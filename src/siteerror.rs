@@ -8,6 +8,7 @@ use hyper::StatusCode;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::{FromStr, ParseBoolError};
+use crate::repository::repo_error::RepositoryError;
 
 #[derive(Debug, Display, Error)]
 pub enum SiteError {
@@ -25,6 +26,7 @@ pub enum SiteError {
     BadRequest,
     MissingArgument(GenericError),
     UnInstalled,
+    RepoError(RepositoryError)
 }
 
 #[derive(Debug)]
@@ -49,6 +51,7 @@ impl From<String> for GenericError {
         GenericError { error: value }
     }
 }
+
 
 impl From<&str> for GenericError {
     fn from(value: &str) -> Self {
@@ -199,7 +202,11 @@ impl From<hyper::Error> for SiteError {
         SiteError::HyperError(err)
     }
 }
-
+impl From<RepositoryError> for SiteError {
+    fn from(value: RepositoryError) -> Self {
+        return SiteError::RepoError(value);
+    }
+}
 impl From<actix_web::client::HttpError> for SiteError {
     fn from(err: actix_web::client::HttpError) -> SiteError {
         SiteError::Error(GenericError::from(err.to_string()))
