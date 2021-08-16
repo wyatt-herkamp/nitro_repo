@@ -7,6 +7,8 @@ use crate::utils::{installed};
 use crate::{settings, DbPool};
 use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
+use crate::system::utils::get_user_by_header;
+use crate::siteerror::SiteError::NotAuthorized;
 
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(
@@ -29,7 +31,7 @@ pub struct UpdateSettingRequest {
     pub value: String,
 }
 
-/*#[post("/api/admin/setting/{setting}/update")]
+#[post("/api/admin/setting/{setting}/update")]
 pub async fn update_setting(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -38,8 +40,11 @@ pub async fn update_setting(
 ) -> Result<APIResponse<DBSetting>, SiteError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
+    let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| SiteError::NotAuthorized)?;
+    if !user.permissions.permissions.contains(&"ADMIN".to_string()) {
+        return Err(NotAuthorized);
+    }
     let mut option =
         get_setting(setting.as_str(), &connection)?.ok_or_else(|| SiteError::NotFound)?;
     option.set_value(request.value.clone());
@@ -47,4 +52,3 @@ pub async fn update_setting(
     let option = get_setting(setting.as_str(), &connection)?.ok_or_else(|| SiteError::NotFound)?;
     return Ok(APIResponse::new(true, Some(option)));
 }
-*/
