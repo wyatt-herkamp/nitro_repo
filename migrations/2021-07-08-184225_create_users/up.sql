@@ -1,8 +1,10 @@
 CREATE TABLE users
 (
-    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
-    username       TEXT,
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name        TEXT,
+    username    TEXT,
     email       TEXT,
-    password       TEXT,
-    created        BIGINT
+    password    TEXT,
+    permissions TEXT,
+    created     BIGINT
 )

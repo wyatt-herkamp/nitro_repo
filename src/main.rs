@@ -4,6 +4,7 @@ pub mod schema;
 pub mod settings;
 pub mod siteerror;
 pub mod utils;
+pub mod system;
 
 #[macro_use]
 extern crate lazy_static_include;
