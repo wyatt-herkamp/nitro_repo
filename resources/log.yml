@@ -1,0 +1,48 @@
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  requests:
+    kind: file
+    path: "log/requests.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  error:
+    kind: file
+    path: "log/error.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  site:
+    kind: file
+    path: "log/site.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  all:
+    kind: file
+    path: "log/all.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+root:
+  level: info
+  appenders:
+    - stdout
+    - all
+loggers:
+  actix_web:
+    level: trace
+    appenders:
+      - stdout
+  actix-web-actors:
+    level: trace
+    appenders:
+      - stdout
+  actix:
+    level: trace
+    appenders:
+      - stdout
+  shoppence:
+    level: trace
+    appenders:
+      - site
+
