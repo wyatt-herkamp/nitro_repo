@@ -41,7 +41,7 @@ loggers:
     level: trace
     appenders:
       - stdout
-  shoppence:
+  nitro_reoo:
     level: trace
     appenders:
       - site
