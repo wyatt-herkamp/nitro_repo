@@ -37,3 +37,18 @@ table! {
         created ->Bigint,
     }
 }
+table! {
+     storages(id) {
+        id -> Bigint,
+        name -> Text,
+        created ->Bigint,
+    }
+}
+table! {
+     repositories(id) {
+        id -> Bigint,
+        name -> Text,
+        storage -> Bigint,
+        created ->Bigint,
+    }
+}

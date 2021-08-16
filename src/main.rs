@@ -5,6 +5,8 @@ pub mod settings;
 pub mod siteerror;
 pub mod utils;
 pub mod system;
+pub mod storage;
+pub mod repository;
 
 #[macro_use]
 extern crate lazy_static_include;
