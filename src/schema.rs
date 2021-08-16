@@ -17,14 +17,3 @@ table! {
 
     }
 }
-table! {
-    categories (id) {
-        id -> Bigint,
-        s_id -> Text,
-        name -> Text,
-        settings -> Text,
-        server -> Bigint,
-        created ->Bigint,
-
-    }
-}
