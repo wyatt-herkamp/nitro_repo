@@ -1,20 +1,4 @@
 [[settings]]
-key = "require_verify"
-name = "Require Verifcation"
-type = "bool"
-default = 'true'
-optional = false
-[[settings]]
-key = "recaptcha_public"
-name = "Public Recaptcha Key"
-type = "string"
-optional = true
-[[settings]]
-key = "recaptcha_private"
-name = "private Recaptcha Key"
-type = "string"
-optional = true
-[[settings]]
 key = "installed"
 name = "Installed"
 type = "boolean"
@@ -24,34 +8,3 @@ key = "version"
 name = "Version"
 type = "string"
 properties = ["hidden"]
-[[settings]]
-key ="email.host"
-name = "SMTP Host"
-type = "string"
-[[settings]]
-key ="email.username"
-name = "Email Username"
-type = "string"
-[[settings]]
-key ="email.password"
-name = "Email Password"
-type = "string"
-[[settings]]
-key = "email.encryption"
-name = "SMTP Encryption"
-type = "string"
-options = ["TLS", "NONE"]
-[[settings]]
-key = "email.from"
-name = "Mail From"
-type = "string"
-[[settings]]
-key = "email.port"
-name = "Mail Port"
-type = "int"
-default="587"
-[[settings]]
-key = "store.name.public"
-name = "Public Store Name"
-type = "string"
-default="Shoppence"

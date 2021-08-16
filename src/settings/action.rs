@@ -1,7 +1,5 @@
 use crate::settings::settings::DBSetting;
-use crate::store::model::ShoppingCart;
-use crate::system::models::{AuthToken, User};
-use crate::{settings, store, system, utils};
+use crate::{settings, utils};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 // Setting

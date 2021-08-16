@@ -3,8 +3,8 @@ use crate::settings::settings::DBSetting;
 use crate::siteerror::SiteError;
 
 use crate::settings::action::get_setting;
-use crate::utils::{get_user_by_header, installed};
-use crate::{action, settings, DbPool};
+use crate::utils::{installed};
+use crate::{settings, DbPool};
 use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +19,7 @@ pub async fn about_setting(
 
     let option = get_setting(setting.as_str(), &connection)?.ok_or_else(|| SiteError::NotFound)?;
     if !option.setting.public.unwrap_or(false) {
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| SiteError::NotAuthorized)?;
+        return Err(SiteError::NotAuthorized);
     }
     return Ok(APIResponse::new(true, Some(option)));
 }
@@ -29,7 +29,7 @@ pub struct UpdateSettingRequest {
     pub value: String,
 }
 
-#[post("/api/admin/setting/{setting}/update")]
+/*#[post("/api/admin/setting/{setting}/update")]
 pub async fn update_setting(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -47,3 +47,4 @@ pub async fn update_setting(
     let option = get_setting(setting.as_str(), &connection)?.ok_or_else(|| SiteError::NotFound)?;
     return Ok(APIResponse::new(true, Some(option)));
 }
+*/
