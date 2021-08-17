@@ -1,6 +1,6 @@
-use crate::api_response::{APIError, APIResponse};
+use crate::api_response::{APIErrorResponse, APIResponse};
 use crate::settings::settings::DBSetting;
-use crate::siteerror::SiteError;
+use crate::apierror::APIError;
 
 use crate::settings::action::get_setting;
 use crate::settings::utils::quick_add;
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[get("/api/installed")]
-pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, SiteError> {
+pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, APIError> {
     let connection = pool.get()?;
     utils::installed(&connection)?;
     Ok(APIResponse::new(true, Some(true)))
@@ -27,7 +27,7 @@ pub async fn install(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     request: web::Json<InstallRequest>,
-) -> Result<APIResponse<Value>, SiteError> {
+) -> Result<APIResponse<Value>, APIError> {
     let connection = pool.get()?;
 
     quick_add("installed", "true".to_string(), &connection)?;

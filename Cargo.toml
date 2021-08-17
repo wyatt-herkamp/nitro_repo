@@ -48,3 +48,4 @@ lettre = "0.10.0-rc.3"
 rust-embed = {version="5.9.0", features=["interpolate-folder-path"]}
 handlebars = "4.1.0"
 serde_yaml = { version = "0.8.4" }
+tera = "1.12.1"

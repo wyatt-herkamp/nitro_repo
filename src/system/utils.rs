@@ -2,13 +2,13 @@ use crate::system;
 use actix_web::http::HeaderMap;
 use diesel::MysqlConnection;
 use crate::system::models::User;
-use crate::siteerror::SiteError;
+use crate::apierror::APIError;
 use actix_web::{HttpRequest, HttpMessage};
 
 pub fn get_user_by_cookie(
     http: &HttpRequest,
     conn: &MysqlConnection,
-) -> Result<Option<User>, SiteError> {
+) -> Result<Option<User>, APIError> {
     let option = http.cookie("session");
     if option.is_none() {
         return Ok(None);
@@ -22,7 +22,7 @@ pub fn get_user_by_cookie(
 pub fn get_user_by_header(
     header_map: &HeaderMap,
     conn: &MysqlConnection,
-) -> Result<Option<User>, SiteError> {
+) -> Result<Option<User>, APIError> {
     let option = header_map.get("Authorization");
     if option.is_none() {
         return Ok(None);

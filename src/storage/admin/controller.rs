@@ -2,12 +2,12 @@ use crate::repository::models::Repository;
 use crate::DbPool;
 use actix_web::{get, post, web, HttpRequest};
 use crate::api_response::APIResponse;
-use crate::siteerror::{SiteError, GenericError};
+use crate::apierror::{APIError, GenericError};
 use crate::utils::{installed, get_current_time};
 use crate::system::utils::get_user_by_header;
 use crate::repository::action::{get_repositories, add_new_repository, get_repo_by_name_and_storage};
 use serde::{Serialize, Deserialize};
-use crate::siteerror::SiteError::NotFound;
+use crate::apierror::APIError::NotFound;
 use crate::storage::models::Storage;
 use crate::storage::action::{get_storages, add_new_storage, get_storage_by_name};
 
@@ -20,11 +20,11 @@ pub struct ListStorages {
 pub async fn list_storages(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<ListStorages>, SiteError> {
+) -> Result<APIResponse<ListStorages>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| SiteError::NotAuthorized)?;
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
     let vec = get_storages(&connection)?;
 
     let response = ListStorages { storages: vec };
@@ -41,11 +41,11 @@ pub async fn add_server(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewStorage>,
-) -> Result<APIResponse<Storage>, SiteError> {
+) -> Result<APIResponse<Storage>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| SiteError::NotAuthorized)?;
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
 
     let storage = Storage {
         id: 0,

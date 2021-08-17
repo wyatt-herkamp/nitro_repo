@@ -1,6 +1,6 @@
 use crate::api_response::APIResponse;
 use crate::settings::settings::DBSetting;
-use crate::siteerror::SiteError;
+use crate::apierror::APIError;
 
 use crate::settings::action::get_setting;
 use crate::utils::{installed};
@@ -8,7 +8,7 @@ use crate::{settings, DbPool};
 use actix_web::{get, post, patch, put, delete, head, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use crate::system::utils::get_user_by_header;
-use crate::siteerror::SiteError::NotAuthorized;
+use crate::apierror::APIError::NotAuthorized;
 use crate::system::models::User;
 use futures::StreamExt;
 use actix_web::web::Bytes;
@@ -19,7 +19,7 @@ use actix_web::web::Bytes;
 pub async fn get_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, APIError> {
     let connection = pool.get()?;
      installed(&connection)?;
     println!("GET {}", path.0.0);
@@ -33,7 +33,7 @@ pub async fn get_repository(
 pub async fn post_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
     println!("POST {}", path.0.0);
@@ -48,7 +48,7 @@ pub async fn post_repository(
 pub async fn patch_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,bytes: Bytes ) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>,bytes: Bytes ) -> Result<APIResponse<User>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
     println!("PATCH {}", path.0.0);
@@ -63,7 +63,7 @@ pub async fn patch_repository(
 pub async fn put_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, APIError> {
     let connection = pool.get()?;
      installed(&connection)?;
     println!("HEAD {}", path.0.0);
@@ -80,7 +80,7 @@ pub async fn put_repository(
 pub async fn head_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, APIError> {
     let connection = pool.get()?;
       installed(&connection)?;
     println!("PUT {}", path.0.0);

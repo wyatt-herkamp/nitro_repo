@@ -1,5 +1,5 @@
 
-use crate::siteerror::SiteError;
+use crate::apierror::APIError;
 
 use actix_web::http::HeaderMap;
 
@@ -13,7 +13,7 @@ use std::ops::Add;
 
 use crate::schema::settings::columns::setting;
 use crate::settings::action::get_setting;
-use crate::siteerror::SiteError::{MissingArgument, NotFound};
+use crate::apierror::APIError::{MissingArgument, NotFound};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use lettre::transport::smtp::authentication::Credentials;
@@ -42,10 +42,10 @@ impl Resources {
     }
 }
 
-pub fn installed(conn: &MysqlConnection) -> Result<(), SiteError> {
+pub fn installed(conn: &MysqlConnection) -> Result<(), APIError> {
     let option = get_setting("INSTALLED", &conn)?;
     if option.is_none() {
-        return Err(SiteError::UnInstalled);
+        return Err(APIError::UnInstalled);
     }
 
     return Ok(());
@@ -91,9 +91,9 @@ pub struct NewPassword {
 }
 
 impl NewPassword {
-    pub fn hash(&self) -> Result<String, SiteError> {
+    pub fn hash(&self) -> Result<String, APIError> {
         if self.password != self.password_two {
-            return Err(SiteError::from("Mismatching Password"));
+            return Err(APIError::from("Mismatching Password"));
         }
         let salt = SaltString::generate(&mut OsRng);
 

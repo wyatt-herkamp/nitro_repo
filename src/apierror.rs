@@ -1,4 +1,4 @@
-use crate::api_response::{APIError, APIResponse};
+use crate::api_response::{APIErrorResponse, APIResponse};
 
 use actix_web::http::header::ToStrError;
 
@@ -11,7 +11,7 @@ use std::str::{FromStr, ParseBoolError};
 use crate::repository::repo_error::RepositoryError;
 
 #[derive(Debug, Display, Error)]
-pub enum SiteError {
+pub enum APIError {
     JSONError(serde_json::Error),
     DBError(diesel::result::Error),
     ActixWebError(actix_web::Error),
@@ -62,7 +62,7 @@ impl From<&str> for GenericError {
 }
 
 impl FromStr for GenericError {
-    type Err = SiteError;
+    type Err = APIError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(GenericError {
@@ -71,11 +71,11 @@ impl FromStr for GenericError {
     }
 }
 
-impl actix_web::error::ResponseError for SiteError {
+impl actix_web::error::ResponseError for APIError {
     fn error_response(&self) -> HttpResponse {
         return match self {
-            SiteError::NotAuthorized => {
-                let error = APIError {
+            APIError::NotAuthorized => {
+                let error = APIErrorResponse {
                     user_friendly_message: Some(self.to_string()),
                     error_code: Some("NOT_AUTHORIZED".to_string()),
                 };
@@ -86,8 +86,8 @@ impl actix_web::error::ResponseError for SiteError {
                 }
                 .error(StatusCode::UNAUTHORIZED)
             }
-            SiteError::InvalidLogin => {
-                let error = APIError {
+            APIError::InvalidLogin => {
+                let error = APIErrorResponse {
                     user_friendly_message: Some("Invalid Login".to_string()),
                     error_code: Some("NOT_AUTHORIZED".to_string()),
                 };
@@ -98,8 +98,8 @@ impl actix_web::error::ResponseError for SiteError {
                 }
                 .error(StatusCode::UNAUTHORIZED)
             }
-            SiteError::BadRequest => {
-                let error = APIError {
+            APIError::BadRequest => {
+                let error = APIErrorResponse {
                     user_friendly_message: Some(self.to_string()),
                     error_code: Some("BAD_REQUEST".to_string()),
                 };
@@ -110,8 +110,8 @@ impl actix_web::error::ResponseError for SiteError {
                 }
                 .error(StatusCode::BAD_REQUEST)
             }
-            SiteError::MissingArgument(s) => {
-                let error = APIError {
+            APIError::MissingArgument(s) => {
+                let error = APIErrorResponse {
                     user_friendly_message: Some(format!("Missing Argument {}", s)),
                     error_code: Some("BAD_REQUEST".to_string()),
                 };
@@ -122,8 +122,8 @@ impl actix_web::error::ResponseError for SiteError {
                 }
                 .error(StatusCode::BAD_REQUEST)
             }
-            SiteError::NotFound => {
-                let error = APIError {
+            APIError::NotFound => {
+                let error = APIErrorResponse {
                     user_friendly_message: Some(self.to_string()),
                     error_code: Some("NOT_FOUND".to_string()),
                 };
@@ -134,8 +134,8 @@ impl actix_web::error::ResponseError for SiteError {
                 }
                 .error(StatusCode::NOT_FOUND)
             }
-            SiteError::UnInstalled => {
-                let error = APIError {
+            APIError::UnInstalled => {
+                let error = APIErrorResponse {
                     user_friendly_message: Some(self.to_string()),
                     error_code: Some("UNINSTALLED".to_string()),
                 };
@@ -147,7 +147,7 @@ impl actix_web::error::ResponseError for SiteError {
                 .error(StatusCode::OK)
             }
             _ => {
-                let error = APIError {
+                let error = APIErrorResponse {
                     user_friendly_message: Some(self.to_string()),
                     error_code: None,
                 };
@@ -162,92 +162,92 @@ impl actix_web::error::ResponseError for SiteError {
     }
 }
 
-impl From<diesel::result::Error> for SiteError {
-    fn from(err: diesel::result::Error) -> SiteError {
-        SiteError::DBError(err)
+impl From<diesel::result::Error> for APIError {
+    fn from(err: diesel::result::Error) -> APIError {
+        APIError::DBError(err)
     }
 }
 
-impl From<serde_json::Error> for SiteError {
-    fn from(err: serde_json::Error) -> SiteError {
-        SiteError::JSONError(err)
+impl From<serde_json::Error> for APIError {
+    fn from(err: serde_json::Error) -> APIError {
+        APIError::JSONError(err)
     }
 }
 
-impl From<actix_web::Error> for SiteError {
-    fn from(err: actix_web::Error) -> SiteError {
-        SiteError::ActixWebError(err)
+impl From<actix_web::Error> for APIError {
+    fn from(err: actix_web::Error) -> APIError {
+        APIError::ActixWebError(err)
     }
 }
 
-impl From<r2d2::Error> for SiteError {
-    fn from(err: r2d2::Error) -> SiteError {
-        SiteError::R2D2Error(err)
+impl From<r2d2::Error> for APIError {
+    fn from(err: r2d2::Error) -> APIError {
+        APIError::R2D2Error(err)
     }
 }
-impl From<lettre::transport::smtp::Error> for SiteError {
-    fn from(err: lettre::transport::smtp::Error) -> SiteError {
-        SiteError::SMTPTransportError(err)
-    }
-}
-
-impl From<ParseBoolError> for SiteError {
-    fn from(err: ParseBoolError) -> SiteError {
-        SiteError::BooleanParseError(err)
+impl From<lettre::transport::smtp::Error> for APIError {
+    fn from(err: lettre::transport::smtp::Error) -> APIError {
+        APIError::SMTPTransportError(err)
     }
 }
 
-impl From<hyper::Error> for SiteError {
-    fn from(err: hyper::Error) -> SiteError {
-        SiteError::HyperError(err)
+impl From<ParseBoolError> for APIError {
+    fn from(err: ParseBoolError) -> APIError {
+        APIError::BooleanParseError(err)
     }
 }
-impl From<RepositoryError> for SiteError {
+
+impl From<hyper::Error> for APIError {
+    fn from(err: hyper::Error) -> APIError {
+        APIError::HyperError(err)
+    }
+}
+impl From<RepositoryError> for APIError {
     fn from(value: RepositoryError) -> Self {
-        return SiteError::RepoError(value);
+        return APIError::RepoError(value);
     }
 }
-impl From<actix_web::client::HttpError> for SiteError {
-    fn from(err: actix_web::client::HttpError) -> SiteError {
-        SiteError::Error(GenericError::from(err.to_string()))
-    }
-}
-
-impl From<std::io::Error> for SiteError {
-    fn from(err: std::io::Error) -> SiteError {
-        SiteError::Error(GenericError::from(err.to_string()))
+impl From<actix_web::client::HttpError> for APIError {
+    fn from(err: actix_web::client::HttpError) -> APIError {
+        APIError::Error(GenericError::from(err.to_string()))
     }
 }
 
-impl From<ToStrError> for SiteError {
-    fn from(err: ToStrError) -> SiteError {
-        SiteError::Error(GenericError::from(err.to_string()))
+impl From<std::io::Error> for APIError {
+    fn from(err: std::io::Error) -> APIError {
+        APIError::Error(GenericError::from(err.to_string()))
     }
 }
 
-impl From<String> for SiteError {
+impl From<ToStrError> for APIError {
+    fn from(err: ToStrError) -> APIError {
+        APIError::Error(GenericError::from(err.to_string()))
+    }
+}
+
+impl From<String> for APIError {
     fn from(value: String) -> Self {
         let error = GenericError { error: value };
-        SiteError::Error(error)
+        APIError::Error(error)
     }
 }
 
-impl From<&str> for SiteError {
+impl From<&str> for APIError {
     fn from(value: &str) -> Self {
         let error = GenericError {
             error: value.to_string(),
         };
-        SiteError::Error(error)
+        APIError::Error(error)
     }
 }
 
-impl FromStr for SiteError {
-    type Err = SiteError;
+impl FromStr for APIError {
+    type Err = APIError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let error = GenericError {
             error: s.to_string(),
         };
-        Ok(SiteError::Error(error))
+        Ok(APIError::Error(error))
     }
 }

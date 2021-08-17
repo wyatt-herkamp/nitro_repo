@@ -2,11 +2,13 @@ pub mod api_response;
 pub mod install;
 pub mod schema;
 pub mod settings;
-pub mod siteerror;
+pub mod apierror;
 pub mod utils;
 pub mod system;
 pub mod storage;
 pub mod repository;
+pub mod internal_error;
+mod site_response;
 
 #[macro_use]
 extern crate lazy_static_include;
@@ -37,10 +39,11 @@ use log::info;
 use actix_cors::Cors;
 
 use crate::settings::settings::get_file;
-use crate::siteerror::SiteError;
+use crate::apierror::APIError;
 use crate::utils::Resources;
 use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use tera::Tera;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
@@ -66,10 +69,18 @@ async fn main() -> std::io::Result<()> {
             .allow_any_header()
             .allow_any_method()
             .allow_any_origin();
+        let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
+        if result1.is_err() {
+            println!("{}", result1.err().unwrap());
+            panic!("Unable to create Tera")
+        }
+        let tera = result1.unwrap();
         App::new()
+
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .data(pool.clone())
+            .data(tera)
             .service(install::install)
             .service(install::installed)
                  .service(settings::controller::update_setting)
@@ -79,7 +90,7 @@ async fn main() -> std::io::Result<()> {
             .service(repository::controller::patch_repository)
             .service(repository::controller::put_repository)
             .service(repository::controller::head_repository)
-                    .default_service(web::route().to(|| SiteError::NotFound.error_response()))
+                    .default_service(web::route().to(|| APIError::NotFound.error_response()))
     })
         .workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {

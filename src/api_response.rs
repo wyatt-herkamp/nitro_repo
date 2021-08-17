@@ -1,4 +1,4 @@
-use crate::siteerror::SiteError;
+use crate::apierror::APIError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 
@@ -12,7 +12,7 @@ pub struct APIResponse<T> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct APIError {
+pub struct APIErrorResponse {
     //User friendly messages will be` provided for some cases
     pub user_friendly_message: Option<String>,
     //Look into that specific API for what this will be set to. This is something that specific api will control
@@ -36,8 +36,8 @@ impl<T: Serialize> APIResponse<T> {
 }
 
 impl<T: Serialize> Responder for APIResponse<T> {
-    type Error = SiteError;
-    type Future = futures_util::future::Ready<Result<HttpResponse, SiteError>>;
+    type Error = APIError;
+    type Future = futures_util::future::Ready<Result<HttpResponse, APIError>>;
 
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
         let i = self.status_code.unwrap_or(200);
