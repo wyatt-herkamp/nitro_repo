@@ -1,0 +1,10 @@
+{
+  "name": "nitro_repo",
+  "version": "1.0.0",
+  "description": "Nitro_Repo Frontend",
+  "author": "Wyatt Jacob Herkamp <wherkamp@kingtux.me> (https://kingtux.me/)",
+  "license": "MIT",
+  "dependencies": {
+    "halfmoon": "^1.1.1"
+  }
+}
