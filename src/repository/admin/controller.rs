@@ -1,4 +1,4 @@
-use crate::repository::models::Repository;
+use crate::repository::models::{Repository, RepositorySettings};
 use crate::DbPool;
 use actix_web::{get, post, web, HttpRequest};
 use crate::api_response::APIResponse;
@@ -14,15 +14,18 @@ pub struct ListRepositories {
     pub repositories: Vec<Repository>,
 }
 
-#[get("/api/admin/repositories/list")]
+#[get("/api/repositories/list")]
 pub async fn list_servers(
     pool: web::Data<DbPool>,
     r: HttpRequest,
 ) -> Result<APIResponse<ListRepositories>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
+    let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+    if !user.permissions.permissions.contains(&"ADMIN".to_string()){
+        return Err(APIError::NotAuthorized);
+    }
     let vec = get_repositories(&connection)?;
 
     let response = ListRepositories { repositories: vec };
@@ -34,6 +37,7 @@ pub struct NewRepo {
     pub name: String,
     pub storage: String,
     pub repo: String,
+    pub settings: RepositorySettings,
 }
 
 #[post("/api/admin/repository/add")]
@@ -44,8 +48,11 @@ pub async fn add_server(
 ) -> Result<APIResponse<Repository>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
+    let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+    if !user.permissions.permissions.contains(&"ADMIN".to_string()){
+        return Err(APIError::NotAuthorized);
+    }
     let option1 = crate::storage::action::get_storage_by_name(nc.storage.clone(), &connection)?.
         ok_or_else(|| APIError::from("Unable to find storage"))?;
     let repository = Repository {
@@ -54,6 +61,7 @@ pub async fn add_server(
         name: nc.name.clone(),
         repo_type: nc.repo.clone(),
         storage: option1.id.clone(),
+        settings: nc.settings.clone(),
         created: get_current_time(),
     };
     add_new_repository(&repository, &connection)?;

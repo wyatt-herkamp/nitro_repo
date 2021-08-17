@@ -8,7 +8,8 @@ pub mod system;
 pub mod storage;
 pub mod repository;
 pub mod internal_error;
-mod site_response;
+pub mod site_response;
+pub mod frontend;
 
 #[macro_use]
 extern crate lazy_static_include;
@@ -44,7 +45,22 @@ use crate::utils::Resources;
 use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use tera::Tera;
+use std::collections::HashMap;
+use actix_files::Files;
 
+fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::Error> {
+    let option = args.get("path");
+    return if option.is_some() {
+        let x = option.unwrap().to_string();
+        let x1 = std::env::var("URL").unwrap();
+        let string = format!("{}/{}", x1, x);
+        println!("{}", &string);
+        let result = tera::Value::from(&*string);
+        Ok(result)
+    } else {
+        Err(tera::Error::from("Missing Param Tera".to_string()))
+    };
+}
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
 #[actix_web::main]
@@ -74,7 +90,8 @@ async fn main() -> std::io::Result<()> {
             println!("{}", result1.err().unwrap());
             panic!("Unable to create Tera")
         }
-        let tera = result1.unwrap();
+        let mut  tera = result1.unwrap();
+        tera.register_function("url", url);
         App::new()
 
             .wrap(cors)
@@ -83,14 +100,18 @@ async fn main() -> std::io::Result<()> {
             .data(tera)
             .service(install::install)
             .service(install::installed)
-                 .service(settings::controller::update_setting)
+            .service(settings::controller::update_setting)
             .service(settings::controller::about_setting)
-            .service(repository::controller::get_repository)
-            .service(repository::controller::post_repository)
-            .service(repository::controller::patch_repository)
-            .service(repository::controller::put_repository)
-            .service(repository::controller::head_repository)
-                    .default_service(web::route().to(|| APIError::NotFound.error_response()))
+            .service(repository::admin::controller::add_server)
+            .service(repository::admin::controller::list_servers)
+            .service(storage::admin::controller::add_server)
+            .service(storage::admin::controller::list_storages)
+            .configure(repository::init)
+            .configure(frontend::install::init)
+            .configure(frontend::public::init)
+            .service(Files::new("/cdn", "site/node_modules").show_files_listing())
+            .service(Files::new("/", "site/static").show_files_listing())
+            .default_service(web::route().to(|| APIError::NotFound.error_response()))
     })
         .workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {

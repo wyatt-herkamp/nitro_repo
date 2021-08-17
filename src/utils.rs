@@ -76,32 +76,3 @@ pub struct EmailChangeRequest {
     pub from: Option<String>,
     pub port: Option<i64>,
 }
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NewUser {
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub password: Option<NewPassword>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NewPassword {
-    pub password: String,
-    pub password_two: String,
-}
-
-impl NewPassword {
-    pub fn hash(&self) -> Result<String, APIError> {
-        if self.password != self.password_two {
-            return Err(APIError::from("Mismatching Password"));
-        }
-        let salt = SaltString::generate(&mut OsRng);
-
-        let argon2 = Argon2::default();
-        let password_hash = argon2
-            .hash_password_simple(self.password.as_bytes(), salt.as_ref())
-            .unwrap()
-            .to_string();
-        return Ok(password_hash);
-    }
-}

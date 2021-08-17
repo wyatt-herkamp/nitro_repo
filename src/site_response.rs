@@ -15,25 +15,24 @@ pub struct SiteResponse {
 
 
 impl SiteResponse {
-    pub fn new(template: String, context: Context, status_code: Option<StatusCode>) -> SiteResponse {
+    pub fn new(template: &str, context: Context, status_code: Option<StatusCode>) -> SiteResponse {
         return SiteResponse {
-            template,
+            template: template.to_string(),
             context,
-            status_code
+            status_code,
         };
     }
-
 }
 
-impl Responder for SiteResponse{
+impl Responder for SiteResponse {
     type Error = InternalError;
     type Future = futures_util::future::Ready<Result<HttpResponse, Self::Error>>;
 
     fn respond_to(self, req: &HttpRequest) -> Self::Future {
-        let tera:&Tera = req.app_data().unwrap();
+        let tera: &actix_web::web::Data<Tera> = req.app_data().unwrap();
         let result1 = tera.render(self.template.as_str(), &self.context);
-        if let Err(e) = result1{
-           return futures_util::future::err(InternalError::TeraError(e));
+        if let Err(e) = result1 {
+            return futures_util::future::err(InternalError::TeraError(e));
         }
         let result = HttpResponse::Ok()
             .status(self.status_code.unwrap_or(StatusCode::OK))

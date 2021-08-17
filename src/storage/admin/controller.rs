@@ -16,15 +16,18 @@ pub struct ListStorages {
     pub storages: Vec<Storage>,
 }
 
-#[get("/api/admin/storages/list")]
+#[get("/api/storages/list")]
 pub async fn list_storages(
     pool: web::Data<DbPool>,
     r: HttpRequest,
 ) -> Result<APIResponse<ListStorages>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
+    let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+    if !user.permissions.permissions.contains(&"ADMIN".to_string()){
+        return Err(APIError::NotAuthorized);
+    }
     let vec = get_storages(&connection)?;
 
     let response = ListStorages { storages: vec };
@@ -44,9 +47,11 @@ pub async fn add_server(
 ) -> Result<APIResponse<Storage>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
+    let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-
+    if !user.permissions.permissions.contains(&"ADMIN".to_string()){
+        return Err(APIError::NotAuthorized);
+    }
     let storage = Storage {
         id: 0,
 
