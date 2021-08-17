@@ -4,6 +4,8 @@ use crate::utils::get_current_time;
 use crate::{system, utils, storage};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
+use crate::storage::models::Storage;
+
 pub fn get_storage_by_name(
     d: String,
     conn: &MysqlConnection,
@@ -16,4 +18,15 @@ pub fn get_storage_by_name(
         .optional()?;
 
     Ok(found_mod)
+}
+pub fn add_new_storage(s: &Storage, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::storages::dsl::*;
+    diesel::insert_into(storages).values(s).execute(conn).unwrap();
+    Ok(())
+}
+pub fn get_storages(
+    conn: &MysqlConnection,
+) -> Result<Vec<storage::models::Storage>, diesel::result::Error> {
+    use crate::schema::storages::dsl::*;
+    Ok(storages.load::<storage::models::Storage>(conn)?)
 }

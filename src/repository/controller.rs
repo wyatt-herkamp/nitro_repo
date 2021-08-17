@@ -11,6 +11,7 @@ use crate::system::utils::get_user_by_header;
 use crate::siteerror::SiteError::NotAuthorized;
 use crate::system::models::User;
 use futures::StreamExt;
+use actix_web::web::Bytes;
 
 //
 
@@ -20,7 +21,7 @@ pub async fn get_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, SiteError> {
     let connection = pool.get()?;
-    //  installed(&connection)?;
+     installed(&connection)?;
     println!("GET {}", path.0.0);
     println!("{}", path.0.1);
     println!("{}", path.0.2);
@@ -32,9 +33,9 @@ pub async fn get_repository(
 pub async fn post_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, SiteError> {
     let connection = pool.get()?;
-    //  installed(&connection)?;
+    installed(&connection)?;
     println!("POST {}", path.0.0);
     println!("{}", path.0.1);
     println!("{}", path.0.2);
@@ -47,9 +48,9 @@ pub async fn post_repository(
 pub async fn patch_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>,bytes: Bytes ) -> Result<APIResponse<User>, SiteError> {
     let connection = pool.get()?;
-    //  installed(&connection)?;
+    installed(&connection)?;
     println!("PATCH {}", path.0.0);
     println!("{}", path.0.1);
     println!("{}", path.0.2);
@@ -62,9 +63,9 @@ pub async fn patch_repository(
 pub async fn put_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, ) -> Result<APIResponse<User>, SiteError> {
+    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, SiteError> {
     let connection = pool.get()?;
-    //  installed(&connection)?;
+     installed(&connection)?;
     println!("HEAD {}", path.0.0);
     println!("{}", path.0.1);
 

@@ -4,6 +4,8 @@ use crate::utils::get_current_time;
 use crate::{system, utils, storage, repository};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
+use crate::repository::models::Repository;
+
 pub fn get_repo_by_name_and_storage(
     d: String, storage: i64,
     conn: &MysqlConnection,
@@ -16,4 +18,15 @@ pub fn get_repo_by_name_and_storage(
         .optional()?;
 
     Ok(found_mod)
+}
+
+pub fn add_new_repository(s: &Repository, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+    diesel::insert_into(repositories).values(s).execute(conn).unwrap();
+    Ok(())
+}pub fn get_repositories(
+    conn: &MysqlConnection,
+) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+    Ok(repositories.load::<repository::models::Repository>(conn)?)
 }

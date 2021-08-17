@@ -9,4 +9,5 @@ pub mod models;
 pub mod repository;
 pub mod maven;
 pub mod action;
+pub mod admin;
 
