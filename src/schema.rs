@@ -48,6 +48,7 @@ table! {
      repositories(id) {
         id -> Bigint,
         name -> Text,
+        repo_type -> Text,
         storage -> Bigint,
         created ->Bigint,
     }

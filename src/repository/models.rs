@@ -19,6 +19,7 @@ use std::io::Write;
 pub struct Repository {
     pub id: i64,
     pub name: String,
+    pub repo_type: String,
     pub storage: i64,
     pub created: i64,
 }
