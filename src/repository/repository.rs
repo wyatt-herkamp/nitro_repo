@@ -3,8 +3,9 @@ use crate::storage::models::Storage;
 use crate::repository::models::Repository;
 use crate::repository::repo_error::RepositoryError;
 use actix_web::web::Bytes;
+use crate::site_response::SiteResponse;
 
-pub type RepoResponse = HttpResponse;
+pub type RepoResponse = SiteResponse;
 pub type RepoResult = Result<RepoResponse, RepositoryError>;
 
 pub struct RepositoryRequest {
