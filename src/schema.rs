@@ -50,6 +50,7 @@ table! {
         name -> Text,
         repo_type -> Text,
         storage -> Bigint,
+        settings -> Text,
         created ->Bigint,
     }
 }
