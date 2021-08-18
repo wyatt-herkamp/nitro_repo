@@ -1,3 +1,35 @@
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
+extern crate dotenv;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static_include;
+extern crate strum;
+extern crate strum_macros;
+
+use std::collections::HashMap;
+use std::env;
+use std::path::Path;
+
+use actix_cors::Cors;
+use actix_files::Files;
+use actix_web::{
+    App, get, HttpRequest, HttpResponse, HttpServer, middleware, post, ResponseError, web,
+};
+use diesel::prelude::*;
+use diesel::r2d2::{self, ConnectionManager};
+use log4rs::config::RawConfig;
+use log::info;
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use tera::Tera;
+
+use crate::apierror::APIError;
+use crate::settings::settings::get_file;
+use crate::utils::Resources;
+
 pub mod api_response;
 pub mod install;
 pub mod schema;
@@ -11,47 +43,11 @@ pub mod internal_error;
 pub mod site_response;
 pub mod frontend;
 
-#[macro_use]
-extern crate lazy_static_include;
-#[macro_use]
-extern crate lazy_static;
-
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
-extern crate dotenv;
-extern crate strum;
-extern crate strum_macros;
-
-use std::path::Path;
-
-use std::env;
-
-use actix_web::{
-    get, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, ResponseError,
-};
-
-use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
-
-use log::info;
-
-use actix_cors::Cors;
-
-use crate::settings::settings::get_file;
-use crate::apierror::APIError;
-use crate::utils::Resources;
-use log4rs::config::RawConfig;
-use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use tera::Tera;
-use std::collections::HashMap;
-use actix_files::Files;
-
 fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::Error> {
     let option = args.get("path");
     return if option.is_some() {
-        let x = option.unwrap().to_string();
+        let x = option.unwrap().to_string().replace("\"","");
+        println!("{}", &x);
         let x1 = std::env::var("URL").unwrap();
         let string = format!("{}/{}", x1, x);
         println!("{}", &string);
@@ -61,6 +57,13 @@ fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::E
         Err(tera::Error::from("Missing Param Tera".to_string()))
     };
 }
+
+fn url_raw(value: &str) -> String {
+    let url = std::env::var("URL").unwrap();
+    let string = format!("{}/{}", url, value);
+    return string;
+}
+
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
 #[actix_web::main]
@@ -90,7 +93,7 @@ async fn main() -> std::io::Result<()> {
             println!("{}", result1.err().unwrap());
             panic!("Unable to create Tera")
         }
-        let mut  tera = result1.unwrap();
+        let mut tera = result1.unwrap();
         tera.register_function("url", url);
         App::new()
 
@@ -98,7 +101,6 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(tera)
-            .service(install::install)
             .service(install::installed)
             .service(settings::controller::update_setting)
             .service(settings::controller::about_setting)
@@ -109,8 +111,8 @@ async fn main() -> std::io::Result<()> {
             .configure(repository::init)
             .configure(frontend::install::init)
             .configure(frontend::public::init)
-            .service(Files::new("/cdn", "site/node_modules").show_files_listing())
-            .service(Files::new("/", "site/static").show_files_listing())
+            .service(Files::new("/cdn", format!("{}/node_modules", std::env::var("SITE_DIR").unwrap())).show_files_listing())
+            .service(Files::new("/", format!("{}/static", std::env::var("SITE_DIR").unwrap())).show_files_listing())
             .default_service(web::route().to(|| APIError::NotFound.error_response()))
     })
         .workers(2);

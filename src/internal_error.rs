@@ -1,16 +1,17 @@
-use crate::api_response::{APIErrorResponse, APIResponse};
-
-use actix_web::http::header::ToStrError;
-
-use actix_web::HttpResponse;
-use derive_more::{Display, Error};
-use hyper::StatusCode;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::{FromStr, ParseBoolError};
-use crate::repository::repo_error::RepositoryError;
-use actix_web::dev::HttpResponseBuilder;
+
 use actix_web::body::Body;
+use actix_web::dev::HttpResponseBuilder;
+use actix_web::http::header::ToStrError;
+use actix_web::HttpResponse;
+use derive_more::{Display, Error};
+use hyper::StatusCode;
+
+use crate::api_response::{APIErrorResponse, APIResponse};
+use crate::apierror::APIError;
+use crate::repository::repo_error::RepositoryError;
 
 #[derive(Debug, Display, Error)]
 pub enum InternalError {
@@ -24,6 +25,7 @@ pub enum InternalError {
     SMTPTransportError(lettre::transport::smtp::Error),
     MissingArgument(GenericError),
     Error(GenericError),
+    Internal(APIError),
     UnInstalled,
     RepoError(RepositoryError),
 }
@@ -154,6 +156,12 @@ impl From<String> for InternalError {
     fn from(value: String) -> Self {
         let error = GenericError { error: value };
         InternalError::Error(error)
+    }
+}
+
+impl From<APIError> for InternalError {
+    fn from(value: APIError) -> Self {
+        InternalError::Internal(value)
     }
 }
 

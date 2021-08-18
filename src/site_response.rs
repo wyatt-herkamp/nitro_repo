@@ -1,9 +1,9 @@
-use crate::apierror::APIError;
-use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder};
-
+use actix_web::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
+
+use crate::apierror::APIError;
 use crate::internal_error::InternalError;
 
 #[derive(Debug)]
@@ -15,12 +15,12 @@ pub struct SiteResponse {
 
 
 impl SiteResponse {
-    pub fn new(template: &str, context: Context, status_code: Option<StatusCode>) -> SiteResponse {
-        return SiteResponse {
+    pub fn new(template: &str, context: Context, status_code: Option<StatusCode>) -> Result<SiteResponse, InternalError> {
+        return Ok(SiteResponse {
             template: template.to_string(),
             context,
             status_code,
-        };
+        });
     }
 }
 

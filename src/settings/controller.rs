@@ -1,14 +1,14 @@
-use crate::api_response::APIResponse;
-use crate::settings::settings::DBSetting;
-use crate::apierror::APIError;
-
-use crate::settings::action::get_setting;
-use crate::utils::{installed};
-use crate::{settings, DbPool};
-use actix_web::{get, post, web, HttpRequest};
+use actix_web::{get, HttpRequest, post, web};
 use serde::{Deserialize, Serialize};
-use crate::system::utils::get_user_by_header;
+
+use crate::{DbPool, settings};
+use crate::api_response::APIResponse;
+use crate::apierror::APIError;
 use crate::apierror::APIError::NotAuthorized;
+use crate::settings::action::get_setting;
+use crate::settings::settings::DBSetting;
+use crate::system::utils::get_user_by_header;
+use crate::utils::installed;
 
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(
@@ -42,7 +42,7 @@ pub async fn update_setting(
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.permissions.contains(&"ADMIN".to_string()) {
+    if !user.permissions.admin {
         return Err(NotAuthorized);
     }
     let mut option =

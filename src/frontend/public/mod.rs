@@ -1,9 +1,10 @@
-use actix_web::{get, web, HttpRequest, HttpResponse};
-use crate::DbPool;
-use crate::site_response::SiteResponse;
-use crate::internal_error::InternalError;
-use crate::utils::installed;
+use actix_web::{get, HttpRequest, HttpResponse, web};
 use tera::Context;
+
+use crate::DbPool;
+use crate::internal_error::InternalError;
+use crate::site_response::SiteResponse;
+use crate::utils::installed;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(index);
@@ -16,5 +17,5 @@ pub async fn index(
 ) -> Result<SiteResponse, InternalError> {
     let connection = pool.get()?;
     //installed(&connection)?;
-    return Ok(SiteResponse::new("index.html",Context::new(), None));
+    return SiteResponse::new("index.html",Context::new(), None);
 }

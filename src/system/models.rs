@@ -1,19 +1,17 @@
-use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::io::Write;
 
-use crate::schema::*;
-
+use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize, MysqlConnection};
+use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
-
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::io::Write;
+use crate::schema::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
@@ -37,7 +35,21 @@ impl User {
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub struct UserPermissions {
-    pub permissions: Vec<String>
+    #[serde(default = "default_permission")]
+    pub admin: bool,
+    #[serde(default = "default_permission")]
+    pub deployer: bool,
+
+}
+
+impl UserPermissions {
+    pub fn new_owner() -> UserPermissions {
+        UserPermissions { admin: true, deployer: true }
+    }
+}
+
+fn default_permission() -> bool {
+    false
 }
 
 
@@ -66,6 +78,7 @@ pub struct ForgotPassword {
     pub expiration: i64,
     pub created: i64,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct AuthToken {
     pub id: i64,

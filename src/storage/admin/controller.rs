@@ -1,15 +1,16 @@
-use crate::repository::models::Repository;
-use crate::DbPool;
-use actix_web::{get, post, web, HttpRequest};
+use actix_web::{get, HttpRequest, post, web};
+use serde::{Deserialize, Serialize};
+
 use crate::api_response::APIResponse;
 use crate::apierror::{APIError, GenericError};
-use crate::utils::{installed, get_current_time};
-use crate::system::utils::get_user_by_header;
-use crate::repository::action::{get_repositories, add_new_repository, get_repo_by_name_and_storage};
-use serde::{Serialize, Deserialize};
 use crate::apierror::APIError::NotFound;
+use crate::DbPool;
+use crate::repository::action::{add_new_repository, get_repo_by_name_and_storage, get_repositories};
+use crate::repository::models::Repository;
+use crate::storage::action::{add_new_storage, get_storage_by_name, get_storages};
 use crate::storage::models::Storage;
-use crate::storage::action::{get_storages, add_new_storage, get_storage_by_name};
+use crate::system::utils::get_user_by_header;
+use crate::utils::{get_current_time, installed};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListStorages {
@@ -25,7 +26,7 @@ pub async fn list_storages(
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.permissions.contains(&"ADMIN".to_string()){
+    if !user.permissions.admin{
         return Err(APIError::NotAuthorized);
     }
     let vec = get_storages(&connection)?;
@@ -49,7 +50,7 @@ pub async fn add_server(
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.permissions.contains(&"ADMIN".to_string()){
+    if !user.permissions.admin{
         return Err(APIError::NotAuthorized);
     }
     let storage = Storage {
