@@ -1,10 +1,33 @@
 {
   "name": "nitro_repo",
-  "version": "1.0.0",
-  "description": "Nitro_Repo Frontend",
-  "author": "Wyatt Jacob Herkamp <wherkamp@kingtux.me> (https://kingtux.me/)",
-  "license": "MIT",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
-    "halfmoon": "^1.1.1"
+    "axios": "^0.21.1",
+    "date-fns": "^2.11.1",
+    "gray-matter": "^4.0.2",
+    "material-ui-dropzone": "^3.5.0",
+    "next": "^10.0.0",
+    "react": "17.0.1",
+    "react-cookie": "^4.0.3",
+    "react-dom": "17.0.1",
+    "react-router": "^5.2.0",
+    "remark": "^12.0.0",
+    "remark-html": "^12.0.0",
+    "swr": "^0.5.6",
+    "use-between": "0.0.18",
+    "@material-ui/core": "latest",
+    "@material-ui/icons": "latest",
+    "@material-ui/lab": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^16.6.1",
+    "@types/react": "^17.0.17",
+    "typescript": "^4.3.5"
   }
 }

@@ -1,29 +1,17 @@
-use crate::system;
+use actix_web::{HttpMessage, HttpRequest};
 use actix_web::http::HeaderMap;
-use diesel::MysqlConnection;
-use crate::system::models::{User, UserPermissions};
-use crate::apierror::APIError;
-use actix_web::{HttpRequest, HttpMessage};
-use crate::utils::{get_current_time};
-use crate::apierror::APIError::MissingArgument;
-use crate::system::action::{add_new_user, get_user_by_username};
-use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use argon2::password_hash::rand_core::OsRng;
-use serde::{Serialize, Deserialize};
-pub fn get_user_by_cookie(
-    http: &HttpRequest,
-    conn: &MysqlConnection,
-) -> Result<Option<User>, APIError> {
-    let option = http.cookie("session");
-    if option.is_none() {
-        return Ok(None);
-    }
-    let x = option.as_ref().unwrap().value().clone();
+use argon2::password_hash::SaltString;
+use diesel::MysqlConnection;
+use serde::{Deserialize, Serialize};
 
-    let result = system::action::get_user_from_auth_token(x.to_string(), conn)?;
-    return Ok(result);
-}
+use crate::apierror::APIError;
+use crate::apierror::APIError::MissingArgument;
+use crate::system;
+use crate::system::action::{add_new_user, get_user_by_username};
+use crate::system::models::{User, UserPermissions};
+use crate::utils::get_current_time;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
