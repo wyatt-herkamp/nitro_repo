@@ -42,6 +42,7 @@ pub mod repository;
 pub mod internal_error;
 pub mod site_response;
 pub mod frontend;
+pub mod error;
 
 fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::Error> {
     let option = args.get("path");
