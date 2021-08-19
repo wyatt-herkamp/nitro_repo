@@ -69,7 +69,6 @@ type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    Command
     std::env::set_var("RUST_LOG", "actix_web=trace");
     std::env::set_var("RUST_BACKTRACE", "1");
     let config: RawConfig =
@@ -112,7 +111,7 @@ async fn main() -> std::io::Result<()> {
             .service(storage::admin::controller::list_storages)
             .configure(repository::init)
             .configure(frontend::install::init)
-            .configure(frontend::public::init)
+            .configure(system::controllers::init)
             .service(Files::new("/cdn", format!("{}/node_modules", std::env::var("SITE_DIR").unwrap())).show_files_listing())
             .service(Files::new("/", format!("{}/static", std::env::var("SITE_DIR").unwrap())).show_files_listing())
             .default_service(web::route().to(|| APIError::NotFound.error_response()))

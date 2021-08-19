@@ -21,6 +21,7 @@ pub enum RequestError {
     InvalidLogin,
     NotFound,
     BadRequest,
+    MismatchingPasswords,
     MissingArgument(GenericError),
     UnInstalled,
     InternalError(InternalError),
@@ -29,10 +30,15 @@ pub enum RequestError {
 
 impl RequestError {
     pub fn json_error(&self) -> HttpResponse {
+        let response = APIResponse {
+            success: false,
+            data: Some(self.to_string()),
+            status_code: Some(200),
+        };
         let result = HttpResponse::Ok()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .content_type("application/json")
-            .body("");
+            .body(serde_json::to_string(&response).unwrap());
         return result;
     }
 }
@@ -63,6 +69,7 @@ impl From<APIError> for RequestError {
         panic!("LEGACY CODE FIX IT FUCKER")
     }
 }
+
 impl From<diesel::result::Error> for RequestError {
     fn from(err: diesel::result::Error) -> RequestError {
         InternalError::DBError(err).into()
@@ -143,13 +150,11 @@ impl From<String> for RequestError {
 }
 
 
-
 impl From<&str> for RequestError {
     fn from(value: &str) -> Self {
         let error = GenericError {
             error: value.to_string(),
         };
         InternalError::Error(error).into()
-
     }
 }

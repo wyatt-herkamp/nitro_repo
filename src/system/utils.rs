@@ -9,9 +9,13 @@ use serde::{Deserialize, Serialize};
 use crate::apierror::APIError;
 use crate::apierror::APIError::MissingArgument;
 use crate::system;
-use crate::system::action::{add_new_user, get_user_by_username};
+use crate::system::action::{add_new_user, get_user_by_username, get_auth_token};
 use crate::system::models::{User, UserPermissions};
 use crate::utils::get_current_time;
+use rand::Rng;
+use rand::distributions::Alphanumeric;
+use crate::error::internal_error::InternalError;
+use crate::error::request_error::RequestError;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -104,4 +108,17 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, APIEr
     return Ok(
         get_user_by_username(username, &conn)?.ok_or(APIError::from("Unable to find new user"))?
     );
+}
+pub fn generate_auth_token(connection: &MysqlConnection) -> Result<String, RequestError> {
+    loop {
+        let x: String = OsRng
+            .sample_iter(&Alphanumeric)
+            .take(128)
+            .map(char::from)
+            .collect();
+        let result = get_auth_token(x.clone(), &connection)?;
+        if result.is_none() {
+            return Ok(x);
+        }
+    }
 }

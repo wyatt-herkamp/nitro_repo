@@ -9,24 +9,11 @@ use crate::site_response::SiteResponse;
 use crate::system::models::UserPermissions;
 use crate::system::utils::{new_user, NewPassword, NewUser};
 use crate::utils::installed;
+use crate::error::request_error::RequestError;
+use crate::api_response::APIResponse;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(install);
     cfg.service(install_post);
-}
-
-#[get("/install")]
-pub async fn install(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<SiteResponse, InternalError> {
-    let connection = pool.get()?;
-    if installed(&connection).is_ok() {
-        let mut context = Context::new();
-        context.insert("url", &url_raw(""));
-        return SiteResponse::new("utils/redirect.html", context, None);
-    }
-    return SiteResponse::new("install/index.html", Context::new(), None);
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -42,11 +29,11 @@ pub struct InstallUser {
 pub async fn install_post(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    request: web::Form<InstallUser>,
-) -> Result<SiteResponse, InternalError> {
+    request: web::Json<InstallUser>,
+) -> Result<APIResponse<bool>, RequestError> {
     let connection = pool.get()?;
     if request.password != request.password_two {
-        return SiteResponse::new("install/index.html", Context::new(), None);
+        return Err(RequestError::MismatchingPasswords);
     }
     let user = NewUser {
         name: request.name.clone(),
@@ -59,7 +46,7 @@ pub async fn install_post(
         ,
         permissions: UserPermissions::new_owner(),
     };
-    let result = new_user(user, &connection).map_err(|e| InternalError::from(e.to_string()))?;
+    let result = new_user(user, &connection)?;
 
     quick_add("installed", "true".to_string(), &connection)?;
     quick_add(
@@ -69,5 +56,5 @@ pub async fn install_post(
     )?;
     let mut context = Context::new();
     context.insert("url", &url_raw(""));
-    return SiteResponse::new("utils/redirect.html", context, None);
+    return Ok(APIResponse::new(true, Some(true)));
 }
