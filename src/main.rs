@@ -69,6 +69,7 @@ type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    Command
     std::env::set_var("RUST_LOG", "actix_web=trace");
     std::env::set_var("RUST_BACKTRACE", "1");
     let config: RawConfig =
