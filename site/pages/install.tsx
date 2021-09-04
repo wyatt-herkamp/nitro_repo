@@ -19,6 +19,8 @@ import { resolve } from 'url';
 import { Alert, AlertTitle } from '@material-ui/lab';
 import { BasicResponse } from '../src/Response';
 import { toast } from 'react-toastify';
+import FailedToConnectToBackend from '../src/BackendConnectionFail';
+import Redirect from '../src/Redirect';
 const useStyles = makeStyles((theme) => ({
     paper: {
         marginTop: theme.spacing(8),
@@ -189,17 +191,13 @@ export default function Install() {
             pauseOnHover: true,
             draggable: true,
             progress: undefined,
-            });
-        return (
-            <div>Error Connecting to Backend</div>
-        )
+        });
+        return (<FailedToConnectToBackend />);
+
     }
     if (!data) {
-        return (
-            <div>Loading the cool data</div>
+        return (<FailedToConnectToBackend />);
 
-
-        )
     }
 
 
@@ -212,14 +210,10 @@ export default function Install() {
         if (myData.data == false) {
             return (
                 <InstallPage />
-
-
             )
         } else {
             return (
-                <div>
-                    Site Already Configured
-                </div>
+                <Redirect url="/"/>
             )
         }
     } else {

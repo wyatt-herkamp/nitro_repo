@@ -16,7 +16,7 @@ pub struct ListRepositories {
 }
 
 #[get("/api/repositories/list")]
-pub async fn list_servers(
+pub async fn list_repos(
     pool: web::Data<DbPool>,
     r: HttpRequest,
 ) -> Result<APIResponse<ListRepositories>, APIError> {
@@ -42,7 +42,7 @@ pub struct NewRepo {
 }
 
 #[post("/api/admin/repository/add")]
-pub async fn add_server(
+pub async fn add_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewRepo>,

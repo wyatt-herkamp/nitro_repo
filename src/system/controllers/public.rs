@@ -1,4 +1,3 @@
-
 use actix_web::{get, post, HttpRequest, HttpResponse, web};
 use tera::Context;
 
@@ -12,7 +11,8 @@ use crate::error::request_error::RequestError;
 use crate::system::action::{get_user_by_email, get_user_by_username, add_new_auth_token};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::{Deserialize, Serialize};
-use crate::system::utils::generate_auth_token;
+use crate::system::utils::{generate_auth_token, get_user_by_header};
+use crate::apierror::APIError;
 
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -52,4 +52,18 @@ pub async fn login(
     add_new_auth_token(&token, &connection)?;
 
     return Ok(APIResponse::new(true, Some(token)));
+}
+
+
+#[get("/api/me")]
+pub async fn me(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<APIResponse<bool>, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let user =
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+
+    return Ok(APIResponse::new(true, Some(true)));
 }

@@ -4,4 +4,5 @@ pub mod public;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(public::login);
+    cfg.service(public::me);
 }

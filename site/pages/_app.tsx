@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
 import { AppProps } from 'next/app';
 import { ThemeProvider } from '@material-ui/core/styles';
@@ -7,7 +7,15 @@ import theme from '../src/theme';
 import MyNavBar from '../src/IndexNavBar';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-  
+import '../styles/global.css'
+import { Cookies } from 'react-cookie';
+import axios from 'axios';
+import useSWR from 'swr';
+import { API_URL } from '../src/config';
+const fetcher = (url, token) =>
+  axios
+    .get(url, { headers: { Authorization: "Bearer " + token } })
+    .then((res) => res.data);
 export default function MyApp(props: AppProps) {
   const { Component, pageProps } = props;
 
@@ -18,7 +26,18 @@ export default function MyApp(props: AppProps) {
       jssStyles.parentElement!.removeChild(jssStyles);
     }
   }, []);
-  var auth = false;
+  let auth = false;
+  if (!auth) {
+    const cookies = new Cookies();
+    let token = cookies.get("auth_token");
+    if (token != undefined) {
+      const { data, error } = useSWR([API_URL + "/api/me", token], fetcher)
+      if (!error && data) {
+        console.log("logged");
+        auth = true;
+      }
+    }
+  }
   return (
     <React.Fragment>
       <Head>

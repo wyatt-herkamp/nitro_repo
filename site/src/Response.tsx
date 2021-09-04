@@ -18,3 +18,13 @@ export interface AuthToken {
     expiration: number;
     created: number;
 }
+export interface Storage {
+
+    id: number;
+    name: String;
+    created: number;
+
+}export interface StorageList {
+
+    storages: Array<Storage>
+}
