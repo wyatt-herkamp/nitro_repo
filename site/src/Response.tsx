@@ -27,4 +27,20 @@ export interface Storage {
 }export interface StorageList {
 
     storages: Array<Storage>
+}export interface RepoSettings {
+
+
+
+}export interface Repository {
+
+    id: number;
+    name: String;
+    repo_type: String;
+    settings: RepoSettings;
+    storage: number;
+    created: number;
+
+}export interface RepositoryList {
+
+    repositories: Array<Repository>
 }
