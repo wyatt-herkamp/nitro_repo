@@ -6,6 +6,7 @@ use actix_web::web::Bytes;
 use crate::site_response::SiteResponse;
 use std::path::{Path, PathBuf};
 use crate::error::request_error::RequestError;
+use diesel::MysqlConnection;
 
 pub enum RepoResponse {
     FileList(Vec<String>),
@@ -26,9 +27,9 @@ pub struct RepositoryRequest {
 }
 
 pub trait RepositoryType {
-    fn handle_get(request: RepositoryRequest) -> RepoResult;
-    fn handle_post(request: RepositoryRequest, bytes: Bytes) -> RepoResult;
-    fn handle_put(request: RepositoryRequest, bytes: Bytes) -> RepoResult;
-    fn handle_patch(request: RepositoryRequest, bytes: Bytes) -> RepoResult;
-    fn handle_head(request: RepositoryRequest) -> RepoResult;
+    fn handle_get(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
+    fn handle_post(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
+    fn handle_put(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
+    fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
+    fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
 }

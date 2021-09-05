@@ -85,11 +85,11 @@ pub async fn get_repository(
         request: r.clone(),
         storage: option1,
         repository: option,
-        value: string,
+        value: string
     };
     let x = match t.as_str() {
         "maven" => {
-            MavenHandler::handle_get(request)
+            MavenHandler::handle_get(request,&connection)
         }
         _ => {
             panic!("Unknown REPO")
@@ -182,10 +182,11 @@ pub async fn put_repository(
         storage: option1,
         repository: option,
         value: string,
+
     };
     let x = match t.as_str() {
         "maven" => {
-            MavenHandler::handle_put(request, bytes)
+            MavenHandler::handle_put(request,&connection, bytes)
         }
         _ => {
             panic!("Unknown REPO")

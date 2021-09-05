@@ -31,16 +31,33 @@ pub enum RequestError {
 
 impl RequestError {
     pub fn json_error(&self) -> HttpResponse {
-        let response = APIResponse {
-            success: false,
-            data: Some(self.to_string()),
-            status_code: Some(200),
-        };
-        let result = HttpResponse::Ok()
-            .status(StatusCode::OK)
-            .content_type("application/json")
-            .body(serde_json::to_string(&response).unwrap());
-        return result;
+        match self {
+            RequestError::NotAuthorized => {
+                let response = APIResponse {
+                    success: false,
+                    data: Some(self.to_string()),
+                    status_code: Some(401),
+                };
+                let result = HttpResponse::Ok()
+                    .status(StatusCode::UNAUTHORIZED)
+                    .content_type("application/json")
+                    .body(serde_json::to_string(&response).unwrap());
+                return result;
+            }
+            _=>{
+                let response = APIResponse {
+                    success: false,
+                    data: Some(self.to_string()),
+                    status_code: Some(200),
+                };
+                let result = HttpResponse::Ok()
+                    .status(StatusCode::OK)
+                    .content_type("application/json")
+                    .body(serde_json::to_string(&response).unwrap());
+                return result;
+            }
+        }
+
     }
 }
 
