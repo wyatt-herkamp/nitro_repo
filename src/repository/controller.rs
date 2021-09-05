@@ -36,6 +36,7 @@ pub struct ListStorages {
 pub struct ListRepositories {
     pub repositories: Vec<Repository>,
 }
+
 #[get("/storages.json")]
 pub async fn browse(
     pool: web::Data<DbPool>,
@@ -48,6 +49,7 @@ pub async fn browse(
     let response = ListStorages { storages: vec };
     return Ok(APIResponse::new(true, Some(response)));
 }
+
 #[get("/storages/{storage}.json")]
 pub async fn browse_storage(
     pool: web::Data<DbPool>,
@@ -63,7 +65,6 @@ pub async fn browse_storage(
 }
 
 
-
 #[get("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn get_repository(
     pool: web::Data<DbPool>,
@@ -71,13 +72,13 @@ pub async fn get_repository(
     path: web::Path<(String, String, String)>, ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-println!("LOOK");
+    println!("LOOK");
     let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?.ok_or(RequestError::NotFound)?;
     let t = option.repo_type.clone();
     let mut string = path.0.2.clone();
-    if string.ends_with("api_browse.json"){
-       string= string.replace("api_browse.json","");
+    if string.ends_with("api_browse.json") {
+        string = string.replace("api_browse.json", "");
     }
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -94,13 +95,16 @@ println!("LOOK");
             panic!("Unknown REPO")
         }
     }?;
-    return match x {
-        RepoResponse::FileList(files) => {
+    return handle_result(x, path.0.2.clone(), r);
+}
 
-            if path.0.2.ends_with("api_browse.json") {
+pub fn handle_result(response: RepoResponse, url: String, r: HttpRequest) -> Result<HttpResponse, RequestError> {
+    return match response {
+        RepoResponse::FileList(files) => {
+            if url.ends_with("api_browse.json") {
                 Ok(APIResponse::new(true, Some(files)).respond(&r))
             } else {
-                let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse.html"));
+                let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"));
                 Ok(HttpResponse::Ok()
                     .content_type("text/html")
                     .body(result1.unwrap()))
@@ -112,8 +116,8 @@ println!("LOOK");
         RepoResponse::Ok => {
             Ok(APIResponse::new(true, Some(false)).respond(&r))
         }
-        RepoResponse::NotFound =>{
-            if path.0.2.ends_with("browse.json") {
+        RepoResponse::NotFound => {
+            if url.ends_with(".json") {
                 return Err(NotFound);
             } else {
                 let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("404.html"));
@@ -122,7 +126,10 @@ println!("LOOK");
                     .body(result1.unwrap()))
             }
         }
-    }
+        RepoResponse::NotAuthorized => {
+            return Err(RequestError::NotAuthorized);
+        }
+    };
 }
 
 #[post("/storages/{storage}/{repository}/{file:.*}")]
@@ -159,17 +166,32 @@ pub async fn patch_repository(
 pub async fn put_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<APIResponse<User>, RequestError> {
+    path: web::Path<(String, String, String)>, bytes: Bytes) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    println!("HEAD {}", path.0.0);
-    println!("{}", path.0.1);
-
-    println!("{}", path.0.2);
-    for x in r.headers().keys() {
-        println!("{}: {}", &x, r.headers().get(x).unwrap().to_str().unwrap());
+    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?.ok_or(RequestError::NotFound)?;
+    let t = option.repo_type.clone();
+    let mut string = path.0.2.clone();
+    if string.ends_with("api_browse.json") {
+        string = string.replace("api_browse.json", "");
     }
-    return Ok(APIResponse::new(true, None));
+    let request = RepositoryRequest {
+        //TODO DONT DO THIS
+        request: r.clone(),
+        storage: option1,
+        repository: option,
+        value: string,
+    };
+    let x = match t.as_str() {
+        "maven" => {
+            MavenHandler::handle_put(request, bytes)
+        }
+        _ => {
+            panic!("Unknown REPO")
+        }
+    }?;
+    return handle_result(x, path.0.2.clone(), r);
 }
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]

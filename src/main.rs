@@ -31,6 +31,7 @@ use crate::settings::settings::get_file;
 use crate::utils::{Resources, installed};
 use std::fs::read_to_string;
 use crate::error::request_error::RequestError;
+use actix_web::web::PayloadConfig;
 
 pub mod api_response;
 pub mod install;
@@ -104,6 +105,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(tera)
+            .data(PayloadConfig::new(1 * 1024 * 1024))
             .service(install::installed)
             .service(settings::controller::update_setting)
             .service(settings::controller::about_setting)
@@ -150,13 +152,26 @@ pub async fn index(
 }
 
 #[get("/browse/{file:.*}")]
+pub async fn browse_extend(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"));
+    return Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result1.unwrap()));
+}
+
+#[get("/browse")]
 pub async fn browse(
     pool: web::Data<DbPool>,
     r: HttpRequest,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse.html"));
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/index.html"));
     return Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(result1.unwrap()));

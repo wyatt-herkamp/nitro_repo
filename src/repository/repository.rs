@@ -12,6 +12,7 @@ pub enum RepoResponse {
     FileResponse(PathBuf),
     Ok,
     NotFound,
+    NotAuthorized,
 
 }
 
