@@ -28,9 +28,12 @@ export interface Storage {
 }export interface StorageList {
 
     storages: Array<Storage>
+}export interface SecurityRules {
 }export interface RepoSettings {
-
-
+    policy: string,
+    active: boolean,
+    re_deployment: boolean,
+    security_rules: SecurityRules
 
 }export interface Repository {
 
@@ -41,7 +44,26 @@ export interface Storage {
     storage: number;
     created: number;
 
-}export interface RepositoryList {
+}export interface User {
+
+    id: number;
+    name: string;
+    username: string;
+    email: string;
+    UserPermissions: RepoSettings;
+    created: number;
+
+}export interface UserPermissions {
+    admin: boolean;
+    deployer: boolean
+
+
+}
+export interface RepositoryList {
 
     repositories: Array<Repository>
+}
+export interface UserList {
+
+    users: Array<User>
 }

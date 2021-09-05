@@ -6,6 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import ShowStorages from '../src/Storages';
 import ShowRepos from '../src/Repositories';
+import ShowUsers from '../src/Users';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -76,10 +77,12 @@ export default function VerticalTabs() {
 
       </Tabs>
       <TabPanel value={value} index={0}>
-        <ShowStorages/>
+        <ShowStorages />
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <ShowRepos/>
+        <ShowRepos />
+      </TabPanel>      <TabPanel value={value} index={2}>
+        <ShowUsers />
       </TabPanel>
 
     </div>

@@ -12,7 +12,7 @@ import { BasicResponse, RepositoryList, StorageList } from './Response';
 import { Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField } from '@material-ui/core';
 import axios from 'axios';
 import Cookies from 'universal-cookie';
-
+import RepoSettings from './RepoSettings';
 interface TabPanelProps {
     children?: React.ReactNode;
     index: any;
@@ -116,13 +116,13 @@ export function DisplayRepos(values) {
                 {values.values.map((value, index) => (
                     <Tab label={value.name}  {...a11yProps(index)} />
                 ))}
-                <Tab label="Create new Storage" {...a11yProps(values.values.length)} />
+                <Tab label="Create new Repository" {...a11yProps(values.values.length)} />
 
 
             </Tabs>
             {values.values.map((value, index) => (
                 <TabPanel value={storage} index={index}>
-                    {value.name}
+                    <RepoSettings repo={value} />
                 </TabPanel>
 
             ))}
@@ -136,9 +136,7 @@ export function DisplayRepos(values) {
         </div>
     );
 }
-export function DisplayStorage(storage) {
 
-}
 const newStorageSty = makeStyles((theme) => ({
     paper: {
         marginTop: theme.spacing(8),
