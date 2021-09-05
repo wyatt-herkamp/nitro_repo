@@ -27,10 +27,6 @@ use actix_files::NamedFile;
 
 //
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListStorages {
-    pub storages: Vec<Storage>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -40,28 +36,32 @@ pub struct ListRepositories {
 #[get("/storages.json")]
 pub async fn browse(
     pool: web::Data<DbPool>,
-    r: HttpRequest) -> Result<APIResponse<ListStorages>, RequestError> {
+    r: HttpRequest) -> Result<APIResponse<Vec<String>>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
 
     let vec = get_storages(&connection)?;
-
-    let response = ListStorages { storages: vec };
-    return Ok(APIResponse::new(true, Some(response)));
+    let mut storages = Vec::new();
+    for x in vec {
+        storages.push(x.name);
+    }
+    return Ok(APIResponse::new(true, Some(storages)));
 }
 
 #[get("/storages/{storage}.json")]
 pub async fn browse_storage(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String)>, ) -> Result<APIResponse<ListRepositories>, RequestError> {
+    path: web::Path<(String)>, ) -> Result<APIResponse<Vec<String>>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let storage = get_storage_by_name(path.0, &connection)?.ok_or(NotFound)?;
     let vec = get_repositories_by_storage(storage.id, &connection)?;
-
-    let response = ListRepositories { repositories: vec };
-    return Ok(APIResponse::new(true, Some(response)));
+    let mut repos = Vec::new();
+    for x in vec {
+        repos.push(x.name);
+    }
+    return Ok(APIResponse::new(true, Some(repos)));
 }
 
 
@@ -85,11 +85,11 @@ pub async fn get_repository(
         request: r.clone(),
         storage: option1,
         repository: option,
-        value: string
+        value: string,
     };
     let x = match t.as_str() {
         "maven" => {
-            MavenHandler::handle_get(request,&connection)
+            MavenHandler::handle_get(request, &connection)
         }
         _ => {
             panic!("Unknown REPO")
@@ -186,7 +186,7 @@ pub async fn put_repository(
     };
     let x = match t.as_str() {
         "maven" => {
-            MavenHandler::handle_put(request,&connection, bytes)
+            MavenHandler::handle_put(request, &connection, bytes)
         }
         _ => {
             panic!("Unknown REPO")

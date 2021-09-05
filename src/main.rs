@@ -119,6 +119,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(admin)
             .service(browse)
+            .service(browse_extend)
             .service(login)
             .service(Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap())).show_files_listing())
     })
@@ -171,7 +172,7 @@ pub async fn browse(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/index.html"));
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/browse.html"));
     return Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(result1.unwrap()));
