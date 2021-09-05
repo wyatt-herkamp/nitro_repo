@@ -11,6 +11,8 @@ use crate::storage::action::{add_new_storage, get_storage_by_name, get_storages}
 use crate::storage::models::Storage;
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
+use std::path::PathBuf;
+use std::fs::create_dir_all;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListStorages {
@@ -62,6 +64,10 @@ pub async fn add_storage(
         created: get_current_time(),
     };
     add_new_storage(&storage, &connection)?;
+    let buf = PathBuf::new().join("storages").join(nc.name.clone());
+    if !buf.exists(){
+        create_dir_all(buf)?;
+    }
     let option = get_storage_by_name(nc.name.clone(), &connection)?.ok_or(NotFound)?;
     return Ok(APIResponse::new(true, Some(option)));
 }

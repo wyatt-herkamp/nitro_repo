@@ -190,7 +190,7 @@ export function NewRepo() {
         return (<FailedToConnectToBackend />);
     }
     let storageResponse = myData as BasicResponse<StorageList>;
-    let storages: Array<Storage> = storageResponse.data.storages;
+    let storages = storageResponse.data.storages;
     const newRepoRequest = async event => {
         event.preventDefault() // don't redirect the page
         // where we'll add our form logic

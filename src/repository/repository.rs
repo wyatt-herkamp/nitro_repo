@@ -1,12 +1,21 @@
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use crate::storage::models::Storage;
 use crate::repository::models::Repository;
 use crate::repository::repo_error::RepositoryError;
 use actix_web::web::Bytes;
 use crate::site_response::SiteResponse;
+use std::path::{Path, PathBuf};
+use crate::error::request_error::RequestError;
 
-pub type RepoResponse = SiteResponse;
-pub type RepoResult = Result<RepoResponse, RepositoryError>;
+pub enum RepoResponse {
+    FileList(Vec<String>),
+    FileResponse(PathBuf),
+    Ok,
+    NotFound,
+
+}
+
+pub type RepoResult = Result<RepoResponse, RequestError>;
 
 pub struct RepositoryRequest {
     pub request: HttpRequest,

@@ -22,6 +22,7 @@ pub enum RequestError {
     NotFound,
     BadRequest,
     MismatchingPasswords,
+    AlreadyExists,
     MissingArgument(GenericError),
     UnInstalled,
     InternalError(InternalError),
@@ -36,7 +37,7 @@ impl RequestError {
             status_code: Some(200),
         };
         let result = HttpResponse::Ok()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .status(StatusCode::OK)
             .content_type("application/json")
             .body(serde_json::to_string(&response).unwrap());
         return result;

@@ -33,6 +33,14 @@ impl<T: Serialize> APIResponse<T> {
             .content_type("application/json")
             .body(serde_json::to_string(self).unwrap());
     }
+    pub fn respond(self, _req: &HttpRequest) -> HttpResponse {
+        let i = self.status_code.unwrap_or(200);
+        let result = HttpResponse::Ok()
+            .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
+            .content_type("application/json")
+            .body(serde_json::to_string(&self).unwrap());
+        return result;
+    }
 }
 
 impl<T: Serialize> Responder for APIResponse<T> {
@@ -40,11 +48,7 @@ impl<T: Serialize> Responder for APIResponse<T> {
     type Future = futures_util::future::Ready<Result<HttpResponse, APIError>>;
 
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        let i = self.status_code.unwrap_or(200);
-        let result = HttpResponse::Ok()
-            .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
-            .content_type("application/json")
-            .body(serde_json::to_string(&self).unwrap());
-        return futures_util::future::ok(result);
+
+        return futures_util::future::ok(self.respond(_req));
     }
 }

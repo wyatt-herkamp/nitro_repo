@@ -5,7 +5,7 @@ export interface BasicResponse<T> {
 }
 export interface APIError {
     user_friendly_message: String;
-    error_code: String;
+    error_code: string;
 }
 
 export interface LoginRequest {
@@ -14,14 +14,15 @@ export interface LoginRequest {
 export interface AuthToken {
     id: number;
     user: number;
-    token: String;
+    token: string;
     expiration: number;
     created: number;
 }
 export interface Storage {
 
     id: number;
-    name: String;
+    name: string;
+    public_name: string;
     created: number;
 
 }export interface StorageList {
@@ -34,8 +35,8 @@ export interface Storage {
 }export interface Repository {
 
     id: number;
-    name: String;
-    repo_type: String;
+    name: string;
+    repo_type: string;
     settings: RepoSettings;
     storage: number;
     created: number;
