@@ -4,3 +4,5 @@ nitro_repo.iml
 .idea
 log
 site/node_modules
+site/out
+.next

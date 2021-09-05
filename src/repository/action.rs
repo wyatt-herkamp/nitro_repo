@@ -24,9 +24,18 @@ pub fn add_new_repository(s: &Repository, conn: &MysqlConnection) -> Result<(), 
     use crate::schema::repositories::dsl::*;
     diesel::insert_into(repositories).values(s).execute(conn).unwrap();
     Ok(())
-}pub fn get_repositories(
+}
+
+pub fn get_repositories(
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
     Ok(repositories.load::<repository::models::Repository>(conn)?)
+}
+
+pub fn get_repositories_by_storage(storage: i64,
+                                   conn: &MysqlConnection,
+) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+    Ok(repositories.filter(storage.eq(storage)).load::<repository::models::Repository>(conn)?)
 }

@@ -40,6 +40,7 @@ table! {
 table! {
      storages(id) {
         id -> Bigint,
+        public_name -> Text,
         name -> Text,
         created ->Bigint,
     }

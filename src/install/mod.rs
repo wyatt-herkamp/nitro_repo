@@ -15,7 +15,10 @@ use crate::utils::get_current_time;
 #[get("/api/installed")]
 pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, APIError> {
     let connection = pool.get()?;
-    utils::installed(&connection)?;
+    let result = utils::installed(&connection);
+    if result.is_err(){
+        return Ok(APIResponse::new(true, Some(false)));
+    }
     Ok(APIResponse::new(true, Some(true)))
 }
 

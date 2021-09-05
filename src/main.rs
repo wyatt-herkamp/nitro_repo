@@ -28,7 +28,10 @@ use tera::Tera;
 
 use crate::apierror::APIError;
 use crate::settings::settings::get_file;
-use crate::utils::Resources;
+use crate::utils::{Resources, installed};
+use std::fs::read_to_string;
+use crate::error::request_error::RequestError;
+use actix_web::web::PayloadConfig;
 
 pub mod api_response;
 pub mod install;
@@ -42,11 +45,12 @@ pub mod repository;
 pub mod internal_error;
 pub mod site_response;
 pub mod frontend;
+pub mod error;
 
 fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::Error> {
     let option = args.get("path");
     return if option.is_some() {
-        let x = option.unwrap().to_string().replace("\"","");
+        let x = option.unwrap().to_string().replace("\"", "");
         println!("{}", &x);
         let x1 = std::env::var("URL").unwrap();
         let string = format!("{}/{}", x1, x);
@@ -101,19 +105,22 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(tera)
+            .data(PayloadConfig::new(1 * 1024 * 1024))
             .service(install::installed)
             .service(settings::controller::update_setting)
             .service(settings::controller::about_setting)
-            .service(repository::admin::controller::add_server)
-            .service(repository::admin::controller::list_servers)
-            .service(storage::admin::controller::add_server)
+            .service(repository::admin::controller::add_repo)
+            .service(repository::admin::controller::list_repos)
+            .service(storage::admin::controller::add_storage)
             .service(storage::admin::controller::list_storages)
             .configure(repository::init)
             .configure(frontend::install::init)
-            .configure(frontend::public::init)
-            .service(Files::new("/cdn", format!("{}/node_modules", std::env::var("SITE_DIR").unwrap())).show_files_listing())
-            .service(Files::new("/", format!("{}/static", std::env::var("SITE_DIR").unwrap())).show_files_listing())
-            .default_service(web::route().to(|| APIError::NotFound.error_response()))
+            .configure(system::controllers::init)
+            .service(index)
+            .service(admin)
+            .service(browse)
+            .service(login)
+            .service(Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap())).show_files_listing())
     })
         .workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {
@@ -129,4 +136,69 @@ async fn main() -> std::io::Result<()> {
     } else {
         server.bind("0.0.0.0:6742")?.run().await
     }
+}
+
+#[get("/")]
+pub async fn index(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"));
+    return Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result1.unwrap()));
+}
+
+#[get("/browse/{file:.*}")]
+pub async fn browse_extend(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"));
+    return Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result1.unwrap()));
+}
+
+#[get("/browse")]
+pub async fn browse(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/index.html"));
+    return Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result1.unwrap()));
+}
+
+#[get("/admin")]
+pub async fn admin(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("admin.html"));
+    return Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result1.unwrap()));
+}
+
+#[get("/login")]
+pub async fn login(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("login.html"));
+    return Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result1.unwrap()));
 }

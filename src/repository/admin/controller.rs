@@ -9,6 +9,9 @@ use crate::repository::action::{add_new_repository, get_repo_by_name_and_storage
 use crate::repository::models::{Repository, RepositorySettings};
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
+use crate::error::request_error::RequestError;
+use std::path::PathBuf;
+use std::fs::create_dir_all;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -16,7 +19,7 @@ pub struct ListRepositories {
 }
 
 #[get("/api/repositories/list")]
-pub async fn list_servers(
+pub async fn list_repos(
     pool: web::Data<DbPool>,
     r: HttpRequest,
 ) -> Result<APIResponse<ListRepositories>, APIError> {
@@ -42,20 +45,26 @@ pub struct NewRepo {
 }
 
 #[post("/api/admin/repository/add")]
-pub async fn add_server(
+pub async fn add_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewRepo>,
-) -> Result<APIResponse<Repository>, APIError> {
+) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
     if !user.permissions.admin{
-        return Err(APIError::NotAuthorized);
+        return Err(RequestError::NotAuthorized);
     }
     let option1 = crate::storage::action::get_storage_by_name(nc.storage.clone(), &connection)?.
-        ok_or_else(|| APIError::from("Unable to find storage"))?;
+        ok_or_else(|| RequestError::from("Unable to find storage"))?;
+
+    let option = get_repo_by_name_and_storage(nc.name.clone(), option1.id, &connection)?;
+    if option.is_some(){
+        return Err(RequestError::AlreadyExists)
+
+    }
     let repository = Repository {
         id: 0,
 
@@ -66,6 +75,10 @@ pub async fn add_server(
         created: get_current_time(),
     };
     add_new_repository(&repository, &connection)?;
-    let option = get_repo_by_name_and_storage(nc.name.clone(), option1.id, &connection)?.ok_or(NotFound)?;
+    let buf = PathBuf::new().join("storages").join(nc.name.clone()).join(repository.name.clone());
+    if !buf.exists(){
+        create_dir_all(buf)?;
+    }
+    let option = get_repo_by_name_and_storage(nc.name.clone(), option1.id, &connection)?.ok_or(RequestError::NotFound)?;
     return Ok(APIResponse::new(true, Some(option)));
 }

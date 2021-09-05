@@ -18,6 +18,7 @@ use std::io::Write;
 #[table_name = "storages"]
 pub struct Storage {
     pub id: i64,
+    pub public_name: String,
     pub name: String,
     pub created: i64,
 }

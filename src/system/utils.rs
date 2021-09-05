@@ -1,29 +1,22 @@
-use crate::system;
+use actix_web::{HttpMessage, HttpRequest};
 use actix_web::http::HeaderMap;
-use diesel::MysqlConnection;
-use crate::system::models::{User, UserPermissions};
-use crate::apierror::APIError;
-use actix_web::{HttpRequest, HttpMessage};
-use crate::utils::{get_current_time};
-use crate::apierror::APIError::MissingArgument;
-use crate::system::action::{add_new_user, get_user_by_username};
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
+use argon2::{Argon2, PasswordHasher, PasswordHash, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
-use serde::{Serialize, Deserialize};
-pub fn get_user_by_cookie(
-    http: &HttpRequest,
-    conn: &MysqlConnection,
-) -> Result<Option<User>, APIError> {
-    let option = http.cookie("session");
-    if option.is_none() {
-        return Ok(None);
-    }
-    let x = option.as_ref().unwrap().value().clone();
+use argon2::password_hash::SaltString;
+use diesel::MysqlConnection;
+use serde::{Deserialize, Serialize};
 
-    let result = system::action::get_user_from_auth_token(x.to_string(), conn)?;
-    return Ok(result);
-}
+use crate::apierror::APIError;
+use crate::apierror::APIError::MissingArgument;
+use crate::system;
+use crate::system::action::{add_new_user, get_user_by_username, get_auth_token};
+use crate::system::models::{User, UserPermissions};
+use crate::utils::get_current_time;
+use rand::Rng;
+use rand::distributions::Alphanumeric;
+use crate::error::internal_error::InternalError;
+use crate::error::request_error::RequestError;
+use crate::repository::models::Repository;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -53,6 +46,60 @@ pub fn get_user_by_header(
         return Ok(result);
     }
     Ok(None)
+}
+
+pub fn can_deploy_basic_auth(
+    header_map: &HeaderMap,
+    repo: &Repository,
+    conn: &MysqlConnection,
+) -> Result<bool, InternalError> {
+    let option = header_map.get("Authorization");
+    if option.is_none() {
+        return Ok(false);
+    }
+    let x = option.unwrap().to_str();
+    if x.is_err() {}
+    let header = x.unwrap().to_string();
+
+    let split = header.split(" ").collect::<Vec<&str>>();
+    let option = split.get(0);
+    if option.is_none() {
+        return Ok(false);
+    }
+    let value = split.get(1);
+    if value.is_none() {
+        return Ok(false);
+    }
+    let value = value.unwrap().to_string();
+    let key = option.unwrap().to_string();
+    if key.eq("Basic") {
+        return can_deploy(value, repo, conn);
+    }
+    Ok(false)
+}
+
+pub fn can_deploy(user: String, repo: &Repository, conn: &MysqlConnection) -> Result<bool, InternalError> {
+    let result = base64::decode(user)?;
+    let string = String::from_utf8(result)?;
+    let split = string.split(":").collect::<Vec<&str>>();
+
+    if !split.len().eq(&2) {
+        return Ok(false);
+    }
+    let result1 = get_user_by_username(split.get(0).unwrap().to_string(), &conn)?;
+    if result1.is_none() {
+        return Ok(false);
+    }
+    let argon2 = Argon2::default();
+    let user = result1.unwrap();
+    let parsed_hash =
+        PasswordHash::new(user.password.as_str())?;
+    if argon2
+        .verify_password(split.get(1).unwrap().clone().as_bytes(), &parsed_hash).is_err() {
+        return Ok(false);
+    }
+
+    return Ok(true);
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -116,4 +163,18 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, APIEr
     return Ok(
         get_user_by_username(username, &conn)?.ok_or(APIError::from("Unable to find new user"))?
     );
+}
+
+pub fn generate_auth_token(connection: &MysqlConnection) -> Result<String, RequestError> {
+    loop {
+        let x: String = OsRng
+            .sample_iter(&Alphanumeric)
+            .take(128)
+            .map(char::from)
+            .collect();
+        let result = get_auth_token(x.clone(), &connection)?;
+        if result.is_none() {
+            return Ok(x);
+        }
+    }
 }
