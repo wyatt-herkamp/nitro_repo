@@ -15,7 +15,7 @@ export default function Index() {
         return (<FailedToConnectToBackend />);
     }
     if (browse.length == 1) {
-        const path = "/"+browse[0];
+        const path = "/" + browse[0];
         const { data, error } = useSWR(API_URL + "/storages/" + browse[0] + ".json", fetcher)
 
         if (error) {
@@ -41,7 +41,7 @@ export default function Index() {
         if (myData.success) {
             let myData = data as BasicResponse<string[]>;
             return (
-                <FileExplorer directory={path+"/"} files={myData.data} />
+                <FileExplorer directory={path + "/"} files={myData.data} />
             );
 
         } else {
@@ -53,9 +53,11 @@ export default function Index() {
         }
     } else {
         let path = "";
-        browse.forEach(element => {
-            path = path + element + "/"
-        });
+        if (Array.isArray(browse)) {
+            browse.forEach(element => {
+                path = path + element + "/"
+            });
+        }
         console.log(path);
         const { data, error } = useSWR(API_URL + "/storages/" + path + "api_browse.json", fetcher)
 
@@ -82,7 +84,7 @@ export default function Index() {
         if (myData.success) {
             let myData = data as BasicResponse<string[]>;
             return (
-                <FileExplorer directory={"/"+path} files={myData.data} />
+                <FileExplorer directory={"/" + path} files={myData.data} />
             );
 
         } else {

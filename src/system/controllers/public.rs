@@ -55,15 +55,3 @@ pub async fn login(
 }
 
 
-#[get("/api/me")]
-pub async fn me(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<APIResponse<bool>, RequestError> {
-    let connection = pool.get()?;
-    installed(&connection)?;
-    let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-
-    return Ok(APIResponse::new(true, Some(true)));
-}

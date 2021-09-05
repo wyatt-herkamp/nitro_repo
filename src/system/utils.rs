@@ -98,7 +98,17 @@ pub fn can_deploy(user: String, repo: &Repository, conn: &MysqlConnection) -> Re
         .verify_password(split.get(1).unwrap().clone().as_bytes(), &parsed_hash).is_err() {
         return Ok(false);
     }
-
+    if !user.permissions.admin {
+        if let Some(settings) = &repo.settings.security_rules {
+            if settings.open_to_all_deployers {
+                if user.permissions.deployer {
+                    return Ok(true);
+                }
+            } else {
+                return Ok(settings.deployers.contains(&user.id));
+            }
+        }
+    }
     return Ok(true);
 }
 
@@ -110,7 +120,12 @@ pub struct NewUser {
     pub password: Option<NewPassword>,
     pub permissions: UserPermissions,
 }
-
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ModifyUser {
+    pub name: String,
+    pub email: String,
+    pub permissions: UserPermissions,
+}
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewPassword {
     pub password: String,

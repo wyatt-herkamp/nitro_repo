@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
 use crate::schema::*;
+use crate::system::utils::ModifyUser;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
@@ -29,6 +30,11 @@ pub struct User {
 impl User {
     pub fn set_password(&mut self, password: String) {
         self.password = password;
+    }
+    pub fn update(&mut self, update: ModifyUser){
+        self.permissions = update.permissions;
+        self.email = update.email;
+        self.name = update.name;
     }
 }
 

@@ -14,12 +14,45 @@ use crate::schema::*;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
+use crate::repository::models::Policy::Mixed;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Policy{
+    Release,
+    Snapshot,
+    Mixed
+}
+impl Policy{
+    fn default() ->Self{
+        return Mixed;
+    }
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityRules {
+    //Default true. If false only people listed in deployers can deploy
+    pub open_to_all_deployers: bool,
+    //List of deployers
+    pub deployers: Vec<i64>,
+    #[serde(default = "default")]
+    pub public: bool
+}
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub struct RepositorySettings {
-
+    pub security_rules: Option<SecurityRules>,
+    #[serde(default = "default")]
+    pub active: bool,
+    #[serde(default = "default")]
+    pub re_deployment: bool,
+    #[serde(default = "Policy::default")]
+    pub policy: Policy,
 }
+fn default() -> bool {
+    true
+}
+
+
 
 
 impl FromSql<Text, Mysql> for RepositorySettings {
@@ -38,7 +71,6 @@ impl ToSql<Text, Mysql> for RepositorySettings {
         <String as ToSql<Text, Mysql>>::to_sql(&s, out)
     }
 }
-
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
