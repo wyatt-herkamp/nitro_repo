@@ -1,12 +1,13 @@
-import React from 'react';
-import { makeStyles, Theme } from '@material-ui/core/styles';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import Typography from '@material-ui/core/Typography';
-import Box from '@material-ui/core/Box';
-import ShowStorages from '../src/Storages';
-import ShowRepos from '../src/Repositories';
-import ShowUsers from '../src/Users';
+import React from "react";
+import { makeStyles, Theme } from "@material-ui/core/styles";
+import Tabs from "@material-ui/core/Tabs";
+import Tab from "@material-ui/core/Tab";
+import Typography from "@material-ui/core/Typography";
+import Box from "@material-ui/core/Box";
+import ShowStorages from "../src/Storages";
+import ShowRepos from "../src/Repositories";
+import ShowUsers from "../src/Users";
+import Me from "../src/Me";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -37,7 +38,7 @@ function TabPanel(props: TabPanelProps) {
 function a11yProps(index: any) {
   return {
     id: `vertical-tab-${index}`,
-    'aria-controls': `vertical-tabpanel-${index}`,
+    "aria-controls": `vertical-tabpanel-${index}`,
   };
 }
 
@@ -45,7 +46,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   root: {
     flexGrow: 1,
     backgroundColor: theme.palette.background.paper,
-    display: 'flex',
+    display: "flex",
   },
   tabs: {
     borderRight: `1px solid ${theme.palette.divider}`,
@@ -74,17 +75,23 @@ export default function VerticalTabs() {
         <Tab label="Repositories" {...a11yProps(1)} />
         <Tab label="Users" {...a11yProps(2)} />
         <Tab label="Settings" {...a11yProps(3)} />
-
+        <Tab label="Me" {...a11yProps(4)} />
       </Tabs>
       <TabPanel value={value} index={0}>
         <ShowStorages />
       </TabPanel>
       <TabPanel value={value} index={1}>
         <ShowRepos />
-      </TabPanel>      <TabPanel value={value} index={2}>
+      </TabPanel>
+      <TabPanel value={value} index={2}>
         <ShowUsers />
       </TabPanel>
-
+      <TabPanel value={value} index={3}>
+        <h1>Settings</h1>
+      </TabPanel>
+      <TabPanel value={value} index={4}>
+        <Me />
+      </TabPanel>
     </div>
   );
 }
