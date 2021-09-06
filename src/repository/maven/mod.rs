@@ -1,11 +1,11 @@
-use crate::repository::models::Repository;
+
 use crate::repository::repository::RepoResponse::{NotAuthorized, NotFound};
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
-use crate::storage::models::Storage;
+
 use crate::system::utils::can_deploy_basic_auth;
-use actix_files::NamedFile;
+
 use actix_web::web::{Buf, Bytes};
-use actix_web::HttpRequest;
+
 use diesel::MysqlConnection;
 use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
 use std::io::Write;
@@ -14,7 +14,7 @@ use std::path::PathBuf;
 pub struct MavenHandler;
 
 impl RepositoryType for MavenHandler {
-    fn handle_get(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_get(request: RepositoryRequest, _conn: &MysqlConnection) -> RepoResult {
         let buf = PathBuf::new()
             .join("storages")
             .join(request.storage.name.clone())
@@ -38,7 +38,7 @@ impl RepositoryType for MavenHandler {
         return Ok(NotFound);
     }
 
-    fn handle_post(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult {
+    fn handle_post(_request: RepositoryRequest, _conn: &MysqlConnection, _bytes: Bytes) -> RepoResult {
         return Ok(RepoResponse::Ok);
     }
 
@@ -68,14 +68,14 @@ impl RepositoryType for MavenHandler {
     }
 
     fn handle_patch(
-        request: RepositoryRequest,
-        conn: &MysqlConnection,
-        bytes: Bytes,
+        _request: RepositoryRequest,
+        _conn: &MysqlConnection,
+        _bytes: Bytes,
     ) -> RepoResult {
         return Ok(RepoResponse::Ok);
     }
 
-    fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_head(_request: RepositoryRequest, _conn: &MysqlConnection) -> RepoResult {
         return Ok(RepoResponse::Ok);
     }
 }

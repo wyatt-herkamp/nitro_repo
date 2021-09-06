@@ -26,9 +26,9 @@ use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use tera::Tera;
 
-use crate::apierror::APIError;
+
 use crate::error::request_error::RequestError;
-use crate::settings::settings::get_file;
+
 use crate::utils::{installed, Resources};
 use actix_web::web::PayloadConfig;
 use std::fs::read_to_string;
@@ -142,7 +142,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 #[get("/")]
-pub async fn index(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
+pub async fn index(pool: web::Data<DbPool>, _r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"));
@@ -154,7 +154,7 @@ pub async fn index(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpRespon
 #[get("/browse/{file:.*}")]
 pub async fn browse_extend(
     pool: web::Data<DbPool>,
-    r: HttpRequest,
+    _r: HttpRequest,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
@@ -167,7 +167,7 @@ pub async fn browse_extend(
 }
 
 #[get("/browse")]
-pub async fn browse(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
+pub async fn browse(pool: web::Data<DbPool>, _r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 =
@@ -178,7 +178,7 @@ pub async fn browse(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpRespo
 }
 
 #[get("/admin")]
-pub async fn admin(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
+pub async fn admin(pool: web::Data<DbPool>, _r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("admin.html"));
@@ -188,7 +188,7 @@ pub async fn admin(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpRespon
 }
 
 #[get("/login")]
-pub async fn login(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
+pub async fn login(pool: web::Data<DbPool>, _r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("login.html"));

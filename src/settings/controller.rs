@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
 use crate::apierror::APIError;
-use crate::apierror::APIError::NotAuthorized;
+
 use crate::error::request_error::RequestError;
 use crate::settings::action::get_setting;
 use crate::settings::settings::DBSetting;
@@ -14,7 +14,7 @@ use crate::{settings, DbPool};
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(
     pool: web::Data<DbPool>,
-    r: HttpRequest,
+    _r: HttpRequest,
     web::Path(setting): web::Path<String>,
 ) -> Result<APIResponse<DBSetting>, RequestError> {
     let connection = pool.get()?;

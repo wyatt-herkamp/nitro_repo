@@ -1,14 +1,14 @@
 use crate::repository::models::Repository;
-use crate::schema::settings::dsl::settings;
-use crate::system::models::{AuthToken, ForgotPassword, User};
-use crate::utils::get_current_time;
-use crate::{repository, storage, system, utils};
+
+
+
+use crate::{repository};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 
 pub fn get_repo_by_name_and_storage(
     d: String,
-    storage: i64,
+    _storage: i64,
     conn: &MysqlConnection,
 ) -> Result<Option<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
@@ -41,7 +41,7 @@ pub fn get_repositories(
 }
 
 pub fn get_repositories_by_storage(
-    storage: i64,
+    _storage: i64,
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;

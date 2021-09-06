@@ -2,8 +2,8 @@ use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
-use crate::apierror::APIError::NotFound;
-use crate::apierror::{APIError, GenericError};
+
+use crate::apierror::{APIError};
 use crate::error::request_error::RequestError;
 use crate::repository::action::{
     add_new_repository, get_repo_by_name_and_storage, get_repositories,

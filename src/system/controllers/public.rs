@@ -1,14 +1,14 @@
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
-use tera::Context;
+
 
 use crate::api_response::APIResponse;
-use crate::apierror::APIError;
+
 use crate::error::request_error::RequestError;
-use crate::internal_error::InternalError;
-use crate::site_response::SiteResponse;
+
+
 use crate::system::action::{add_new_auth_token, get_user_by_email, get_user_by_username};
 use crate::system::models::AuthToken;
-use crate::system::utils::{generate_auth_token, get_user_by_header};
+use crate::system::utils::{generate_auth_token};
 use crate::utils::{default_expiration, get_current_time, installed};
 use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};

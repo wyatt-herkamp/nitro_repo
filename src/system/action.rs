@@ -1,6 +1,6 @@
-use crate::schema::settings::dsl::settings;
-use crate::system::models::{AuthToken, ForgotPassword, User};
-use crate::utils::get_current_time;
+
+use crate::system::models::{AuthToken, User};
+
 use crate::{system, utils};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
@@ -13,7 +13,7 @@ pub fn get_users(
 }
 pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let result1 = diesel::update(users.filter(id.eq(user.id)))
+    let _result1 = diesel::update(users.filter(id.eq(user.id)))
         .set((
             password.eq(user.password.clone()),
             email.eq(user.email.clone()),

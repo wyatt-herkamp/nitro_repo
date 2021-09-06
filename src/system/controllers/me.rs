@@ -1,8 +1,8 @@
 use crate::api_response::APIResponse;
 use crate::apierror::APIError;
 use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::{NotAuthorized, NotFound};
-use crate::system::action::{get_user_by_username, update_user};
+use crate::error::request_error::RequestError::{NotAuthorized};
+use crate::system::action::{update_user};
 use crate::system::models::User;
 use crate::system::utils::{get_user_by_header, NewPassword};
 use crate::utils::installed;
@@ -16,7 +16,7 @@ pub async fn me(
 ) -> Result<APIResponse<bool>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let user =
+    let _user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
 
     return Ok(APIResponse::new(true, Some(true)));

@@ -1,5 +1,5 @@
 use crate::apierror::APIError;
-use crate::schema::settings::dsl::settings;
+
 use crate::settings::action::{add_new_setting, get_setting, update_setting};
 use crate::settings::settings::DBSetting;
 use crate::utils::get_current_time;

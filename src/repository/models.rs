@@ -7,12 +7,12 @@ use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize, MysqlConnection};
+use diesel::{deserialize, serialize};
 
-use crate::schema::*;
+
 
 use crate::repository::models::Policy::Mixed;
-use std::collections::HashMap;
+
 use std::fmt::Debug;
 use std::io::Write;
 

@@ -1,12 +1,12 @@
 use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
-use crate::repository::repo_error::RepositoryError;
-use crate::site_response::SiteResponse;
+
+
 use crate::storage::models::Storage;
 use actix_web::web::Bytes;
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use actix_web::{HttpRequest};
 use diesel::MysqlConnection;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
 pub enum RepoResponse {
     FileList(Vec<String>),

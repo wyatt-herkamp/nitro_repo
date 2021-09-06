@@ -1,28 +1,28 @@
 use crate::api_response::APIResponse;
-use crate::apierror::APIError;
-use crate::settings::settings::DBSetting;
 
-use crate::apierror::APIError::NotAuthorized;
+
+
+
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotFound;
 use crate::repository::action::{
-    get_repo_by_name_and_storage, get_repositories, get_repositories_by_storage,
+    get_repo_by_name_and_storage, get_repositories_by_storage,
 };
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
-use crate::settings::action::get_setting;
+
 use crate::storage::action::{get_storage_by_name, get_storages};
-use crate::storage::models::Storage;
+
 use crate::system::models::User;
-use crate::system::utils::get_user_by_header;
+
 use crate::utils::installed;
-use crate::{settings, DbPool};
+use crate::{DbPool};
 use actix_files::NamedFile;
-use actix_web::body::Body;
+
 use actix_web::web::Bytes;
 use actix_web::{delete, get, head, patch, post, put, web, HttpRequest, HttpResponse, Responder};
-use futures::StreamExt;
+
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;
@@ -37,7 +37,7 @@ pub struct ListRepositories {
 #[get("/storages.json")]
 pub async fn browse(
     pool: web::Data<DbPool>,
-    r: HttpRequest,
+    _r: HttpRequest,
 ) -> Result<APIResponse<Vec<String>>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
@@ -53,8 +53,8 @@ pub async fn browse(
 #[get("/storages/{storage}.json")]
 pub async fn browse_storage(
     pool: web::Data<DbPool>,
-    r: HttpRequest,
-    path: web::Path<(String)>,
+    _r: HttpRequest,
+    path: web::Path<String>,
 ) -> Result<APIResponse<Vec<String>>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
@@ -142,7 +142,7 @@ pub async fn post_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes,
+    _bytes: Bytes,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
@@ -162,7 +162,7 @@ pub async fn patch_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes,
+    _bytes: Bytes,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;

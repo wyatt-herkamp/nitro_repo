@@ -3,7 +3,7 @@ use crate::apierror::APIError::NotFound;
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotAuthorized;
 use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
-use crate::system::models::{User, UserPermissions};
+use crate::system::models::{User};
 use crate::system::utils::{get_user_by_header, new_user, ModifyUser, NewPassword, NewUser};
 use crate::utils::installed;
 use crate::DbPool;

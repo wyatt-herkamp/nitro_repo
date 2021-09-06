@@ -1,15 +1,15 @@
-use std::error::Error;
-use std::fmt::{Display, Formatter};
-use std::str::{FromStr, ParseBoolError};
 
-use actix_web::body::Body;
-use actix_web::dev::HttpResponseBuilder;
+
+use std::str::{ParseBoolError};
+
+
+
 use actix_web::http::header::ToStrError;
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpResponse};
 use derive_more::{Display, Error};
 use hyper::StatusCode;
 
-use crate::api_response::{APIErrorResponse, APIResponse};
+use crate::api_response::{APIResponse};
 use crate::apierror::APIError;
 use crate::error::internal_error::InternalError;
 use crate::error::GenericError;
@@ -80,7 +80,7 @@ impl actix_web::error::ResponseError for RequestError {
 
 //from<Error>
 impl From<APIError> for RequestError {
-    fn from(err: APIError) -> RequestError {
+    fn from(_err: APIError) -> RequestError {
         panic!("LEGACY CODE FIX IT FUCKER")
     }
 }

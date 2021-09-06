@@ -1,9 +1,9 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+
 use tera::{Context, Tera};
 
-use crate::apierror::APIError;
+
 use crate::internal_error::InternalError;
 
 #[derive(Debug)]
