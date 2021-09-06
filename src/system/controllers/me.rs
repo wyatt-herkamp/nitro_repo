@@ -7,7 +7,7 @@ use crate::system::models::User;
 use crate::system::utils::{get_user_by_header, NewPassword};
 use crate::utils::installed;
 use crate::DbPool;
-use actix_web::{get, web, HttpRequest};
+use actix_web::{get,post, web, HttpRequest};
 
 #[get("/api/me")]
 pub async fn me(
