@@ -8,6 +8,10 @@ import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import { FormControlLabel, Checkbox, FormControl, InputLabel, MenuItem, Select, Grid, Button, TextField } from '@material-ui/core';
 import { addMinutes } from 'date-fns';
+import { API_URL } from './config';
+import { BasicResponse, UserPermissions } from './Response';
+import { toast } from 'react-toastify';
+import { Cookies } from 'react-cookie';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -71,8 +75,8 @@ export default function UserSettings({ user }) {
             </TabPanel>
             <TabPanel value={userTab} index={1}>
                 <ChangePassword user={user} />
-            </TabPanel>          
-             <TabPanel value={userTab} index={2}>
+            </TabPanel>
+            <TabPanel value={userTab} index={2}>
                 <Permissions user={user} />
             </TabPanel>
 
@@ -82,9 +86,65 @@ export default function UserSettings({ user }) {
 
 export function GeneralSettings({ user }) {
     const classes = useStyles();
+    const update = async event => {
+        event.preventDefault() // don't redirect the page
+        // where we'll add our form logic
+        let newUser = {
+
+            name: event.target.name.value,
+            email: event.target.email.value,
+            permissions: user.permissions
+
+        };
+        let body = JSON.stringify(newUser);
+        console.log(body)
+        const cookies = new Cookies();
+
+        const res = await fetch(
+            API_URL + "/api/admin/user/" + user.username + "/modify",
+            {
+                body: body,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': "Bearer " + cookies.get("auth_token")
+
+                },
+                method: 'POST'
+            }
+        )
+        console.log(await res)
+        const result = await res.json();
+
+        let value = JSON.stringify(result);
+        console.log(value)
+
+        let response: BasicResponse<Object> = JSON.parse(value);
+        if (!response.success) {
+            toast.error('Unable to update user', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+
+        } else {
+            toast.info('Updated User', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        }
+    }
 
     return (
-        <form className={classes.form} noValidate >
+        <form noValidate onSubmit={update}  >
             <Grid container spacing={2}>
                 <Grid item xs={12}>
                     <TextField
@@ -95,7 +155,7 @@ export function GeneralSettings({ user }) {
                         label="Name"
                         name="name"
                         autoComplete="name"
-                        value={user.name}
+                        defaultValue={user.name}
 
                     />
                 </Grid>
@@ -108,7 +168,7 @@ export function GeneralSettings({ user }) {
                         label="Email Address"
                         name="email"
                         autoComplete="email"
-                        value={user.email}
+                        defaultValue={user.email}
                     />
                 </Grid>
 
@@ -118,7 +178,6 @@ export function GeneralSettings({ user }) {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submit}
             >
                 Update User
             </Button>
@@ -128,9 +187,64 @@ export function GeneralSettings({ user }) {
 }
 export function ChangePassword({ user }) {
     const classes = useStyles();
+    const update = async event => {
+        event.preventDefault() // don't redirect the page
+        // where we'll add our form logic
+        let newUser = {
+            password: event.target.password.value,
+            password_two: event.target.password_two.value
 
+        };
+        event.target.password.value = "";
+        event.target.password_two.value = "";
+        let body = JSON.stringify(newUser);
+        console.log(body)
+        const cookies = new Cookies();
+
+        const res = await fetch(
+            API_URL + "/api/admin/user/" + user.username + "/password",
+            {
+                body: body,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': "Bearer " + cookies.get("auth_token")
+
+                },
+                method: 'POST'
+            }
+        )
+        console.log(await res)
+        const result = await res.json();
+
+        let value = JSON.stringify(result);
+        console.log(value)
+
+        let response: BasicResponse<Object> = JSON.parse(value);
+        if (!response.success) {
+            toast.error('Unable to update user', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+
+        } else {
+            toast.info('Updated User', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        }
+    }
     return (
-        <form className={classes.form} noValidate >
+        <form noValidate onSubmit={update}  >
             <Grid container spacing={2}>
                 <Grid item xs={12}>
                     <TextField
@@ -163,7 +277,6 @@ export function ChangePassword({ user }) {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submit}
             >
                 Change Password                </Button>
         </form>
@@ -179,13 +292,71 @@ export function Permissions({ user }) {
         deployer: user.permissions.deployer
 
     });
-    const updateRepo = async event => {
+    const update = async event => {
+        event.preventDefault() // don't redirect the page
+        // where we'll add our form logic
+        let permissions: UserPermissions = {
+            admin: event.target.admin.checked,
+            deployer: event.target.deployer.checked
+        }
+        let newUser = {
+
+            name: user.name,
+            email: user.email,
+            permissions: permissions
+
+        };
+        let body = JSON.stringify(newUser);
+        console.log(body)
+        const cookies = new Cookies();
+
+        const res = await fetch(
+            API_URL + "/api/admin/user/" + user.username + "/modify",
+            {
+                body: body,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': "Bearer " + cookies.get("auth_token")
+
+                },
+                method: 'POST'
+            }
+        )
+        console.log(await res)
+        const result = await res.json();
+
+        let value = JSON.stringify(result);
+        console.log(value)
+
+        let response: BasicResponse<Object> = JSON.parse(value);
+        if (!response.success) {
+            toast.error('Unable to update user', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+
+        } else {
+            toast.info('Updated User', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        }
     }
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setChecked({ ...checked, [event.target.name]: event.target.checked });
     };
     return (
-        <form className={classes.form} noValidate onSubmit={updateRepo} >
+        <form noValidate onSubmit={update} >
             <Grid container spacing={2}>
                 <Grid item xs={12}>
                     <FormControlLabel
@@ -214,7 +385,7 @@ export function Permissions({ user }) {
                         label="Admin"
                     />
                 </Grid>
-               
+
 
             </Grid>
             <Button
@@ -222,9 +393,8 @@ export function Permissions({ user }) {
                 fullWidth
                 variant="contained"
                 color="primary"
-                className={classes.submit}
             >
-              Update Permissions               </Button>
+                Update Permissions               </Button>
         </form >
     );
 

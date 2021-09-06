@@ -17,6 +17,8 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
         .set((
             password.eq(user.password.clone()),
             email.eq(user.email.clone()),
+            name.eq(user.name.clone()),
+            permissions.eq(user.permissions.clone()),
         ))
         .execute(conn);
     Ok(())

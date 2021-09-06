@@ -167,7 +167,8 @@ const userPage = makeStyles((theme) => ({
 export function NewUser() {
 
     const classes = useStyles();
-    const installSystem = async event => {
+   
+    const update = async event => {
         event.preventDefault() // don't redirect the page
         // where we'll add our form logic
         let newUser = {
@@ -175,55 +176,63 @@ export function NewUser() {
             name: event.target.name.value,
             username: event.target.username.value,
             email: event.target.email.value,
-            password: event.target.password.value,
-            password_two: event.target.password_two.value,
+            password: {password: event.target.password.value, password_two:event.target.password_two.value},
+            permissions: {deployer:false, admin:false}
 
         };
         let body = JSON.stringify(newUser);
         console.log(body)
+        const cookies = new Cookies();
+
         const res = await fetch(
-            API_URL + "/install",
+            API_URL + "/api/admin/user/add",
             {
                 body: body,
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': "Bearer " + cookies.get("auth_token")
+
                 },
                 method: 'POST'
             }
         )
+        console.log(await res)
         const result = await res.json();
+
         let value = JSON.stringify(result);
         console.log(value)
 
         let response: BasicResponse<Object> = JSON.parse(value);
-
         if (!response.success) {
-            console.log("Error");
-            return (
-                <Alert severity="error">
-                    <AlertTitle>Error</AlertTitle>
-                    {{ value }}
-                </Alert>
-            )
+            toast.error('Unable to add new user', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+
         } else {
-            return (
-                <Alert severity="success">
-                    <AlertTitle>Success</AlertTitle>
-                    Install Completed
-                </Alert>
-            )
+            toast.info('Added new user', {
+                position: "bottom-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
         }
     }
-
     return (<Container component="main" maxWidth="xs">
         <CssBaseline />
-        <div className={classes.paper}>
-            <Avatar className={classes.avatar}>
-            </Avatar>
+        <div>
             <Typography component="h1" variant="h5">
               Create new User
             </Typography>
-            <form className={classes.form} noValidate onSubmit={installSystem}>
+            <form noValidate onSubmit={update}>
                 <Grid container spacing={2}>
                     <Grid item xs={12}>
                         <TextField
@@ -289,7 +298,6 @@ export function NewUser() {
                     fullWidth
                     variant="contained"
                     color="primary"
-                    className={classes.submit}
                 >
                     Create
                 </Button>

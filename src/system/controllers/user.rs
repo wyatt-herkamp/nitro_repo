@@ -2,13 +2,14 @@ use crate::DbPool;
 use crate::api_response::APIResponse;
 use actix_web::{get, post, HttpRequest, web};
 use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
-use crate::system::utils::{get_user_by_header, NewUser, new_user, ModifyUser};
+use crate::system::utils::{get_user_by_header, NewUser, new_user, ModifyUser, NewPassword};
 use crate::utils::installed;
 use crate::system::models::{User, UserPermissions};
 use crate::apierror::APIError::NotFound;
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotAuthorized;
 use serde::{Serialize, Deserialize};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
     pub users: Vec<User>,
@@ -56,6 +57,25 @@ pub async fn modify_user(
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
     user.update(nc.0.clone());
+    update_user(&user, &connection)?;
+    return Ok(APIResponse::new(true, Some(user)));
+}
+
+#[post("/api/admin/user/{user}/password")]
+pub async fn change_password(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    web::Path(user): web::Path<String>,
+    nc: web::Json<NewPassword>,
+) -> Result<APIResponse<User>, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let _user =
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
+    let string = nc.0.hash().unwrap();
+    println!("{}", &string);
+    user.set_password(string);
     update_user(&user, &connection)?;
     return Ok(APIResponse::new(true, Some(user)));
 }
