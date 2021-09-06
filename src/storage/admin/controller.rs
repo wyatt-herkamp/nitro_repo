@@ -1,18 +1,20 @@
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
-use crate::apierror::{APIError, GenericError};
 use crate::apierror::APIError::NotFound;
-use crate::DbPool;
-use crate::repository::action::{add_new_repository, get_repo_by_name_and_storage, get_repositories};
+use crate::apierror::{APIError, GenericError};
+use crate::repository::action::{
+    add_new_repository, get_repo_by_name_and_storage, get_repositories,
+};
 use crate::repository::models::Repository;
 use crate::storage::action::{add_new_storage, get_storage_by_name, get_storages};
 use crate::storage::models::Storage;
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
-use std::path::PathBuf;
+use crate::DbPool;
 use std::fs::create_dir_all;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListStorages {
@@ -28,7 +30,7 @@ pub async fn list_storages(
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.admin{
+    if !user.permissions.admin {
         return Err(APIError::NotAuthorized);
     }
     let vec = get_storages(&connection)?;
@@ -51,10 +53,10 @@ pub async fn add_storage(
 ) -> Result<APIResponse<Storage>, APIError> {
     let connection = pool.get()?;
     installed(&connection)?;
-     let user =
-         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.admin{
-      return Err(APIError::NotAuthorized);
+    let user =
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+    if !user.permissions.admin {
+        return Err(APIError::NotAuthorized);
     }
     let storage = Storage {
         id: 0,
@@ -65,7 +67,7 @@ pub async fn add_storage(
     };
     add_new_storage(&storage, &connection)?;
     let buf = PathBuf::new().join("storages").join(nc.name.clone());
-    if !buf.exists(){
+    if !buf.exists() {
         create_dir_all(buf)?;
     }
     let option = get_storage_by_name(nc.name.clone(), &connection)?.ok_or(NotFound)?;

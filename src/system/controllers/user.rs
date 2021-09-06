@@ -1,14 +1,14 @@
-use crate::DbPool;
 use crate::api_response::APIResponse;
-use actix_web::{get, post, HttpRequest, web};
-use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
-use crate::system::utils::{get_user_by_header, NewUser, new_user, ModifyUser, NewPassword};
-use crate::utils::installed;
-use crate::system::models::{User, UserPermissions};
 use crate::apierror::APIError::NotFound;
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotAuthorized;
-use serde::{Serialize, Deserialize};
+use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
+use crate::system::models::{User, UserPermissions};
+use crate::system::utils::{get_user_by_header, new_user, ModifyUser, NewPassword, NewUser};
+use crate::utils::installed;
+use crate::DbPool;
+use actix_web::{get, post, web, HttpRequest};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
@@ -22,8 +22,7 @@ pub async fn list_users(
 ) -> Result<APIResponse<ListUsers>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let vec = get_users(&connection)?;
 
     let response = ListUsers { users: vec };
@@ -38,8 +37,7 @@ pub async fn add_user(
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let user = new_user(nc.0.clone(), &connection)?;
     return Ok(APIResponse::new(true, Some(user)));
 }
@@ -53,8 +51,7 @@ pub async fn modify_user(
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
     user.update(nc.0.clone());
     update_user(&user, &connection)?;
@@ -70,8 +67,7 @@ pub async fn change_password(
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
     let string = nc.0.hash().unwrap();
     println!("{}", &string);
@@ -89,8 +85,7 @@ pub async fn delete_user(
     let connection = pool.get()?;
     installed(&connection)?;
 
-    let _user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let option = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
 
     return Ok(APIResponse::<bool>::new(
@@ -98,4 +93,3 @@ pub async fn delete_user(
         None,
     ));
 }
-

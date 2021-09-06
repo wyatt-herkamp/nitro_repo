@@ -17,35 +17,35 @@ use std::path::Path;
 use actix_cors::Cors;
 use actix_files::Files;
 use actix_web::{
-    App, get, HttpRequest, HttpResponse, HttpServer, middleware, post, ResponseError, web,
+    get, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, ResponseError,
 };
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use log4rs::config::RawConfig;
 use log::info;
+use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use tera::Tera;
 
 use crate::apierror::APIError;
-use crate::settings::settings::get_file;
-use crate::utils::{Resources, installed};
-use std::fs::read_to_string;
 use crate::error::request_error::RequestError;
+use crate::settings::settings::get_file;
+use crate::utils::{installed, Resources};
 use actix_web::web::PayloadConfig;
+use std::fs::read_to_string;
 
 pub mod api_response;
+pub mod apierror;
+pub mod error;
+pub mod frontend;
 pub mod install;
+pub mod internal_error;
+pub mod repository;
 pub mod schema;
 pub mod settings;
-pub mod apierror;
-pub mod utils;
-pub mod system;
-pub mod storage;
-pub mod repository;
-pub mod internal_error;
 pub mod site_response;
-pub mod frontend;
-pub mod error;
+pub mod storage;
+pub mod system;
+pub mod utils;
 
 fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::Error> {
     let option = args.get("path");
@@ -100,7 +100,6 @@ async fn main() -> std::io::Result<()> {
         let mut tera = result1.unwrap();
         tera.register_function("url", url);
         App::new()
-
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .data(pool.clone())
@@ -121,9 +120,12 @@ async fn main() -> std::io::Result<()> {
             .service(browse)
             .service(browse_extend)
             .service(login)
-            .service(Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap())).show_files_listing())
+            .service(
+                Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
+                    .show_files_listing(),
+            )
     })
-        .workers(2);
+    .workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {
         let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
         builder
@@ -140,10 +142,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 #[get("/")]
-pub async fn index(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<HttpResponse, RequestError> {
+pub async fn index(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"));
@@ -159,30 +158,27 @@ pub async fn browse_extend(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"));
+    let result1 = read_to_string(
+        Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"),
+    );
     return Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(result1.unwrap()));
 }
 
 #[get("/browse")]
-pub async fn browse(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<HttpResponse, RequestError> {
+pub async fn browse(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/browse.html"));
+    let result1 =
+        read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/browse.html"));
     return Ok(HttpResponse::Ok()
         .content_type("text/html")
         .body(result1.unwrap()));
 }
 
 #[get("/admin")]
-pub async fn admin(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<HttpResponse, RequestError> {
+pub async fn admin(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("admin.html"));
@@ -192,10 +188,7 @@ pub async fn admin(
 }
 
 #[get("/login")]
-pub async fn login(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<HttpResponse, RequestError> {
+pub async fn login(pool: web::Data<DbPool>, r: HttpRequest) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("login.html"));

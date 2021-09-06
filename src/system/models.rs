@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
 
-use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
+use diesel::{deserialize, serialize, MysqlConnection};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
@@ -31,7 +31,7 @@ impl User {
     pub fn set_password(&mut self, password: String) {
         self.password = password;
     }
-    pub fn update(&mut self, update: ModifyUser){
+    pub fn update(&mut self, update: ModifyUser) {
         self.permissions = update.permissions;
         self.email = update.email;
         self.name = update.name;
@@ -45,19 +45,20 @@ pub struct UserPermissions {
     pub admin: bool,
     #[serde(default = "default_permission")]
     pub deployer: bool,
-
 }
 
 impl UserPermissions {
     pub fn new_owner() -> UserPermissions {
-        UserPermissions { admin: true, deployer: true }
+        UserPermissions {
+            admin: true,
+            deployer: true,
+        }
     }
 }
 
 fn default_permission() -> bool {
     false
 }
-
 
 impl FromSql<Text, Mysql> for UserPermissions {
     fn from_sql(

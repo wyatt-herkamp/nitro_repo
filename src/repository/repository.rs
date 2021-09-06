@@ -1,12 +1,12 @@
-use actix_web::{HttpRequest, HttpResponse, Responder};
-use crate::storage::models::Storage;
+use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
 use crate::repository::repo_error::RepositoryError;
-use actix_web::web::Bytes;
 use crate::site_response::SiteResponse;
-use std::path::{Path, PathBuf};
-use crate::error::request_error::RequestError;
+use crate::storage::models::Storage;
+use actix_web::web::Bytes;
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use diesel::MysqlConnection;
+use std::path::{Path, PathBuf};
 
 pub enum RepoResponse {
     FileList(Vec<String>),
@@ -14,7 +14,6 @@ pub enum RepoResponse {
     Ok,
     NotFound,
     NotAuthorized,
-
 }
 
 pub type RepoResult = Result<RepoResponse, RequestError>;
@@ -30,6 +29,7 @@ pub trait RepositoryType {
     fn handle_get(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
     fn handle_post(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
     fn handle_put(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
-    fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
+    fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes)
+        -> RepoResult;
     fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
 }

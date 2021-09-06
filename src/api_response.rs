@@ -48,7 +48,6 @@ impl<T: Serialize> Responder for APIResponse<T> {
     type Future = futures_util::future::Ready<Result<HttpResponse, APIError>>;
 
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-
         return futures_util::future::ok(self.respond(_req));
     }
 }

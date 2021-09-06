@@ -1,19 +1,18 @@
-use actix_web::{get, post, HttpRequest, HttpResponse, web};
+use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use tera::Context;
 
-use crate::DbPool;
+use crate::api_response::APIResponse;
+use crate::apierror::APIError;
+use crate::error::request_error::RequestError;
 use crate::internal_error::InternalError;
 use crate::site_response::SiteResponse;
-use crate::utils::{installed, default_expiration, get_current_time};
-use crate::api_response::APIResponse;
+use crate::system::action::{add_new_auth_token, get_user_by_email, get_user_by_username};
 use crate::system::models::AuthToken;
-use crate::error::request_error::RequestError;
-use crate::system::action::{get_user_by_email, get_user_by_username, add_new_auth_token};
+use crate::system::utils::{generate_auth_token, get_user_by_header};
+use crate::utils::{default_expiration, get_current_time, installed};
+use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::{Deserialize, Serialize};
-use crate::system::utils::{generate_auth_token, get_user_by_header};
-use crate::apierror::APIError;
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
@@ -35,10 +34,10 @@ pub async fn login(
     } else {
         get_user_by_username(username, &connection)?
     }
-        .ok_or(RequestError::InvalidLogin)?;
+    .ok_or(RequestError::InvalidLogin)?;
     let argon2 = Argon2::default();
-    let parsed_hash =
-        PasswordHash::new(user.password.as_str()).map_err(|_| RequestError::from("Password Error"))?;
+    let parsed_hash = PasswordHash::new(user.password.as_str())
+        .map_err(|_| RequestError::from("Password Error"))?;
     argon2
         .verify_password(nc.password.clone().as_bytes(), &parsed_hash)
         .map_err(|_| RequestError::InvalidLogin)?;
@@ -53,5 +52,3 @@ pub async fn login(
 
     return Ok(APIResponse::new(true, Some(token)));
 }
-
-

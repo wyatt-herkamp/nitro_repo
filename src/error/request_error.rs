@@ -2,17 +2,17 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::{FromStr, ParseBoolError};
 
-use actix_web::{HttpRequest, HttpResponse};
 use actix_web::body::Body;
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::http::header::ToStrError;
+use actix_web::{HttpRequest, HttpResponse};
 use derive_more::{Display, Error};
 use hyper::StatusCode;
 
 use crate::api_response::{APIErrorResponse, APIResponse};
 use crate::apierror::APIError;
-use crate::error::GenericError;
 use crate::error::internal_error::InternalError;
+use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
 
 #[derive(Debug, Display, Error)]
@@ -26,7 +26,6 @@ pub enum RequestError {
     MissingArgument(GenericError),
     UnInstalled,
     InternalError(InternalError),
-
 }
 
 impl RequestError {
@@ -44,7 +43,7 @@ impl RequestError {
                     .body(serde_json::to_string(&response).unwrap());
                 return result;
             }
-            _=>{
+            _ => {
                 let response = APIResponse {
                     success: false,
                     data: Some(self.to_string()),
@@ -57,7 +56,6 @@ impl RequestError {
                 return result;
             }
         }
-
     }
 }
 
@@ -79,7 +77,6 @@ impl actix_web::error::ResponseError for RequestError {
         }
     }
 }
-
 
 //from<Error>
 impl From<APIError> for RequestError {
@@ -166,7 +163,6 @@ impl From<String> for RequestError {
         InternalError::Error(error).into()
     }
 }
-
 
 impl From<&str> for RequestError {
     fn from(value: &str) -> Self {

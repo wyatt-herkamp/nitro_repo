@@ -2,16 +2,16 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::{FromStr, ParseBoolError};
 
-use actix_web::{HttpRequest, HttpResponse};
 use actix_web::body::Body;
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::http::header::ToStrError;
+use actix_web::{HttpRequest, HttpResponse};
 use derive_more::{Display, Error};
 use hyper::StatusCode;
 
 use crate::api_response::{APIErrorResponse, APIResponse};
-use crate::error::GenericError;
 use crate::error::request_error::RequestError;
+use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
 use base64::DecodeError;
 use std::string::FromUtf8Error;
@@ -40,7 +40,6 @@ impl InternalError {
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .content_type("application/json")
             .body("");
-        ;
         return result;
     }
 }
@@ -85,5 +84,3 @@ impl FromStr for InternalError {
         Ok(InternalError::Error(error))
     }
 }
-
-

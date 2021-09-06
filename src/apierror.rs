@@ -2,13 +2,13 @@ use crate::api_response::{APIErrorResponse, APIResponse};
 
 use actix_web::http::header::ToStrError;
 
+use crate::repository::repo_error::RepositoryError;
 use actix_web::HttpResponse;
 use derive_more::{Display, Error};
 use hyper::StatusCode;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::{FromStr, ParseBoolError};
-use crate::repository::repo_error::RepositoryError;
 
 #[derive(Debug, Display, Error)]
 pub enum APIError {
@@ -26,7 +26,7 @@ pub enum APIError {
     BadRequest,
     MissingArgument(GenericError),
     UnInstalled,
-    RepoError(RepositoryError)
+    RepoError(RepositoryError),
 }
 
 #[derive(Debug)]
@@ -51,7 +51,6 @@ impl From<String> for GenericError {
         GenericError { error: value }
     }
 }
-
 
 impl From<&str> for GenericError {
     fn from(value: &str) -> Self {

@@ -1,8 +1,8 @@
 use actix_web::web;
 
+pub mod me;
 pub mod public;
 pub mod user;
-pub mod me;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(public::login)
@@ -11,7 +11,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(user::delete_user)
         .service(user::modify_user)
         .service(user::change_password)
-
         .service(me::change_my_password)
         .service(me::me);
 }

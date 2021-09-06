@@ -1,4 +1,3 @@
-
 use crate::apierror::APIError;
 
 use actix_web::http::HeaderMap;
@@ -10,10 +9,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::ops::Add;
 
-
+use crate::apierror::APIError::{MissingArgument, NotFound};
 use crate::schema::settings::columns::setting;
 use crate::settings::action::get_setting;
-use crate::apierror::APIError::{MissingArgument, NotFound};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use lettre::transport::smtp::authentication::Credentials;
@@ -65,7 +63,6 @@ pub fn default_expiration() -> i64 {
     let time = Local::now();
     time.add(Duration::days(30)).timestamp_millis()
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EmailChangeRequest {

@@ -1,5 +1,5 @@
-use actix_web::{HttpRequest, HttpResponse, Responder};
 use actix_web::http::StatusCode;
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
@@ -13,9 +13,12 @@ pub struct SiteResponse {
     pub status_code: Option<StatusCode>,
 }
 
-
 impl SiteResponse {
-    pub fn new(template: &str, context: Context, status_code: Option<StatusCode>) -> Result<SiteResponse, InternalError> {
+    pub fn new(
+        template: &str,
+        context: Context,
+        status_code: Option<StatusCode>,
+    ) -> Result<SiteResponse, InternalError> {
         return Ok(SiteResponse {
             template: template.to_string(),
             context,

@@ -1,15 +1,15 @@
-use crate::repository::repository::{RepositoryType, RepoResult};
-use actix_web::{HttpRequest, web};
-use crate::storage::models::Storage;
 use crate::repository::models::Repository;
+use crate::repository::repository::{RepoResult, RepositoryType};
+use crate::storage::models::Storage;
+use actix_web::{web, HttpRequest};
 
-pub mod controller;
-pub mod repo_error;
-pub mod models;
-pub mod repository;
-pub mod maven;
 pub mod action;
 pub mod admin;
+pub mod controller;
+pub mod maven;
+pub mod models;
+pub mod repo_error;
+pub mod repository;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)

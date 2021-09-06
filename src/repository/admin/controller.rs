@@ -1,17 +1,19 @@
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
-use crate::apierror::{APIError, GenericError};
 use crate::apierror::APIError::NotFound;
-use crate::DbPool;
-use crate::repository::action::{add_new_repository, get_repo_by_name_and_storage, get_repositories};
+use crate::apierror::{APIError, GenericError};
+use crate::error::request_error::RequestError;
+use crate::repository::action::{
+    add_new_repository, get_repo_by_name_and_storage, get_repositories,
+};
 use crate::repository::models::{Repository, RepositorySettings};
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
-use crate::error::request_error::RequestError;
-use std::path::PathBuf;
+use crate::DbPool;
 use std::fs::create_dir_all;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -27,7 +29,7 @@ pub async fn list_repos(
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.admin{
+    if !user.permissions.admin {
         return Err(APIError::NotAuthorized);
     }
     let vec = get_repositories(&connection)?;
@@ -54,16 +56,15 @@ pub async fn add_repo(
     installed(&connection)?;
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
-    if !user.permissions.admin{
+    if !user.permissions.admin {
         return Err(RequestError::NotAuthorized);
     }
-    let option1 = crate::storage::action::get_storage_by_name(nc.storage.clone(), &connection)?.
-        ok_or_else(|| RequestError::from("Unable to find storage"))?;
+    let option1 = crate::storage::action::get_storage_by_name(nc.storage.clone(), &connection)?
+        .ok_or_else(|| RequestError::from("Unable to find storage"))?;
 
     let option = get_repo_by_name_and_storage(nc.name.clone(), option1.id, &connection)?;
-    if option.is_some(){
-        return Err(RequestError::AlreadyExists)
-
+    if option.is_some() {
+        return Err(RequestError::AlreadyExists);
     }
     let repository = Repository {
         id: 0,
@@ -75,10 +76,14 @@ pub async fn add_repo(
         created: get_current_time(),
     };
     add_new_repository(&repository, &connection)?;
-    let buf = PathBuf::new().join("storages").join(nc.name.clone()).join(repository.name.clone());
-    if !buf.exists(){
+    let buf = PathBuf::new()
+        .join("storages")
+        .join(nc.name.clone())
+        .join(repository.name.clone());
+    if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_repo_by_name_and_storage(nc.name.clone(), option1.id, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(nc.name.clone(), option1.id, &connection)?
+        .ok_or(RequestError::NotFound)?;
     return Ok(APIResponse::new(true, Some(option)));
 }

@@ -1,10 +1,10 @@
 use crate::schema::settings::dsl::settings;
+use crate::storage::models::Storage;
 use crate::system::models::{AuthToken, ForgotPassword, User};
 use crate::utils::get_current_time;
-use crate::{system, utils, storage};
+use crate::{storage, system, utils};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
-use crate::storage::models::Storage;
 
 pub fn get_storage_by_name(
     d: String,
@@ -21,7 +21,10 @@ pub fn get_storage_by_name(
 }
 pub fn add_new_storage(s: &Storage, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::storages::dsl::*;
-    diesel::insert_into(storages).values(s).execute(conn).unwrap();
+    diesel::insert_into(storages)
+        .values(s)
+        .execute(conn)
+        .unwrap();
     Ok(())
 }
 pub fn get_storages(

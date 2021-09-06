@@ -53,7 +53,6 @@ impl From<String> for GenericError {
     }
 }
 
-
 impl From<&str> for GenericError {
     fn from(value: &str) -> Self {
         GenericError {
@@ -75,8 +74,12 @@ impl FromStr for GenericError {
 impl actix_web::error::ResponseError for InternalError {
     fn error_response(&self) -> HttpResponse {
         log::error!("Site Error: {}", self.to_string());
-        HttpResponse::Ok().status(StatusCode::INTERNAL_SERVER_ERROR).content_type("text/html").
-            body(crate::utils::Resources::file_get_string("pages/error/500.html"))
+        HttpResponse::Ok()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .content_type("text/html")
+            .body(crate::utils::Resources::file_get_string(
+                "pages/error/500.html",
+            ))
     }
 }
 

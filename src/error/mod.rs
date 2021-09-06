@@ -29,7 +29,6 @@ impl From<String> for GenericError {
     }
 }
 
-
 impl From<&str> for GenericError {
     fn from(value: &str) -> Self {
         GenericError {

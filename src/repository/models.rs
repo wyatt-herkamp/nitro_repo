@@ -11,19 +11,19 @@ use diesel::{deserialize, serialize, MysqlConnection};
 
 use crate::schema::*;
 
+use crate::repository::models::Policy::Mixed;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
-use crate::repository::models::Policy::Mixed;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Policy{
+pub enum Policy {
     Release,
     Snapshot,
-    Mixed
+    Mixed,
 }
-impl Policy{
-    fn default() ->Self{
+impl Policy {
+    fn default() -> Self {
         return Mixed;
     }
 }
@@ -34,7 +34,7 @@ pub struct SecurityRules {
     //List of deployers
     pub deployers: Vec<i64>,
     #[serde(default = "default")]
-    pub public: bool
+    pub public: bool,
 }
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
@@ -52,9 +52,6 @@ fn default() -> bool {
     true
 }
 
-
-
-
 impl FromSql<Text, Mysql> for RepositorySettings {
     fn from_sql(
         bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
@@ -71,7 +68,6 @@ impl ToSql<Text, Mysql> for RepositorySettings {
         <String as ToSql<Text, Mysql>>::to_sql(&s, out)
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "repositories"]

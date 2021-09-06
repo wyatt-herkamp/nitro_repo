@@ -1,22 +1,22 @@
-use actix_web::{HttpMessage, HttpRequest};
 use actix_web::http::HeaderMap;
-use argon2::{Argon2, PasswordHasher, PasswordHash, PasswordVerifier};
+use actix_web::{HttpMessage, HttpRequest};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::apierror::APIError;
 use crate::apierror::APIError::MissingArgument;
-use crate::system;
-use crate::system::action::{add_new_user, get_user_by_username, get_auth_token};
-use crate::system::models::{User, UserPermissions};
-use crate::utils::get_current_time;
-use rand::Rng;
-use rand::distributions::Alphanumeric;
 use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
+use crate::system;
+use crate::system::action::{add_new_user, get_auth_token, get_user_by_username};
+use crate::system::models::{User, UserPermissions};
+use crate::utils::get_current_time;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -78,7 +78,11 @@ pub fn can_deploy_basic_auth(
     Ok(false)
 }
 
-pub fn can_deploy(user: String, repo: &Repository, conn: &MysqlConnection) -> Result<bool, InternalError> {
+pub fn can_deploy(
+    user: String,
+    repo: &Repository,
+    conn: &MysqlConnection,
+) -> Result<bool, InternalError> {
     let result = base64::decode(user)?;
     let string = String::from_utf8(result)?;
     let split = string.split(":").collect::<Vec<&str>>();
@@ -92,10 +96,11 @@ pub fn can_deploy(user: String, repo: &Repository, conn: &MysqlConnection) -> Re
     }
     let argon2 = Argon2::default();
     let user = result1.unwrap();
-    let parsed_hash =
-        PasswordHash::new(user.password.as_str())?;
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
     if argon2
-        .verify_password(split.get(1).unwrap().clone().as_bytes(), &parsed_hash).is_err() {
+        .verify_password(split.get(1).unwrap().clone().as_bytes(), &parsed_hash)
+        .is_err()
+    {
         return Ok(false);
     }
     if !user.permissions.admin {

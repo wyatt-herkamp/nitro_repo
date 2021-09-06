@@ -1,7 +1,6 @@
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
-use crate::{DbPool, settings};
 use crate::api_response::APIResponse;
 use crate::apierror::APIError;
 use crate::apierror::APIError::NotAuthorized;
@@ -10,6 +9,7 @@ use crate::settings::action::get_setting;
 use crate::settings::settings::DBSetting;
 use crate::system::utils::get_user_by_header;
 use crate::utils::installed;
+use crate::{settings, DbPool};
 
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(
@@ -20,7 +20,8 @@ pub async fn about_setting(
     let connection = pool.get()?;
     installed(&connection)?;
 
-    let option = get_setting(setting.as_str(), &connection)?.ok_or_else(|| RequestError::NotFound)?;
+    let option =
+        get_setting(setting.as_str(), &connection)?.ok_or_else(|| RequestError::NotFound)?;
     if !option.setting.public.unwrap_or(false) {
         return Err(RequestError::NotAuthorized);
     }
@@ -50,6 +51,7 @@ pub async fn update_setting(
         get_setting(setting.as_str(), &connection)?.ok_or_else(|| APIError::NotFound)?;
     option.set_value(request.value.clone());
     settings::action::update_setting(&option, &connection)?;
-    let option = get_setting(setting.as_str(), &connection)?.ok_or_else(|| RequestError::NotFound)?;
+    let option =
+        get_setting(setting.as_str(), &connection)?.ok_or_else(|| RequestError::NotFound)?;
     return Ok(APIResponse::new(true, Some(option)));
 }
