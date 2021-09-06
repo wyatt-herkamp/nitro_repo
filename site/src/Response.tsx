@@ -47,7 +47,7 @@ export interface User {
   name: string;
   username: string;
   email: string;
-  UserPermissions: RepoSettings;
+  permissions: UserPermissions;
   created: number;
 }
 export interface UserPermissions {

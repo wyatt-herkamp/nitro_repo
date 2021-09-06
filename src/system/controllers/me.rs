@@ -13,13 +13,13 @@ use actix_web::{get,post, web, HttpRequest};
 pub async fn me(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<bool>, RequestError> {
+) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user =
+    let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
 
-    return Ok(APIResponse::new(true, Some(true)));
+    return Ok(APIResponse::new(true, Some(user)));
 }
 #[post("/api/admin/user/password")]
 pub async fn change_my_password(

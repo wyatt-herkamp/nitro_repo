@@ -8,6 +8,13 @@ import ShowStorages from "../src/Storages";
 import ShowRepos from "../src/Repositories";
 import ShowUsers from "../src/Users";
 import Me from "../src/Me";
+import { Cookies } from "react-cookie";
+import axios from "axios";
+import { toast } from "react-toastify";
+import useSWR from "swr";
+import FailedToConnectToBackend from "../src/BackendConnectionFail";
+import { API_URL } from "../src/config";
+import { BasicResponse, User } from "../src/Response";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -52,10 +59,40 @@ const useStyles = makeStyles((theme: Theme) => ({
     borderRight: `1px solid ${theme.palette.divider}`,
   },
 }));
+const fetcher = (url) => {
+  const cookies = new Cookies();
 
+  return axios
+    .get(url, {
+      headers: { Authorization: "Bearer " + cookies.get("auth_token") },
+    })
+    .then((res) => res.data);
+};
 export default function VerticalTabs() {
-  const classes = useStyles();
+  const { data, error } = useSWR(API_URL + "/api/me", fetcher);
   const [value, setValue] = React.useState(0);
+  const classes = useStyles();
+
+  if (error) {
+    console.log(error);
+    toast.error("Bad Connection", {
+      position: "bottom-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+    return <FailedToConnectToBackend />;
+  }
+  if (!data) {
+    return <FailedToConnectToBackend />;
+  }
+  let jsonValue = JSON.stringify(data, null, 2);
+
+  let myUser = data as BasicResponse<User>;
+  let user = myUser.data;
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);
@@ -71,27 +108,30 @@ export default function VerticalTabs() {
         aria-label="Vertical tabs example"
         className={classes.tabs}
       >
-        <Tab label="Storages" {...a11yProps(0)} />
-        <Tab label="Repositories" {...a11yProps(1)} />
-        <Tab label="Users" {...a11yProps(2)} />
-        <Tab label="Settings" {...a11yProps(3)} />
-        <Tab label="Me" {...a11yProps(4)} />
+        <Tab label="Me" {...a11yProps(0)} />
+
+        <Tab disabled={!user.permissions.admin} label="Storages" {...a11yProps(1)} />
+        <Tab disabled={!user.permissions.admin} label="Repositories" {...a11yProps(2)} />
+        <Tab disabled={!user.permissions.admin} label="Users" {...a11yProps(3)} />
+        <Tab disabled={!user.permissions.admin} label="Settings" {...a11yProps(4)} />
       </Tabs>
+
       <TabPanel value={value} index={0}>
-        <ShowStorages />
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-        <ShowRepos />
-      </TabPanel>
-      <TabPanel value={value} index={2}>
-        <ShowUsers />
-      </TabPanel>
-      <TabPanel value={value} index={3}>
-        <h1>Settings</h1>
-      </TabPanel>
-      <TabPanel value={value} index={4}>
         <Me />
       </TabPanel>
+      <TabPanel value={value} index={1}>
+        <ShowStorages />
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+        <ShowRepos />
+      </TabPanel>
+      <TabPanel value={value} index={3}>
+        <ShowUsers />
+      </TabPanel>
+      <TabPanel value={value} index={4}>
+        <h1>Settings</h1>
+      </TabPanel>
+
     </div>
-  );
+  )
 }

@@ -75,7 +75,7 @@ const fetcher = (url) => {
 };
 
 export default function Me() {
-  const { data, error } = useSWR(API_URL + "/api/repositories/list", fetcher);
+  const { data, error } = useSWR(API_URL + "/api/me", fetcher);
   if (error) {
     console.log(error);
     toast.error("Bad Connection", {
@@ -111,6 +111,7 @@ export function DisplayUser({ user }) {
 
   return (
     <div className={classes.root}>
+        <h1>Hello {user.username}</h1>
       <AppBar position="static">
         <Tabs
           value={userTab}
@@ -208,7 +209,7 @@ export function ChangePassword({ user }) {
         </Grid>
       </Grid>
       <Button type="submit" fullWidth variant="contained" color="primary">
-        Change Password{" "}
+        Change Password
       </Button>
     </form>
   );

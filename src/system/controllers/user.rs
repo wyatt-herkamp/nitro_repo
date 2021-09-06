@@ -22,7 +22,10 @@ pub async fn list_users(
 ) -> Result<APIResponse<ListUsers>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin{
+        return Err(NotAuthorized);
+    }
     let vec = get_users(&connection)?;
 
     let response = ListUsers { users: vec };
@@ -51,7 +54,10 @@ pub async fn modify_user(
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin{
+        return Err(NotAuthorized);
+    }
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
     user.update(nc.0.clone());
     update_user(&user, &connection)?;
@@ -67,7 +73,10 @@ pub async fn change_password(
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin{
+        return Err(NotAuthorized);
+    }
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
     let string = nc.0.hash().unwrap();
     println!("{}", &string);
@@ -85,7 +94,10 @@ pub async fn delete_user(
     let connection = pool.get()?;
     installed(&connection)?;
 
-    let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin{
+        return Err(NotAuthorized);
+    }
     let option = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
 
     return Ok(APIResponse::<bool>::new(
