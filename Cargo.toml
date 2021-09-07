@@ -42,7 +42,7 @@ lazy-static-include = "3.1.1"
 toml="0.5.8"
 lazy_static = "1.4.0"
 uuid = { version = "0.8", features = ["serde", "v4"] }
-argon2 = "0.2.1"
+argon2 = "0.3.0"
 rand_core = { version = "0.6.3", features = ["std"] }
 lettre = "0.10.0-rc.3"
 rust-embed = {version="5.9.0", features=["interpolate-folder-path"]}

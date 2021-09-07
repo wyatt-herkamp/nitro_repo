@@ -482,10 +482,11 @@ checksum = "dabe5a181f83789739c194cbe5a897dde195078fac08568d09221fd6137a7ba8"
 
 [[package]]
 name = "argon2"
-version = "0.2.3"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e99a67e1c7e8bb14bdb2d8f4046da246e138c99f605499a0bb7aa39e9ec52435"
+checksum = "d805bb12b532be9ce066df7913311f43716b41d8d780e9322113e8a6ae7c41ab"
 dependencies = [
+ "base64ct",
  "blake2",
  "password-hash",
 ]
@@ -2384,9 +2385,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd482dfb8cfba5a93ec0f91e1c0f66967cb2fdc1a8dba646c4f9202c5d05d785"
+checksum = "7ad7268ef9bc463fddde8361d358fbfae1aeeb1fb62eca111cd8c763bf1c5891"
 dependencies = [
  "base64ct",
  "rand_core 0.6.3",
