@@ -18,7 +18,7 @@ serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
 serde_qs = "0.8.4"
 zip = "0.5.13"
-futures = "0.3.15"
+futures = "0.3.17"
 sanitize-filename = "0.3"
 actix-files = "0.5.0"
 env_logger = "0.8"
@@ -47,6 +47,6 @@ rand_core = { version = "0.6.3", features = ["std"] }
 lettre = "0.10.0-rc.3"
 rust-embed = {version="5.9.0", features=["interpolate-folder-path"]}
 handlebars = "4.1.0"
-serde_yaml = { version = "0.8.4" }
+serde_yaml = { version = "0.8.20" }
 tera = "1.12.1"
 base64 = "0.13.0"
