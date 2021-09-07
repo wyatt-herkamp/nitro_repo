@@ -24,7 +24,7 @@
     "react-toastify": "^8.0.2",
     "remark": "^14.0.1",
     "remark-html": "^14.0.1",
-    "swr": "^0.5.6",
+    "swr": "^1.0.0",
     "use-between": "0.0.18"
   },
   "devDependencies": {
