@@ -52,6 +52,7 @@ table! {
         repo_type -> Text,
         storage -> Bigint,
         settings -> Text,
+        security -> Text,
         created ->Bigint,
     }
 }

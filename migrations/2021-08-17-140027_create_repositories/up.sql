@@ -5,6 +5,7 @@ CREATE TABLE repositories
     repo_type  TEXT,
     storage BIGINT,
     settings  TEXT,
+    security  TEXT,
     created BIGINT
 
 )

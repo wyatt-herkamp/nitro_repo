@@ -5,6 +5,15 @@ use crate::repository::models::Repository;
 use crate::{repository};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
+pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+    let _result1 = diesel::update(repositories.filter(id.eq(repo.id)))
+        .set((
+            settings.eq(repo.settings.clone()),
+        ))
+        .execute(conn);
+    Ok(())
+}
 
 pub fn get_repo_by_name_and_storage(
     d: String,

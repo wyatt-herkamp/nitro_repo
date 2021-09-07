@@ -10,7 +10,6 @@ use diesel::sql_types::Text;
 use diesel::{deserialize, serialize};
 
 
-
 use crate::repository::models::Policy::Mixed;
 
 use std::fmt::Debug;
@@ -22,17 +21,21 @@ pub enum Policy {
     Snapshot,
     Mixed,
 }
+
 impl Policy {
     fn default() -> Self {
         return Mixed;
     }
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+
+#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
+#[sql_type = "Text"]
 pub struct SecurityRules {
     //Default true. If false only people listed in deployers can deploy
     #[serde(default = "default")]
     pub open_to_all_deployers: bool,
     //List of deployers
+    #[serde(default = "Vec::new")]
     pub deployers: Vec<i64>,
     #[serde(default = "default")]
     pub public: bool,
@@ -41,12 +44,19 @@ pub struct SecurityRules {
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub struct RepositorySettings {
-    pub security_rules: Option<SecurityRules>,
     #[serde(default = "default")]
     pub active: bool,
     #[serde(default = "Policy::default")]
     pub policy: Policy,
 }
+
+impl RepositorySettings {
+    pub fn update(&mut self, settings: RepositorySettings) {
+        self.policy = settings.policy;
+        self.active = settings.active;
+    }
+}
+
 fn default() -> bool {
     true
 }
@@ -68,6 +78,23 @@ impl ToSql<Text, Mysql> for RepositorySettings {
     }
 }
 
+impl FromSql<Text, Mysql> for SecurityRules {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<SecurityRules> {
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
+        let result: SecurityRules = serde_json::from_str(t.as_str())?;
+        return Ok(result);
+    }
+}
+
+impl ToSql<Text, Mysql> for SecurityRules {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        let s = serde_json::to_string(&self)?;
+        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "repositories"]
 pub struct Repository {
@@ -76,5 +103,6 @@ pub struct Repository {
     pub repo_type: String,
     pub storage: i64,
     pub settings: RepositorySettings,
+    pub security: SecurityRules,
     pub created: i64,
 }

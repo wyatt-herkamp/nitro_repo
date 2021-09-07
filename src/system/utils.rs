@@ -104,14 +104,12 @@ pub fn can_deploy(
         return Ok(false);
     }
     if !user.permissions.admin {
-        if let Some(settings) = &repo.settings.security_rules {
-            if settings.open_to_all_deployers {
-                if user.permissions.deployer {
-                    return Ok(true);
-                }
-            } else {
-                return Ok(settings.deployers.contains(&user.id));
+        if repo.security.open_to_all_deployers {
+            if user.permissions.deployer {
+                return Ok(true);
             }
+        } else {
+            return Ok(repo.security.deployers.contains(&user.id));
         }
     }
     return Ok(true);
@@ -125,12 +123,14 @@ pub struct NewUser {
     pub password: Option<NewPassword>,
     pub permissions: UserPermissions,
 }
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModifyUser {
     pub name: String,
     pub email: String,
     pub permissions: UserPermissions,
 }
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewPassword {
     pub password: String,
