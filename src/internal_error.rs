@@ -7,11 +7,11 @@ use std::str::{FromStr, ParseBoolError};
 use actix_web::http::header::ToStrError;
 use actix_web::HttpResponse;
 use derive_more::{Display, Error};
-use hyper::StatusCode;
 
 
 use crate::repository::repo_error::RepositoryError;
 use crate::error::request_error::RequestError;
+use actix_web::http::StatusCode;
 
 #[derive(Debug, Display, Error)]
 pub enum InternalError {
@@ -20,8 +20,6 @@ pub enum InternalError {
     ActixWebError(actix_web::Error),
     R2D2Error(r2d2::Error),
     BooleanParseError(ParseBoolError),
-    HyperError(hyper::Error),
-    TeraError(tera::Error),
     SMTPTransportError(lettre::transport::smtp::Error),
     MissingArgument(GenericError),
     Error(GenericError),
@@ -94,11 +92,7 @@ impl From<serde_json::Error> for InternalError {
     }
 }
 
-impl From<tera::Error> for InternalError {
-    fn from(err: tera::Error) -> InternalError {
-        InternalError::TeraError(err)
-    }
-}
+
 
 impl From<actix_web::Error> for InternalError {
     fn from(err: actix_web::Error) -> InternalError {
@@ -124,11 +118,6 @@ impl From<ParseBoolError> for InternalError {
     }
 }
 
-impl From<hyper::Error> for InternalError {
-    fn from(err: hyper::Error) -> InternalError {
-        InternalError::HyperError(err)
-    }
-}
 
 impl From<RepositoryError> for InternalError {
     fn from(value: RepositoryError) -> Self {

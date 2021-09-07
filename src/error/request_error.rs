@@ -7,12 +7,12 @@ use std::str::{ParseBoolError};
 use actix_web::http::header::ToStrError;
 use actix_web::{HttpResponse};
 use derive_more::{Display, Error};
-use hyper::StatusCode;
 
 use crate::api_response::{APIResponse};
 use crate::error::internal_error::InternalError;
 use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
+use actix_web::http::StatusCode;
 
 #[derive(Debug, Display, Error)]
 pub enum RequestError {
@@ -104,12 +104,6 @@ impl From<serde_json::Error> for RequestError {
     }
 }
 
-impl From<tera::Error> for RequestError {
-    fn from(err: tera::Error) -> RequestError {
-        InternalError::TeraError(err).into()
-    }
-}
-
 impl From<actix_web::Error> for RequestError {
     fn from(err: actix_web::Error) -> RequestError {
         InternalError::ActixWebError(err).into()
@@ -134,11 +128,6 @@ impl From<ParseBoolError> for RequestError {
     }
 }
 
-impl From<hyper::Error> for RequestError {
-    fn from(err: hyper::Error) -> RequestError {
-        InternalError::HyperError(err).into()
-    }
-}
 
 impl From<RepositoryError> for RequestError {
     fn from(value: RepositoryError) -> RequestError {

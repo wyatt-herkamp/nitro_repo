@@ -24,7 +24,6 @@ use diesel::r2d2::{self, ConnectionManager};
 use log::info;
 use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use tera::Tera;
 
 
 use crate::error::request_error::RequestError;
@@ -41,25 +40,10 @@ pub mod internal_error;
 pub mod repository;
 pub mod schema;
 pub mod settings;
-pub mod site_response;
 pub mod storage;
 pub mod system;
 pub mod utils;
 
-fn url(args: &HashMap<String, serde_json::Value>) -> Result<tera::Value, tera::Error> {
-    let option = args.get("path");
-    return if option.is_some() {
-        let x = option.unwrap().to_string().replace("\"", "");
-        println!("{}", &x);
-        let x1 = std::env::var("URL").unwrap();
-        let string = format!("{}/{}", x1, x);
-        println!("{}", &string);
-        let result = tera::Value::from(&*string);
-        Ok(result)
-    } else {
-        Err(tera::Error::from("Missing Param Tera".to_string()))
-    };
-}
 
 fn url_raw(value: &str) -> String {
     let url = std::env::var("URL").unwrap();
@@ -91,18 +75,10 @@ async fn main() -> std::io::Result<()> {
             .allow_any_header()
             .allow_any_method()
             .allow_any_origin();
-        let result1 = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/site/templates/**/*"));
-        if result1.is_err() {
-            println!("{}", result1.err().unwrap());
-            panic!("Unable to create Tera")
-        }
-        let mut tera = result1.unwrap();
-        tera.register_function("url", url);
         App::new()
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .data(pool.clone())
-            .data(tera)
             .data(PayloadConfig::new(1 * 1024 * 1024))
             .service(install::installed)
             .service(settings::controller::update_setting)

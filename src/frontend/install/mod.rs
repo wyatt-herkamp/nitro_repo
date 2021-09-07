@@ -1,6 +1,5 @@
 use actix_web::{post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
-use tera::Context;
 
 use crate::api_response::APIResponse;
 use crate::error::request_error::RequestError;
@@ -53,7 +52,5 @@ pub async fn install_post(
         env!("CARGO_PKG_VERSION").to_string(),
         &connection,
     )?;
-    let mut context = Context::new();
-    context.insert("url", &url_raw(""));
     return Ok(APIResponse::new(true, Some(true)));
 }

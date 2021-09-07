@@ -7,7 +7,6 @@ use std::str::{FromStr, ParseBoolError};
 
 use actix_web::{HttpResponse};
 use derive_more::{Display, Error};
-use hyper::StatusCode;
 
 
 
@@ -15,6 +14,7 @@ use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
 use base64::DecodeError;
 use std::string::FromUtf8Error;
+use actix_web::http::StatusCode;
 
 #[derive(Debug, Display, Error)]
 pub enum InternalError {
@@ -23,10 +23,8 @@ pub enum InternalError {
     ActixWebError(actix_web::Error),
     R2D2Error(r2d2::Error),
     BooleanParseError(ParseBoolError),
-    HyperError(hyper::Error),
     DecodeError(DecodeError),
     UTF8Error(FromUtf8Error),
-    TeraError(tera::Error),
     SMTPTransportError(lettre::transport::smtp::Error),
     MissingArgument(GenericError),
     Error(GenericError),
