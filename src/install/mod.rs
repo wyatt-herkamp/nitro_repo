@@ -3,7 +3,6 @@ use actix_web::{get, post, web, HttpRequest};
 
 
 use crate::api_response::{APIResponse};
-use crate::apierror::APIError;
 
 
 
@@ -11,9 +10,10 @@ use crate::apierror::APIError;
 
 
 use crate::{utils, DbPool};
+use crate::error::request_error::RequestError;
 
 #[get("/api/installed")]
-pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, APIError> {
+pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, RequestError> {
     let connection = pool.get()?;
     let result = utils::installed(&connection);
     if result.is_err() {

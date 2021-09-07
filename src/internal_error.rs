@@ -10,8 +10,8 @@ use derive_more::{Display, Error};
 use hyper::StatusCode;
 
 
-use crate::apierror::APIError;
 use crate::repository::repo_error::RepositoryError;
+use crate::error::request_error::RequestError;
 
 #[derive(Debug, Display, Error)]
 pub enum InternalError {
@@ -25,7 +25,6 @@ pub enum InternalError {
     SMTPTransportError(lettre::transport::smtp::Error),
     MissingArgument(GenericError),
     Error(GenericError),
-    Internal(APIError),
     UnInstalled,
     RepoError(RepositoryError),
 }
@@ -162,11 +161,7 @@ impl From<String> for InternalError {
     }
 }
 
-impl From<APIError> for InternalError {
-    fn from(value: APIError) -> Self {
-        InternalError::Internal(value)
-    }
-}
+
 
 impl From<&str> for InternalError {
     fn from(value: &str) -> Self {

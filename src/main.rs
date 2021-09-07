@@ -34,7 +34,6 @@ use actix_web::web::PayloadConfig;
 use std::fs::read_to_string;
 
 pub mod api_response;
-pub mod apierror;
 pub mod error;
 pub mod frontend;
 pub mod install;

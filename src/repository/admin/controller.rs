@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
 
-use crate::apierror::{APIError};
 use crate::error::request_error::RequestError;
 use crate::repository::action::{add_new_repository, get_repo_by_name_and_storage, get_repositories, update_repo};
 use crate::repository::models::{Repository, RepositorySettings, SecurityRules};
@@ -24,13 +23,13 @@ pub struct ListRepositories {
 pub async fn list_repos(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<ListRepositories>, APIError> {
+) -> Result<APIResponse<ListRepositories>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
-        return Err(APIError::NotAuthorized);
+        return Err(RequestError::NotAuthorized);
     }
     let vec = get_repositories(&connection)?;
 
@@ -55,7 +54,7 @@ pub async fn add_repo(
     let connection = pool.get()?;
     installed(&connection)?;
     let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
         return Err(RequestError::NotAuthorized);
     }

@@ -6,8 +6,7 @@ use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::apierror::APIError;
-use crate::apierror::APIError::MissingArgument;
+
 use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
@@ -17,11 +16,12 @@ use crate::system::models::{User, UserPermissions};
 use crate::utils::get_current_time;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use crate::error::request_error::RequestError::MissingArgument;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
     conn: &MysqlConnection,
-) -> Result<Option<User>, APIError> {
+) -> Result<Option<User>, RequestError> {
     let option = header_map.get("Authorization");
     if option.is_none() {
         return Ok(None);
@@ -138,9 +138,9 @@ pub struct NewPassword {
 }
 
 impl NewPassword {
-    pub fn hash(&self) -> Result<String, APIError> {
+    pub fn hash(&self) -> Result<String, RequestError> {
         if self.password != self.password_two {
-            return Err(APIError::from("Mismatching Password"));
+            return Err(RequestError::from("Mismatching Password"));
         }
         let salt = SaltString::generate(&mut OsRng);
 
@@ -153,18 +153,18 @@ impl NewPassword {
     }
 }
 
-pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, APIError> {
+pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, RequestError> {
     let username = new_user
         .username
         .ok_or(MissingArgument("Username".into()))?;
     let option = system::action::get_user_by_username(username.clone(), &conn)?;
     if option.is_some() {
-        return Err(APIError::Error("Username Already Exists".into()));
+        return Err(RequestError::Error("Username Already Exists".into()));
     }
     let email = new_user.email.ok_or(MissingArgument("Email".into()))?;
     let option = system::action::get_user_by_email(email.clone(), &conn)?;
     if option.is_some() {
-        return Err(APIError::from("Email Already Exists"));
+        return Err(RequestError::from("Email Already Exists"));
     }
 
     let user = User {
@@ -181,7 +181,7 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, APIEr
     };
     add_new_user(&user, &conn)?;
     return Ok(
-        get_user_by_username(username, &conn)?.ok_or(APIError::from("Unable to find new user"))?
+        get_user_by_username(username, &conn)?.ok_or(RequestError::from("Unable to find new user"))?
     );
 }
 

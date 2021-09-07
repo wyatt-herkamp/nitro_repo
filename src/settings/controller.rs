@@ -2,7 +2,6 @@ use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
-use crate::apierror::APIError;
 
 use crate::error::request_error::RequestError;
 use crate::settings::action::get_setting;
@@ -48,7 +47,7 @@ pub async fn update_setting(
         return Err(RequestError::NotAuthorized);
     }
     let mut option =
-        get_setting(setting.as_str(), &connection)?.ok_or_else(|| APIError::NotFound)?;
+        get_setting(setting.as_str(), &connection)?.ok_or_else(|| RequestError::NotFound)?;
     option.set_value(request.value.clone());
     settings::action::update_setting(&option, &connection)?;
     let option =

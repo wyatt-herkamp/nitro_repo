@@ -1,5 +1,4 @@
 use crate::api_response::APIResponse;
-use crate::apierror::APIError;
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::{NotAuthorized};
 use crate::system::action::{update_user};
@@ -17,7 +16,7 @@ pub async fn me(
     let connection = pool.get()?;
     installed(&connection)?;
     let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| APIError::NotAuthorized)?;
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
 
     return Ok(APIResponse::new(true, Some(user)));
 }

@@ -1,4 +1,3 @@
-use crate::apierror::APIError;
 
 
 
@@ -20,6 +19,7 @@ use crate::settings::action::get_setting;
 use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path};
+use crate::error::request_error::RequestError;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -40,10 +40,10 @@ impl Resources {
     }
 }
 
-pub fn installed(conn: &MysqlConnection) -> Result<(), APIError> {
+pub fn installed(conn: &MysqlConnection) -> Result<(), RequestError> {
     let option = get_setting("INSTALLED", &conn)?;
     if option.is_none() {
-        return Err(APIError::UnInstalled);
+        return Err(RequestError::UnInstalled);
     }
 
     return Ok(());

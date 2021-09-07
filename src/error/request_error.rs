@@ -10,7 +10,6 @@ use derive_more::{Display, Error};
 use hyper::StatusCode;
 
 use crate::api_response::{APIResponse};
-use crate::apierror::APIError;
 use crate::error::internal_error::InternalError;
 use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
@@ -21,6 +20,7 @@ pub enum RequestError {
     InvalidLogin,
     NotFound,
     BadRequest(GenericError),
+    Error(GenericError),
     MismatchingPasswords,
     AlreadyExists,
     MissingArgument(GenericError),
@@ -91,12 +91,6 @@ impl actix_web::error::ResponseError for RequestError {
     }
 }
 
-//from<Error>
-impl From<APIError> for RequestError {
-    fn from(_err: APIError) -> RequestError {
-        panic!("LEGACY CODE FIX IT FUCKER")
-    }
-}
 
 impl From<diesel::result::Error> for RequestError {
     fn from(err: diesel::result::Error) -> RequestError {

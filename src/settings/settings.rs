@@ -9,11 +9,11 @@ use diesel::{deserialize, serialize};
 
 use crate::schema::*;
 
-use crate::apierror::APIError;
 use crate::utils::Resources;
 use std::io::Write;
 use std::str::FromStr;
 use rust_embed::EmbeddedFile;
+use crate::error::request_error::RequestError;
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
@@ -101,9 +101,9 @@ impl From<&str> for Setting {
 }
 
 impl FromStr for Setting {
-    type Err = APIError;
+    type Err = RequestError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        SettingManager::get_setting(s.to_string()).ok_or(APIError::from("Missing Error"))
+        SettingManager::get_setting(s.to_string()).ok_or(RequestError::from("Missing Error"))
     }
 }
