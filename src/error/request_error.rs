@@ -20,12 +20,13 @@ pub enum RequestError {
     NotAuthorized,
     InvalidLogin,
     NotFound,
-    BadRequest,
+    BadRequest(GenericError),
     MismatchingPasswords,
     AlreadyExists,
     MissingArgument(GenericError),
     UnInstalled,
     InternalError(InternalError),
+
 }
 
 impl RequestError {
@@ -39,6 +40,18 @@ impl RequestError {
                 };
                 let result = HttpResponse::Ok()
                     .status(StatusCode::UNAUTHORIZED)
+                    .content_type("application/json")
+                    .body(serde_json::to_string(&response).unwrap());
+                return result;
+            }
+            RequestError::BadRequest(error) => {
+                let response = APIResponse {
+                    success: false,
+                    data: Some(error.error.clone()),
+                    status_code: Some(401),
+                };
+                let result = HttpResponse::Ok()
+                    .status(StatusCode::BAD_REQUEST)
                     .content_type("application/json")
                     .body(serde_json::to_string(&response).unwrap());
                 return result;

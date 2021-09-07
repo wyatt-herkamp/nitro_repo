@@ -14,6 +14,7 @@ pub enum RepoResponse {
     Ok,
     NotFound,
     NotAuthorized,
+    BadRequest(String),
 }
 
 pub type RepoResult = Result<RepoResponse, RequestError>;

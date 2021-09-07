@@ -30,6 +30,7 @@ impl Policy {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityRules {
     //Default true. If false only people listed in deployers can deploy
+    #[serde(default = "default")]
     pub open_to_all_deployers: bool,
     //List of deployers
     pub deployers: Vec<i64>,
@@ -43,8 +44,6 @@ pub struct RepositorySettings {
     pub security_rules: Option<SecurityRules>,
     #[serde(default = "default")]
     pub active: bool,
-    #[serde(default = "default")]
-    pub re_deployment: bool,
     #[serde(default = "Policy::default")]
     pub policy: Policy,
 }

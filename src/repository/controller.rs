@@ -1,8 +1,6 @@
 use crate::api_response::APIResponse;
 
 
-
-
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotFound;
 use crate::repository::action::{
@@ -26,6 +24,7 @@ use actix_web::{delete, get, head, patch, post, put, web, HttpRequest, HttpRespo
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;
+use crate::repository::repository::RepoResponse::BadRequest;
 
 //
 
@@ -76,11 +75,11 @@ pub async fn get_repository(
     let connection = pool.get()?;
     installed(&connection)?;
     println!("LOOK");
-    let option1 = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0 .1.clone(), option1.id.clone(), &connection)?
+    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
     let t = option.repo_type.clone();
-    let mut string = path.0 .2.clone();
+    let mut string = path.0.2.clone();
     if string.ends_with("api_browse.json") {
         string = string.replace("api_browse.json", "");
     }
@@ -97,7 +96,7 @@ pub async fn get_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0 .2.clone(), r);
+    return handle_result(x, path.0.2.clone(), r);
 }
 
 pub fn handle_result(
@@ -134,6 +133,9 @@ pub fn handle_result(
         RepoResponse::NotAuthorized => {
             return Err(RequestError::NotAuthorized);
         }
+        RepoResponse::BadRequest(e) => {
+            return Err(RequestError::BadRequest(e.into()));
+        }
     };
 }
 
@@ -142,19 +144,36 @@ pub async fn post_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    _bytes: Bytes,
-) -> Result<APIResponse<User>, RequestError> {
+    bytes: Bytes,
+) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    println!("POST {}", path.0 .0);
-    println!("{}", path.0 .1);
-    println!("{}", path.0 .2);
-    println!(
-        "{}",
-        r.headers().get("Authorization").unwrap().to_str().unwrap()
-    );
+    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+        .ok_or(RequestError::NotFound)?;
+    if !option.settings.active {
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
+    }
+    let t = option.repo_type.clone();
+    let mut string = path.0.2.clone();
+    if string.ends_with("api_browse.json") {
+        string = string.replace("api_browse.json", "");
+    }
 
-    return Ok(APIResponse::new(true, None));
+    let request = RepositoryRequest {
+        //TODO DONT DO THIS
+        request: r.clone(),
+        storage: option1,
+        repository: option,
+        value: string,
+    };
+    let x = match t.as_str() {
+        "maven" => MavenHandler::handle_post(request, &connection, bytes),
+        _ => {
+            panic!("Unknown REPO")
+        }
+    }?;
+    return handle_result(x, path.0.2.clone(), r);
 }
 
 #[patch("/storages/{storage}/{repository}/{file:.*}")]
@@ -162,19 +181,36 @@ pub async fn patch_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    _bytes: Bytes,
-) -> Result<APIResponse<User>, RequestError> {
+    bytes: Bytes,
+) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    println!("PATCH {}", path.0 .0);
-    println!("{}", path.0 .1);
-    println!("{}", path.0 .2);
-    println!(
-        "{}",
-        r.headers().get("Authorization").unwrap().to_str().unwrap()
-    );
+    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+        .ok_or(RequestError::NotFound)?;
+    if !option.settings.active {
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
+    }
+    let t = option.repo_type.clone();
+    let mut string = path.0.2.clone();
+    if string.ends_with("api_browse.json") {
+        string = string.replace("api_browse.json", "");
+    }
 
-    return Ok(APIResponse::new(true, None));
+    let request = RepositoryRequest {
+        //TODO DONT DO THIS
+        request: r.clone(),
+        storage: option1,
+        repository: option,
+        value: string,
+    };
+    let x = match t.as_str() {
+        "maven" => MavenHandler::handle_patch(request, &connection, bytes),
+        _ => {
+            panic!("Unknown REPO")
+        }
+    }?;
+    return handle_result(x, path.0.2.clone(), r);
 }
 
 #[put("/storages/{storage}/{repository}/{file:.*}")]
@@ -186,14 +222,18 @@ pub async fn put_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let option1 = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0 .1.clone(), option1.id.clone(), &connection)?
+    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
+    if !option.settings.active {
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
+    }
     let t = option.repo_type.clone();
-    let mut string = path.0 .2.clone();
+    let mut string = path.0.2.clone();
     if string.ends_with("api_browse.json") {
         string = string.replace("api_browse.json", "");
     }
+
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
@@ -207,7 +247,7 @@ pub async fn put_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0 .2.clone(), r);
+    return handle_result(x, path.0.2.clone(), r);
 }
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]
@@ -215,15 +255,34 @@ pub async fn head_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-) -> Result<APIResponse<User>, RequestError> {
+) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    println!("PUT {}", path.0 .0);
-    println!("{}", path.0 .1);
 
-    println!("{}", path.0 .2);
-    for x in r.headers().keys() {
-        println!("{}: {}", &x, r.headers().get(x).unwrap().to_str().unwrap());
+    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+        .ok_or(RequestError::NotFound)?;
+    if !option.settings.active {
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
     }
-    return Ok(APIResponse::new(true, None));
+    let t = option.repo_type.clone();
+    let mut string = path.0.2.clone();
+    if string.ends_with("api_browse.json") {
+        string = string.replace("api_browse.json", "");
+    }
+
+    let request = RepositoryRequest {
+        //TODO DONT DO THIS
+        request: r.clone(),
+        storage: option1,
+        repository: option,
+        value: string,
+    };
+    let x = match t.as_str() {
+        "maven" => MavenHandler::handle_head(request, &connection),
+        _ => {
+            panic!("Unknown REPO")
+        }
+    }?;
+    return handle_result(x, path.0.2.clone(), r);
 }
