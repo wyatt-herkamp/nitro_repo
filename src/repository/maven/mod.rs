@@ -15,12 +15,12 @@ pub struct MavenHandler;
 
 impl RepositoryType for MavenHandler {
     fn handle_get(request: RepositoryRequest, _conn: &MysqlConnection) -> RepoResult {
+
         let buf = PathBuf::new()
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
             .join(request.value);
-        println!("{}-{}", buf.clone().to_str().unwrap(), buf.exists().clone());
         if buf.exists() {
             if buf.is_dir() {
                 let dir = read_dir(buf)?;
@@ -96,7 +96,6 @@ impl RepositoryType for MavenHandler {
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
             .join(request.value);
-        println!("{}-{}", buf.clone().to_str().unwrap(), buf.exists().clone());
         //TODO do not return the body
         if buf.exists() {
             if buf.is_dir() {
