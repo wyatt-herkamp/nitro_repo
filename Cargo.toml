@@ -45,7 +45,7 @@ uuid = { version = "0.8", features = ["serde", "v4"] }
 argon2 = "0.2.1"
 rand_core = { version = "0.6.3", features = ["std"] }
 lettre = "0.10.0-rc.3"
-rust-embed = {version="5.9.0", features=["interpolate-folder-path"]}
+rust-embed = {version="6.2.0", features=["interpolate-folder-path"]}
 handlebars = "4.1.0"
 serde_yaml = { version = "0.8.20" }
 tera = "1.12.1"
