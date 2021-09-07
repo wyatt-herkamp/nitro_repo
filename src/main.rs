@@ -110,6 +110,8 @@ async fn main() -> std::io::Result<()> {
             .service(settings::controller::about_setting)
             .service(repository::admin::controller::add_repo)
             .service(repository::admin::controller::list_repos)
+            .service(repository::admin::controller::modify_security)
+            .service(repository::admin::controller::modify_settings)
             .service(storage::admin::controller::add_storage)
             .service(storage::admin::controller::list_storages)
             .configure(repository::init)

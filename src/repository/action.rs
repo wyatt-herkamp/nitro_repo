@@ -10,6 +10,7 @@ pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), dies
     let _result1 = diesel::update(repositories.filter(id.eq(repo.id)))
         .set((
             settings.eq(repo.settings.clone()),
+            security.eq(repo.security.clone()),
         ))
         .execute(conn);
     Ok(())

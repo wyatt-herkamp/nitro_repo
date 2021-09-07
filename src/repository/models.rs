@@ -57,6 +57,14 @@ impl RepositorySettings {
     }
 }
 
+impl SecurityRules {
+    pub fn update(&mut self, security: SecurityRules) {
+        self.public = security.public;
+        self.deployers = security.deployers;
+        self.open_to_all_deployers = security.open_to_all_deployers;
+    }
+}
+
 fn default() -> bool {
     true
 }

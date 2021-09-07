@@ -76,7 +76,7 @@ pub async fn add_repo(
         security: SecurityRules {
             open_to_all_deployers: true,
             deployers: vec![],
-            public: true
+            public: true,
         },
         created: get_current_time(),
     };
@@ -93,8 +93,8 @@ pub async fn add_repo(
     return Ok(APIResponse::new(true, Some(option)));
 }
 
-#[post("/api/admin/repository/{storage}/{repo}/modify")]
-pub async fn modify_user(
+#[post("/api/admin/repository/{storage}/{repo}/modify/settings")]
+pub async fn modify_settings(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String)>,
@@ -103,13 +103,34 @@ pub async fn modify_user(
     let connection = pool.get()?;
     installed(&connection)?;
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    if !admin.permissions.admin{
+    if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
     let string = path.0.1.clone();
     let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
     let mut repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?.ok_or(NotFound)?;
     repository.settings.update(nc.0.clone());
+    update_repo(&repository, &connection)?;
+    return Ok(APIResponse::new(true, Some(repository)));
+}
+
+#[post("/api/admin/repository/{storage}/{repo}/modify/security")]
+pub async fn modify_security(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(String, String)>,
+    nc: web::Json<SecurityRules>,
+) -> Result<APIResponse<Repository>, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin {
+        return Err(NotAuthorized);
+    }
+    let string = path.0.1.clone();
+    let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
+    let mut repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?.ok_or(NotFound)?;
+    repository.security.update(nc.0.clone());
     update_repo(&repository, &connection)?;
     return Ok(APIResponse::new(true, Some(repository)));
 }
