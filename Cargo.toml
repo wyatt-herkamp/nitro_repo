@@ -21,7 +21,7 @@ zip = "0.5.13"
 futures = "0.3.15"
 sanitize-filename = "0.3"
 actix-files = "0.5.0"
-env_logger = "0.8"
+env_logger = "0.9"
 rand = "0.8.4"
 futures-util = "0.3.17"
 actix-web = {version = "3.3.2",features = ["openssl"] }
