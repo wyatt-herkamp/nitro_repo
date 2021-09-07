@@ -31,7 +31,7 @@ impl Resources {
         if buf.exists() {
             return read(buf).unwrap();
         } else {
-            return Resources::get(file).unwrap().to_vec();
+            return Resources::get(file).unwrap().data.to_vec();
         }
     }
     pub fn file_get_string(file: &str) -> String {

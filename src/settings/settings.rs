@@ -13,6 +13,7 @@ use crate::apierror::APIError;
 use crate::utils::Resources;
 use std::io::Write;
 use std::str::FromStr;
+use rust_embed::EmbeddedFile;
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
@@ -59,7 +60,7 @@ impl DBSetting {
 }
 
 pub fn get_file() -> String {
-    let cow = Resources::get("settings.toml").unwrap();
+    let cow = Resources::get("settings.toml").unwrap().data;
     let string = String::from_utf8(cow.to_vec()).unwrap();
     return string;
 }

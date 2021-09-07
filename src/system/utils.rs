@@ -146,7 +146,7 @@ impl NewPassword {
 
         let argon2 = Argon2::default();
         let password_hash = argon2
-            .hash_password_simple(self.password.as_bytes(), salt.as_ref())
+            .hash_password(self.password.as_bytes(), salt.as_ref())
             .unwrap()
             .to_string();
         return Ok(password_hash);
