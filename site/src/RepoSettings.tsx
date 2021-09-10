@@ -79,7 +79,7 @@ export default function RepoSettings({ repo }) {
         <GeneralSettings repo={repo} />
       </TabPanel>
       <TabPanel value={repoTab} index={1}>
-        Item Two
+        <Security repo={repo} />
       </TabPanel>
     </div>
   );
@@ -91,12 +91,12 @@ export function GeneralSettings({ repo }) {
     active: repo.settings.active,
     redeploy: repo.settings.re_deployment,
   });
-  const updateRepo = async (event) => {};
+  const updateRepo = async (event) => { };
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setChecked({ ...checked, [event.target.name]: event.target.checked });
   };
   return (
-    <form className={classes.form} noValidate onSubmit={updateRepo}>
+    <form noValidate onSubmit={updateRepo}>
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <FormControlLabel
@@ -125,7 +125,7 @@ export function GeneralSettings({ repo }) {
           />
         </Grid>
         <Grid item xs={12}>
-          <FormControl variant="outlined" className={classes.formControl}>
+          <FormControl variant="outlined">
             <InputLabel id="demo-simple-select-outlined-label">
               Policy
             </InputLabel>
@@ -142,6 +142,45 @@ export function GeneralSettings({ repo }) {
             </Select>
           </FormControl>
         </Grid>
+
+      </Grid>
+    </form>
+  );
+}
+
+
+export function Security({ repo }) {
+  const classes = useStyles();
+  const [checked, setChecked] = React.useState({
+    active: repo.settings.active,
+    redeploy: repo.settings.re_deployment,
+  });
+  const updateRepo = async (event) => { };
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setChecked({ ...checked, [event.target.name]: event.target.checked });
+  };
+  return (
+    <form noValidate onSubmit={updateRepo}>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <FormControl variant="outlined">
+            <InputLabel id="demo-simple-select-outlined-label">
+              Policy
+            </InputLabel>
+            <Select
+              labelId="demo-simple-select-outlined-label"
+              id="policy"
+              label="Policy"
+              name="policy"
+              defaultValue={repo.security.visibility}
+            >
+              <MenuItem value="Public">Public</MenuItem>
+              <MenuItem value="Private">Private</MenuItem>
+              <MenuItem value="Hidden">Hidden</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
       </Grid>
     </form>
   );

@@ -27,18 +27,24 @@ export interface Storage {
 export interface StorageList {
   storages: Array<Storage>;
 }
-export interface SecurityRules {}
+export interface SecurityRules {
+  open_to_all_deployers: boolean;
+  open_to_all_readers: boolean;
+  visibility: string;
+  readers: Array<number>;
+  deployers: Array<number>;
+}
 export interface RepoSettings {
   policy: string;
   active: boolean;
   re_deployment: boolean;
-  security_rules: SecurityRules;
 }
 export interface Repository {
   id: number;
   name: string;
   repo_type: string;
   settings: RepoSettings;
+  security: SecurityRules;
   storage: number;
   created: number;
 }
