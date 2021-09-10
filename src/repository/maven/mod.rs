@@ -1,7 +1,7 @@
 use crate::repository::repository::RepoResponse::{NotAuthorized, NotFound, BadRequest};
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
 
-use crate::system::utils::can_deploy_basic_auth;
+use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 use actix_web::web::{Buf, Bytes};
 
@@ -14,7 +14,10 @@ use crate::repository::models::Policy;
 pub struct MavenHandler;
 
 impl RepositoryType for MavenHandler {
-    fn handle_get(request: RepositoryRequest, _conn: &MysqlConnection) -> RepoResult {
+    fn handle_get(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
+        if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
+        }
 
         let buf = PathBuf::new()
             .join("storages")

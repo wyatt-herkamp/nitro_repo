@@ -5,7 +5,7 @@ use crate::api_response::APIResponse;
 
 use crate::error::request_error::RequestError;
 use crate::repository::action::{add_new_repository, get_repo_by_name_and_storage, get_repositories, update_repo};
-use crate::repository::models::{Repository, RepositorySettings, SecurityRules};
+use crate::repository::models::{Repository, RepositorySettings, SecurityRules, Visibility};
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
 use crate::DbPool;
@@ -75,7 +75,9 @@ pub async fn add_repo(
         security: SecurityRules {
             open_to_all_deployers: true,
             deployers: vec![],
-            public: true,
+            visibility: Visibility::Public,
+            open_to_all_readers: true,
+            readers: vec![]
         },
         created: get_current_time(),
     };

@@ -14,6 +14,7 @@ use crate::repository::models::Policy::Mixed;
 
 use std::fmt::Debug;
 use std::io::Write;
+use crate::repository::models::Visibility::Public;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Policy {
@@ -22,9 +23,22 @@ pub enum Policy {
     Mixed,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Visibility {
+    Public,
+    Private,
+    Hidden,
+}
+
 impl Policy {
     fn default() -> Self {
         return Mixed;
+    }
+}
+
+impl Visibility {
+    fn default() -> Self {
+        return Public;
     }
 }
 
@@ -37,8 +51,16 @@ pub struct SecurityRules {
     //List of deployers
     #[serde(default = "Vec::new")]
     pub deployers: Vec<i64>,
+    #[serde(default = "Visibility::default")]
+    pub visibility: Visibility,
+
+    //Default true. If false only people listed in reader can reader
+    // Requires visibility to be set to Private
     #[serde(default = "default")]
-    pub public: bool,
+    pub open_to_all_readers: bool,
+    //List of readers
+    #[serde(default = "Vec::new")]
+    pub readers: Vec<i64>,
 }
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
@@ -59,9 +81,11 @@ impl RepositorySettings {
 
 impl SecurityRules {
     pub fn update(&mut self, security: SecurityRules) {
-        self.public = security.public;
+        self.visibility = security.visibility;
         self.deployers = security.deployers;
         self.open_to_all_deployers = security.open_to_all_deployers;
+        self.readers = security.readers;
+        self.open_to_all_readers = security.open_to_all_readers;
     }
 }
 

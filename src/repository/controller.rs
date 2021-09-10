@@ -2,7 +2,7 @@ use crate::api_response::APIResponse;
 
 
 use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::NotFound;
+use crate::error::request_error::RequestError::{NotFound, NotAuthorized};
 use crate::repository::action::{
     get_repo_by_name_and_storage, get_repositories_by_storage,
 };
@@ -25,6 +25,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;
 use crate::repository::repository::RepoResponse::BadRequest;
+use actix_web::http::StatusCode;
 
 //
 
@@ -74,6 +75,11 @@ pub async fn get_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
+    println!("Query String {}", r.query_string());
+    println!("Path {}", r.path());
+    for x in r.headers().keys() {
+        println!("{}: {}", &x, r.headers().get(x).unwrap().to_str().unwrap());
+    }
     let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
@@ -130,7 +136,17 @@ pub fn handle_result(
             }
         }
         RepoResponse::NotAuthorized => {
-            return Err(RequestError::NotAuthorized);
+            let r = APIResponse {
+                success: false,
+                data: Some(RequestError::NotAuthorized.to_string()),
+                status_code: Some(401),
+            };
+            let result = HttpResponse::Ok()
+                .status(StatusCode::UNAUTHORIZED)
+                .content_type("application/json")
+                .header("WWW-Authenticate", "Basic realm=nitro_repo")
+                .body(serde_json::to_string(&r).unwrap());
+            return Ok(result);
         }
         RepoResponse::BadRequest(e) => {
             return Err(RequestError::BadRequest(e.into()));

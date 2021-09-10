@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
-use crate::repository::models::Repository;
+use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_auth_token, get_user_by_username};
 use crate::system::models::{User, UserPermissions};
@@ -73,12 +73,52 @@ pub fn can_deploy_basic_auth(
     let value = value.unwrap().to_string();
     let key = option.unwrap().to_string();
     if key.eq("Basic") {
-        return can_deploy(value, repo, conn);
+        return is_authed(value, repo, conn);
     }
     Ok(false)
 }
+pub fn can_read_basic_auth(
+    header_map: &HeaderMap,
+    repo: &Repository,
+    conn: &MysqlConnection,
+) -> Result<bool, InternalError> {
+     match repo.security.visibility {
+        Visibility::Public => {
+            return Ok(true)
+        }
+        Visibility::Private => {
+            let option = header_map.get("Authorization");
+            if option.is_none() {
+                return Ok(false);
+            }
+            let x = option.unwrap().to_str();
+            if x.is_err() {}
+            let header = x.unwrap().to_string();
 
-pub fn can_deploy(
+            let split = header.split(" ").collect::<Vec<&str>>();
+            let option = split.get(0);
+            if option.is_none() {
+                return Ok(false);
+            }
+            let value = split.get(1);
+            if value.is_none() {
+                return Ok(false);
+            }
+            let value = value.unwrap().to_string();
+            let key = option.unwrap().to_string();
+            if key.eq("Basic") {
+                return is_authed(value, repo, conn);
+            }
+            Ok(false)
+        }
+        Visibility::Hidden => {
+            return Ok(true)
+        }
+    }
+
+}
+
+pub fn is_authed(
     user: String,
     repo: &Repository,
     conn: &MysqlConnection,
