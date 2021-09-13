@@ -45,5 +45,5 @@ rand_core = { version = "0.6.3", features = ["std"] }
 lettre = "0.10.0-rc.3"
 rust-embed = {version="6.2.0", features=["interpolate-folder-path"]}
 handlebars = "4.1.0"
-serde_yaml = { version = "0.8.20" }
+serde_yaml = { version = "0.8.21" }
 base64 = "0.13.0"
