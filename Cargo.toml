@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-diesel = { version = "1.4.7", features = ["mysql", "r2d2"] }
+diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
 diesel_migrations = "1.4.0"
 r2d2 = "0.8.9"
 r2d2_mysql = "*"
