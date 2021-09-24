@@ -38,3 +38,9 @@ pub fn get_setting(
         .optional()?;
     Ok(found_user)
 }
+pub fn get_settings(
+    conn: &MysqlConnection,
+) -> Result<Vec<settings::settings::DBSetting>, diesel::result::Error> {
+    use crate::schema::settings::dsl::*;
+    Ok(settings.load::<DBSetting>(conn)?)
+}

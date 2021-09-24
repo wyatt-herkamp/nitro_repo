@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useRouter } from "next/router";
 import React from "react";
 import { toast } from "react-toastify";
@@ -6,8 +7,14 @@ import FailedToConnectToBackend from "../../src/BackendConnectionFail";
 import { API_URL } from "../../src/config";
 import FileExplorer from "../../src/FileExplorer";
 import { BasicResponse } from "../../src/Response";
-const fetcher = (url) => fetch(url).then((r) => r.json());
+const fetcher = (url) => {
 
+  return axios
+    .get(url, {
+      headers: { "Content-Type": "application/json" },
+    })
+    .then((res) => res.data);
+};
 export default function Browse() {
   const { data, error } = useSWR(API_URL + "/storages.json", fetcher);
 

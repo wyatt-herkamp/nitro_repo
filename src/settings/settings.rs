@@ -15,6 +15,31 @@ use std::str::FromStr;
 use rust_embed::EmbeddedFile;
 use crate::error::request_error::RequestError;
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct GeneralSettings {
+    pub name: DBSetting
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SecuritySettings {}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct EmailSetting {
+    pub email_username: DBSetting,
+    pub email_password: DBSetting,
+    pub email_host:DBSetting,
+    pub encryption: DBSetting,
+    pub from:DBSetting ,
+    pub port: DBSetting,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SettingReport {
+    pub email: EmailSetting,
+    pub general: GeneralSettings,
+    pub security: SecuritySettings,
+}
+
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub struct Setting {
@@ -105,5 +130,19 @@ impl FromStr for Setting {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         SettingManager::get_setting(s.to_string()).ok_or(RequestError::from("Missing Error"))
+    }
+}
+pub trait SettingVec{
+     fn get_setting_by_key(&self, key: &str) ->Option<&DBSetting>;
+}
+impl SettingVec for Vec<DBSetting> {
+
+    fn get_setting_by_key(&self, key: &str) -> Option<&DBSetting> {
+        for x in self {
+            if x.setting.key.eq(key){
+                return Option::Some(x);
+            }
+        }
+        return None;
     }
 }

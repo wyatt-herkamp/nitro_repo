@@ -66,3 +66,18 @@ export interface RepositoryList {
 export interface UserList {
   users: Array<User>;
 }
+export interface GeneralSettings {
+
+}
+export interface SecuritySettings {
+
+}
+export interface EmailSettings {
+
+}
+export interface SettingsValue {
+
+  general: GeneralSettings;
+  security: SecuritySettings;
+  email: EmailSettings;
+}

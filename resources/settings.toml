@@ -9,15 +9,15 @@ name = "Version"
 type = "string"
 properties = ["hidden"]
 [[settings]]
-key ="email.host"
+key = "email.host"
 name = "SMTP Host"
 type = "string"
 [[settings]]
-key ="email.username"
+key = "email.username"
 name = "Email Username"
 type = "string"
 [[settings]]
-key ="email.password"
+key = "email.password"
 name = "Email Password"
 type = "string"
 [[settings]]
@@ -33,9 +33,10 @@ type = "string"
 key = "email.port"
 name = "Mail Port"
 type = "int"
-default="587"
+default = "587"
 [[settings]]
 key = "name.public"
 name = "Public Store Name"
 type = "string"
-default="Nitro Repo"
+default = "Nitro Repo"
+public = true

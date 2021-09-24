@@ -20,6 +20,7 @@ use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path};
 use crate::error::request_error::RequestError;
+use actix_web::http::HeaderMap;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -72,4 +73,16 @@ pub struct EmailChangeRequest {
     pub encryption: Option<String>,
     pub from: Option<String>,
     pub port: Option<i64>,
+}
+pub fn get_accept(
+    header_map: &HeaderMap,
+) -> Result<Option<String>, RequestError> {
+    let option = header_map.get("accept");
+    if option.is_none() {
+        return Ok(None);
+    }
+    let x = option.unwrap().to_str();
+    if x.is_err() {}
+    let header = x.unwrap().to_string();
+    Ok(Some(header))
 }

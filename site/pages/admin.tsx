@@ -15,6 +15,7 @@ import useSWR from "swr";
 import FailedToConnectToBackend from "../src/BackendConnectionFail";
 import { API_URL } from "../src/config";
 import { BasicResponse, User } from "../src/Response";
+import Settings from "../src/Settings";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -129,7 +130,7 @@ export default function VerticalTabs() {
         <ShowUsers />
       </TabPanel>
       <TabPanel value={value} index={4}>
-        <h1>Settings</h1>
+        <Settings/>
       </TabPanel>
 
     </div>

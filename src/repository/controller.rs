@@ -7,25 +7,26 @@ use crate::repository::action::{
     get_repo_by_name_and_storage, get_repositories_by_storage,
 };
 use crate::repository::maven::MavenHandler;
-use crate::repository::models::Repository;
+use crate::repository::models::{Repository, Visibility};
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
 
 use crate::storage::action::{get_storage_by_name, get_storages};
 
 use crate::system::models::User;
 
-use crate::utils::installed;
+use crate::utils::{installed, get_accept};
 use crate::{DbPool};
 use actix_files::NamedFile;
 
 use actix_web::web::Bytes;
-use actix_web::{delete, get, head, patch, post, put, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{delete, get, head, patch, post, put, web, HttpRequest, HttpResponse, Responder, HttpMessage};
 
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;
 use crate::repository::repository::RepoResponse::BadRequest;
 use actix_web::http::StatusCode;
+use crate::system::utils::can_read_basic_auth;
 
 //
 
@@ -75,19 +76,13 @@ pub async fn get_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    println!("Query String {}", r.query_string());
-    println!("Path {}", r.path());
-    for x in r.headers().keys() {
-        println!("{}: {}", &x, r.headers().get(x).unwrap().to_str().unwrap());
-    }
     let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
+
     let t = option.repo_type.clone();
     let mut string = path.0.2.clone();
-    if string.ends_with("api_browse.json") {
-        string = string.replace("api_browse.json", "");
-    }
+
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
@@ -109,9 +104,11 @@ pub fn handle_result(
     url: String,
     r: HttpRequest,
 ) -> Result<HttpResponse, RequestError> {
+    let x = get_accept(r.headers())?.unwrap_or("text/html".to_string());
     return match response {
+
         RepoResponse::FileList(files) => {
-            if url.ends_with("api_browse.json") {
+            if x.contains(&"application/json".to_string()) {
                 Ok(APIResponse::new(true, Some(files)).respond(&r))
             } else {
                 let result1 = read_to_string(
@@ -125,7 +122,8 @@ pub fn handle_result(
         RepoResponse::FileResponse(file) => Ok(NamedFile::open(file)?.into_response(&r)?),
         RepoResponse::Ok => Ok(APIResponse::new(true, Some(false)).respond(&r)),
         RepoResponse::NotFound => {
-            if url.ends_with(".json") {
+            if x.contains(&"application/json".to_string()) {
+
                 return Err(NotFound);
             } else {
                 let result1 =
@@ -171,9 +169,6 @@ pub async fn post_repository(
     }
     let t = option.repo_type.clone();
     let mut string = path.0.2.clone();
-    if string.ends_with("api_browse.json") {
-        string = string.replace("api_browse.json", "");
-    }
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -208,9 +203,6 @@ pub async fn patch_repository(
     }
     let t = option.repo_type.clone();
     let mut string = path.0.2.clone();
-    if string.ends_with("api_browse.json") {
-        string = string.replace("api_browse.json", "");
-    }
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -245,9 +237,6 @@ pub async fn put_repository(
     }
     let t = option.repo_type.clone();
     let mut string = path.0.2.clone();
-    if string.ends_with("api_browse.json") {
-        string = string.replace("api_browse.json", "");
-    }
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -282,9 +271,6 @@ pub async fn head_repository(
     }
     let t = option.repo_type.clone();
     let mut string = path.0.2.clone();
-    if string.ends_with("api_browse.json") {
-        string = string.replace("api_browse.json", "");
-    }
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS

@@ -52,5 +52,10 @@ pub async fn install_post(
         env!("CARGO_PKG_VERSION").to_string(),
         &connection,
     )?;
+    quick_add(
+        "version",
+        env!("CARGO_PKG_VERSION").to_string(),
+        &connection,
+    )?;
     return Ok(APIResponse::new(true, Some(true)));
 }
