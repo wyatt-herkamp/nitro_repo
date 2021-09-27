@@ -12,23 +12,28 @@ properties = ["hidden"]
 key = "email.host"
 name = "SMTP Host"
 type = "string"
+default="example.com"
 [[settings]]
 key = "email.username"
 name = "Email Username"
 type = "string"
+default="no-reply@example.com"
 [[settings]]
 key = "email.password"
 name = "Email Password"
 type = "string"
+default=""
 [[settings]]
 key = "email.encryption"
 name = "SMTP Encryption"
 type = "string"
 options = ["TLS", "NONE"]
+default="NONE"
 [[settings]]
 key = "email.from"
 name = "Mail From"
 type = "string"
+from=""
 [[settings]]
 key = "email.port"
 name = "Mail Port"

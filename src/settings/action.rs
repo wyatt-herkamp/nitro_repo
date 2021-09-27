@@ -2,6 +2,7 @@ use crate::settings::settings::DBSetting;
 use crate::{settings, utils};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
+
 // Setting
 pub fn add_new_setting(s: &DBSetting, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::settings::dsl::*;
@@ -20,9 +21,9 @@ pub fn update_setting(s: &DBSetting, conn: &MysqlConnection) -> Result<(), diese
             value.eq(s.value.clone()),
             updated.eq(utils::get_current_time()),
         ))
-        .execute(conn);
-    if result1.is_err() {
-        return Err(result1.err().unwrap());
+        .execute(conn)?;
+    if result1 == 0 {
+        return add_new_setting(s, conn);
     }
     return Ok(());
 }
@@ -38,6 +39,7 @@ pub fn get_setting(
         .optional()?;
     Ok(found_user)
 }
+
 pub fn get_settings(
     conn: &MysqlConnection,
 ) -> Result<Vec<settings::settings::DBSetting>, diesel::result::Error> {

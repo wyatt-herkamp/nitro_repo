@@ -58,7 +58,6 @@ pub async fn about_setting(
 pub async fn setting_report(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    web::Path(setting): web::Path<String>,
 ) -> Result<APIResponse<SettingReport>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;

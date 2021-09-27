@@ -66,18 +66,45 @@ export interface RepositoryList {
 export interface UserList {
   users: Array<User>;
 }
-export interface GeneralSettings {
 
-}
 export interface SecuritySettings {
 
 }
-export interface EmailSettings {
 
+export interface SettingReport {
+  email:    EmailSettings;
+  general:  DBSetting;
+  security: Security;
 }
-export interface SettingsValue {
 
-  general: GeneralSettings;
-  security: SecuritySettings;
-  email: EmailSettings;
+export interface EmailSettings {
+  email_username: DBSetting;
+  email_host:     DBSetting;
+  encryption:     DBSetting;
+  from:           DBSetting;
+  port:           DBSetting;
+}
+
+export interface DBSetting {
+  id:      number;
+  setting: Setting;
+  value:   string;
+  updated: number;
+}
+
+export interface Setting {
+  key:        string;
+  name:       string;
+  default:    null | string;
+  optional:   null;
+  properties: null;
+  options:    string[] | null;
+  public:     boolean | null;
+}
+
+export interface GeneralSetting {
+  name: DBSetting;
+}
+
+export interface Security {
 }
