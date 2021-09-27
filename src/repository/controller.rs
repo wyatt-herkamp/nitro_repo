@@ -106,7 +106,6 @@ pub fn handle_result(
 ) -> Result<HttpResponse, RequestError> {
     let x = get_accept(r.headers())?.unwrap_or("text/html".to_string());
     return match response {
-
         RepoResponse::FileList(files) => {
             if x.contains(&"application/json".to_string()) {
                 Ok(APIResponse::new(true, Some(files)).respond(&r))
@@ -123,7 +122,6 @@ pub fn handle_result(
         RepoResponse::Ok => Ok(APIResponse::new(true, Some(false)).respond(&r)),
         RepoResponse::NotFound => {
             if x.contains(&"application/json".to_string()) {
-
                 return Err(NotFound);
             } else {
                 let result1 =
@@ -148,6 +146,9 @@ pub fn handle_result(
         }
         RepoResponse::BadRequest(e) => {
             return Err(RequestError::BadRequest(e.into()));
+        }
+        RepoResponse::VersionResponse(value) => {
+            Ok(APIResponse::new(true, Some(value)).respond(&r))
         }
     };
 }

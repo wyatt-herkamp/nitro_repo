@@ -17,6 +17,32 @@ use std::io::Write;
 use crate::repository::models::Visibility::Public;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PageProvider {
+    None,
+    README,
+}
+
+impl PageProvider {
+    fn default() -> Self {
+        return PageProvider::None;
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Frontend {
+    #[serde(default = "default")]
+    pub enabled: bool,
+    #[serde(default = "PageProvider::default")]
+    pub page_provider: PageProvider,
+}
+
+impl Default for Frontend {
+    fn default() -> Self {
+        return Frontend { enabled: true, page_provider: PageProvider::None };
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Policy {
     Release,
     Snapshot,
@@ -70,6 +96,8 @@ pub struct RepositorySettings {
     pub active: bool,
     #[serde(default = "Policy::default")]
     pub policy: Policy,
+    #[serde(default = "Frontend::default")]
+    pub frontend: Frontend,
 }
 
 impl RepositorySettings {

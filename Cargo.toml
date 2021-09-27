@@ -47,3 +47,4 @@ rust-embed = {version="6.2.0", features=["interpolate-folder-path"]}
 handlebars = "4.1.3"
 serde_yaml = { version = "0.8.21" }
 base64 = "0.13.0"
+serde-xml-rs = "0.5.1"

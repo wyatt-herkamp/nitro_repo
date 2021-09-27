@@ -7,6 +7,7 @@ use actix_web::web::Bytes;
 use actix_web::{HttpRequest};
 use diesel::MysqlConnection;
 use std::path::{PathBuf};
+use serde::{Serialize, Deserialize};
 
 pub enum RepoResponse {
     FileList(Vec<String>),
@@ -15,6 +16,7 @@ pub enum RepoResponse {
     NotFound,
     NotAuthorized,
     BadRequest(String),
+    VersionResponse(Vec<Version>),
 }
 
 pub type RepoResult = Result<RepoResponse, RequestError>;
@@ -26,11 +28,18 @@ pub struct RepositoryRequest {
     pub value: String,
 }
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Version {
+    pub version: String,
+    pub artifacts: Vec<String>,
+}
+
 pub trait RepositoryType {
     fn handle_get(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
     fn handle_post(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
     fn handle_put(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
-    fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes)
-        -> RepoResult;
+    fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
     fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
+    fn handle_versions(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
 }

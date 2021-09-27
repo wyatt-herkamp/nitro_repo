@@ -1,3 +1,6 @@
+mod utils;
+mod models;
+
 use crate::repository::repository::RepoResponse::{NotAuthorized, NotFound, BadRequest};
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
 
@@ -10,6 +13,8 @@ use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use crate::repository::models::Policy;
+use crate::error::request_error::RequestError;
+use crate::repository::maven::utils::get_versions;
 
 pub struct MavenHandler;
 
@@ -115,5 +120,22 @@ impl RepositoryType for MavenHandler {
         }
 
         return Ok(NotFound);
+    }
+
+    fn handle_versions(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
+        println!("IM here");
+        if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
+        }
+        let buf = PathBuf::new()
+            .join("storages")
+            .join(request.storage.name.clone())
+            .join(request.repository.name.clone())
+            .join(request.value);
+        if !buf.exists(){
+            return RepoResult::Ok(NotFound);
+        }
+        let vec = get_versions(&buf);
+        return Ok(RepoResponse::VersionResponse(vec));
     }
 }
