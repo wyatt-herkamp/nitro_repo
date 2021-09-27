@@ -74,6 +74,7 @@ const fetcher = (url) => {
     .then((res) => res.data);
 };
 export default function Settings() {
+  const [settingValue, setSettings] = React.useState(undefined);
   const { data, error } = useSWR(API_URL + "/api/settings/report", fetcher);
 
   if (error) {
@@ -92,11 +93,13 @@ export default function Settings() {
   if (!data) {
     return <FailedToConnectToBackend />;
   }
-  let jsonValue = JSON.stringify(data, null, 2);
 
   let response = data as BasicResponse<SettingReport>;
   let settings = response.data;
-  return <SettingsInside settings={settings} />
+  if (settingValue == undefined) {
+    setSettings(settings);
+  }
+  return <SettingsInside settings={settingValue} />
 }
 export function SettingsInside({ settings }) {
   const classes = useStyles();
@@ -225,7 +228,7 @@ export function EmailSettings({ settings }) {
             defaultValue={settings.email_username.value}
 
           />
-        </Grid>        
+        </Grid>
         <Grid item xs={12}>
           <TextField
             variant="outlined"
@@ -238,8 +241,8 @@ export function EmailSettings({ settings }) {
             onChange={handleChange}
 
           />
-        </Grid>       
-         <Grid item xs={12}>
+        </Grid>
+        <Grid item xs={12}>
           <TextField
             variant="outlined"
             required
