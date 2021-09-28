@@ -43,5 +43,5 @@ pub trait RepositoryType {
     fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
     fn handle_versions(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
 
-    fn latest_version(request: RepositoryRequest, conn: &MysqlConnection) -> String;
+    fn latest_version(request: RepositoryRequest, conn: &MysqlConnection) -> Result<String, RequestError>;
 }

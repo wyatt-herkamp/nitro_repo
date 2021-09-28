@@ -14,7 +14,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use crate::repository::models::Policy;
 use crate::error::request_error::RequestError;
-use crate::repository::maven::utils::get_versions;
+use crate::repository::maven::utils::{get_versions, get_latest_version};
 
 pub struct MavenHandler;
 
@@ -123,7 +123,6 @@ impl RepositoryType for MavenHandler {
     }
 
     fn handle_versions(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
-        println!("IM here");
         if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -132,14 +131,26 @@ impl RepositoryType for MavenHandler {
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
             .join(request.value);
-        if !buf.exists(){
+        if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
         return Ok(RepoResponse::VersionResponse(vec));
     }
 
-    fn latest_version(request: RepositoryRequest, conn: &MysqlConnection) -> String {
-        todo!()
+    fn latest_version(request: RepositoryRequest, conn: &MysqlConnection) -> Result<String, RequestError> {
+        if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
+            return Ok("".to_string());
+        }
+        let buf = PathBuf::new()
+            .join("storages")
+            .join(request.storage.name.clone())
+            .join(request.repository.name.clone())
+            .join(request.value);
+        if !buf.exists() {
+            return Ok("".to_string());
+        }
+        let vec = get_latest_version(&buf, false);
+        return Ok(vec);
     }
 }

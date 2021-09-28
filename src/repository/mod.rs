@@ -11,6 +11,7 @@ pub mod models;
 pub mod repo_error;
 pub mod repository;
 mod api;
+mod badge;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)
@@ -20,5 +21,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(controller::patch_repository)
         .service(controller::put_repository)
         .service(controller::head_repository)
-        .service(api::get_versions);
+        .service(api::get_versions)
+        .service(badge::badge);
 }

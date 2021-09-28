@@ -49,3 +49,7 @@ serde_yaml = { version = "0.8.21" }
 base64 = "0.13.0"
 serde-xml-rs = "0.5.1"
 semver = "1.0.4"
+badge-maker = "0.1.4"
+usvg = "0.18.0"
+resvg = "0.18.0"
+tiny-skia = "0.6.1"
