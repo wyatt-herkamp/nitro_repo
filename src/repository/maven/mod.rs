@@ -138,4 +138,8 @@ impl RepositoryType for MavenHandler {
         let vec = get_versions(&buf);
         return Ok(RepoResponse::VersionResponse(vec));
     }
+
+    fn latest_version(request: RepositoryRequest, conn: &MysqlConnection) -> String {
+        todo!()
+    }
 }
