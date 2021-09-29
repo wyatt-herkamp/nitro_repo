@@ -18,7 +18,7 @@ use crate::settings::action::get_setting;
 
 use rust_embed::RustEmbed;
 use std::fs::read;
-use std::path::{Path};
+use std::path::{Path, PathBuf};
 use crate::error::request_error::RequestError;
 use actix_web::http::HeaderMap;
 
@@ -85,4 +85,7 @@ pub fn get_accept(
     if x.is_err() {}
     let header = x.unwrap().to_string();
     Ok(Some(header))
+}
+pub fn get_storage_location() ->PathBuf{
+    return PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap())
 }

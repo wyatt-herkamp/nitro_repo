@@ -15,6 +15,7 @@ use std::path::PathBuf;
 use crate::repository::models::Policy;
 use crate::error::request_error::RequestError;
 use crate::repository::maven::utils::{get_versions, get_latest_version};
+use crate::utils::get_storage_location;
 
 pub struct MavenHandler;
 
@@ -24,7 +25,7 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotAuthorized);
         }
 
-        let buf = PathBuf::new()
+        let buf = get_storage_location()
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
@@ -69,7 +70,7 @@ impl RepositoryType for MavenHandler {
             }
             Policy::Mixed => {}
         }
-        let buf = PathBuf::new()
+        let buf = get_storage_location()
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
@@ -99,7 +100,7 @@ impl RepositoryType for MavenHandler {
     }
 
     fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
-        let buf = PathBuf::new()
+        let buf = get_storage_location()
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
@@ -126,7 +127,7 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let buf = PathBuf::new()
+        let buf = get_storage_location()
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
@@ -142,7 +143,7 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
             return Ok("".to_string());
         }
-        let buf = PathBuf::new()
+        let buf = get_storage_location()
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
