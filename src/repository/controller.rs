@@ -76,18 +76,18 @@ pub async fn get_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
 
-    let t = option.repo_type.clone();
+    let t = repository.repo_type.clone();
     let mut string = path.0.2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
-        storage: option1,
-        repository: option,
+        storage: storage,
+        repository: repository,
         value: string,
     };
     let x = match t.as_str() {
@@ -162,20 +162,20 @@ pub async fn post_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
-    if !option.settings.active {
+    if !repository.settings.active {
         return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
     }
-    let t = option.repo_type.clone();
+    let t = repository.repo_type.clone();
     let mut string = path.0.2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
-        storage: option1,
-        repository: option,
+        storage: storage,
+        repository: repository,
         value: string,
     };
     let x = match t.as_str() {
@@ -196,20 +196,20 @@ pub async fn patch_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
-    if !option.settings.active {
+    if !repository.settings.active {
         return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
     }
-    let t = option.repo_type.clone();
+    let t = repository.repo_type.clone();
     let mut string = path.0.2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
-        storage: option1,
-        repository: option,
+        storage: storage,
+        repository: repository,
         value: string,
     };
     let x = match t.as_str() {
@@ -230,20 +230,20 @@ pub async fn put_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
-    if !option.settings.active {
+    if !repository.settings.active {
         return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
     }
-    let t = option.repo_type.clone();
+    let t = repository.repo_type.clone();
     let mut string = path.0.2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
-        storage: option1,
-        repository: option,
+        storage: storage,
+        repository: repository,
         value: string,
     };
     let x = match t.as_str() {
@@ -264,20 +264,20 @@ pub async fn head_repository(
     let connection = pool.get()?;
     installed(&connection)?;
 
-    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
-    if !option.settings.active {
+    if !repository.settings.active {
         return handle_result(BadRequest("Repo is not active".to_string()), path.0.2.clone(), r);
     }
-    let t = option.repo_type.clone();
+    let t = repository.repo_type.clone();
     let mut string = path.0.2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
-        storage: option1,
-        repository: option,
+        storage: storage,
+        repository: repository,
         value: string,
     };
     let x = match t.as_str() {
