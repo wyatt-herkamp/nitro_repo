@@ -57,10 +57,10 @@ embed_migrations!();
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=trace");
     std::env::set_var("RUST_BACKTRACE", "1");
+    dotenv::dotenv().ok();
     let config: RawConfig =
         serde_yaml::from_str(Resources::file_get_string("log.yml").as_str()).unwrap();
     log4rs::init_raw_config(config).unwrap();
-    dotenv::dotenv().ok();
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
     let pool = r2d2::Pool::builder()
@@ -113,9 +113,9 @@ async fn main() -> std::io::Result<()> {
             .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
             .unwrap();
 
-        server.bind_openssl("0.0.0.0:6742", builder)?.run().await
+        server.bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?.run().await
     } else {
-        server.bind("0.0.0.0:6742")?.run().await
+        server.bind(std::env::var("ADDRESS").unwrap())?.run().await
     }
 }
 

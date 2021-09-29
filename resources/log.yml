@@ -5,37 +5,37 @@ appenders:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   requests:
     kind: file
-    path: "log/requests.log"
+    path: "$ENV{LOG_LOCATION}/log/requests.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   maven:
     kind: file
-    path: "log/repos/maven.log"
+    path: "$ENV{LOG_LOCATION}/log/repos/maven.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   repositories:
     kind: file
-    path: "log/repos.log"
+    path: "$ENV{LOG_LOCATION}/log/repos.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   system:
     kind: file
-    path: "log/system.log"
+    path: "$ENV{LOG_LOCATION}/log/system.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   error:
     kind: file
-    path: "log/error.log"
+    path: "$ENV{LOG_LOCATION}/log/error.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   site:
     kind: file
-    path: "log/site.log"
+    path: "$ENV{LOG_LOCATION}/log/site.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
   all:
     kind: file
-    path: "log/all.log"
+    path: "$ENV{LOG_LOCATION}/log/all.log"
     encoder:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
 root:

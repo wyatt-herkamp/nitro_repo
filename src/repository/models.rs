@@ -15,6 +15,65 @@ use crate::repository::models::Policy::Mixed;
 use std::fmt::Debug;
 use std::io::Write;
 use crate::repository::models::Visibility::Public;
+use badge_maker::Style;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum BadgeStyle {
+    Flat,
+    FlatSquare,
+    Plastic,
+}
+
+impl Default for BadgeStyle {
+    fn default() -> Self {
+        return BadgeStyle::Flat;
+    }
+}
+
+impl BadgeStyle {
+    pub fn to_badge_maker_style(&self) -> badge_maker::Style {
+        match self {
+            BadgeStyle::Flat => {
+                return Style::Flat;
+            }
+            BadgeStyle::FlatSquare => {
+                return Style::FlatSquare;
+            }
+            BadgeStyle::Plastic => {
+                return Style::Plastic;
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BadgeSettings {
+    #[serde(default = "BadgeStyle::default")]
+    pub style: BadgeStyle,
+    #[serde(default = "default_label_color")]
+    pub label_color: String,
+    #[serde(default = "default_color")]
+    pub color: String,
+}
+
+impl Default for BadgeSettings {
+    fn default() -> Self {
+        return BadgeSettings {
+            style: Default::default(),
+            label_color: default_label_color(),
+            color: default_color(),
+        };
+    }
+}
+
+fn default_color() -> String {
+    return "#33B5E5".to_string();
+}
+
+fn default_label_color() -> String {
+    return "#555".to_string();
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PageProvider {
@@ -98,6 +157,8 @@ pub struct RepositorySettings {
     pub policy: Policy,
     #[serde(default = "Frontend::default")]
     pub frontend: Frontend,
+    #[serde(default = "BadgeSettings::default")]
+    pub badge: BadgeSettings,
 }
 
 impl RepositorySettings {

@@ -28,7 +28,7 @@ use crate::repository::repository::RepoResponse::BadRequest;
 use actix_web::http::StatusCode;
 use crate::system::utils::can_read_basic_auth;
 use crate::repository::controller::handle_result;
-use badge_maker::BadgeBuilder;
+use badge_maker::{BadgeBuilder, Style};
 use actix_web::body::Body;
 use std::io::Write;
 use usvg::Options;
@@ -99,9 +99,12 @@ pub async fn badge(
 
     if !svg_file.exists() {
         let svg: String = BadgeBuilder::new()
+            .style(Style::Flat)
             .label(option.name.as_str())
             .message(x.as_str())
-            .color_parse("#33B5E5")
+            .style(option.settings.badge.style.to_badge_maker_style())
+            .color_parse(option.settings.badge.color.as_str())
+            .label_color_parse(option.settings.badge.label_color.as_str())
             .build().unwrap()
             .svg();
         let mut file1 = File::create(&svg_file).unwrap();

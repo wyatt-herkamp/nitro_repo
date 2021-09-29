@@ -1,0 +1,9 @@
+[Unit]
+AssertPathExists=/usr/bin/nitro_repo
+
+[Service]
+WorkingDirectory=/etc/nitro_repo
+ExecStart=/usr/bin/nitro_repo
+Restart=always
+PrivateTmp=true
+NoNewPrivileges=true
