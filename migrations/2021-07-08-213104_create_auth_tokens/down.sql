@@ -1,1 +1,1 @@
-drop table auth_tokens;
+drop table session_tokens;

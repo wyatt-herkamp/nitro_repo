@@ -20,7 +20,7 @@ table! {
     }
 }
 table! {
-    auth_tokens (id) {
+    session_tokens (id) {
         id -> Bigint,
         user -> Bigint,
         token -> Text,

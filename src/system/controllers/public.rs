@@ -6,9 +6,9 @@ use crate::api_response::APIResponse;
 use crate::error::request_error::RequestError;
 
 
-use crate::system::action::{add_new_auth_token, get_user_by_email, get_user_by_username};
-use crate::system::models::AuthToken;
-use crate::system::utils::{generate_auth_token};
+use crate::system::action::{get_user_by_email, get_user_by_username, add_new_session_token};
+use crate::system::models::SessionToken;
+use crate::system::utils::{generate_session_token};
 use crate::utils::{default_expiration, get_current_time, installed};
 use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
@@ -25,7 +25,7 @@ pub async fn login(
     pool: web::Data<DbPool>,
     _r: HttpRequest,
     nc: web::Json<Login>,
-) -> Result<APIResponse<AuthToken>, RequestError> {
+) -> Result<APIResponse<SessionToken>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let username = nc.username.clone();
@@ -41,14 +41,14 @@ pub async fn login(
     argon2
         .verify_password(nc.password.clone().as_bytes(), &parsed_hash)
         .map_err(|_| RequestError::InvalidLogin)?;
-    let token = AuthToken {
+    let token = SessionToken {
         id: 0,
         user: user.id.clone(),
-        token: generate_auth_token(&connection)?,
+        token: generate_session_token(&connection)?,
         expiration: default_expiration(),
         created: get_current_time(),
     };
-    add_new_auth_token(&token, &connection)?;
+    add_new_session_token(&token, &connection)?;
 
     return Ok(APIResponse::new(true, Some(token)));
 }

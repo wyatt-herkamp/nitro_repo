@@ -87,7 +87,7 @@ pub struct ForgotPassword {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-pub struct AuthToken {
+pub struct SessionToken {
     pub id: i64,
     pub user: i64,
     pub token: String,

@@ -62,18 +62,18 @@ pub async fn badge(
     println!("HELLO");
     let connection = pool.get()?;
     installed(&connection)?;
-    let option1 = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let option = get_repo_by_name_and_storage(path.0.1.clone(), option1.id.clone(), &connection)?
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
 
-    let t = option.repo_type.clone();
+    let t = repository.repo_type.clone();
     let mut string = path.0.2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
         request: r.clone(),
-        storage: option1.clone(),
-        repository: option.clone(),
+        storage: storage.clone(),
+        repository: repository.clone(),
         value: string.clone(),
     };
     let x = match t.as_str() {
@@ -84,8 +84,8 @@ pub async fn badge(
     }?;
     let buf1 = PathBuf::new()
         .join("storages")
-        .join(option1.name.clone())
-        .join(option.name.clone())
+        .join(storage.name.clone())
+        .join(repository.name.clone())
         .join(string.clone()).join(".nitro_repo");
     if !buf1.exists() {
         create_dir_all(&buf1);
@@ -100,11 +100,11 @@ pub async fn badge(
     if !svg_file.exists() {
         let svg: String = BadgeBuilder::new()
             .style(Style::Flat)
-            .label(option.name.as_str())
+            .label(repository.name.as_str())
             .message(x.as_str())
-            .style(option.settings.badge.style.to_badge_maker_style())
-            .color_parse(option.settings.badge.color.as_str())
-            .label_color_parse(option.settings.badge.label_color.as_str())
+            .style(repository.settings.badge.style.to_badge_maker_style())
+            .color_parse(repository.settings.badge.color.as_str())
+            .label_color_parse(repository.settings.badge.label_color.as_str())
             .build().unwrap()
             .svg();
         let mut file1 = File::create(&svg_file).unwrap();

@@ -1,5 +1,5 @@
 
-use crate::system::models::{AuthToken, User};
+use crate::system::models::{SessionToken, User};
 
 use crate::{system, utils};
 use diesel::prelude::*;
@@ -79,35 +79,35 @@ pub fn add_new_user(s: &User, conn: &MysqlConnection) -> Result<(), diesel::resu
 }
 
 //Auth Token
-pub fn get_auth_token(
+pub fn get_session_token(
     a_token: String,
     conn: &MysqlConnection,
-) -> Result<Option<system::models::AuthToken>, diesel::result::Error> {
-    use crate::schema::auth_tokens::dsl::*;
-    let found_token = auth_tokens
+) -> Result<Option<system::models::SessionToken>, diesel::result::Error> {
+    use crate::schema::session_tokens::dsl::*;
+    let found_token = session_tokens
         .filter(token.eq(a_token))
-        .first::<system::models::AuthToken>(conn)
+        .first::<system::models::SessionToken>(conn)
         .optional()?;
     Ok(found_token)
 }
 
-pub fn add_new_auth_token(
-    t: &AuthToken,
+pub fn add_new_session_token(
+    t: &SessionToken,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {
-    use crate::schema::auth_tokens::dsl::*;
-    diesel::insert_into(auth_tokens)
+    use crate::schema::session_tokens::dsl::*;
+    diesel::insert_into(session_tokens)
         .values(t)
         .execute(conn)
         .unwrap();
     Ok(())
 }
 
-pub fn get_user_from_auth_token(
+pub fn get_user_from_session_token(
     token: String,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
-    let result = get_auth_token(token, conn)?;
+    let result = get_session_token(token, conn)?;
     if result.is_none() {
         return Ok(None);
     }

@@ -11,7 +11,7 @@ use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
-use crate::system::action::{add_new_user, get_auth_token, get_user_by_username};
+use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
 use crate::system::models::{User, UserPermissions};
 use crate::utils::get_current_time;
 use rand::distributions::Alphanumeric;
@@ -42,7 +42,7 @@ pub fn get_user_by_header(
     let value = value.unwrap().to_string();
     let key = option.unwrap().to_string();
     if key.eq("Bearer") {
-        let result = system::action::get_user_from_auth_token(value, conn)?;
+        let result = system::action::get_user_from_session_token(value, conn)?;
         return Ok(result);
     }
     Ok(None)
@@ -225,14 +225,14 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, Reque
     );
 }
 
-pub fn generate_auth_token(connection: &MysqlConnection) -> Result<String, RequestError> {
+pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, RequestError> {
     loop {
         let x: String = OsRng
             .sample_iter(&Alphanumeric)
             .take(128)
             .map(char::from)
             .collect();
-        let result = get_auth_token(x.clone(), &connection)?;
+        let result = get_session_token(x.clone(), &connection)?;
         if result.is_none() {
             return Ok(x);
         }
