@@ -1,26 +1,16 @@
-
-
-
 use chrono::{DateTime, Duration, Local};
 use diesel::MysqlConnection;
-
 
 use serde::{Deserialize, Serialize};
 use std::ops::Add;
 
-
-
 use crate::settings::action::get_setting;
 
-
-
-
-
+use crate::error::request_error::RequestError;
+use actix_web::http::HeaderMap;
 use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path, PathBuf};
-use crate::error::request_error::RequestError;
-use actix_web::http::HeaderMap;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -74,9 +64,7 @@ pub struct EmailChangeRequest {
     pub from: Option<String>,
     pub port: Option<i64>,
 }
-pub fn get_accept(
-    header_map: &HeaderMap,
-) -> Result<Option<String>, RequestError> {
+pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, RequestError> {
     let option = header_map.get("accept");
     if option.is_none() {
         return Ok(None);
@@ -86,6 +74,6 @@ pub fn get_accept(
     let header = x.unwrap().to_string();
     Ok(Some(header))
 }
-pub fn get_storage_location() ->PathBuf{
-    return PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap())
+pub fn get_storage_location() -> PathBuf {
+    return PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap());
 }

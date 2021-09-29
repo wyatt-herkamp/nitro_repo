@@ -1,16 +1,9 @@
 use actix_web::{get, post, web, HttpRequest};
 
+use crate::api_response::APIResponse;
 
-
-use crate::api_response::{APIResponse};
-
-
-
-
-
-
-use crate::{utils, DbPool};
 use crate::error::request_error::RequestError;
+use crate::{utils, DbPool};
 
 #[get("/api/installed")]
 pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, RequestError> {

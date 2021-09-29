@@ -1,8 +1,6 @@
 use crate::repository::models::Repository;
 
-
-
-use crate::{repository};
+use crate::repository;
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {

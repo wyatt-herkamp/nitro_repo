@@ -12,12 +12,12 @@ use crate::schema::*;
 use crate::utils::Resources;
 use std::io::Write;
 use std::str::FromStr;
-use rust_embed::EmbeddedFile;
+
 use crate::error::request_error::RequestError;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
-    pub name: DBSetting
+    pub name: DBSetting,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -27,9 +27,9 @@ pub struct SecuritySettings {}
 pub struct EmailSetting {
     pub email_username: DBSetting,
     pub email_password: DBSetting,
-    pub email_host:DBSetting,
+    pub email_host: DBSetting,
     pub encryption: DBSetting,
-    pub from:DBSetting ,
+    pub from: DBSetting,
     pub port: DBSetting,
 }
 
@@ -132,14 +132,13 @@ impl FromStr for Setting {
         SettingManager::get_setting(s.to_string()).ok_or(RequestError::from("Missing Error"))
     }
 }
-pub trait SettingVec{
-     fn get_setting_by_key(&self, key: &str) ->Option<&DBSetting>;
+pub trait SettingVec {
+    fn get_setting_by_key(&self, key: &str) -> Option<&DBSetting>;
 }
 impl SettingVec for Vec<DBSetting> {
-
     fn get_setting_by_key(&self, key: &str) -> Option<&DBSetting> {
         for x in self {
-            if x.setting.key.eq(key){
+            if x.setting.key.eq(key) {
                 return Option::Some(x);
             }
         }

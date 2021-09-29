@@ -9,13 +9,12 @@ use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::{deserialize, serialize};
 
-
 use crate::repository::models::Policy::Mixed;
 
-use std::fmt::Debug;
-use std::io::Write;
 use crate::repository::models::Visibility::Public;
 use badge_maker::Style;
+use std::fmt::Debug;
+use std::io::Write;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BadgeStyle {
@@ -74,7 +73,6 @@ fn default_label_color() -> String {
     return "#555".to_string();
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PageProvider {
     None,
@@ -97,7 +95,10 @@ pub struct Frontend {
 
 impl Default for Frontend {
     fn default() -> Self {
-        return Frontend { enabled: true, page_provider: PageProvider::None };
+        return Frontend {
+            enabled: true,
+            page_provider: PageProvider::None,
+        };
     }
 }
 

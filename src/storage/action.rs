@@ -1,8 +1,6 @@
-
 use crate::storage::models::Storage;
 
-
-use crate::{storage};
+use crate::storage;
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 

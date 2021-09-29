@@ -1,14 +1,12 @@
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
 
-
 use crate::api_response::APIResponse;
 
 use crate::error::request_error::RequestError;
 
-
-use crate::system::action::{get_user_by_email, get_user_by_username, add_new_session_token};
+use crate::system::action::{add_new_session_token, get_user_by_email, get_user_by_username};
 use crate::system::models::SessionToken;
-use crate::system::utils::{generate_session_token};
+use crate::system::utils::generate_session_token;
 use crate::utils::{default_expiration, get_current_time, installed};
 use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};

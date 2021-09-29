@@ -1,9 +1,8 @@
-use std::path::PathBuf;
-use std::fs::{read_dir, read_to_string, DirEntry};
 use crate::repository::repository::Version;
-use rust_embed::utils::read_file_from_fs;
-use crate::repository::maven::models::{DeployMetadata, Versioning};
-use semver::Version as SemVersion;
+use std::fs::{read_dir, read_to_string, DirEntry};
+use std::path::PathBuf;
+
+use crate::repository::maven::models::DeployMetadata;
 
 pub fn get_versions(path: &PathBuf) -> Vec<Version> {
     let maven_metadata = path.clone().join("maven-metadata.xml");
@@ -44,7 +43,7 @@ fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
 
 pub fn get_latest_version(path: &PathBuf, release: bool) -> String {
     let maven_metadata = path.clone().join("maven-metadata.xml");
-    let mut value = if maven_metadata.exists() {
+    let value = if maven_metadata.exists() {
         get_latest_version_generated(&maven_metadata, release)
     } else {
         get_latest_versions_without_maven(path, release)
@@ -75,15 +74,24 @@ fn get_latest_version_generated(path: &PathBuf, release: bool) -> String {
 
 fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
     let dir = read_dir(path).unwrap();
-    let mut vec = dir.collect::<Vec<Result<DirEntry, std::io::Error>>>();
-    let mut values = vec.iter().map(|e| e.as_ref().unwrap()).collect::<Vec<&DirEntry>>();
-    values.sort_by(|a, b| a.metadata().unwrap().created().unwrap().cmp(&b.metadata().unwrap().created().unwrap()));
+    let vec = dir.collect::<Vec<Result<DirEntry, std::io::Error>>>();
+    let mut values = vec
+        .iter()
+        .map(|e| e.as_ref().unwrap())
+        .collect::<Vec<&DirEntry>>();
+    values.sort_by(|a, b| {
+        a.metadata()
+            .unwrap()
+            .created()
+            .unwrap()
+            .cmp(&b.metadata().unwrap().created().unwrap())
+    });
 
     let mut value = None;
     for x in values {
         if x.file_type().unwrap().is_dir() {
             let string = x.file_name().to_str().unwrap().to_string();
-            if value.is_none(){
+            if value.is_none() {
                 value = Some(string.clone());
             }
             if release {

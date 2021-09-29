@@ -1,14 +1,10 @@
-
-
-use std::str::{ParseBoolError};
-
-
+use std::str::ParseBoolError;
 
 use actix_web::http::header::ToStrError;
-use actix_web::{HttpResponse};
+use actix_web::HttpResponse;
 use derive_more::{Display, Error};
 
-use crate::api_response::{APIResponse};
+use crate::api_response::APIResponse;
 use crate::error::internal_error::InternalError;
 use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
@@ -26,7 +22,6 @@ pub enum RequestError {
     MissingArgument(GenericError),
     UnInstalled,
     InternalError(InternalError),
-
 }
 
 impl RequestError {
@@ -91,7 +86,6 @@ impl actix_web::error::ResponseError for RequestError {
     }
 }
 
-
 impl From<diesel::result::Error> for RequestError {
     fn from(err: diesel::result::Error) -> RequestError {
         InternalError::DBError(err).into()
@@ -127,7 +121,6 @@ impl From<ParseBoolError> for RequestError {
         InternalError::BooleanParseError(err).into()
     }
 }
-
 
 impl From<RepositoryError> for RequestError {
     fn from(value: RepositoryError) -> RequestError {

@@ -1,35 +1,26 @@
-use crate::api_response::APIResponse;
-
-
 use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::{NotFound, NotAuthorized};
-use crate::repository::action::{
-    get_repo_by_name_and_storage, get_repositories_by_storage,
-};
+
+use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
-use crate::repository::models::{Repository, Visibility};
-use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
+use crate::repository::models::Repository;
+use crate::repository::repository::{RepositoryRequest, RepositoryType};
 
-use crate::storage::action::{get_storage_by_name, get_storages};
+use crate::storage::action::get_storage_by_name;
 
-use crate::system::models::User;
-
-use crate::utils::{installed, get_accept};
-use crate::{DbPool};
+use crate::utils::installed;
+use crate::DbPool;
 use actix_files::NamedFile;
 
-use actix_web::web::Bytes;
-use actix_web::{delete, get, head, patch, post, put, web, HttpRequest, HttpResponse, Responder, HttpMessage};
+use actix_web::{
+    delete, get, head, patch, post, put, web, HttpMessage, HttpRequest, HttpResponse, Responder,
+};
 
 use serde::{Deserialize, Serialize};
-use std::fs::{read_to_string, File, create_dir_all};
-use std::path::{Path, PathBuf};
-use crate::repository::repository::RepoResponse::BadRequest;
-use actix_web::http::StatusCode;
-use crate::system::utils::can_read_basic_auth;
-use crate::repository::controller::handle_result;
+use std::fs::{create_dir_all, read_to_string, File};
+use std::path::PathBuf;
+
 use badge_maker::{BadgeBuilder, Style};
-use actix_web::body::Body;
+
 use std::io::Write;
 use usvg::Options;
 
@@ -62,12 +53,13 @@ pub async fn badge(
     println!("HELLO");
     let connection = pool.get()?;
     installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-        .ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
+    let repository =
+        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
+            .ok_or(RequestError::NotFound)?;
 
     let t = repository.repo_type.clone();
-    let mut string = path.0.2.clone();
+    let string = path.0 .2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -86,12 +78,15 @@ pub async fn badge(
         .join("storages")
         .join(storage.name.clone())
         .join(repository.name.clone())
-        .join(string.clone()).join(".nitro_repo");
+        .join(string.clone())
+        .join(".nitro_repo");
     if !buf1.exists() {
         create_dir_all(&buf1);
     }
-    let typ = path.0.3.clone();
-    let buf = buf1.clone().join(format!("badge-{}.{}", x.clone(), typ.clone()));
+    let typ = path.0 .3.clone();
+    let buf = buf1
+        .clone()
+        .join(format!("badge-{}.{}", x.clone(), typ.clone()));
     if buf.exists() {
         return Ok(NamedFile::open(buf)?.into_response(&r)?);
     }
@@ -105,14 +100,15 @@ pub async fn badge(
             .style(repository.settings.badge.style.to_badge_maker_style())
             .color_parse(repository.settings.badge.color.as_str())
             .label_color_parse(repository.settings.badge.label_color.as_str())
-            .build().unwrap()
+            .build()
+            .unwrap()
             .svg();
         let mut file1 = File::create(&svg_file).unwrap();
         file1.write_all(svg.as_bytes());
     }
     if typ.eq("png") {
         let string1 = read_to_string(svg_file)?;
-        let options = Options{
+        let options = Options {
             resources_dir: None,
             dpi: 0.0,
             font_family: "Times New Roman".to_string(),
@@ -123,21 +119,24 @@ pub async fn badge(
             image_rendering: Default::default(),
             keep_named_groups: false,
             default_size: usvg::Size::new(100.0, 100.0).unwrap(),
-            fontdb: load_fonts()
+            fontdb: load_fonts(),
         };
         let result = usvg::Tree::from_str(string1.as_str(), &options.to_ref()).unwrap();
 
         let fit_to = usvg::FitTo::Original;
-        let size = fit_to.fit_to(result.svg_node().size.to_screen_size()).unwrap();
+        let size = fit_to
+            .fit_to(result.svg_node().size.to_screen_size())
+            .unwrap();
         let mut pixmap1 = tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
-        let mut pixmap = pixmap1.as_mut();
+        let pixmap = pixmap1.as_mut();
         resvg::render(&result, fit_to, pixmap).unwrap();
         let svg_file = buf1.clone().join(format!("badge-{}.png", x.clone()));
 
         pixmap1.save_png(svg_file).unwrap();
     }
 
-
-    let buf = buf1.clone().join(format!("badge-{}.{}", x.clone(), typ.clone()));
+    let buf = buf1
+        .clone()
+        .join(format!("badge-{}.{}", x.clone(), typ.clone()));
     return Ok(NamedFile::open(buf)?.into_response(&r)?);
 }

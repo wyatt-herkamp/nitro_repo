@@ -10,8 +10,6 @@ extern crate lazy_static_include;
 extern crate strum;
 extern crate strum_macros;
 
-use std::collections::HashMap;
-use std::env;
 use std::path::Path;
 
 use actix_cors::Cors;
@@ -24,7 +22,6 @@ use diesel::r2d2::{self, ConnectionManager};
 use log::info;
 use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-
 
 use crate::error::request_error::RequestError;
 
@@ -43,7 +40,6 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
-
 
 fn url_raw(value: &str) -> String {
     let url = std::env::var("URL").unwrap();
@@ -113,7 +109,10 @@ async fn main() -> std::io::Result<()> {
             .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
             .unwrap();
 
-        server.bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?.run().await
+        server
+            .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+            .run()
+            .await
     } else {
         server.bind(std::env::var("ADDRESS").unwrap())?.run().await
     }
@@ -145,7 +144,10 @@ pub async fn browse_extend(
 }
 
 #[get("/browse")]
-pub async fn browse(pool: web::Data<DbPool>, _r: HttpRequest) -> Result<HttpResponse, RequestError> {
+pub async fn browse(
+    pool: web::Data<DbPool>,
+    _r: HttpRequest,
+) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
     let result1 =

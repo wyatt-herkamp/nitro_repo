@@ -1,7 +1,7 @@
-mod utils;
 mod models;
+mod utils;
 
-use crate::repository::repository::RepoResponse::{NotAuthorized, NotFound, BadRequest};
+use crate::repository::repository::RepoResponse::{BadRequest, NotAuthorized, NotFound};
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
 
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
@@ -11,10 +11,10 @@ use actix_web::web::{Buf, Bytes};
 use diesel::MysqlConnection;
 use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
 use std::io::Write;
-use std::path::PathBuf;
-use crate::repository::models::Policy;
+
 use crate::error::request_error::RequestError;
-use crate::repository::maven::utils::{get_versions, get_latest_version};
+use crate::repository::maven::utils::{get_latest_version, get_versions};
+use crate::repository::models::Policy;
 use crate::utils::get_storage_location;
 
 pub struct MavenHandler;
@@ -47,7 +47,11 @@ impl RepositoryType for MavenHandler {
         return Ok(NotFound);
     }
 
-    fn handle_post(_request: RepositoryRequest, _conn: &MysqlConnection, _bytes: Bytes) -> RepoResult {
+    fn handle_post(
+        _request: RepositoryRequest,
+        _conn: &MysqlConnection,
+        _bytes: Bytes,
+    ) -> RepoResult {
         return Ok(BadRequest("Post is not handled in Maven".to_string()));
     }
 
@@ -99,7 +103,7 @@ impl RepositoryType for MavenHandler {
         return Ok(BadRequest("Patch is not handled in Maven".to_string()));
     }
 
-    fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_head(request: RepositoryRequest, _conn: &MysqlConnection) -> RepoResult {
         let buf = get_storage_location()
             .join("storages")
             .join(request.storage.name.clone())
@@ -139,7 +143,10 @@ impl RepositoryType for MavenHandler {
         return Ok(RepoResponse::VersionResponse(vec));
     }
 
-    fn latest_version(request: RepositoryRequest, conn: &MysqlConnection) -> Result<String, RequestError> {
+    fn latest_version(
+        request: RepositoryRequest,
+        conn: &MysqlConnection,
+    ) -> Result<String, RequestError> {
         if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
             return Ok("".to_string());
         }

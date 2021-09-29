@@ -2,15 +2,12 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::{FromStr, ParseBoolError};
 
-
-
 use actix_web::http::header::ToStrError;
 use actix_web::HttpResponse;
 use derive_more::{Display, Error};
 
-
 use crate::repository::repo_error::RepositoryError;
-use crate::error::request_error::RequestError;
+
 use actix_web::http::StatusCode;
 
 #[derive(Debug, Display, Error)]
@@ -92,8 +89,6 @@ impl From<serde_json::Error> for InternalError {
     }
 }
 
-
-
 impl From<actix_web::Error> for InternalError {
     fn from(err: actix_web::Error) -> InternalError {
         InternalError::ActixWebError(err)
@@ -117,7 +112,6 @@ impl From<ParseBoolError> for InternalError {
         InternalError::BooleanParseError(err)
     }
 }
-
 
 impl From<RepositoryError> for InternalError {
     fn from(value: RepositoryError) -> Self {
@@ -149,8 +143,6 @@ impl From<String> for InternalError {
         InternalError::Error(error)
     }
 }
-
-
 
 impl From<&str> for InternalError {
     fn from(value: &str) -> Self {

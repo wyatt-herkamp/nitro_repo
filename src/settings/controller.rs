@@ -3,18 +3,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
 
-use crate::error::request_error::RequestError;
-use crate::settings::action::{get_setting, get_settings};
-use crate::settings::settings::{DBSetting, SettingManager, SettingVec, SettingReport};
-use crate::system::utils::get_user_by_header;
-use crate::utils::{installed, get_current_time};
-use crate::{settings, DbPool};
 use crate::error::internal_error::InternalError;
-use diesel::MysqlConnection;
+use crate::error::request_error::RequestError;
 use crate::error::GenericError;
+use crate::settings::action::get_setting;
+use crate::settings::settings::{DBSetting, SettingManager, SettingReport};
 use crate::settings::utils::get_setting_report;
+use crate::system::utils::get_user_by_header;
+use crate::utils::{get_current_time, installed};
+use crate::{settings, DbPool};
+use diesel::MysqlConnection;
 
-pub fn get_setting_or_empty(string: &str, connection: &MysqlConnection) -> Result<DBSetting, InternalError> {
+pub fn get_setting_or_empty(
+    string: &str,
+    connection: &MysqlConnection,
+) -> Result<DBSetting, InternalError> {
     let result = get_setting(string.clone(), &connection)?;
     if let Some(some) = result {
         return Ok(some);
@@ -24,7 +27,11 @@ pub fn get_setting_or_empty(string: &str, connection: &MysqlConnection) -> Resul
 }
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
-    let setting = SettingManager::get_setting(string.to_string()).ok_or(InternalError::Error(GenericError::from("Unable to find setting"))).unwrap();
+    let setting = SettingManager::get_setting(string.to_string())
+        .ok_or(InternalError::Error(GenericError::from(
+            "Unable to find setting",
+        )))
+        .unwrap();
     return Ok(DBSetting {
         id: 0,
         setting: setting.clone(),
@@ -46,8 +53,7 @@ pub async fn about_setting(
     let connection = pool.get()?;
     installed(&connection)?;
 
-    let option =
-        get_setting_or_empty(setting.as_str(), &connection)?;
+    let option = get_setting_or_empty(setting.as_str(), &connection)?;
     if !option.setting.public.unwrap_or(false) {
         return Err(RequestError::NotAuthorized);
     }
@@ -89,8 +95,7 @@ pub async fn update_setting(
     if !user.permissions.admin {
         return Err(RequestError::NotAuthorized);
     }
-    let mut option =
-        get_setting_or_empty(setting.as_str(), &connection)?;
+    let mut option = get_setting_or_empty(setting.as_str(), &connection)?;
     option.set_value(request.value.clone());
     settings::action::update_setting(&option, &connection)?;
     let option =

@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
 
-
-
+use crate::error::request_error::RequestError;
+use crate::error::request_error::RequestError::NotFound;
 use crate::storage::action::{add_new_storage, get_storage_by_name, get_storages};
 use crate::storage::models::Storage;
 use crate::system::utils::get_user_by_header;
@@ -12,8 +12,6 @@ use crate::utils::{get_current_time, installed};
 use crate::DbPool;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::NotFound;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListStorages {

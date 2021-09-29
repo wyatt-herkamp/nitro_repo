@@ -1,20 +1,13 @@
-
-
 use std::str::{FromStr, ParseBoolError};
 
-
-
-
-use actix_web::{HttpResponse};
+use actix_web::HttpResponse;
 use derive_more::{Display, Error};
-
-
 
 use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
+use actix_web::http::StatusCode;
 use base64::DecodeError;
 use std::string::FromUtf8Error;
-use actix_web::http::StatusCode;
 
 #[derive(Debug, Display, Error)]
 pub enum InternalError {

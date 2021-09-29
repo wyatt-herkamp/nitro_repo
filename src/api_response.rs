@@ -1,8 +1,8 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 
-use serde::{Deserialize, Serialize};
 use crate::error::request_error::RequestError;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIResponse<T> {

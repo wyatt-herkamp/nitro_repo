@@ -6,9 +6,9 @@ use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 
-
 use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
+use crate::error::request_error::RequestError::MissingArgument;
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
@@ -16,7 +16,6 @@ use crate::system::models::{User, UserPermissions};
 use crate::utils::get_current_time;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use crate::error::request_error::RequestError::MissingArgument;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -82,10 +81,8 @@ pub fn can_read_basic_auth(
     repo: &Repository,
     conn: &MysqlConnection,
 ) -> Result<bool, InternalError> {
-     match repo.security.visibility {
-        Visibility::Public => {
-            return Ok(true)
-        }
+    match repo.security.visibility {
+        Visibility::Public => return Ok(true),
         Visibility::Private => {
             let option = header_map.get("Authorization");
             if option.is_none() {
@@ -111,11 +108,8 @@ pub fn can_read_basic_auth(
             }
             Ok(false)
         }
-        Visibility::Hidden => {
-            return Ok(true)
-        }
+        Visibility::Hidden => return Ok(true),
     }
-
 }
 
 pub fn is_authed(
@@ -220,9 +214,8 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, Reque
         created: get_current_time(),
     };
     add_new_user(&user, &conn)?;
-    return Ok(
-        get_user_by_username(username, &conn)?.ok_or(RequestError::from("Unable to find new user"))?
-    );
+    return Ok(get_user_by_username(username, &conn)?
+        .ok_or(RequestError::from("Unable to find new user"))?);
 }
 
 pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, RequestError> {

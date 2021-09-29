@@ -1,12 +1,12 @@
 use crate::api_response::APIResponse;
 use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::{NotAuthorized};
-use crate::system::action::{update_user};
+use crate::error::request_error::RequestError::NotAuthorized;
+use crate::system::action::update_user;
 use crate::system::models::User;
 use crate::system::utils::{get_user_by_header, NewPassword};
 use crate::utils::installed;
 use crate::DbPool;
-use actix_web::{get,post, web, HttpRequest};
+use actix_web::{get, post, web, HttpRequest};
 
 #[get("/api/me")]
 pub async fn me(

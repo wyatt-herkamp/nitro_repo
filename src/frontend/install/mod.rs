@@ -9,7 +9,7 @@ use crate::settings::utils::quick_add;
 use crate::system::models::UserPermissions;
 use crate::system::utils::{new_user, NewPassword, NewUser};
 
-use crate::{url_raw, DbPool};
+use crate::DbPool;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(install_post);

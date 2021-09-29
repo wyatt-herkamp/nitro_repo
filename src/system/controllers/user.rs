@@ -2,7 +2,7 @@ use crate::api_response::APIResponse;
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::{NotAuthorized, NotFound};
 use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
-use crate::system::models::{User};
+use crate::system::models::User;
 use crate::system::utils::{get_user_by_header, new_user, ModifyUser, NewPassword, NewUser};
 use crate::utils::installed;
 use crate::DbPool;
@@ -22,7 +22,7 @@ pub async fn list_users(
     let connection = pool.get()?;
     installed(&connection)?;
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    if !admin.permissions.admin{
+    if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
     let vec = get_users(&connection)?;
@@ -54,7 +54,7 @@ pub async fn modify_user(
     let connection = pool.get()?;
     installed(&connection)?;
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    if !admin.permissions.admin{
+    if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
@@ -73,7 +73,7 @@ pub async fn change_password(
     let connection = pool.get()?;
     installed(&connection)?;
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    if !admin.permissions.admin{
+    if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
     let mut user = get_user_by_username(user, &connection)?.ok_or(NotFound)?;
@@ -94,7 +94,7 @@ pub async fn delete_user(
     installed(&connection)?;
 
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    if !admin.permissions.admin{
+    if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
     let option = get_user_by_username(user, &connection)?.ok_or(NotFound)?;

@@ -1,17 +1,14 @@
-
-
-
-use actix_web::{web};
+use actix_web::web;
 
 pub mod action;
 pub mod admin;
+mod api;
+mod badge;
 pub mod controller;
 pub mod maven;
 pub mod models;
 pub mod repo_error;
 pub mod repository;
-mod api;
-mod badge;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)
