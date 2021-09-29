@@ -85,8 +85,20 @@ pub struct ForgotPassword {
     pub created: i64,
 }
 
+// Represents a Session of an active user
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 pub struct SessionToken {
+    pub id: i64,
+    pub user: i64,
+    pub token: String,
+    pub expiration: i64,
+    pub created: i64,
+}
+
+// Unlike a SessionToken this is a token sent with the users username to be used as a password.
+// If the user sets up Google Authentication with their account they will need to generate one of these to do deploys
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
+pub struct AuthToken {
     pub id: i64,
     pub user: i64,
     pub token: String,

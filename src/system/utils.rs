@@ -76,6 +76,7 @@ pub fn can_deploy_basic_auth(
     }
     Ok(false)
 }
+
 pub fn can_read_basic_auth(
     header_map: &HeaderMap,
     repo: &Repository,
@@ -230,4 +231,13 @@ pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, Re
             return Ok(x);
         }
     }
+}
+
+pub fn generate_auth_token() -> String {
+    let x: String = OsRng
+        .sample_iter(&Alphanumeric)
+        .take(64)
+        .map(char::from)
+        .collect();
+    return format!("ntr_{}", x);
 }

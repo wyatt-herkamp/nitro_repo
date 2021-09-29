@@ -27,6 +27,14 @@ table! {
         expiration ->Bigint,
         created ->Bigint,
     }
+}table! {
+    auth_tokens (id) {
+        id -> Bigint,
+        user -> Bigint,
+        token -> Text,
+        expiration ->Bigint,
+        created ->Bigint,
+    }
 }
 table! {
     forgot_passwords (id) {
