@@ -12,7 +12,7 @@
     "@material-ui/core": "latest",
     "@material-ui/icons": "latest",
     "@material-ui/lab": "latest",
-    "axios": "^0.21.2",
+    "axios": "^0.22.0",
     "date-fns": "^2.24.0",
     "gray-matter": "^4.0.2",
     "material-ui-dropzone": "^3.5.0",
