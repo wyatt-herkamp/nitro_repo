@@ -15,7 +15,7 @@ use actix_files::NamedFile;
 
 use actix_web::web::Bytes;
 use actix_web::{
-    delete, get, head, patch, post, put, web, HttpMessage, HttpRequest, HttpResponse, Responder,
+    get, head, patch, post, put, web, HttpRequest, HttpResponse,
 };
 
 use crate::repository::repository::RepoResponse::BadRequest;

@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, HttpRequest, HttpResponse};
+use actix_web::{post, web, HttpRequest};
 
 use crate::api_response::APIResponse;
 

@@ -11,9 +11,7 @@ use crate::utils::installed;
 use crate::DbPool;
 use actix_files::NamedFile;
 
-use actix_web::{
-    delete, get, head, patch, post, put, web, HttpMessage, HttpRequest, HttpResponse, Responder,
-};
+use actix_web::{get, HttpRequest, HttpResponse, web};
 
 use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, read_to_string, File};
@@ -81,7 +79,7 @@ pub async fn badge(
         .join(string.clone())
         .join(".nitro_repo");
     if !buf1.exists() {
-        create_dir_all(&buf1);
+        create_dir_all(&buf1)?;
     }
     let typ = path.0 .3.clone();
     let buf = buf1
@@ -104,7 +102,7 @@ pub async fn badge(
             .unwrap()
             .svg();
         let mut file1 = File::create(&svg_file).unwrap();
-        file1.write_all(svg.as_bytes());
+        file1.write_all(svg.as_bytes())?;
     }
     if typ.eq("png") {
         let string1 = read_to_string(svg_file)?;

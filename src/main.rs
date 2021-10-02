@@ -3,10 +3,6 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 extern crate dotenv;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate lazy_static_include;
 extern crate strum;
 extern crate strum_macros;
 
@@ -15,7 +11,7 @@ use std::path::Path;
 use actix_cors::Cors;
 use actix_files::Files;
 use actix_web::{
-    get, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, ResponseError,
+    get, middleware, web, App, HttpRequest, HttpResponse, HttpServer,
 };
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
@@ -41,11 +37,6 @@ pub mod storage;
 pub mod system;
 pub mod utils;
 
-fn url_raw(value: &str) -> String {
-    let url = std::env::var("URL").unwrap();
-    let string = format!("{}/{}", url, value);
-    return string;
-}
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();

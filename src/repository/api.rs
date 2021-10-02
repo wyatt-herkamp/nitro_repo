@@ -11,7 +11,7 @@ use crate::utils::installed;
 use crate::DbPool;
 
 use actix_web::{
-    delete, get, head, patch, post, put, web, HttpMessage, HttpRequest, HttpResponse, Responder,
+    get, web, HttpRequest, HttpResponse,
 };
 
 use serde::{Deserialize, Serialize};

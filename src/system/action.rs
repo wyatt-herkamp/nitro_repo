@@ -134,12 +134,12 @@ pub fn add_new_auth_token(
 }
 
 pub fn get_tokens(
-    user: i64,
+    user_id: i64,
     conn: &MysqlConnection,
 ) -> Result<Vec<system::models::AuthToken>, diesel::result::Error> {
     use crate::schema::session_tokens::dsl::*;
     let found_token = session_tokens
-        .filter(user.eq(user))
+        .filter(user.eq(user_id))
         .load::<system::models::AuthToken>(conn)?;
     Ok(found_token)
 }
