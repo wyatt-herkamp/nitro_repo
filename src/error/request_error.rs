@@ -16,6 +16,7 @@ pub enum RequestError {
     InvalidLogin,
     NotFound,
     BadRequest(GenericError),
+    IAmATeapot(GenericError),
     Error(GenericError),
     MismatchingPasswords,
     AlreadyExists,
@@ -47,6 +48,18 @@ impl RequestError {
                 };
                 let result = HttpResponse::Ok()
                     .status(StatusCode::BAD_REQUEST)
+                    .content_type("application/json")
+                    .body(serde_json::to_string(&response).unwrap());
+                return result;
+            }
+            RequestError::IAmATeapot(error) => {
+                let response = APIResponse {
+                    success: false,
+                    data: Some(error.error.clone()),
+                    status_code: Some(418),
+                };
+                let result = HttpResponse::Ok()
+                    .status(StatusCode::IM_A_TEAPOT)
                     .content_type("application/json")
                     .body(serde_json::to_string(&response).unwrap());
                 return result;

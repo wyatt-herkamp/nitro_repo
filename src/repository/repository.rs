@@ -15,6 +15,7 @@ pub enum RepoResponse {
     NotFound,
     NotAuthorized,
     BadRequest(String),
+    IAmATeapot(String),
     VersionResponse(Vec<Version>),
 }
 
