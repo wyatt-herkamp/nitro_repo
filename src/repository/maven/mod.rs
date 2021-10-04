@@ -1,7 +1,7 @@
 mod models;
 mod utils;
 
-use crate::repository::repository::RepoResponse::{BadRequest, NotAuthorized, NotFound};
+use crate::repository::repository::RepoResponse::{BadRequest, NotAuthorized, NotFound, IAmATeapot};
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
 
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
@@ -52,7 +52,7 @@ impl RepositoryType for MavenHandler {
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
-        return Ok(BadRequest("Post is not handled in Maven".to_string()));
+        return Ok(IAmATeapot("Post is not handled in Maven".to_string()));
     }
 
     fn handle_put(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult {
@@ -100,7 +100,7 @@ impl RepositoryType for MavenHandler {
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
-        return Ok(BadRequest("Patch is not handled in Maven".to_string()));
+        return Ok(IAmATeapot("Patch is not handled in Maven".to_string()));
     }
 
     fn handle_head(request: RepositoryRequest, _conn: &MysqlConnection) -> RepoResult {
