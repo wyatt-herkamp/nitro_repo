@@ -85,10 +85,10 @@ async fn main() -> std::io::Result<()> {
             .service(browse)
             .service(browse_extend)
             .service(login)
-            .service(
-                Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
-                    .show_files_listing(),
-            )
+            //.service(
+            //    Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
+            //        .show_files_listing(),
+            //)
     })
     .workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {
