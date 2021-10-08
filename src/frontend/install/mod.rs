@@ -10,6 +10,7 @@ use crate::system::models::UserPermissions;
 use crate::system::utils::{new_user, NewPassword, NewUser};
 
 use crate::DbPool;
+use uuid::Bytes;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(install_post);
@@ -28,8 +29,10 @@ pub struct InstallUser {
 pub async fn install_post(
     pool: web::Data<DbPool>,
     _r: HttpRequest,
-    request: web::Json<InstallUser>,
+    b: web::Bytes,
 ) -> Result<APIResponse<bool>, RequestError> {
+    let string = String::from_utf8(b.to_vec()).unwrap();
+    let request : InstallUser = serde_json::from_str(string.as_str()).unwrap();
     println!("HERe");
     let connection = pool.get()?;
     if request.password != request.password_two {
