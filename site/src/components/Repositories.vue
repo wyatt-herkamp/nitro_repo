@@ -27,11 +27,15 @@
         </el-menu-item>
       </el-menu>
     </el-aside>
-    <el-container>
-      <div v-if="index == 0">
+    <el-container class="content">
+      <div class="content" v-if="index == 0">
         <CreateRepo />
       </div>
-
+      <div class="content" v-for="repo in repositories.repositories" :key="repo.id">
+        <div class="content" v-if="index == repo.id">
+          <UpdateRepository :repo="repo" />
+        </div>
+      </div>
     </el-container>
   </el-container>
 </template>
@@ -40,12 +44,13 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
+import UpdateRepository from "@/components/UpdateRepository.vue";
 import { useCookie } from "vue-cookie-next";
 import { getRepositories } from "@/backend/api/Repository";
 import { DEFAULT_REPO_LIST } from "@/backend/Response";
 
 export default defineComponent({
-  components: { CreateRepo },
+  components: { CreateRepo,UpdateRepository },
 
   setup() {
     const isCollapse = ref(false);
@@ -83,5 +88,9 @@ export default defineComponent({
 .el-menu-vertical-demo:not(.el-menu--collapse) {
   width: 200px;
   min-height: 400px;
+}
+div{
+    width:100%;
+    height:100%;
 }
 </style>

@@ -16,6 +16,18 @@ pub fn get_storage_by_name(
         .optional()?;
 
     Ok(found_mod)
+}pub fn get_storage_by_id(
+    d: i64,
+    conn: &MysqlConnection,
+) -> Result<Option<storage::models::Storage>, diesel::result::Error> {
+    use crate::schema::storages::dsl::*;
+
+    let found_mod = storages
+        .filter(id.eq(d))
+        .first::<storage::models::Storage>(conn)
+        .optional()?;
+
+    Ok(found_mod)
 }
 pub fn add_new_storage(s: &Storage, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::storages::dsl::*;

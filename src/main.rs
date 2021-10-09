@@ -77,6 +77,7 @@ async fn main() -> std::io::Result<()> {
             .service(repository::admin::controller::modify_settings)
             .service(storage::admin::controller::add_storage)
             .service(storage::admin::controller::list_storages)
+            .service(storage::admin::controller::get_by_id)
             .configure(repository::init)
             .configure(frontend::install::init)
             .configure(system::controllers::init)

@@ -24,10 +24,16 @@ export interface Storage {
   public_name: string;
   created: number;
 }
+export const DEFAULT_STORAGE: Storage = {
+  id: 0,
+  name: "",
+  public_name: "",
+  created: 0
+}
 export interface StorageList {
   storages: Array<Storage>;
 }
-export const DEFAULT_STORAGE_LIST :StorageList={
+export const DEFAULT_STORAGE_LIST: StorageList = {
   storages: []
 }
 export interface SecurityRules {
@@ -37,10 +43,20 @@ export interface SecurityRules {
   readers: Array<number>;
   deployers: Array<number>;
 }
-export interface RepoSettings {
+export interface Frontend {
+  active: boolean;
+  enabled: string;
+}export interface BadgeSettings {
+  style: string;
+  label_color: string;
+  color: string;
+
+}export interface RepoSettings {
   policy: string;
   active: boolean;
   re_deployment: boolean;
+  frontend: Frontend;
+  badge: BadgeSettings;
 }
 export interface Repository {
   id: number;
@@ -66,7 +82,7 @@ export interface UserPermissions {
 export interface RepositoryList {
   repositories: Array<Repository>;
 }
-export const DEFAULT_REPO_LIST :RepositoryList={
+export const DEFAULT_REPO_LIST: RepositoryList = {
   repositories: []
 }
 export interface UserList {
@@ -75,33 +91,33 @@ export interface UserList {
 
 
 export interface SettingReport {
-  email:    EmailSettings;
-  general:  DBSetting;
+  email: EmailSettings;
+  general: DBSetting;
 }
 
 export interface EmailSettings {
   email_username: DBSetting;
-  email_host:     DBSetting;
-  encryption:     DBSetting;
-  from:           DBSetting;
-  port:           DBSetting;
+  email_host: DBSetting;
+  encryption: DBSetting;
+  from: DBSetting;
+  port: DBSetting;
 }
 
 export interface DBSetting {
-  id:      number;
+  id: number;
   setting: Setting;
-  value:   string;
+  value: string;
   updated: number;
 }
 
 export interface Setting {
-  key:        string;
-  name:       string;
-  default:    null | string;
-  optional:   null;
+  key: string;
+  name: string;
+  default: null | string;
+  optional: null;
   properties: null;
-  options:    string[] | null;
-  public:     boolean | null;
+  options: string[] | null;
+  public: boolean | null;
 }
 
 export interface GeneralSetting {

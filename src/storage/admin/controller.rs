@@ -5,7 +5,7 @@ use crate::api_response::APIResponse;
 
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotFound;
-use crate::storage::action::{add_new_storage, get_storage_by_name, get_storages};
+use crate::storage::action::{add_new_storage, get_storage_by_name, get_storages, get_storage_by_id};
 use crate::storage::models::Storage;
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
@@ -34,6 +34,24 @@ pub async fn list_storages(
 
     let response = ListStorages { storages: vec };
     return Ok(APIResponse::new(true, Some(response)));
+}
+#[get("/api/storages/id/{id}")]
+pub async fn get_by_id(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    id: web::Path<(i64)>,
+
+) -> Result<APIResponse<Storage>, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let user =
+        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
+    if !user.permissions.admin {
+        return Err(RequestError::NotAuthorized);
+    }
+    let vec = get_storage_by_id(id.0,&connection)?.ok_or(RequestError::NotFound)?;
+
+    return Ok(APIResponse::new(true, Some(vec)));
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

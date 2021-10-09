@@ -1,5 +1,5 @@
 import http from "@/http-common";
-import { BasicResponse, StorageList, DEFAULT_STORAGE_LIST } from "../Response";
+import { BasicResponse, StorageList, Storage, DEFAULT_STORAGE_LIST, DEFAULT_STORAGE } from "../Response";
 export async function getStorages(token: string) {
     const value = await http.get( "/api/storages/list",
         {
@@ -17,4 +17,22 @@ export async function getStorages(token: string) {
     }
 
     return DEFAULT_STORAGE_LIST;
+}
+export async function getStorage(token: string, id: number) {
+    const value = await http.get( "/api/storages/id/"+id,
+        {
+            headers: {
+                Authorization: "Bearer " + token
+            }
+        });
+
+    if (value.status != 200) {
+        return DEFAULT_STORAGE;
+    }
+    const data = value.data as BasicResponse<unknown>;
+    if (data.success) {
+        return data.data as Storage;
+    }
+
+    return DEFAULT_STORAGE;
 }
