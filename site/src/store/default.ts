@@ -4,6 +4,7 @@ import { BasicResponse, User } from '@/backend/Response'
 import { getUser } from '@/backend/api/User';
 import { useCookie } from 'vue-cookie-next'
 import http from "@/http-common"
+
 const state = reactive({
   installed: false,
 })
@@ -24,7 +25,8 @@ const actions = {
     }
 
 
-  }
+  },
+
 }
 export default { state, ...actions }
 

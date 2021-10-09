@@ -4,7 +4,7 @@ export interface BasicResponse<T> {
   status_code: number;
 }
 export interface APIError {
-  user_friendly_message: String;
+  user_friendly_message: string;
   error_code: string;
 }
 
@@ -26,6 +26,9 @@ export interface Storage {
 }
 export interface StorageList {
   storages: Array<Storage>;
+}
+export const DEFAULT_STORAGE_LIST :StorageList={
+  storages: []
 }
 export interface SecurityRules {
   open_to_all_deployers: boolean;
@@ -67,14 +70,10 @@ export interface UserList {
   users: Array<User>;
 }
 
-export interface SecuritySettings {
-
-}
 
 export interface SettingReport {
   email:    EmailSettings;
   general:  DBSetting;
-  security: Security;
 }
 
 export interface EmailSettings {
@@ -104,7 +103,4 @@ export interface Setting {
 
 export interface GeneralSetting {
   name: DBSetting;
-}
-
-export interface Security {
 }
