@@ -7,17 +7,30 @@
         v-if="form.error.length != 0"
         :title="form.error"
         type="error"
+        closable="false"
       />
       <el-form label-position="top" :model="form" label-width="120px">
         <el-form-item label="Name">
-          <el-input v-model="form.name"></el-input>
+          <el-input disabled v-model="form.name" :placeholder="computedStorage.name"></el-input>
         </el-form-item>
         <el-form-item label="Public Name">
-          <el-input v-model="form.public_name"></el-input>
+          <el-input disabled
+            v-model="form.public_name"
+            :placeholder="computedStorage.public_name"
+          ></el-input>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="onSubmit">Create New Storage</el-button>
+          <!--Yeah, I know. But please don't judge -->
+          <el-button
+            :disabled="
+              form.name == computedStorage.name &&
+              form.public_name == computedStorage.public_name
+            "
+            type="primary"
+            @click="onSubmit"
+            >Update Storage</el-button
+          >
         </el-form-item>
       </el-form>
     </el-main>
@@ -29,17 +42,28 @@ import axios from "axios";
 import { AuthToken, BasicResponse } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
-import { defineComponent, ref } from "vue";
+import { computed, defineComponent, onMounted, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
-  setup() {
+  props: {
+    storage: {
+      required: true,
+      type: Storage,
+    },
+  },
+
+  setup(props) {
     let form = ref({
-      name: "",
-      public_name: "",
+      name: props.storage.name,
+      public_name: props.storage.public_name,
       error: "",
     });
-    return { form };
+    const computedStorage = computed(() => {
+       return props.storage
+    });
+    return { form, computedStorage };
   },
   methods: {
     async onSubmit() {
@@ -49,7 +73,7 @@ export default defineComponent({
       };
       let body = JSON.stringify(newUser);
       console.log(body);
-      const res = await http.post("/api/admin/storages/add", body, {
+      const res = await http.post("/api/admin/storages/update", body, {
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + this.$cookie.getCookie("token"),
@@ -66,9 +90,9 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        router.push("/");
+        this.form.error = "Unable to Update Storage";
       } else {
-        this.form.error = "Invalid Password or Username";
+        this.form.error = "Unable to Update Storage";
       }
     },
   },

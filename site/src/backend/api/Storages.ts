@@ -1,7 +1,6 @@
 import http from "@/http-common";
 import { BasicResponse, StorageList, DEFAULT_STORAGE_LIST } from "../Response";
 export async function getStorages(token: string) {
-    //${API_URL}
     const value = await http.get( "/api/storages/list",
         {
             headers: {

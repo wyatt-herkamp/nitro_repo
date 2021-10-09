@@ -12,9 +12,29 @@
         <el-form-item label="Name">
           <el-input v-model="form.name"></el-input>
         </el-form-item>
-
+        <el-form-item label="Repository Type">
+          <el-select
+            v-model="form.type"
+            placeholder="Please select your Repo Type"
+          >
+            <el-option label="Maven" value="maven"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Storage">
+          <el-select
+            v-model="form.storage"
+            placeholder="Please select your storage"
+          >
+            <el-option
+              v-for="storage in storages.storages"
+              :key="storage.id"
+              :label="storage.public_name"
+              :value="storage.name"
+            ></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="onSubmit">Login</el-button>
+          <el-button type="primary" @click="onSubmit">Create Repository</el-button>
         </el-form-item>
       </el-form>
     </el-main>
@@ -23,11 +43,16 @@
 
 <script lang="ts">
 import axios from "axios";
-import { AuthToken, BasicResponse } from "@/backend/Response";
+import {
+  AuthToken,
+  BasicResponse,
+  DEFAULT_STORAGE_LIST,
+} from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
+import { getStorages } from "@/backend/api/Storages";
 
 export default defineComponent({
   setup() {
@@ -37,7 +62,30 @@ export default defineComponent({
       type: "",
       error: "",
     });
-    return { form };
+    const cookie = useCookie();
+    const isLoading = ref(false);
+
+    const error = ref(null);
+    let storages = ref(DEFAULT_STORAGE_LIST);
+    const getStorage = async () => {
+      isLoading.value = true;
+      try {
+        const value = await getStorages(cookie.getCookie("token"));
+        storages.value = value;
+
+        isLoading.value = false;
+      } catch (e) {
+        error.value = e;
+      }
+    };
+    getStorage();
+    return {
+      form,
+      storages,
+      isLoading,
+      error,
+      getStorage,
+    };
   },
   methods: {
     async onSubmit() {

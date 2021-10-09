@@ -66,6 +66,9 @@ export interface UserPermissions {
 export interface RepositoryList {
   repositories: Array<Repository>;
 }
+export const DEFAULT_REPO_LIST :RepositoryList={
+  repositories: []
+}
 export interface UserList {
   users: Array<User>;
 }
