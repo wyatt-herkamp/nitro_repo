@@ -188,7 +188,10 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        this.settingForm.success = "Updated User";
+        this.$notify({
+          title: "Updated User",
+          type:"success"
+        });
       } else {
         this.settingForm.error = "Unable to Update user";
         console.log(response);

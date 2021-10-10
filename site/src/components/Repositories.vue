@@ -3,7 +3,7 @@
     <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
       <el-menu
         default-active="0"
-        class="el-menu-vertical-demo"
+        class="el-menu-vertical-demo content"
         :collapse="false"
       >
         <el-menu-item @click="index = 0" index="0">
@@ -90,8 +90,5 @@ export default defineComponent({
   width: 200px;
   min-height: 400px;
 }
-div {
-  width: 100%;
-  height: 100%;
-}
+
 </style>

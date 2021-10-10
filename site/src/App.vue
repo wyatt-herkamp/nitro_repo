@@ -1,6 +1,9 @@
 <template>
   <Navbar :user="userStore.state.user" />
+
   <router-view />
+  <notifications position="bottom right" />
+
 </template>
 
 <script lang="ts">
