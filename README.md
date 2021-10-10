@@ -20,5 +20,5 @@ After years of using Nexus and then a bit of time of using StrongBox I decided I
 ### Technical Side
 Backend:  Rust using Actix.
 
-Frontend: React, next.js, material-ui, and typescript
+Frontend: Vue and Typescript
 
