@@ -1,15 +1,15 @@
 use std::str::{FromStr, ParseBoolError};
 
 use actix_web::HttpResponse;
-use derive_more::{Display, Error};
 
-use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
 use std::string::FromUtf8Error;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug)]
 pub enum InternalError {
     JSONError(serde_json::Error),
     DBError(diesel::result::Error),
@@ -19,8 +19,8 @@ pub enum InternalError {
     DecodeError(DecodeError),
     UTF8Error(FromUtf8Error),
     SMTPTransportError(lettre::transport::smtp::Error),
-    MissingArgument(GenericError),
-    Error(GenericError),
+    MissingArgument(String),
+    Error(String),
     UnInstalled,
     RepoError(RepositoryError),
 }
@@ -34,6 +34,14 @@ impl InternalError {
         return result;
     }
 }
+
+impl Display for InternalError {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl Error for InternalError {}
 
 //from<Error>
 impl From<DecodeError> for InternalError {
@@ -59,9 +67,10 @@ impl From<r2d2::Error> for InternalError {
         InternalError::R2D2Error(err)
     }
 }
+
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {
-        InternalError::Error(GenericError::from(err.to_string()))
+        InternalError::Error(err.to_string())
     }
 }
 
@@ -69,9 +78,6 @@ impl FromStr for InternalError {
     type Err = InternalError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let error = GenericError {
-            error: s.to_string(),
-        };
-        Ok(InternalError::Error(error))
+        Ok(InternalError::Error(s.to_string()))
     }
 }
