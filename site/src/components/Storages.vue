@@ -4,7 +4,7 @@
       <el-menu
         default-active="0"
         class="el-menu-vertical-demo"
-        :collapse="isCollapse"
+        :collapse="false"
       >
         <el-menu-item @click="index = 0" index="0">
           <i class="el-icon-watermelon"></i>
@@ -52,7 +52,6 @@ export default defineComponent({
   components: { CreateStorage, UpdateStorage },
 
   setup() {
-    const isCollapse = ref(false);
     let index = ref(1);
     const cookie = useCookie();
     const isLoading = ref(false);
@@ -72,7 +71,6 @@ export default defineComponent({
     };
     getStorage();
     return {
-      isCollapse,
       index,
       storages,
       isLoading,

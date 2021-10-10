@@ -4,7 +4,7 @@
       <el-menu
         default-active="0"
         class="el-menu-vertical-demo"
-        :collapse="isCollapse"
+        :collapse="false"
       >
         <el-menu-item @click="index = 0" index="0">
           <i class="el-icon-watermelon"></i>
@@ -33,7 +33,7 @@
       </div>
       <div v-for="user in users.users" :key="user.id">
         <div v-if="index == user.id">
-          <UpdateUser :user="user" />
+          <UpdateUser :user="user" :me="false"/>
         </div>
       </div>
     </el-container>
@@ -52,7 +52,6 @@ export default defineComponent({
   components: { CreateUser, UpdateUser },
 
   setup() {
-    const isCollapse = ref(false);
     let index = ref(0);
     const cookie = useCookie();
     const isLoading = ref(false);
@@ -72,7 +71,6 @@ export default defineComponent({
     };
     getUser();
     return {
-      isCollapse,
       index,
       users,
       isLoading,

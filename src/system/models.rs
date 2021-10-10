@@ -31,9 +31,16 @@ impl User {
         self.password = password;
     }
     pub fn update(&mut self, update: ModifyUser) {
-        self.permissions = update.permissions;
-        self.email = update.email;
-        self.name = update.name;
+        if let Some(perms) = update.permissions {
+            self.permissions = perms;
+        }
+        if let Some(name) = update.name {
+            self.name = name;
+        }
+        if let Some(email) = update.email {
+            self.email = email;
+        }
+
     }
 }
 

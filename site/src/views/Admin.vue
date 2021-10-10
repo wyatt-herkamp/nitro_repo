@@ -4,7 +4,7 @@
       <el-menu
         default-active="4"
         class="el-menu-vertical-demo"
-        :collapse="isCollapse"
+        :collapse="false"
       >
         <el-menu-item @click="index = 1" index="1">
           <i class="el-icon-menu"></i>
@@ -14,7 +14,7 @@
           <i class="el-icon-menu"></i>
           <template #title>Repositories</template>
         </el-menu-item>
-        <el-menu-item @click="index = 3" index="3">
+        <el-menu-item :disabled="!userStore.state.user.permissions.admin" @click="index = 3" index="3">
           <i class="el-icon-user"></i>
           <template #title>User</template>
         </el-menu-item>
@@ -39,7 +39,7 @@
         <Users />
       </div>
       <div v-else-if="index == 4">
-        <UpdateUser :user="user" />
+        <UpdateUser :user="userStore.state.user" :me="true" />
       </div>
       <div v-else-if="index == 5">
         <h1>Settings</h1>
@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from "vue";
+import { defineComponent, onBeforeMount, onMounted, ref } from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Repositories from "@/components/Repositories.vue";
@@ -62,13 +62,11 @@ export default defineComponent({
   components: { Storages, Repositories, Users, UpdateUser },
 
   setup() {
-    const isCollapse = ref(false);
     let index = ref(4);
-    const user = userStore.state.user;
+    onBeforeMount(userStore.getUser);
     return {
-      isCollapse,
       index,
-      user,
+      userStore,
     };
   },
 });

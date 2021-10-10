@@ -8,13 +8,13 @@ import userStore from "@/store/user";
 import defaultStore from "@/store/default";
 import Navbar from "@/components/Navbar.vue";
 import router from "@/router";
-import { defineComponent, onMounted } from "vue";
+import { defineComponent, onBeforeMount, onMounted } from "vue";
 export default defineComponent({
   name: "App",
   components: { Navbar },
   setup() {
-    onMounted(defaultStore.init);
-    onMounted(userStore.getUser);
+    onBeforeMount(defaultStore.init);
+    onBeforeMount(userStore.getUser);
     return { userStore, defaultStore };
   },
 });
