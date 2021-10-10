@@ -55,7 +55,7 @@ export default defineComponent({
 
   setup() {
     const isCollapse = ref(false);
-    let index = ref(1);
+    let index = ref(0);
     const cookie = useCookie();
     const isLoading = ref(false);
 
