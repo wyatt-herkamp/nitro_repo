@@ -11,6 +11,7 @@ use actix_web::http::HeaderMap;
 use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -32,11 +33,15 @@ impl Resources {
 }
 
 pub fn installed(conn: &MysqlConnection) -> Result<(), RequestError> {
+    let installed: bool = bool::from_str(std::env::var("INSTALLED").unwrap().as_str()).unwrap();
+    if installed {
+        return Ok(());
+    }
     let option = get_setting("INSTALLED", &conn)?;
     if option.is_none() {
         return Err(RequestError::UnInstalled);
     }
-
+    std::env::set_var("INSTALLED", "true");
     return Ok(());
 }
 
@@ -64,6 +69,7 @@ pub struct EmailChangeRequest {
     pub from: Option<String>,
     pub port: Option<i64>,
 }
+
 pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, RequestError> {
     let option = header_map.get("accept");
     if option.is_none() {
@@ -74,6 +80,7 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, RequestError
     let header = x.unwrap().to_string();
     Ok(Some(header))
 }
+
 pub fn get_storage_location() -> PathBuf {
     return PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap());
 }

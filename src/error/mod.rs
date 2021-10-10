@@ -4,8 +4,10 @@ use std::str::FromStr;
 
 use crate::error::internal_error::InternalError;
 
+pub mod handlers;
 pub mod internal_error;
 pub mod request_error;
+
 #[derive(Debug)]
 pub struct GenericError {
     pub error: String,
