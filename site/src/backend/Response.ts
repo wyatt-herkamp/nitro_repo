@@ -88,8 +88,9 @@ export const DEFAULT_REPO_LIST: RepositoryList = {
 export interface UserList {
   users: Array<User>;
 }
-
-
+export const DEFAULT_USER_LIST: UserList = {
+  users: []
+}
 export interface SettingReport {
   email: EmailSettings;
   general: DBSetting;

@@ -91,12 +91,6 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        let loginRequest = response as BasicResponse<AuthToken>;
-        let date = new Date(loginRequest.data.expiration * 1000);
-        this.$cookie.setCookie("token", loginRequest.data.token, {
-          expire: date,
-          sameSite: "lax",
-        });
         router.push("/");
       } else {
         this.form.error = "Invalid Password or Username";

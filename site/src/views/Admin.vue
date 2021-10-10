@@ -19,6 +19,10 @@
           <template #title>User</template>
         </el-menu-item>
         <el-menu-item @click="index = 4" index="4">
+          <i class="el-icon-user"></i>
+          <template #title>Me</template>
+        </el-menu-item>
+        <el-menu-item @click="index = 5" index="5">
           <i class="el-icon-setting"></i>
           <template #title>Setting</template>
         </el-menu-item>
@@ -30,13 +34,14 @@
       </div>
       <div v-else-if="index == 2">
         <Repositories />
-
       </div>
       <div v-else-if="index == 3">
         <Users />
-
       </div>
       <div v-else-if="index == 4">
+        <UpdateUser :user="user" />
+      </div>
+      <div v-else-if="index == 5">
         <h1>Settings</h1>
         <p>Paragraph 1</p>
         <p>Paragraph 2</p>
@@ -47,19 +52,24 @@
 
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Repositories from "@/components/Repositories.vue";
+import UpdateUser from "@/components/UpdateUser.vue";
+import userStore from "@/store/user";
+
 export default defineComponent({
-  components: { Storages, Repositories, Users },
+  components: { Storages, Repositories, Users, UpdateUser },
+
   setup() {
     const isCollapse = ref(false);
     let index = ref(4);
-
+    const user = userStore.state.user;
     return {
       isCollapse,
       index,
+      user,
     };
   },
 });

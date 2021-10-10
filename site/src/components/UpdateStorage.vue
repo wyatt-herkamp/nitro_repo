@@ -50,7 +50,7 @@ export default defineComponent({
   props: {
     storage: {
       required: true,
-      type: Storage,
+      type: Object as () => Storage,
     },
   },
 

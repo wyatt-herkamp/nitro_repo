@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BasicResponse, User, UserList } from "../Response";
+import { BasicResponse, DEFAULT_USER_LIST, User, UserList } from "../Response";
 import http from "@/http-common"
 export async function getUser(token: string) {
     //${API_URL}
@@ -30,12 +30,13 @@ export async function getUsers(token: string) {
         });
 
     if (value.status != 200) {
-        return null;
+        return DEFAULT_USER_LIST;
     }
     const data = value.data as BasicResponse<unknown>;
     if (data.success) {
         return data.data as UserList;
     }
 
-    return null;
+    return DEFAULT_USER_LIST;
 }
+
