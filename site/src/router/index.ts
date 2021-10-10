@@ -25,12 +25,12 @@ const routes: Array<RouteRecordRaw> = [
     path: "/login",
     name: "Login",
     component: Login,
-  },  {
+  },
+  {
     path: "/browse/:storage?/:repo?/",
     name: "Browse",
     component: Browse,
   },
-  
 ];
 
 const router = createRouter({

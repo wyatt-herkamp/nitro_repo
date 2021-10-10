@@ -14,7 +14,11 @@
           <i class="el-icon-menu"></i>
           <template #title>Repositories</template>
         </el-menu-item>
-        <el-menu-item :disabled="!userStore.state.user.permissions.admin" @click="index = 3" index="3">
+        <el-menu-item
+          :disabled="!userStore.state.user.permissions.admin"
+          @click="index = 3"
+          index="3"
+        >
           <i class="el-icon-user"></i>
           <template #title>User</template>
         </el-menu-item>

@@ -33,7 +33,7 @@
       </div>
       <div v-for="user in users.users" :key="user.id">
         <div v-if="index == user.id">
-          <UpdateUser :user="user" :me="false"/>
+          <UpdateUser :user="user" :me="false" />
         </div>
       </div>
     </el-container>

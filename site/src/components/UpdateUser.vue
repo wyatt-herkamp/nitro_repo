@@ -92,10 +92,7 @@
           <el-switch v-model="permissions.deployer" />
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
-        <el-button
-          :disabled="me"
-          type="primary"
-          @click="onSettingSubmit"
+        <el-button :disabled="me" type="primary" @click="onSettingSubmit"
           >Update Permissions</el-button
         >
       </el-form-item>

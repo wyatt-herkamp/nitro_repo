@@ -1,46 +1,45 @@
-
-
 <template>
-
-      <el-menu aria-expanded="true" default-active="0" class="el-menu-demo" mode="horizontal">
-        <el-menu-item @click="tab = 0" index="0">General Settings</el-menu-item>
-        <el-menu-item @click="tab = 1" index="1"
-          >Security Settings</el-menu-item
+  <el-menu
+    aria-expanded="true"
+    default-active="0"
+    class="el-menu-demo"
+    mode="horizontal"
+  >
+    <el-menu-item @click="tab = 0" index="0">General Settings</el-menu-item>
+    <el-menu-item @click="tab = 1" index="1">Security Settings</el-menu-item>
+  </el-menu>
+  <div v-if="tab == 0">
+    <el-alert
+      v-if="settingForm.error.length != 0"
+      :title="settingForm.error"
+      type="error"
+      closable="false"
+    />
+    <el-form label-position="top" :model="settingForm" label-width="120px">
+      <el-form-item>
+        <!--Yeah, I know. But please don't judge -->
+        <el-button disabled type="primary" @click="onSettingSubmit"
+          >Update Settings</el-button
         >
-      </el-menu>
-      <div v-if="tab == 0">
-        <el-alert
-          v-if="settingForm.error.length != 0"
-          :title="settingForm.error"
-          type="error"
-          closable="false"
-        />
-        <el-form label-position="top" :model="settingForm" label-width="120px">
-          <el-form-item>
-            <!--Yeah, I know. But please don't judge -->
-            <el-button disabled type="primary" @click="onSettingSubmit"
-              >Update Settings</el-button
-            >
-          </el-form-item>
-        </el-form>
-      </div>
-      <div v-if="tab == 1">
-        <el-alert
-          v-if="settingForm.error.length != 0"
-          :title="settingForm.error"
-          type="error"
-          closable="false"
-        />
-        <el-form label-position="top" :model="settingForm" label-width="120px">
-          <el-form-item>
-            <!--Yeah, I know. But please don't judge -->
-            <el-button disabled type="primary" @click="onSettingSubmit"
-              >Update Security Settings</el-button
-            >
-          </el-form-item>
-        </el-form>
-      </div>
-
+      </el-form-item>
+    </el-form>
+  </div>
+  <div v-if="tab == 1">
+    <el-alert
+      v-if="settingForm.error.length != 0"
+      :title="settingForm.error"
+      type="error"
+      closable="false"
+    />
+    <el-form label-position="top" :model="settingForm" label-width="120px">
+      <el-form-item>
+        <!--Yeah, I know. But please don't judge -->
+        <el-button disabled type="primary" @click="onSettingSubmit"
+          >Update Security Settings</el-button
+        >
+      </el-form-item>
+    </el-form>
+  </div>
 </template>
 
 <script lang="ts">
