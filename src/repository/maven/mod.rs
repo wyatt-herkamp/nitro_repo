@@ -1,7 +1,9 @@
 mod models;
 mod utils;
 
-use crate::repository::repository::RepoResponse::{BadRequest, NotAuthorized, NotFound, IAmATeapot};
+use crate::repository::repository::RepoResponse::{
+    BadRequest, IAmATeapot, NotAuthorized, NotFound,
+};
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
 
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};

@@ -31,7 +31,11 @@
       <div class="content" v-if="index == 0">
         <CreateRepo />
       </div>
-      <div class="content" v-for="repo in repositories.repositories" :key="repo.id">
+      <div
+        class="content"
+        v-for="repo in repositories.repositories"
+        :key="repo.id"
+      >
         <div class="content" v-if="index == repo.id">
           <UpdateRepository :repo="repo" />
         </div>
@@ -39,7 +43,6 @@
     </el-container>
   </el-container>
 </template>
-
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
@@ -50,7 +53,7 @@ import { getRepositories } from "@/backend/api/Repository";
 import { DEFAULT_REPO_LIST } from "@/backend/Response";
 
 export default defineComponent({
-  components: { CreateRepo,UpdateRepository },
+  components: { CreateRepo, UpdateRepository },
 
   setup() {
     const isCollapse = ref(false);
@@ -89,8 +92,8 @@ export default defineComponent({
   width: 200px;
   min-height: 400px;
 }
-div{
-    width:100%;
-    height:100%;
+div {
+  width: 100%;
+  height: 100%;
 }
 </style>

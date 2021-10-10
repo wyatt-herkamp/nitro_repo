@@ -28,14 +28,14 @@ export const DEFAULT_STORAGE: Storage = {
   id: 0,
   name: "",
   public_name: "",
-  created: 0
-}
+  created: 0,
+};
 export interface StorageList {
   storages: Array<Storage>;
 }
 export const DEFAULT_STORAGE_LIST: StorageList = {
-  storages: []
-}
+  storages: [],
+};
 export interface SecurityRules {
   open_to_all_deployers: boolean;
   open_to_all_readers: boolean;
@@ -46,12 +46,13 @@ export interface SecurityRules {
 export interface Frontend {
   active: boolean;
   enabled: string;
-}export interface BadgeSettings {
+}
+export interface BadgeSettings {
   style: string;
   label_color: string;
   color: string;
-
-}export interface RepoSettings {
+}
+export interface RepoSettings {
   policy: string;
   active: boolean;
   re_deployment: boolean;
@@ -83,14 +84,14 @@ export interface RepositoryList {
   repositories: Array<Repository>;
 }
 export const DEFAULT_REPO_LIST: RepositoryList = {
-  repositories: []
-}
+  repositories: [],
+};
 export interface UserList {
   users: Array<User>;
 }
 export const DEFAULT_USER_LIST: UserList = {
-  users: []
-}
+  users: [],
+};
 export interface SettingReport {
   email: EmailSettings;
   general: DBSetting;

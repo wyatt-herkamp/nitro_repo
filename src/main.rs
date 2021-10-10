@@ -10,22 +10,20 @@ use std::path::Path;
 
 use actix_cors::Cors;
 use actix_files::Files;
-use actix_web::{
-    get, middleware, web, App, HttpRequest, HttpResponse, HttpServer,
-};
+use actix_web::{get, middleware, web, App, HttpRequest, HttpResponse, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use log::info;
 use log::error;
+use log::info;
 use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 use crate::error::request_error::RequestError;
 
 use crate::utils::{installed, Resources};
+use actix_web::error::JsonPayloadError;
 use actix_web::web::PayloadConfig;
 use std::fs::read_to_string;
-use actix_web::error::JsonPayloadError;
 
 pub mod api_response;
 pub mod error;
@@ -38,7 +36,6 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
-
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
@@ -69,23 +66,44 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .data(PayloadConfig::new(1 * 1024 * 1024))
-            .app_data(web::JsonConfig::default().
-                limit(4096).error_handler(|error, request| {
-                match error {
-                    JsonPayloadError::Overflow => {
-                        return actix_web::error::ErrorBadRequest(RequestError::MissingArgument("Overflow".into()).to_json_response().value);
-                    }
-                    JsonPayloadError::ContentType => {
-                        return actix_web::error::ErrorBadRequest(RequestError::MissingArgument("Invalid Content Type".into()).to_json_response().value);
-                    }
-                    JsonPayloadError::Deserialize(serde) => {
-                        return actix_web::error::ErrorBadRequest(RequestError::MissingArgument(format!("Invalid Json {}", serde.to_string()).into()).to_json_response().value);
-                    }
-                    JsonPayloadError::Payload(payload) => {
-                        return actix_web::error::ErrorBadRequest(RequestError::MissingArgument(format!("Bad payload {}", payload.to_string()).into()).to_json_response().value);
-                    }
-                }
-            }))
+            .app_data(
+                web::JsonConfig::default().limit(4096).error_handler(
+                    |error, request| match error {
+                        JsonPayloadError::Overflow => {
+                            return actix_web::error::ErrorBadRequest(
+                                RequestError::MissingArgument("Overflow".into())
+                                    .to_json_response()
+                                    .value,
+                            );
+                        }
+                        JsonPayloadError::ContentType => {
+                            return actix_web::error::ErrorBadRequest(
+                                RequestError::MissingArgument("Invalid Content Type".into())
+                                    .to_json_response()
+                                    .value,
+                            );
+                        }
+                        JsonPayloadError::Deserialize(serde) => {
+                            return actix_web::error::ErrorBadRequest(
+                                RequestError::MissingArgument(
+                                    format!("Invalid Json {}", serde.to_string()).into(),
+                                )
+                                .to_json_response()
+                                .value,
+                            );
+                        }
+                        JsonPayloadError::Payload(payload) => {
+                            return actix_web::error::ErrorBadRequest(
+                                RequestError::MissingArgument(
+                                    format!("Bad payload {}", payload.to_string()).into(),
+                                )
+                                .to_json_response()
+                                .value,
+                            );
+                        }
+                    },
+                ),
+            )
             .service(install::installed)
             .service(settings::controller::update_setting)
             .service(settings::controller::about_setting)
@@ -110,7 +128,7 @@ async fn main() -> std::io::Result<()> {
         //        .show_files_listing(),
         //)
     })
-        .workers(2);
+    .workers(2);
     if std::env::var("PRIVATE_KEY").is_ok() {
         let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
         builder

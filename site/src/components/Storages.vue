@@ -40,7 +40,6 @@
   </el-container>
 </template>
 
-
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import CreateStorage from "@/components/CreateStorage.vue";

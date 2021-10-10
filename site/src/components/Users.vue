@@ -1,4 +1,3 @@
-
 <template>
   <el-container style="border: 1px solid #eee">
     <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
@@ -34,13 +33,12 @@
       </div>
       <div v-for="user in users.users" :key="user.id">
         <div v-if="index == user.id">
-            <UpdateUser :user="user"/>
+          <UpdateUser :user="user" />
         </div>
       </div>
     </el-container>
   </el-container>
 </template>
-
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
@@ -51,7 +49,7 @@ import { getUsers } from "@/backend/api/User";
 import { DEFAULT_USER_LIST } from "@/backend/Response";
 
 export default defineComponent({
-  components: { CreateUser ,UpdateUser},
+  components: { CreateUser, UpdateUser },
 
   setup() {
     const isCollapse = ref(false);

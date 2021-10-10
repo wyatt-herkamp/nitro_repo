@@ -27,7 +27,8 @@ table! {
         expiration ->Bigint,
         created ->Bigint,
     }
-}table! {
+}
+table! {
     auth_tokens (id) {
         id -> Bigint,
         user -> Bigint,

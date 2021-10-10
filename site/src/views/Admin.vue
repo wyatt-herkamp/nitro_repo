@@ -50,7 +50,6 @@
   </el-container>
 </template>
 
-
 <script lang="ts">
 import { defineComponent, onMounted, ref } from "vue";
 import Storages from "@/components/Storages.vue";

@@ -1,5 +1,3 @@
-
-
 <template>
   <el-container direction="horizontal" style="border: 1px solid #eee">
     <el-main>
@@ -11,10 +9,15 @@
       />
       <el-form label-position="top" :model="form" label-width="120px">
         <el-form-item label="Name">
-          <el-input disabled v-model="form.name" :placeholder="computedStorage.name"></el-input>
+          <el-input
+            disabled
+            v-model="form.name"
+            :placeholder="computedStorage.name"
+          ></el-input>
         </el-form-item>
         <el-form-item label="Public Name">
-          <el-input disabled
+          <el-input
+            disabled
             v-model="form.public_name"
             :placeholder="computedStorage.public_name"
           ></el-input>
@@ -61,7 +64,7 @@ export default defineComponent({
       error: "",
     });
     const computedStorage = computed(() => {
-       return props.storage
+      return props.storage;
     });
     return { form, computedStorage };
   },
@@ -98,5 +101,4 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-</style>
+<style scoped></style>

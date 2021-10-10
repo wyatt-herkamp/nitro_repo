@@ -8,9 +8,9 @@ use crate::api_response::APIResponse;
 use crate::error::internal_error::InternalError;
 use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
+use actix_web::dev::Body;
 use actix_web::http::StatusCode;
 use std::fmt::{Display, Formatter};
-use actix_web::dev::Body;
 
 #[derive(Debug, Display, Error)]
 pub enum RequestError {
@@ -59,7 +59,10 @@ impl RequestError {
                     data: Some(self.to_string()),
                     status_code: Some(401),
                 };
-                return ErrorResponse{ value: serde_json::to_string(&response).unwrap(), status: StatusCode::UNAUTHORIZED };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
+                };
             }
             RequestError::BadRequest(error) => {
                 let response = APIResponse {
@@ -67,7 +70,10 @@ impl RequestError {
                     data: Some(error.error.clone()),
                     status_code: Some(400),
                 };
-                return ErrorResponse{ value: serde_json::to_string(&response).unwrap(), status: StatusCode::BAD_REQUEST };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::BAD_REQUEST,
+                };
             }
             RequestError::MissingArgument(error) => {
                 let response = APIResponse {
@@ -75,7 +81,10 @@ impl RequestError {
                     data: Some(error.error.clone()),
                     status_code: Some(400),
                 };
-                return ErrorResponse{ value: serde_json::to_string(&response).unwrap(), status: StatusCode::BAD_REQUEST };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::BAD_REQUEST,
+                };
             }
             RequestError::IAmATeapot(error) => {
                 let response = APIResponse {
@@ -83,7 +92,10 @@ impl RequestError {
                     data: Some(error.error.clone()),
                     status_code: Some(418),
                 };
-                return ErrorResponse{ value: serde_json::to_string(&response).unwrap(), status: StatusCode::IM_A_TEAPOT };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::IM_A_TEAPOT,
+                };
             }
             _ => {
                 let response = APIResponse {
@@ -91,12 +103,14 @@ impl RequestError {
                     data: Some(self.to_string()),
                     status_code: Some(200),
                 };
-                return ErrorResponse{ value: serde_json::to_string(&response).unwrap(), status: StatusCode::OK };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::OK,
+                };
             }
         }
     }
 }
-
 
 impl Into<Body> for RequestError {
     fn into(self) -> Body {

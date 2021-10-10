@@ -10,9 +10,7 @@ use crate::storage::action::get_storage_by_name;
 use crate::utils::installed;
 use crate::DbPool;
 
-use actix_web::{
-    get, web, HttpRequest, HttpResponse,
-};
+use actix_web::{get, web, HttpRequest, HttpResponse};
 
 use serde::{Deserialize, Serialize};
 

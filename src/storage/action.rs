@@ -16,7 +16,8 @@ pub fn get_storage_by_name(
         .optional()?;
 
     Ok(found_mod)
-}pub fn get_storage_by_id(
+}
+pub fn get_storage_by_id(
     d: i64,
     conn: &MysqlConnection,
 ) -> Result<Option<storage::models::Storage>, diesel::result::Error> {

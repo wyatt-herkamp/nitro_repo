@@ -32,7 +32,7 @@ pub async fn install_post(
     b: web::Bytes,
 ) -> Result<APIResponse<bool>, RequestError> {
     let string = String::from_utf8(b.to_vec()).unwrap();
-    let request : InstallUser = serde_json::from_str(string.as_str()).unwrap();
+    let request: InstallUser = serde_json::from_str(string.as_str()).unwrap();
     println!("HERe");
     let connection = pool.get()?;
     if request.password != request.password_two {

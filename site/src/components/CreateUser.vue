@@ -1,5 +1,3 @@
-
-
 <template>
   <el-container direction="horizontal" style="border: 1px solid #eee">
     <el-main>
@@ -99,5 +97,4 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-</style>
+<style scoped></style>

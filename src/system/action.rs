@@ -1,4 +1,4 @@
-use crate::system::models::{SessionToken, User, AuthToken};
+use crate::system::models::{AuthToken, SessionToken, User};
 
 use crate::{system, utils};
 use diesel::prelude::*;
@@ -116,8 +116,6 @@ pub fn get_user_from_session_token(
     }
     return get_user_by_id(result.user, conn);
 }
-
-
 
 //Session Token
 

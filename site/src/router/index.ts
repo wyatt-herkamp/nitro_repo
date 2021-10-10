@@ -14,7 +14,8 @@ const routes: Array<RouteRecordRaw> = [
     path: "/install",
     name: "Install",
     component: Install,
-  }, {
+  },
+  {
     path: "/admin",
     name: "Admin",
     component: Admin,
