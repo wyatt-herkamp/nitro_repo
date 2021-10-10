@@ -41,7 +41,7 @@ pub async fn list_storages(
 pub async fn get_by_id(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    id: web::Path<(i64)>,
+    id: web::Path<i64>,
 ) -> Result<APIResponse<Storage>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;

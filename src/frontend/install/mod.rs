@@ -10,7 +10,6 @@ use crate::system::models::UserPermissions;
 use crate::system::utils::{new_user, NewPassword, NewUser};
 
 use crate::DbPool;
-use uuid::Bytes;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(install_post);

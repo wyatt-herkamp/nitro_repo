@@ -10,7 +10,6 @@ use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
 use actix_web::dev::Body;
 use actix_web::http::StatusCode;
-use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Display, Error)]
 pub enum RequestError {

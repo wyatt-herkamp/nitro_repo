@@ -9,12 +9,10 @@ extern crate strum_macros;
 use std::path::Path;
 
 use actix_cors::Cors;
-use actix_files::Files;
 use actix_web::{get, middleware, web, App, HttpRequest, HttpResponse, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use log::error;
-use log::info;
+use log::{info};
 use log4rs::config::RawConfig;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
@@ -68,7 +66,7 @@ async fn main() -> std::io::Result<()> {
             .data(PayloadConfig::new(1 * 1024 * 1024))
             .app_data(
                 web::JsonConfig::default().limit(4096).error_handler(
-                    |error, request| match error {
+                    |error, _request| match error {
                         JsonPayloadError::Overflow => {
                             return actix_web::error::ErrorBadRequest(
                                 RequestError::MissingArgument("Overflow".into())
