@@ -15,6 +15,7 @@ use log4rs::config::RawConfig;
 
 use crate::utils::Resources;
 use actix_web::web::PayloadConfig;
+use actix_files::Files;
 
 pub mod api_response;
 pub mod error;
@@ -66,6 +67,9 @@ async fn main() -> std::io::Result<()> {
             .configure(install::init)
             .configure(system::controllers::init)
             .configure(frontend::init)
+            // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
+            .service(Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
+                .show_files_listing())
     })
         .workers(2);
 
