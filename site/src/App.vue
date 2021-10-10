@@ -1,24 +1,17 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </div>
-
-  <p>
-    {{ defaultStore.state.installed }}
-    {{ userStore.state.user.username }}
-  </p>
+  <Navbar :user="userStore.state.user" />
   <router-view />
 </template>
 
 <script lang="ts">
 import userStore from "@/store/user";
 import defaultStore from "@/store/default";
+import Navbar from "@/components/Navbar.vue";
 import router from "@/router";
 import { defineComponent, onMounted } from "vue";
 export default defineComponent({
   name: "App",
-  components: {},
+  components: { Navbar },
   setup() {
     onMounted(defaultStore.init);
     onMounted(userStore.getUser);
