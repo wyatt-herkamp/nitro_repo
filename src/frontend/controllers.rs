@@ -9,8 +9,6 @@ use std::path::Path;
 
 #[get("/")]
 pub async fn index(pool: web::Data<DbPool>, _r: HttpRequest) -> Result<HttpResponse, RequestError> {
-    let connection = pool.get()?;
-    installed(&connection)?;
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"));
     return Ok(HttpResponse::Ok()
         .content_type("text/html")
