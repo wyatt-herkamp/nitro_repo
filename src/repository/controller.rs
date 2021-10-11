@@ -119,11 +119,8 @@ pub fn handle_result(
             if x.contains(&"application/json".to_string()) {
                 return Err(NotFound);
             } else {
-                let result1 =
-                    read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("404.html"));
                 Ok(HttpResponse::NotFound()
-                    .content_type("text/html")
-                    .body(result1.unwrap()))
+                    .content_type("text/html").body("NOT FOUND"))
             }
         }
         RepoResponse::NotAuthorized => {
