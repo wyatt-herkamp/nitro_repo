@@ -11,7 +11,7 @@ use crate::utils::installed;
 use crate::DbPool;
 use actix_files::NamedFile;
 
-use actix_web::{get, HttpRequest, HttpResponse, web};
+use actix_web::{get, web, HttpRequest, HttpResponse};
 
 use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, read_to_string, File};

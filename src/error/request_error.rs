@@ -2,31 +2,62 @@ use std::str::ParseBoolError;
 
 use actix_web::http::header::ToStrError;
 use actix_web::HttpResponse;
-use derive_more::{Display, Error};
 
 use crate::api_response::APIResponse;
 use crate::error::internal_error::InternalError;
-use crate::error::GenericError;
 use crate::repository::repo_error::RepositoryError;
+use actix_web::dev::Body;
 use actix_web::http::StatusCode;
+use std::fmt::{Display, Formatter};
+use std::error::Error;
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug)]
 pub enum RequestError {
     NotAuthorized,
     InvalidLogin,
     NotFound,
-    BadRequest(GenericError),
-    IAmATeapot(GenericError),
-    Error(GenericError),
+    BadRequest(String),
+    IAmATeapot(String),
+    Error(String),
     MismatchingPasswords,
     AlreadyExists,
-    MissingArgument(GenericError),
+    MissingArgument(String),
     UnInstalled,
     InternalError(InternalError),
 }
+impl Display for RequestError {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl Error for RequestError {}
 
 impl RequestError {
     pub fn json_error(&self) -> HttpResponse {
+        let response = self.to_json_response();
+        let result = HttpResponse::Ok()
+            .status(response.status.clone())
+            .content_type("application/json")
+            .body(response.value);
+        return result;
+    }
+}
+
+impl From<InternalError> for RequestError {
+    fn from(err: InternalError) -> RequestError {
+        RequestError::InternalError(err)
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorResponse {
+    pub value: String,
+    pub status: StatusCode,
+}
+
+impl RequestError {
+    pub fn to_json_response(&self) -> ErrorResponse {
         match self {
             RequestError::NotAuthorized => {
                 let response = APIResponse {
@@ -34,35 +65,43 @@ impl RequestError {
                     data: Some(self.to_string()),
                     status_code: Some(401),
                 };
-                let result = HttpResponse::Ok()
-                    .status(StatusCode::UNAUTHORIZED)
-                    .content_type("application/json")
-                    .body(serde_json::to_string(&response).unwrap());
-                return result;
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
+                };
             }
             RequestError::BadRequest(error) => {
                 let response = APIResponse {
                     success: false,
-                    data: Some(error.error.clone()),
-                    status_code: Some(401),
+                    data: Some(error.clone()),
+                    status_code: Some(400),
                 };
-                let result = HttpResponse::Ok()
-                    .status(StatusCode::BAD_REQUEST)
-                    .content_type("application/json")
-                    .body(serde_json::to_string(&response).unwrap());
-                return result;
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::BAD_REQUEST,
+                };
+            }
+            RequestError::MissingArgument(error) => {
+                let response = APIResponse {
+                    success: false,
+                    data: Some(error.clone()),
+                    status_code: Some(400),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::BAD_REQUEST,
+                };
             }
             RequestError::IAmATeapot(error) => {
                 let response = APIResponse {
                     success: false,
-                    data: Some(error.error.clone()),
+                    data: Some(error.clone()),
                     status_code: Some(418),
                 };
-                let result = HttpResponse::Ok()
-                    .status(StatusCode::IM_A_TEAPOT)
-                    .content_type("application/json")
-                    .body(serde_json::to_string(&response).unwrap());
-                return result;
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::IM_A_TEAPOT,
+                };
             }
             _ => {
                 let response = APIResponse {
@@ -70,19 +109,18 @@ impl RequestError {
                     data: Some(self.to_string()),
                     status_code: Some(200),
                 };
-                let result = HttpResponse::Ok()
-                    .status(StatusCode::OK)
-                    .content_type("application/json")
-                    .body(serde_json::to_string(&response).unwrap());
-                return result;
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::OK,
+                };
             }
         }
     }
 }
 
-impl From<InternalError> for RequestError {
-    fn from(err: InternalError) -> RequestError {
-        RequestError::InternalError(err)
+impl Into<Body> for RequestError {
+    fn into(self) -> Body {
+        Body::from(self.to_json_response().value)
     }
 }
 
@@ -143,34 +181,30 @@ impl From<RepositoryError> for RequestError {
 
 impl From<actix_web::client::HttpError> for RequestError {
     fn from(err: actix_web::client::HttpError) -> RequestError {
-        InternalError::Error(GenericError::from(err.to_string())).into()
+        InternalError::Error(err.to_string()).into()
     }
 }
 
 impl From<std::io::Error> for RequestError {
     fn from(err: std::io::Error) -> RequestError {
-        InternalError::Error(GenericError::from(err.to_string())).into()
+        InternalError::Error(err.to_string()).into()
     }
 }
 
 impl From<ToStrError> for RequestError {
     fn from(err: ToStrError) -> RequestError {
-        InternalError::Error(GenericError::from(err.to_string())).into()
+        InternalError::Error(err.to_string()).into()
     }
 }
 
 impl From<String> for RequestError {
     fn from(value: String) -> RequestError {
-        let error = GenericError { error: value };
-        InternalError::Error(error).into()
+        InternalError::Error(value).into()
     }
 }
 
 impl From<&str> for RequestError {
     fn from(value: &str) -> Self {
-        let error = GenericError {
-            error: value.to_string(),
-        };
-        InternalError::Error(error).into()
+        InternalError::Error(value.to_string()).into()
     }
 }

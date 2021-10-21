@@ -14,9 +14,7 @@ use crate::DbPool;
 use actix_files::NamedFile;
 
 use actix_web::web::Bytes;
-use actix_web::{
-    get, head, patch, post, put, web, HttpRequest, HttpResponse,
-};
+use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
 
 use crate::repository::repository::RepoResponse::BadRequest;
 use actix_web::http::StatusCode;
@@ -72,13 +70,13 @@ pub async fn get_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
+        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
             .ok_or(RequestError::NotFound)?;
 
     let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
+    let string = path.0 .2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -93,7 +91,7 @@ pub async fn get_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, path.0 .2.clone(), r);
 }
 
 pub fn handle_result(
@@ -121,11 +119,8 @@ pub fn handle_result(
             if x.contains(&"application/json".to_string()) {
                 return Err(NotFound);
             } else {
-                let result1 =
-                    read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("404.html"));
                 Ok(HttpResponse::NotFound()
-                    .content_type("text/html")
-                    .body(result1.unwrap()))
+                    .content_type("text/html").body("NOT FOUND"))
             }
         }
         RepoResponse::NotAuthorized => {
@@ -160,19 +155,19 @@ pub async fn post_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
+        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
             .ok_or(RequestError::NotFound)?;
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0 .2.clone(),
             r,
         );
     }
     let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
+    let string = path.0 .2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -187,7 +182,7 @@ pub async fn post_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, path.0 .2.clone(), r);
 }
 
 #[patch("/storages/{storage}/{repository}/{file:.*}")]
@@ -199,19 +194,19 @@ pub async fn patch_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
+        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
             .ok_or(RequestError::NotFound)?;
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0 .2.clone(),
             r,
         );
     }
     let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
+    let string = path.0 .2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -226,7 +221,7 @@ pub async fn patch_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, path.0 .2.clone(), r);
 }
 
 #[put("/storages/{storage}/{repository}/{file:.*}")]
@@ -238,19 +233,19 @@ pub async fn put_repository(
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
+        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
             .ok_or(RequestError::NotFound)?;
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0 .2.clone(),
             r,
         );
     }
     let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
+    let string = path.0 .2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -265,7 +260,7 @@ pub async fn put_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, path.0 .2.clone(), r);
 }
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]
@@ -277,19 +272,19 @@ pub async fn head_repository(
     let connection = pool.get()?;
     installed(&connection)?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
+        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
             .ok_or(RequestError::NotFound)?;
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0 .2.clone(),
             r,
         );
     }
     let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
+    let string = path.0 .2.clone();
 
     let request = RepositoryRequest {
         //TODO DONT DO THIS
@@ -304,5 +299,5 @@ pub async fn head_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, path.0 .2.clone(), r);
 }

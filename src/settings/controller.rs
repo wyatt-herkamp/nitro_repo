@@ -5,7 +5,6 @@ use crate::api_response::APIResponse;
 
 use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
-use crate::error::GenericError;
 use crate::settings::action::get_setting;
 use crate::settings::settings::{DBSetting, SettingManager, SettingReport};
 use crate::settings::utils::get_setting_report;
@@ -28,9 +27,9 @@ pub fn get_setting_or_empty(
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
-        .ok_or(InternalError::Error(GenericError::from(
-            "Unable to find setting",
-        )))
+        .ok_or(InternalError::Error(
+            "Unable to find setting".to_string(),
+        ))
         .unwrap();
     return Ok(DBSetting {
         id: 0,
