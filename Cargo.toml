@@ -2,7 +2,7 @@
 name = "nitro_repo"
 version = "0.1.0"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
