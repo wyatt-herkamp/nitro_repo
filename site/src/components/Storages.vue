@@ -14,7 +14,7 @@
           <i class="el-icon-watermelon"></i>
           <template #title>Loading </template>
         </el-menu-item>
-        <div v-else-if="error != null">
+        <div v-else-if="error != ''">
           {{ error }} <button @click="getStorage">try again</button>
         </div>
         <el-menu-item
@@ -56,7 +56,7 @@ export default defineComponent({
     const cookie = useCookie();
     const isLoading = ref(false);
 
-    const error = ref(null);
+    const error = ref("");
     let storages = ref(DEFAULT_STORAGE_LIST);
     const getStorage = async () => {
       isLoading.value = true;
@@ -66,7 +66,7 @@ export default defineComponent({
 
         isLoading.value = false;
       } catch (e) {
-        error.value = e;
+        error.value = "Error";
       }
     };
     getStorage();

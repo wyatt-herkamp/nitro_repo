@@ -6,7 +6,8 @@
     mode="horizontal"
   >
     <el-menu-item @click="tab = 0" index="0">General Settings</el-menu-item>
-    <el-menu-item @click="tab = 1" index="1">Security Settings</el-menu-item>
+    <el-menu-item @click="tab = 1" index="1">Frontend Settings</el-menu-item>
+    <el-menu-item @click="tab = 2" index="2">Security Settings</el-menu-item>
   </el-menu>
   <div v-if="tab == 0">
     <el-alert
@@ -17,6 +18,28 @@
     />
     <el-form label-position="top" :model="settingForm" label-width="120px">
       <el-form-item>
+        <el-form-item label="Name">
+          <el-input disabled v-model="$props.repo.name"></el-input>
+        </el-form-item>
+        <el-form-item label="Storage">
+          <el-input disabled v-model="storage.name"></el-input>
+        </el-form-item>
+        <el-form-item label="Type">
+          <el-input disabled v-model="$props.repo.repo_type"></el-input>
+        </el-form-item>
+        <el-form-item label="Created On">
+          <el-input disabled v-model="date"></el-input>
+        </el-form-item>
+        <el-form-item label="Active">
+          <el-switch v-model="settingForm.active" />
+        </el-form-item>
+        <el-form-item label="Repository Policy">
+          <el-select v-model="settingForm.policy">
+            <el-option label="Release" value="Release"></el-option>
+            <el-option label="Snapshot" value="Snapshot"></el-option>
+            <el-option label="Mixed" value="Mixed"></el-option>
+          </el-select>
+        </el-form-item>
         <!--Yeah, I know. But please don't judge -->
         <el-button disabled type="primary" @click="onSettingSubmit"
           >Update Settings</el-button
@@ -31,8 +54,54 @@
       type="error"
       closable="false"
     />
-    <el-form label-position="top" :model="settingForm" label-width="120px">
+    <el-form label-position="top" :model="frontendForm" label-width="120px">
       <el-form-item>
+        <el-form-item label="Frontend Page Enabled">
+          <el-switch v-model="frontendForm.frontend_enabled" />
+        </el-form-item>
+        <el-form-item label="Page Provider">
+          <el-select v-model="frontendForm.frontend_page_provider">
+            <el-option label="README" value="README"></el-option>
+            <el-option label="None" value="None"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-divider></el-divider>
+        <el-form-item label="Badge Style ">
+          <el-select v-model="frontendForm.badge_style">
+            <el-option label="Flat" value="Flat"></el-option>
+            <el-option label="FlatSquare" value="FlatSquare"></el-option>
+            <el-option label="Plastic" value="Plastic"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Badge Color ">
+          <el-color-picker  v-model="frontendForm.badge_color" />
+        </el-form-item>        
+        <el-form-item label="Badge Color ">
+          <el-color-picker v-model="frontendForm.badge_label_color" />
+        </el-form-item>
+
+        <!--Yeah, I know. But please don't judge -->
+        <el-button disabled type="primary" @click="onSettingSubmit"
+          >Update Frontend Settings</el-button
+        >
+      </el-form-item>
+    </el-form>
+  </div>
+  <div v-if="tab == 2">
+    <el-alert
+      v-if="settingForm.error.length != 0"
+      :title="settingForm.error"
+      type="error"
+      closable="false"
+    />
+    <el-form label-position="top" :model="securityForm" label-width="120px">
+      <el-form-item>
+        <el-select v-model="securityForm.visibility">
+          <el-option label="Public" value="Public"></el-option>
+          <el-option label="Private" value="Private"></el-option>
+          <el-option label="Hidden" value="Hidden"></el-option>
+        </el-select>
+
         <!--Yeah, I know. But please don't judge -->
         <el-button disabled type="primary" @click="onSettingSubmit"
           >Update Security Settings</el-button
@@ -73,18 +142,28 @@ export default defineComponent({
       policy: props.repo.settings.policy,
       error: "",
     });
+    let frontendForm = ref({
+      frontend_enabled: props.repo.settings.frontend.enabled,
+      frontend_page_provider: props.repo.settings.frontend.page_provider,
+      badge_style: props.repo.settings.badge.style,
+      badge_label_color: props.repo.settings.badge.label_color,
+      badge_color: props.repo.settings.badge.color,
+
+      error: "",
+    });
     let securityForm = ref({
       open_to_all_deployers: props.repo.security.open_to_all_deployers,
       open_to_all_readers: props.repo.security.open_to_all_readers,
       visibility: props.repo.security.visibility,
       error: "",
     });
+    let date = new Date(props.repo.created).toLocaleDateString("en-US");
 
     const cookie = useCookie();
     const isLoading = ref(false);
     const tab = ref(0);
     const activeName = ref("first");
-    const error = ref(null);
+    const error = ref("");
     let storage = ref(DEFAULT_STORAGE);
     const getStorageByID = async () => {
       isLoading.value = true;
@@ -97,12 +176,20 @@ export default defineComponent({
 
         isLoading.value = false;
       } catch (e) {
-        error.value = e;
+        error.value = "";
       }
     };
     getStorageByID();
 
-    return { settingForm, securityForm, storage, tab, activeName };
+    return {
+      settingForm,
+      securityForm,
+      frontendForm,
+      storage,
+      tab,
+      activeName,
+      date,
+    };
   },
   methods: {
     async onSettingSubmit() {

@@ -43,9 +43,10 @@ export interface SecurityRules {
   readers: Array<number>;
   deployers: Array<number>;
 }
+
 export interface Frontend {
-  active: boolean;
-  enabled: string;
+  page_provider: string;
+  enabled: boolean;
 }
 export interface BadgeSettings {
   style: string;

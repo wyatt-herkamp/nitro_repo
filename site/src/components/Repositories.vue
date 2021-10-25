@@ -14,7 +14,7 @@
           <i class="el-icon-watermelon"></i>
           <template #title>Loading </template>
         </el-menu-item>
-        <div v-else-if="error != null">
+        <div v-else-if="error != ''">
           {{ error }} <button @click="getRepos">try again</button>
         </div>
         <el-menu-item
@@ -60,7 +60,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const cookie = useCookie();
 
-    const error = ref(null);
+    const error = ref("");
     let repositories = ref(DEFAULT_REPO_LIST);
     const getRepos = async () => {
       isLoading.value = true;
@@ -70,7 +70,7 @@ export default defineComponent({
 
         isLoading.value = false;
       } catch (e) {
-        error.value = e;
+        error.value = "Error";
       }
     };
     getRepos();

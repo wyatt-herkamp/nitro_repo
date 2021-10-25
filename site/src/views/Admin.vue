@@ -46,9 +46,8 @@
         <UpdateUser :user="userStore.state.user" :me="true" />
       </div>
       <div v-else-if="index == 5">
-        <h1>Settings</h1>
-        <p>Paragraph 1</p>
-        <p>Paragraph 2</p>
+        <Settings />
+
       </div>
     </el-container>
   </el-container>
@@ -59,11 +58,12 @@ import { defineComponent, onBeforeMount, onMounted, ref } from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Repositories from "@/components/Repositories.vue";
+import Settings from "@/components/Settings.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
 
 export default defineComponent({
-  components: { Storages, Repositories, Users, UpdateUser },
+  components: { Storages, Repositories, Users, UpdateUser , Settings},
 
   setup() {
     let index = ref(4);

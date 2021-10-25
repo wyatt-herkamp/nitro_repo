@@ -18,7 +18,7 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="onSubmit">Login</el-button>
+          <el-button type="primary" @click="onSubmit">Log In</el-button>
         </el-form-item>
       </el-form>
     </el-main>
