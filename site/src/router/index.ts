@@ -27,7 +27,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Login,
   },
   {
-    path: "/browse/:storage?/:repo?/",
+    path: "/browse/:storage?/:repo?/:catchAll(.*)?",
     name: "Browse",
     component: Browse,
   },
