@@ -25,6 +25,7 @@ pub enum RequestError {
     UnInstalled,
     InternalError(InternalError),
 }
+
 impl Display for RequestError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self)
@@ -101,6 +102,17 @@ impl RequestError {
                 return ErrorResponse {
                     value: serde_json::to_string(&response).unwrap(),
                     status: StatusCode::IM_A_TEAPOT,
+                };
+            }
+            RequestError::NotFound => {
+                let response = APIResponse::<bool> {
+                    success: false,
+                    data: None,
+                    status_code: Some(404),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::NOT_FOUND,
                 };
             }
             _ => {
