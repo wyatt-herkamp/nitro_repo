@@ -37,7 +37,7 @@ strum = { version = "0.22.0", features = ["derive"] }
 strum_macros = "0.22.0"
 derive_more = "0.99.14"
 chrono = "0.4.19"
-time = "0.3.3"
+time = "0.3.4"
 actix-multipart = "0.3.0"
 actix-cors = "0.5.4"
 toml = "0.5.8"
