@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
-
+export const baseURL = "http://127.0.0.1:6742";
 const apiClient: AxiosInstance = axios.create({
-  baseURL: "http://127.0.0.1:6742",
+  baseURL: baseURL,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

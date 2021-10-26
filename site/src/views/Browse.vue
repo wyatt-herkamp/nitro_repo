@@ -7,7 +7,7 @@
     </el-breadcrumb>
     <el-main>
       <h1>Welcome to Nitro Repo Browse 0.1.0</h1>
-      <el-table :data="tableData" @row-click="onRowClick" style="width: 100%">
+      <el-table class="pointer" :data="tableData" @row-click="onRowClick" style="width: 100%">
         <el-table-column prop="name" label="name" />
       </el-table>
     </el-main>
@@ -126,3 +126,8 @@ export default defineComponent({
   },
 });
 </script>
+<style scoped>
+.pointer:hover{
+  cursor: pointer;
+}
+</style>

@@ -66,6 +66,9 @@
           </el-select>
         </el-form-item>
         <el-divider></el-divider>
+        
+        <img  :src="exampleBadgeURL" />
+        <el-divider></el-divider>
         <el-form-item label="Badge Style ">
           <el-select v-model="frontendForm.badge_style">
             <el-option label="Flat" value="Flat"></el-option>
@@ -74,8 +77,8 @@
           </el-select>
         </el-form-item>
         <el-form-item label="Badge Color ">
-          <el-color-picker  v-model="frontendForm.badge_color" />
-        </el-form-item>        
+          <el-color-picker v-model="frontendForm.badge_color" />
+        </el-form-item>
         <el-form-item label="Badge Color ">
           <el-color-picker v-model="frontendForm.badge_label_color" />
         </el-form-item>
@@ -122,7 +125,7 @@ import {
   Storage,
 } from "@/backend/Response";
 import router from "@/router";
-import http from "@/http-common";
+import http, { baseURL } from "@/http-common";
 import { computed, defineComponent, onMounted, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useRouter } from "vue-router";
@@ -158,13 +161,14 @@ export default defineComponent({
       error: "",
     });
     let date = new Date(props.repo.created).toLocaleDateString("en-US");
-
     const cookie = useCookie();
     const isLoading = ref(false);
     const tab = ref(0);
     const activeName = ref("first");
     const error = ref("");
     let storage = ref(DEFAULT_STORAGE);
+    const exampleBadgeURL =  ref("");
+
     const getStorageByID = async () => {
       isLoading.value = true;
       try {
@@ -173,7 +177,13 @@ export default defineComponent({
           props.repo.storage
         );
         storage.value = value;
-
+        exampleBadgeURL.value =
+          baseURL + 
+          "/badge/" +
+          storage.value.name +
+          "/" +
+          props.repo.name +
+          "/nitro_repo_example/badge.svg";
         isLoading.value = false;
       } catch (e) {
         error.value = "";
@@ -189,6 +199,7 @@ export default defineComponent({
       tab,
       activeName,
       date,
+      exampleBadgeURL,
     };
   },
   methods: {

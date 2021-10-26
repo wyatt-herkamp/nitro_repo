@@ -51,27 +51,30 @@ pub async fn badge(
     println!("HELLO");
     let connection = pool.get()?;
     installed(&connection)?;
-    let storage = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
-        get_repo_by_name_and_storage(path.0 .1.clone(), storage.id.clone(), &connection)?
+        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
             .ok_or(RequestError::NotFound)?;
 
     let t = repository.repo_type.clone();
-    let string = path.0 .2.clone();
-
-    let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
-        storage: storage.clone(),
-        repository: repository.clone(),
-        value: string.clone(),
+    let string = path.0.2.clone();
+    let x = if string.eq("nitro_repo_example") {
+        "example".to_string()
+    } else {
+        let request = RepositoryRequest {
+            //TODO DONT DO THIS
+            request: r.clone(),
+            storage: storage.clone(),
+            repository: repository.clone(),
+            value: string.clone(),
+        };
+        match t.as_str() {
+            "maven" => MavenHandler::latest_version(request, &connection),
+            _ => {
+                panic!("Unknown REPO")
+            }
+        }?
     };
-    let x = match t.as_str() {
-        "maven" => MavenHandler::latest_version(request, &connection),
-        _ => {
-            panic!("Unknown REPO")
-        }
-    }?;
     let buf1 = PathBuf::new()
         .join("storages")
         .join(storage.name.clone())
@@ -81,7 +84,7 @@ pub async fn badge(
     if !buf1.exists() {
         create_dir_all(&buf1)?;
     }
-    let typ = path.0 .3.clone();
+    let typ = path.0.3.clone();
     let buf = buf1
         .clone()
         .join(format!("badge-{}.{}", x.clone(), typ.clone()));

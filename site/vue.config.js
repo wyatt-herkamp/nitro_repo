@@ -13,7 +13,7 @@ if (!API_URL) {
     throw new Error("No config file or environment variables found. ");
   }
 }
-
+console.log(API_URL);
 module.exports = {
   chainWebpack: (config) => {
     config.plugin("html").tap((args) => {
