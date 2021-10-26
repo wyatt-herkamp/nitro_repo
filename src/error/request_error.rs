@@ -5,7 +5,6 @@ use actix_web::HttpResponse;
 
 use crate::api_response::APIResponse;
 use crate::error::internal_error::InternalError;
-use crate::repository::repo_error::RepositoryError;
 use actix_web::dev::Body;
 use actix_web::http::StatusCode;
 use std::fmt::{Display, Formatter};
@@ -13,17 +12,29 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub enum RequestError {
+    /// Not Authorized
     NotAuthorized,
+    /// Invalid Login
     InvalidLogin,
+    /// Not Found
     NotFound,
+    /// Bad Request
     BadRequest(String),
+    /// I am a Teapot
     IAmATeapot(String),
+    /// Generic Error
     Error(String),
+    /// Passwords are not matching
     MismatchingPasswords,
+    /// That item already exists
     AlreadyExists,
+    /// Missing arguments in your request
     MissingArgument(String),
+    /// Nitro_Repo is not installed
     UnInstalled,
+    /// Internal Errors that happen due to a library or error outside the users controll
     InternalError(InternalError),
+
 }
 
 impl Display for RequestError {
@@ -115,15 +126,71 @@ impl RequestError {
                     status: StatusCode::NOT_FOUND,
                 };
             }
-            _ => {
-                let response = APIResponse {
+
+            RequestError::InvalidLogin => {
+                let response = APIResponse::<bool> {
                     success: false,
-                    data: Some(self.to_string()),
-                    status_code: Some(200),
+                    data: None,
+                    status_code: Some(401),
                 };
                 return ErrorResponse {
                     value: serde_json::to_string(&response).unwrap(),
-                    status: StatusCode::OK,
+                    status: StatusCode::UNAUTHORIZED,
+                };
+            }
+            RequestError::Error(error) => {
+                let response = APIResponse {
+                    success: false,
+                    data: Some(error),
+                    status_code: Some(401),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
+                };
+            }
+            RequestError::MismatchingPasswords => {
+                let response = APIResponse::<bool> {
+                    success: false,
+                    data: None,
+                    status_code: Some(401),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
+                };
+            }
+            RequestError::AlreadyExists => {
+                let response = APIResponse::<bool> {
+                    success: false,
+                    data: None,
+                    status_code: Some(401),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
+                };
+            }
+            RequestError::UnInstalled => {
+                let response = APIResponse::<bool> {
+                    success: false,
+                    data: None,
+                    status_code: Some(401),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
+                };
+            }
+            RequestError::InternalError(s) => {
+                let response = APIResponse {
+                    success: false,
+                    data: Some(s.to_string()),
+                    status_code: Some(401),
+                };
+                return ErrorResponse {
+                    value: serde_json::to_string(&response).unwrap(),
+                    status: StatusCode::UNAUTHORIZED,
                 };
             }
         }
@@ -185,11 +252,6 @@ impl From<ParseBoolError> for RequestError {
     }
 }
 
-impl From<RepositoryError> for RequestError {
-    fn from(value: RepositoryError) -> RequestError {
-        return InternalError::RepoError(value).into();
-    }
-}
 
 impl From<actix_web::client::HttpError> for RequestError {
     fn from(err: actix_web::client::HttpError) -> RequestError {

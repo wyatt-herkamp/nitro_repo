@@ -2,7 +2,6 @@ use std::str::{FromStr, ParseBoolError};
 
 use actix_web::HttpResponse;
 
-use crate::repository::repo_error::RepositoryError;
 use actix_web::http::StatusCode;
 use base64::DecodeError;
 use std::string::FromUtf8Error;
@@ -21,8 +20,6 @@ pub enum InternalError {
     SMTPTransportError(lettre::transport::smtp::Error),
     MissingArgument(String),
     Error(String),
-    UnInstalled,
-    RepoError(RepositoryError),
 }
 
 impl InternalError {

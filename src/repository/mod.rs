@@ -7,7 +7,6 @@ mod badge;
 pub mod controller;
 pub mod maven;
 pub mod models;
-pub mod repo_error;
 pub mod repository;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
