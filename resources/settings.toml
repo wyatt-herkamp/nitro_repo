@@ -41,7 +41,7 @@ type = "int"
 default = "587"
 [[settings]]
 key = "name.public"
-name = "Public Store Name"
+name = "Public Name"
 type = "string"
 default = "Nitro Repo"
 public = true

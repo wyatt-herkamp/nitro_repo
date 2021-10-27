@@ -95,7 +95,7 @@ export const DEFAULT_USER_LIST: UserList = {
 };
 export interface SettingReport {
   email: EmailSettings;
-  general: DBSetting;
+  general: GeneralSetting;
 }
 
 export interface EmailSettings {
@@ -125,6 +125,8 @@ export interface Setting {
 
 export interface GeneralSetting {
   name: DBSetting;
+  installed: DBSetting;
+  version: DBSetting;
 }
 
 

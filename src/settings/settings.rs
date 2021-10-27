@@ -18,6 +18,8 @@ use crate::error::request_error::RequestError;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
     pub name: DBSetting,
+    pub installed: DBSetting,
+    pub version: DBSetting,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

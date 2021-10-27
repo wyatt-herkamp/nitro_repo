@@ -11,6 +11,15 @@
   <div v-if="tab == 0">
     <el-form label-position="top" :model="settingForm" label-width="120px">
       <el-form-item>
+        <el-form-item label="Installed">
+          <el-input disabled v-model="unchangeable.installed"></el-input>
+        </el-form-item>
+        <el-form-item label="Version">
+          <el-input disabled v-model="unchangeable.version"></el-input>
+        </el-form-item>
+        <el-form-item label="Name">
+          <el-input disabled v-model="settingForm['site.name']"></el-input>
+        </el-form-item>
         <el-button
           :disabled="settingButton()"
           type="primary"
@@ -23,10 +32,28 @@
   <div v-if="tab == 1">
     <el-form label-position="top" :model="email" label-width="120px">
       <el-form-item>
-        <!--Yeah, I know. But please don't judge -->
-        <el-button type="primary" @click="updateEmail"
-          >Update Email</el-button
-        >
+        <el-form-item label="Email Host">
+          <el-input v-model="email['email.host']"></el-input>
+        </el-form-item>
+        <el-form-item label="Email Port">
+          <el-input v-model="email['email.port']"></el-input>
+        </el-form-item>
+        <el-form-item label="Email Type">
+          <el-select v-model="email['email.encryption']">
+            <el-option label="TLS" value="TLS"></el-option>
+            <el-option label="NONE" value="NONE"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Email Username">
+          <el-input v-model="email['email.username']"></el-input>
+        </el-form-item>
+        <el-form-item label="Email Password">
+          <el-input v-model="email['email.password']"></el-input>
+        </el-form-item>
+        <el-form-item label="Email From">
+          <el-input v-model="email['email.from']"></el-input>
+        </el-form-item>
+        <el-button type="primary" @click="updateEmail">Update Email</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -42,6 +69,7 @@ import {
   DEFAULT_STORAGE,
   Storage,
   User,
+  SettingReport,
 } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
@@ -52,14 +80,54 @@ import { getStorage } from "@/backend/api/Storages";
 
 export default defineComponent({
   setup() {
-    let settingForm = ref({});
+    let settingForm = ref({
+      "site.name": "Nitro Repo",
+    });
     let email = ref({
       "email.host": "",
+      "email.username": "",
+      "email.password": "",
+      "email.encryption": "",
+      "email.from": "",
+      "email.port": "",
     });
+    let unchangeable = ref({
+      installed: false,
+      version: "0.1.0",
+    });
+    const cookie = useCookie();
 
+    const loadSettings = async () => {
+      try {
+        const value = await http.get("/api/settings/report", {
+          headers: {
+            Authorization: "Bearer " + cookie.getCookie("token"),
+          },
+        });
+        if (value.status != 200) {
+          return [];
+        }
+        const data = value.data as BasicResponse<unknown>;
+        if (data.success) {
+          let report = data.data as SettingReport;
+          settingForm.value['site.name'] = report.general.name.value
+          email.value['email.host'] = report.email.email_host.value
+          email.value['email.username'] = report.email.email_username.value
+          email.value['email.from'] = report.email.from.value
+          email.value['email.password'] ="";
+          email.value['email.encryption'] = report.email.encryption.value
+          email.value['email.port'] = report.email.port.value
+          unchangeable.value.installed = report.general.installed.value=="true"
+          unchangeable.value.version = report.general.version.value
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    loadSettings();
     const tab = ref(0);
 
-    return { settingForm, email, tab };
+    return { settingForm, email, tab, unchangeable };
   },
   methods: {
     settingButton() {

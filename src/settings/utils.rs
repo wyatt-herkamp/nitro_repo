@@ -57,6 +57,14 @@ pub fn get_setting_report(connection: &MysqlConnection) -> Result<SettingReport,
             .get_setting_by_key("name.public")
             .unwrap_or(&default_setting("name.public")?)
             .clone(),
+        installed: vec
+            .get_setting_by_key("installed")
+            .unwrap_or(&default_setting("installed")?)
+            .clone(),
+        version: vec
+            .get_setting_by_key("version")
+            .unwrap_or(&default_setting("version")?)
+            .clone()
     };
     let security = SecuritySettings {};
     return Ok(SettingReport {
