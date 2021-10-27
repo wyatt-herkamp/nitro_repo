@@ -17,7 +17,7 @@ use actix_web::web::Bytes;
 use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
 
 use crate::repository::repository::RepoResponse::BadRequest;
-use actix_web::http::{Method, StatusCode};
+use actix_web::http::{ StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;

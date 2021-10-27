@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::iter::Map;
 use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
 
