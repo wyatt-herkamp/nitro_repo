@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::iter::Map;
 use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
 
@@ -7,9 +9,19 @@ use actix_web::HttpRequest;
 use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use serde_json::Value;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RepositoryFile {
+    pub name: String,
+    pub full_path: String,
+    pub directory: bool,
+    pub data: HashMap<String, Value>,
+}
+
 
 pub enum RepoResponse {
-    FileList(Vec<String>),
+    FileList(Vec<RepositoryFile>),
     FileResponse(PathBuf),
     Ok,
     NotFound,
@@ -39,7 +51,7 @@ pub trait RepositoryType {
     fn handle_post(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
     fn handle_put(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
     fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes)
-        -> RepoResult;
+                    -> RepoResult;
     fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
     fn handle_versions(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
 

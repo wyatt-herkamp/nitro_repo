@@ -1,10 +1,11 @@
 mod models;
 mod utils;
 
+use std::collections::HashMap;
 use crate::repository::repository::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound,
 };
-use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
+use crate::repository::repository::{RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType};
 
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
@@ -38,7 +39,14 @@ impl RepositoryType for MavenHandler {
                 let mut files = Vec::new();
                 for x in dir {
                     let entry = x?;
-                    files.push(entry.file_name().into_string().unwrap());
+                    let string = entry.file_name().into_string().unwrap();
+                    let file = RepositoryFile {
+                        name: string,
+                        full_path: entry.path().to_str().unwrap().to_string(),
+                        directory: entry.file_type()?.is_dir(),
+                        data: HashMap::new()
+                    };
+                    files.push(file);
                 }
                 return Ok(RepoResponse::FileList(files));
             } else {
@@ -110,7 +118,7 @@ impl RepositoryType for MavenHandler {
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
-            .join(request.value);
+            .join(request.value.clone());
         //TODO do not return the body
         if buf.exists() {
             if buf.is_dir() {
@@ -118,7 +126,14 @@ impl RepositoryType for MavenHandler {
                 let mut files = Vec::new();
                 for x in dir {
                     let entry = x?;
-                    files.push(entry.file_name().into_string().unwrap());
+                    let string = entry.file_name().into_string().unwrap();
+                    let file = RepositoryFile {
+                        name: string.clone(),
+                        full_path: format!("{}/{}",request.value, string),
+                        directory: entry.file_type()?.is_dir(),
+                        data: Default::default()
+                    };
+                    files.push(file);
                 }
                 return Ok(RepoResponse::FileList(files));
             } else {
