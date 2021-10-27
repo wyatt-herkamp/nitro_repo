@@ -126,3 +126,11 @@ export interface Setting {
 export interface GeneralSetting {
   name: DBSetting;
 }
+
+
+export interface FileResponse {
+  name: string,
+  full_path: string,
+  directory: boolean,
+  data: Map<string, any>
+}

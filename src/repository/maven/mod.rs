@@ -32,7 +32,9 @@ impl RepositoryType for MavenHandler {
             .join("storages")
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
-            .join(request.value);
+            .join(request.value.clone());
+        let path = format!("{}/{}/{}", request.storage.name.clone(), request.repository.name.clone(), request.value);
+
         if buf.exists() {
             if buf.is_dir() {
                 let dir = read_dir(buf)?;
@@ -41,10 +43,10 @@ impl RepositoryType for MavenHandler {
                     let entry = x?;
                     let string = entry.file_name().into_string().unwrap();
                     let file = RepositoryFile {
-                        name: string,
-                        full_path: entry.path().to_str().unwrap().to_string(),
+                        name: string.clone(),
+                        full_path: format!("{}/{}",path, string),
                         directory: entry.file_type()?.is_dir(),
-                        data: HashMap::new()
+                        data: HashMap::new(),
                     };
                     files.push(file);
                 }
@@ -119,6 +121,8 @@ impl RepositoryType for MavenHandler {
             .join(request.storage.name.clone())
             .join(request.repository.name.clone())
             .join(request.value.clone());
+        let path = format!("{}/{}/{}", request.storage.name.clone(), request.repository.name.clone(), request.value);
+
         //TODO do not return the body
         if buf.exists() {
             if buf.is_dir() {
@@ -129,9 +133,9 @@ impl RepositoryType for MavenHandler {
                     let string = entry.file_name().into_string().unwrap();
                     let file = RepositoryFile {
                         name: string.clone(),
-                        full_path: format!("{}/{}",request.value, string),
+                        full_path: format!("{}/{}",path, string),
                         directory: entry.file_type()?.is_dir(),
-                        data: Default::default()
+                        data: Default::default(),
                     };
                     files.push(file);
                 }

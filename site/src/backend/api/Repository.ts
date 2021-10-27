@@ -1,5 +1,5 @@
 import http from "@/http-common";
-import { BasicResponse, RepositoryList, DEFAULT_REPO_LIST } from "../Response";
+import { BasicResponse, RepositoryList, DEFAULT_REPO_LIST, FileResponse } from "../Response";
 export async function getRepositories(token: string) {
   const value = await http.get("/api/repositories/list", {
     headers: {
@@ -43,7 +43,7 @@ export async function getRepositoriesPublicAccess(storage: string) {
   }
   const data = value.data as BasicResponse<unknown>;
   if (data.success) {
-    return data.data as Array<string>;
+    return data.data as Array<FileResponse>;
   }
 
   return [];

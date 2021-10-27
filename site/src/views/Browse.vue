@@ -7,7 +7,12 @@
     </el-breadcrumb>
     <el-main>
       <h1>Welcome to Nitro Repo Browse 0.1.0</h1>
-      <el-table class="pointer" :data="tableData" @row-click="onRowClick" style="width: 100%">
+      <el-table
+        class="pointer"
+        :data="tableData"
+        @row-click="onRowClick"
+        style="width: 100%"
+      >
         <el-table-column prop="name" label="name" />
       </el-table>
     </el-main>
@@ -20,6 +25,7 @@ import {
   getRepositoriesPublicAccess,
 } from "@/backend/api/Repository";
 import { getStorages, getStoragesPublicAccess } from "@/backend/api/Storages";
+import { FileResponse } from "@/backend/Response";
 import router from "@/router";
 import { defineComponent, ref } from "vue";
 import { useRoute } from "vue-router";
@@ -49,10 +55,9 @@ export default defineComponent({
               storage,
               repository,
               catchAll
-            )) as string[];
+            )) as FileResponse[];
             for (const storage of value) {
-              console.log(storage);
-              tableData.value.push({ name: storage });
+              tableData.value.push(storage);
             }
           } catch (e) {
             console.log(e);
@@ -95,12 +100,20 @@ export default defineComponent({
     onRowClick(row: any) {
       if (this.repository != undefined && this.repository != "") {
         let value = row.name as string;
-
+        for (const i of this.tableData) {
+          let data = i as FileResponse;
+          if (data.name == value) {
+            if(!data.directory){
+             console.log( data.full_path)
+              return;
+            }
+          }
+        }
         let url = this.catchAll;
         if (url == "") {
           url = value;
-        }else{
-          url = url +"/"+value;
+        } else {
+          url = url + "/" + value;
         }
         console.log("Path " + url);
         router.push({
@@ -127,7 +140,7 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-.pointer:hover{
+.pointer:hover {
   cursor: pointer;
 }
 </style>
