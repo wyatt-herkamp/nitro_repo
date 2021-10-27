@@ -8,7 +8,7 @@ use crate::error::request_error::RequestError::{NotAuthorized, NotFound};
 use crate::repository::action::{
     add_new_repository, get_repo_by_name_and_storage, get_repositories, update_repo,
 };
-use crate::repository::models::{Repository, RepositorySettings, SecurityRules, Visibility};
+use crate::repository::models::{Repository, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
 use crate::storage::action::get_storage_by_name;
 use crate::system::utils::get_user_by_header;
 use crate::utils::{get_current_time, installed};
@@ -96,12 +96,12 @@ pub async fn add_repo(
     return Ok(APIResponse::new(true, Some(option)));
 }
 
-#[post("/api/admin/repository/{storage}/{repo}/modify/settings")]
-pub async fn modify_settings(
+#[post("/api/admin/repository/{storage}/{repo}/modify/settings/general")]
+pub async fn modify_general_settings(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String)>,
-    nc: web::Json<RepositorySettings>,
+    nc: web::Json<UpdateSettings>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
@@ -109,11 +109,32 @@ pub async fn modify_settings(
     if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
-    let string = path.0 .1.clone();
+    let string = path.0 .0.clone();
     let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
     let mut repository = get_repo_by_name_and_storage(path.0 .1.clone(), storage.id, &connection)?
         .ok_or(NotFound)?;
-    repository.settings.update(nc.0.clone());
+    repository.settings.update_general(nc.0);
+    update_repo(&repository, &connection)?;
+    return Ok(APIResponse::new(true, Some(repository)));
+}
+#[post("/api/admin/repository/{storage}/{repo}/modify/settings/frontend")]
+pub async fn modify_frontend_settings(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(String, String)>,
+    nc: web::Json<UpdateFrontend>,
+) -> Result<APIResponse<Repository>, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin {
+        return Err(NotAuthorized);
+    }
+    let string = path.0 .0.clone();
+    let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
+    let mut repository = get_repo_by_name_and_storage(path.0 .1.clone(), storage.id, &connection)?
+        .ok_or(NotFound)?;
+    repository.settings.update_frontend(nc.0);
     update_repo(&repository, &connection)?;
     return Ok(APIResponse::new(true, Some(repository)));
 }

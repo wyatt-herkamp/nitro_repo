@@ -2,7 +2,7 @@ use crate::error::request_error::RequestError;
 
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
-use crate::repository::models::Repository;
+use crate::repository::models::{BadgeSettings, Repository};
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 
 use crate::storage::action::get_storage_by_name;
@@ -28,7 +28,9 @@ use usvg::Options;
 pub struct ListRepositories {
     pub repositories: Vec<Repository>,
 }
-
+fn file_name(b_s: &BadgeSettings, version: &String, t: &str)->String{
+    return format!("badge-{}-{}-{}-{}.{}", b_s.style.to_badge_maker_style(), b_s.color, b_s.label_color, version.clone(), t);
+}
 fn load_fonts() -> usvg::fontdb::Database {
     let mut fontdb = usvg::fontdb::Database::new();
     fontdb.load_system_fonts();
@@ -84,22 +86,23 @@ pub async fn badge(
         create_dir_all(&buf1)?;
     }
     let typ = path.0.3.clone();
+    let b_s = repository.settings.badge;
     let buf = buf1
         .clone()
-        .join(format!("badge-{}.{}", x.clone(), typ.clone()));
+        .join(file_name(&b_s, &x, typ.as_str()));
     if buf.exists() {
         return Ok(NamedFile::open(buf)?.into_response(&r)?);
     }
-    let svg_file = buf1.clone().join(format!("badge-{}.svg", x.clone()));
+    let svg_file = buf1.clone().join(file_name(&b_s, &x, typ.as_str()));
 
     if !svg_file.exists() {
         let svg: String = BadgeBuilder::new()
             .style(Style::Flat)
             .label(repository.name.as_str())
             .message(x.as_str())
-            .style(repository.settings.badge.style.to_badge_maker_style())
-            .color_parse(repository.settings.badge.color.as_str())
-            .label_color_parse(repository.settings.badge.label_color.as_str())
+            .style(b_s.style.to_badge_maker_style())
+            .color_parse(b_s.color.as_str())
+            .label_color_parse(b_s.label_color.as_str())
             .build()
             .unwrap()
             .svg();
@@ -130,7 +133,7 @@ pub async fn badge(
         let mut pixmap1 = tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
         let pixmap = pixmap1.as_mut();
         resvg::render(&result, fit_to, pixmap).unwrap();
-        let svg_file = buf1.clone().join(format!("badge-{}.png", x.clone()));
+        let svg_file = buf1.clone().join(file_name(&b_s, &x, typ.as_str()));
 
         pixmap1.save_png(svg_file).unwrap();
     }

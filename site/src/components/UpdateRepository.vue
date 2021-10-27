@@ -41,7 +41,7 @@
           </el-select>
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
-        <el-button disabled type="primary" @click="onSettingSubmit"
+        <el-button  type="primary" @click="onSettingSubmit"
           >Update Settings</el-button
         >
       </el-form-item>
@@ -66,8 +66,8 @@
           </el-select>
         </el-form-item>
         <el-divider></el-divider>
-        
-        <img  :src="exampleBadgeURL" />
+
+        <img :src="exampleBadgeURL" />
         <el-divider></el-divider>
         <el-form-item label="Badge Style ">
           <el-select v-model="frontendForm.badge_style">
@@ -84,7 +84,7 @@
         </el-form-item>
 
         <!--Yeah, I know. But please don't judge -->
-        <el-button disabled type="primary" @click="onSettingSubmit"
+        <el-button type="primary" @click="submitFrontend"
           >Update Frontend Settings</el-button
         >
       </el-form-item>
@@ -106,7 +106,7 @@
         </el-select>
 
         <!--Yeah, I know. But please don't judge -->
-        <el-button disabled type="primary" @click="onSettingSubmit"
+        <el-button disabled type="primary" @click="submitSecurity"
           >Update Security Settings</el-button
         >
       </el-form-item>
@@ -167,7 +167,7 @@ export default defineComponent({
     const activeName = ref("first");
     const error = ref("");
     let storage = ref(DEFAULT_STORAGE);
-    const exampleBadgeURL =  ref("");
+    const exampleBadgeURL = ref("");
 
     const getStorageByID = async () => {
       isLoading.value = true;
@@ -178,7 +178,7 @@ export default defineComponent({
         );
         storage.value = value;
         exampleBadgeURL.value =
-          baseURL + 
+          baseURL +
           "/badge/" +
           storage.value.name +
           "/" +
@@ -218,7 +218,7 @@ export default defineComponent({
           this.storage.name +
           "/" +
           this.repo.name +
-          "/modify/settings",
+          "/modify/settings/general",
         body,
         {
           headers: {
@@ -238,7 +238,103 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        router.push("/");
+        this.$notify({
+          title: "Updated Repository",
+          type: "success",
+        });
+      } else {
+        this.settingForm.error = "Unable to Update Storage";
+      }
+    },
+    async submitSecurity() {
+            if (this.storage.id == 0) {
+        return;
+      }
+      let newUser = {
+        active: this.settingForm.active,
+        policy: this.settingForm.policy,
+      };
+      let body = JSON.stringify(newUser);
+      console.log(body);
+      const res = await http.post(
+        "/api/admin/repository/" +
+          this.storage.name +
+          "/" +
+          this.repo.name +
+          "/modify/settings/general",
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + this.$cookie.getCookie("token"),
+          },
+        }
+      );
+      if (res.status != 200) {
+        console.log("Data" + res.data);
+        return;
+      }
+      const result = res.data;
+      let value = JSON.stringify(result);
+      console.log(value);
+
+      let response: BasicResponse<unknown> = JSON.parse(value);
+
+      if (response.success) {
+        this.$notify({
+          title: "Updated Repository",
+          type: "success",
+        });
+      } else {
+        this.settingForm.error = "Unable to Update Storage";
+      }
+    },
+    async submitFrontend() {
+           if (this.storage.id == 0) {
+        return;
+      }
+      let newUser = {
+        frontend: {
+          enabled: this.frontendForm.frontend_enabled,
+          page_provider: this.frontendForm.frontend_page_provider
+        },
+        badge: {
+          style: this.frontendForm.badge_style,
+          label_color: this.frontendForm.badge_label_color,
+          color: this.frontendForm.badge_color
+        },
+      };
+      let body = JSON.stringify(newUser);
+      console.log(body);
+      const res = await http.post(
+        "/api/admin/repository/" +
+          this.storage.name +
+          "/" +
+          this.repo.name +
+          "/modify/settings/frontend",
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + this.$cookie.getCookie("token"),
+          },
+        }
+      );
+      if (res.status != 200) {
+        console.log("Data" + res.data);
+        return;
+      }
+      const result = res.data;
+      let value = JSON.stringify(result);
+      console.log(value);
+
+      let response: BasicResponse<unknown> = JSON.parse(value);
+
+      if (response.success) {
+        this.$notify({
+          title: "Updated Repository",
+          type: "success",
+        });
       } else {
         this.settingForm.error = "Unable to Update Storage";
       }

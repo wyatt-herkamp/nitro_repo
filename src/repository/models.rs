@@ -161,11 +161,24 @@ pub struct RepositorySettings {
     #[serde(default = "BadgeSettings::default")]
     pub badge: BadgeSettings,
 }
-
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateSettings{
+    pub active: bool,
+    pub policy: Policy
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateFrontend{
+    pub frontend: Frontend,
+    pub badge: BadgeSettings
+}
 impl RepositorySettings {
-    pub fn update(&mut self, settings: RepositorySettings) {
+    pub fn update_general(&mut self, settings: UpdateSettings) {
         self.policy = settings.policy;
         self.active = settings.active;
+    }
+    pub fn update_frontend(&mut self, settings: UpdateFrontend) {
+        self.frontend = settings.frontend;
+        self.badge = settings.badge;
     }
 }
 
