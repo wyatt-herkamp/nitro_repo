@@ -21,6 +21,7 @@ use badge_maker::{BadgeBuilder, Style};
 
 use std::io::Write;
 use usvg::Options;
+use crate::repository::npm::NPMHandler;
 
 //
 
@@ -71,6 +72,7 @@ pub async fn badge(
         };
         match t.as_str() {
             "maven" => MavenHandler::latest_version(request, &connection),
+            "npm" => NPMHandler::latest_version(request, &connection),
             _ => {
                 panic!("Unknown REPO")
             }

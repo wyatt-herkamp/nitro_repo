@@ -16,6 +16,7 @@
             placeholder="Please select your Repo Type"
           >
             <el-option label="Maven" value="maven"></el-option>
+            <el-option label="NPM" value="npm"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="Storage">

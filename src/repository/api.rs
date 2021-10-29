@@ -15,6 +15,7 @@ use actix_web::{get, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::controller::handle_result;
+use crate::repository::npm::NPMHandler;
 
 //
 
@@ -47,6 +48,7 @@ pub async fn get_versions(
     };
     let x = match t.as_str() {
         "maven" => MavenHandler::handle_versions(request, &connection),
+        "npm" => NPMHandler::handle_versions(request, &connection),
         _ => {
             panic!("Unknown REPO")
         }
@@ -77,6 +79,7 @@ pub async fn get_about(
     };
     let _x = match t.as_str() {
         "maven" => MavenHandler::handle_get(request, &connection),
+        "npm" => NPMHandler::handle_get(request, &connection),
         _ => {
             panic!("Unknown REPO")
         }
