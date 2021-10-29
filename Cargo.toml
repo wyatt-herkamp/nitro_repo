@@ -43,7 +43,7 @@ actix-cors = "0.5.4"
 toml = "0.5.8"
 argon2 = "0.3.1"
 rand_core = { version = "0.6.3", features = ["std"] }
-lettre = "0.10.0-rc.3"
+lettre = "0.10.0-rc.4"
 rust-embed = { version = "6.2.0", features = ["interpolate-folder-path"] }
 serde_yaml = { version = "0.8.21" }
 base64 = "0.13.0"
