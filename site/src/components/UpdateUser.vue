@@ -25,10 +25,10 @@
     <el-form label-position="top" :model="settingForm" label-width="120px">
       <el-form-item>
         <el-form-item label="Name">
-          <el-input v-model="settingForm.name"></el-input>
+          <el-input :disabled="me"  v-model="settingForm.name"></el-input>
         </el-form-item>
         <el-form-item label="Email">
-          <el-input v-model="settingForm.email"></el-input>
+          <el-input  :disabled="me"  v-model="settingForm.email"></el-input>
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
         <el-button
@@ -70,7 +70,7 @@
             password.password != password.confirm
           "
           type="primary"
-          @click="onSettingSubmit"
+          @click="updatePassword"
           >Update Passwords</el-button
         >
       </el-form-item>
@@ -86,13 +86,13 @@
     <el-form label-position="top" :model="permissions" label-width="120px">
       <el-form-item>
         <el-form-item label="Admin">
-          <el-switch v-model="permissions.admin" />
+          <el-switch :disabled="me"  v-model="permissions.admin" />
         </el-form-item>
         <el-form-item label="Deployer">
-          <el-switch v-model="permissions.deployer" />
+          <el-switch  :disabled="me"  v-model="permissions.deployer" />
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
-        <el-button :disabled="me" type="primary" @click="onSettingSubmit"
+        <el-button :disabled="me" type="primary" @click="onPermissionUpdate"
           >Update Permissions</el-button
         >
       </el-form-item>
@@ -190,7 +190,46 @@ export default defineComponent({
       if (response.success) {
         this.$notify({
           title: "Updated User",
-          type:"success"
+          type: "success",
+        });
+      } else {
+        this.settingForm.error = "Unable to Update user";
+        console.log(response);
+      }
+    },
+    async onPermissionUpdate() {
+      let newUser = {
+        permissions: {
+          deployer: this.permissions.deployer,
+          admin: this.permissions.admin
+        },
+      };
+      let body = JSON.stringify(newUser);
+      console.log(body);
+      const res = await http.post(
+        "/api/admin/user/" + this.$props.user.username + "/modify",
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + this.$cookie.getCookie("token"),
+          },
+        }
+      );
+      if (res.status != 200) {
+        console.log("Data" + res.data);
+        return;
+      }
+      const result = res.data;
+      let value = JSON.stringify(result);
+      console.log(value);
+
+      let response: BasicResponse<unknown> = JSON.parse(value);
+
+      if (response.success) {
+        this.$notify({
+          title: "Updated User",
+          type: "success",
         });
       } else {
         this.settingForm.error = "Unable to Update user";

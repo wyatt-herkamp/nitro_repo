@@ -21,6 +21,8 @@
           v-for="user in users.users"
           :key="user.id"
           @click="index = user.id"
+          :index="user.id"
+
         >
           <i class="el-icon-user"></i>
           <template #title>{{ user.name }}</template>

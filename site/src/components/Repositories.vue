@@ -21,6 +21,8 @@
           v-for="repo in repositories.repositories"
           :key="repo.id"
           @click="index = repo.id"
+                    :index="repo.id"
+
         >
           <i class="el-icon-watermelon"></i>
           <template #title>{{ repo.name }}</template>
