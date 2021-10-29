@@ -1,5 +1,7 @@
+declare const API_URL: string;
+
 import axios, { AxiosInstance } from "axios";
-export const baseURL = "http://127.0.0.1:6742";
+export const baseURL = API_URL;
 const apiClient: AxiosInstance = axios.create({
   baseURL: baseURL,
   headers: {

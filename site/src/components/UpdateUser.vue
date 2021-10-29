@@ -49,7 +49,7 @@
     />
     <el-form label-position="top" :model="password" label-width="120px">
       <el-form-item>
-        <el-form-item label="Passowrd">
+        <el-form-item label="Password">
           <el-input
             v-model="this.password.password"
             placeholder="Please input password"
