@@ -16,7 +16,7 @@
         <el-form-item label="Username">
           <el-input v-model="form.username"></el-input>
         </el-form-item>
-        <el-form-item label="Passowrd">
+        <el-form-item label="Password">
           <el-input
             v-model="this.form.password.password"
             placeholder="Please input password"
