@@ -38,7 +38,7 @@ export default defineComponent({
     console.log(route.params);
     const storage = route.params.storage as string;
     const repository = route.params.repo as string;
-    const catchAll = route.params.catchAll as string;
+    let catchAll = route.params.catchAll as string;
 
     if (storage != undefined && storage != "") {
       values.value.push(storage);
@@ -48,6 +48,8 @@ export default defineComponent({
           for (var s of catchAll.split("/")) {
             values.value.push(s);
           }
+        }else{
+          catchAll = "";
         }
         const getFiles = async () => {
           try {
