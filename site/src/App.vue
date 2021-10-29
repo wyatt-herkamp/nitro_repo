@@ -1,7 +1,7 @@
 <template>
   <Navbar :user="userStore.state.user" />
 
-  <router-view />
+  <router-view :key="$route.fullPath" />
   <notifications position="bottom right" />
 
 </template>
