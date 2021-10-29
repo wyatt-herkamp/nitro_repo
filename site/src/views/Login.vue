@@ -50,28 +50,52 @@ export default defineComponent({
       };
       let body = JSON.stringify(newUser);
       console.log(body);
-      const res = await http.post("api/login", body);
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
+      const res = await http
+        .post("api/login", body)
+        .then((res) => {
+          console.log(typeof res);
+          if (res.status != 200) {
+            return;
+          }
+          const result = res.data;
+          let value = JSON.stringify(result);
+          console.log(value);
 
-      let response: BasicResponse<unknown> = JSON.parse(value);
+          let response: BasicResponse<unknown> = JSON.parse(value);
 
-      if (response.success) {
-        let loginRequest = response as BasicResponse<AuthToken>;
-        let date = new Date(loginRequest.data.expiration * 1000);
-        this.$cookie.setCookie("token", loginRequest.data.token, {
-          expire: date,
-          sameSite: "lax",
+          if (response.success) {
+            let loginRequest = response as BasicResponse<AuthToken>;
+            let date = new Date(loginRequest.data.expiration * 1000);
+            this.$cookie.setCookie("token", loginRequest.data.token, {
+              expire: date,
+              sameSite: "lax",
+            });
+            router.push("/");
+          } else {
+            this.form.password = "";
+
+            this.$notify({
+              title: "Invalid Username or Password",
+              type: "warn",
+            });
+          }
+        })
+        .catch((error) => {
+          if (error.response) {
+            if (error.response.status == 401) {
+              this.form.password = "";
+              this.$notify({
+                title: "Invalid Username or Password",
+                type: "warn",
+              });
+            } else {
+              this.$notify({
+                title: "Unkown Error Occured",
+                type: "warn",
+              });
+            }
+          }
         });
-        router.push("/");
-      } else {
-        this.form.error = "Invalid Password or Username";
-      }
     },
   },
 });
