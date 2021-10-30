@@ -139,7 +139,7 @@ pub fn is_authed(
         return Ok(false);
     }
     if !user.permissions.admin {
-        if repo.security.open_to_all_deployers {
+        if !repo.security.deployers.is_empty() {
             if user.permissions.deployer {
                 return Ok(true);
             }

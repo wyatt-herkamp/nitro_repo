@@ -102,14 +102,14 @@ impl Default for Frontend {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, strum_macros::EnumString)]
 pub enum Policy {
     Release,
     Snapshot,
     Mixed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, strum_macros::EnumString)]
 pub enum Visibility {
     Public,
     Private,
@@ -131,20 +131,16 @@ impl Visibility {
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub struct SecurityRules {
-    //Default true. If false only people listed in deployers can deploy
-    #[serde(default = "default")]
-    pub open_to_all_deployers: bool,
-    //List of deployers
+    ///Default true. If false only people listed in deployers can deploy
+    ///List of deployers
+    //TODO IMPLEMENT IN BACKEND
     #[serde(default = "Vec::new")]
     pub deployers: Vec<i64>,
     #[serde(default = "Visibility::default")]
     pub visibility: Visibility,
-
-    //Default true. If false only people listed in reader can reader
-    // Requires visibility to be set to Private
-    #[serde(default = "default")]
-    pub open_to_all_readers: bool,
-    //List of readers
+    ///List of readers
+    /// If Empty it will ignore this method of security
+    //TODO IMPLEMENT IN BACKEND
     #[serde(default = "Vec::new")]
     pub readers: Vec<i64>,
 }
@@ -161,16 +157,19 @@ pub struct RepositorySettings {
     #[serde(default = "BadgeSettings::default")]
     pub badge: BadgeSettings,
 }
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UpdateSettings{
+pub struct UpdateSettings {
     pub active: bool,
-    pub policy: Policy
+    pub policy: Policy,
 }
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UpdateFrontend{
+pub struct UpdateFrontend {
     pub frontend: Frontend,
-    pub badge: BadgeSettings
+    pub badge: BadgeSettings,
 }
+
 impl RepositorySettings {
     pub fn update_general(&mut self, settings: UpdateSettings) {
         self.policy = settings.policy;
@@ -186,9 +185,10 @@ impl SecurityRules {
     pub fn update(&mut self, security: SecurityRules) {
         self.visibility = security.visibility;
         self.deployers = security.deployers;
-        self.open_to_all_deployers = security.open_to_all_deployers;
         self.readers = security.readers;
-        self.open_to_all_readers = security.open_to_all_readers;
+    }
+    pub fn set_visibility(&mut self, visibility: Visibility) {
+        self.visibility = visibility;
     }
 }
 

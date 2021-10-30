@@ -15,7 +15,8 @@ use crate::utils::{get_current_time, installed};
 use crate::DbPool;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
-
+use crate::system::action::get_user_by_username;
+use std::str::FromStr;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
     pub repositories: Vec<Repository>,
@@ -75,10 +76,8 @@ pub async fn add_repo(
         storage: option1.id.clone(),
         settings: nc.settings.clone(),
         security: SecurityRules {
-            open_to_all_deployers: true,
             deployers: vec![],
             visibility: Visibility::Public,
-            open_to_all_readers: true,
             readers: vec![],
         },
         created: get_current_time(),
@@ -109,14 +108,15 @@ pub async fn modify_general_settings(
     if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
-    let string = path.0 .0.clone();
+    let string = path.0.0.clone();
     let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
-    let mut repository = get_repo_by_name_and_storage(path.0 .1.clone(), storage.id, &connection)?
+    let mut repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?
         .ok_or(NotFound)?;
     repository.settings.update_general(nc.0);
     update_repo(&repository, &connection)?;
     return Ok(APIResponse::new(true, Some(repository)));
 }
+
 #[post("/api/admin/repository/{storage}/{repo}/modify/settings/frontend")]
 pub async fn modify_frontend_settings(
     pool: web::Data<DbPool>,
@@ -130,21 +130,20 @@ pub async fn modify_frontend_settings(
     if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
-    let string = path.0 .0.clone();
+    let string = path.0.0.clone();
     let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
-    let mut repository = get_repo_by_name_and_storage(path.0 .1.clone(), storage.id, &connection)?
+    let mut repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?
         .ok_or(NotFound)?;
     repository.settings.update_frontend(nc.0);
     update_repo(&repository, &connection)?;
     return Ok(APIResponse::new(true, Some(repository)));
 }
 
-#[post("/api/admin/repository/{storage}/{repo}/modify/security")]
+#[post("/api/admin/repository/{storage}/{repo}/modify/security/visibility/{visibility}")]
 pub async fn modify_security(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String)>,
-    nc: web::Json<SecurityRules>,
+    path: web::Path<(String, String,String)>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
     installed(&connection)?;
@@ -152,11 +151,64 @@ pub async fn modify_security(
     if !admin.permissions.admin {
         return Err(NotAuthorized);
     }
-    let string = path.0 .1.clone();
+    let string = path.0.1.clone();
     let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
-    let mut repository = get_repo_by_name_and_storage(path.0 .1.clone(), storage.id, &connection)?
+    let mut repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?
         .ok_or(NotFound)?;
-    repository.security.update(nc.0.clone());
+    let visibility = Visibility::from_str(path.0.2.as_str()).map_err(|_e| RequestError::BadRequest("Invalid Visibility".to_string()))?;
+    repository.security.set_visibility(visibility);
+    update_repo(&repository, &connection)?;
+    return Ok(APIResponse::new(true, Some(repository)));
+}
+
+#[post("/api/admin/repository/{storage}/{repo}/modify/security/{what}/{action}/{user}")]
+pub async fn update_deployers_readers(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(String, String, String, String, String)>,
+) -> Result<APIResponse<Repository>, RequestError> {
+    let connection = pool.get()?;
+    installed(&connection)?;
+    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
+    if !admin.permissions.admin {
+        return Err(NotAuthorized);
+    }
+    let string = path.0.1.clone();
+    let storage = get_storage_by_name(string, &connection)?.ok_or(NotFound)?;
+    let mut repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?
+        .ok_or(NotFound)?;
+    let user = get_user_by_username(path.0.4, &connection)?.ok_or(NotFound)?;
+    match path.0.2.as_str() {
+        "deployers" => {
+            match path.0.3.as_str() {
+                "add" => {
+                    repository.security.deployers.push(user.id);
+                }
+                "remove" => {
+                    let filter = repository.security.deployers.iter().position(|x| x == &user.id);
+                    if filter.is_some() {
+                        repository.security.deployers.remove(filter.unwrap());
+                    }
+                }
+                _ => return Err(RequestError::BadRequest("Must be Add or Remove".to_string()))
+            }
+        }
+        "readers" => {
+            match path.0.3.as_str() {
+                "add" => {
+                    repository.security.readers.push(user.id);
+                }
+                "remove" => {
+                    let filter = repository.security.readers.iter().position(|x| x == &user.id);
+                    if filter.is_some() {
+                        repository.security.readers.remove(filter.unwrap());
+                    }
+                }
+                _ => return Err(RequestError::BadRequest("Must be Add or Remove".to_string()))
+            }
+        }
+        _ => return Err(RequestError::BadRequest("Must be Deployers or Readers".to_string()))
+    }
     update_repo(&repository, &connection)?;
     return Ok(APIResponse::new(true, Some(repository)));
 }
