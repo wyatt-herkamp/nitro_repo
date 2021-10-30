@@ -32,11 +32,12 @@ embed_migrations!();
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+
+    info!("Initializing Config");
+    dotenv::dotenv().ok();
     let config: RawConfig =
         serde_yaml::from_str(Resources::file_get_string("log.yml").as_str()).unwrap();
     log4rs::init_raw_config(config).unwrap();
-    info!("Initializing Config");
-    dotenv::dotenv().ok();
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
