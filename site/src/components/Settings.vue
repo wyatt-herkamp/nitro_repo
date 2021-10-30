@@ -18,10 +18,9 @@
           <el-input disabled v-model="unchangeable.version"></el-input>
         </el-form-item>
         <el-form-item label="Name">
-          <el-input disabled v-model="settingForm['site.name']"></el-input>
+          <el-input v-model="settingForm['name.public']"></el-input>
         </el-form-item>
         <el-button
-          :disabled="settingButton()"
           type="primary"
           @click="onSettingSubmit"
           >Update Settings</el-button
@@ -81,7 +80,7 @@ import { getStorage } from "@/backend/api/Storages";
 export default defineComponent({
   setup() {
     let settingForm = ref({
-      "site.name": "Nitro Repo",
+      "name.public": "Nitro Repo",
     });
     let email = ref({
       "email.host": "",
@@ -110,7 +109,7 @@ export default defineComponent({
         const data = value.data as BasicResponse<unknown>;
         if (data.success) {
           let report = data.data as SettingReport;
-          settingForm.value['site.name'] = report.general.name.value
+          settingForm.value['name.public'] = report.general.name.value
           email.value['email.host'] = report.email.email_host.value
           email.value['email.username'] = report.email.email_username.value
           email.value['email.from'] = report.email.from.value
@@ -130,9 +129,6 @@ export default defineComponent({
     return { settingForm, email, tab, unchangeable };
   },
   methods: {
-    settingButton() {
-      return true;
-    },
     async onSettingSubmit() {
       for (const [k, v] of Object.entries(this.settingForm)) {
         let update = {
