@@ -32,8 +32,6 @@ embed_migrations!();
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
-    info!("Initializing Config");
     dotenv::dotenv().ok();
     let config: RawConfig =
         serde_yaml::from_str(Resources::file_get_string("log.yml").as_str()).unwrap();
