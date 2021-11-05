@@ -1,6 +1,6 @@
 pub mod install;
 
-use actix_web::{get, web};
+use actix_web::{get, web, Responder};
 
 use crate::api_response::APIResponse;
 
@@ -19,7 +19,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 }
 
 #[get("/api/installed")]
-pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, RequestError> {
+pub async fn installed(pool: web::Data<DbPool>) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
     let result = utils::installed(&connection);
     if result.is_err() {
@@ -42,7 +42,7 @@ pub async fn install_post(
     pool: web::Data<DbPool>,
     _r: HttpRequest,
     b: web::Bytes,
-) -> Result<APIResponse<bool>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let string = String::from_utf8(b.to_vec()).unwrap();
     let request: InstallUser = serde_json::from_str(string.as_str()).unwrap();
     let connection = pool.get()?;

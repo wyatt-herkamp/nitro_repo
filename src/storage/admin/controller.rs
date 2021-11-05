@@ -1,7 +1,7 @@
-use actix_web::{get, post, web, HttpRequest};
+use actix_web::{get, post, web, HttpRequest, Responder};
 use serde::{Deserialize, Serialize};
 
-use crate::api_response::APIResponse;
+use crate::api_response::{APIResponse};
 
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotFound;
@@ -24,7 +24,7 @@ pub struct ListStorages {
 pub async fn list_storages(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<ListStorages>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =
@@ -42,7 +42,7 @@ pub async fn get_by_id(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     id: web::Path<i64>,
-) -> Result<APIResponse<Storage>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =
@@ -66,7 +66,7 @@ pub async fn add_storage(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewStorage>,
-) -> Result<APIResponse<Storage>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =

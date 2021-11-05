@@ -14,7 +14,7 @@ use crate::DbPool;
 use actix_files::NamedFile;
 
 use actix_web::web::Bytes;
-use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
+use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse, Responder};
 
 use crate::repository::repository::RepoResponse::BadRequest;
 use actix_web::http::{ StatusCode};
@@ -67,7 +67,7 @@ pub async fn get_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-) -> Result<HttpResponse, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
@@ -154,7 +154,7 @@ pub async fn post_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-) -> Result<HttpResponse, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
@@ -193,7 +193,7 @@ pub async fn patch_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-) -> Result<HttpResponse, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
@@ -232,7 +232,7 @@ pub async fn put_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-) -> Result<HttpResponse, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
@@ -270,7 +270,7 @@ pub async fn head_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-) -> Result<HttpResponse, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
 

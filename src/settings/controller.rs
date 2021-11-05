@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, HttpRequest};
+use actix_web::{get, post, web, HttpRequest, Responder};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
@@ -48,7 +48,7 @@ pub async fn about_setting(
     pool: web::Data<DbPool>,
     _r: HttpRequest,
     web::Path(setting): web::Path<String>,
-) -> Result<APIResponse<DBSetting>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
 
@@ -63,7 +63,7 @@ pub async fn about_setting(
 pub async fn setting_report(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<SettingReport>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =
@@ -86,7 +86,7 @@ pub async fn update_setting(
     r: HttpRequest,
     request: web::Json<UpdateSettingRequest>,
     web::Path(setting): web::Path<String>,
-) -> Result<APIResponse<DBSetting>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =

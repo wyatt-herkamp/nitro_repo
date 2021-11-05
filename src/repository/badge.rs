@@ -11,7 +11,7 @@ use crate::utils::installed;
 use crate::DbPool;
 use actix_files::NamedFile;
 
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 
 use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, read_to_string, File};
@@ -49,7 +49,7 @@ pub async fn badge(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
-) -> Result<HttpResponse, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;

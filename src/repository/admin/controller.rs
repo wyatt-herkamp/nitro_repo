@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, HttpRequest};
+use actix_web::{get, post, web, HttpRequest, Responder};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::APIResponse;
@@ -11,7 +11,7 @@ use crate::repository::action::{
 use crate::repository::models::{Repository, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
 use crate::storage::action::get_storage_by_name;
 use crate::system::utils::get_user_by_header;
-use crate::utils::{get_current_time, installed};
+use crate::utils::{get_current_time};
 use crate::DbPool;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
@@ -26,7 +26,7 @@ pub struct ListRepositories {
 pub async fn list_repos(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<ListRepositories>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =
@@ -53,7 +53,7 @@ pub async fn add_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewRepo>,
-) -> Result<APIResponse<Repository>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let user =
@@ -101,7 +101,7 @@ pub async fn modify_general_settings(
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<UpdateSettings>,
-) -> Result<APIResponse<Repository>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
@@ -123,7 +123,7 @@ pub async fn modify_frontend_settings(
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<UpdateFrontend>,
-) -> Result<APIResponse<Repository>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
@@ -144,7 +144,7 @@ pub async fn modify_security(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String,String)>,
-) -> Result<APIResponse<Repository>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
@@ -166,7 +166,7 @@ pub async fn update_deployers_readers(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String, String, String)>,
-) -> Result<APIResponse<Repository>, RequestError> {
+) -> Result< impl Responder, RequestError> {
     let connection = pool.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;

@@ -3,8 +3,6 @@ use actix_web::{HttpRequest, HttpResponse, Responder};
 
 use crate::error::request_error::RequestError;
 use serde::{Deserialize, Serialize};
-use actix::Response;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIResponse<T> {
     pub success: bool,
