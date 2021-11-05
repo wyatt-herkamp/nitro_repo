@@ -35,7 +35,7 @@ pub async fn browse(
     _r: HttpRequest,
 ) -> Result<APIResponse<Vec<String>>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
 
     let vec = get_storages(&connection)?;
     let mut storages = Vec::new();
@@ -52,7 +52,7 @@ pub async fn browse_storage(
     path: web::Path<String>,
 ) -> Result<APIResponse<Vec<String>>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let storage = get_storage_by_name(path.0, &connection)?.ok_or(NotFound)?;
     let vec = get_repositories_by_storage(storage.id, &connection)?;
     let mut repos = Vec::new();
@@ -69,7 +69,7 @@ pub async fn get_repository(
     path: web::Path<(String, String, String)>,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
         get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
@@ -156,7 +156,7 @@ pub async fn post_repository(
     bytes: Bytes,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
         get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
@@ -195,7 +195,7 @@ pub async fn patch_repository(
     bytes: Bytes,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
         get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
@@ -234,7 +234,7 @@ pub async fn put_repository(
     bytes: Bytes,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
         get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
@@ -272,7 +272,7 @@ pub async fn head_repository(
     path: web::Path<(String, String, String)>,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
 
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =

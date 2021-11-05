@@ -28,7 +28,7 @@ pub async fn list_repos(
     r: HttpRequest,
 ) -> Result<APIResponse<ListRepositories>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
@@ -55,7 +55,7 @@ pub async fn add_repo(
     nc: web::Json<NewRepo>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
@@ -103,7 +103,7 @@ pub async fn modify_general_settings(
     nc: web::Json<UpdateSettings>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);
@@ -125,7 +125,7 @@ pub async fn modify_frontend_settings(
     nc: web::Json<UpdateFrontend>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);
@@ -146,7 +146,7 @@ pub async fn modify_security(
     path: web::Path<(String, String,String)>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);
@@ -168,7 +168,7 @@ pub async fn update_deployers_readers(
     path: web::Path<(String, String, String, String, String)>,
 ) -> Result<APIResponse<Repository>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);

@@ -20,7 +20,7 @@ pub async fn list_users(
     r: HttpRequest,
 ) -> Result<APIResponse<ListUsers>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);
@@ -38,7 +38,7 @@ pub async fn add_user(
     nc: web::Json<NewUser>,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let _user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let user = new_user(nc.0.clone(), &connection)?;
     return Ok(APIResponse::new(true, Some(user)));
@@ -52,7 +52,7 @@ pub async fn modify_user(
     nc: web::Json<ModifyUser>,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);
@@ -71,7 +71,7 @@ pub async fn change_password(
     nc: web::Json<NewPassword>,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {
         return Err(NotAuthorized);
@@ -91,7 +91,7 @@ pub async fn delete_user(
     web::Path(user): web::Path<String>,
 ) -> Result<APIResponse<bool>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
 
     let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     if !admin.permissions.admin {

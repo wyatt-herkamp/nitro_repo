@@ -50,7 +50,7 @@ pub async fn about_setting(
     web::Path(setting): web::Path<String>,
 ) -> Result<APIResponse<DBSetting>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
 
     let option = get_setting_or_empty(setting.as_str(), &connection)?;
     if !option.setting.public.unwrap_or(false) {
@@ -65,7 +65,7 @@ pub async fn setting_report(
     r: HttpRequest,
 ) -> Result<APIResponse<SettingReport>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
@@ -88,7 +88,7 @@ pub async fn update_setting(
     web::Path(setting): web::Path<String>,
 ) -> Result<APIResponse<DBSetting>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {

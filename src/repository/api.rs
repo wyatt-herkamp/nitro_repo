@@ -30,7 +30,7 @@ pub async fn get_versions(
     path: web::Path<(String, String, String)>,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let option1 = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let option = get_repo_by_name_and_storage(path.0 .1.clone(), option1.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;
@@ -60,7 +60,7 @@ pub async fn get_about(
     path: web::Path<(String, String, String)>,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let option1 = get_storage_by_name(path.0 .0, &connection)?.ok_or(RequestError::NotFound)?;
     let option = get_repo_by_name_and_storage(path.0 .1.clone(), option1.id.clone(), &connection)?
         .ok_or(RequestError::NotFound)?;

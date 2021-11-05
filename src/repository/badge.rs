@@ -51,7 +51,7 @@ pub async fn badge(
     path: web::Path<(String, String, String, String)>,
 ) -> Result<HttpResponse, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
     let repository =
         get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?

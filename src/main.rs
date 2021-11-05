@@ -16,6 +16,7 @@ use log4rs::config::RawConfig;
 use crate::utils::Resources;
 use actix_web::web::PayloadConfig;
 use actix_files::Files;
+use crate::install::install::Installed;
 
 pub mod api_response;
 pub mod error;
@@ -56,6 +57,8 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .data(pool.clone())
+            .wrap(Installed)
+
             .data(PayloadConfig::new(1 * 1024 * 1024*1024))
             .configure(error::handlers::init)
             .configure(settings::init)

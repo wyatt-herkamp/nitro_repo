@@ -14,7 +14,7 @@ pub async fn me(
     r: HttpRequest,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
 
@@ -27,7 +27,7 @@ pub async fn change_my_password(
     nc: web::Json<NewPassword>,
 ) -> Result<APIResponse<User>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let mut user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
     let string = nc.0.hash().unwrap();
     user.set_password(string);

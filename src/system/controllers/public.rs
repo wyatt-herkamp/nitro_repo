@@ -25,7 +25,7 @@ pub async fn login(
     nc: web::Json<Login>,
 ) -> Result<APIResponse<SessionToken>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let username = nc.username.clone();
     let user = if username.contains("@") {
         get_user_by_email(username, &connection)?

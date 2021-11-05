@@ -1,3 +1,5 @@
+pub mod install;
+
 use actix_web::{get, web};
 
 use crate::api_response::APIResponse;

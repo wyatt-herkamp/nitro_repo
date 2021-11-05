@@ -26,7 +26,7 @@ pub async fn list_storages(
     r: HttpRequest,
 ) -> Result<APIResponse<ListStorages>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
@@ -44,7 +44,7 @@ pub async fn get_by_id(
     id: web::Path<i64>,
 ) -> Result<APIResponse<Storage>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
@@ -68,7 +68,7 @@ pub async fn add_storage(
     nc: web::Json<NewStorage>,
 ) -> Result<APIResponse<Storage>, RequestError> {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let user =
         get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
     if !user.permissions.admin {
