@@ -34,12 +34,19 @@ pub enum RepoResponse {
 pub type RepoResult = Result<RepoResponse, InternalError>;
 
 pub struct RepositoryRequest {
-    pub request: HttpRequest,
     pub storage: Storage,
     pub repository: Repository,
     pub value: String,
 }
-
+impl RepositoryRequest{
+    pub fn new(storage: Storage, repository: Repository, value: String)->RepositoryRequest{
+        return RepositoryRequest {
+            storage,
+            repository,
+            value
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Version {
     pub version: String,
@@ -47,16 +54,16 @@ pub struct Version {
 }
 
 pub trait RepositoryType {
-    fn handle_get(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
-    fn handle_post(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
-    fn handle_put(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
-    fn handle_patch(request: RepositoryRequest, conn: &MysqlConnection, bytes: Bytes)
+    fn handle_get(request: &RepositoryRequest,http:&HttpRequest, conn: &MysqlConnection) -> RepoResult;
+    fn handle_post(request: &RepositoryRequest,http:&HttpRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
+    fn handle_put(request: &RepositoryRequest,http:&HttpRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult;
+    fn handle_patch(request: &RepositoryRequest,http:&HttpRequest, conn: &MysqlConnection, bytes: Bytes)
                     -> RepoResult;
-    fn handle_head(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
-    fn handle_versions(request: RepositoryRequest, conn: &MysqlConnection) -> RepoResult;
+    fn handle_head(request: &RepositoryRequest, http:&HttpRequest,conn: &MysqlConnection) -> RepoResult;
+    fn handle_versions(request: &RepositoryRequest,http:&HttpRequest, conn: &MysqlConnection) -> RepoResult;
 
     fn latest_version(
-        request: RepositoryRequest,
+        request: &RepositoryRequest,http:&HttpRequest,
         conn: &MysqlConnection,
     ) -> Result<String, InternalError>;
 }

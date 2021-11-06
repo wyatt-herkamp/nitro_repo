@@ -53,12 +53,12 @@ pub async fn browse_storage(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0, &connection)?;
+    let storage = get_storage_by_name(&path.0, &connection)?;
     if storage.is_none(){
         return not_found();
     }
     let storage = storage.unwrap();
-    let vec = get_repositories_by_storage(storage.id, &connection)?;
+    let vec = get_repositories_by_storage(&storage.id, &connection)?;
     let mut repos = Vec::new();
     for x in vec {
         repos.push(x.name);
@@ -74,34 +74,26 @@ pub async fn get_repository(
 ) ->SiteResponse{
     let connection = pool.get()?;
 
-       let storage = get_storage_by_name(path.0.0, &connection)?;
+       let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
     let repository = repository.unwrap();
 
-    let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
 
-    let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
-        storage: storage,
-        repository: repository,
-        value: string,
-    };
-    let x = match t.as_str() {
-        "maven" => MavenHandler::handle_get(request, &connection),
+    let request = RepositoryRequest::new(storage, repository, path.0.2);
+    let x = match request.repository.repo_type.as_str(){
+        "maven" => MavenHandler::handle_get(&request, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, request.value , r);
 }
 /// TODO look into this method
 pub fn handle_result(
@@ -168,12 +160,12 @@ pub async fn post_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-       let storage = get_storage_by_name(path.0.0, &connection)?;
+       let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
@@ -181,27 +173,23 @@ pub async fn post_repository(
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0.2,
             r,
         );
     }
-    let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
 
     let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
-        storage: storage,
-        repository: repository,
-        value: string,
+        storage,
+        repository,
+        value: path.0.2,
     };
-    let x = match t.as_str() {
-        "maven" => MavenHandler::handle_post(request, &connection, bytes),
+    let x = match request.repository.repo_type.as_str() {
+        "maven" => MavenHandler::handle_post(&request, &r,&connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, request.value, r);
 }
 
 #[patch("/storages/{storage}/{repository}/{file:.*}")]
@@ -213,12 +201,12 @@ pub async fn patch_repository(
 ) ->SiteResponse{
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
@@ -226,27 +214,22 @@ pub async fn patch_repository(
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0.2,
             r,
         );
     }
-    let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
-
     let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
-        storage: storage,
-        repository: repository,
-        value: string,
+        storage,
+        repository,
+        value: path.0.2,
     };
-    let x = match t.as_str() {
-        "maven" => MavenHandler::handle_patch(request, &connection, bytes),
+    let x = match request.repository.repo_type.as_str() {
+        "maven" => MavenHandler::handle_patch(&request, &r,&connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, request.value, r);
 }
 
 #[put("/storages/{storage}/{repository}/{file:.*}")]
@@ -258,12 +241,12 @@ pub async fn put_repository(
 ) ->SiteResponse{
     let connection = pool.get()?;
 
-       let storage = get_storage_by_name(path.0.0, &connection)?;
+       let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
@@ -271,27 +254,22 @@ pub async fn put_repository(
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0.2,
             r,
         );
     }
-    let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
-
     let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
-        storage: storage,
-        repository: repository,
-        value: string,
+        storage,
+        repository,
+        value: path.0.2,
     };
-    let x = match t.as_str() {
-        "maven" => MavenHandler::handle_put(request, &connection, bytes),
+    let x = match request.repository.repo_type.as_str() {
+        "maven" => MavenHandler::handle_put(&request, &r,&connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, request.value, r);
 }
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]
@@ -303,12 +281,12 @@ pub async fn head_repository(
     let connection = pool.get()?;
 
 
-       let storage = get_storage_by_name(path.0.0, &connection)?;
+       let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
@@ -316,25 +294,20 @@ pub async fn head_repository(
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
-            path.0.2.clone(),
+            path.0.2,
             r,
         );
     }
-    let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
-
     let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
-        storage: storage,
-        repository: repository,
-        value: string,
+        storage,
+        repository,
+        value: path.0.2,
     };
-    let x = match t.as_str() {
-        "maven" => MavenHandler::handle_head(request, &connection),
+    let x = match request.repository.repo_type.as_str() {
+        "maven" => MavenHandler::handle_head(&request, &r,&connection),
         _ => {
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0.2.clone(), r);
+    return handle_result(x, request.value, r);
 }

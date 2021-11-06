@@ -63,13 +63,13 @@ pub async fn add_repo(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = crate::storage::action::get_storage_by_name(nc.storage.clone(), &connection)?;
+    let storage = crate::storage::action::get_storage_by_name(&nc.storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
 
-    let option = get_repo_by_name_and_storage(nc.name.clone(), storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&nc.name, &storage.id, &connection)?;
     if option.is_some() {
         return already_exists();
     }
@@ -95,7 +95,7 @@ pub async fn add_repo(
     if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_repo_by_name_and_storage(nc.name.clone(), storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&nc.name, &storage.id, &connection)?;
 
     return APIResponse::from(option).respond(&r);
 }
@@ -115,12 +115,12 @@ pub async fn modify_general_settings(
         return unauthorized();
     }
     let string = path.0.0.clone();
-    let storage = get_storage_by_name(string, &connection)?;
+    let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -145,12 +145,12 @@ pub async fn modify_frontend_settings(
         return unauthorized();
     }
     let string = path.0.0.clone();
-    let storage = get_storage_by_name(string, &connection)?;
+    let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -174,12 +174,12 @@ pub async fn modify_security(
         return unauthorized();
     }
     let string = path.0.0.clone();
-    let storage = get_storage_by_name(string, &connection)?;
+    let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -205,12 +205,12 @@ pub async fn update_deployers_readers(
         return unauthorized();
     }
     let string = path.0.0.clone();
-    let storage = get_storage_by_name(string, &connection)?;
+    let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }

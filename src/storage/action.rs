@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel::MysqlConnection;
 
 pub fn get_storage_by_name(
-    d: String,
+    d: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<storage::models::Storage>, diesel::result::Error> {
     use crate::schema::storages::dsl::*;
@@ -18,7 +18,7 @@ pub fn get_storage_by_name(
     Ok(found_mod)
 }
 pub fn get_storage_by_id(
-    d: i64,
+    d: &i64,
     conn: &MysqlConnection,
 ) -> Result<Option<storage::models::Storage>, diesel::result::Error> {
     use crate::schema::storages::dsl::*;

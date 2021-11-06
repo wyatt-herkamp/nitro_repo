@@ -15,14 +15,14 @@ pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), dies
 }
 
 pub fn get_repo_by_name_and_storage(
-    d: String,
-    _storage: i64,
+    repo: &String,
+    storage: &i64,
     conn: &MysqlConnection,
 ) -> Result<Option<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
 
     let found_mod = repositories
-        .filter(name.like(d).and(storage.eq(storage)))
+        .filter(name.like(repo).and(storage.eq(storage)))
         .first::<repository::models::Repository>(conn)
         .optional()?;
 
@@ -49,7 +49,7 @@ pub fn get_repositories(
 }
 
 pub fn get_repositories_by_storage(
-    _storage: i64,
+    storage: &i64,
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;

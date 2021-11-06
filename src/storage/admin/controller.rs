@@ -55,7 +55,7 @@ pub async fn get_by_id(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let vec = get_storage_by_id(id.0, &connection)?;
+    let vec = get_storage_by_id(&id.0, &connection)?;
     if vec.is_none(){
         return not_found();
     }
@@ -89,11 +89,11 @@ pub async fn add_storage(
         created: get_current_time(),
     };
     add_new_storage(&storage, &connection)?;
-    let buf = PathBuf::new().join("storages").join(nc.name.clone());
+    let buf = PathBuf::new().join("storages").join(&nc.name);
     if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_storage_by_name(nc.name.clone(), &connection)?;
+    let option = get_storage_by_name(&nc.name, &connection)?;
     if option.is_none(){
         return not_found();
     }

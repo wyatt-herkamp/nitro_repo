@@ -33,12 +33,12 @@ pub async fn get_versions(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
@@ -48,14 +48,12 @@ pub async fn get_versions(
     let string = path.0.2.clone();
 
     let request = RepositoryRequest {
-        //TODO DONT DO THIS
-        request: r.clone(),
         storage,
         repository,
         value: string,
     };
     let x = match t.as_str() {
-        "maven" => MavenHandler::handle_versions(request, &connection),
+        "maven" => MavenHandler::handle_versions(&request, &r,&connection),
         _ => {
             panic!("Unknown REPO")
         }

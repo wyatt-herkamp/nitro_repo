@@ -54,12 +54,12 @@ pub async fn badge(
 ) ->SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none(){
         return not_found();
     }
@@ -70,14 +70,13 @@ pub async fn badge(
         "example".to_string()
     } else {
         let request = RepositoryRequest {
-            //TODO DONT DO THIS
-            request: r.clone(),
+
             storage: storage.clone(),
             repository: repository.clone(),
             value: string.clone(),
         };
         match t.as_str() {
-            "maven" => MavenHandler::latest_version(request, &connection),
+            "maven" => MavenHandler::latest_version(&request,&r, &connection),
             _ => {
                 panic!("Unknown REPO")
             }
@@ -85,14 +84,14 @@ pub async fn badge(
     };
     let buf1 = PathBuf::new()
         .join("storages")
-        .join(storage.name.clone())
-        .join(repository.name.clone())
-        .join(string.clone())
+        .join(&storage.name)
+        .join(&repository.name)
+        .join(&string)
         .join(".nitro_repo");
     if !buf1.exists() {
         create_dir_all(&buf1)?;
     }
-    let typ = path.0.3.clone();
+    let typ = path.0.3;
     let b_s = repository.settings.badge;
     let buf = buf1
         .clone()
