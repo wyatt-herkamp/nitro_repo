@@ -1,4 +1,4 @@
-use crate::api_response::APIResponse;
+use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::request_error::RequestError;
 use crate::error::request_error::RequestError::NotFound;
@@ -21,6 +21,7 @@ use actix_web::http::{ StatusCode};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;
+use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 
 //
 
@@ -67,13 +68,19 @@ pub async fn get_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-) -> Result< impl Responder, RequestError> {
+) ->SiteResponse{
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
+       let storage = get_storage_by_name(path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    if repository.is_none(){
+        return not_found();
+    }
+    let repository = repository.unwrap();
 
     let t = repository.repo_type.clone();
     let string = path.0.2.clone();
@@ -98,12 +105,12 @@ pub fn handle_result(
     response: RepoResponse,
     _url: String,
     r: HttpRequest,
-) -> Result<HttpResponse, RequestError> {
+) -> SiteResponse {
     let x = get_accept(r.headers())?.unwrap_or("text/html".to_string());
     return match response {
         RepoResponse::FileList(files) => {
             if x.contains(&"application/json".to_string()) {
-                Ok(APIResponse::new(true, Some(files)).respond(&r))
+               APIResponse::new(true, Some(files)).respond(&r)
             } else {
                 let result1 = read_to_string(
                     Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"),
@@ -116,10 +123,10 @@ pub fn handle_result(
         RepoResponse::FileResponse(file) => {
             Ok(NamedFile::open(file)?.into_response(&r)?)
         }
-        RepoResponse::Ok => Ok(APIResponse::new(true, Some(false)).respond(&r)),
+        RepoResponse::Ok => APIResponse::new(true, Some(false)).respond(&r),
         RepoResponse::NotFound => {
             if x.contains(&"application/json".to_string()) {
-                return Err(NotFound);
+                return not_found();
             } else {
                 Ok(HttpResponse::NotFound()
                     .content_type("text/html").body("NOT FOUND"))
@@ -139,12 +146,12 @@ pub fn handle_result(
             return Ok(result);
         }
         RepoResponse::BadRequest(e) => {
-            return Err(RequestError::BadRequest(e.into()));
+            return bad_request(e);
         }
         RepoResponse::IAmATeapot(e) => {
-            return Err(RequestError::IAmATeapot(e.into()));
+            return i_am_a_teapot(e);
         }
-        RepoResponse::VersionResponse(value) => Ok(APIResponse::new(true, Some(value)).respond(&r)),
+        RepoResponse::VersionResponse(value) => APIResponse::new(true, Some(value)).respond(&r),
     };
 }
 
@@ -154,13 +161,19 @@ pub async fn post_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-) -> Result< impl Responder, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
+       let storage = get_storage_by_name(path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    if repository.is_none(){
+        return not_found();
+    }
+    let repository = repository.unwrap();
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
@@ -193,13 +206,19 @@ pub async fn patch_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-) -> Result< impl Responder, RequestError> {
+) ->SiteResponse{
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
+    let storage = get_storage_by_name(path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    if repository.is_none(){
+        return not_found();
+    }
+    let repository = repository.unwrap();
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
@@ -232,13 +251,19 @@ pub async fn put_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-) -> Result< impl Responder, RequestError> {
+) ->SiteResponse{
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
+       let storage = get_storage_by_name(path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    if repository.is_none(){
+        return not_found();
+    }
+    let repository = repository.unwrap();
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),
@@ -270,14 +295,20 @@ pub async fn head_repository(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-) -> Result< impl Responder, RequestError> {
+) ->SiteResponse{
     let connection = pool.get()?;
 
 
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
+       let storage = get_storage_by_name(path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    if repository.is_none(){
+        return not_found();
+    }
+    let repository = repository.unwrap();
     if !repository.settings.active {
         return handle_result(
             BadRequest("Repo is not active".to_string()),

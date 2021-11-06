@@ -20,7 +20,7 @@ use rand::Rng;
 pub fn get_user_by_header(
     header_map: &HeaderMap,
     conn: &MysqlConnection,
-) -> Result<Option<User>, RequestError> {
+) -> Result<Option<User>, InternalError> {
     let option = header_map.get("Authorization");
     if option.is_none() {
         return Ok(None);

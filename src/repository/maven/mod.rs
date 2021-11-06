@@ -14,6 +14,7 @@ use actix_web::web::{Buf, Bytes};
 use diesel::MysqlConnection;
 use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
 use std::io::Write;
+use crate::error::internal_error::InternalError;
 
 use crate::error::request_error::RequestError;
 use crate::repository::maven::utils::{get_latest_version, get_versions};
@@ -167,7 +168,7 @@ impl RepositoryType for MavenHandler {
     fn latest_version(
         request: RepositoryRequest,
         conn: &MysqlConnection,
-    ) -> Result<String, RequestError> {
+    ) -> Result<String, InternalError> {
         if !can_read_basic_auth(request.request.headers(), &request.repository, conn)? {
             return Ok("".to_string());
         }

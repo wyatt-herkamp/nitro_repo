@@ -66,7 +66,7 @@ impl<S, B> Service for InstallMiddleware<S>
         if result.is_err() {
             let response = APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: None, error_code: Some("UNINSTALLED".to_string()) })).error(StatusCode::BAD_GATEWAY);
             return Box::pin(async move {
-                 Ok(req.into_response(response.into_body()))
+                 Ok(req.into_response(response.unwrap().into_body()))
 
             });
         }

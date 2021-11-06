@@ -12,6 +12,7 @@ use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use crate::error::internal_error::InternalError;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -70,7 +71,7 @@ pub struct EmailChangeRequest {
     pub port: Option<i64>,
 }
 
-pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, RequestError> {
+pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
     let option = header_map.get("accept");
     if option.is_none() {
         return Ok(None);

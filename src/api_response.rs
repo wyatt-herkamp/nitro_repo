@@ -3,6 +3,10 @@ use actix_web::{HttpRequest, HttpResponse, Responder};
 
 use crate::error::request_error::RequestError;
 use serde::{Deserialize, Serialize};
+use crate::error::internal_error::InternalError;
+
+pub type SiteResponse = Result<HttpResponse, InternalError>;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct APIResponse<T> {
     pub success: bool,
@@ -12,7 +16,7 @@ pub struct APIResponse<T> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestErrorResponse {
-    //User friendly messages will be` provided for some cases
+    //User friendly messages will be provided for some cases
     pub user_friendly_message: Option<String>,
     //Look into that specific API for what this will be set to. This is something that specific api will control
     pub error_code: Option<String>,
@@ -26,19 +30,19 @@ impl<T: Serialize> APIResponse<T> {
             status_code: None,
         };
     }
-    pub fn error(&self, status: StatusCode) -> HttpResponse {
-        return HttpResponse::Ok()
+    pub fn error(&self, status: StatusCode) -> SiteResponse {
+        return Ok(HttpResponse::Ok()
             .status(status)
             .content_type("application/json")
-            .body(serde_json::to_string(self).unwrap());
+            .body(serde_json::to_string(self).unwrap()));
     }
-    pub fn respond(self, _req: &HttpRequest) -> HttpResponse {
+    pub fn respond(self, _req: &HttpRequest) -> SiteResponse {
         let i = self.status_code.unwrap_or(200);
         let result = HttpResponse::Ok()
             .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
             .content_type("application/json")
             .body(serde_json::to_string(&self).unwrap());
-        return result;
+        return Ok(result);
     }
 }
 
@@ -47,6 +51,6 @@ impl<T: Serialize> Responder for APIResponse<T> {
     type Future = futures_util::future::Ready<Result<HttpResponse, RequestError>>;
 
     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        return futures_util::future::ok(self.respond(_req));
+        return futures_util::future::ok(self.respond(_req).unwrap());
     }
 }

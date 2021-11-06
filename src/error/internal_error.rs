@@ -7,10 +7,12 @@ use base64::DecodeError;
 use std::string::FromUtf8Error;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use crate::error::request_error::RequestError;
 
 #[derive(Debug)]
 pub enum InternalError {
     JSONError(serde_json::Error),
+    IOError(std::io::Error),
     DBError(diesel::result::Error),
     ActixWebError(actix_web::Error),
     R2D2Error(r2d2::Error),
@@ -29,6 +31,12 @@ impl InternalError {
             .content_type("application/json")
             .body("");
         return result;
+    }
+}
+
+impl actix_web::error::ResponseError for InternalError {
+    fn error_response(&self) -> HttpResponse {
+        return self.json_error();
     }
 }
 
@@ -71,10 +79,37 @@ impl From<argon2::password_hash::Error> for InternalError {
     }
 }
 
-impl FromStr for InternalError {
-    type Err = InternalError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(InternalError::Error(s.to_string()))
+
+impl From<serde_json::Error> for InternalError {
+    fn from(err: serde_json::Error) -> InternalError {
+        InternalError::JSONError(err)
     }
 }
+
+impl From<actix_web::Error> for InternalError {
+    fn from(err: actix_web::Error) -> InternalError {
+        InternalError::ActixWebError(err)
+    }
+}impl From<std::io::Error> for InternalError {
+    fn from(err: std::io::Error) -> InternalError {
+        InternalError::IOError(err)
+    }
+}
+
+
+impl From<lettre::transport::smtp::Error> for InternalError {
+    fn from(err: lettre::transport::smtp::Error) -> InternalError {
+        InternalError::SMTPTransportError(err)
+    }
+}
+
+impl From<ParseBoolError> for InternalError {
+    fn from(err: ParseBoolError) -> InternalError {
+        InternalError::BooleanParseError(err)
+    }
+}
+
+
+
+
