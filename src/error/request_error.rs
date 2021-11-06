@@ -10,6 +10,7 @@ use actix_web::http::StatusCode;
 use std::fmt::{Display, Formatter};
 use std::error::Error;
 
+#[deprecated(note = "Internal Code must use response or InternalError")]
 #[derive(Debug)]
 pub enum RequestError {
     /// Not Authorized
@@ -32,7 +33,7 @@ pub enum RequestError {
     MissingArgument(String),
     /// Nitro_Repo is not installed
     UnInstalled,
-    /// Internal Errors that happen due to a library or error outside the users controll
+    /// Internal Errors that happen due to a library or error outside the users controller
     InternalError(InternalError),
 
 }
