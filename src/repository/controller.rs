@@ -9,12 +9,12 @@ use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryT
 
 use crate::storage::action::{get_storage_by_name, get_storages};
 
-use crate::utils::{get_accept, installed};
+use crate::utils::{get_accept};
 use crate::DbPool;
 use actix_files::NamedFile;
 
 use actix_web::web::Bytes;
-use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
 
 use crate::repository::repository::RepoResponse::BadRequest;
 use actix_web::http::{ StatusCode};

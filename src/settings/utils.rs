@@ -8,7 +8,7 @@ use crate::settings::settings::{
 use crate::utils::get_current_time;
 use diesel::MysqlConnection;
 
-pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(), RequestError> {
+pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(), InternalError> {
     let result = get_setting(key, &conn)?;
     if let Some(mut setting) = result {
         setting.set_value(value.clone());

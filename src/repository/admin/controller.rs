@@ -1,10 +1,10 @@
-use actix_web::{get, post, web, HttpRequest, Responder};
+use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::{NotAuthorized, NotFound};
+
+
 use crate::repository::action::{
     add_new_repository, get_repo_by_name_and_storage, get_repositories, update_repo,
 };

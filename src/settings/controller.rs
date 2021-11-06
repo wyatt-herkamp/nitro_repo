@@ -6,10 +6,10 @@ use crate::api_response::APIResponse;
 use crate::error::internal_error::InternalError;
 use crate::error::request_error::RequestError;
 use crate::settings::action::get_setting;
-use crate::settings::settings::{DBSetting, SettingManager, SettingReport};
+use crate::settings::settings::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
-use crate::utils::{get_current_time, installed};
+use crate::utils::{get_current_time};
 use crate::{settings, DbPool};
 use diesel::MysqlConnection;
 

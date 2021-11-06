@@ -7,7 +7,7 @@ use crate::error::request_error::RequestError;
 use crate::system::action::{add_new_session_token, get_user_by_email, get_user_by_username};
 use crate::system::models::SessionToken;
 use crate::system::utils::generate_session_token;
-use crate::utils::{default_expiration, get_current_time, installed};
+use crate::utils::{default_expiration, get_current_time};
 use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::{Deserialize, Serialize};

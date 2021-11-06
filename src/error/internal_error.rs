@@ -1,4 +1,4 @@
-use std::str::{FromStr, ParseBoolError};
+use std::str::{ParseBoolError};
 
 use actix_web::HttpResponse;
 
@@ -7,7 +7,7 @@ use base64::DecodeError;
 use std::string::FromUtf8Error;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use crate::error::request_error::RequestError;
+
 
 #[derive(Debug)]
 pub enum InternalError {

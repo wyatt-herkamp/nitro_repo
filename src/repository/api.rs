@@ -1,5 +1,5 @@
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::NotFound;
+
+
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
@@ -7,10 +7,10 @@ use crate::repository::repository::{RepositoryRequest, RepositoryType};
 
 use crate::storage::action::get_storage_by_name;
 
-use crate::utils::installed;
+
 use crate::DbPool;
 
-use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, web, HttpRequest};
 
 use serde::{Deserialize, Serialize};
 use crate::api_response::SiteResponse;
