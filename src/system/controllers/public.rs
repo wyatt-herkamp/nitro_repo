@@ -1,6 +1,6 @@
 use actix_web::{post, web, HttpRequest};
 
-use crate::api_response::APIResponse;
+use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::request_error::RequestError;
 
@@ -11,6 +11,7 @@ use crate::utils::{default_expiration, get_current_time};
 use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::{Deserialize, Serialize};
+use crate::error::response::unauthorized;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
@@ -21,9 +22,9 @@ pub struct Login {
 #[post("/api/login")]
 pub async fn login(
     pool: web::Data<DbPool>,
-    _r: HttpRequest,
+    r: HttpRequest,
     nc: web::Json<Login>,
-) -> Result<APIResponse<SessionToken>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
 
     let username = nc.username.clone();
@@ -31,14 +32,18 @@ pub async fn login(
         get_user_by_email(username, &connection)?
     } else {
         get_user_by_username(username, &connection)?
+    };
+    if user.is_none(){
+        return unauthorized();
     }
-    .ok_or(RequestError::InvalidLogin)?;
+    let user = user.unwrap();
     let argon2 = Argon2::default();
-    let parsed_hash = PasswordHash::new(user.password.as_str())
-        .map_err(|_| RequestError::from("Password Error"))?;
-    argon2
-        .verify_password(nc.password.clone().as_bytes(), &parsed_hash)
-        .map_err(|_| RequestError::InvalidLogin)?;
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    let x = argon2
+        .verify_password(nc.password.clone().as_bytes(), &parsed_hash);
+    if x.is_err(){
+        return unauthorized();
+    }
     let token = SessionToken {
         id: 0,
         user: user.id.clone(),
@@ -48,5 +53,5 @@ pub async fn login(
     };
     add_new_session_token(&token, &connection)?;
 
-    return Ok(APIResponse::new(true, Some(token)));
+    return APIResponse::respond_new(Some(token), &r);
 }

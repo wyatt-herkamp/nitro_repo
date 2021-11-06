@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 
@@ -20,18 +21,45 @@ pub struct RequestErrorResponse {
     pub user_friendly_message: Option<String>,
     //Look into that specific API for what this will be set to. This is something that specific api will control
     pub error_code: Option<String>,
+}impl RequestErrorResponse{
+    pub fn new<S: Into<String>>(friendly: S, error: S)->RequestErrorResponse{
+        return RequestErrorResponse{ user_friendly_message: Some(friendly.into()), error_code: Some(error.into()) }
+    }
+}
+
+impl<T: Serialize> Display for APIResponse<T> {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(self).unwrap())
+    }
+}
+
+impl Display for RequestErrorResponse {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(self).unwrap())
+    }
+}
+
+impl From<RequestErrorResponse> for APIResponse<RequestErrorResponse> {
+    fn from(error: RequestErrorResponse) -> Self {
+        return APIResponse::new(false, Some(error));
+    }
 }
 
 impl<T: Serialize> From<Option<T>> for APIResponse<T> {
+    /// If the value is None it will create a 404 response
+    /// If the value is Some it will set Success to True and the data is provided
     fn from(value: Option<T>) -> Self {
         return if value.is_none() {
-            APIResponse::<T>::new(false, None)
+            APIResponse {
+                success: true,
+                data: None,
+                status_code: Some(404),
+            }
         } else {
             APIResponse::<T>::new(true, value)
         };
     }
 }
-
 
 
 impl<T: Serialize> APIResponse<T> {
@@ -54,6 +82,15 @@ impl<T: Serialize> APIResponse<T> {
             .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
             .content_type("application/json")
             .body(serde_json::to_string(&self).unwrap());
+        return Ok(result);
+    }
+    pub fn respond_new<S: Into<APIResponse<T>>>(response: S, _req: &HttpRequest) -> SiteResponse {
+        let response = response.into();
+        let i = response.status_code.unwrap_or(200);
+        let result = HttpResponse::Ok()
+            .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
+            .content_type("application/json")
+            .body(serde_json::to_string(&response).unwrap());
         return Ok(result);
     }
 }

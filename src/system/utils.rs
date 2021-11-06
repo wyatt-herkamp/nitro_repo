@@ -239,7 +239,7 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<Result<Opti
     return Ok(Ok(user));
 }
 
-pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, RequestError> {
+pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, InternalError> {
     loop {
         let x: String = OsRng
             .sample_iter(&Alphanumeric)

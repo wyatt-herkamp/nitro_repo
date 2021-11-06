@@ -19,17 +19,17 @@ pub struct ListUsers {
 pub async fn list_users(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<ListUsers>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
 
-    let admin = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    if !admin.permissions.admin {
-        return Err(NotAuthorized);
+    let admin = get_user_by_header(r.headers(), &connection)?;
+    if admin.is_none() || !admin.unwrap().permissions.admin {
+        return unauthorized();
     }
     let vec = get_users(&connection)?;
 
     let response = ListUsers { users: vec };
-    return Ok(APIResponse::new(true, Some(response)));
+    return APIResponse::respond_new(Some(response), &r);
 }
 
 #[post("/api/admin/user/add")]

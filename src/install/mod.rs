@@ -22,11 +22,8 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 #[get("/api/installed")]
 pub async fn installed(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
-    let result = utils::installed(&connection);
-    if result.is_err() {
-        return APIResponse::new(true, Some(false)).respond(&r);
-    }
-    APIResponse::new(true, Some(true)).respond(&r)
+    let result = utils::installed(&connection)?;
+    APIResponse::new(true, Some(result)).respond(&r)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -44,9 +41,14 @@ pub async fn install_post(
     r: HttpRequest,
     b: web::Bytes,
 ) -> SiteResponse {
+
+    let connection = pool.get()?;
+    let x = crate::utils::installed(&connection)?;
+    if x{
+        return  APIResponse::new(true, Some(true)).respond(&r);
+    }
     let string = String::from_utf8(b.to_vec()).unwrap();
     let request: InstallUser = serde_json::from_str(string.as_str()).unwrap();
-    let connection = pool.get()?;
     if request.password != request.password_two {
         return mismatching_passwords();
     }

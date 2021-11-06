@@ -33,17 +33,17 @@ impl Resources {
     }
 }
 
-pub fn installed(conn: &MysqlConnection) -> Result<(), RequestError> {
+pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
     let installed: bool = bool::from_str(std::env::var("INSTALLED").unwrap().as_str()).unwrap();
     if installed {
-        return Ok(());
+        return Ok(true);
     }
     let option = get_setting("INSTALLED", &conn)?;
     if option.is_none() {
-        return Err(RequestError::UnInstalled);
+        return Ok(false);
     }
     std::env::set_var("INSTALLED", "true");
-    return Ok(());
+    return Ok(true);
 }
 
 pub fn get_current_time() -> i64 {
