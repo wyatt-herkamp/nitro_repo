@@ -1,7 +1,6 @@
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::NotFound;
+
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
@@ -33,8 +32,8 @@ pub struct ListRepositories {
 #[get("/storages.json")]
 pub async fn browse(
     pool: web::Data<DbPool>,
-    _r: HttpRequest,
-) -> Result<APIResponse<Vec<String>>, RequestError> {
+    r: HttpRequest,
+) -> SiteResponse {
     let connection = pool.get()?;
 
 
@@ -43,24 +42,28 @@ pub async fn browse(
     for x in vec {
         storages.push(x.name);
     }
-    return Ok(APIResponse::new(true, Some(storages)));
+    return APIResponse::respond_new(Some(storages), &r);
 }
 
 #[get("/storages/{storage}.json")]
 pub async fn browse_storage(
     pool: web::Data<DbPool>,
-    _r: HttpRequest,
+    r: HttpRequest,
     path: web::Path<String>,
-) -> Result<APIResponse<Vec<String>>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(path.0, &connection)?.ok_or(NotFound)?;
+    let storage = get_storage_by_name(path.0, &connection)?;
+    if storage.is_none(){
+        return not_found();
+    }
+    let storage = storage.unwrap();
     let vec = get_repositories_by_storage(storage.id, &connection)?;
     let mut repos = Vec::new();
     for x in vec {
         repos.push(x.name);
     }
-    return Ok(APIResponse::new(true, Some(repos)));
+    return APIResponse::respond_new(Some(repos), &r);
 }
 
 #[get("/storages/{storage}/{repository}/{file:.*}")]
@@ -100,7 +103,7 @@ pub async fn get_repository(
     }?;
     return handle_result(x, path.0.2.clone(), r);
 }
-
+/// TODO look into this method
 pub fn handle_result(
     response: RepoResponse,
     _url: String,
@@ -132,10 +135,11 @@ pub fn handle_result(
                     .content_type("text/html").body("NOT FOUND"))
             }
         }
+
         RepoResponse::NotAuthorized => {
-            let r = APIResponse {
+            let r = APIResponse::<bool> {
                 success: false,
-                data: Some(RequestError::NotAuthorized.to_string()),
+                data: None,
                 status_code: Some(401),
             };
             let result = HttpResponse::Ok()

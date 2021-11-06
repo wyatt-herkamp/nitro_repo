@@ -1,8 +1,7 @@
 use std::fmt::{Display, Formatter};
 use actix_web::http::StatusCode;
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use actix_web::{HttpRequest, HttpResponse};
 
-use crate::error::request_error::RequestError;
 use serde::{Deserialize, Serialize};
 use crate::error::internal_error::InternalError;
 
@@ -92,14 +91,5 @@ impl<T: Serialize> APIResponse<T> {
             .content_type("application/json")
             .body(serde_json::to_string(&response).unwrap());
         return Ok(result);
-    }
-}
-
-impl<T: Serialize> Responder for APIResponse<T> {
-    type Error = RequestError;
-    type Future = futures_util::future::Ready<Result<HttpResponse, RequestError>>;
-
-    fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        return futures_util::future::ok(self.respond(_req).unwrap());
     }
 }
