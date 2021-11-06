@@ -1,36 +1,48 @@
-use crate::api_response::APIResponse;
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::NotAuthorized;
+use crate::api_response::{APIResponse, SiteResponse};
+
+
 use crate::system::action::update_user;
-use crate::system::models::User;
+
 use crate::system::utils::{get_user_by_header, NewPassword};
-use crate::utils::installed;
+
 use crate::DbPool;
 use actix_web::{get, post, web, HttpRequest};
+use crate::error::response::{mismatching_passwords, unauthorized};
 
 #[get("/api/me")]
 pub async fn me(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-) -> Result<APIResponse<User>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
-    let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
 
-    return Ok(APIResponse::new(true, Some(user)));
+    let user =
+        get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() {
+        return unauthorized();
+    }
+
+    return APIResponse::respond_new(user, &r);
 }
+
 #[post("/api/admin/user/password")]
 pub async fn change_my_password(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewPassword>,
-) -> Result<APIResponse<User>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
-    let mut user = get_user_by_header(r.headers(), &connection)?.ok_or_else(|| NotAuthorized)?;
-    let string = nc.0.hash().unwrap();
-    user.set_password(string);
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() {
+        return unauthorized();
+    }
+    let mut user = user.unwrap();
+    let string = nc.0.hash()?;
+    if string.is_none() {
+        return mismatching_passwords();
+    }
+    user.set_password(string.unwrap());
     update_user(&user, &connection)?;
-    return Ok(APIResponse::new(true, Some(user)));
+    return APIResponse::from(Some(user)).respond(&r);
 }

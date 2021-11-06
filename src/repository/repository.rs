@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::error::request_error::RequestError;
+
 use crate::repository::models::Repository;
 
 use crate::storage::models::Storage;
@@ -9,6 +9,7 @@ use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use serde_json::Value;
+use crate::error::internal_error::InternalError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -30,7 +31,7 @@ pub enum RepoResponse {
     VersionResponse(Vec<Version>),
 }
 
-pub type RepoResult = Result<RepoResponse, RequestError>;
+pub type RepoResult = Result<RepoResponse, InternalError>;
 
 pub struct RepositoryRequest {
     pub request: HttpRequest,
@@ -57,5 +58,5 @@ pub trait RepositoryType {
     fn latest_version(
         request: RepositoryRequest,
         conn: &MysqlConnection,
-    ) -> Result<String, RequestError>;
+    ) -> Result<String, InternalError>;
 }

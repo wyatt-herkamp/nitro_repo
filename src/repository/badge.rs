@@ -1,4 +1,4 @@
-use crate::error::request_error::RequestError;
+
 
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
@@ -7,11 +7,11 @@ use crate::repository::repository::{RepositoryRequest, RepositoryType};
 
 use crate::storage::action::get_storage_by_name;
 
-use crate::utils::installed;
+
 use crate::DbPool;
 use actix_files::NamedFile;
 
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{get, web, HttpRequest};
 
 use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, read_to_string, File};
@@ -21,6 +21,8 @@ use badge_maker::{BadgeBuilder, Style};
 
 use std::io::Write;
 use usvg::Options;
+use crate::api_response::SiteResponse;
+use crate::error::response::not_found;
 
 //
 
@@ -49,14 +51,19 @@ pub async fn badge(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
-) -> Result<HttpResponse, RequestError> {
+) ->SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
 
+    let storage = get_storage_by_name(path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?;
+    if repository.is_none(){
+        return not_found();
+    }
+    let repository = repository.unwrap();
     let t = repository.repo_type.clone();
     let string = path.0.2.clone();
     let x = if string.eq("nitro_repo_example") {

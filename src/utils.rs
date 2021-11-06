@@ -6,12 +6,13 @@ use std::ops::Add;
 
 use crate::settings::action::get_setting;
 
-use crate::error::request_error::RequestError;
+
 use actix_web::http::HeaderMap;
 use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use crate::error::internal_error::InternalError;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -32,17 +33,17 @@ impl Resources {
     }
 }
 
-pub fn installed(conn: &MysqlConnection) -> Result<(), RequestError> {
+pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
     let installed: bool = bool::from_str(std::env::var("INSTALLED").unwrap().as_str()).unwrap();
     if installed {
-        return Ok(());
+        return Ok(true);
     }
     let option = get_setting("INSTALLED", &conn)?;
     if option.is_none() {
-        return Err(RequestError::UnInstalled);
+        return Ok(false);
     }
     std::env::set_var("INSTALLED", "true");
-    return Ok(());
+    return Ok(true);
 }
 
 pub fn get_current_time() -> i64 {
@@ -70,7 +71,7 @@ pub struct EmailChangeRequest {
     pub port: Option<i64>,
 }
 
-pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, RequestError> {
+pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
     let option = header_map.get("accept");
     if option.is_none() {
         return Ok(None);

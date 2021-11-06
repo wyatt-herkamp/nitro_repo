@@ -7,8 +7,8 @@ use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::MissingArgument;
+
+
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
@@ -16,11 +16,12 @@ use crate::system::models::{User, UserPermissions};
 use crate::utils::get_current_time;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use crate::system::utils::NewUserError::{EmailAlreadyExists, PasswordDoesNotMatch, UsernameAlreadyExists};
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
     conn: &MysqlConnection,
-) -> Result<Option<User>, RequestError> {
+) -> Result<Option<User>, InternalError> {
     let option = header_map.get("Authorization");
     if option.is_none() {
         return Ok(None);
@@ -172,10 +173,20 @@ pub struct NewPassword {
     pub password_two: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum NewUserError {
+    UsernameAlreadyExists,
+    UsernameMissing,
+    EmailAlreadyExists,
+    EmailMissing,
+    PasswordDoesNotMatch,
+    PasswordMissing,
+}
+
 impl NewPassword {
-    pub fn hash(&self) -> Result<String, RequestError> {
+    pub fn hash(&self) -> Result<Option<String>, InternalError> {
         if self.password != self.password_two {
-            return Err(RequestError::from("Mismatching Password"));
+            return Ok(None);
         }
         let salt = SaltString::generate(&mut OsRng);
 
@@ -184,22 +195,34 @@ impl NewPassword {
             .hash_password(self.password.as_bytes(), salt.as_ref())
             .unwrap()
             .to_string();
-        return Ok(password_hash);
+        return Ok(Some(password_hash));
     }
 }
 
-pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, RequestError> {
-    let username = new_user
-        .username
-        .ok_or(MissingArgument("Username".into()))?;
+pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<Result<Option<User>, NewUserError>, InternalError> {
+    if new_user.username.is_none() {
+        return Ok(Err(NewUserError::UsernameMissing))
+    }
+    let username = new_user.username.unwrap();
+    if new_user.email.is_none() {
+        return Ok(Err(NewUserError::EmailMissing))
+    }
+    if new_user.password.is_none() {
+        return Ok(Err(NewUserError::PasswordMissing))
+    }
+    let password = new_user.password.unwrap().hash()?;
+    if password.is_none(){
+        return Ok(Err(PasswordDoesNotMatch))
+    }
+    let password = password.unwrap();
+    let email = new_user.email.unwrap();
     let option = system::action::get_user_by_username(username.clone(), &conn)?;
     if option.is_some() {
-        return Err(RequestError::Error("Username Already Exists".into()));
+        return Ok(Err(UsernameAlreadyExists));
     }
-    let email = new_user.email.ok_or(MissingArgument("Email".into()))?;
     let option = system::action::get_user_by_email(email.clone(), &conn)?;
     if option.is_some() {
-        return Err(RequestError::from("Email Already Exists"));
+        return Ok(Err(EmailAlreadyExists));
     }
 
     let user = User {
@@ -207,19 +230,16 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<User, Reque
         name: new_user.name.clone(),
         username: username.clone(),
         email: email.clone(),
-        password: new_user
-            .password
-            .ok_or(MissingArgument("Missing Password".into()))?
-            .hash()?,
+        password: password,
         permissions: new_user.permissions.clone(),
         created: get_current_time(),
     };
     add_new_user(&user, &conn)?;
-    return Ok(get_user_by_username(username, &conn)?
-        .ok_or(RequestError::from("Unable to find new user"))?);
+    let user = get_user_by_username(username, &conn)?;
+    return Ok(Ok(user));
 }
 
-pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, RequestError> {
+pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, InternalError> {
     loop {
         let x: String = OsRng
             .sample_iter(&Alphanumeric)
