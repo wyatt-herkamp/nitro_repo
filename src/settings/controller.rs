@@ -1,10 +1,10 @@
-use actix_web::{get, post, web, HttpRequest, Responder};
+use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
-use crate::error::request_error::RequestError;
+
 use crate::settings::action::get_setting;
 use crate::settings::settings::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;

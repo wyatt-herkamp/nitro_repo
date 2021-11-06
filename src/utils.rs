@@ -6,7 +6,7 @@ use std::ops::Add;
 
 use crate::settings::action::get_setting;
 
-use crate::error::request_error::RequestError;
+
 use actix_web::http::HeaderMap;
 use rust_embed::RustEmbed;
 use std::fs::read;

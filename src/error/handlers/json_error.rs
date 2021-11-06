@@ -1,4 +1,4 @@
-use crate::error::request_error::RequestError;
+
 use actix_web::error::JsonPayloadError;
 use actix_web::web::JsonConfig;
 use actix_web::HttpRequest;

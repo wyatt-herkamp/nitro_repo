@@ -1,6 +1,6 @@
-use actix_web::{get, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, HttpRequest, HttpResponse};
 
-use crate::error::request_error::RequestError;
+
 
 use std::fs::read_to_string;
 use std::path::Path;

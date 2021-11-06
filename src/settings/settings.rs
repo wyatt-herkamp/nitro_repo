@@ -14,7 +14,7 @@ use std::io::Write;
 use std::str::FromStr;
 use crate::error::internal_error::InternalError;
 
-use crate::error::request_error::RequestError;
+
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {

@@ -1,6 +1,6 @@
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::{NotAuthorized, NotFound};
+
+
 use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
 use crate::system::models::User;
 use crate::system::utils::{get_user_by_header, new_user, ModifyUser, NewPassword, NewUser, NewUserError};
@@ -8,7 +8,7 @@ use crate::system::utils::{get_user_by_header, new_user, ModifyUser, NewPassword
 use crate::DbPool;
 use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
-use crate::error::response::{already_exists, bad_request, mismatching_passwords, not_found, unauthorized};
+use crate::error::response::{bad_request, mismatching_passwords, not_found, unauthorized};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {

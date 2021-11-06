@@ -1,8 +1,8 @@
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::NotAuthorized;
+
+
 use crate::system::action::update_user;
-use crate::system::models::User;
+
 use crate::system::utils::{get_user_by_header, NewPassword};
 
 use crate::DbPool;

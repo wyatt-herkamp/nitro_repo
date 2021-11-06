@@ -7,8 +7,8 @@ use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::error::request_error::RequestError;
-use crate::error::request_error::RequestError::MissingArgument;
+
+
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};

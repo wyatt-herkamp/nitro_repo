@@ -1,10 +1,10 @@
 pub mod install;
 
-use actix_web::{get, web, Responder};
+use actix_web::{get, web};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::request_error::RequestError;
+
 use crate::{utils, DbPool};
 use actix_web::{post, HttpRequest};
 use serde::{Deserialize, Serialize};

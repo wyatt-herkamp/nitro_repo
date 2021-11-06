@@ -2,7 +2,7 @@ use actix_web::{post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::request_error::RequestError;
+
 
 use crate::system::action::{add_new_session_token, get_user_by_email, get_user_by_username};
 use crate::system::models::SessionToken;
