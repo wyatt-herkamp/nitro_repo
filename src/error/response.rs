@@ -28,18 +28,18 @@ pub fn uninstalled() -> SiteResponse {
     (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: None, error_code: Some("UNINSTALLED".to_string()) })).error(StatusCode::BAD_GATEWAY))
 }
 
-pub fn i_am_a_teapot(value: String) -> SiteResponse {
-    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value), error_code: None })).error(StatusCode::IM_A_TEAPOT))
+pub fn i_am_a_teapot<S: Into<String>>(value: S) -> SiteResponse {
+    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value.into()), error_code: None })).error(StatusCode::IM_A_TEAPOT))
 }
 
-pub fn bad_request(value: String) -> SiteResponse {
-    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value), error_code: None })).error(StatusCode::BAD_REQUEST))
+pub fn bad_request<S: Into<String>>(value: S) -> SiteResponse {
+    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value.into()), error_code: None })).error(StatusCode::BAD_REQUEST))
 }
 
-pub fn missing_arguments(value: String) -> SiteResponse {
-    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value), error_code: Some("MISSING_ARGUMENT".to_string()) })).error(StatusCode::BAD_REQUEST))
+pub fn missing_arguments<S: Into<String>>(value: S) -> SiteResponse {
+    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value.into()), error_code: Some("MISSING_ARGUMENT".to_string()) })).error(StatusCode::BAD_REQUEST))
 }
 
-pub fn error(value: String, status: Option<StatusCode>) -> SiteResponse {
-    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value), error_code: None })).error(status.unwrap_or(StatusCode::BAD_REQUEST)))
+pub fn error<S: Into<String>>(value: S, status: Option<StatusCode>) -> SiteResponse {
+    (APIResponse::new(false, Some(RequestErrorResponse { user_friendly_message: Some(value.into()), error_code: None })).error(status.unwrap_or(StatusCode::BAD_REQUEST)))
 }

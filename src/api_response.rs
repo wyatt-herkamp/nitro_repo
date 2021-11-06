@@ -22,6 +22,18 @@ pub struct RequestErrorResponse {
     pub error_code: Option<String>,
 }
 
+impl<T: Serialize> From<Option<T>> for APIResponse<T> {
+    fn from(value: Option<T>) -> Self {
+        return if value.is_none() {
+            APIResponse::<T>::new(false, None)
+        } else {
+            APIResponse::<T>::new(true, value)
+        };
+    }
+}
+
+
+
 impl<T: Serialize> APIResponse<T> {
     pub fn new(success: bool, data: Option<T>) -> APIResponse<T> {
         return APIResponse {
