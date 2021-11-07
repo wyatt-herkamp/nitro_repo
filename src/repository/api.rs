@@ -14,6 +14,7 @@ use crate::error::response::not_found;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::controller::handle_result;
+use crate::repository::npm::NPMHandler;
 
 //
 
@@ -51,6 +52,7 @@ pub async fn get_versions(
     };
     let x = match t.as_str() {
         "maven" => MavenHandler::handle_versions(&request, &r, &connection),
+        "npm" => NPMHandler::handle_versions(&request, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }

@@ -19,6 +19,7 @@ use crate::api_response::SiteResponse;
 use crate::error::response::not_found;
 use std::io::Write;
 use usvg::Options;
+use crate::repository::npm::NPMHandler;
 
 fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
     return format!(
@@ -72,6 +73,7 @@ pub async fn badge(
     } else {
         match request.repository.repo_type.as_str() {
             "maven" => MavenHandler::latest_version(&request, &r, &connection),
+            "npm" => NPMHandler::latest_version(&request, &r, &connection),
             _ => {
                 panic!("Unknown REPO")
             }

@@ -20,6 +20,7 @@ use actix_web::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::Path;
+use crate::repository::npm::NPMHandler;
 
 //
 
@@ -83,6 +84,7 @@ pub async fn get_repository(
     let request = RepositoryRequest::new(storage, repository, path.0 .2);
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
+        "npm" => NPMHandler::handle_get(&request, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }
@@ -170,6 +172,7 @@ pub async fn post_repository(
     };
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_post(&request, &r, &connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
@@ -206,6 +209,7 @@ pub async fn patch_repository(
     };
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_patch(&request, &r, &connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
@@ -242,6 +246,7 @@ pub async fn put_repository(
     };
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_put(&request, &r, &connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
@@ -277,6 +282,7 @@ pub async fn head_repository(
     };
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_head(&request, &r, &connection),
+        "npm" => NPMHandler::handle_head(&request, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }

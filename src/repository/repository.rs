@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use crate::error::request_error::RequestError;
 use crate::repository::models::Repository;
 
 use crate::storage::models::Storage;
@@ -9,6 +8,7 @@ use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use serde_json::Value;
+use crate::error::internal_error::InternalError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
