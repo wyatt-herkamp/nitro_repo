@@ -13,10 +13,10 @@ use diesel::r2d2::{self, ConnectionManager};
 use log::info;
 use log4rs::config::RawConfig;
 
-use crate::utils::Resources;
-use actix_web::web::PayloadConfig;
-use actix_files::Files;
 use crate::install::install::Installed;
+use crate::utils::Resources;
+use actix_files::Files;
+use actix_web::web::PayloadConfig;
 
 pub mod api_response;
 pub mod error;
@@ -58,8 +58,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .data(pool.clone())
             .wrap(Installed)
-
-            .data(PayloadConfig::new(1 * 1024 * 1024*1024))
+            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
             .configure(error::handlers::init)
             .configure(settings::init)
             .configure(repository::init)
@@ -69,31 +68,33 @@ async fn main() -> std::io::Result<()> {
             .configure(system::controllers::init)
             .configure(frontend::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
-            .service(Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
-                .show_files_listing())
+            .service(
+                Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
+                    .show_files_listing(),
+            )
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
     #[cfg(feature = "ssl")]
-        {
-            if std::env::var("PRIVATE_KEY").is_ok() {
-                use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+    {
+        if std::env::var("PRIVATE_KEY").is_ok() {
+            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-                let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-                builder
-                    .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-                    .unwrap();
-                builder
-                    .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-                    .unwrap();
-                return server
-                    .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
-                    .run()
-                    .await;
-            }
+            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+            builder
+                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                .unwrap();
+            builder
+                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                .unwrap();
+            return server
+                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                .run()
+                .await;
         }
+    }
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }

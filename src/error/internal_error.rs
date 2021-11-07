@@ -1,13 +1,12 @@
-use std::str::{ParseBoolError};
+use std::str::ParseBoolError;
 
 use actix_web::HttpResponse;
 
 use actix_web::http::StatusCode;
 use base64::DecodeError;
-use std::string::FromUtf8Error;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-
+use std::string::FromUtf8Error;
 
 #[derive(Debug)]
 pub enum InternalError {
@@ -79,8 +78,6 @@ impl From<argon2::password_hash::Error> for InternalError {
     }
 }
 
-
-
 impl From<serde_json::Error> for InternalError {
     fn from(err: serde_json::Error) -> InternalError {
         InternalError::JSONError(err)
@@ -91,12 +88,12 @@ impl From<actix_web::Error> for InternalError {
     fn from(err: actix_web::Error) -> InternalError {
         InternalError::ActixWebError(err)
     }
-}impl From<std::io::Error> for InternalError {
+}
+impl From<std::io::Error> for InternalError {
     fn from(err: std::io::Error) -> InternalError {
         InternalError::IOError(err)
     }
 }
-
 
 impl From<lettre::transport::smtp::Error> for InternalError {
     fn from(err: lettre::transport::smtp::Error) -> InternalError {
@@ -109,7 +106,3 @@ impl From<ParseBoolError> for InternalError {
         InternalError::BooleanParseError(err)
     }
 }
-
-
-
-

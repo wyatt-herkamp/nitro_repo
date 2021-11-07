@@ -6,13 +6,12 @@ use std::ops::Add;
 
 use crate::settings::action::get_setting;
 
-
+use crate::error::internal_error::InternalError;
 use actix_web::http::HeaderMap;
 use rust_embed::RustEmbed;
 use std::fs::read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use crate::error::internal_error::InternalError;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]

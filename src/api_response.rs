@@ -1,9 +1,9 @@
-use std::fmt::{Display, Formatter};
 use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse};
+use std::fmt::{Display, Formatter};
 
-use serde::{Deserialize, Serialize};
 use crate::error::internal_error::InternalError;
+use serde::{Deserialize, Serialize};
 
 pub type SiteResponse = Result<HttpResponse, InternalError>;
 
@@ -20,9 +20,13 @@ pub struct RequestErrorResponse {
     pub user_friendly_message: Option<String>,
     //Look into that specific API for what this will be set to. This is something that specific api will control
     pub error_code: Option<String>,
-}impl RequestErrorResponse{
-    pub fn new<S: Into<String>>(friendly: S, error: S)->RequestErrorResponse{
-        return RequestErrorResponse{ user_friendly_message: Some(friendly.into()), error_code: Some(error.into()) }
+}
+impl RequestErrorResponse {
+    pub fn new<S: Into<String>>(friendly: S, error: S) -> RequestErrorResponse {
+        return RequestErrorResponse {
+            user_friendly_message: Some(friendly.into()),
+            error_code: Some(error.into()),
+        };
     }
 }
 
@@ -59,7 +63,6 @@ impl<T: Serialize> From<Option<T>> for APIResponse<T> {
         };
     }
 }
-
 
 impl<T: Serialize> APIResponse<T> {
     pub fn new(success: bool, data: Option<T>) -> APIResponse<T> {

@@ -24,7 +24,7 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
 }
 
 pub fn get_user_by_id(
-    d: i64,
+    d: &i64,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -38,7 +38,7 @@ pub fn get_user_by_id(
 }
 
 pub fn get_user_by_email(
-    d: String,
+    d: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -51,14 +51,14 @@ pub fn get_user_by_email(
     Ok(found_mod)
 }
 
-pub fn delete_user_db(d: i64, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
+pub fn delete_user_db(d: &i64, conn: &MysqlConnection) -> Result<bool, diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let x = diesel::delete(users).filter(id.eq(d)).execute(conn)?;
     Ok(x >= 1)
 }
 
 pub fn get_user_by_username(
-    d: String,
+    d: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -79,7 +79,7 @@ pub fn add_new_user(s: &User, conn: &MysqlConnection) -> Result<(), diesel::resu
 
 //Session Token
 pub fn get_session_token(
-    a_token: String,
+    a_token: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::SessionToken>, diesel::result::Error> {
     use crate::schema::session_tokens::dsl::*;
@@ -103,7 +103,7 @@ pub fn add_new_session_token(
 }
 
 pub fn get_user_from_session_token(
-    token: String,
+    token: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     let result = get_session_token(token, conn)?;
@@ -114,7 +114,7 @@ pub fn get_user_from_session_token(
     if result.expiration <= utils::get_current_time() {
         return Ok(None);
     }
-    return get_user_by_id(result.user, conn);
+    return get_user_by_id(&result.user, conn);
 }
 
 //Session Token
@@ -132,7 +132,7 @@ pub fn add_new_auth_token(
 }
 
 pub fn get_tokens(
-    user_id: i64,
+    user_id: &i64,
     conn: &MysqlConnection,
 ) -> Result<Vec<system::models::AuthToken>, diesel::result::Error> {
     use crate::schema::session_tokens::dsl::*;
