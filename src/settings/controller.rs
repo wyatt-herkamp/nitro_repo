@@ -5,14 +5,14 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
 
+use crate::error::response::unauthorized;
 use crate::settings::action::get_setting;
 use crate::settings::settings::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
-use crate::utils::{get_current_time};
+use crate::utils::get_current_time;
 use crate::{settings, DbPool};
 use diesel::MysqlConnection;
-use crate::error::response::unauthorized;
 
 pub fn get_setting_or_empty(
     string: &str,
@@ -28,9 +28,7 @@ pub fn get_setting_or_empty(
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
-        .ok_or(InternalError::Error(
-            "Unable to find setting".to_string(),
-        ))
+        .ok_or(InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
     return Ok(DBSetting {
         id: 0,
@@ -52,7 +50,6 @@ pub async fn about_setting(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-
     let option = get_setting_or_empty(setting.as_str(), &connection)?;
     if !option.setting.public.unwrap_or(false) {
         //TODO check if admin
@@ -62,14 +59,10 @@ pub async fn about_setting(
 }
 
 #[get("/api/settings/report")]
-pub async fn setting_report(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> SiteResponse {
+pub async fn setting_report(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
-    let user =
-        get_user_by_header(r.headers(), &connection)?;
+    let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
@@ -91,15 +84,13 @@ pub async fn update_setting(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let user =
-        get_user_by_header(r.headers(), &connection)?;
+    let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
     let mut option = get_setting_or_empty(setting.as_str(), &connection)?;
     option.set_value(request.value.clone());
     settings::action::update_setting(&option, &connection)?;
-    let option =
-        get_setting(setting.as_str(), &connection)?;
+    let option = get_setting(setting.as_str(), &connection)?;
     return APIResponse::respond_new(option, &r);
 }

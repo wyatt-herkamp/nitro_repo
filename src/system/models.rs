@@ -40,7 +40,6 @@ impl User {
         if let Some(email) = update.email {
             self.email = email;
         }
-
     }
 }
 

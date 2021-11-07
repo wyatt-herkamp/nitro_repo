@@ -1,22 +1,23 @@
 mod models;
 mod utils;
 
-use std::collections::HashMap;
 use crate::repository::repository::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound,
 };
-use crate::repository::repository::{RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType};
+use crate::repository::repository::{
+    RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
+};
+use std::collections::HashMap;
 
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 use actix_web::web::{Buf, Bytes};
 
+use crate::error::internal_error::InternalError;
+use actix_web::HttpRequest;
 use diesel::MysqlConnection;
 use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
 use std::io::Write;
-use actix_web::HttpRequest;
-use crate::error::internal_error::InternalError;
-
 
 use crate::repository::maven::utils::{get_latest_version, get_versions};
 use crate::repository::models::Policy;
@@ -25,7 +26,11 @@ use crate::utils::get_storage_location;
 pub struct MavenHandler;
 
 impl RepositoryType for MavenHandler {
-    fn handle_get(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_get(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -35,7 +40,10 @@ impl RepositoryType for MavenHandler {
             .join(&request.storage.name)
             .join(&request.repository.name)
             .join(&request.value);
-        let path = format!("{}/{}/{}", &request.storage.name,& request.repository.name, &request.value);
+        let path = format!(
+            "{}/{}/{}",
+            &request.storage.name, &request.repository.name, &request.value
+        );
 
         if buf.exists() {
             if buf.is_dir() {
@@ -63,14 +71,20 @@ impl RepositoryType for MavenHandler {
     }
 
     fn handle_post(
-        _request: &RepositoryRequest, http: &HttpRequest,
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
         return Ok(IAmATeapot("Post is not handled in Maven".to_string()));
     }
 
-    fn handle_put(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult {
+    fn handle_put(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+        bytes: Bytes,
+    ) -> RepoResult {
         if !can_deploy_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -110,20 +124,28 @@ impl RepositoryType for MavenHandler {
     }
 
     fn handle_patch(
-        _request: &RepositoryRequest,http:&HttpRequest,
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
         return Ok(IAmATeapot("Patch is not handled in Maven".to_string()));
     }
 
-    fn handle_head(request: &RepositoryRequest, http: &HttpRequest, _conn: &MysqlConnection) -> RepoResult {
+    fn handle_head(
+        request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+    ) -> RepoResult {
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
             .join(&request.value);
-        let path = format!("{}/{}/{}", &request.storage.name, &request.repository.name, &request.value);
+        let path = format!(
+            "{}/{}/{}",
+            &request.storage.name, &request.repository.name, &request.value
+        );
 
         //TODO do not return the body
         if buf.exists() {
@@ -151,7 +173,11 @@ impl RepositoryType for MavenHandler {
         return Ok(NotFound);
     }
 
-    fn handle_versions(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_versions(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -168,7 +194,8 @@ impl RepositoryType for MavenHandler {
     }
 
     fn latest_version(
-       request: &RepositoryRequest, http: &HttpRequest,
+        request: &RepositoryRequest,
+        http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> Result<String, InternalError> {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {

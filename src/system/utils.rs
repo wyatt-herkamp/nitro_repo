@@ -8,15 +8,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 
-
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
 use crate::system::models::{User, UserPermissions};
+use crate::system::utils::NewUserError::{
+    EmailAlreadyExists, PasswordDoesNotMatch, UsernameAlreadyExists,
+};
 use crate::utils::get_current_time;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use crate::system::utils::NewUserError::{EmailAlreadyExists, PasswordDoesNotMatch, UsernameAlreadyExists};
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -44,7 +45,6 @@ pub fn get_user_by_header(
     if key.eq("Bearer") {
         let result = system::action::get_user_from_session_token(&value, conn)?;
         return Ok(result);
-
     }
     Ok(None)
 }
@@ -200,20 +200,23 @@ impl NewPassword {
     }
 }
 
-pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<Result<Option<User>, NewUserError>, InternalError> {
+pub fn new_user(
+    new_user: NewUser,
+    conn: &MysqlConnection,
+) -> Result<Result<Option<User>, NewUserError>, InternalError> {
     if new_user.username.is_none() {
-        return Ok(Err(NewUserError::UsernameMissing))
+        return Ok(Err(NewUserError::UsernameMissing));
     }
     let username = new_user.username.unwrap();
     if new_user.email.is_none() {
-        return Ok(Err(NewUserError::EmailMissing))
+        return Ok(Err(NewUserError::EmailMissing));
     }
     if new_user.password.is_none() {
-        return Ok(Err(NewUserError::PasswordMissing))
+        return Ok(Err(NewUserError::PasswordMissing));
     }
     let password = new_user.password.unwrap().hash()?;
-    if password.is_none(){
-        return Ok(Err(PasswordDoesNotMatch))
+    if password.is_none() {
+        return Ok(Err(PasswordDoesNotMatch));
     }
     let password = password.unwrap();
     let email = new_user.email.unwrap();

@@ -16,7 +16,7 @@ pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), dies
 
 pub fn get_repo_by_name_and_storage(
     repo: &String,
-    storage: &i64,
+    _storage: &i64,
     conn: &MysqlConnection,
 ) -> Result<Option<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
@@ -49,7 +49,7 @@ pub fn get_repositories(
 }
 
 pub fn get_repositories_by_storage(
-    storage: &i64,
+    _storage: &i64,
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;

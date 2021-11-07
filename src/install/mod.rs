@@ -4,11 +4,10 @@ use actix_web::{get, web};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-
+use crate::error::response::mismatching_passwords;
 use crate::{utils, DbPool};
 use actix_web::{post, HttpRequest};
 use serde::{Deserialize, Serialize};
-use crate::error::response::mismatching_passwords;
 
 use crate::settings::utils::quick_add;
 
@@ -36,16 +35,11 @@ pub struct InstallUser {
 }
 
 #[post("/install")]
-pub async fn install_post(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-    b: web::Bytes,
-) -> SiteResponse {
-
+pub async fn install_post(pool: web::Data<DbPool>, r: HttpRequest, b: web::Bytes) -> SiteResponse {
     let connection = pool.get()?;
     let x = crate::utils::installed(&connection)?;
-    if x{
-        return  APIResponse::new(true, Some(true)).respond(&r);
+    if x {
+        return APIResponse::new(true, Some(true)).respond(&r);
     }
     let string = String::from_utf8(b.to_vec()).unwrap();
     let request: InstallUser = serde_json::from_str(string.as_str()).unwrap();

@@ -1,23 +1,18 @@
 use crate::api_response::{APIResponse, SiteResponse};
 
-
 use crate::system::action::update_user;
 
 use crate::system::utils::{get_user_by_header, NewPassword};
 
+use crate::error::response::{mismatching_passwords, unauthorized};
 use crate::DbPool;
 use actix_web::{get, post, web, HttpRequest};
-use crate::error::response::{mismatching_passwords, unauthorized};
 
 #[get("/api/me")]
-pub async fn me(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> SiteResponse {
+pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
-    let user =
-        get_user_by_header(r.headers(), &connection)?;
+    let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() {
         return unauthorized();
     }

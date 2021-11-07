@@ -1,10 +1,8 @@
 use actix_web::{get, HttpRequest, HttpResponse};
 
-
-
+use crate::api_response::SiteResponse;
 use std::fs::read_to_string;
 use std::path::Path;
-use crate::api_response::SiteResponse;
 
 #[get("/")]
 pub async fn index(_r: HttpRequest) -> SiteResponse {
@@ -15,9 +13,7 @@ pub async fn index(_r: HttpRequest) -> SiteResponse {
 }
 
 #[get("/browse/{file:.*}")]
-pub async fn browse_extend(
-    _r: HttpRequest,
-) -> SiteResponse {
+pub async fn browse_extend(_r: HttpRequest) -> SiteResponse {
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"));
     return Ok(HttpResponse::Ok()
         .content_type("text/html")
@@ -25,9 +21,7 @@ pub async fn browse_extend(
 }
 
 #[get("/browse")]
-pub async fn browse(
-    _r: HttpRequest,
-) -> SiteResponse {
+pub async fn browse(_r: HttpRequest) -> SiteResponse {
     let result1 = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"));
     return Ok(HttpResponse::Ok()
         .content_type("text/html")

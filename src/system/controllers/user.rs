@@ -1,14 +1,15 @@
 use crate::api_response::{APIResponse, SiteResponse};
 
-
 use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
 use crate::system::models::User;
-use crate::system::utils::{get_user_by_header, new_user, ModifyUser, NewPassword, NewUser, NewUserError};
+use crate::system::utils::{
+    get_user_by_header, new_user, ModifyUser, NewPassword, NewUser, NewUserError,
+};
 
+use crate::error::response::{bad_request, mismatching_passwords, not_found, unauthorized};
 use crate::DbPool;
 use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
-use crate::error::response::{bad_request, mismatching_passwords, not_found, unauthorized};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
@@ -16,10 +17,7 @@ pub struct ListUsers {
 }
 
 #[get("/api/admin/user/list")]
-pub async fn list_users(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> SiteResponse {
+pub async fn list_users(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
     let admin = get_user_by_header(r.headers(), &connection)?;
@@ -47,24 +45,12 @@ pub async fn add_user(
     let user = new_user(nc.0, &connection)?;
     if let Err(e) = user {
         return match e {
-            NewUserError::UsernameAlreadyExists => {
-                bad_request("Username already exists")
-            }
-            NewUserError::UsernameMissing => {
-                bad_request("Username Missing")
-            }
-            NewUserError::EmailAlreadyExists => {
-                bad_request("Email already exists")
-            }
-            NewUserError::EmailMissing => {
-                bad_request("Email Missing")
-            }
-            NewUserError::PasswordDoesNotMatch => {
-                mismatching_passwords()
-            }
-            NewUserError::PasswordMissing => {
-                bad_request("Password Missing")
-            }
+            NewUserError::UsernameAlreadyExists => bad_request("Username already exists"),
+            NewUserError::UsernameMissing => bad_request("Username Missing"),
+            NewUserError::EmailAlreadyExists => bad_request("Email already exists"),
+            NewUserError::EmailMissing => bad_request("Email Missing"),
+            NewUserError::PasswordDoesNotMatch => mismatching_passwords(),
+            NewUserError::PasswordMissing => bad_request("Password Missing"),
         };
     }
     return APIResponse::from(user.unwrap()).respond(&r);
@@ -84,7 +70,7 @@ pub async fn modify_user(
         return unauthorized();
     }
     let user = get_user_by_username(&user, &connection)?;
-    if user.is_none(){
+    if user.is_none() {
         return not_found();
     }
     let mut user = user.unwrap();
@@ -107,7 +93,7 @@ pub async fn change_password(
         return unauthorized();
     }
     let user = get_user_by_username(&user, &connection)?;
-    if user.is_none(){
+    if user.is_none() {
         return not_found();
     }
     let mut user = user.unwrap();
@@ -127,7 +113,6 @@ pub async fn delete_user(
     web::Path(user): web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
 
     let admin = get_user_by_header(r.headers(), &connection)?;
     if admin.is_none() || !admin.unwrap().permissions.admin {
