@@ -9,11 +9,10 @@ use diesel::{deserialize, serialize};
 
 use crate::schema::*;
 
+use crate::error::internal_error::InternalError;
 use crate::utils::Resources;
 use std::io::Write;
 use std::str::FromStr;
-
-use crate::error::request_error::RequestError;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
@@ -128,10 +127,11 @@ impl From<&str> for Setting {
 }
 
 impl FromStr for Setting {
-    type Err = RequestError;
+    type Err = InternalError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        SettingManager::get_setting(s.to_string()).ok_or(RequestError::from("Missing Error"))
+        return SettingManager::get_setting(s.to_string())
+            .ok_or(InternalError::Error("Missing Setting".to_string()));
     }
 }
 pub trait SettingVec {

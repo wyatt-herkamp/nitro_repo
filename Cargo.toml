@@ -52,6 +52,7 @@ badge-maker = "0.1.4"
 usvg = "0.19.0"
 resvg = "0.19.0"
 tiny-skia = "0.6.1"
+actix-service = "1.0.6"
 [features]
 # Defines a feature named `webp` that does not enable any other features.
 ssl = ["openssl", "actix-web/openssl"]

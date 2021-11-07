@@ -1,8 +1,10 @@
+pub mod install;
+
 use actix_web::{get, web};
 
-use crate::api_response::APIResponse;
+use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::request_error::RequestError;
+use crate::error::response::mismatching_passwords;
 use crate::{utils, DbPool};
 use actix_web::{post, HttpRequest};
 use serde::{Deserialize, Serialize};
@@ -17,13 +19,10 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 }
 
 #[get("/api/installed")]
-pub async fn installed(pool: web::Data<DbPool>) -> Result<APIResponse<bool>, RequestError> {
+pub async fn installed(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
-    let result = utils::installed(&connection);
-    if result.is_err() {
-        return Ok(APIResponse::new(true, Some(false)));
-    }
-    Ok(APIResponse::new(true, Some(true)))
+    let result = utils::installed(&connection)?;
+    APIResponse::new(true, Some(result)).respond(&r)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -36,24 +35,24 @@ pub struct InstallUser {
 }
 
 #[post("/install")]
-pub async fn install_post(
-    pool: web::Data<DbPool>,
-    _r: HttpRequest,
-    b: web::Bytes,
-) -> Result<APIResponse<bool>, RequestError> {
+pub async fn install_post(pool: web::Data<DbPool>, r: HttpRequest, b: web::Bytes) -> SiteResponse {
+    let connection = pool.get()?;
+    let x = crate::utils::installed(&connection)?;
+    if x {
+        return APIResponse::new(true, Some(true)).respond(&r);
+    }
     let string = String::from_utf8(b.to_vec()).unwrap();
     let request: InstallUser = serde_json::from_str(string.as_str()).unwrap();
-    let connection = pool.get()?;
     if request.password != request.password_two {
-        return Err(RequestError::MismatchingPasswords);
+        return mismatching_passwords();
     }
     let user = NewUser {
-        name: request.name.clone(),
-        username: Some(request.username.clone()),
-        email: Some(request.email.clone()),
+        name: request.name,
+        username: Some(request.username),
+        email: Some(request.email),
         password: Some(NewPassword {
-            password: request.password.clone(),
-            password_two: request.password_two.clone(),
+            password: request.password,
+            password_two: request.password_two,
         }),
         permissions: UserPermissions::new_owner(),
     };
@@ -65,5 +64,5 @@ pub async fn install_post(
         env!("CARGO_PKG_VERSION").to_string(),
         &connection,
     )?;
-    return Ok(APIResponse::new(true, Some(true)));
+    return APIResponse::new(true, Some(true)).respond(&r);
 }

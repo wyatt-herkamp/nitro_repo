@@ -1,5 +1,5 @@
 use crate::error::internal_error::InternalError;
-use crate::error::request_error::RequestError;
+
 use crate::settings::action::{add_new_setting, get_setting, get_settings, update_setting};
 use crate::settings::controller::default_setting;
 use crate::settings::settings::{
@@ -8,7 +8,7 @@ use crate::settings::settings::{
 use crate::utils::get_current_time;
 use diesel::MysqlConnection;
 
-pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(), RequestError> {
+pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(), InternalError> {
     let result = get_setting(key, &conn)?;
     if let Some(mut setting) = result {
         setting.set_value(value.clone());
@@ -64,7 +64,7 @@ pub fn get_setting_report(connection: &MysqlConnection) -> Result<SettingReport,
         version: vec
             .get_setting_by_key("version")
             .unwrap_or(&default_setting("version")?)
-            .clone()
+            .clone(),
     };
     let security = SecuritySettings {};
     return Ok(SettingReport {

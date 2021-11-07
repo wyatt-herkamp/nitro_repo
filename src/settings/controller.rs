@@ -1,15 +1,16 @@
 use actix_web::{get, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
-use crate::api_response::APIResponse;
+use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
-use crate::error::request_error::RequestError;
+
+use crate::error::response::unauthorized;
 use crate::settings::action::get_setting;
-use crate::settings::settings::{DBSetting, SettingManager, SettingReport};
+use crate::settings::settings::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
-use crate::utils::{get_current_time, installed};
+use crate::utils::get_current_time;
 use crate::{settings, DbPool};
 use diesel::MysqlConnection;
 
@@ -27,9 +28,7 @@ pub fn get_setting_or_empty(
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
-        .ok_or(InternalError::Error(
-            "Unable to find setting".to_string(),
-        ))
+        .ok_or(InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
     return Ok(DBSetting {
         id: 0,
@@ -46,33 +45,29 @@ pub fn default_string() -> String {
 #[get("/api/setting/{setting}")]
 pub async fn about_setting(
     pool: web::Data<DbPool>,
-    _r: HttpRequest,
+    r: HttpRequest,
     web::Path(setting): web::Path<String>,
-) -> Result<APIResponse<DBSetting>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
 
     let option = get_setting_or_empty(setting.as_str(), &connection)?;
     if !option.setting.public.unwrap_or(false) {
-        return Err(RequestError::NotAuthorized);
+        //TODO check if admin
+        return unauthorized();
     }
-    return Ok(APIResponse::new(true, Some(option)));
+    return APIResponse::from(Some(option)).respond(&r);
 }
 
 #[get("/api/settings/report")]
-pub async fn setting_report(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-) -> Result<APIResponse<SettingReport>, RequestError> {
+pub async fn setting_report(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
-    let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
-    if !user.permissions.admin {
-        return Err(RequestError::NotAuthorized);
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
     }
     let report = get_setting_report(&connection)?;
-    return Ok(APIResponse::new(true, Some(report)));
+    return APIResponse::from(Some(report)).respond(&r);
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -86,18 +81,16 @@ pub async fn update_setting(
     r: HttpRequest,
     request: web::Json<UpdateSettingRequest>,
     web::Path(setting): web::Path<String>,
-) -> Result<APIResponse<DBSetting>, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
-    let user =
-        get_user_by_header(r.headers(), &connection)?.ok_or_else(|| RequestError::NotAuthorized)?;
-    if !user.permissions.admin {
-        return Err(RequestError::NotAuthorized);
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
     }
     let mut option = get_setting_or_empty(setting.as_str(), &connection)?;
     option.set_value(request.value.clone());
     settings::action::update_setting(&option, &connection)?;
-    let option =
-        get_setting(setting.as_str(), &connection)?.ok_or_else(|| RequestError::NotFound)?;
-    return Ok(APIResponse::new(true, Some(option)));
+    let option = get_setting(setting.as_str(), &connection)?;
+    return APIResponse::respond_new(option, &r);
 }

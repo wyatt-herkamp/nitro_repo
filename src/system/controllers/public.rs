@@ -1,13 +1,12 @@
 use actix_web::{post, web, HttpRequest};
 
-use crate::api_response::APIResponse;
+use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::request_error::RequestError;
-
+use crate::error::response::unauthorized;
 use crate::system::action::{add_new_session_token, get_user_by_email, get_user_by_username};
 use crate::system::models::SessionToken;
 use crate::system::utils::generate_session_token;
-use crate::utils::{default_expiration, get_current_time, installed};
+use crate::utils::{default_expiration, get_current_time};
 use crate::DbPool;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::{Deserialize, Serialize};
@@ -19,26 +18,25 @@ pub struct Login {
 }
 
 #[post("/api/login")]
-pub async fn login(
-    pool: web::Data<DbPool>,
-    _r: HttpRequest,
-    nc: web::Json<Login>,
-) -> Result<APIResponse<SessionToken>, RequestError> {
+pub async fn login(pool: web::Data<DbPool>, r: HttpRequest, nc: web::Json<Login>) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
+
     let username = nc.username.clone();
     let user = if username.contains("@") {
-        get_user_by_email(username, &connection)?
+        get_user_by_email(&username, &connection)?
     } else {
-        get_user_by_username(username, &connection)?
+        get_user_by_username(&username, &connection)?
+    };
+    if user.is_none() {
+        return unauthorized();
     }
-    .ok_or(RequestError::InvalidLogin)?;
+    let user = user.unwrap();
     let argon2 = Argon2::default();
-    let parsed_hash = PasswordHash::new(user.password.as_str())
-        .map_err(|_| RequestError::from("Password Error"))?;
-    argon2
-        .verify_password(nc.password.clone().as_bytes(), &parsed_hash)
-        .map_err(|_| RequestError::InvalidLogin)?;
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    let x = argon2.verify_password(nc.password.clone().as_bytes(), &parsed_hash);
+    if x.is_err() {
+        return unauthorized();
+    }
     let token = SessionToken {
         id: 0,
         user: user.id.clone(),
@@ -48,5 +46,5 @@ pub async fn login(
     };
     add_new_session_token(&token, &connection)?;
 
-    return Ok(APIResponse::new(true, Some(token)));
+    return APIResponse::respond_new(Some(token), &r);
 }

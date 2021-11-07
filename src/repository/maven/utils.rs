@@ -15,7 +15,7 @@ pub fn get_versions(path: &PathBuf) -> Vec<Version> {
     for x in value {
         versions.push(Version {
             version: x.clone(),
-            artifacts: get_artifacts(path.clone().join(x.clone())),
+            artifacts: get_artifacts(path.clone().join(x)),
         })
     }
     return versions;
@@ -24,9 +24,7 @@ pub fn get_versions(path: &PathBuf) -> Vec<Version> {
 fn get_versions_generated(path: &PathBuf) -> Vec<String> {
     let string = read_to_string(path).unwrap();
     let vec: DeployMetadata = serde_xml_rs::from_str(string.as_str()).unwrap();
-    println!("{}", &vec.artifact_id);
-    println!("{:?}", &vec.versioning.release);
-    return vec.versioning.versions.version.clone();
+    return vec.versioning.versions.version;
 }
 
 fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
@@ -42,7 +40,7 @@ fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
 }
 
 pub fn get_latest_version(path: &PathBuf, release: bool) -> String {
-    let maven_metadata = path.clone().join("maven-metadata.xml");
+    let maven_metadata = path.join("maven-metadata.xml");
     let value = if maven_metadata.exists() {
         get_latest_version_generated(&maven_metadata, release)
     } else {

@@ -1,37 +1,36 @@
-use crate::error::request_error::RequestError;
-
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
-use crate::repository::models::{BadgeSettings, Repository};
+use crate::repository::models::{BadgeSettings};
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 
 use crate::storage::action::get_storage_by_name;
 
-use crate::utils::installed;
 use crate::DbPool;
 use actix_files::NamedFile;
 
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{get, web, HttpRequest};
 
-use serde::{Deserialize, Serialize};
 use std::fs::{create_dir_all, read_to_string, File};
 use std::path::PathBuf;
 
 use badge_maker::{BadgeBuilder, Style};
 
+use crate::api_response::SiteResponse;
+use crate::error::response::not_found;
 use std::io::Write;
 use usvg::Options;
-use crate::repository::npm::NPMHandler;
 
-//
+fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
+    return format!(
+        "badge-{}-{}-{}-{}.{}",
+        b_s.style.to_badge_maker_style(),
+        b_s.color,
+        b_s.label_color,
+        &version,
+        t
+    );
+}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListRepositories {
-    pub repositories: Vec<Repository>,
-}
-fn file_name(b_s: &BadgeSettings, version: &String, t: &str)->String{
-    return format!("badge-{}-{}-{}-{}.{}", b_s.style.to_badge_maker_style(), b_s.color, b_s.label_color, version.clone(), t);
-}
 fn load_fonts() -> usvg::fontdb::Database {
     let mut fontdb = usvg::fontdb::Database::new();
     fontdb.load_system_fonts();
@@ -50,29 +49,29 @@ pub async fn badge(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
-) -> Result<HttpResponse, RequestError> {
+) -> SiteResponse {
     let connection = pool.get()?;
-    installed(&connection)?;
-    let storage = get_storage_by_name(path.0.0, &connection)?.ok_or(RequestError::NotFound)?;
-    let repository =
-        get_repo_by_name_and_storage(path.0.1.clone(), storage.id.clone(), &connection)?
-            .ok_or(RequestError::NotFound)?;
 
-    let t = repository.repo_type.clone();
-    let string = path.0.2.clone();
-    let x = if string.eq("nitro_repo_example") {
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
+    if repository.is_none() {
+        return not_found();
+    }
+    let repository = repository.unwrap();
+    let request = RepositoryRequest {
+        storage,
+        repository,
+        value: path.0.2,
+    };
+    let x = if request.value.eq("nitro_repo_example") {
         "example".to_string()
     } else {
-        let request = RepositoryRequest {
-            //TODO DONT DO THIS
-            request: r.clone(),
-            storage: storage.clone(),
-            repository: repository.clone(),
-            value: string.clone(),
-        };
-        match t.as_str() {
-            "maven" => MavenHandler::latest_version(request, &connection),
-            "npm" => NPMHandler::latest_version(request, &connection),
+        match request.repository.repo_type.as_str() {
+            "maven" => MavenHandler::latest_version(&request, &r, &connection),
             _ => {
                 panic!("Unknown REPO")
             }
@@ -80,27 +79,25 @@ pub async fn badge(
     };
     let buf1 = PathBuf::new()
         .join("storages")
-        .join(storage.name.clone())
-        .join(repository.name.clone())
-        .join(string.clone())
+        .join(&request.storage.name)
+        .join(&request.repository.name)
+        .join(&request.value)
         .join(".nitro_repo");
     if !buf1.exists() {
         create_dir_all(&buf1)?;
     }
-    let typ = path.0.3.clone();
-    let b_s = repository.settings.badge;
-    let buf = buf1
-        .clone()
-        .join(file_name(&b_s, &x, typ.as_str()));
+    let typ = path.0.3;
+    let b_s = request.repository.settings.badge;
+    let buf = buf1.join(file_name(&b_s, &x, typ.as_str()));
     if buf.exists() {
         return Ok(NamedFile::open(buf)?.into_response(&r)?);
     }
-    let svg_file = buf1.clone().join(file_name(&b_s, &x, typ.as_str()));
+    let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
 
     if !svg_file.exists() {
         let svg: String = BadgeBuilder::new()
             .style(Style::Flat)
-            .label(repository.name.as_str())
+            .label(request.repository.name.as_str())
             .message(x.as_str())
             .style(b_s.style.to_badge_maker_style())
             .color_parse(b_s.color.as_str())
@@ -135,13 +132,12 @@ pub async fn badge(
         let mut pixmap1 = tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
         let pixmap = pixmap1.as_mut();
         resvg::render(&result, fit_to, pixmap).unwrap();
-        let svg_file = buf1.clone().join(file_name(&b_s, &x, typ.as_str()));
+        let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
 
         pixmap1.save_png(svg_file).unwrap();
     }
 
     let buf = buf1
-        .clone()
-        .join(format!("badge-{}.{}", x.clone(), typ.clone()));
+        .join(format!("badge-{}.{}", &x, &typ));
     return Ok(NamedFile::open(buf)?.into_response(&r)?);
 }
