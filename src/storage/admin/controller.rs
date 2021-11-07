@@ -84,16 +84,16 @@ pub async fn add_storage(
     let storage = Storage {
         id: 0,
 
-        public_name: nc.public_name.clone(),
-        name: nc.name.clone(),
+        public_name: nc.0.public_name,
+        name: nc.0.name,
         created: get_current_time(),
     };
     add_new_storage(&storage, &connection)?;
-    let buf = PathBuf::new().join("storages").join(&nc.name);
+    let buf = PathBuf::new().join("storages").join(&storage.name);
     if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_storage_by_name(&nc.name, &connection)?;
+    let option = get_storage_by_name(&storage.name, &connection)?;
     if option.is_none(){
         return not_found();
     }

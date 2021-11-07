@@ -53,12 +53,12 @@ pub async fn install_post(
         return mismatching_passwords();
     }
     let user = NewUser {
-        name: request.name.clone(),
-        username: Some(request.username.clone()),
-        email: Some(request.email.clone()),
+        name: request.name,
+        username: Some(request.username),
+        email: Some(request.email),
         password: Some(NewPassword {
-            password: request.password.clone(),
-            password_two: request.password_two.clone(),
+            password: request.password,
+            password_two: request.password_two,
         }),
         permissions: UserPermissions::new_owner(),
     };

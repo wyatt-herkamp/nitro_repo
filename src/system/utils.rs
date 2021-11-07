@@ -42,8 +42,9 @@ pub fn get_user_by_header(
     let value = value.unwrap().to_string();
     let key = option.unwrap().to_string();
     if key.eq("Bearer") {
-        let result = system::action::get_user_from_session_token(value, conn)?;
+        let result = system::action::get_user_from_session_token(&value, conn)?;
         return Ok(result);
+
     }
     Ok(None)
 }
@@ -126,7 +127,7 @@ pub fn is_authed(
     if !split.len().eq(&2) {
         return Ok(false);
     }
-    let result1 = get_user_by_username(split.get(0).unwrap().to_string(), &conn)?;
+    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), &conn)?;
     if result1.is_none() {
         return Ok(false);
     }
@@ -134,7 +135,7 @@ pub fn is_authed(
     let user = result1.unwrap();
     let parsed_hash = PasswordHash::new(user.password.as_str())?;
     if argon2
-        .verify_password(split.get(1).unwrap().clone().as_bytes(), &parsed_hash)
+        .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
         .is_err()
     {
         return Ok(false);
@@ -216,26 +217,26 @@ pub fn new_user(new_user: NewUser, conn: &MysqlConnection) -> Result<Result<Opti
     }
     let password = password.unwrap();
     let email = new_user.email.unwrap();
-    let option = system::action::get_user_by_username(username.clone(), &conn)?;
+    let option = system::action::get_user_by_username(&username, &conn)?;
     if option.is_some() {
         return Ok(Err(UsernameAlreadyExists));
     }
-    let option = system::action::get_user_by_email(email.clone(), &conn)?;
+    let option = system::action::get_user_by_email(&email, &conn)?;
     if option.is_some() {
         return Ok(Err(EmailAlreadyExists));
     }
 
     let user = User {
         id: 0,
-        name: new_user.name.clone(),
-        username: username.clone(),
-        email: email.clone(),
-        password: password,
-        permissions: new_user.permissions.clone(),
+        name: new_user.name,
+        username,
+        email,
+        password,
+        permissions: new_user.permissions,
         created: get_current_time(),
     };
     add_new_user(&user, &conn)?;
-    let user = get_user_by_username(username, &conn)?;
+    let user = get_user_by_username(&user.username, &conn)?;
     return Ok(Ok(user));
 }
 
@@ -246,7 +247,7 @@ pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, In
             .take(128)
             .map(char::from)
             .collect();
-        let result = get_session_token(x.clone(), &connection)?;
+        let result = get_session_token(&x, &connection)?;
         if result.is_none() {
             return Ok(x);
         }

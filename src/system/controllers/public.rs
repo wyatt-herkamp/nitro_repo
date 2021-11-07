@@ -29,9 +29,9 @@ pub async fn login(
 
     let username = nc.username.clone();
     let user = if username.contains("@") {
-        get_user_by_email(username, &connection)?
+        get_user_by_email(&username, &connection)?
     } else {
-        get_user_by_username(username, &connection)?
+        get_user_by_username(&username, &connection)?
     };
     if user.is_none(){
         return unauthorized();

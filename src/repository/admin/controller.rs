@@ -76,10 +76,10 @@ pub async fn add_repo(
     let repository = Repository {
         id: 0,
 
-        name: nc.name.clone(),
-        repo_type: nc.repo.clone(),
+        name: nc.0.name,
+        repo_type: nc.0.repo,
         storage: storage.id.clone(),
-        settings: nc.settings.clone(),
+        settings: nc.0.settings,
         security: SecurityRules {
             deployers: vec![],
             visibility: Visibility::Public,
@@ -90,12 +90,12 @@ pub async fn add_repo(
     add_new_repository(&repository, &connection)?;
     let buf = PathBuf::new()
         .join("storages")
-        .join(nc.name.clone())
-        .join(repository.name.clone());
+        .join(&storage.name)
+        .join(&repository.name);
     if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_repo_by_name_and_storage(&nc.name, &storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&repository.name, &storage.id, &connection)?;
 
     return APIResponse::from(option).respond(&r);
 }
@@ -114,8 +114,7 @@ pub async fn modify_general_settings(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let string = path.0.0.clone();
-    let storage = get_storage_by_name(&string, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
@@ -144,8 +143,7 @@ pub async fn modify_frontend_settings(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let string = path.0.0.clone();
-    let storage = get_storage_by_name(&string, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
@@ -173,8 +171,7 @@ pub async fn modify_security(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let string = path.0.0.clone();
-    let storage = get_storage_by_name(&string, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
@@ -204,7 +201,7 @@ pub async fn update_deployers_readers(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let string = path.0.0.clone();
+    let string = path.0.0;
     let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
         return not_found();
@@ -215,7 +212,7 @@ pub async fn update_deployers_readers(
         return not_found();
     }
     let mut repository = repository.unwrap();
-    let user = get_user_by_username(path.0.4, &connection)?;
+    let user = get_user_by_username(&path.0.4, &connection)?;
     if user.is_none() {
         return not_found();
     }

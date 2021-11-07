@@ -44,7 +44,7 @@ pub async fn add_user(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let user = new_user(nc.0.clone(), &connection)?;
+    let user = new_user(nc.0, &connection)?;
     if let Err(e) = user {
         return match e {
             NewUserError::UsernameAlreadyExists => {
@@ -83,12 +83,12 @@ pub async fn modify_user(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let user = get_user_by_username(user, &connection)?;
+    let user = get_user_by_username(&user, &connection)?;
     if user.is_none(){
         return not_found();
     }
     let mut user = user.unwrap();
-    user.update(nc.0.clone());
+    user.update(nc.0);
     update_user(&user, &connection)?;
     return APIResponse::from(Some(user)).respond(&r);
 }
@@ -106,7 +106,7 @@ pub async fn change_password(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let user = get_user_by_username(user, &connection)?;
+    let user = get_user_by_username(&user, &connection)?;
     if user.is_none(){
         return not_found();
     }
@@ -133,10 +133,10 @@ pub async fn delete_user(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let option = get_user_by_username(user, &connection)?;
+    let option = get_user_by_username(&user, &connection)?;
     if option.is_none() {
         return not_found();
     }
-    delete_user_db(option.unwrap().id, &connection)?;
+    delete_user_db(&option.unwrap().id, &connection)?;
     return APIResponse::new(true, Some(true)).respond(&r);
 }
