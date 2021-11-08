@@ -28,14 +28,23 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
+
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().ok();
+    if let Err(error) = dotenv::dotenv() {
+        println!("Unable to load dotenv {}", error);
+        return Ok(());
+    }
+    let file = match std::env::var("MODE").unwrap_or("DEBUG".to_string()).as_str() {
+        "DEBUG" => { "log-debug.yml" }
+        "RELEASE" => { "log-release.yml" }
+        _ => {panic!("Must be Release or Debug")}
+    };
     let config: RawConfig =
-        serde_yaml::from_str(Resources::file_get_string("log.yml").as_str()).unwrap();
+        serde_yaml::from_str(Resources::file_get_string(file).as_str()).unwrap();
     log4rs::init_raw_config(config).unwrap();
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
@@ -73,28 +82,28 @@ async fn main() -> std::io::Result<()> {
                     .show_files_listing(),
             )
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
     #[cfg(feature = "ssl")]
-    {
-        if std::env::var("PRIVATE_KEY").is_ok() {
-            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+        {
+            if std::env::var("PRIVATE_KEY").is_ok() {
+                use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder
-                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-                .unwrap();
-            builder
-                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-                .unwrap();
-            return server
-                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
-                .run()
-                .await;
+                let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+                builder
+                    .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                    .unwrap();
+                builder
+                    .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                    .unwrap();
+                return server
+                    .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                    .run()
+                    .await;
+            }
         }
-    }
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }
