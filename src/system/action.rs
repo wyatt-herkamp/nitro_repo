@@ -8,7 +8,7 @@ pub fn get_users(
     conn: &MysqlConnection,
 ) -> Result<Vec<system::models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    Ok(users.load::<system::models::User>(conn)?)
+    users.load::<system::models::User>(conn)
 }
 pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -114,7 +114,7 @@ pub fn get_user_from_session_token(
     if result.expiration <= utils::get_current_time() {
         return Ok(None);
     }
-    return get_user_by_id(&result.user, conn);
+    get_user_by_id(&result.user, conn)
 }
 
 //Session Token

@@ -64,5 +64,5 @@ pub async fn install_post(pool: web::Data<DbPool>, r: HttpRequest, b: web::Bytes
         env!("CARGO_PKG_VERSION").to_string(),
         &connection,
     )?;
-    return APIResponse::new(true, Some(true)).respond(&r);
+    APIResponse::new(true, Some(true)).respond(&r)
 }

@@ -78,7 +78,7 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(
-                Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
+                Files::new("/", std::env::var("SITE_DIR").unwrap())
                     .show_files_listing(),
             )
     })

@@ -55,5 +55,5 @@ pub async fn get_versions(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, path.0 .2.clone(), r);
+    handle_result(x, path.0 .2, r)
 }

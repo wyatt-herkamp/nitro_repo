@@ -25,7 +25,7 @@ pub fn update_setting(s: &DBSetting, conn: &MysqlConnection) -> Result<(), diese
     if result1 == 0 {
         return add_new_setting(s, conn);
     }
-    return Ok(());
+    Ok(())
 }
 
 pub fn get_setting(
@@ -44,5 +44,5 @@ pub fn get_settings(
     conn: &MysqlConnection,
 ) -> Result<Vec<settings::settings::DBSetting>, diesel::result::Error> {
     use crate::schema::settings::dsl::*;
-    Ok(settings.load::<DBSetting>(conn)?)
+    settings.load::<DBSetting>(conn)
 }

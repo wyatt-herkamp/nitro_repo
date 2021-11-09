@@ -45,7 +45,7 @@ pub fn get_repositories(
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
-    Ok(repositories.load::<repository::models::Repository>(conn)?)
+    repositories.load::<repository::models::Repository>(conn)
 }
 
 pub fn get_repositories_by_storage(
@@ -53,7 +53,7 @@ pub fn get_repositories_by_storage(
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
-    Ok(repositories
+    repositories
         .filter(storage.eq(storage))
-        .load::<repository::models::Repository>(conn)?)
+        .load::<repository::models::Repository>(conn)
 }

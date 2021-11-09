@@ -67,7 +67,7 @@ impl RepositoryType for MavenHandler {
             }
         }
 
-        return Ok(NotFound);
+        Ok(NotFound)
     }
 
     fn handle_post(
@@ -76,7 +76,7 @@ impl RepositoryType for MavenHandler {
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
-        return Ok(IAmATeapot("Post is not handled in Maven".to_string()));
+        Ok(IAmATeapot("Post is not handled in Maven".to_string()))
     }
 
     fn handle_put(
@@ -120,7 +120,7 @@ impl RepositoryType for MavenHandler {
             .create(true)
             .open(buf)?;
         file.write_all(bytes.bytes())?;
-        return Ok(RepoResponse::Ok);
+        Ok(RepoResponse::Ok)
     }
 
     fn handle_patch(
@@ -129,7 +129,7 @@ impl RepositoryType for MavenHandler {
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
-        return Ok(IAmATeapot("Patch is not handled in Maven".to_string()));
+        Ok(IAmATeapot("Patch is not handled in Maven".to_string()))
     }
 
     fn handle_head(
@@ -170,7 +170,7 @@ impl RepositoryType for MavenHandler {
             }
         }
 
-        return Ok(NotFound);
+        Ok(NotFound)
     }
 
     fn handle_versions(
@@ -190,7 +190,7 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
-        return Ok(RepoResponse::VersionResponse(vec));
+        Ok(RepoResponse::VersionResponse(vec))
     }
 
     fn latest_version(
@@ -210,6 +210,6 @@ impl RepositoryType for MavenHandler {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        return Ok(vec);
+        Ok(vec)
     }
 }

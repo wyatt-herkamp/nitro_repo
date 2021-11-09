@@ -71,7 +71,7 @@ impl FromSql<Text, Mysql> for UserPermissions {
     ) -> deserialize::Result<UserPermissions> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: UserPermissions = serde_json::from_str(t.as_str())?;
-        return Ok(result);
+        Ok(result)
     }
 }
 

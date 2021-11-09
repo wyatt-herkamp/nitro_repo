@@ -9,10 +9,10 @@ use crate::utils::get_current_time;
 use diesel::MysqlConnection;
 
 pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(), InternalError> {
-    let result = get_setting(key, &conn)?;
+    let result = get_setting(key, conn)?;
     if let Some(mut setting) = result {
         setting.set_value(value.clone());
-        update_setting(&setting, &conn)?;
+        update_setting(&setting, conn)?;
     }
     let setting = DBSetting {
         id: 0,
@@ -20,12 +20,12 @@ pub fn quick_add(key: &str, value: String, conn: &MysqlConnection) -> Result<(),
         value,
         updated: get_current_time(),
     };
-    add_new_setting(&setting, &conn)?;
-    return Ok(());
+    add_new_setting(&setting, conn)?;
+    Ok(())
 }
 
 pub fn get_setting_report(connection: &MysqlConnection) -> Result<SettingReport, InternalError> {
-    let vec = get_settings(&connection)?;
+    let vec = get_settings(connection)?;
     let email = EmailSetting {
         email_username: vec
             .get_setting_by_key("email.username")
@@ -67,9 +67,9 @@ pub fn get_setting_report(connection: &MysqlConnection) -> Result<SettingReport,
             .clone(),
     };
     let security = SecuritySettings {};
-    return Ok(SettingReport {
+    Ok(SettingReport {
         email,
         general,
         security,
-    });
+    })
 }
