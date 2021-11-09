@@ -34,7 +34,7 @@ pub async fn list_storages(
     let vec = get_storages(&connection)?;
 
     let response = ListStorages { storages: vec };
-    return APIResponse::new(true, Some(response)).respond(&r);
+    APIResponse::new(true, Some(response)).respond(&r)
 }
 
 #[get("/api/storages/id/{id}")]
@@ -54,7 +54,7 @@ pub async fn get_by_id(
         return not_found();
     }
 
-    return APIResponse::new(true, vec).respond(&r);
+    APIResponse::new(true, vec).respond(&r)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -91,5 +91,5 @@ pub async fn add_storage(
     if option.is_none() {
         return not_found();
     }
-    return APIResponse::new(true, option).respond(&r);
+    APIResponse::new(true, option).respond(&r)
 }

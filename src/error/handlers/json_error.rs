@@ -8,7 +8,7 @@ pub fn json_config() -> JsonConfig {
 }
 
 pub fn handle(payload: JsonPayloadError, _request: &HttpRequest) -> actix_web::Error {
-    return match payload {
+    match payload {
         JsonPayloadError::Overflow => actix_web::error::ErrorBadRequest(APIResponse::from(
             RequestErrorResponse::new("Json Overflow", "INTERNAL"),
         )),
@@ -21,5 +21,5 @@ pub fn handle(payload: JsonPayloadError, _request: &HttpRequest) -> actix_web::E
         JsonPayloadError::Payload(_) => actix_web::error::ErrorBadRequest(APIResponse::from(
             RequestErrorResponse::new("BAD PAYLOAD", "PAYLOAD"),
         )),
-    };
+    }
 }

@@ -23,10 +23,10 @@ pub struct RequestErrorResponse {
 }
 impl RequestErrorResponse {
     pub fn new<S: Into<String>>(friendly: S, error: S) -> RequestErrorResponse {
-        return RequestErrorResponse {
+        RequestErrorResponse {
             user_friendly_message: Some(friendly.into()),
             error_code: Some(error.into()),
-        };
+        }
     }
 }
 
@@ -44,7 +44,7 @@ impl Display for RequestErrorResponse {
 
 impl From<RequestErrorResponse> for APIResponse<RequestErrorResponse> {
     fn from(error: RequestErrorResponse) -> Self {
-        return APIResponse::new(false, Some(error));
+        APIResponse::new(false, Some(error))
     }
 }
 
@@ -52,7 +52,7 @@ impl<T: Serialize> From<Option<T>> for APIResponse<T> {
     /// If the value is None it will create a 404 response
     /// If the value is Some it will set Success to True and the data is provided
     fn from(value: Option<T>) -> Self {
-        return if value.is_none() {
+        if value.is_none() {
             APIResponse {
                 success: true,
                 data: None,
@@ -60,17 +60,17 @@ impl<T: Serialize> From<Option<T>> for APIResponse<T> {
             }
         } else {
             APIResponse::<T>::new(true, value)
-        };
+        }
     }
 }
 
 impl<T: Serialize> APIResponse<T> {
     pub fn new(success: bool, data: Option<T>) -> APIResponse<T> {
-        return APIResponse {
+        APIResponse {
             success,
             data,
             status_code: None,
-        };
+        }
     }
     pub fn error(&self, status: StatusCode) -> SiteResponse {
         return Ok(HttpResponse::Ok()
@@ -84,7 +84,7 @@ impl<T: Serialize> APIResponse<T> {
             .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
             .content_type("application/json")
             .body(serde_json::to_string(&self).unwrap());
-        return Ok(result);
+        Ok(result)
     }
     pub fn respond_new<S: Into<APIResponse<T>>>(response: S, _req: &HttpRequest) -> SiteResponse {
         let response = response.into();
@@ -93,6 +93,6 @@ impl<T: Serialize> APIResponse<T> {
             .status(StatusCode::from_u16(i).unwrap_or(StatusCode::OK))
             .content_type("application/json")
             .body(serde_json::to_string(&response).unwrap());
-        return Ok(result);
+        Ok(result)
     }
 }

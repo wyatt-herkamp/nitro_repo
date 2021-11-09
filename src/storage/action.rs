@@ -42,5 +42,5 @@ pub fn get_storages(
     conn: &MysqlConnection,
 ) -> Result<Vec<storage::models::Storage>, diesel::result::Error> {
     use crate::schema::storages::dsl::*;
-    Ok(storages.load::<storage::models::Storage>(conn)?)
+    storages.load::<storage::models::Storage>(conn)
 }

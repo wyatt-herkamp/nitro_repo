@@ -21,14 +21,14 @@ impl Resources {
     pub fn file_get(file: &str) -> Vec<u8> {
         let buf = Path::new("resources").join(file);
         if buf.exists() {
-            return read(buf).unwrap();
+            read(buf).unwrap()
         } else {
-            return Resources::get(file).unwrap().data.to_vec();
+            Resources::get(file).unwrap().data.to_vec()
         }
     }
     pub fn file_get_string(file: &str) -> String {
         let vec = Resources::file_get(file);
-        return String::from_utf8(vec).unwrap();
+        String::from_utf8(vec).unwrap()
     }
 }
 
@@ -37,12 +37,12 @@ pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
     if installed {
         return Ok(true);
     }
-    let option = get_setting("INSTALLED", &conn)?;
+    let option = get_setting("INSTALLED", conn)?;
     if option.is_none() {
         return Ok(false);
     }
     std::env::set_var("INSTALLED", "true");
-    return Ok(true);
+    Ok(true)
 }
 
 pub fn get_current_time() -> i64 {
@@ -82,5 +82,5 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
 }
 
 pub fn get_storage_location() -> PathBuf {
-    return PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap());
+    PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap())
 }

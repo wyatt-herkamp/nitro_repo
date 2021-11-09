@@ -29,13 +29,13 @@ impl InternalError {
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .content_type("application/json")
             .body("");
-        return result;
+        result
     }
 }
 
 impl actix_web::error::ResponseError for InternalError {
     fn error_response(&self) -> HttpResponse {
-        return self.json_error();
+        self.json_error()
     }
 }
 
@@ -50,19 +50,19 @@ impl Error for InternalError {}
 //from<Error>
 impl From<DecodeError> for InternalError {
     fn from(err: DecodeError) -> InternalError {
-        return InternalError::DecodeError(err);
+        InternalError::DecodeError(err)
     }
 }
 
 impl From<FromUtf8Error> for InternalError {
     fn from(err: FromUtf8Error) -> InternalError {
-        return InternalError::UTF8Error(err);
+        InternalError::UTF8Error(err)
     }
 }
 
 impl From<diesel::result::Error> for InternalError {
     fn from(err: diesel::result::Error) -> InternalError {
-        return InternalError::DBError(err);
+        InternalError::DBError(err)
     }
 }
 

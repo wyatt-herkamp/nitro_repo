@@ -35,7 +35,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
     let vec = get_repositories(&connection)?;
 
     let response = ListRepositories { repositories: vec };
-    return APIResponse::new(true, Some(response)).respond(&r);
+    APIResponse::new(true, Some(response)).respond(&r)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -73,7 +73,7 @@ pub async fn add_repo(
 
         name: nc.0.name,
         repo_type: nc.0.repo,
-        storage: storage.id.clone(),
+        storage: storage.id,
         settings: nc.0.settings,
         security: SecurityRules {
             deployers: vec![],
@@ -92,7 +92,7 @@ pub async fn add_repo(
     }
     let option = get_repo_by_name_and_storage(&repository.name, &storage.id, &connection)?;
 
-    return APIResponse::from(option).respond(&r);
+    APIResponse::from(option).respond(&r)
 }
 
 #[post("/api/admin/repository/{storage}/{repo}/modify/settings/general")]
@@ -120,7 +120,7 @@ pub async fn modify_general_settings(
     let mut repository = repository.unwrap();
     repository.settings.update_general(nc.0);
     update_repo(&repository, &connection)?;
-    return APIResponse::new(true, Some(repository)).respond(&r);
+    APIResponse::new(true, Some(repository)).respond(&r)
 }
 
 #[post("/api/admin/repository/{storage}/{repo}/modify/settings/frontend")]
@@ -148,7 +148,7 @@ pub async fn modify_frontend_settings(
     let mut repository = repository.unwrap();
     repository.settings.update_frontend(nc.0);
     update_repo(&repository, &connection)?;
-    return APIResponse::new(true, Some(repository)).respond(&r);
+    APIResponse::new(true, Some(repository)).respond(&r)
 }
 
 #[post("/api/admin/repository/{storage}/{repo}/modify/security/visibility/{visibility}")]
@@ -177,7 +177,7 @@ pub async fn modify_security(
     let visibility = Visibility::from_str(path.0 .2.as_str()).unwrap();
     repository.security.set_visibility(visibility);
     update_repo(&repository, &connection)?;
-    return APIResponse::new(true, Some(repository)).respond(&r);
+    APIResponse::new(true, Some(repository)).respond(&r)
 }
 
 #[post("/api/admin/repository/{storage}/{repo}/modify/security/{what}/{action}/{user}")]
@@ -244,5 +244,5 @@ pub async fn update_deployers_readers(
         _ => return bad_request("Must be Deployers or Readers"),
     }
     update_repo(&repository, &connection)?;
-    return APIResponse::new(true, Some(repository)).respond(&r);
+    APIResponse::new(true, Some(repository)).respond(&r)
 }

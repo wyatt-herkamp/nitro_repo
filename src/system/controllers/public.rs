@@ -22,7 +22,7 @@ pub async fn login(pool: web::Data<DbPool>, r: HttpRequest, nc: web::Json<Login>
     let connection = pool.get()?;
 
     let username = nc.username.clone();
-    let user = if username.contains("@") {
+    let user = if username.contains('@') {
         get_user_by_email(&username, &connection)?
     } else {
         get_user_by_username(&username, &connection)?
@@ -39,12 +39,12 @@ pub async fn login(pool: web::Data<DbPool>, r: HttpRequest, nc: web::Json<Login>
     }
     let token = SessionToken {
         id: 0,
-        user: user.id.clone(),
+        user: user.id,
         token: generate_session_token(&connection)?,
         expiration: default_expiration(),
         created: get_current_time(),
     };
     add_new_session_token(&token, &connection)?;
 
-    return APIResponse::respond_new(Some(token), &r);
+    APIResponse::respond_new(Some(token), &r)
 }

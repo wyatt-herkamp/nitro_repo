@@ -38,7 +38,7 @@ pub async fn browse(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     for x in vec {
         storages.push(x.name);
     }
-    return APIResponse::respond_new(Some(storages), &r);
+    APIResponse::respond_new(Some(storages), &r)
 }
 
 #[get("/storages/{storage}.json")]
@@ -60,7 +60,7 @@ pub async fn browse_storage(
     for x in vec {
         repos.push(x.name);
     }
-    return APIResponse::respond_new(Some(repos), &r);
+    APIResponse::respond_new(Some(repos), &r)
 }
 
 #[get("/storages/{storage}/{repository}/{file:.*}")]
@@ -93,7 +93,7 @@ pub async fn get_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, request.value, r);
+    handle_result(x, request.value, r)
 }
 
 /// TODO look into this method
@@ -186,7 +186,7 @@ pub async fn post_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, request.value, r);
+    handle_result(x, request.value, r)
 }
 
 #[patch("/storages/{storage}/{repository}/{file:.*}")]
@@ -226,7 +226,7 @@ pub async fn patch_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, request.value, r);
+    handle_result(x, request.value, r)
 }
 
 #[put("/storages/{storage}/{repository}/{file:.*}")]
@@ -267,7 +267,7 @@ pub async fn put_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, request.value, r);
+    handle_result(x, request.value, r)
 }
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]
@@ -307,5 +307,5 @@ pub async fn head_repository(
             panic!("Unknown REPO")
         }
     }?;
-    return handle_result(x, request.value, r);
+    handle_result(x, request.value, r)
 }

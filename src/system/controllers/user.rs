@@ -27,7 +27,7 @@ pub async fn list_users(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
     let vec = get_users(&connection)?;
 
     let response = ListUsers { users: vec };
-    return APIResponse::respond_new(Some(response), &r);
+    APIResponse::respond_new(Some(response), &r)
 }
 
 #[post("/api/admin/user/add")]
@@ -53,7 +53,7 @@ pub async fn add_user(
             NewUserError::PasswordMissing => bad_request("Password Missing"),
         };
     }
-    return APIResponse::from(user.unwrap()).respond(&r);
+    APIResponse::from(user.unwrap()).respond(&r)
 }
 
 #[post("/api/admin/user/{user}/modify")]
@@ -76,7 +76,7 @@ pub async fn modify_user(
     let mut user = user.unwrap();
     user.update(nc.0);
     update_user(&user, &connection)?;
-    return APIResponse::from(Some(user)).respond(&r);
+    APIResponse::from(Some(user)).respond(&r)
 }
 
 #[post("/api/admin/user/{user}/password")]
@@ -103,7 +103,7 @@ pub async fn change_password(
     }
     user.set_password(string.unwrap());
     update_user(&user, &connection)?;
-    return APIResponse::from(Some(user)).respond(&r);
+    APIResponse::from(Some(user)).respond(&r)
 }
 
 #[get("/api/admin/user/{user}/delete")]
@@ -123,5 +123,5 @@ pub async fn delete_user(
         return not_found();
     }
     delete_user_db(&option.unwrap().id, &connection)?;
-    return APIResponse::new(true, Some(true)).respond(&r);
+    APIResponse::new(true, Some(true)).respond(&r)
 }

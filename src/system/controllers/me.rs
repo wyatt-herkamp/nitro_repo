@@ -17,7 +17,7 @@ pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
         return unauthorized();
     }
 
-    return APIResponse::respond_new(user, &r);
+    APIResponse::respond_new(user, &r)
 }
 
 #[post("/api/admin/user/password")]
@@ -39,5 +39,5 @@ pub async fn change_my_password(
     }
     user.set_password(string.unwrap());
     update_user(&user, &connection)?;
-    return APIResponse::from(Some(user)).respond(&r);
+    APIResponse::from(Some(user)).respond(&r)
 }

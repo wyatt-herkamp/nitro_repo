@@ -114,7 +114,7 @@ pub async fn badge(
             resources_dir: None,
             dpi: 0.0,
             font_family: "Times New Roman".to_string(),
-            font_size: 12 as f64,
+            font_size: 12_f64,
             languages: Default::default(),
             shape_rendering: Default::default(),
             text_rendering: Default::default(),
@@ -139,5 +139,5 @@ pub async fn badge(
 
     let buf = buf1
         .join(format!("badge-{}.{}", &x, &typ));
-    return Ok(NamedFile::open(buf)?.into_response(&r)?);
+    Ok(NamedFile::open(buf)?.into_response(&r)?)
 }

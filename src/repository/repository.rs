@@ -51,11 +51,11 @@ pub struct RepositoryRequest {
 }
 impl RepositoryRequest {
     pub fn new(storage: Storage, repository: Repository, value: String) -> RepositoryRequest {
-        return RepositoryRequest {
+        RepositoryRequest {
             storage,
             repository,
             value,
-        };
+        }
     }
 }
 #[derive(Debug, Serialize, Deserialize)]

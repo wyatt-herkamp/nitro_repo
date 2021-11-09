@@ -25,7 +25,7 @@ pub enum BadgeStyle {
 
 impl Default for BadgeStyle {
     fn default() -> Self {
-        return BadgeStyle::Flat;
+        BadgeStyle::Flat
     }
 }
 
@@ -33,13 +33,13 @@ impl BadgeStyle {
     pub fn to_badge_maker_style(&self) -> badge_maker::Style {
         match self {
             BadgeStyle::Flat => {
-                return Style::Flat;
+                Style::Flat
             }
             BadgeStyle::FlatSquare => {
-                return Style::FlatSquare;
+                Style::FlatSquare
             }
             BadgeStyle::Plastic => {
-                return Style::Plastic;
+                Style::Plastic
             }
         }
     }
@@ -57,20 +57,20 @@ pub struct BadgeSettings {
 
 impl Default for BadgeSettings {
     fn default() -> Self {
-        return BadgeSettings {
+        BadgeSettings {
             style: Default::default(),
             label_color: default_label_color(),
             color: default_color(),
-        };
+        }
     }
 }
 
 fn default_color() -> String {
-    return "#33B5E5".to_string();
+    "#33B5E5".to_string()
 }
 
 fn default_label_color() -> String {
-    return "#555".to_string();
+    "#555".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,7 +81,7 @@ pub enum PageProvider {
 
 impl PageProvider {
     fn default() -> Self {
-        return PageProvider::None;
+        PageProvider::None
     }
 }
 
@@ -95,10 +95,10 @@ pub struct Frontend {
 
 impl Default for Frontend {
     fn default() -> Self {
-        return Frontend {
+        Frontend {
             enabled: true,
             page_provider: PageProvider::None,
-        };
+        }
     }
 }
 
@@ -118,13 +118,13 @@ pub enum Visibility {
 
 impl Policy {
     fn default() -> Self {
-        return Mixed;
+        Mixed
     }
 }
 
 impl Visibility {
     fn default() -> Self {
-        return Public;
+        Public
     }
 }
 
@@ -202,7 +202,7 @@ impl FromSql<Text, Mysql> for RepositorySettings {
     ) -> deserialize::Result<RepositorySettings> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: RepositorySettings = serde_json::from_str(t.as_str())?;
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -219,7 +219,7 @@ impl FromSql<Text, Mysql> for SecurityRules {
     ) -> deserialize::Result<SecurityRules> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: SecurityRules = serde_json::from_str(t.as_str())?;
-        return Ok(result);
+        Ok(result)
     }
 }
 
