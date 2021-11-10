@@ -8,7 +8,7 @@
       >
         <el-menu-item @click="index = 0" index="0">
           <i class="el-icon-watermelon"></i>
-          <template #title>Create new Storage</template>
+          <template #title>Create new User</template>
         </el-menu-item>
         <el-menu-item v-if="isLoading">
           <i class="el-icon-watermelon"></i>
@@ -22,7 +22,6 @@
           :key="user.id"
           @click="index = user.id"
           :index="user.id"
-
         >
           <i class="el-icon-user"></i>
           <template #title>{{ user.name }}</template>
@@ -31,11 +30,11 @@
     </el-aside>
     <el-container>
       <div v-if="index == 0">
-        <CreateUser />
+        <CreateUser :updateList="updateList" />
       </div>
       <div v-for="user in users.users" :key="user.id">
         <div v-if="index == user.id">
-          <UpdateUser :user="user" :me="false" />
+          <UpdateUser :userResponse="user" :me="false" />
         </div>
       </div>
     </el-container>
@@ -64,11 +63,12 @@ export default defineComponent({
       isLoading.value = true;
       try {
         const value = await getUsers(cookie.getCookie("token"));
+        console.log(value);
         users.value = value;
 
         isLoading.value = false;
       } catch (e) {
-        error.value="Error Loading";
+        error.value = "Error Loading";
       }
     };
     getUser();
@@ -78,7 +78,22 @@ export default defineComponent({
       isLoading,
       error,
       getUser,
+      cookie,
     };
+  },
+  methods: {
+    updateList(id: number) {
+      const getUser = async () => {
+        try {
+          const value = await getUsers(this.cookie.getCookie("token"));
+          this.users = value;
+          this.index = id;
+        } catch (e) {
+          this.error = "Error Loading";
+        }
+      };
+      getUser();
+    },
   },
 });
 </script>

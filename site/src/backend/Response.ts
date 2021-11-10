@@ -76,6 +76,9 @@ export interface User {
   email: string;
   permissions: UserPermissions;
   created: number;
+}export interface UserListResponse {
+  id: number;
+  name: string;
 }
 export interface UserPermissions {
   admin: boolean;

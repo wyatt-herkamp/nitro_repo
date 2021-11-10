@@ -40,13 +40,19 @@
 
 <script lang="ts">
 import axios from "axios";
-import { AuthToken, BasicResponse } from "@/backend/Response";
+import { AuthToken, BasicResponse, User } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 
 export default defineComponent({
+  props: {
+    updateList: {
+      required: true,
+      type: Function,
+    },
+  },
   setup() {
     let form = ref({
       error: "",
@@ -89,12 +95,16 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        router.push("/");
-      } else {
+        let data =  response.data as User;
+        this.$props.updateList(data.id);
+        this.$notify({
+          title: "User Created",
+          type: "success",
+        });      } else {
         this.form.error = "Invalid Password or Username";
       }
     },
-  },
+  }
 });
 </script>
 <style scoped></style>

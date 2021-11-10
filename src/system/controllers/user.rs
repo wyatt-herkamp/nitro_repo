@@ -1,7 +1,7 @@
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::system::action::{delete_user_db, get_user_by_username, get_users, update_user};
-use crate::system::models::User;
+use crate::system::action::{delete_user_db, get_user_by_id_response, get_user_by_username, get_users, update_user, update_user_password};
+use crate::system::models::{User, UserListResponse};
 use crate::system::utils::{
     get_user_by_header, new_user, ModifyUser, NewPassword, NewUser, NewUserError,
 };
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
-    pub users: Vec<User>,
+    pub users: Vec<UserListResponse>,
 }
 
 #[get("/api/admin/user/list")]
@@ -28,6 +28,18 @@ pub async fn list_users(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
 
     let response = ListUsers { users: vec };
     APIResponse::respond_new(Some(response), &r)
+}
+#[get("/api/admin/user/get/{user}")]
+pub async fn get_user(pool: web::Data<DbPool>, r: HttpRequest, path: web::Path<(i64)>) -> SiteResponse {
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repo = get_user_by_id_response(&path.0, &connection)?;
+
+    APIResponse::respond_new(repo, &r)
 }
 
 #[post("/api/admin/user/add")]
@@ -101,8 +113,7 @@ pub async fn change_password(
     if string.is_none() {
         return mismatching_passwords();
     }
-    user.set_password(string.unwrap());
-    update_user(&user, &connection)?;
+    update_user_password(&user.id, string.unwrap(), &connection)?;
     APIResponse::from(Some(user)).respond(&r)
 }
 

@@ -1,6 +1,6 @@
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::system::action::update_user;
+use crate::system::action::{update_user, update_user_password};
 
 use crate::system::utils::{get_user_by_header, NewPassword};
 
@@ -37,7 +37,6 @@ pub async fn change_my_password(
     if string.is_none() {
         return mismatching_passwords();
     }
-    user.set_password(string.unwrap());
-    update_user(&user, &connection)?;
+    update_user_password(&user.id, string.unwrap(), &connection)?;
     APIResponse::from(Some(user)).respond(&r)
 }

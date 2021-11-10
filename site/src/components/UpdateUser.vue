@@ -25,10 +25,10 @@
     <el-form label-position="top" :model="settingForm" label-width="120px">
       <el-form-item>
         <el-form-item label="Name">
-          <el-input :disabled="me"  v-model="settingForm.name"></el-input>
+          <el-input :disabled="me" v-model="settingForm.name"></el-input>
         </el-form-item>
         <el-form-item label="Email">
-          <el-input  :disabled="me"  v-model="settingForm.email"></el-input>
+          <el-input :disabled="me" v-model="settingForm.email"></el-input>
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
         <el-button
@@ -86,10 +86,10 @@
     <el-form label-position="top" :model="permissions" label-width="120px">
       <el-form-item>
         <el-form-item label="Admin">
-          <el-switch :disabled="me"  v-model="permissions.admin" />
+          <el-switch :disabled="me" v-model="permissions.admin" />
         </el-form-item>
         <el-form-item label="Deployer">
-          <el-switch  :disabled="me"  v-model="permissions.deployer" />
+          <el-switch :disabled="me" v-model="permissions.deployer" />
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
         <el-button :disabled="me" type="primary" @click="onPermissionUpdate"
@@ -110,6 +110,7 @@ import {
   DEFAULT_STORAGE,
   Storage,
   User,
+  UserListResponse,
 } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
@@ -117,12 +118,13 @@ import { computed, defineComponent, onMounted, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useRouter } from "vue-router";
 import { getStorage } from "@/backend/api/Storages";
+import { getUser, getUserByID } from "@/backend/api/User";
 
 export default defineComponent({
   props: {
-    user: {
-      required: true,
-      type: Object as () => User,
+    userResponse: {
+      required: false,
+      type: Object as () => UserListResponse,
     },
     me: {
       required: true,
@@ -132,8 +134,8 @@ export default defineComponent({
 
   setup(props) {
     let settingForm = ref({
-      email: props.user.email,
-      name: props.user.name,
+      email: "",
+      name: "",
       error: "",
       success: "",
     });
@@ -143,24 +145,69 @@ export default defineComponent({
       error: "",
     });
     let permissions = ref({
-      admin: props.user.permissions.admin,
-      deployer: props.user.permissions.deployer,
+      admin: false,
+      deployer: false,
       error: "",
     });
-
+    const isLoading = ref(false);
+    const error = ref("");
+    const cookie = useCookie();
     const tab = ref(0);
+    const user = ref<User | undefined>(undefined);
+    const loadUser = async () => {
+      isLoading.value = true;
+      try {
+        let value = undefined;
+        console.log(props.userResponse);
+        if (props.me) {
+          value = await getUser(cookie.getCookie("token"));
+        } else {
+          value = (await getUserByID(
+            cookie.getCookie("token"),
+            (props.userResponse as UserListResponse).id
+          )) as User;
+        }
+        user.value = value as User;
 
-    return { settingForm, password, tab, permissions };
+        isLoading.value = false;
+        settingForm.value = {
+          email: user.value.email,
+          name: user.value.name,
+          error: "",
+          success: "",
+        };
+        password.value = {
+          password: "",
+          confirm: "",
+          error: "",
+        };
+        permissions.value=({
+          admin: user.value.permissions.admin,
+          deployer: user.value.permissions.deployer,
+          error: "",
+        });
+      } catch (e) {
+        error.value = "";
+      }
+    };
+    loadUser();
+
+    return { user, settingForm, password, tab, permissions };
   },
   methods: {
     settingButton() {
+      if (this.user == undefined) return true;
+      let user = this.user as User;
       return (
         this.$props.me ||
-        (this.$props.user.name == this.settingForm.name &&
-          this.$props.user.email == this.settingForm.email)
+        (user.name == this.settingForm.name &&
+          user.email == this.settingForm.email)
       );
     },
     async onSettingSubmit() {
+      if (this.user == undefined) {
+        return;
+      }
       let newUser = {
         email: this.settingForm.email,
         name: this.settingForm.name,
@@ -168,7 +215,7 @@ export default defineComponent({
       let body = JSON.stringify(newUser);
       console.log(body);
       const res = await http.post(
-        "/api/admin/user/" + this.$props.user.username + "/modify",
+        "/api/admin/user/" + this.user.username + "/modify",
         body,
         {
           headers: {
@@ -198,16 +245,19 @@ export default defineComponent({
       }
     },
     async onPermissionUpdate() {
+      if (this.user == undefined) {
+        return;
+      }
       let newUser = {
         permissions: {
           deployer: this.permissions.deployer,
-          admin: this.permissions.admin
+          admin: this.permissions.admin,
         },
       };
       let body = JSON.stringify(newUser);
       console.log(body);
       const res = await http.post(
-        "/api/admin/user/" + this.$props.user.username + "/modify",
+        "/api/admin/user/" + this.user.username + "/modify",
         body,
         {
           headers: {
@@ -237,6 +287,9 @@ export default defineComponent({
       }
     },
     async updatePassword() {
+      if (this.user == undefined) {
+        return;
+      }
       let newUser = {
         password: this.password.password,
         password_two: this.password.confirm,
@@ -246,7 +299,7 @@ export default defineComponent({
       const res = await http.post(
         this.$props.me
           ? "/api/admin/user/password"
-          : "/api/admin/user/" + this.$props.user.username + "/password",
+          : "/api/admin/user/" + this.user.username + "/password",
         body,
         {
           headers: {

@@ -25,6 +25,24 @@ pub struct User {
     pub permissions: UserPermissions,
     pub created: i64,
 }
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct UserListResponse {
+    pub id: i64,
+    pub name: String,
+
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct UserResponse {
+    pub id: i64,
+    pub name: String,
+    pub username: String,
+    pub email: String,
+    pub permissions: UserPermissions,
+    pub created: i64
+
+}
+
 
 impl User {
     pub fn set_password(&mut self, password: String) {

@@ -43,7 +43,7 @@
         <Users />
       </div>
       <div v-else-if="index == 4">
-        <UpdateUser :user="userStore.state.user" :me="true" />
+        <UpdateUser  :me="true" />
       </div>
       <div v-else-if="index == 5">
         <Settings />
