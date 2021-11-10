@@ -1,5 +1,5 @@
 import http from "@/http-common";
-import { BasicResponse, RepositoryList, DEFAULT_REPO_LIST, FileResponse } from "../Response";
+import { BasicResponse, RepositoryList, DEFAULT_REPO_LIST, FileResponse, Repository } from "../Response";
 export async function getRepositories(token: string) {
   const value = await http.get("/api/repositories/list", {
     headers: {
@@ -16,6 +16,23 @@ export async function getRepositories(token: string) {
   }
 
   return DEFAULT_REPO_LIST;
+}
+export async function getRepoByID(token: string, id: number): Promise<Repository | undefined>{
+  const value = await http.get("/api/repositories/get/"+id, {
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  if (value.status != 200) {
+    return undefined;
+  }
+  const data = value.data as BasicResponse<unknown>;
+  if (data.success) {
+    return data.data as Repository;
+  }
+
+  return undefined;
 }
 export async function getRepositoriesPublicAccess(storage: string) {
   const url = "/storages/"+storage+".json";

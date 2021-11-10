@@ -241,3 +241,12 @@ pub struct Repository {
     pub security: SecurityRules,
     pub created: i64,
 }
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct RepositoryListResponse {
+    pub id: i64,
+    pub name: String,
+    pub repo_type: String,
+    pub storage: i64,
+}
+
+

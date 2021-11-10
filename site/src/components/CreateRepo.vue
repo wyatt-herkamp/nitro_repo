@@ -47,6 +47,7 @@ import {
   AuthToken,
   BasicResponse,
   DEFAULT_STORAGE_LIST,
+  Repository,
 } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
@@ -55,6 +56,12 @@ import { useCookie } from "vue-cookie-next";
 import { getStorages } from "@/backend/api/Storages";
 
 export default defineComponent({
+  props: {
+    updateList: {
+      required: true,
+      type: Function,
+    },
+  },
   setup() {
     let form = ref({
       name: "",
@@ -114,7 +121,12 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        router.push("/");
+        let data =  response.data as Repository;
+        this.$props.updateList(data.id);
+        this.$notify({
+          title: "Repository Created",
+          type: "success",
+        });
       } else {
         this.form.error = "Invalid Password or Username";
       }

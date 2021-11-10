@@ -1,4 +1,4 @@
-use crate::repository::models::Repository;
+use crate::repository::models::{Repository, RepositoryListResponse};
 
 use crate::repository;
 use diesel::prelude::*;
@@ -28,6 +28,19 @@ pub fn get_repo_by_name_and_storage(
 
     Ok(found_mod)
 }
+pub fn get_repo_by_id(
+    repo: &i64,
+    conn: &MysqlConnection,
+) -> Result<Option<repository::models::Repository>, diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+
+    let found_mod = repositories
+        .filter(id.eq(repo))
+        .first::<repository::models::Repository>(conn)
+        .optional()?;
+
+    Ok(found_mod)
+}
 
 pub fn add_new_repository(
     s: &Repository,
@@ -43,9 +56,9 @@ pub fn add_new_repository(
 
 pub fn get_repositories(
     conn: &MysqlConnection,
-) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
+) -> Result<Vec<RepositoryListResponse>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
-    repositories.load::<repository::models::Repository>(conn)
+    repositories.select((id, name,repo_type, storage)).load::<RepositoryListResponse>(conn)
 }
 
 pub fn get_repositories_by_storage(

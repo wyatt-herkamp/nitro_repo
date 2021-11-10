@@ -41,7 +41,7 @@
           </el-select>
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
-        <el-button  type="primary" @click="onSettingSubmit"
+        <el-button type="primary" @click="onSettingSubmit"
           >Update Settings</el-button
         >
       </el-form-item>
@@ -123,6 +123,7 @@ import {
   Repository,
   DEFAULT_STORAGE,
   Storage,
+  RepositoryListResponse,
 } from "@/backend/Response";
 import router from "@/router";
 import http, { baseURL } from "@/http-common";
@@ -130,37 +131,39 @@ import { computed, defineComponent, onMounted, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useRouter } from "vue-router";
 import { getStorage } from "@/backend/api/Storages";
+import { getRepoByID } from "@/backend/api/Repository";
 
 export default defineComponent({
   props: {
     repo: {
       required: true,
-      type: Object as () => Repository,
+      type: Object as () => RepositoryListResponse,
     },
   },
 
   setup(props) {
     let settingForm = ref({
-      active: props.repo.settings.active,
-      policy: props.repo.settings.policy,
+      active: false,
+      policy: "props.repo.settings.policy",
       error: "",
     });
     let frontendForm = ref({
-      frontend_enabled: props.repo.settings.frontend.enabled,
-      frontend_page_provider: props.repo.settings.frontend.page_provider,
-      badge_style: props.repo.settings.badge.style,
-      badge_label_color: props.repo.settings.badge.label_color,
-      badge_color: props.repo.settings.badge.color,
+      frontend_enabled: false,
+      frontend_page_provider: "props.repo.settings.frontend.page_provider",
+      badge_style: "props.repo.settings.badge.style",
+      badge_label_color: "props.repo.settings.badge.label_color",
+      badge_color: "props.repo.settings.badge.color",
 
       error: "",
     });
     let securityForm = ref({
-      open_to_all_deployers: props.repo.security.open_to_all_deployers,
-      open_to_all_readers: props.repo.security.open_to_all_readers,
-      visibility: props.repo.security.visibility,
+      open_to_all_deployers: false,
+      open_to_all_readers: false,
+      visibility: "props.repo.security.visibility",
       error: "",
     });
-    let date = new Date(props.repo.created).toLocaleDateString("en-US");
+    let repository = ref<Repository | undefined>(undefined);
+    let date = ref<string | undefined>(undefined);
     const cookie = useCookie();
     const isLoading = ref(false);
     const tab = ref(0);
@@ -177,6 +180,20 @@ export default defineComponent({
           props.repo.storage
         );
         storage.value = value;
+        isLoading.value = false;
+      } catch (e) {
+        error.value = "";
+      }
+    };
+    getStorageByID();
+    const getRepo = async () => {
+      isLoading.value = true;
+      try {
+        const value = (await getRepoByID(
+          cookie.getCookie("token"),
+          props.repo.id
+        )) as Repository;
+        repository.value = value;
         exampleBadgeURL.value =
           baseURL +
           "/badge/" +
@@ -184,12 +201,36 @@ export default defineComponent({
           "/" +
           props.repo.name +
           "/nitro_repo_example/badge.svg";
+        date.value = new Date(repository.value.created).toLocaleDateString(
+          "en-US"
+        );
         isLoading.value = false;
+        settingForm.value = {
+          active: value.settings.active,
+          policy: value.settings.policy,
+          error: "",
+        };
+        frontendForm.value = {
+          frontend_enabled: value.settings.frontend.enabled,
+          frontend_page_provider: value.settings.frontend.page_provider,
+          badge_style: value.settings.badge.style,
+          badge_label_color: value.settings.badge.label_color,
+          badge_color: value.settings.badge.color,
+
+          error: "",
+        };
+        securityForm.value = {
+          open_to_all_deployers: value.security.open_to_all_deployers,
+          open_to_all_readers: value.security.open_to_all_readers,
+          visibility: value.security.visibility,
+          error: "",
+        };
+        repository.value = value;
       } catch (e) {
         error.value = "";
       }
     };
-    getStorageByID();
+    getRepo();
 
     return {
       settingForm,
@@ -200,9 +241,33 @@ export default defineComponent({
       activeName,
       date,
       exampleBadgeURL,
+      repository,
     };
   },
   methods: {
+    async updateValues(repository: Repository) {
+      this.settingForm = {
+        active: repository.settings.active,
+        policy: repository.settings.policy,
+        error: "",
+      };
+      this.frontendForm = {
+        frontend_enabled: repository.settings.frontend.enabled,
+        frontend_page_provider: repository.settings.frontend.page_provider,
+        badge_style: repository.settings.badge.style,
+        badge_label_color: repository.settings.badge.label_color,
+        badge_color: repository.settings.badge.color,
+
+        error: "",
+      };
+      this.securityForm = {
+        open_to_all_deployers: repository.security.open_to_all_deployers,
+        open_to_all_readers: repository.security.open_to_all_readers,
+        visibility: repository.security.visibility,
+        error: "",
+      };
+      this.repository = repository;
+    },
     async onSettingSubmit() {
       if (this.storage.id == 0) {
         return;
@@ -238,6 +303,7 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
+        this.updateValues(response.data as Repository);
         this.$notify({
           title: "Updated Repository",
           type: "success",
@@ -247,7 +313,7 @@ export default defineComponent({
       }
     },
     async submitSecurity() {
-            if (this.storage.id == 0) {
+      if (this.storage.id == 0) {
         return;
       }
       let newUser = {
@@ -281,6 +347,7 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
+        this.updateValues(response.data as Repository);
         this.$notify({
           title: "Updated Repository",
           type: "success",
@@ -290,18 +357,18 @@ export default defineComponent({
       }
     },
     async submitFrontend() {
-           if (this.storage.id == 0) {
+      if (this.storage.id == 0) {
         return;
       }
       let newUser = {
         frontend: {
           enabled: this.frontendForm.frontend_enabled,
-          page_provider: this.frontendForm.frontend_page_provider
+          page_provider: this.frontendForm.frontend_page_provider,
         },
         badge: {
           style: this.frontendForm.badge_style,
           label_color: this.frontendForm.badge_label_color,
-          color: this.frontendForm.badge_color
+          color: this.frontendForm.badge_color,
         },
       };
       let body = JSON.stringify(newUser);
@@ -331,6 +398,7 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
+        this.updateValues(response.data as Repository);
         this.$notify({
           title: "Updated Repository",
           type: "success",

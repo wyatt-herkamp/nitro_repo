@@ -4,12 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
-use crate::repository::action::{
-    add_new_repository, get_repo_by_name_and_storage, get_repositories, update_repo,
-};
-use crate::repository::models::{
-    Repository, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility,
-};
+use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_repo};
+use crate::repository::models::{Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
 use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
@@ -21,7 +17,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
-    pub repositories: Vec<Repository>,
+    pub repositories: Vec<RepositoryListResponse>,
 }
 
 #[get("/api/repositories/list")]
@@ -36,6 +32,19 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
 
     let response = ListRepositories { repositories: vec };
     APIResponse::new(true, Some(response)).respond(&r)
+}
+
+#[get("/api/repositories/get/{repo}")]
+pub async fn get_repo(pool: web::Data<DbPool>, r: HttpRequest, path: web::Path<(i64)>) -> SiteResponse {
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repo = get_repo_by_id(&path.0, &connection)?;
+
+    APIResponse::respond_new(repo, &r)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -108,12 +117,12 @@ pub async fn modify_general_settings(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -136,12 +145,12 @@ pub async fn modify_frontend_settings(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -163,18 +172,18 @@ pub async fn modify_security(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let mut repository = repository.unwrap();
     //TODO BAD CODE
-    let visibility = Visibility::from_str(path.0 .2.as_str()).unwrap();
+    let visibility = Visibility::from_str(path.0.2.as_str()).unwrap();
     repository.security.set_visibility(visibility);
     update_repo(&repository, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
@@ -192,24 +201,24 @@ pub async fn update_deployers_readers(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let string = path.0 .0;
+    let string = path.0.0;
     let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let mut repository = repository.unwrap();
-    let user = get_user_by_username(&path.0 .4, &connection)?;
+    let user = get_user_by_username(&path.0.4, &connection)?;
     if user.is_none() {
         return not_found();
     }
     let user = user.unwrap();
-    match path.0 .2.as_str() {
-        "deployers" => match path.0 .3.as_str() {
+    match path.0.2.as_str() {
+        "deployers" => match path.0.3.as_str() {
             "add" => {
                 repository.security.deployers.push(user.id);
             }
@@ -225,7 +234,7 @@ pub async fn update_deployers_readers(
             }
             _ => return bad_request("Must be Add or Remove"),
         },
-        "readers" => match path.0 .3.as_str() {
+        "readers" => match path.0.3.as_str() {
             "add" => {
                 repository.security.readers.push(user.id);
             }

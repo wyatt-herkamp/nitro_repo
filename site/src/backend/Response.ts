@@ -81,8 +81,14 @@ export interface UserPermissions {
   admin: boolean;
   deployer: boolean;
 }
+export interface RepositoryListResponse {
+  id: number;
+  name: string;
+  repo_type: string;
+  storage: number;
+}
 export interface RepositoryList {
-  repositories: Array<Repository>;
+  repositories: Array<RepositoryListResponse>;
 }
 export const DEFAULT_REPO_LIST: RepositoryList = {
   repositories: [],

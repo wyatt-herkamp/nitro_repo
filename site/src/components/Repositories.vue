@@ -21,8 +21,7 @@
           v-for="repo in repositories.repositories"
           :key="repo.id"
           @click="index = repo.id"
-                    :index="repo.id"
-
+          :index="repo.id"
         >
           <i class="el-icon-watermelon"></i>
           <template #title>{{ repo.name }}</template>
@@ -31,7 +30,7 @@
     </el-aside>
     <el-container class="content">
       <div class="content" v-if="index == 0">
-        <CreateRepo />
+        <CreateRepo :updateList="updateList" />
       </div>
       <div
         class="content"
@@ -77,12 +76,29 @@ export default defineComponent({
     };
     getRepos();
     return {
+      cookie,
       index,
       repositories,
       isLoading,
       error,
       getRepos,
     };
+  },
+  methods: {
+    updateList(id: number) {
+      console.log("Updating Repos");
+      const getRepos = async () => {
+        try {
+          const value = await getRepositories(this.cookie.getCookie("token"));
+          this.repositories = value;
+        this.index = id;
+        } catch (e) {
+          this.error = "Error";
+        }
+
+      };
+      getRepos();
+    },
   },
 });
 </script>
@@ -92,5 +108,4 @@ export default defineComponent({
   width: 200px;
   min-height: 400px;
 }
-
 </style>
