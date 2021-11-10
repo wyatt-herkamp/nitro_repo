@@ -63,7 +63,6 @@ export default defineComponent({
       isLoading.value = true;
       try {
         const value = await getUsers(cookie.getCookie("token"));
-        console.log(value);
         users.value = value;
 
         isLoading.value = false;
