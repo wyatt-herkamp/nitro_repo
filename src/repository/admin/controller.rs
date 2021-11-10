@@ -1,8 +1,12 @@
-use actix_web::{get, post, web, HttpRequest};
+use std::fs::create_dir_all;
+use std::path::PathBuf;
+use std::str::FromStr;
+
+use actix_web::{get, HttpRequest, post, web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-
+use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_repo};
 use crate::repository::models::{Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
@@ -10,10 +14,6 @@ use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::DbPool;
-use std::fs::create_dir_all;
-use std::path::PathBuf;
-use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -35,7 +35,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
 }
 
 #[get("/api/repositories/get/{repo}")]
-pub async fn get_repo(pool: web::Data<DbPool>, r: HttpRequest, path: web::Path<(i64)>) -> SiteResponse {
+pub async fn get_repo(pool: web::Data<DbPool>, r: HttpRequest, path: web::Path<i64>) -> SiteResponse {
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;

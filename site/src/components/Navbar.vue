@@ -1,16 +1,16 @@
 <template>
   <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
     <el-menu-item index="Home" @click="router.push('/')">Index</el-menu-item>
-    <el-menu-item index="Browse" @click="router.push('browse')"
+    <el-menu-item index="Browse" @click="router.push('/browse')"
       >Browse</el-menu-item
     >
     <el-menu-item
       v-if="user.id != 0"
       index="Admin"
-      @click="router.push('admin')"
+      @click="router.push('/admin')"
       >Admin</el-menu-item
     >
-    <el-menu-item v-else index="Login" @click="router.push('login')"
+    <el-menu-item v-else index="Login" @click="router.push('/login')"
       >Login</el-menu-item
     >
   </el-menu>

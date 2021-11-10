@@ -32,6 +32,7 @@ import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
+import userStore from "@/store/user";
 
 export default defineComponent({
   setup() {
@@ -70,10 +71,9 @@ export default defineComponent({
               expire: date,
               sameSite: "lax",
             });
-            router.push("/");
+            location.replace("/")
           } else {
             this.form.password = "";
-
             this.$notify({
               title: "Invalid Username or Password",
               type: "warn",
