@@ -1,18 +1,17 @@
-use serde::{Deserialize, Serialize};
+use std::io::Write;
+use std::str::FromStr;
 
+use diesel::{deserialize, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
-
-use crate::schema::*;
+use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
+use crate::schema::*;
 use crate::utils::Resources;
-use std::io::Write;
-use std::str::FromStr;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
@@ -87,7 +86,7 @@ impl DBSetting {
 
 pub fn get_file() -> String {
     let cow = Resources::get("settings.toml").unwrap().data;
-    
+
     String::from_utf8(cow.to_vec()).unwrap()
 }
 

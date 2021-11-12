@@ -1,8 +1,9 @@
+use std::fs::read_to_string;
+use std::path::Path;
+
 use actix_web::{get, HttpRequest, HttpResponse};
 
 use crate::api_response::SiteResponse;
-use std::fs::read_to_string;
-use std::path::Path;
 
 #[get("/")]
 pub async fn index(_r: HttpRequest) -> SiteResponse {
@@ -36,8 +37,7 @@ pub async fn install(_r: HttpRequest) -> SiteResponse {
 
 fn get_file() -> SiteResponse {
     //TODO cache this value at runtime
-    let content = read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"))?;
-    return Ok(HttpResponse::Ok()
-        .content_type("text/html")
-        .body(content));
+    let content =
+        read_to_string(Path::new(&std::env::var("SITE_DIR").unwrap()).join("index.html"))?;
+    return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }

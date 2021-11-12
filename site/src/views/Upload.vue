@@ -2,7 +2,8 @@
   <el-container style="border: 1px solid #eee">
     <MavenUpload
       v-if="repository != undefined && repository.repo_type == 'maven'"
-      :repo="repository" :storage="storage"
+      :repo="repository"
+      :storage="storage"
     />
   </el-container>
 </template>
@@ -14,9 +15,7 @@ import userStore from "@/store/user";
 import { Repository } from "@/backend/Response";
 import { useCookie } from "vue-cookie-next";
 import MavenUpload from "@/components/upload/MavenUpload.vue";
-import {
-  getRepoByNameAndStorage,
-} from "@/backend/api/Repository";
+import { getRepoByNameAndStorage } from "@/backend/api/Repository";
 import { useRoute } from "vue-router";
 
 export default defineComponent({
@@ -43,7 +42,7 @@ export default defineComponent({
     };
     getRepo();
     onBeforeMount(userStore.getUser);
-    return { repository ,storage};
+    return { repository, storage };
   },
 });
 </script>

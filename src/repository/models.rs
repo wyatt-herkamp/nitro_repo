@@ -26,7 +26,10 @@ pub struct RepositorySummary {
 }
 
 impl RepositorySummary {
-    pub fn new(repo: &Repository, conn: &MysqlConnection) -> Result<RepositorySummary, InternalError> {
+    pub fn new(
+        repo: &Repository,
+        conn: &MysqlConnection,
+    ) -> Result<RepositorySummary, InternalError> {
         return Ok(RepositorySummary {
             name: repo.name.clone(),
             storage: get_storage_name_by_id(&repo.storage, conn)?.unwrap(),
@@ -53,15 +56,9 @@ impl Default for BadgeStyle {
 impl BadgeStyle {
     pub fn to_badge_maker_style(&self) -> badge_maker::Style {
         match self {
-            BadgeStyle::Flat => {
-                Style::Flat
-            }
-            BadgeStyle::FlatSquare => {
-                Style::FlatSquare
-            }
-            BadgeStyle::Plastic => {
-                Style::Plastic
-            }
+            BadgeStyle::Flat => Style::Flat,
+            BadgeStyle::FlatSquare => Style::FlatSquare,
+            BadgeStyle::Plastic => Style::Plastic,
         }
     }
 }
@@ -100,7 +97,6 @@ pub enum PageProvider {
     README,
     ReadmeGit,
     ReadmeSent,
-
 }
 
 impl PageProvider {
@@ -273,5 +269,3 @@ pub struct RepositoryListResponse {
     pub repo_type: String,
     pub storage: i64,
 }
-
-

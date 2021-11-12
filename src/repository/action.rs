@@ -1,8 +1,9 @@
-use crate::repository::models::{Repository, RepositoryListResponse};
+use diesel::MysqlConnection;
+use diesel::prelude::*;
 
 use crate::repository;
-use diesel::prelude::*;
-use diesel::MysqlConnection;
+use crate::repository::models::{Repository, RepositoryListResponse};
+
 pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
     let _result1 = diesel::update(repositories.filter(id.eq(repo.id)))
@@ -58,7 +59,9 @@ pub fn get_repositories(
     conn: &MysqlConnection,
 ) -> Result<Vec<RepositoryListResponse>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
-    repositories.select((id, name,repo_type, storage)).load::<RepositoryListResponse>(conn)
+    repositories
+        .select((id, name, repo_type, storage))
+        .load::<RepositoryListResponse>(conn)
 }
 
 pub fn get_repositories_by_storage(

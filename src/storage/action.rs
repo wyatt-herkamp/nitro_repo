@@ -24,7 +24,8 @@ pub fn get_storage_name_by_id(
 ) -> Result<Option<String>, diesel::result::Error> {
     use crate::schema::storages::dsl::*;
 
-    let found_mod = storages.select(name)
+    let found_mod = storages
+        .select(name)
         .filter(id.eq(d))
         .first(conn)
         .optional()?;

@@ -1,24 +1,20 @@
-use crate::repository::action::get_repo_by_name_and_storage;
-use crate::repository::maven::MavenHandler;
-use crate::repository::models::{BadgeSettings};
-use crate::repository::repository::{RepositoryRequest, RepositoryType};
-
-use crate::storage::action::get_storage_by_name;
-
-use crate::DbPool;
-use actix_files::NamedFile;
-
-use actix_web::{get, web, HttpRequest};
-
-use std::fs::{create_dir_all, read_to_string, File};
+use std::fs::{create_dir_all, File, read_to_string};
+use std::io::Write;
 use std::path::PathBuf;
 
+use actix_files::NamedFile;
+use actix_web::{get, HttpRequest, web};
 use badge_maker::{BadgeBuilder, Style};
+use usvg::Options;
 
 use crate::api_response::SiteResponse;
+use crate::DbPool;
 use crate::error::response::not_found;
-use std::io::Write;
-use usvg::Options;
+use crate::repository::action::get_repo_by_name_and_storage;
+use crate::repository::maven::MavenHandler;
+use crate::repository::models::BadgeSettings;
+use crate::repository::repository::{RepositoryRequest, RepositoryType};
+use crate::storage::action::get_storage_by_name;
 
 fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
     return format!(
@@ -52,12 +48,12 @@ pub async fn badge(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0.0, &connection)?;
+    let storage = get_storage_by_name(&path.0 .0, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -65,7 +61,7 @@ pub async fn badge(
     let request = RepositoryRequest {
         storage,
         repository,
-        value: path.0.2,
+        value: path.0 .2,
     };
     let x = if request.value.eq("nitro_repo_example") {
         "example".to_string()
@@ -86,7 +82,7 @@ pub async fn badge(
     if !buf1.exists() {
         create_dir_all(&buf1)?;
     }
-    let typ = path.0.3;
+    let typ = path.0 .3;
     let b_s = request.repository.settings.badge;
     let buf = buf1.join(file_name(&b_s, &x, typ.as_str()));
     if buf.exists() {
@@ -137,7 +133,6 @@ pub async fn badge(
         pixmap1.save_png(svg_file).unwrap();
     }
 
-    let buf = buf1
-        .join(format!("badge-{}.{}", &x, &typ));
+    let buf = buf1.join(format!("badge-{}.{}", &x, &typ));
     Ok(NamedFile::open(buf)?.into_response(&r)?)
 }

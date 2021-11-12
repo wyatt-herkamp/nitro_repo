@@ -1,16 +1,15 @@
 use std::fmt::Debug;
 use std::io::Write;
 
+use diesel::{deserialize, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
-
 use crate::system::utils::ModifyUser;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -29,7 +28,6 @@ pub struct User {
 pub struct UserListResponse {
     pub id: i64,
     pub name: String,
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
@@ -39,10 +37,8 @@ pub struct UserResponse {
     pub username: String,
     pub email: String,
     pub permissions: UserPermissions,
-    pub created: i64
-
+    pub created: i64,
 }
-
 
 impl User {
     pub fn set_password(&mut self, password: String) {

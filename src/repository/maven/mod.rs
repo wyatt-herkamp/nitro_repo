@@ -9,8 +9,12 @@ use diesel::MysqlConnection;
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
 use crate::repository::models::{Policy, RepositorySummary};
-use crate::repository::repository::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType, Version};
-use crate::repository::repository::RepoResponse::{BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse, VersionResponse};
+use crate::repository::repository::{
+    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType, Version,
+};
+use crate::repository::repository::RepoResponse::{
+    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse, VersionResponse,
+};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -187,7 +191,11 @@ impl RepositoryType for MavenHandler {
         Ok(RepoResponse::VersionListingResponse(vec))
     }
 
-    fn handle_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_version(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -202,7 +210,11 @@ impl RepositoryType for MavenHandler {
         Ok(RepoResponse::VersionResponse(get_version(&buf)))
     }
 
-    fn handle_project(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_project(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -215,7 +227,11 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
-        let project = Project { repo_summary: RepositorySummary::new(&request.repository, &conn)?, versions: vec, frontend_response: None };
+        let project = Project {
+            repo_summary: RepositorySummary::new(&request.repository, &conn)?,
+            versions: vec,
+            frontend_response: None,
+        };
         return Ok(ProjectResponse(project));
     }
 

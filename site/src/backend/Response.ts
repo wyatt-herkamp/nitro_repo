@@ -66,32 +66,32 @@ export interface Repository {
   repo_type: string;
   settings: RepoSettings;
   security: SecurityRules;
-    storage: number;
-    created: number;
+  storage: number;
+  created: number;
 }
 
 export interface User {
-    id: number;
-    name: string;
-    username: string;
-    email: string;
-    permissions: UserPermissions;
-    created: number;
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  permissions: UserPermissions;
+  created: number;
 }
 
 export interface UserListResponse {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
 }
 
 export interface UserPermissions {
-    admin: boolean;
-    deployer: boolean;
+  admin: boolean;
+  deployer: boolean;
 }
 
 export interface RepositoryListResponse {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
   repo_type: string;
   storage: number;
 }
@@ -139,32 +139,32 @@ export interface Setting {
 
 export interface GeneralSetting {
   name: DBSetting;
-    installed: DBSetting;
-    version: DBSetting;
+  installed: DBSetting;
+  version: DBSetting;
 }
 
 export interface FileResponse {
-    name: string;
-    full_path: string;
-    directory: boolean;
-    data: Map<string, any>;
+  name: string;
+  full_path: string;
+  directory: boolean;
+  data: Map<string, any>;
 }
 
 export interface Version {
-    version: string;
-    artifacts: string[];
+  version: string;
+  artifacts: string[];
 }
 
 export interface RepoSummary {
-    name: string;
-    storage: string;
-    page_provider: string;
-    repo_type: string;
-    visibility: string;
+  name: string;
+  storage: string;
+  page_provider: string;
+  repo_type: string;
+  visibility: string;
 }
 
 export interface Project {
-    repo_summary: RepoSummary;
-    versions: Version[];
-    frontend_response: null;
+  repo_summary: RepoSummary;
+  versions: Version[];
+  frontend_response: null;
 }

@@ -87,7 +87,7 @@ import http from "@/http-common";
 /**
  * How does the manual upload work?
  * Basically I let the backend do it's thing with one adition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
- * Then I accept files in the frontend and do put request simulating a query. 
+ * Then I accept files in the frontend and do put request simulating a query.
  */
 export default defineComponent({
   props: {
@@ -145,7 +145,7 @@ export default defineComponent({
     return { files, inputFile, upload, fileTable, coordinates, cookie };
   },
   methods: {
-   async  submitUpload() {
+    async submitUpload() {
       for (const value of this.fileTable) {
         let file = this.files.filter(
           (file) => file.name === value.name
@@ -164,13 +164,12 @@ export default defineComponent({
           this.coordinates.version +
           "/" +
           value.newName;
-          console.log(path);
-          console.log(file.file?.size)
+        console.log(path);
+        console.log(file.file?.size);
         let response = await http.put(path, file.file, {
           headers: {
             Authorization: "Bearer " + this.cookie.getCookie("token"),
           },
-        
         });
         console.log(response);
       }

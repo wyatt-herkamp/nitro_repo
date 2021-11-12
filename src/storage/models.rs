@@ -1,8 +1,8 @@
+use std::fmt::Debug;
+
 use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
-
-use std::fmt::Debug;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "storages"]
