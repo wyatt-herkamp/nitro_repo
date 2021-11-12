@@ -1,13 +1,13 @@
 use actix_web::http::HeaderMap;
-
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use diesel::MysqlConnection;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
@@ -16,8 +16,6 @@ use crate::system::utils::NewUserError::{
     EmailAlreadyExists, PasswordDoesNotMatch, UsernameAlreadyExists,
 };
 use crate::utils::get_current_time;
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -74,7 +72,13 @@ pub fn can_deploy_basic_auth(
     let value = value.unwrap().to_string();
     let key = option.unwrap().to_string();
     if key.eq("Basic") {
-        return is_authed(value, repo, conn);
+        return is_authed_deploy(value, repo, conn);
+    } else if key.eq("Bearer") {
+        let result = system::action::get_user_from_session_token(&value, &conn)?;
+        if result.is_none() {
+            return Ok(false);
+        }
+        return user_has_deploy_access(&result.unwrap(), repo);
     }
     Ok(false)
 }
@@ -107,7 +111,13 @@ pub fn can_read_basic_auth(
             let value = value.unwrap().to_string();
             let key = option.unwrap().to_string();
             if key.eq("Basic") {
-                return is_authed(value, repo, conn);
+                return is_authed_read(value, repo, conn);
+            } else if key.eq("Bearer") {
+                let result = system::action::get_user_from_session_token(&value, &conn)?;
+                if result.is_none() {
+                    return Ok(false);
+                }
+                return Ok(true);
             }
             Ok(false)
         }
@@ -115,7 +125,7 @@ pub fn can_read_basic_auth(
     }
 }
 
-pub fn is_authed(
+pub fn is_authed_deploy(
     user: String,
     repo: &Repository,
     conn: &MysqlConnection,
@@ -140,6 +150,38 @@ pub fn is_authed(
     {
         return Ok(false);
     }
+    return user_has_deploy_access(&user, repo);
+}
+
+pub fn is_authed_read(
+    user: String,
+    repo: &Repository,
+    conn: &MysqlConnection,
+) -> Result<bool, InternalError> {
+    let result = base64::decode(user)?;
+    let string = String::from_utf8(result)?;
+    let split = string.split(':').collect::<Vec<&str>>();
+
+    if !split.len().eq(&2) {
+        return Ok(false);
+    }
+    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), conn)?;
+    if result1.is_none() {
+        return Ok(false);
+    }
+    let argon2 = Argon2::default();
+    let user = result1.unwrap();
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    if argon2
+        .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
+        .is_err()
+    {
+        return Ok(false);
+    }
+    return Ok(true);
+}
+
+pub fn user_has_deploy_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
     if !user.permissions.admin {
         if !repo.security.deployers.is_empty() {
             if user.permissions.deployer {
@@ -149,7 +191,16 @@ pub fn is_authed(
             return Ok(repo.security.deployers.contains(&user.id));
         }
     }
-    Ok(true)
+    return Ok(false);
+}
+
+/// TODO call this method for reading
+pub fn user_has_read_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
+    return if !repo.security.readers.is_empty() {
+        Ok(true)
+    } else {
+        Ok(repo.security.readers.contains(&user.id))
+    };
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -47,6 +47,23 @@ pub async fn get_repo(pool: web::Data<DbPool>, r: HttpRequest, path: web::Path<i
     APIResponse::respond_new(repo, &r)
 }
 
+#[get("/api/repositories/get/{storage}/{repo}")]
+pub async fn get_repo_deployer(pool: web::Data<DbPool>, r: HttpRequest, path: web::Path<(String, String)>) -> SiteResponse {
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.deployer {
+        return unauthorized();
+    }
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
+    if storage.is_none() {
+        return not_found();
+    }
+    let repo = get_repo_by_name_and_storage(&path.0.1, &storage.unwrap().id, &connection)?;
+
+    APIResponse::respond_new(repo, &r)
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewRepo {
     pub name: String,
