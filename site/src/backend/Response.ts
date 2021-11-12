@@ -66,27 +66,32 @@ export interface Repository {
   repo_type: string;
   settings: RepoSettings;
   security: SecurityRules;
-  storage: number;
-  created: number;
+    storage: number;
+    created: number;
 }
+
 export interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  permissions: UserPermissions;
-  created: number;
-}export interface UserListResponse {
-  id: number;
-  name: string;
+    id: number;
+    name: string;
+    username: string;
+    email: string;
+    permissions: UserPermissions;
+    created: number;
 }
+
+export interface UserListResponse {
+    id: number;
+    name: string;
+}
+
 export interface UserPermissions {
-  admin: boolean;
-  deployer: boolean;
+    admin: boolean;
+    deployer: boolean;
 }
+
 export interface RepositoryListResponse {
-  id: number;
-  name: string;
+    id: number;
+    name: string;
   repo_type: string;
   storage: number;
 }
@@ -138,10 +143,9 @@ export interface GeneralSetting {
   version: DBSetting;
 }
 
-
 export interface FileResponse {
-  name: string,
-  full_path: string,
-  directory: boolean,
-  data: Map<string, any>
+    name: string;
+    full_path: string;
+    directory: boolean;
+    data: Map<string, any>;
 }

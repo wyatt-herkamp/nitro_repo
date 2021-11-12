@@ -77,21 +77,21 @@ export default defineComponent({
       isLoading,
       error,
       getStorage,
-      cookie
+      cookie,
     };
   },
   methods: {
     updateList(id: number) {
-    const getStorage = async () => {
-      try {
-        const value = await getStorages(this.cookie.getCookie("token"));
-        this.storages = value;
-        this.index =id;
-      } catch (e) {
-        this.error = "Error";
-      }
-    };
-    getStorage();
+      const getStorage = async () => {
+        try {
+          const value = await getStorages(this.cookie.getCookie("token"));
+          this.storages = value;
+          this.index = id;
+        } catch (e) {
+          this.error = "Error";
+        }
+      };
+      getStorage();
     },
   },
 });

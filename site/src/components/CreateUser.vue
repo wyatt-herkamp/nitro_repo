@@ -95,16 +95,17 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        let data =  response.data as User;
+        let data = response.data as User;
         this.$props.updateList(data.id);
         this.$notify({
           title: "User Created",
           type: "success",
-        });      } else {
+        });
+      } else {
         this.form.error = "Invalid Password or Username";
       }
     },
-  }
+  },
 });
 </script>
 <style scoped></style>

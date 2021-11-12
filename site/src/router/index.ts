@@ -7,11 +7,11 @@ import Browse from "../views/Browse.vue";
 import Upload from "../views/Upload.vue";
 
 const routes: Array<RouteRecordRaw> = [
-  {
-    path: "/",
-    name: "Home",
-    component: Home,
-  },
+    {
+        path: "/",
+        name: "Home",
+        component: Home,
+    },
     {
         path: "/install",
         name: "Install",
@@ -21,7 +21,8 @@ const routes: Array<RouteRecordRaw> = [
         path: "/admin",
         name: "Admin",
         component: Admin,
-    }, {
+    },
+    {
         path: "/upload/:storage/:repo",
         name: "Upload",
         component: Upload,
@@ -35,13 +36,12 @@ const routes: Array<RouteRecordRaw> = [
         path: "/browse/:storage?/:repo?/:catchAll(.*)?",
         name: "Browse",
         component: Browse,
-  },
+    },
 ];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
 });
-
 
 export default router;

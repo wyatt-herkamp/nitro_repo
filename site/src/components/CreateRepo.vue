@@ -121,7 +121,7 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        let data =  response.data as Repository;
+        let data = response.data as Repository;
         this.$props.updateList(data.id);
         this.$notify({
           title: "Repository Created",

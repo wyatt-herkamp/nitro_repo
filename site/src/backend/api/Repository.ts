@@ -1,5 +1,5 @@
 import http from "@/http-common";
-import {BasicResponse, DEFAULT_REPO_LIST, FileResponse, Repository, RepositoryList} from "../Response";
+import {BasicResponse, DEFAULT_REPO_LIST, FileResponse, Repository, RepositoryList,} from "../Response";
 
 export async function getRepositories(token: string) {
     const value = await http.get("/api/repositories/list", {
@@ -19,7 +19,10 @@ export async function getRepositories(token: string) {
     return DEFAULT_REPO_LIST;
 }
 
-export async function getRepoByID(token: string, id: number): Promise<Repository | undefined> {
+export async function getRepoByID(
+    token: string,
+    id: number
+): Promise<Repository | undefined> {
     const value = await http.get("/api/repositories/get/" + id, {
         headers: {
             Authorization: "Bearer " + token,
@@ -37,12 +40,19 @@ export async function getRepoByID(token: string, id: number): Promise<Repository
     return undefined;
 }
 
-export async function getRepoByNameAndStorage(token: string, storage: string, repo: string): Promise<Repository | undefined> {
-    const value = await http.get("/api/repositories/get/" + storage + "/" + repo, {
-        headers: {
-            Authorization: "Bearer " + token,
-        },
-    });
+export async function getRepoByNameAndStorage(
+    token: string,
+    storage: string,
+    repo: string
+): Promise<Repository | undefined> {
+    const value = await http.get(
+        "/api/repositories/get/" + storage + "/" + repo,
+        {
+            headers: {
+                Authorization: "Bearer " + token,
+            },
+        }
+    );
 
     if (value.status != 200) {
         return undefined;
@@ -56,9 +66,8 @@ export async function getRepoByNameAndStorage(token: string, storage: string, re
 }
 export async function getRepositoriesPublicAccess(storage: string) {
     const url = "/storages/" + storage + ".json";
-  console.log(url)
-  const value = await http.get(url, {
-  });
+    console.log(url);
+    const value = await http.get(url, {});
 
     if (value.status != 200) {
         return [];
@@ -73,7 +82,7 @@ export async function getRepositoriesPublicAccess(storage: string) {
 
 export async function fileListing(storage: string, repo: string, path: string) {
     const url = "/storages/" + storage + "/" + repo + "/" + path;
-    console.log(url)
+    console.log(url);
     const value = await http.get(url, {});
 
     if (value.status != 200) {
@@ -82,7 +91,7 @@ export async function fileListing(storage: string, repo: string, path: string) {
     const data = value.data as BasicResponse<unknown>;
     if (data.success) {
         return data.data as Array<FileResponse>;
-  }
+    }
 
-  return [];
+    return [];
 }

@@ -3,7 +3,6 @@
 
   <router-view :key="$route.fullPath" />
   <notifications position="bottom right" />
-
 </template>
 
 <script lang="ts">

@@ -1,10 +1,27 @@
 <template>
   <div class="example-typescript">
     <h1>Repo Uploader</h1>
+    <el-form label-position="top" :model="coordinates" label-width="120px">
+      <el-form-item>
+        <el-form-item label="Group ID">
+          <el-input v-model="coordinates.groupID"></el-input>
+        </el-form-item>
+        <el-form-item label="Artifact ID">
+          <el-input v-model="coordinates.artifactID"></el-input>
+        </el-form-item>
+        <el-form-item label="Version">
+          <el-input v-model="coordinates.version"></el-input>
+        </el-form-item>
+
+        <el-form-item label="Generate Pom">
+          <el-switch v-model="coordinates.generatePom" />
+        </el-form-item>
+      </el-form-item>
+    </el-form>
     <div class="upload">
       <el-table :data="fileTable" style="width: 100%">
-        <el-table-column prop="name" label="OG File name" width="180" />
-        <el-table-column prop="newName" label="New Name" width="180">
+        <el-table-column prop="name" label="OG File name" width="360" />
+        <el-table-column prop="newName" label="New Name" width="360">
           <template v-slot:default="scope">
             <el-input
               v-model="scope.row.newName"
@@ -13,7 +30,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="extension" label="Extension">
+        <el-table-column prop="extension" label="Extension" width="180">
           <template v-slot:default="scope">
             <el-input
               v-model="scope.row.extension"
@@ -56,7 +73,6 @@
 }
 </style>
 
-
 <script lang="ts">
 import { defineComponent } from "vue";
 
@@ -78,7 +94,14 @@ export default defineComponent({
     const upload = ref<InstanceType<typeof FileUpload> | null>(null);
     // File Name, FinalName, Extension
     const fileTable = ref([{}]);
+    // Dont ask why?
     fileTable.value.pop();
+    const coordinates = ref({
+      groupID: "",
+      artifactID: "",
+      version: "",
+      generatePom: false,
+    });
     function inputFile(
       newFile: VueUploadItem | undefined,
       oldFile: VueUploadItem | undefined
@@ -97,11 +120,12 @@ export default defineComponent({
         console.log("update", newFile);
       }
       if (!newFile && oldFile) {
+        // TODO add removal from File Table
         // remove
         console.log("remove", oldFile);
       }
     }
-    return { files, inputFile, upload, fileTable };
+    return { files, inputFile, upload, fileTable, coordinates };
   },
   methods: {
     submitUpload() {

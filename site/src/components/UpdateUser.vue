@@ -181,11 +181,11 @@ export default defineComponent({
           confirm: "",
           error: "",
         };
-        permissions.value=({
+        permissions.value = {
           admin: user.value.permissions.admin,
           deployer: user.value.permissions.deployer,
           error: "",
-        });
+        };
       } catch (e) {
         error.value = "";
       }

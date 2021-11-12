@@ -1,20 +1,21 @@
 <template>
   <el-container style="border: 1px solid #eee">
-    <MavenUpload v-if="repository != undefined && repository.repo_type == 'maven'" :repo="repository" />
+    <MavenUpload
+      v-if="repository != undefined && repository.repo_type == 'maven'"
+      :repo="repository"
+    />
   </el-container>
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, onMounted, ref } from "vue";
+import { defineComponent, onBeforeMount, ref } from "vue";
 
 import userStore from "@/store/user";
-import { Repository, RepositoryList, StorageList } from "@/backend/Response";
-import { getStorages } from "@/backend/api/Storages";
+import { Repository } from "@/backend/Response";
 import { useCookie } from "vue-cookie-next";
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import {
   getRepoByNameAndStorage,
-  getRepositories,
 } from "@/backend/api/Repository";
 import { useRoute } from "vue-router";
 

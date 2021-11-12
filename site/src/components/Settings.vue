@@ -20,9 +20,7 @@
         <el-form-item label="Name">
           <el-input v-model="settingForm['name.public']"></el-input>
         </el-form-item>
-        <el-button
-          type="primary"
-          @click="onSettingSubmit"
+        <el-button type="primary" @click="onSettingSubmit"
           >Update Settings</el-button
         >
       </el-form-item>
@@ -109,15 +107,16 @@ export default defineComponent({
         const data = value.data as BasicResponse<unknown>;
         if (data.success) {
           let report = data.data as SettingReport;
-          settingForm.value['name.public'] = report.general.name.value
-          email.value['email.host'] = report.email.email_host.value
-          email.value['email.username'] = report.email.email_username.value
-          email.value['email.from'] = report.email.from.value
-          email.value['email.password'] ="";
-          email.value['email.encryption'] = report.email.encryption.value
-          email.value['email.port'] = report.email.port.value
-          unchangeable.value.installed = report.general.installed.value=="true"
-          unchangeable.value.version = report.general.version.value
+          settingForm.value["name.public"] = report.general.name.value;
+          email.value["email.host"] = report.email.email_host.value;
+          email.value["email.username"] = report.email.email_username.value;
+          email.value["email.from"] = report.email.from.value;
+          email.value["email.password"] = "";
+          email.value["email.encryption"] = report.email.encryption.value;
+          email.value["email.port"] = report.email.port.value;
+          unchangeable.value.installed =
+            report.general.installed.value == "true";
+          unchangeable.value.version = report.general.version.value;
         }
       } catch (e) {
         console.log(e);

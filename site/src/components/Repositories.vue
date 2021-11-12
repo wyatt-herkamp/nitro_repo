@@ -91,11 +91,10 @@ export default defineComponent({
         try {
           const value = await getRepositories(this.cookie.getCookie("token"));
           this.repositories = value;
-        this.index = id;
+          this.index = id;
         } catch (e) {
           this.error = "Error";
         }
-
       };
       getRepos();
     },

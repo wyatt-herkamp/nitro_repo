@@ -28,11 +28,8 @@
 <script lang="ts">
 import axios from "axios";
 import { AuthToken, BasicResponse } from "@/backend/Response";
-import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import userStore from "@/store/user";
 
 export default defineComponent({
   setup() {
@@ -71,7 +68,7 @@ export default defineComponent({
               expire: date,
               sameSite: "lax",
             });
-            location.replace("/")
+            location.replace("/");
           } else {
             this.form.password = "";
             this.$notify({
