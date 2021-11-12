@@ -139,8 +139,8 @@ export interface Setting {
 
 export interface GeneralSetting {
   name: DBSetting;
-  installed: DBSetting;
-  version: DBSetting;
+    installed: DBSetting;
+    version: DBSetting;
 }
 
 export interface FileResponse {
@@ -148,4 +148,23 @@ export interface FileResponse {
     full_path: string;
     directory: boolean;
     data: Map<string, any>;
+}
+
+export interface Version {
+    version: string;
+    artifacts: string[];
+}
+
+export interface RepoSummary {
+    name: string;
+    storage: string;
+    page_provider: string;
+    repo_type: string;
+    visibility: string;
+}
+
+export interface Project {
+    repo_summary: RepoSummary;
+    versions: Version[];
+    frontend_response: null;
 }

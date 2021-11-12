@@ -1,27 +1,21 @@
-mod models;
-mod utils;
-
-use crate::repository::repository::RepoResponse::{
-    BadRequest, IAmATeapot, NotAuthorized, NotFound,
-};
-use crate::repository::repository::{
-    RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
-};
 use std::collections::HashMap;
-
-use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
-
-use actix_web::web::{Buf, Bytes};
-
-use crate::error::internal_error::InternalError;
-use actix_web::HttpRequest;
-use diesel::MysqlConnection;
-use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
+use std::fs::{create_dir_all, OpenOptions, read_dir, remove_file};
 use std::io::Write;
 
-use crate::repository::maven::utils::{get_latest_version, get_versions};
-use crate::repository::models::Policy;
+use actix_web::HttpRequest;
+use actix_web::web::{Buf, Bytes};
+use diesel::MysqlConnection;
+
+use crate::error::internal_error::InternalError;
+use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
+use crate::repository::models::{Policy, RepositorySummary};
+use crate::repository::repository::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType, Version};
+use crate::repository::repository::RepoResponse::{BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse, VersionResponse};
+use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
+
+mod models;
+mod utils;
 
 pub struct MavenHandler;
 
@@ -190,7 +184,39 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
-        Ok(RepoResponse::VersionResponse(vec))
+        Ok(RepoResponse::VersionListingResponse(vec))
+    }
+
+    fn handle_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
+        }
+        let buf = get_storage_location()
+            .join("storages")
+            .join(&request.storage.name)
+            .join(&request.repository.name)
+            .join(&request.value);
+        if !buf.exists() {
+            return RepoResult::Ok(NotFound);
+        }
+        Ok(RepoResponse::VersionResponse(get_version(&buf)))
+    }
+
+    fn handle_project(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
+        }
+        let buf = get_storage_location()
+            .join("storages")
+            .join(&request.storage.name)
+            .join(&request.repository.name)
+            .join(&request.value);
+        if !buf.exists() {
+            return RepoResult::Ok(NotFound);
+        }
+        let vec = get_versions(&buf);
+        let project = Project { repo_summary: RepositorySummary::new(&request.repository, &conn)?, versions: vec, frontend_response: None };
+        return Ok(ProjectResponse(project));
     }
 
     fn latest_version(

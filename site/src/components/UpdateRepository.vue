@@ -61,7 +61,8 @@
         </el-form-item>
         <el-form-item label="Page Provider">
           <el-select v-model="frontendForm.frontend_page_provider">
-            <el-option label="README" value="README"></el-option>
+            <el-option label="Readme Sent" value="ReadmeSent"></el-option>
+            <el-option label="Readme Git" value="ReadmeGit"></el-option>
             <el-option label="None" value="None"></el-option>
           </el-select>
         </el-form-item>

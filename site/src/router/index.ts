@@ -5,6 +5,7 @@ import Login from "../views/Login.vue";
 import Admin from "../views/Admin.vue";
 import Browse from "../views/Browse.vue";
 import Upload from "../views/Upload.vue";
+import Project from "../views/Project.vue";
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -36,6 +37,10 @@ const routes: Array<RouteRecordRaw> = [
         path: "/browse/:storage?/:repo?/:catchAll(.*)?",
         name: "Browse",
         component: Browse,
+    }, {
+        path: "/browse/:storage/:repo/:catchAll(.*)",
+        name: "Project",
+        component: Project,
     },
 ];
 

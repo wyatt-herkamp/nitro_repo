@@ -1,5 +1,5 @@
 import http from "@/http-common";
-import {BasicResponse, DEFAULT_REPO_LIST, FileResponse, Repository, RepositoryList,} from "../Response";
+import {BasicResponse, DEFAULT_REPO_LIST, FileResponse, Project, Repository, RepositoryList,} from "../Response";
 
 export async function getRepositories(token: string) {
     const value = await http.get("/api/repositories/list", {
@@ -94,4 +94,19 @@ export async function fileListing(storage: string, repo: string, path: string) {
     }
 
     return [];
+}
+
+export async function getProject(storage: string, repo: string, path: string): Promise<Project | undefined> {
+    const url = "/api/project/" + storage + "/" + repo + "/" + path;
+    const value = await http.get(url, {});
+
+    if (value.status != 200) {
+        return undefined;
+    }
+    const data = value.data as BasicResponse<unknown>;
+    if (data.success) {
+        return data.data as Project;
+    }
+
+    return undefined;
 }

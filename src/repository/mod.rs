@@ -8,6 +8,7 @@ pub mod controller;
 pub mod maven;
 pub mod models;
 pub mod repository;
+pub mod frontend;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)
@@ -18,5 +19,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(controller::put_repository)
         .service(controller::head_repository)
         .service(api::get_versions)
+        .service(api::get_version)
+        .service(api::get_project)
         .service(badge::badge);
 }

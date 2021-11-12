@@ -1,20 +1,41 @@
-use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
+use std::io::Write;
 
-use crate::schema::*;
-
+use badge_maker::Style;
+use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
+use serde::{Deserialize, Serialize};
 
+use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
-
 use crate::repository::models::Visibility::Public;
-use badge_maker::Style;
-use std::fmt::Debug;
-use std::io::Write;
+use crate::schema::*;
+use crate::storage::action::get_storage_name_by_id;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RepositorySummary {
+    pub name: String,
+    pub storage: String,
+    pub page_provider: PageProvider,
+    pub repo_type: String,
+    pub visibility: Visibility,
+}
+
+impl RepositorySummary {
+    pub fn new(repo: &Repository, conn: &MysqlConnection) -> Result<RepositorySummary, InternalError> {
+        return Ok(RepositorySummary {
+            name: repo.name.clone(),
+            storage: get_storage_name_by_id(&repo.storage, conn)?.unwrap(),
+            page_provider: repo.settings.frontend.page_provider.clone(),
+            repo_type: repo.repo_type.clone(),
+            visibility: repo.security.visibility.clone(),
+        });
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BadgeStyle {
@@ -77,6 +98,9 @@ fn default_label_color() -> String {
 pub enum PageProvider {
     None,
     README,
+    ReadmeGit,
+    ReadmeSent,
+
 }
 
 impl PageProvider {
@@ -241,6 +265,7 @@ pub struct Repository {
     pub security: SecurityRules,
     pub created: i64,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct RepositoryListResponse {
     pub id: i64,

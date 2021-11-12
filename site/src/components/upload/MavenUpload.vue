@@ -84,7 +84,11 @@ import { ref, SetupContext } from "vue";
 import FileUpload from "../../../src/FileUpload.vue";
 import { VueUploadItem } from "vue-upload-component";
 import http from "@/http-common";
-
+/**
+ * How does the manual upload work?
+ * Basically I let the backend do it's thing with one adition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
+ * Then I accept files in the frontend and do put request simulating a query. 
+ */
 export default defineComponent({
   props: {
     repo: {
