@@ -33,6 +33,7 @@
         <el-table-column prop="extension" label="Extension" width="180">
           <template v-slot:default="scope">
             <el-input
+              :disabled="true"
               v-model="scope.row.extension"
               size="small"
               controls-position="right"
@@ -52,16 +53,16 @@
           <br />
 
           <el-button type="primary">Select File</el-button>
-          <el-button
-            type="primary"
-            v-if="!upload || !upload.active"
-            @click="submitUpload"
-            @click.prevent="upload.active = true"
-          >
-            <i class="fa fa-arrow-up" aria-hidden="true"></i>
-            Start Upload
-          </el-button>
         </file-upload>
+        <el-button
+          type="primary"
+          v-if="!upload || !upload.active"
+          @click="submitUpload"
+          @click.prevent="upload.active = true"
+        >
+          <i class="fa fa-arrow-up" aria-hidden="true"></i>
+          Start Upload
+        </el-button>
       </div>
     </div>
   </div>
@@ -82,24 +83,35 @@ import { DEFAULT_USER_LIST, Repository } from "@/backend/Response";
 import { ref, SetupContext } from "vue";
 import FileUpload from "../../../src/FileUpload.vue";
 import { VueUploadItem } from "vue-upload-component";
+import http from "@/http-common";
+
 export default defineComponent({
   props: {
     repo: {
       required: true,
       type: Object as () => Repository,
     },
+    storage: {
+      required: true,
+      type: Object as () => string,
+    },
   },
   setup() {
-    const files = ref<any[]>([]);
+    interface FileTableValue {
+      name: string;
+      newName: string;
+      extension: string;
+    }
+    const files = ref<VueUploadItem[]>([]);
     const upload = ref<InstanceType<typeof FileUpload> | null>(null);
     // File Name, FinalName, Extension
-    const fileTable = ref([{}]);
-    // Dont ask why?
+    const fileTable = ref<FileTableValue[]>([]);
     fileTable.value.pop();
+    const cookie = useCookie();
     const coordinates = ref({
-      groupID: "",
-      artifactID: "",
-      version: "",
+      groupID: "org.kakara",
+      artifactID: "engine",
+      version: "1.0-SNAPSHOT",
       generatePom: false,
     });
     function inputFile(
@@ -108,10 +120,11 @@ export default defineComponent({
     ) {
       if (newFile && !oldFile) {
         // add
+
         console.log("add", newFile);
         fileTable.value.push({
           name: newFile.name as string,
-          newName: newFile.name,
+          newName: newFile.name as string,
           extension: "",
         });
       }
@@ -125,12 +138,37 @@ export default defineComponent({
         console.log("remove", oldFile);
       }
     }
-    return { files, inputFile, upload, fileTable, coordinates };
+    return { files, inputFile, upload, fileTable, coordinates, cookie };
   },
   methods: {
-    submitUpload() {
-      for (const value of this.files) {
-        console.log(value);
+   async  submitUpload() {
+      for (const value of this.fileTable) {
+        let file = this.files.filter(
+          (file) => file.name === value.name
+        )[0] as VueUploadItem;
+
+        let path =
+          "storages/" +
+          this.storage +
+          "/" +
+          this.repo.name +
+          "/" +
+          this.coordinates.groupID.replaceAll(".", "/") +
+          "/" +
+          this.coordinates.artifactID +
+          "/" +
+          this.coordinates.version +
+          "/" +
+          value.newName;
+          console.log(path);
+          console.log(file.file?.size)
+        let response = await http.put(path, file.file, {
+          headers: {
+            Authorization: "Bearer " + this.cookie.getCookie("token"),
+          },
+        
+        });
+        console.log(response);
       }
     },
     addFile(file: any, fileList: any) {

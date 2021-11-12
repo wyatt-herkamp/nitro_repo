@@ -2,7 +2,7 @@
   <el-container style="border: 1px solid #eee">
     <MavenUpload
       v-if="repository != undefined && repository.repo_type == 'maven'"
-      :repo="repository"
+      :repo="repository" :storage="storage"
     />
   </el-container>
 </template>
@@ -43,7 +43,7 @@ export default defineComponent({
     };
     getRepo();
     onBeforeMount(userStore.getUser);
-    return { repository };
+    return { repository ,storage};
   },
 });
 </script>

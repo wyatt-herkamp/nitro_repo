@@ -59,7 +59,6 @@ pub fn can_deploy_basic_auth(
     let x = option.unwrap().to_str();
     if x.is_err() {}
     let header = x.unwrap().to_string();
-
     let split = header.split(' ').collect::<Vec<&str>>();
     let option = split.get(0);
     if option.is_none() {
@@ -184,14 +183,12 @@ pub fn is_authed_read(
 pub fn user_has_deploy_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
     if !user.permissions.admin {
         if !repo.security.deployers.is_empty() {
-            if user.permissions.deployer {
-                return Ok(true);
-            }
+            return Ok(user.permissions.deployer.clone());
         } else {
             return Ok(repo.security.deployers.contains(&user.id));
         }
     }
-    return Ok(false);
+    return Ok(true);
 }
 
 /// TODO call this method for reading
