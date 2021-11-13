@@ -1,7 +1,10 @@
 use std::fs::read_to_string;
 use std::path::Path;
-use actix_web::{get, head, HttpRequest, HttpResponse, patch, post, put, web};
 
+use actix_files::NamedFile;
+use actix_web::{get, head, HttpRequest, HttpResponse, patch, post, put, web};
+use actix_web::http::StatusCode;
+use actix_web::web::Bytes;
 use log::{debug, error, trace};
 use serde::{Deserialize, Serialize};
 
@@ -11,12 +14,11 @@ use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
+use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::repository::repository::RepoResponse::BadRequest;
 use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
-
-use crate::repository::npm::NPMHandler;
 
 //
 

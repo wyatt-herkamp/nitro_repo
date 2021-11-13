@@ -1,6 +1,7 @@
 use actix_web::HttpRequest;
 use actix_web::web::Bytes;
 use diesel::MysqlConnection;
+
 use crate::error::internal_error::InternalError;
 use crate::repository::repository::{RepoResponse, RepoResult, RepositoryRequest, RepositoryType};
 
@@ -23,15 +24,23 @@ impl RepositoryType for NPMHandler {
         todo!()
     }
 
-    fn handle_head(request: &RepositoryRequest,http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_head(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
         todo!()
     }
 
-    fn handle_versions(request: &RepositoryRequest,http: &HttpRequest,conn: &MysqlConnection) -> RepoResult {
+    fn handle_versions(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
         todo!()
     }
 
-    fn latest_version(request: &RepositoryRequest, http: &HttpRequest,conn: &MysqlConnection) -> Result<String, InternalError> {
+    fn handle_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+        todo!()
+    }
+
+    fn handle_project(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+        todo!()
+    }
+
+    fn latest_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> Result<String, InternalError> {
         todo!()
     }
 }

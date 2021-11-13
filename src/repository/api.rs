@@ -8,19 +8,9 @@ use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::controller::handle_result;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
+use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
-
-use crate::DbPool;
-
-use actix_web::{get, web, HttpRequest};
-
-use crate::api_response::SiteResponse;
-use crate::error::response::not_found;
-use serde::{Deserialize, Serialize};
-
-use crate::repository::controller::handle_result;
-use crate::repository::npm::NPMHandler;
 
 //
 
