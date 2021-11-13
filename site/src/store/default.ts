@@ -1,8 +1,5 @@
-import { createStore } from "vuex";
-import { computed, reactive } from "vue";
-import { BasicResponse, User } from "@/backend/Response";
-import { getUser } from "@/backend/api/User";
-import { useCookie } from "vue-cookie-next";
+import {reactive} from "vue";
+import {BasicResponse} from "@/backend/Response";
 import http from "@/http-common";
 
 const state = reactive({

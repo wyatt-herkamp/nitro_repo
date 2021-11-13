@@ -1,0 +1,66 @@
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  requests:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/requests.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  maven:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/repos/maven.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  repositories:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/repos.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  system:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/system.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  error:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/error.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  site:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/site.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+  all:
+    kind: file
+    path: "$ENV{LOG_LOCATION}/log/all.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} [{l}][{M}]: {m}\n"
+root:
+  level: info
+  appenders:
+    - all
+loggers:
+  nitro_reoo:
+    level: debug
+    appenders:
+      - site
+  nitro_repo::repository:
+    level: debug
+    appenders:
+      - repositories
+  nitro_repo::system:
+    level: debug
+    appenders:
+      - system
+  nitro_repo::repository::maven:
+    level: debug
+    appenders:
+      - maven
+  actix_web::middleware::logger:
+    level: info
+    appenders:
+      - requests
+

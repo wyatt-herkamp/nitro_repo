@@ -1,20 +1,44 @@
-use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
+use std::io::Write;
 
-use crate::schema::*;
-
+use badge_maker::Style;
+use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
+use serde::{Deserialize, Serialize};
 
+use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
-
 use crate::repository::models::Visibility::Public;
-use badge_maker::Style;
-use std::fmt::Debug;
-use std::io::Write;
+use crate::schema::*;
+use crate::storage::action::get_storage_name_by_id;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RepositorySummary {
+    pub name: String,
+    pub storage: String,
+    pub page_provider: PageProvider,
+    pub repo_type: String,
+    pub visibility: Visibility,
+}
+
+impl RepositorySummary {
+    pub fn new(
+        repo: &Repository,
+        conn: &MysqlConnection,
+    ) -> Result<RepositorySummary, InternalError> {
+        return Ok(RepositorySummary {
+            name: repo.name.clone(),
+            storage: get_storage_name_by_id(&repo.storage, conn)?.unwrap(),
+            page_provider: repo.settings.frontend.page_provider.clone(),
+            repo_type: repo.repo_type.clone(),
+            visibility: repo.security.visibility.clone(),
+        });
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BadgeStyle {
@@ -25,22 +49,16 @@ pub enum BadgeStyle {
 
 impl Default for BadgeStyle {
     fn default() -> Self {
-        return BadgeStyle::Flat;
+        BadgeStyle::Flat
     }
 }
 
 impl BadgeStyle {
     pub fn to_badge_maker_style(&self) -> badge_maker::Style {
         match self {
-            BadgeStyle::Flat => {
-                return Style::Flat;
-            }
-            BadgeStyle::FlatSquare => {
-                return Style::FlatSquare;
-            }
-            BadgeStyle::Plastic => {
-                return Style::Plastic;
-            }
+            BadgeStyle::Flat => Style::Flat,
+            BadgeStyle::FlatSquare => Style::FlatSquare,
+            BadgeStyle::Plastic => Style::Plastic,
         }
     }
 }
@@ -57,31 +75,33 @@ pub struct BadgeSettings {
 
 impl Default for BadgeSettings {
     fn default() -> Self {
-        return BadgeSettings {
+        BadgeSettings {
             style: Default::default(),
             label_color: default_label_color(),
             color: default_color(),
-        };
+        }
     }
 }
 
 fn default_color() -> String {
-    return "#33B5E5".to_string();
+    "#33B5E5".to_string()
 }
 
 fn default_label_color() -> String {
-    return "#555".to_string();
+    "#555".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PageProvider {
     None,
     README,
+    ReadmeGit,
+    ReadmeSent,
 }
 
 impl PageProvider {
     fn default() -> Self {
-        return PageProvider::None;
+        PageProvider::None
     }
 }
 
@@ -95,10 +115,10 @@ pub struct Frontend {
 
 impl Default for Frontend {
     fn default() -> Self {
-        return Frontend {
+        Frontend {
             enabled: true,
             page_provider: PageProvider::None,
-        };
+        }
     }
 }
 
@@ -118,13 +138,13 @@ pub enum Visibility {
 
 impl Policy {
     fn default() -> Self {
-        return Mixed;
+        Mixed
     }
 }
 
 impl Visibility {
     fn default() -> Self {
-        return Public;
+        Public
     }
 }
 
@@ -202,7 +222,7 @@ impl FromSql<Text, Mysql> for RepositorySettings {
     ) -> deserialize::Result<RepositorySettings> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: RepositorySettings = serde_json::from_str(t.as_str())?;
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -219,7 +239,7 @@ impl FromSql<Text, Mysql> for SecurityRules {
     ) -> deserialize::Result<SecurityRules> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: SecurityRules = serde_json::from_str(t.as_str())?;
-        return Ok(result);
+        Ok(result)
     }
 }
 
@@ -240,4 +260,12 @@ pub struct Repository {
     pub settings: RepositorySettings,
     pub security: SecurityRules,
     pub created: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct RepositoryListResponse {
+    pub id: i64,
+    pub name: String,
+    pub repo_type: String,
+    pub storage: i64,
 }

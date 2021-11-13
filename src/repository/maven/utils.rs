@@ -1,8 +1,8 @@
-use crate::repository::repository::Version;
-use std::fs::{read_dir, read_to_string, DirEntry};
+use std::fs::{DirEntry, read_dir, read_to_string};
 use std::path::PathBuf;
 
 use crate::repository::maven::models::DeployMetadata;
+use crate::repository::repository::Version;
 
 pub fn get_versions(path: &PathBuf) -> Vec<Version> {
     let maven_metadata = path.clone().join("maven-metadata.xml");
@@ -13,18 +13,22 @@ pub fn get_versions(path: &PathBuf) -> Vec<Version> {
     };
     let mut versions = Vec::new();
     for x in value {
-        versions.push(Version {
-            version: x.clone(),
-            artifacts: get_artifacts(path.clone().join(x)),
-        })
+        versions.push(get_version(&path.join(x)))
     }
-    return versions;
+    versions
+}
+
+pub fn get_version(path: &PathBuf) -> Version {
+    return Version {
+        version: path.file_name().unwrap().to_str().unwrap().to_string(),
+        artifacts: get_artifacts(path),
+    };
 }
 
 fn get_versions_generated(path: &PathBuf) -> Vec<String> {
     let string = read_to_string(path).unwrap();
     let vec: DeployMetadata = serde_xml_rs::from_str(string.as_str()).unwrap();
-    return vec.versioning.versions.version;
+    vec.versioning.versions.version
 }
 
 fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
@@ -36,17 +40,17 @@ fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
             values.push(x1.file_name().to_str().unwrap().to_string());
         }
     }
-    return values;
+    values
 }
 
 pub fn get_latest_version(path: &PathBuf, release: bool) -> String {
     let maven_metadata = path.join("maven-metadata.xml");
-    let value = if maven_metadata.exists() {
+
+    if maven_metadata.exists() {
         get_latest_version_generated(&maven_metadata, release)
     } else {
         get_latest_versions_without_maven(path, release)
-    };
-    return value;
+    }
 }
 
 fn get_latest_version_generated(path: &PathBuf, release: bool) -> String {
@@ -60,10 +64,8 @@ fn get_latest_version_generated(path: &PathBuf, release: bool) -> String {
     }
     let versions = versioning.versions.version;
     for x in &versions {
-        if release {
-            if x.ends_with("SNAPSHOT") || x.contains("pr") {
-                continue;
-            }
+        if release && (x.ends_with("SNAPSHOT") || x.contains("pr")) {
+            continue;
         }
         return x.clone();
     }
@@ -92,18 +94,16 @@ fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
             if value.is_none() {
                 value = Some(string.clone());
             }
-            if release {
-                if string.ends_with("SNAPSHOT") || string.contains("pr") {
-                    continue;
-                }
+            if release && (string.ends_with("SNAPSHOT") || string.contains("pr")) {
+                continue;
             }
             return string;
         }
     }
-    return value.unwrap_or("".to_string());
+    value.unwrap_or("".to_string())
 }
 
-fn get_artifacts(path: PathBuf) -> Vec<String> {
+fn get_artifacts(path: &PathBuf) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
     for x in dir {
@@ -116,5 +116,5 @@ fn get_artifacts(path: PathBuf) -> Vec<String> {
             values.push(file_name);
         }
     }
-    return values;
+    values
 }

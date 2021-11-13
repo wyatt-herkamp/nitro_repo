@@ -1,17 +1,21 @@
- /* eslint-disable */ 
-import { createApp } from "vue";
+/* eslint-disable */
+import {createApp} from "vue";
 import App from "./App.vue";
 import router from "./router";
-import { VueCookieNext } from "vue-cookie-next";
-import Notifications from '@kyvg/vue3-notification'
+import {VueCookieNext} from "vue-cookie-next";
+import Notifications from "@kyvg/vue3-notification";
 
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
+import VueUploadComponent from "vue-upload-component";
+
 const app = createApp(App);
-app.use(router);
 app.use(VueCookieNext);
 app.use(ElementPlus);
-app.use(Notifications)
+app.use(Notifications);
+app.use(router);
+app.component("file-upload", VueUploadComponent);
+
 app.mount("#app");
 
 // set default config

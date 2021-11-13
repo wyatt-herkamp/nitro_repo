@@ -7,16 +7,16 @@ extern crate strum;
 extern crate strum_macros;
 
 use actix_cors::Cors;
-use actix_web::{middleware, App, HttpServer};
+use actix_files::Files;
+use actix_web::{App, HttpServer, middleware};
+use actix_web::web::PayloadConfig;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use log::info;
 use log4rs::config::RawConfig;
+use log::info;
 
 use crate::install::install::Installed;
 use crate::utils::Resources;
-use actix_files::Files;
-use actix_web::web::PayloadConfig;
 
 pub mod api_response;
 pub mod error;
@@ -28,14 +28,28 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
+
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().ok();
+    if let Err(error) = dotenv::dotenv() {
+        println!("Unable to load dotenv {}", error);
+        return Ok(());
+    }
+    let file = match std::env::var("MODE")
+        .unwrap_or("DEBUG".to_string())
+        .as_str()
+    {
+        "DEBUG" => "log-debug.yml",
+        "RELEASE" => "log-release.yml",
+        _ => {
+            panic!("Must be Release or Debug")
+        }
+    };
     let config: RawConfig =
-        serde_yaml::from_str(Resources::file_get_string("log.yml").as_str()).unwrap();
+        serde_yaml::from_str(Resources::file_get_string(file).as_str()).unwrap();
     log4rs::init_raw_config(config).unwrap();
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
@@ -68,10 +82,7 @@ async fn main() -> std::io::Result<()> {
             .configure(system::controllers::init)
             .configure(frontend::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
-            .service(
-                Files::new("/", format!("{}", std::env::var("SITE_DIR").unwrap()))
-                    .show_files_listing(),
-            )
+            .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
     .workers(2);
 

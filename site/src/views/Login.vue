@@ -28,10 +28,8 @@
 <script lang="ts">
 import axios from "axios";
 import { AuthToken, BasicResponse } from "@/backend/Response";
-import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
 
 export default defineComponent({
   setup() {
@@ -59,7 +57,6 @@ export default defineComponent({
           }
           const result = res.data;
           let value = JSON.stringify(result);
-          console.log(value);
 
           let response: BasicResponse<unknown> = JSON.parse(value);
 
@@ -70,10 +67,9 @@ export default defineComponent({
               expire: date,
               sameSite: "lax",
             });
-            router.push("/");
+            location.replace("/");
           } else {
             this.form.password = "";
-
             this.$notify({
               title: "Invalid Username or Password",
               type: "warn",

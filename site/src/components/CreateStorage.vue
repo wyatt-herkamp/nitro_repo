@@ -26,13 +26,19 @@
 
 <script lang="ts">
 import axios from "axios";
-import { AuthToken, BasicResponse } from "@/backend/Response";
+import { AuthToken, BasicResponse, Storage } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 
 export default defineComponent({
+  props: {
+    updateList: {
+      required: true,
+      type: Function,
+    },
+  },
   setup() {
     let form = ref({
       name: "",
@@ -61,15 +67,22 @@ export default defineComponent({
       }
       const result = res.data;
       let value = JSON.stringify(result);
-      console.log(value);
 
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (response.success) {
-        router.push("/");
+        let value = response.data as Storage;
+        this.updateList(value.id);
+        this.$notify({
+          title: "Storage Created",
+          type: "success",
+        });
       } else {
-        this.form.error = "Invalid Password or Username";
-      }
+        this.$notify({
+          title: "Unable to Create Storage",
+          text: JSON.stringify(response.data),
+          type: "error",
+        });      }
     },
   },
 });

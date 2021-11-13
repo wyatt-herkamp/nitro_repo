@@ -5,7 +5,8 @@ pub mod admin;
 mod api;
 mod badge;
 pub mod controller;
-mod maven;
+pub mod frontend;
+pub mod maven;
 pub mod models;
 pub mod repository;
 mod npm;
@@ -19,5 +20,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(controller::put_repository)
         .service(controller::head_repository)
         .service(api::get_versions)
+        .service(api::get_version)
+        .service(api::get_project)
         .service(badge::badge);
 }

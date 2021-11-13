@@ -34,7 +34,6 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
 import { BasicResponse } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";

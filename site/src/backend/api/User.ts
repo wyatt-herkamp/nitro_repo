@@ -1,6 +1,6 @@
-import axios from "axios";
-import { BasicResponse, DEFAULT_USER_LIST, User, UserList } from "../Response";
+import {BasicResponse, DEFAULT_USER_LIST, User, UserList} from "../Response";
 import http from "@/http-common";
+
 export async function getUser(token: string) {
   //${API_URL}
   const value = await http.get("/api/me", {
@@ -36,4 +36,26 @@ export async function getUsers(token: string) {
   }
 
   return DEFAULT_USER_LIST;
+}
+
+export async function getUserByID(
+  token: string,
+  id: number
+): Promise<User | undefined> {
+  //${API_URL}
+  const value = await http.get("/api/admin/user/get/" + id, {
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  if (value.status != 200) {
+    return undefined;
+  }
+  const data = value.data as BasicResponse<unknown>;
+  if (data.success) {
+    return data.data as User;
+  }
+
+  return undefined;
 }

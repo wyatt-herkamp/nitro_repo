@@ -21,7 +21,7 @@
           v-for="storage in storages.storages"
           :key="storage.id"
           @click="index = storage.id"
-          :index="storage.id"
+          :index="storage.id.toString()"
         >
           <i class="el-icon-watermelon"></i>
           <template #title>{{ storage.public_name }}</template>
@@ -30,7 +30,7 @@
     </el-aside>
     <el-container>
       <div v-if="index == 0">
-        <CreateStorage />
+        <CreateStorage :updateList="updateList" />
       </div>
       <div v-for="storage in storages.storages" :key="storage.id">
         <div v-if="index == storage.id">
@@ -77,7 +77,22 @@ export default defineComponent({
       isLoading,
       error,
       getStorage,
+      cookie,
     };
+  },
+  methods: {
+    updateList(id: number) {
+      const getStorage = async () => {
+        try {
+          const value = await getStorages(this.cookie.getCookie("token"));
+          this.storages = value;
+          this.index = id;
+        } catch (e) {
+          this.error = "Error";
+        }
+      };
+      getStorage();
+    },
   },
 });
 </script>

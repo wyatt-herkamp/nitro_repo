@@ -1,13 +1,13 @@
 use actix_web::http::HeaderMap;
-
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use diesel::MysqlConnection;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
@@ -16,8 +16,6 @@ use crate::system::utils::NewUserError::{
     EmailAlreadyExists, PasswordDoesNotMatch, UsernameAlreadyExists,
 };
 use crate::utils::get_current_time;
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -31,7 +29,7 @@ pub fn get_user_by_header(
     if x.is_err() {}
     let header = x.unwrap().to_string();
 
-    let split = header.split(" ").collect::<Vec<&str>>();
+    let split = header.split(' ').collect::<Vec<&str>>();
     let option = split.get(0);
     if option.is_none() {
         return Ok(None);
@@ -61,8 +59,7 @@ pub fn can_deploy_basic_auth(
     let x = option.unwrap().to_str();
     if x.is_err() {}
     let header = x.unwrap().to_string();
-
-    let split = header.split(" ").collect::<Vec<&str>>();
+    let split = header.split(' ').collect::<Vec<&str>>();
     let option = split.get(0);
     if option.is_none() {
         return Ok(false);
@@ -74,7 +71,13 @@ pub fn can_deploy_basic_auth(
     let value = value.unwrap().to_string();
     let key = option.unwrap().to_string();
     if key.eq("Basic") {
-        return is_authed(value, repo, conn);
+        return is_authed_deploy(value, repo, conn);
+    } else if key.eq("Bearer") {
+        let result = system::action::get_user_from_session_token(&value, &conn)?;
+        if result.is_none() {
+            return Ok(false);
+        }
+        return user_has_deploy_access(&result.unwrap(), repo);
     }
     Ok(false)
 }
@@ -85,7 +88,7 @@ pub fn can_read_basic_auth(
     conn: &MysqlConnection,
 ) -> Result<bool, InternalError> {
     match repo.security.visibility {
-        Visibility::Public => return Ok(true),
+        Visibility::Public => Ok(true),
         Visibility::Private => {
             let option = header_map.get("Authorization");
             if option.is_none() {
@@ -95,7 +98,7 @@ pub fn can_read_basic_auth(
             if x.is_err() {}
             let header = x.unwrap().to_string();
 
-            let split = header.split(" ").collect::<Vec<&str>>();
+            let split = header.split(' ').collect::<Vec<&str>>();
             let option = split.get(0);
             if option.is_none() {
                 return Ok(false);
@@ -107,27 +110,33 @@ pub fn can_read_basic_auth(
             let value = value.unwrap().to_string();
             let key = option.unwrap().to_string();
             if key.eq("Basic") {
-                return is_authed(value, repo, conn);
+                return is_authed_read(value, repo, conn);
+            } else if key.eq("Bearer") {
+                let result = system::action::get_user_from_session_token(&value, &conn)?;
+                if result.is_none() {
+                    return Ok(false);
+                }
+                return Ok(true);
             }
             Ok(false)
         }
-        Visibility::Hidden => return Ok(true),
+        Visibility::Hidden => Ok(true),
     }
 }
 
-pub fn is_authed(
+pub fn is_authed_deploy(
     user: String,
     repo: &Repository,
     conn: &MysqlConnection,
 ) -> Result<bool, InternalError> {
     let result = base64::decode(user)?;
     let string = String::from_utf8(result)?;
-    let split = string.split(":").collect::<Vec<&str>>();
+    let split = string.split(':').collect::<Vec<&str>>();
 
     if !split.len().eq(&2) {
         return Ok(false);
     }
-    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), &conn)?;
+    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), conn)?;
     if result1.is_none() {
         return Ok(false);
     }
@@ -140,16 +149,55 @@ pub fn is_authed(
     {
         return Ok(false);
     }
+    return user_has_deploy_access(&user, repo);
+}
+
+pub fn is_authed_read(
+    user: String,
+    repo: &Repository,
+    conn: &MysqlConnection,
+) -> Result<bool, InternalError> {
+    let result = base64::decode(user)?;
+    let string = String::from_utf8(result)?;
+    let split = string.split(':').collect::<Vec<&str>>();
+
+    if !split.len().eq(&2) {
+        return Ok(false);
+    }
+    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), conn)?;
+    if result1.is_none() {
+        return Ok(false);
+    }
+    let argon2 = Argon2::default();
+    let user = result1.unwrap();
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    if argon2
+        .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
+        .is_err()
+    {
+        return Ok(false);
+    }
+    return Ok(true);
+}
+
+pub fn user_has_deploy_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
     if !user.permissions.admin {
         if !repo.security.deployers.is_empty() {
-            if user.permissions.deployer {
-                return Ok(true);
-            }
+            return Ok(user.permissions.deployer.clone());
         } else {
             return Ok(repo.security.deployers.contains(&user.id));
         }
     }
     return Ok(true);
+}
+
+/// TODO call this method for reading
+pub fn user_has_read_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
+    return if !repo.security.readers.is_empty() {
+        Ok(true)
+    } else {
+        Ok(repo.security.readers.contains(&user.id))
+    };
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -196,7 +244,7 @@ impl NewPassword {
             .hash_password(self.password.as_bytes(), salt.as_ref())
             .unwrap()
             .to_string();
-        return Ok(Some(password_hash));
+        Ok(Some(password_hash))
     }
 }
 
@@ -220,11 +268,11 @@ pub fn new_user(
     }
     let password = password.unwrap();
     let email = new_user.email.unwrap();
-    let option = system::action::get_user_by_username(&username, &conn)?;
+    let option = system::action::get_user_by_username(&username, conn)?;
     if option.is_some() {
         return Ok(Err(UsernameAlreadyExists));
     }
-    let option = system::action::get_user_by_email(&email, &conn)?;
+    let option = system::action::get_user_by_email(&email, conn)?;
     if option.is_some() {
         return Ok(Err(EmailAlreadyExists));
     }
@@ -238,9 +286,9 @@ pub fn new_user(
         permissions: new_user.permissions,
         created: get_current_time(),
     };
-    add_new_user(&user, &conn)?;
-    let user = get_user_by_username(&user.username, &conn)?;
-    return Ok(Ok(user));
+    add_new_user(&user, conn)?;
+    let user = get_user_by_username(&user.username, conn)?;
+    Ok(Ok(user))
 }
 
 pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, InternalError> {
@@ -250,7 +298,7 @@ pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, In
             .take(128)
             .map(char::from)
             .collect();
-        let result = get_session_token(&x, &connection)?;
+        let result = get_session_token(&x, connection)?;
         if result.is_none() {
             return Ok(x);
         }

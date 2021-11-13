@@ -1,18 +1,17 @@
-use serde::{Deserialize, Serialize};
+use std::io::Write;
+use std::str::FromStr;
 
+use diesel::{deserialize, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
-
-use crate::schema::*;
+use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
+use crate::schema::*;
 use crate::utils::Resources;
-use std::io::Write;
-use std::str::FromStr;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
@@ -59,7 +58,7 @@ impl FromSql<Text, Mysql> for Setting {
     ) -> deserialize::Result<Setting> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes).unwrap();
         let result = SettingManager::get_setting(t);
-        return Ok(result.unwrap());
+        Ok(result.unwrap())
     }
 }
 
@@ -87,8 +86,8 @@ impl DBSetting {
 
 pub fn get_file() -> String {
     let cow = Resources::get("settings.toml").unwrap().data;
-    let string = String::from_utf8(cow.to_vec()).unwrap();
-    return string;
+
+    String::from_utf8(cow.to_vec()).unwrap()
 }
 
 #[derive(Serialize, Deserialize)]
@@ -106,11 +105,11 @@ impl SettingManager {
                 return Some(setting);
             }
         }
-        return None;
+        None
     }
     pub fn get_settings() -> Vec<Setting> {
         let settings: Settings = toml::from_str(&*get_file()).unwrap();
-        return settings.settings;
+        settings.settings
     }
 }
 
@@ -130,8 +129,8 @@ impl FromStr for Setting {
     type Err = InternalError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        return SettingManager::get_setting(s.to_string())
-            .ok_or(InternalError::Error("Missing Setting".to_string()));
+        SettingManager::get_setting(s.to_string())
+            .ok_or(InternalError::Error("Missing Setting".to_string()))
     }
 }
 pub trait SettingVec {
@@ -144,6 +143,6 @@ impl SettingVec for Vec<DBSetting> {
                 return Option::Some(x);
             }
         }
-        return None;
+        None
     }
 }

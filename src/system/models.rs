@@ -1,16 +1,15 @@
 use std::fmt::Debug;
 use std::io::Write;
 
+use diesel::{deserialize, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
-
 use crate::system::utils::ModifyUser;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
@@ -22,6 +21,21 @@ pub struct User {
     pub email: String,
     #[serde(skip_serializing)]
     pub password: String,
+    pub permissions: UserPermissions,
+    pub created: i64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct UserListResponse {
+    pub id: i64,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct UserResponse {
+    pub id: i64,
+    pub name: String,
+    pub username: String,
+    pub email: String,
     pub permissions: UserPermissions,
     pub created: i64,
 }
@@ -71,7 +85,7 @@ impl FromSql<Text, Mysql> for UserPermissions {
     ) -> deserialize::Result<UserPermissions> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: UserPermissions = serde_json::from_str(t.as_str())?;
-        return Ok(result);
+        Ok(result)
     }
 }
 

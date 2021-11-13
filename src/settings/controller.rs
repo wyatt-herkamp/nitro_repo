@@ -18,11 +18,11 @@ pub fn get_setting_or_empty(
     string: &str,
     connection: &MysqlConnection,
 ) -> Result<DBSetting, InternalError> {
-    let result = get_setting(string.clone(), &connection)?;
+    let result = get_setting(string.clone(), connection)?;
     if let Some(some) = result {
-        return Ok(some);
+        Ok(some)
     } else {
-        return default_setting(string);
+        default_setting(string)
     }
 }
 
@@ -30,16 +30,16 @@ pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
         .ok_or(InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
-    return Ok(DBSetting {
+    Ok(DBSetting {
         id: 0,
         setting: setting.clone(),
         value: setting.default.unwrap_or_else(default_string),
         updated: get_current_time(),
-    });
+    })
 }
 
 pub fn default_string() -> String {
-    return "".to_string();
+    "".to_string()
 }
 
 #[get("/api/setting/{setting}")]
@@ -55,7 +55,7 @@ pub async fn about_setting(
         //TODO check if admin
         return unauthorized();
     }
-    return APIResponse::from(Some(option)).respond(&r);
+    APIResponse::from(Some(option)).respond(&r)
 }
 
 #[get("/api/settings/report")]
@@ -67,7 +67,7 @@ pub async fn setting_report(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResp
         return unauthorized();
     }
     let report = get_setting_report(&connection)?;
-    return APIResponse::from(Some(report)).respond(&r);
+    APIResponse::from(Some(report)).respond(&r)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -92,5 +92,5 @@ pub async fn update_setting(
     option.set_value(request.value.clone());
     settings::action::update_setting(&option, &connection)?;
     let option = get_setting(setting.as_str(), &connection)?;
-    return APIResponse::respond_new(option, &r);
+    APIResponse::respond_new(option, &r)
 }

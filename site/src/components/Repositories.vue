@@ -6,7 +6,7 @@
         class="el-menu-vertical-demo content"
         :collapse="false"
       >
-        <el-menu-item @click="index = 0" index="0">
+        <el-menu-item @click="index = 0" index=0>
           <i class="el-icon-watermelon"></i>
           <template #title>Create new Repository</template>
         </el-menu-item>
@@ -21,8 +21,7 @@
           v-for="repo in repositories.repositories"
           :key="repo.id"
           @click="index = repo.id"
-                    :index="repo.id"
-
+          :index="repo.id.toString()"
         >
           <i class="el-icon-watermelon"></i>
           <template #title>{{ repo.name }}</template>
@@ -31,14 +30,14 @@
     </el-aside>
     <el-container class="content">
       <div class="content" v-if="index == 0">
-        <CreateRepo />
+        <CreateRepo :updateList="updateList" />
       </div>
       <div
         class="content"
         v-for="repo in repositories.repositories"
         :key="repo.id"
       >
-        <div class="content" v-if="index == repo.id">
+        <div class="content" v-if="index === repo.id">
           <UpdateRepository :repo="repo" />
         </div>
       </div>
@@ -58,7 +57,7 @@ export default defineComponent({
   components: { CreateRepo, UpdateRepository },
 
   setup() {
-    let index = ref(0);
+    const index = ref<number>(0);
     const isLoading = ref(false);
     const cookie = useCookie();
 
@@ -77,12 +76,28 @@ export default defineComponent({
     };
     getRepos();
     return {
+      cookie,
       index,
       repositories,
       isLoading,
       error,
       getRepos,
     };
+  },
+  methods: {
+    updateList(id: number) {
+      console.log("Updating Repos");
+      const getRepos = async () => {
+        try {
+          const value = await getRepositories(this.cookie.getCookie("token"));
+          this.repositories = value;
+          this.index = id;
+        } catch (e) {
+          this.error = "Error";
+        }
+      };
+      getRepos();
+    },
   },
 });
 </script>
@@ -92,5 +107,4 @@ export default defineComponent({
   width: 200px;
   min-height: 400px;
 }
-
 </style>

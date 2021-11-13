@@ -43,11 +43,10 @@
         <Users />
       </div>
       <div v-else-if="index == 4">
-        <UpdateUser :user="userStore.state.user" :me="true" />
+        <UpdateUser :me="true" />
       </div>
       <div v-else-if="index == 5">
         <Settings />
-
       </div>
     </el-container>
   </el-container>
@@ -63,7 +62,7 @@ import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
 
 export default defineComponent({
-  components: { Storages, Repositories, Users, UpdateUser , Settings},
+  components: { Storages, Repositories, Users, UpdateUser, Settings },
 
   setup() {
     let index = ref(4);

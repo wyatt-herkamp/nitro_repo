@@ -24,7 +24,7 @@ import {
   fileListing,
   getRepositoriesPublicAccess,
 } from "@/backend/api/Repository";
-import { getStorages, getStoragesPublicAccess } from "@/backend/api/Storages";
+import { getStoragesPublicAccess } from "@/backend/api/Storages";
 import { FileResponse } from "@/backend/Response";
 import router from "@/router";
 import { defineComponent, ref } from "vue";
@@ -34,9 +34,7 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     let values = ref([""]);
-    const tableData = ref([{}]);
-    console.log(route.params);
-    const storage = route.params.storage as string;
+    const tableData = ref([{}]);const storage = route.params.storage as string;
     const repository = route.params.repo as string;
     let catchAll = route.params.catchAll as string;
 
@@ -48,7 +46,7 @@ export default defineComponent({
           for (var s of catchAll.split("/")) {
             values.value.push(s);
           }
-        }else{
+        } else {
           catchAll = "";
         }
         const getFiles = async () => {
@@ -73,7 +71,6 @@ export default defineComponent({
               storage
             )) as string[];
             for (const storage of value) {
-              console.log(storage);
               tableData.value.push({ name: storage });
             }
           } catch (e) {
@@ -105,8 +102,8 @@ export default defineComponent({
         for (const i of this.tableData) {
           let data = i as FileResponse;
           if (data.name == value) {
-            if(!data.directory){
-             console.log( data.full_path)
+            if (!data.directory) {
+              console.log(data.full_path);
               return;
             }
           }

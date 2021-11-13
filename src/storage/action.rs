@@ -1,8 +1,8 @@
-use crate::storage::models::Storage;
+use diesel::MysqlConnection;
+use diesel::prelude::*;
 
 use crate::storage;
-use diesel::prelude::*;
-use diesel::MysqlConnection;
+use crate::storage::models::Storage;
 
 pub fn get_storage_by_name(
     d: &String,
@@ -17,6 +17,22 @@ pub fn get_storage_by_name(
 
     Ok(found_mod)
 }
+
+pub fn get_storage_name_by_id(
+    d: &i64,
+    conn: &MysqlConnection,
+) -> Result<Option<String>, diesel::result::Error> {
+    use crate::schema::storages::dsl::*;
+
+    let found_mod = storages
+        .select(name)
+        .filter(id.eq(d))
+        .first(conn)
+        .optional()?;
+
+    Ok(found_mod)
+}
+
 pub fn get_storage_by_id(
     d: &i64,
     conn: &MysqlConnection,
@@ -30,6 +46,7 @@ pub fn get_storage_by_id(
 
     Ok(found_mod)
 }
+
 pub fn add_new_storage(s: &Storage, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::storages::dsl::*;
     diesel::insert_into(storages)
@@ -38,9 +55,10 @@ pub fn add_new_storage(s: &Storage, conn: &MysqlConnection) -> Result<(), diesel
         .unwrap();
     Ok(())
 }
+
 pub fn get_storages(
     conn: &MysqlConnection,
 ) -> Result<Vec<storage::models::Storage>, diesel::result::Error> {
     use crate::schema::storages::dsl::*;
-    Ok(storages.load::<storage::models::Storage>(conn)?)
+    storages.load::<storage::models::Storage>(conn)
 }
