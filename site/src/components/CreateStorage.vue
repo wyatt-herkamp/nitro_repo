@@ -78,8 +78,11 @@ export default defineComponent({
           type: "success",
         });
       } else {
-        this.form.error = "Invalid Password or Username";
-      }
+        this.$notify({
+          title: "Unable to Create Storage",
+          text: JSON.stringify(response.data),
+          type: "error",
+        });      }
     },
   },
 });

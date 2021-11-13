@@ -34,9 +34,7 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     let values = ref([""]);
-    const tableData = ref([{}]);
-    console.log(route.params);
-    const storage = route.params.storage as string;
+    const tableData = ref([{}]);const storage = route.params.storage as string;
     const repository = route.params.repo as string;
     let catchAll = route.params.catchAll as string;
 
@@ -73,7 +71,6 @@ export default defineComponent({
               storage
             )) as string[];
             for (const storage of value) {
-              console.log(storage);
               tableData.value.push({ name: storage });
             }
           } catch (e) {

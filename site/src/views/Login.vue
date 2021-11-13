@@ -57,7 +57,6 @@ export default defineComponent({
           }
           const result = res.data;
           let value = JSON.stringify(result);
-          console.log(value);
 
           let response: BasicResponse<unknown> = JSON.parse(value);
 

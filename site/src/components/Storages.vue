@@ -21,7 +21,7 @@
           v-for="storage in storages.storages"
           :key="storage.id"
           @click="index = storage.id"
-          :index="storage.id"
+          :index="storage.id.toString()"
         >
           <i class="el-icon-watermelon"></i>
           <template #title>{{ storage.public_name }}</template>

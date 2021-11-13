@@ -3,7 +3,6 @@
     <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
       <el-menu
         default-active="0"
-        class="el-menu-vertical-demo"
         :collapse="false"
       >
         <el-menu-item @click="index = 0" index="0">
@@ -21,7 +20,7 @@
           v-for="user in users.users"
           :key="user.id"
           @click="index = user.id"
-          :index="user.id"
+          :index="user.id.toString()"
         >
           <i class="el-icon-user"></i>
           <template #title>{{ user.name }}</template>

@@ -6,7 +6,7 @@
         class="el-menu-vertical-demo content"
         :collapse="false"
       >
-        <el-menu-item @click="index = 0" index="0">
+        <el-menu-item @click="index = 0" index=0>
           <i class="el-icon-watermelon"></i>
           <template #title>Create new Repository</template>
         </el-menu-item>
@@ -21,7 +21,7 @@
           v-for="repo in repositories.repositories"
           :key="repo.id"
           @click="index = repo.id"
-          :index="repo.id"
+          :index="repo.id.toString()"
         >
           <i class="el-icon-watermelon"></i>
           <template #title>{{ repo.name }}</template>
@@ -37,7 +37,7 @@
         v-for="repo in repositories.repositories"
         :key="repo.id"
       >
-        <div class="content" v-if="index == repo.id">
+        <div class="content" v-if="index === repo.id">
           <UpdateRepository :repo="repo" />
         </div>
       </div>
@@ -57,7 +57,7 @@ export default defineComponent({
   components: { CreateRepo, UpdateRepository },
 
   setup() {
-    let index = ref(0);
+    const index = ref<number>(0);
     const isLoading = ref(false);
     const cookie = useCookie();
 
