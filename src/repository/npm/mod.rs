@@ -59,6 +59,7 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let value: PublishRequest = serde_json::from_slice(bytes.bytes()).unwrap();
+        println!("{}", serde_json::to_string_pretty(&value)?);
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
