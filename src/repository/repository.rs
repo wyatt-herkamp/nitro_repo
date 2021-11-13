@@ -36,6 +36,8 @@ pub enum RepoResponse {
     FileResponse(PathBuf),
     /// Ok
     Ok,
+    /// CREATED WITH_JSON
+    Created_With_JSON(String),
     /// Not Found
     NotFound,
     /// Not Authorized
