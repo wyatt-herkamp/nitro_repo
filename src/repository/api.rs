@@ -8,6 +8,7 @@ use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::controller::handle_result;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
+use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
 
@@ -47,6 +48,7 @@ pub async fn get_versions(
     };
     let x = match t.as_str() {
         "maven" => MavenHandler::handle_versions(&request, &r, &connection),
+        "npm" => NPMHandler::handle_versions(&request, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }

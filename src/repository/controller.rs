@@ -14,6 +14,7 @@ use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
+use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::repository::repository::RepoResponse::BadRequest;
 use crate::storage::action::{get_storage_by_name, get_storages};
@@ -68,29 +69,23 @@ pub async fn get_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         trace!("Storage {} not found", &path.0 .0);
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", &path.0 .1);
         return not_found();
     }
     let repository = repository.unwrap();
 
-    let request = RepositoryRequest::new(storage, repository, path.0 .2);
-    debug!(
-        "GET {} in {}/{}: Route: {}",
-        &request.repository.repo_type,
-        &request.storage.name,
-        &request.repository.name,
-        &request.value
-    );
+    let request = RepositoryRequest::new(storage, repository, path.0.2);
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
+        "npm" => NPMHandler::handle_get(&request, &r, &connection),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
@@ -151,6 +146,20 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::VersionListingResponse(versions) => {
             APIResponse::new(true, Some(versions)).respond(&r)
         }
+        RepoResponse::Created_With_JSON(json) => {
+            let result = HttpResponse::Ok()
+                .status(StatusCode::CREATED)
+                .content_type("application/json")
+                .body(json);
+            return Ok(result);
+        }
+        RepoResponse::Ok_With_JSON(json) => {
+            let result = HttpResponse::Ok()
+                .status(StatusCode::OK)
+                .content_type("application/json")
+                .body(json);
+            return Ok(result);
+        }
     };
 }
 
@@ -163,13 +172,13 @@ pub async fn post_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         trace!("Storage {} not found", &path.0 .0);
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", &path.0 .1);
         return not_found();
@@ -177,13 +186,13 @@ pub async fn post_repository(
     let repository = repository.unwrap();
     if !repository.settings.active {
         trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0 .2, r);
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
     }
 
     let request = RepositoryRequest {
         storage,
         repository,
-        value: path.0 .2,
+        value: path.0.2,
     };
     debug!(
         "POST {} in {}/{}: Route: {}",
@@ -194,6 +203,7 @@ pub async fn post_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_post(&request, &r, &connection, bytes),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
@@ -211,13 +221,13 @@ pub async fn patch_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         trace!("Storage {} not found", &path.0 .0);
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", &path.0 .1);
         return not_found();
@@ -225,12 +235,12 @@ pub async fn patch_repository(
     let repository = repository.unwrap();
     if !repository.settings.active {
         trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0 .2, r);
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
     }
     let request = RepositoryRequest {
         storage,
         repository,
-        value: path.0 .2,
+        value: path.0.2,
     };
     debug!(
         "PATCH {} in {}/{}: Route: {}",
@@ -241,6 +251,7 @@ pub async fn patch_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_patch(&request, &r, &connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
@@ -257,13 +268,13 @@ pub async fn put_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         trace!("Storage {} not found", &path.0 .0);
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", &path.0 .1);
         return not_found();
@@ -271,12 +282,12 @@ pub async fn put_repository(
     let repository = repository.unwrap();
     if !repository.settings.active {
         trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0 .2, r);
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
     }
     let request = RepositoryRequest {
         storage,
         repository,
-        value: path.0 .2,
+        value: path.0.2,
     };
     debug!(
         "PUT {} in {}/{}: Route: {}",
@@ -287,6 +298,7 @@ pub async fn put_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_put(&request, &r, &connection, bytes),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
@@ -303,13 +315,13 @@ pub async fn head_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&path.0.0, &connection)?;
     if storage.is_none() {
         trace!("Storage {} not found", &path.0 .0);
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", &path.0 .1);
         return not_found();
@@ -317,12 +329,12 @@ pub async fn head_repository(
     let repository = repository.unwrap();
     if !repository.settings.active {
         trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0 .2, r);
+        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
     }
     let request = RepositoryRequest {
         storage,
         repository,
-        value: path.0 .2,
+        value: path.0.2,
     };
     debug!(
         "HEAD {} in {}/{}: Route: {}",
@@ -333,6 +345,7 @@ pub async fn head_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_head(&request, &r, &connection),
+        "npm" => NPMHandler::handle_head(&request, &r, &connection),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")

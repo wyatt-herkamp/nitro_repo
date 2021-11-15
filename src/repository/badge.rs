@@ -13,6 +13,7 @@ use crate::error::response::not_found;
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::BadgeSettings;
+use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
 
@@ -68,6 +69,7 @@ pub async fn badge(
     } else {
         match request.repository.repo_type.as_str() {
             "maven" => MavenHandler::latest_version(&request, &r, &connection),
+            "npm" => NPMHandler::latest_version(&request, &r, &connection),
             _ => {
                 panic!("Unknown REPO")
             }

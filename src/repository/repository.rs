@@ -36,6 +36,10 @@ pub enum RepoResponse {
     FileResponse(PathBuf),
     /// Ok
     Ok,
+    //Ok With Json
+    Ok_With_JSON(String),
+    /// CREATED WITH_JSON
+    Created_With_JSON(String),
     /// Not Found
     NotFound,
     /// Not Authorized
@@ -75,7 +79,8 @@ impl RepositoryRequest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Version {
     pub version: String,
-    pub artifacts: Vec<String>,
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
 }
 
 pub trait RepositoryType {

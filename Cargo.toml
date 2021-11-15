@@ -53,6 +53,8 @@ usvg = "0.19.0"
 resvg = "0.19.0"
 tiny-skia = "0.6.1"
 actix-service = "1.0.6"
+regex = "1.5.4"
+glob = "0.3.0"
 [features]
 # Defines a feature named `webp` that does not enable any other features.
 ssl = ["openssl", "actix-web/openssl"]
