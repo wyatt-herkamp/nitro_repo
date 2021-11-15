@@ -79,7 +79,8 @@ impl RepositoryRequest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Version {
     pub version: String,
-    pub artifacts: Vec<String>,
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
 }
 
 pub trait RepositoryType {
