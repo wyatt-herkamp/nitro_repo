@@ -51,7 +51,7 @@ pub struct GetResponse {
 
 
 pub fn get_latest_version(map: &HashMap<String, String>) -> String {
-    let mut value = map.values().cloned().collect::<Vec<String>>();
+    let value = map.values().cloned().collect::<Vec<String>>();
     let mut times = Vec::new();
     for x in value {
         println!("{}", &x);

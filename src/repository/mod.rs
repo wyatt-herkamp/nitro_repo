@@ -10,6 +10,7 @@ pub mod maven;
 pub mod models;
 pub mod repository;
 mod npm;
+pub mod utils;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)

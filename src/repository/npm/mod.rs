@@ -17,14 +17,17 @@ use crate::error::internal_error::InternalError;
 use crate::repository::models::RepositorySummary;
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{Attachment, get_latest_version, GetResponse, LoginRequest, LoginResponse, PublishRequest, Version};
+use crate::repository::npm::utils::{get_time_file, read_time_file};
 use crate::repository::repository::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType};
-use crate::repository::repository::Version as RepoVersion;
 use crate::repository::repository::RepoResponse::{Created_With_JSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse};
+use crate::repository::repository::Version as RepoVersion;
+use crate::repository::utils::{build_artifact_directory, build_directory};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
 mod models;
 mod auth;
+mod utils;
 
 pub struct NPMHandler;
 
@@ -34,10 +37,7 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         if http.headers().contains_key("npm-command") {
-            let buf = get_storage_location()
-                .join("storages")
-                .join(&request.storage.name)
-                .join(&request.repository.name);
+            let buf = build_directory(&request);
             if request.value.ends_with(".tgz") {
                 let mut id = buf;
                 for x in request.value.split("/-/").collect::<Vec<&str>>().first().unwrap().split("/") {
@@ -63,8 +63,7 @@ impl RepositoryType for NPMHandler {
                     versions.insert(version.version.clone(), version);
                 }
                 let string = serde_json::to_string_pretty(&versions)?;
-                let times_json = buf.join("times.json");
-                let times: HashMap<String, String> = serde_json::from_reader(File::open(times_json)?)?;
+                let times = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
                 let latest_version = get_latest_version(&times);
                 let version = versions.get(&latest_version).unwrap().clone();
                 let response = GetResponse {
@@ -78,11 +77,7 @@ impl RepositoryType for NPMHandler {
                 return Ok(RepoResponse::Ok_With_JSON(serde_json::to_string(&response)?));
             }
         } else {
-            let buf = get_storage_location()
-                .join("storages")
-                .join(&request.storage.name)
-                .join(&request.repository.name)
-                .join(&request.value);
+            let buf = build_artifact_directory(&request);
             let path = format!(
                 "{}/{}/{}",
                 &request.storage.name, &request.repository.name, &request.value
@@ -135,16 +130,13 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let value: PublishRequest = serde_json::from_slice(bytes.bytes()).unwrap();
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name);
+        let buf = build_directory(&request);
         let artifact = buf.join(&value.name);
         create_dir_all(&artifact)?;
 
         for x in value._attachments {
             let attachments = artifact.join("attachments");
-            create_dir_all(&attachments);
+            create_dir_all(&attachments)?;
 
             let name = x.0.split("/").collect::<Vec<&str>>().get(1).unwrap().to_string();
             let file = attachments.join(name);
@@ -162,19 +154,20 @@ impl RepositoryType for NPMHandler {
             file.write_all(&attachment)?;
         }
 
-        let times_json = artifact.join("times.json");
+        let times_json = crate::repository::npm::utils::get_time_file(&request.storage, &request.repository, &request.value);
+
         if !times_json.exists() {
             let time = chrono::Utc::now();
             let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
             let mut file = File::create(&times_json)?;
             let mut times = HashMap::new();
             times.insert("created", time.clone());
-            file.write_all(serde_json::to_string(&times)?.as_bytes());
+            file.write_all(serde_json::to_string(&times)?.as_bytes())?;
         }
         for (key, value) in value.versions {
             let version = artifact.join(format!("version-{}.json", &key));
             if version.exists() {
-                remove_file(&version);
+                remove_file(&version)?;
             }
             let result = serde_json::to_string_pretty(&value)?;
             let mut file = OpenOptions::new()
@@ -188,10 +181,10 @@ impl RepositoryType for NPMHandler {
             let time = chrono::Utc::now();
             let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
             let mut times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
-            remove_file(&times_json);
+            remove_file(&times_json)?;
             times_map.insert(key.clone(), time);
             let mut times_json = File::create(&times_json)?;
-            times_json.write_all(serde_json::to_string_pretty(&times_map)?.as_bytes());
+            times_json.write_all(serde_json::to_string_pretty(&times_map)?.as_bytes())?;
         }
         // Everything is a ok.... OR is IT??????
         return Ok(RepoResponse::Ok);
@@ -206,11 +199,8 @@ impl RepositoryType for NPMHandler {
     }
 
     fn handle_versions(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
-        let times_json = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name).join(&request.value).join("times.json");
-        let times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
+        let times_map = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
+
         let mut versions = Vec::new();
         for x in times_map {
             versions.push(RepoVersion {
@@ -226,11 +216,8 @@ impl RepositoryType for NPMHandler {
     }
 
     fn handle_project(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
-        let times_json = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name).join(&request.value).join("times.json");
-        let times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
+        let times_map = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
+
         let mut versions = Vec::new();
         for x in times_map {
             versions.push(RepoVersion {
@@ -247,11 +234,7 @@ impl RepositoryType for NPMHandler {
     }
 
     fn latest_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> Result<String, InternalError> {
-        let times_json = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name).join(&request.value).join("times.json");
-        let times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
+        let times_map = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
         Ok(get_latest_version(&times_map))
     }
 }
