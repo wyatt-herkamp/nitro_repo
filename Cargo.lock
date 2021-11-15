@@ -2014,10 +2014,10 @@ dependencies = [
 name = "nitro_repo"
 version = "0.1.0"
 dependencies = [
- "actix",
- "actix-cors",
- "actix-files",
- "actix-multipart",
+    "actix",
+    "actix-cors",
+    "actix-files",
+    "actix-multipart",
     "actix-service",
     "actix-web",
     "argon2",
