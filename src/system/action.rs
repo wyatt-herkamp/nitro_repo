@@ -22,7 +22,7 @@ pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::re
 }
 pub fn update_user_password(
     user: &i64,
-    password: String,
+    _password: String,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;

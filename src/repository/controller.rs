@@ -146,14 +146,14 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::VersionListingResponse(versions) => {
             APIResponse::new(true, Some(versions)).respond(&r)
         }
-        RepoResponse::Created_With_JSON(json) => {
+        RepoResponse::CreatedWithJSON(json) => {
             let result = HttpResponse::Ok()
                 .status(StatusCode::CREATED)
                 .content_type("application/json")
                 .body(json);
             return Ok(result);
         }
-        RepoResponse::Ok_With_JSON(json) => {
+        RepoResponse::OkWithJSON(json) => {
             let result = HttpResponse::Ok()
                 .status(StatusCode::OK)
                 .content_type("application/json")

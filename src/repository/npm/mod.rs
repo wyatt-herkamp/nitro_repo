@@ -1,9 +1,6 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::fs::{create_dir_all, File, OpenOptions, read_dir, remove_file};
 use std::io::{BufReader, Write};
-use std::iter::Map;
-use std::string;
 use std::string::String;
 
 use actix_web::HttpRequest;
@@ -11,28 +8,36 @@ use actix_web::web::{Buf, Bytes};
 use diesel::MysqlConnection;
 use futures_util::AsyncWriteExt;
 use regex::Regex;
-use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::RepositorySummary;
 use crate::repository::npm::auth::is_valid;
-use crate::repository::npm::models::{Attachment, get_latest_version, GetResponse, LoginRequest, LoginResponse, PublishRequest, Version};
-use crate::repository::npm::utils::{get_time_file, read_time_file};
-use crate::repository::repository::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType};
-use crate::repository::repository::RepoResponse::{Created_With_JSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse};
+use crate::repository::npm::models::{
+    Attachment, get_latest_version, GetResponse, LoginRequest, LoginResponse, PublishRequest,
+    Version,
+};
+use crate::repository::repository::{
+    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
+};
+use crate::repository::repository::RepoResponse::{
+    CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse,
+};
 use crate::repository::repository::Version as RepoVersion;
 use crate::repository::utils::{build_artifact_directory, build_directory};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
-use crate::utils::get_storage_location;
 
-mod models;
 mod auth;
+mod models;
 mod utils;
 
 pub struct NPMHandler;
 
 impl RepositoryType for NPMHandler {
-    fn handle_get(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_get(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -40,9 +45,16 @@ impl RepositoryType for NPMHandler {
             let buf = build_directory(&request);
             if request.value.ends_with(".tgz") {
                 let mut id = buf;
-                for x in request.value.split("/-/").collect::<Vec<&str>>().first().unwrap().split("/") {
+                for x in request
+                    .value
+                    .split("/-/")
+                    .collect::<Vec<&str>>()
+                    .first()
+                    .unwrap()
+                    .split("/")
+                {
                     id = id.join(x);
-                };
+                }
                 let vec = request.value.split("/").collect::<Vec<&str>>();
                 let file_name = vec.last().unwrap().to_string();
                 let file = id.join("attachments").join(file_name);
@@ -59,11 +71,16 @@ impl RepositoryType for NPMHandler {
                 let mut versions = HashMap::new();
                 for x in result {
                     let buf1 = x.unwrap();
-                    let version: Version = serde_json::from_reader(BufReader::new(File::open(buf1)?))?;
+                    let version: Version =
+                        serde_json::from_reader(BufReader::new(File::open(buf1)?))?;
                     versions.insert(version.version.clone(), version);
                 }
                 let string = serde_json::to_string_pretty(&versions)?;
-                let times = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
+                let times = crate::repository::npm::utils::read_time_file(
+                    &request.storage,
+                    &request.repository,
+                    &request.value,
+                )?;
                 let latest_version = get_latest_version(&times);
                 let version = versions.get(&latest_version).unwrap().clone();
                 let response = GetResponse {
@@ -74,7 +91,7 @@ impl RepositoryType for NPMHandler {
                     times,
                 };
                 println!("{}", &string);
-                return Ok(RepoResponse::Ok_With_JSON(serde_json::to_string(&response)?));
+                return Ok(RepoResponse::OkWithJSON(serde_json::to_string(&response)?));
             }
         } else {
             let buf = build_artifact_directory(&request);
@@ -108,11 +125,21 @@ impl RepositoryType for NPMHandler {
         return Ok(RepoResponse::Ok);
     }
 
-    fn handle_post(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult {
+    fn handle_post(
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+        _bytes: Bytes,
+    ) -> RepoResult {
         return Ok(NotAuthorized);
     }
 
-    fn handle_put(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult {
+    fn handle_put(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+        bytes: Bytes,
+    ) -> RepoResult {
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         if user.is_match(request.value.as_str()) {
             let content = String::from_utf8(bytes.bytes().to_vec()).unwrap();
@@ -120,7 +147,9 @@ impl RepositoryType for NPMHandler {
             let username = request.value.replace("-/user/org.couchdb.user:", "");
             return if is_valid(&username.to_string(), &json, &conn)? {
                 let message = format!("user '{}' created", username);
-                Ok(Created_With_JSON(serde_json::to_string(&LoginResponse { ok: message })?))
+                Ok(CreatedWithJSON(serde_json::to_string(&LoginResponse {
+                    ok: message,
+                })?))
             } else {
                 println!("Five Unauthorized");
                 Ok(NotAuthorized)
@@ -138,7 +167,12 @@ impl RepositoryType for NPMHandler {
             let attachments = artifact.join("attachments");
             create_dir_all(&attachments)?;
 
-            let name = x.0.split("/").collect::<Vec<&str>>().get(1).unwrap().to_string();
+            let name =
+                x.0.split("/")
+                    .collect::<Vec<&str>>()
+                    .get(1)
+                    .unwrap()
+                    .to_string();
             let file = attachments.join(name);
             if file.exists() {
                 remove_file(&file).unwrap();
@@ -147,14 +181,19 @@ impl RepositoryType for NPMHandler {
                 .write(true)
                 .create_new(true)
                 .create(true)
-                .open(file).unwrap();
+                .open(file)
+                .unwrap();
             let result: Attachment = serde_json::from_value(x.1).unwrap();
             let attachment = base64::decode(result.data)?;
 
             file.write_all(&attachment)?;
         }
 
-        let times_json = crate::repository::npm::utils::get_time_file(&request.storage, &request.repository, &request.value);
+        let times_json = crate::repository::npm::utils::get_time_file(
+            &request.storage,
+            &request.repository,
+            &request.value,
+        );
 
         if !times_json.exists() {
             let time = chrono::Utc::now();
@@ -180,7 +219,8 @@ impl RepositoryType for NPMHandler {
             //Append Time
             let time = chrono::Utc::now();
             let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-            let mut times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
+            let mut times_map: HashMap<String, String> =
+                serde_json::from_reader(File::open(&times_json)?)?;
             remove_file(&times_json)?;
             times_map.insert(key.clone(), time);
             let mut times_json = File::create(&times_json)?;
@@ -190,16 +230,33 @@ impl RepositoryType for NPMHandler {
         return Ok(RepoResponse::Ok);
     }
 
-    fn handle_patch(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection, bytes: Bytes) -> RepoResult {
+    fn handle_patch(
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+        _bytes: Bytes,
+    ) -> RepoResult {
         Ok(IAmATeapot("Patch is not handled in NPM".to_string()))
     }
 
-    fn handle_head(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_head(
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+    ) -> RepoResult {
         Ok(IAmATeapot("HEAD is not handled in NPM".to_string()))
     }
 
-    fn handle_versions(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
-        let times_map = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
+    fn handle_versions(
+        request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+    ) -> RepoResult {
+        let times_map = crate::repository::npm::utils::read_time_file(
+            &request.storage,
+            &request.repository,
+            &request.value,
+        )?;
 
         let mut versions = Vec::new();
         for x in times_map {
@@ -211,12 +268,27 @@ impl RepositoryType for NPMHandler {
         return Ok(RepoResponse::VersionListingResponse(versions));
     }
 
-    fn handle_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
-        return Ok(VersionResponse(RepoVersion { version: request.value.split("/").last().unwrap().to_string(), other: HashMap::new() }));
+    fn handle_version(
+        request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+    ) -> RepoResult {
+        return Ok(VersionResponse(RepoVersion {
+            version: request.value.split("/").last().unwrap().to_string(),
+            other: HashMap::new(),
+        }));
     }
 
-    fn handle_project(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
-        let times_map = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
+    fn handle_project(
+        request: &RepositoryRequest,
+        _http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
+        let times_map = crate::repository::npm::utils::read_time_file(
+            &request.storage,
+            &request.repository,
+            &request.value,
+        )?;
 
         let mut versions = Vec::new();
         for x in times_map {
@@ -233,8 +305,16 @@ impl RepositoryType for NPMHandler {
         return Ok(RepoResponse::ProjectResponse(project));
     }
 
-    fn latest_version(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> Result<String, InternalError> {
-        let times_map = crate::repository::npm::utils::read_time_file(&request.storage, &request.repository, &request.value)?;
+    fn latest_version(
+        request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &MysqlConnection,
+    ) -> Result<String, InternalError> {
+        let times_map = crate::repository::npm::utils::read_time_file(
+            &request.storage,
+            &request.repository,
+            &request.value,
+        )?;
         Ok(get_latest_version(&times_map))
     }
 }

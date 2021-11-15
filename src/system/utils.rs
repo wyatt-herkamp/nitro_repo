@@ -154,7 +154,7 @@ pub fn is_authed_deploy(
 
 pub fn is_authed_read(
     user: String,
-    repo: &Repository,
+    _repo: &Repository,
     conn: &MysqlConnection,
 ) -> Result<bool, InternalError> {
     let result = base64::decode(user)?;

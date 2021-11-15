@@ -10,10 +10,10 @@ use crate::error::internal_error::InternalError;
 use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
-    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType, Version,
+    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
 use crate::repository::repository::RepoResponse::{
-    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse, VersionResponse,
+    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;

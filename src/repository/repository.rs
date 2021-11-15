@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
-use crate::repository::models::{PageProvider, Repository, RepositorySummary};
+use crate::repository::models::{Repository, RepositorySummary};
 use crate::storage::models::Storage;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -37,9 +37,9 @@ pub enum RepoResponse {
     /// Ok
     Ok,
     //Ok With Json
-    Ok_With_JSON(String),
+    OkWithJSON(String),
     /// CREATED WITH_JSON
-    Created_With_JSON(String),
+    CreatedWithJSON(String),
     /// Not Found
     NotFound,
     /// Not Authorized
