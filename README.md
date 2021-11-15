@@ -1,5 +1,5 @@
 # nitro_repo
-Nitro Repo is an open source free artifact manager. Written with a Rust back end and a React front end to create a fast and modern experience.
+Nitro Repo is an open source free artifact manager. Written with a Rust back end and a Vue front end to create a fast and modern experience.
 
 
 ## Features
@@ -7,7 +7,7 @@ Nitro Repo is an open source free artifact manager. Written with a Rust back end
 | feature | nitro_repo | StrongBox | Sonatype Nexus |
 |--|--|--|--|
 | Maven | true | true | true |
-| NPM | coming soon | true | true |
+| NPM | Yes but Unstable | true | true |
 | Badge Generation | true | false | false |
 
 
