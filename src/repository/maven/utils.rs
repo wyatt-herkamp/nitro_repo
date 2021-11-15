@@ -21,7 +21,10 @@ pub fn get_versions(path: &PathBuf) -> Vec<Version> {
 
 pub fn get_version(path: &PathBuf) -> Version {
     let mut other = HashMap::new();
-    other.insert("artifacts".to_string(), serde_json::to_value(get_artifacts(path)).unwrap());
+    other.insert(
+        "artifacts".to_string(),
+        serde_json::to_value(get_artifacts(path)).unwrap(),
+    );
     return Version {
         version: path.file_name().unwrap().to_str().unwrap().to_string(),
         other,

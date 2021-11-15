@@ -5,7 +5,11 @@ use crate::error::internal_error::InternalError;
 use crate::repository::npm::models::LoginRequest;
 use crate::system::action::get_user_by_username;
 
-pub fn is_valid(username: &String, request: &LoginRequest, conn: &MysqlConnection) -> Result<bool, InternalError> {
+pub fn is_valid(
+    username: &String,
+    request: &LoginRequest,
+    conn: &MysqlConnection,
+) -> Result<bool, InternalError> {
     let result1 = get_user_by_username(username, conn)?;
     if result1.is_none() {
         return Ok(false);

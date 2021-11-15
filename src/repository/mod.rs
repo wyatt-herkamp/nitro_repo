@@ -8,8 +8,8 @@ pub mod controller;
 pub mod frontend;
 pub mod maven;
 pub mod models;
-pub mod repository;
 mod npm;
+pub mod repository;
 pub mod utils;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
