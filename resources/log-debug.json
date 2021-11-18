@@ -1,0 +1,40 @@
+{
+  "default_loggers": [
+    {
+      "levels": [
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "console",
+          "properties": {
+            "format": "[%module%] %level_{color='true'}%: %message%"
+          }
+        }
+      ]
+    }
+  ],
+  "loggers": [
+    {
+      "module": "nitro_repo",
+      "targets": [
+        {
+          "type": "console",
+          "properties": {
+            "format": "[%module%] %level_{color='true'}%: %message%"
+          }
+        },
+        {
+          "type": "file-logger",
+          "properties": {
+            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
+            "file": "logs/nitro-repo.log"
+          }
+        }
+      ]
+    }
+  ]
+}

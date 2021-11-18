@@ -31,7 +31,7 @@ rand = "0.8.4"
 futures-util = "0.3.17"
 actix-web = { version = "3.3.2" }
 openssl = { version = "0.10", features = ["v110"], optional = true }
-log4rs = "1.0.0"
+nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
 strum = { version = "0.22.0", features = ["derive"] }
 strum_macros = "0.22.0"
