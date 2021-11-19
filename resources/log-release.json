@@ -2,8 +2,6 @@
   "default_loggers": [
     {
       "levels": [
-        "DEBUG",
-        "INFO",
         "WARN",
         "ERROR"
       ],
@@ -39,6 +37,23 @@
           "properties": {
             "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
             "file": "%env_{key='LOG_LOCATION'}%/%module%/nitro-repo.log"
+          }
+        }
+      ]
+    },
+    {
+      "module": "actix_web::middleware::logger",
+      "levels": [
+        "INFO",
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "file-logger",
+          "properties": {
+            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %level%: %message%",
+            "file": "%env_{key='LOG_LOCATION'}%/requests/request.log"
           }
         }
       ]
