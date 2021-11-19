@@ -33,7 +33,7 @@ actix-web = { version = "3.3.2" }
 openssl = { version = "0.10", features = ["v110"], optional = true }
 log4rs = "1.0.0"
 log = "0.4.14"
-strum = { version = "0.22.0", features = ["derive"] }
+strum = { version = "0.23.0", features = ["derive"] }
 strum_macros = "0.22.0"
 derive_more = "0.99.14"
 chrono = "0.4.19"
