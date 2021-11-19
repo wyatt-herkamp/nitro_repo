@@ -24,7 +24,7 @@ r2d2_mysql = "*"
 dotenv = "0.15.0"
 actix = "0.12"
 serde = { version = "1.0.130", features = ["derive"] }
-serde_json = "1.0.70"
+serde_json = "1.0.71"
 futures = "0.3.17"
 actix-files = "0.5.0"
 rand = "0.8.4"
@@ -34,8 +34,8 @@ openssl = { version = "0.10", features = ["v110"], optional = true }
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 #nitro_log = { path = "../nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
-strum = { version = "0.22.0", features = ["derive"] }
-strum_macros = "0.22.0"
+strum = { version = "0.23.0", features = ["derive"] }
+strum_macros = "0.23.0"
 derive_more = "0.99.14"
 chrono = "0.4.19"
 time = "0.3.5"

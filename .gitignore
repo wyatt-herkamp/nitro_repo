@@ -7,3 +7,4 @@ site/node_modules
 site/out
 .next
 config.json
+Cargo.lock
