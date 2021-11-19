@@ -12,8 +12,9 @@ use actix_web::{App, HttpServer, middleware};
 use actix_web::web::PayloadConfig;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use log4rs::config::RawConfig;
 use log::info;
+use nitro_log::config::Config;
+use nitro_log::NitroLogger;
 
 use crate::install::install::Installed;
 use crate::utils::Resources;
@@ -42,15 +43,15 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or("DEBUG".to_string())
         .as_str()
     {
-        "DEBUG" => "log-debug.yml",
-        "RELEASE" => "log-release.yml",
+        "DEBUG" => "log-debug.json",
+        "RELEASE" => "log-release.json",
         _ => {
             panic!("Must be Release or Debug")
         }
     };
-    let config: RawConfig =
-        serde_yaml::from_str(Resources::file_get_string(file).as_str()).unwrap();
-    log4rs::init_raw_config(config).unwrap();
+    let config: Config =
+        serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
+    NitroLogger::load(config, None).unwrap();
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
