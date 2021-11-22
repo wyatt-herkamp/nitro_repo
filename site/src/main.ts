@@ -7,6 +7,8 @@ import Notifications from "@kyvg/vue3-notification";
 
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
+import "~/styles/index.scss";
+
 import VueUploadComponent from "vue-upload-component";
 
 const app = createApp(App);
