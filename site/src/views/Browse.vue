@@ -1,43 +1,52 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
-    <el-breadcrumb separator="/">
-      <el-breadcrumb-item v-for="path in values" :key="path">{{
-        path
-      }}</el-breadcrumb-item>
-    </el-breadcrumb>
+  <el-container
+      v-loading="loading"
+      element-loading-text="Loading..."
+      style="border: 1px solid #eee"
+  >
+    <el-header>
+      <el-breadcrumb :separator-icon="ArrowRight">
+        <el-breadcrumb-item :to="{ path: '/Browse' }"
+        >Browse
+        </el-breadcrumb-item
+        >
+        <el-breadcrumb-item v-for="path in values" :key="path">{{
+            path
+          }}
+        </el-breadcrumb-item>
+      </el-breadcrumb>
+    </el-header>
     <el-main>
-      <h1>Welcome to Nitro Repo Browse 0.1.0</h1>
       <el-table
-        class="pointer"
-        :data="tableData"
-        @row-click="onRowClick"
-        style="width: 100%"
+          class="pointer"
+          :data="tableData"
+          @row-click="onRowClick"
+          style="width: 100%"
       >
-        <el-table-column prop="name" label="name" />
+        <el-table-column prop="name" label="name"/>
       </el-table>
     </el-main>
   </el-container>
 </template>
 
 <script lang="ts">
-import {
-  fileListing,
-  getRepositoriesPublicAccess,
-} from "@/backend/api/Repository";
-import { getStoragesPublicAccess } from "@/backend/api/Storages";
-import { FileResponse } from "@/backend/Response";
+import {fileListing, getRepositoriesPublicAccess,} from "@/backend/api/Repository";
+import {getStoragesPublicAccess} from "@/backend/api/Storages";
+import {FileResponse} from "@/backend/Response";
 import router from "@/router";
-import { defineComponent, ref } from "vue";
-import { useRoute } from "vue-router";
+import {defineComponent, ref} from "vue";
+import {useRoute} from "vue-router";
+import {ArrowRight} from "@element-plus/icons";
 
 export default defineComponent({
   setup() {
     const route = useRoute();
-    let values = ref([""]);
-    const tableData = ref([{}]);const storage = route.params.storage as string;
+    let values = ref<string[]>([]);
+    const tableData = ref([{}]);
+    const storage = route.params.storage as string;
     const repository = route.params.repo as string;
     let catchAll = route.params.catchAll as string;
-
+    const loading = ref(true);
     if (storage != undefined && storage != "") {
       values.value.push(storage);
       if (repository != undefined && repository != "") {
@@ -46,6 +55,7 @@ export default defineComponent({
           for (var s of catchAll.split("/")) {
             values.value.push(s);
           }
+          loading.value = false;
         } else {
           catchAll = "";
         }
@@ -59,8 +69,9 @@ export default defineComponent({
             for (const storage of value) {
               tableData.value.push(storage);
             }
+            loading.value = false;
           } catch (e) {
-            console.log(e);
+            console.error(e);
           }
         };
         getFiles();
@@ -73,8 +84,9 @@ export default defineComponent({
             for (const storage of value) {
               tableData.value.push({ name: storage });
             }
+            loading.value = false;
           } catch (e) {
-            console.log(e);
+            console.error(e);
           }
         };
         getLocalRepos();
@@ -84,16 +96,24 @@ export default defineComponent({
         try {
           const value = (await getStoragesPublicAccess()) as string[];
           for (const storage of value) {
-            console.log(storage);
-            tableData.value.push({ name: storage });
+            tableData.value.push({name: storage});
           }
+          loading.value = false;
         } catch (e) {
-          console.log(e);
+          console.error(e);
         }
       };
       getLocalStorage();
     }
-    return { values, tableData, storage, repository, catchAll };
+    return {
+      loading,
+      values,
+      tableData,
+      storage,
+      repository,
+      catchAll,
+      ArrowRight,
+    };
   },
   methods: {
     onRowClick(row: any) {
@@ -103,7 +123,6 @@ export default defineComponent({
           let data = i as FileResponse;
           if (data.name == value) {
             if (!data.directory) {
-              console.log(data.full_path);
               return;
             }
           }
@@ -114,7 +133,6 @@ export default defineComponent({
         } else {
           url = url + "/" + value;
         }
-        console.log("Path " + url);
         router.push({
           name: "Browse",
           params: {
