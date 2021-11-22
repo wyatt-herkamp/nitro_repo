@@ -92,24 +92,14 @@
 <style scoped>
 </style>
 <script lang="ts">
-import axios from "axios";
-import {
-  AuthToken,
-  BasicResponse,
-  RepoSettings,
-  Repository,
-  DEFAULT_STORAGE,
-  Storage,
-  RepositoryListResponse,
-} from "@/backend/Response";
-import router from "@/router";
-import http, { baseURL } from "@/http-common";
-import { computed, defineComponent, onMounted, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { useRouter } from "vue-router";
-import { getStorage } from "@/backend/api/Storages";
-import { getRepoByID } from "@/backend/api/Repository";
-import MavenUpload from "@/components/upload/MavenUpload.vue";
+import {BasicResponse, DEFAULT_STORAGE, Repository, RepositoryListResponse,} from "@/backend/Response";
+import http, {apiURL} from "@/http-common";
+import {defineComponent, ref} from "vue";
+import {useCookie} from "vue-cookie-next";
+import {useRouter} from "vue-router";
+import {getStorage} from "@/backend/api/Storages";
+import {getRepoByID} from "@/backend/api/Repository";
+
 export default defineComponent({
   props: {
     repo: {
@@ -174,8 +164,8 @@ export default defineComponent({
         )) as Repository;
         repository.value = value;
         exampleBadgeURL.value =
-          baseURL +
-          "/badge/" +
+            apiURL +
+            "/badge/" +
           storage.value.name +
           "/" +
           props.repo.name +

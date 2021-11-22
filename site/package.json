@@ -5,7 +5,10 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "v-dev": "vite",
+    "v-build": "vite build",
+    "v-serve": "vite preview"
   },
   "dependencies": {
     "@element-plus/icons": "^0.0.11",
@@ -26,6 +29,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.18.0",
     "@typescript-eslint/parser": "^4.18.0",
+    "@vitejs/plugin-vue": "^1.10.0",
     "@vue/cli-plugin-babel": "~4.5.15",
     "@vue/cli-plugin-eslint": "~4.5.15",
     "@vue/cli-plugin-router": "~4.5.15",
@@ -39,6 +43,9 @@
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-vue": "^8.0.1",
     "prettier": "2.4.1",
-    "typescript": "~4.5.2"
+    "sass": "^1.43.4",
+    "typescript": "~4.5.2",
+    "unplugin-vue-components": "^0.17.2",
+    "vite": "^2.6.14"
   }
 }
