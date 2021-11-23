@@ -9,7 +9,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_deploy_settings, update_repo};
-use crate::repository::models::{ReportGeneration, ReportValues, Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
+use crate::repository::models::{ReportGeneration, ReportValues, Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility, Webhook};
 use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
@@ -165,7 +165,7 @@ pub async fn add_webhook(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String)>,
-    nc: web::Json<UpdateSettings>,
+    nc: web::Json<Webhook>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -182,19 +182,20 @@ pub async fn add_webhook(
     if repository.is_none() {
         return not_found();
     }
-    return bad_request("This is still under development");
+    let repo = repository.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
+    deploy_settings.add_webhook(nc.0);
+    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
+    APIResponse::respond_new(get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?, &r)
 }
 
-#[post("/api/admin/repository/{storage}/{repo}/modify/deploy/general")]
+#[post("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add/{webhook}")]
 pub async fn remove_webhook(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String)>,
-    nc: web::Json<UpdateSettings>,
+    path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
@@ -208,7 +209,10 @@ pub async fn remove_webhook(
     if repository.is_none() {
         return not_found();
     }
-    return bad_request("This is still under development");
+    let repo = repository.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
+    deploy_settings.remove_hook(path.0.2);
+    APIResponse::respond_new(get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?, &r)
 }
 
 #[post("/api/admin/repository/{storage}/{repo}/modify/settings/general")]

@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::io::Write;
+use std::ops::Deref;
 
 use badge_maker::Style;
 use diesel::{deserialize, MysqlConnection, serialize};
@@ -43,6 +44,19 @@ pub struct Webhook {
     pub id: String,
 }
 
+impl PartialEq<Self> for Webhook {
+    fn eq(&self, other: &Self) -> bool {
+        other.id.eq_ignore_ascii_case(&self.id)
+    }
+}
+
+impl PartialEq<String> for Webhook {
+    fn eq(&self, other: &String) -> bool {
+        self.id.eq(other)
+    }
+}
+
+
 impl Default for ReportGeneration {
     fn default() -> Self {
         return ReportGeneration { active: true, values: vec![DeployerUsername, Time] };
@@ -57,6 +71,26 @@ pub struct DeploySettings {
     pub report_generation: ReportGeneration,
     #[serde(default)]
     pub webhooks: Vec<Webhook>,
+}
+
+impl DeploySettings {
+    pub fn add_webhook(&mut self, webhook: Webhook) {
+        for x in self.webhooks.iter_mut() {
+            if x.deref().eq(&webhook) {
+                //TODO update webhook properties
+                return;
+            }
+        }
+        self.webhooks.push(webhook);
+    }
+    pub fn remove_hook(&mut self, webhook: String) -> Option<Webhook> {
+        let option = self.webhooks.iter().position(|x| { x.eq(&webhook) });
+        return if let Some(value) = option {
+            Some(self.webhooks.remove(value))
+        } else {
+            None
+        };
+    }
 }
 
 impl Default for DeploySettings {
