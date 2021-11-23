@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
+use crate::repository::models::ReportValues::{DeployerUsername, Time};
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
 use crate::storage::action::get_storage_name_by_id;
@@ -23,6 +24,45 @@ pub struct RepositorySummary {
     pub page_provider: PageProvider,
     pub repo_type: String,
     pub visibility: Visibility,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ReportValues {
+    DeployerUsername,
+    Time,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ReportGeneration {
+    pub active: bool,
+    pub values: Vec<ReportValues>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Webhook {
+    pub id: String,
+}
+
+impl Default for ReportGeneration {
+    fn default() -> Self {
+        return ReportGeneration { active: true, values: vec![DeployerUsername, Time] };
+    }
+}
+
+
+#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
+#[sql_type = "Text"]
+pub struct DeploySettings {
+    #[serde(default)]
+    pub report_generation: ReportGeneration,
+    #[serde(default)]
+    pub webhooks: Vec<Webhook>,
+}
+
+impl Default for DeploySettings {
+    fn default() -> Self {
+        return DeploySettings { report_generation: Default::default(), webhooks: vec![] };
+    }
 }
 
 impl RepositorySummary {
@@ -250,6 +290,26 @@ impl ToSql<Text, Mysql> for SecurityRules {
     }
 }
 
+impl FromSql<Text, Mysql> for DeploySettings {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<DeploySettings> {
+        if bytes.is_none() {
+            return deserialize::Result::Ok(DeploySettings::default());
+        }
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
+        let result: DeploySettings = serde_json::from_str(t.as_str())?;
+        Ok(result)
+    }
+}
+
+impl ToSql<Text, Mysql> for DeploySettings {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        let s = serde_json::to_string(&self)?;
+        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "repositories"]
 pub struct Repository {
@@ -259,6 +319,8 @@ pub struct Repository {
     pub storage: i64,
     pub settings: RepositorySettings,
     pub security: SecurityRules,
+    #[serde(default)]
+    pub deploy_settings: DeploySettings,
     pub created: i64,
 }
 
