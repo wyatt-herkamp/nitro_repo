@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
+use std::iter::Map;
 use std::ops::Deref;
 
 use badge_maker::Style;
@@ -10,6 +12,7 @@ use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
@@ -42,6 +45,8 @@ pub struct ReportGeneration {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Webhook {
     pub id: String,
+    pub handler: String,
+    pub settings: HashMap<String, Value>,
 }
 
 impl PartialEq<Self> for Webhook {

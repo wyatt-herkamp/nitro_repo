@@ -1,12 +1,11 @@
-use std::str::ParseBoolError;
-
-use actix_web::HttpResponse;
-
-use actix_web::http::StatusCode;
-use base64::DecodeError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
+
+use actix_web::http::StatusCode;
+use actix_web::HttpResponse;
+use base64::DecodeError;
 
 #[derive(Debug)]
 pub enum InternalError {
@@ -60,6 +59,12 @@ impl From<FromUtf8Error> for InternalError {
     }
 }
 
+impl From<Box<dyn Error>> for InternalError {
+    fn from(err: Box<dyn Error>) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}
+
 impl From<diesel::result::Error> for InternalError {
     fn from(err: diesel::result::Error) -> InternalError {
         InternalError::DBError(err)
@@ -89,6 +94,7 @@ impl From<actix_web::Error> for InternalError {
         InternalError::ActixWebError(err)
     }
 }
+
 impl From<std::io::Error> for InternalError {
     fn from(err: std::io::Error) -> InternalError {
         InternalError::IOError(err)

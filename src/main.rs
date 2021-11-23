@@ -29,6 +29,7 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
+pub mod webhook;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 embed_migrations!();
