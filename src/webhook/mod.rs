@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::DeployInfo;
-
 #[async_trait]
 pub trait WebhookHandler {
     type WebhookConfig;
