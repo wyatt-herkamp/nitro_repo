@@ -73,9 +73,16 @@ export default defineComponent({
       let response: BasicResponse<unknown> = JSON.parse(value);
 
       if (!response.success) {
-        alert("Unable to install");
+        this.$notify({
+          title: "Unable to Install Nitro_Repo. Check Logs",
+          type: "warn",
+        });
       } else {
-        router.push("Home");
+        this.$notify({
+          title:
+            "Nitro_Repo Installed please restart program to load all features",
+          type: "success",
+        });
       }
     },
   },

@@ -6,7 +6,6 @@ use std::string::String;
 use actix_web::HttpRequest;
 use actix_web::web::{Buf, Bytes};
 use diesel::MysqlConnection;
-use futures_util::AsyncWriteExt;
 use regex::Regex;
 
 use crate::error::internal_error::InternalError;

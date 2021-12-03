@@ -1,12 +1,14 @@
-pub mod install;
-
-use actix_web::{get, web};
+use actix_cors::Cors;
+use actix_files::Files;
+use actix_web::{App, HttpServer, middleware, web};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::response::mismatching_passwords;
-use crate::{utils, DbPool};
+use crate::{DbPool, frontend, installed};
 use actix_web::{post, HttpRequest};
+use actix_web::web::PayloadConfig;
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::settings::utils::quick_add;
@@ -14,16 +16,33 @@ use crate::settings::utils::quick_add;
 use crate::system::models::UserPermissions;
 use crate::system::utils::{new_user, NewPassword, NewUser};
 
-pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(install_post).service(installed);
+pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
+    let result = HttpServer::new(move || {
+        App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_header()
+                    .allow_any_method()
+                    .allow_any_origin(),
+            )
+            .wrap(middleware::Logger::default())
+            .data(pool.clone())
+            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .configure(init)
+            .configure(frontend::init)
+            .service(installed)
+            // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
+            .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
+    })
+        .workers(1).bind(std::env::var("ADDRESS").unwrap())?.run().await;
+    info!("Installer Loaded. Only 1 web worker. Please Setup your Environment ");
+    return result;
 }
 
-#[get("/api/installed")]
-pub async fn installed(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
-    let connection = pool.get()?;
-    let result = utils::installed(&connection)?;
-    APIResponse::new(true, Some(result)).respond(&r)
+pub fn init(cfg: &mut web::ServiceConfig) {
+    cfg.service(install_post);
 }
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstallUser {
@@ -64,5 +83,6 @@ pub async fn install_post(pool: web::Data<DbPool>, r: HttpRequest, b: web::Bytes
         env!("CARGO_PKG_VERSION").to_string(),
         &connection,
     )?;
+    info!("Installation Complete");
     APIResponse::new(true, Some(true)).respond(&r)
 }
