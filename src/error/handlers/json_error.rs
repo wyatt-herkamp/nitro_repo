@@ -9,9 +9,6 @@ pub fn json_config() -> JsonConfig {
 
 pub fn handle(payload: JsonPayloadError, _request: &HttpRequest) -> actix_web::Error {
     match payload {
-        JsonPayloadError::Overflow => actix_web::error::ErrorBadRequest(APIResponse::from(
-            RequestErrorResponse::new("Json Overflow", "INTERNAL"),
-        )),
         JsonPayloadError::ContentType => actix_web::error::ErrorBadRequest(APIResponse::from(
             RequestErrorResponse::new("Json Bad Content Type", "CONTENT_TYPE"),
         )),
@@ -21,5 +18,25 @@ pub fn handle(payload: JsonPayloadError, _request: &HttpRequest) -> actix_web::E
         JsonPayloadError::Payload(_) => actix_web::error::ErrorBadRequest(APIResponse::from(
             RequestErrorResponse::new("BAD PAYLOAD", "PAYLOAD"),
         )),
+        JsonPayloadError::OverflowKnownLength { .. } => {
+            actix_web::error::ErrorBadRequest(APIResponse::from(
+                RequestErrorResponse::new("BAD PAYLOAD", "PAYLOAD"),
+            ))
+        }
+        JsonPayloadError::Serialize(_) => {
+            actix_web::error::ErrorBadRequest(APIResponse::from(
+                RequestErrorResponse::new("BAD PAYLOAD", "PAYLOAD"),
+            ))
+        }
+        JsonPayloadError::Overflow { .. }=> {
+            actix_web::error::ErrorBadRequest(APIResponse::from(
+                RequestErrorResponse::new("Json Overflow", "INTERNAL"),
+            ))
+        }
+        _ => {
+            actix_web::error::ErrorBadRequest(APIResponse::from(
+                RequestErrorResponse::new("Json Overflow", "INTERNAL"),
+            ))
+        }
     }
 }

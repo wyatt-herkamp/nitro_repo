@@ -8,15 +8,15 @@ extern crate strum_macros;
 
 use actix_cors::Cors;
 use actix_files::Files;
-use actix_web::{App, HttpServer, middleware};
+use actix_web::{App, HttpRequest, HttpServer, middleware, web};
 use actix_web::web::PayloadConfig;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
+use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::install::install::Installed;
 use crate::utils::Resources;
 
 pub mod api_response;
@@ -32,6 +32,7 @@ pub mod utils;
 pub mod webhook;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
+type Database = web::Data<DbPool>;
 embed_migrations!();
 
 #[actix_web::main]
@@ -62,6 +63,10 @@ async fn main() -> std::io::Result<()> {
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
     std::env::set_var("INSTALLED", "false");
+    if !crate::utils::installed(&connection).unwrap() {
+        info!("Nitro Repo is not installed!!!!! Loading Installer Web Site. SSL will be disabled!");
+        return install::load_installer(pool).await;
+    }
     info!("Initializing Web Server");
     let server = HttpServer::new(move || {
         App::new()
@@ -72,42 +77,47 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin(),
             )
             .wrap(middleware::Logger::default())
-            .data(pool.clone())
-            .wrap(Installed)
-            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
             .configure(error::handlers::init)
             .configure(settings::init)
             .configure(repository::init)
             .configure(storage::admin::init)
             .configure(repository::admin::init)
-            .configure(install::init)
             .configure(system::controllers::init)
             .configure(frontend::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
     #[cfg(feature = "ssl")]
-    {
-        if std::env::var("PRIVATE_KEY").is_ok() {
-            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+        {
+            if std::env::var("PRIVATE_KEY").is_ok() {
+                use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder
-                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-                .unwrap();
-            builder
-                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-                .unwrap();
-            return server
-                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
-                .run()
-                .await;
+                let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+                builder
+                    .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                    .unwrap();
+                builder
+                    .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                    .unwrap();
+                return server
+                    .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                    .run()
+                    .await;
+            }
         }
-    }
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
+}
+
+#[actix_web::get("/api/installed")]
+pub async fn installed(pool: Database, r: HttpRequest) -> SiteResponse {
+    let connection = pool.get()?;
+    let result = crate::utils::installed(&connection)?;
+    APIResponse::new(true, Some(result)).respond(&r)
 }

@@ -6,7 +6,6 @@ use std::string::String;
 use actix_web::HttpRequest;
 use actix_web::web::{Buf, Bytes};
 use diesel::MysqlConnection;
-use futures_util::AsyncWriteExt;
 use regex::Regex;
 
 use crate::error::internal_error::InternalError;
@@ -142,7 +141,7 @@ impl RepositoryType for NPMHandler {
     ) -> RepoResult {
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         if user.is_match(request.value.as_str()) {
-            let content = String::from_utf8(bytes.bytes().to_vec()).unwrap();
+            let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = request.value.replace("-/user/org.couchdb.user:", "");
             return if is_valid(&username.to_string(), &json, &conn)? {
@@ -158,7 +157,7 @@ impl RepositoryType for NPMHandler {
         if !can_deploy_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let value: PublishRequest = serde_json::from_slice(bytes.bytes()).unwrap();
+        let value: PublishRequest = serde_json::from_slice(bytes.as_ref()).unwrap();
         let buf = build_directory(&request);
         let artifact = buf.join(&value.name);
         create_dir_all(&artifact)?;

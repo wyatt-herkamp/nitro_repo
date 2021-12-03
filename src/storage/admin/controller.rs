@@ -49,7 +49,7 @@ pub async fn get_by_id(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let vec = get_storage_by_id(&id.0, &connection)?;
+    let vec = get_storage_by_id(&id.into_inner(), &connection)?;
     if vec.is_none() {
         return not_found();
     }

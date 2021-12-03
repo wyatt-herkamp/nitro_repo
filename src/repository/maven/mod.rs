@@ -5,12 +5,8 @@ use std::io::Write;
 use actix_web::HttpRequest;
 use actix_web::web::{Buf, Bytes};
 use diesel::MysqlConnection;
-use futures_util::{FutureExt, TryFutureExt};
-use log::{debug, error};
-use tokio::task_local;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
@@ -120,21 +116,8 @@ impl RepositoryType for MavenHandler {
             .write(true)
             .create_new(true)
             .create(true)
-            .open(&buf)?;
-        file.write_all(bytes.bytes())?;
-        if buf.ends_with("pom") {
-            let info = DeployInfo {};
-            let repository = request.repository.clone();
-
-            actix_web::rt::spawn(async move {
-                let deploy = handle_post_deploy(&repository, info).await;
-                if let Err(error) = deploy {
-                    error!("Error Handling Post Deploy Tasks {}", error);
-                } else {
-                    debug!("All Post Deploy Tasks Completed and Happy :)");
-                }
-            });
-        }
+            .open(buf)?;
+        file.write_all(bytes.as_ref())?;
         Ok(RepoResponse::Ok)
     }
 

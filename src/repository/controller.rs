@@ -5,11 +5,13 @@ use actix_files::NamedFile;
 use actix_web::{get, head, HttpRequest, HttpResponse, patch, post, put, web};
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
+use diesel::MysqlConnection;
 use log::{debug, error, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
+use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
 use crate::repository::maven::MavenHandler;
@@ -25,6 +27,24 @@ use crate::utils::get_accept;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
     pub repositories: Vec<Repository>,
+}
+
+fn to_request(storage_name: String, repo_name: String, file: String, connection: &MysqlConnection) -> Result<RepositoryRequest, InternalError> {
+    let storage = get_storage_by_name(&storage_name, &connection)?;
+    if storage.is_none() {
+        trace!("Storage {} not found", &storage_name);
+        return Err(InternalError::NotFound);
+    }
+    let storage = storage.unwrap();
+    let repository = get_repo_by_name_and_storage(&repo_name, &storage.id, &connection)?;
+    if repository.is_none() {
+        trace!("Repository {} not found", repo_name);
+        return Err(InternalError::NotFound);
+    }
+    let repository = repository.unwrap();
+
+    let request = RepositoryRequest::new(storage, repository, file);
+    return Ok(request);
 }
 
 #[get("/storages.json")]
@@ -47,9 +67,10 @@ pub async fn browse_storage(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0, &connection)?;
+    let string = path.into_inner();
+    let storage = get_storage_by_name(&string, &connection)?;
     if storage.is_none() {
-        trace!("Storage {} not found", &path.0);
+        trace!("Storage {} not found", &string);
         return not_found();
     }
     let storage = storage.unwrap();
@@ -68,21 +89,19 @@ pub async fn get_repository(
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let storage = get_storage_by_name(&path.0.0, &connection)?;
-    if storage.is_none() {
-        trace!("Storage {} not found", &path.0 .0);
-        return not_found();
+    let (storage, repository, file) = path.into_inner();
+    let result = to_request(storage, repository, file, &connection);
+    if let Err(error) = result {
+        return match error {
+            InternalError::NotFound => {
+                not_found()
+            }
+            _ => {
+                Err(error)
+            }
+        };
     }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
-    if repository.is_none() {
-        trace!("Repository {} not found", &path.0 .1);
-        return not_found();
-    }
-    let repository = repository.unwrap();
-
-    let request = RepositoryRequest::new(storage, repository, path.0.2);
+    let request = result.unwrap();
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
         "npm" => NPMHandler::handle_get(&request, &r, &connection),
@@ -110,7 +129,7 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
                     .body(result1.unwrap()))
             }
         }
-        RepoResponse::FileResponse(file) => Ok(NamedFile::open(file)?.into_response(&r)?),
+        RepoResponse::FileResponse(file) => Ok(NamedFile::open(file)?.into_response(&r)),
         RepoResponse::Ok => APIResponse::new(true, Some(false)).respond(&r),
         RepoResponse::NotFound => {
             if x.contains(&"application/json".to_string()) {
@@ -171,29 +190,19 @@ pub async fn post_repository(
     bytes: Bytes,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let storage = get_storage_by_name(&path.0.0, &connection)?;
-    if storage.is_none() {
-        trace!("Storage {} not found", &path.0 .0);
-        return not_found();
+    let (storage, repository, file) = path.into_inner();
+    let result = to_request(storage, repository, file, &connection);
+    if let Err(error) = result {
+        return match error {
+            InternalError::NotFound => {
+                not_found()
+            }
+            _ => {
+                Err(error)
+            }
+        };
     }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
-    if repository.is_none() {
-        trace!("Repository {} not found", &path.0 .1);
-        return not_found();
-    }
-    let repository = repository.unwrap();
-    if !repository.settings.active {
-        trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
-    }
-
-    let request = RepositoryRequest {
-        storage,
-        repository,
-        value: path.0.2,
-    };
+    let request = result.unwrap();
     debug!(
         "POST {} in {}/{}: Route: {}",
         &request.repository.repo_type,
@@ -221,27 +230,19 @@ pub async fn patch_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0.0, &connection)?;
-    if storage.is_none() {
-        trace!("Storage {} not found", &path.0 .0);
-        return not_found();
+    let (storage, repository, file) = path.into_inner();
+    let result = to_request(storage, repository, file, &connection);
+    if let Err(error) = result {
+        return match error {
+            InternalError::NotFound => {
+                not_found()
+            }
+            _ => {
+                Err(error)
+            }
+        };
     }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
-    if repository.is_none() {
-        trace!("Repository {} not found", &path.0 .1);
-        return not_found();
-    }
-    let repository = repository.unwrap();
-    if !repository.settings.active {
-        trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
-    }
-    let request = RepositoryRequest {
-        storage,
-        repository,
-        value: path.0.2,
-    };
+    let request = result.unwrap();
     debug!(
         "PATCH {} in {}/{}: Route: {}",
         &request.repository.repo_type,
@@ -267,28 +268,19 @@ pub async fn put_repository(
     bytes: Bytes,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let storage = get_storage_by_name(&path.0.0, &connection)?;
-    if storage.is_none() {
-        trace!("Storage {} not found", &path.0 .0);
-        return not_found();
+    let (storage, repository, file) = path.into_inner();
+    let result = to_request(storage, repository, file, &connection);
+    if let Err(error) = result {
+        return match error {
+            InternalError::NotFound => {
+                not_found()
+            }
+            _ => {
+                Err(error)
+            }
+        };
     }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
-    if repository.is_none() {
-        trace!("Repository {} not found", &path.0 .1);
-        return not_found();
-    }
-    let repository = repository.unwrap();
-    if !repository.settings.active {
-        trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
-    }
-    let request = RepositoryRequest {
-        storage,
-        repository,
-        value: path.0.2,
-    };
+    let request = result.unwrap();
     debug!(
         "PUT {} in {}/{}: Route: {}",
         &request.repository.repo_type,
@@ -315,27 +307,19 @@ pub async fn head_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0.0, &connection)?;
-    if storage.is_none() {
-        trace!("Storage {} not found", &path.0 .0);
-        return not_found();
+    let (storage, repository, file) = path.into_inner();
+    let result = to_request(storage, repository, file, &connection);
+    if let Err(error) = result {
+        return match error {
+            InternalError::NotFound => {
+                not_found()
+            }
+            _ => {
+                Err(error)
+            }
+        };
     }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0.1, &storage.id, &connection)?;
-    if repository.is_none() {
-        trace!("Repository {} not found", &path.0 .1);
-        return not_found();
-    }
-    let repository = repository.unwrap();
-    if !repository.settings.active {
-        trace!("Repository {} not active", &path.0 .1);
-        return handle_result(BadRequest("Repo is not active".to_string()), path.0.2, r);
-    }
-    let request = RepositoryRequest {
-        storage,
-        repository,
-        value: path.0.2,
-    };
+    let request = result.unwrap();
     debug!(
         "HEAD {} in {}/{}: Route: {}",
         &request.repository.repo_type,

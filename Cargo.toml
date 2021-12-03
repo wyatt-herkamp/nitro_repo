@@ -17,48 +17,56 @@ assets = [
 ]
 
 [dependencies]
+# Web
+actix = "0.12.0"
+actix-web = { version = "4.0.0-beta.12", features = ["openssl"] }
+actix-cors = "0.6.0-beta.4"
+actix-service = "2.0.1"
+actix-multipart = "0.4.0-beta.8"
+openssl = { version = "0.10", features = ["v110"], optional = true }
+actix-files = "0.6.0-beta.9"
+# Partly Web
+lettre = "0.10.0-rc.4"
+# Database
 diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
 diesel_migrations = "1.4.0"
 r2d2 = "0.8.9"
 r2d2_mysql = "*"
+# Config
 dotenv = "0.15.0"
-actix = "0.12"
+# Serde
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.71"
 futures = "0.3.17"
-actix-files = "0.5.0"
+serde-xml-rs = "0.5.1"
+serde_yaml = { version = "0.8.21" }
+toml = "0.5.8"
+
+# utils
 rand = "0.8.4"
+rand_core = { version = "0.6.3", features = ["std"] }
+rust-embed = { version = "6.2.0", features = ["interpolate-folder-path"] }
+argon2 = "0.3.1"
+chrono = "0.4.19"
+regex = "1.5.4"
+glob = "0.3.0"
 futures-util = "0.3.17"
-actix-web = { version = "3.3.2" }
-openssl = { version = "0.10", features = ["v110"], optional = true }
+time = "0.3.5"
+base64 = "0.13.0"
+# Log
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
-#nitro_log = { path = "../nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
+# Rust Internal
 strum = { version = "0.23.0", features = ["derive"] }
 strum_macros = "0.23.0"
 derive_more = "0.99.14"
-chrono = "0.4.19"
-time = "0.3.5"
-actix-multipart = "0.3.0"
-actix-cors = "0.5.4"
-toml = "0.5.8"
-argon2 = "0.3.1"
-rand_core = { version = "0.6.3", features = ["std"] }
-lettre = "0.10.0-rc.4"
-rust-embed = { version = "6.2.0", features = ["interpolate-folder-path"] }
-serde_yaml = { version = "0.8.21" }
-base64 = "0.13.0"
-serde-xml-rs = "0.5.1"
+
+# Badge Stuff
 badge-maker = "0.1.4"
 usvg = "0.19.0"
 resvg = "0.19.0"
 tiny-skia = "0.6.1"
-actix-service = "1.0.6"
-regex = "1.5.4"
-glob = "0.3.0"
-webhook = "1.0.1"
-async-trait = "0.1.51"
-tokio = "1.14.0"
+
 [features]
 # Defines a feature named `webp` that does not enable any other features.
 ssl = ["openssl", "actix-web/openssl"]
