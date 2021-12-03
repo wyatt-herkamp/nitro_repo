@@ -4,7 +4,7 @@ use std::io::{BufReader, Write};
 use std::string::String;
 
 use actix_web::HttpRequest;
-use actix_web::web::{Buf, Bytes};
+use actix_web::web::{Bytes};
 use diesel::MysqlConnection;
 use regex::Regex;
 

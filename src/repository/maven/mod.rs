@@ -3,7 +3,7 @@ use std::fs::{create_dir_all, OpenOptions, read_dir, remove_file};
 use std::io::Write;
 
 use actix_web::HttpRequest;
-use actix_web::web::{Buf, Bytes};
+use actix_web::web::{ Bytes};
 use diesel::MysqlConnection;
 
 use crate::error::internal_error::InternalError;

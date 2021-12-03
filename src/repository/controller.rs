@@ -18,7 +18,6 @@ use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
-use crate::repository::repository::RepoResponse::BadRequest;
 use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
 
@@ -150,7 +149,7 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
             let result = HttpResponse::Ok()
                 .status(StatusCode::UNAUTHORIZED)
                 .content_type("application/json")
-                .header("WWW-Authenticate", "Basic realm=nitro_repo")
+                .append_header(("WWW-Authenticate", "Basic realm=nitro_repo"))
                 .body(serde_json::to_string(&r).unwrap());
             return Ok(result);
         }
