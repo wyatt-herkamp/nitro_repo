@@ -117,7 +117,7 @@ impl RepositoryType for MavenHandler {
             .create_new(true)
             .create(true)
             .open(buf)?;
-        file.write_all(bytes.bytes())?;
+        file.write_all(bytes.as_ref())?;
         Ok(RepoResponse::Ok)
     }
 

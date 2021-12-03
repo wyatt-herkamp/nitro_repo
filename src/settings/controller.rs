@@ -46,7 +46,7 @@ pub fn default_string() -> String {
 pub async fn about_setting(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    web::Path(setting): web::Path<String>,
+    setting: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -80,7 +80,7 @@ pub async fn update_setting(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     request: web::Json<UpdateSettingRequest>,
-    web::Path(setting): web::Path<String>,
+    setting: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 

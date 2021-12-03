@@ -51,7 +51,7 @@ pub async fn get_repo(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repo = get_repo_by_id(&path.0, &connection)?;
+    let repo = get_repo_by_id(&path.into_inner(), &connection)?;
 
     APIResponse::respond_new(repo, &r)
 }
@@ -62,17 +62,18 @@ pub async fn get_repo_deployer(
     r: HttpRequest,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
+    let (storage, repo) = path.into_inner();
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.deployer {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
-    let repo = get_repo_by_name_and_storage(&path.0 .1, &storage.unwrap().id, &connection)?;
+    let repo = get_repo_by_name_and_storage(&repo, &storage.unwrap().id, &connection)?;
 
     APIResponse::respond_new(repo, &r)
 }
@@ -141,18 +142,20 @@ pub async fn modify_general_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<UpdateSettings>,
 ) -> SiteResponse {
+    let (storage, repo) = path.into_inner();
+
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -169,18 +172,20 @@ pub async fn modify_frontend_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<UpdateFrontend>,
 ) -> SiteResponse {
+    let (storage, repo) = path.into_inner();
+
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -196,24 +201,26 @@ pub async fn modify_security(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
+    let (storage, repo, visibility) = path.into_inner();
+
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let mut repository = repository.unwrap();
     //TODO BAD CODE
-    let visibility = Visibility::from_str(path.0 .2.as_str()).unwrap();
+    let visibility = Visibility::from_str(visibility.as_str()).unwrap();
     repository.security.set_visibility(visibility);
     update_repo(&repository, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
@@ -225,30 +232,31 @@ pub async fn update_deployers_readers(
     r: HttpRequest,
     path: web::Path<(String, String, String, String, String)>,
 ) -> SiteResponse {
+    let (storage, repo,what,action,user) = path.into_inner();
+
     let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    let admin = get_user_by_header(r.headers(), &connection)?;
+    if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let string = path.0 .0;
-    let storage = get_storage_by_name(&string, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let mut repository = repository.unwrap();
-    let user = get_user_by_username(&path.0 .4, &connection)?;
+    let user = get_user_by_username(&user, &connection)?;
     if user.is_none() {
         return not_found();
     }
     let user = user.unwrap();
-    match path.0 .2.as_str() {
-        "deployers" => match path.0 .3.as_str() {
+    match action.as_str(){
+        "deployers" => match what.as_str() {
             "add" => {
                 repository.security.deployers.push(user.id);
             }
@@ -264,7 +272,7 @@ pub async fn update_deployers_readers(
             }
             _ => return bad_request("Must be Add or Remove"),
         },
-        "readers" => match path.0 .3.as_str() {
+        "readers" => match what.as_str() {
             "add" => {
                 repository.security.readers.push(user.id);
             }

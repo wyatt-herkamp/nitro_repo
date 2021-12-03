@@ -41,20 +41,21 @@ fn load_fonts() -> usvg::fontdb::Database {
     fontdb
 }
 
-#[get("/badge/{storage}/{repository}/{file:.*}/badge.{type}")]
+#[get("/badge/{storage}/{repository}/{file:.*}/badge.{typ}")]
 pub async fn badge(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
+    let (storage, repository, file,typ) = path.into_inner();
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repository, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
@@ -62,7 +63,7 @@ pub async fn badge(
     let request = RepositoryRequest {
         storage,
         repository,
-        value: path.0 .2,
+        value: file.clone(),
     };
     let x = if request.value.eq("nitro_repo_example") {
         "example".to_string()
@@ -84,11 +85,11 @@ pub async fn badge(
     if !buf1.exists() {
         create_dir_all(&buf1)?;
     }
-    let typ = path.0 .3;
     let b_s = request.repository.settings.badge;
     let buf = buf1.join(file_name(&b_s, &x, typ.as_str()));
     if buf.exists() {
-        return Ok(NamedFile::open(buf)?.into_response(&r)?);
+        let response = NamedFile::open(buf)?.into_response(&r);
+        return SiteResponse::Ok(response);
     }
     let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
 
@@ -136,5 +137,6 @@ pub async fn badge(
     }
 
     let buf = buf1.join(format!("badge-{}.{}", &x, &typ));
-    Ok(NamedFile::open(buf)?.into_response(&r)?)
+    let response = NamedFile::open(buf)?.into_response(&r);
+    return SiteResponse::Ok(response);
 }
