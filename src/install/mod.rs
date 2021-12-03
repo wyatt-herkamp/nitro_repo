@@ -7,7 +7,6 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::mismatching_passwords;
 use crate::{DbPool, frontend, installed};
 use actix_web::{post, HttpRequest};
-use actix_web::web::PayloadConfig;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -26,8 +25,7 @@ pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
                     .allow_any_origin(),
             )
             .wrap(middleware::Logger::default())
-            .data(pool.clone())
-            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .app_data(web::Data::new(pool.clone()))
             .configure(init)
             .configure(frontend::init)
             .service(installed)

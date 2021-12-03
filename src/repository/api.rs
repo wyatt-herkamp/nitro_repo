@@ -25,21 +25,22 @@ pub async fn get_versions(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
+    let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repository, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let repository = repository.unwrap();
 
     let t = repository.repo_type.clone();
-    let string = path.0 .2.clone();
+    let string = file.clone();
 
     let request = RepositoryRequest {
         storage,
@@ -53,7 +54,7 @@ pub async fn get_versions(
             panic!("Unknown REPO")
         }
     }?;
-    handle_result(x, path.0 .2, r)
+    handle_result(x, file, r)
 }
 
 #[get("/api/project/{storage}/{repository}/{file:.*}")]
@@ -62,21 +63,22 @@ pub async fn get_project(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
+    let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repository, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let repository = repository.unwrap();
 
     let t = repository.repo_type.clone();
-    let string = path.0 .2.clone();
+    let string = file.clone();
 
     let request = RepositoryRequest {
         storage,
@@ -89,7 +91,7 @@ pub async fn get_project(
             panic!("Unknown REPO")
         }
     }?;
-    handle_result(x, path.0 .2, r)
+    handle_result(x, file, r)
 }
 
 #[get("/api/version/{storage}/{repository}/{file:.*}")]
@@ -98,21 +100,22 @@ pub async fn get_version(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
+    let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&path.0 .0, &connection)?;
+    let storage = get_storage_by_name(&storage, &connection)?;
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&path.0 .1, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repository, &storage.id, &connection)?;
     if repository.is_none() {
         return not_found();
     }
     let repository = repository.unwrap();
 
     let t = repository.repo_type.clone();
-    let string = path.0 .2.clone();
+    let string = file.clone();
 
     let request = RepositoryRequest {
         storage,
@@ -125,5 +128,5 @@ pub async fn get_version(
             panic!("Unknown REPO")
         }
     }?;
-    handle_result(x, path.0 .2, r)
+    handle_result(x, file, r)
 }

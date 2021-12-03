@@ -61,7 +61,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
-    std::env::set_var("INSTALLED","false");
+    std::env::set_var("INSTALLED", "false");
     if !crate::utils::installed(&connection).unwrap() {
         info!("Nitro Repo is not installed!!!!! Loading Installer Web Site. SSL will be disabled!");
         return install::load_installer(pool).await;
@@ -76,8 +76,8 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin(),
             )
             .wrap(middleware::Logger::default())
-            .data(pool.clone())
-            .data(PayloadConfig::new(1 * 1024 * 1024 * 1024))
+            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
             .configure(error::handlers::init)
             .configure(settings::init)
             .configure(repository::init)

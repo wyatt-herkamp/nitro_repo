@@ -20,6 +20,7 @@ pub enum InternalError {
     UTF8Error(FromUtf8Error),
     SMTPTransportError(lettre::transport::smtp::Error),
     MissingArgument(String),
+    NotFound,
     Error(String),
 }
 

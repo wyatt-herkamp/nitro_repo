@@ -44,7 +44,7 @@ pub async fn get_user(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repo = get_user_by_id_response(&path.0, &connection)?;
+    let repo = get_user_by_id_response(&path.into_inner(), &connection)?;
 
     APIResponse::respond_new(repo, &r)
 }
@@ -79,7 +79,7 @@ pub async fn add_user(
 pub async fn modify_user(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    web::Path(user): web::Path<String>,
+    user: web::Path<String>,
     nc: web::Json<ModifyUser>,
 ) -> SiteResponse {
     let connection = pool.get()?;
@@ -102,7 +102,7 @@ pub async fn modify_user(
 pub async fn change_password(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    web::Path(user): web::Path<String>,
+    user: web::Path<String>,
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
     let connection = pool.get()?;
@@ -128,7 +128,7 @@ pub async fn change_password(
 pub async fn delete_user(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    web::Path(user): web::Path<String>,
+    user: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
