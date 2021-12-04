@@ -1,7 +1,7 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::str::FromStr;
-use actix_web::{get, HttpRequest, post, patch,delete,web};
+use actix_web::{get, HttpRequest, post, patch,delete,put,web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -354,7 +354,7 @@ pub async fn modify_deploy(
     APIResponse::respond_new(get_repo_by_id(&repository, &connection)?, &r)
 }
 
-#[patch("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add")]
+#[put("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add")]
 pub async fn add_webhook(
     pool: web::Data<DbPool>,
     r: HttpRequest,

@@ -38,7 +38,7 @@ export async function createNewRepository(name: string, storage: string, type: s
             }
         });
 
-} 
+}
 export async function setActiveStatus(id: number, active: boolean, token: string) {
     return await http.patch("/api/admin/repository/" + id + "/active/" + active, {}, {
         headers: {
@@ -223,6 +223,101 @@ export async function setVisibility(id: number, visibility: string, token: strin
 
 } export async function addOrRemoveReadersOrDeployers(id: number, what: string, action: string, user: number, token: string) {
     return await http.patch("/api/admin/repository/" + id + "/modify/security/" + what + "/" + action + "/" + user, {}, {
+        headers: {
+            Authorization: "Bearer " + token,
+        }
+    })
+        .then((result) => {
+            const resultData = result.data;
+            let value = JSON.stringify(resultData);
+
+            let response: BasicResponse<unknown> = JSON.parse(value);
+
+            if (response.success) {
+                return Ok(response.data as Repository);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        }, (err) => {
+            if (err.response) {
+                if (err.response.status = 401) {
+                    return Err(NOT_AUTHORIZED);
+                }
+                return Err(INTERNAL_ERROR);
+            } else if (err.request) {
+                return Err(INTERNAL_ERROR);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        });
+
+}
+
+export async function updateDeployReport(id: number, active: boolean, values: Array<string>, token: string) {
+    return await http.patch("/api/admin/repository/" + id + "/modify/deploy/report", { active: active, values: values }, {
+        headers: {
+            Authorization: "Bearer " + token,
+        }
+    })
+        .then((result) => {
+            const resultData = result.data;
+            let value = JSON.stringify(resultData);
+
+            let response: BasicResponse<unknown> = JSON.parse(value);
+
+            if (response.success) {
+                return Ok(response.data as Repository);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        }, (err) => {
+            if (err.response) {
+                if (err.response.status = 401) {
+                    return Err(NOT_AUTHORIZED);
+                }
+                return Err(INTERNAL_ERROR);
+            } else if (err.request) {
+                return Err(INTERNAL_ERROR);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        });
+
+}
+
+export async function updateOrAddWebhppl(id: number, name: string, handler: string, settings: Map<string, any>, token: string) {
+    return await http.put("/api/admin/repository/" + id + "/modify/deploy/webhook/add", { id: name, handler: handler, settings: settings }, {
+        headers: {
+            Authorization: "Bearer " + token,
+        }
+    })
+        .then((result) => {
+            const resultData = result.data;
+            let value = JSON.stringify(resultData);
+
+            let response: BasicResponse<unknown> = JSON.parse(value);
+
+            if (response.success) {
+                return Ok(response.data as Repository);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        }, (err) => {
+            if (err.response) {
+                if (err.response.status = 401) {
+                    return Err(NOT_AUTHORIZED);
+                }
+                return Err(INTERNAL_ERROR);
+            } else if (err.request) {
+                return Err(INTERNAL_ERROR);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        });
+
+}
+export async function deleteWebhook(id: number, name: string, token: string) {
+    return await http.delete("/api/admin/repository/" + id + "/modify/deploy/webhook/" + name, {
         headers: {
             Authorization: "Bearer " + token,
         }
