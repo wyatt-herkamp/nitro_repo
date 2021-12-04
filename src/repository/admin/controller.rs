@@ -1,15 +1,15 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::str::FromStr;
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, HttpRequest, post, patch,web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_deploy_settings, update_repo};
-use crate::repository::models::{ReportGeneration, Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility, Webhook};
-use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_repo, update_repo_security, update_repo_settings};
+use crate::repository::models::{ReportGeneration , Webhook};
+use crate::repository::action::{update_repo_security, update_repo_settings};
 use crate::repository::models::{BadgeSettings, Frontend, Policy, Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
 use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
@@ -130,7 +130,6 @@ pub async fn add_repo(
 
     APIResponse::from(option).respond(&r)
 }
-
 #[patch("/api/admin/repository/{repo}/active/{active}")]
 pub async fn update_active_status(
     pool: web::Data<DbPool>,
@@ -231,14 +230,27 @@ pub async fn modify_security(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&storage, &connection)?;
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
-    if repository.is_none() {
-        return not_found();
+    let repository = get_repo_by_id(&repo, &connection)?;
+
+    let mut repository = repository.unwrap();
+    repository.security.visibility = visibility;
+    update_repo_security(&repository.id, &repository.security, &connection)?;
+    APIResponse::new(true, Some(repository)).respond(&r)
+}
+
+#[patch("/api/admin/repository/{repo}/clear/security/{what}")]
+pub async fn clear_all(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(i64, String)>,
+) -> SiteResponse {
+    let (repo, what) = path.into_inner();
+
+    let connection = pool.get()?;
+
+    let admin = get_user_by_header(r.headers(), &connection)?;
+    if admin.is_none() || !admin.unwrap().permissions.admin {
+        return unauthorized();
     }
     let repository = get_repo_by_id(&repo, &connection)?;
 
@@ -279,7 +291,7 @@ pub async fn update_deployers_readers(
         return not_found();
     }
     let user = user.unwrap();
-    match action.as_str(){
+    match action.as_str() {
         "deployers" => match what.as_str() {
             "add" => {
                 repository.security.deployers.push(user.id);
