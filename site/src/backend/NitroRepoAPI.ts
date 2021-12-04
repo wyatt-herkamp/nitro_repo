@@ -12,3 +12,11 @@ export const INVALID_LOGIN: APIError = {
     user_friendly_message: "Internal Error Occured ",
     code: 500
 };
+
+export function createAPIError(code: number, message: string): APIError {
+    let value: APIError = {
+        user_friendly_message: message,
+        code: code
+    };
+    return value;
+}

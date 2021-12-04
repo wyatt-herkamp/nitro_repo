@@ -32,7 +32,7 @@ pub fn already_exists() -> SiteResponse {
             error_code: Some("ALREADY_EXISTS".to_string()),
         }),
     )
-        .error(StatusCode::BAD_REQUEST)
+        .error(StatusCode::CONFLICT)
 }
 
 pub fn already_exists_what<T: Into<String>>(value: T) -> SiteResponse {
@@ -43,7 +43,7 @@ pub fn already_exists_what<T: Into<String>>(value: T) -> SiteResponse {
             error_code: Some(value.into()),
         }),
     )
-        .error(StatusCode::BAD_REQUEST)
+        .error(StatusCode::CONFLICT)
 }
 
 pub fn uninstalled() -> SiteResponse {

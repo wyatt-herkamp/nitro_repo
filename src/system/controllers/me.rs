@@ -18,7 +18,7 @@ pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     APIResponse::respond_new(user, &r)
 }
 
-#[post("/api/admin/user/password")]
+#[post("/api/me/user/password")]
 pub async fn change_my_password(
     pool: web::Data<DbPool>,
     r: HttpRequest,

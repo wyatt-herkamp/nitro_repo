@@ -4,9 +4,6 @@ export interface BasicResponse<T> {
   status_code: number;
 }
 
-export interface LoginRequest {
-  auth_token: AuthToken;
-}
 
 export interface Storage {
   id: number;

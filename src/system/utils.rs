@@ -220,7 +220,6 @@ pub struct ModifyUser {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewPassword {
     pub password: String,
-    pub password_two: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
