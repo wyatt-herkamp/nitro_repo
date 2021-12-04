@@ -155,3 +155,8 @@ export interface Project {
   versions: Version[];
   frontend_response: null;
 }
+enum Policy {
+  Release,
+  Snapshot,
+  Mixed,
+}
