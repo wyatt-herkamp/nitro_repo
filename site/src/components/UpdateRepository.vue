@@ -94,6 +94,28 @@
         </el-form-item>
       </el-form>
     </el-tab-pane>
+
+    <el-tab-pane label="Deploy Settings" name="deploy">
+      <el-form label-position="top" :model="repository.deploy_settings">
+        <el-form-item label="Report Values">
+          <el-select-v2
+            v-model="repository.deploy_settings.report_generation.values"
+            :options="options"
+            placeholder="Please select"
+            multiple
+          />
+        </el-form-item>
+        <el-form-item label="Active">
+          <el-checkbox
+            v-model="repository.deploy_settings.report_generation.active"
+            label="Enable Report Generation"
+          ></el-checkbox>
+        </el-form-item>
+        <el-button type="primary" @click="updateReport()"
+          >Update Report Generation</el-button
+        >
+      </el-form>
+    </el-tab-pane>
     <el-tab-pane label="Upload" name="upload"> HI </el-tab-pane>
   </el-tabs>
 </template>
@@ -118,6 +140,7 @@ import {
   setPolicy,
   setVisibility,
   updateBadge,
+  updateDeployReport,
   updateFrontend,
 } from "@/backend/api/admin/Repository";
 
@@ -131,9 +154,10 @@ export default defineComponent({
 
   setup(props) {
     const router = useRouter();
-
-
-
+    const options = ref([
+      { value: "DeployerUsername", label: "Deploy Username" },
+      { value: "Time", label: "Time" },
+    ]);
     let repository = ref<Repository>(DEFAULT_REPO);
     let date = ref<string | undefined>(undefined);
     const cookie = useCookie();
@@ -176,9 +200,6 @@ export default defineComponent({
           "en-US"
         );
         isLoading.value = false;
-
-
-        repository.value = value;
       } catch (e) {
         console.log(e);
       }
@@ -193,6 +214,7 @@ export default defineComponent({
       exampleBadgeURL,
       repository,
       router,
+      options,
     };
   },
   methods: {
@@ -339,6 +361,36 @@ export default defineComponent({
             type: "error",
           });
         }
+      }
+    },
+    async updateReport() {
+      if (this.repository.id == 0) {
+        this.$notify({
+          title: "Unable Update Repository",
+          text: "Repository is still undefined",
+          type: "error",
+        });
+        return;
+      }
+
+      const response = await updateDeployReport(
+        this.repository.id,
+        this.repository.deploy_settings.report_generation.active,
+        this.repository.deploy_settings.report_generation.values,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        console.log(response.val.security.visibility);
+        this.$notify({
+          title: "Updated Report Settings",
+          type: "info",
+        });
+      } else {
+        this.$notify({
+          title: "Unable Update Repository",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
       }
     },
   },
