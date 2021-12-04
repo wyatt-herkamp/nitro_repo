@@ -11,9 +11,11 @@ use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::settings::utils::quick_add;
+use crate::system::action::add_new_user;
 
-use crate::system::models::UserPermissions;
-use crate::system::utils::{new_user, NewPassword, NewUser};
+use crate::system::models::{User, UserPermissions};
+use crate::system::utils::{hash, NewPassword, NewUser};
+use crate::utils::get_current_time;
 
 pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
     let result = HttpServer::new(move || {
@@ -63,17 +65,16 @@ pub async fn install_post(pool: web::Data<DbPool>, r: HttpRequest, b: web::Bytes
     if request.password != request.password_two {
         return mismatching_passwords();
     }
-    let user = NewUser {
+    let user = User {
+        id: 0,
         name: request.name,
-        username: Some(request.username),
-        email: Some(request.email),
-        password: Some(NewPassword {
-            password: request.password,
-            password_two: request.password_two,
-        }),
+        username: request.username,
+        email: request.email,
+        password: hash(request.password)?,
         permissions: UserPermissions::new_owner(),
+        created: get_current_time(),
     };
-    let _result = new_user(user, &connection)?;
+    add_new_user(&user, &connection)?;
 
     quick_add("installed", "true".to_string(), &connection)?;
     quick_add(

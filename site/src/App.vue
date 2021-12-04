@@ -7,7 +7,6 @@
 
 <script lang="ts">
 import userStore from "@/store/user";
-import defaultStore from "@/store/default";
 import Navbar from "@/components/Navbar.vue";
 import router from "@/router";
 import { defineComponent, onBeforeMount, onMounted } from "vue";
@@ -15,9 +14,8 @@ export default defineComponent({
   name: "App",
   components: { Navbar },
   setup() {
-    onBeforeMount(defaultStore.init);
     onBeforeMount(userStore.getUser);
-    return { userStore, defaultStore };
+    return { userStore };
   },
 });
 </script>

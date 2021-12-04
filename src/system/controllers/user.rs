@@ -3,15 +3,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
-use crate::error::response::{bad_request, mismatching_passwords, not_found, unauthorized};
-use crate::system::action::{
-    delete_user_db, get_user_by_id_response, get_user_by_username, get_users, update_user,
-    update_user_password,
-};
-use crate::system::models::UserListResponse;
-use crate::system::utils::{
-    get_user_by_header, ModifyUser, new_user, NewPassword, NewUser, NewUserError,
-};
+use crate::error::response::{already_exists_what, bad_request, mismatching_passwords, not_found, unauthorized};
+use crate::system::action::{add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username, get_users, update_user, update_user_password};
+use crate::system::models::{User, UserListResponse, UserPermissions};
+use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser, NewUserError};
+use crate::utils::get_current_time;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
@@ -61,18 +57,23 @@ pub async fn add_user(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let user = new_user(nc.0, &connection)?;
-    if let Err(e) = user {
-        return match e {
-            NewUserError::UsernameAlreadyExists => bad_request("Username already exists"),
-            NewUserError::UsernameMissing => bad_request("Username Missing"),
-            NewUserError::EmailAlreadyExists => bad_request("Email already exists"),
-            NewUserError::EmailMissing => bad_request("Email Missing"),
-            NewUserError::PasswordDoesNotMatch => mismatching_passwords(),
-            NewUserError::PasswordMissing => bad_request("Password Missing"),
-        };
+    if get_user_by_username(&nc.username, &connection)?.is_some() {
+        return already_exists_what("username");
     }
-    APIResponse::from(user.unwrap()).respond(&r)
+    if get_user_by_email(&nc.email, &connection)?.is_some() {
+        return already_exists_what("email");
+    }
+    let user = User {
+        id: 0,
+        name: nc.0.name,
+        username: nc.0.username,
+        email: nc.0.email,
+        password: hash(nc.0.password)?,
+        permissions: UserPermissions::default(),
+        created: get_current_time(),
+    };
+    add_new_user(&user, &connection)?;
+    APIResponse::from(get_user_by_username(&user.username,&connection)?).respond(&r)
 }
 
 #[post("/api/admin/user/{user}/modify")]
@@ -116,11 +117,9 @@ pub async fn change_password(
         return not_found();
     }
     let user = user.unwrap();
-    let string = nc.0.hash()?;
-    if string.is_none() {
-        return mismatching_passwords();
-    }
-    update_user_password(&user.id, string.unwrap(), &connection)?;
+    let string = hash(nc.0.password)?;
+
+    update_user_password(&user.id, string, &connection)?;
     APIResponse::from(Some(user)).respond(&r)
 }
 

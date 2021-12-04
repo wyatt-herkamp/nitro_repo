@@ -3,21 +3,11 @@ export interface BasicResponse<T> {
   data: T;
   status_code: number;
 }
-export interface APIError {
-  user_friendly_message: string;
-  error_code: string;
-}
 
 export interface LoginRequest {
   auth_token: AuthToken;
 }
-export interface AuthToken {
-  id: number;
-  user: number;
-  token: string;
-  expiration: number;
-  created: number;
-}
+
 export interface Storage {
   id: number;
   name: string;

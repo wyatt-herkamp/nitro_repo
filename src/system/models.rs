@@ -24,6 +24,7 @@ pub struct User {
     pub permissions: UserPermissions,
     pub created: i64,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct UserListResponse {
     pub id: i64,
@@ -72,6 +73,12 @@ impl UserPermissions {
             admin: true,
             deployer: true,
         }
+    }
+}
+
+impl Default for UserPermissions {
+    fn default() -> Self {
+        UserPermissions { admin: false, deployer: false }
     }
 }
 

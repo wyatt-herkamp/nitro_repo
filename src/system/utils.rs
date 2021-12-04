@@ -2,12 +2,14 @@ use actix_web::http::HeaderMap;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
+use diesel::insertable::ColumnInsertValue::Default;
 use diesel::MysqlConnection;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
+use crate::error::response::already_exists;
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
@@ -203,10 +205,9 @@ pub fn user_has_read_access(user: &User, repo: &Repository) -> Result<bool, Inte
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {
     pub name: String,
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub password: Option<NewPassword>,
-    pub permissions: UserPermissions,
+    pub username: String,
+    pub email: String,
+    pub password: String
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -232,64 +233,17 @@ pub enum NewUserError {
     PasswordMissing,
 }
 
-impl NewPassword {
-    pub fn hash(&self) -> Result<Option<String>, InternalError> {
-        if self.password != self.password_two {
-            return Ok(None);
-        }
-        let salt = SaltString::generate(&mut OsRng);
+pub fn hash(password: String) -> Result<String, InternalError> {
+    let salt = SaltString::generate(&mut OsRng);
 
-        let argon2 = Argon2::default();
-        let password_hash = argon2
-            .hash_password(self.password.as_bytes(), salt.as_ref())
-            .unwrap()
-            .to_string();
-        Ok(Some(password_hash))
-    }
+    let argon2 = Argon2::default();
+    let password_hash = argon2
+        .hash_password(password.as_bytes(), salt.as_ref())?
+        .to_string();
+    Ok(password_hash)
 }
 
-pub fn new_user(
-    new_user: NewUser,
-    conn: &MysqlConnection,
-) -> Result<Result<Option<User>, NewUserError>, InternalError> {
-    if new_user.username.is_none() {
-        return Ok(Err(NewUserError::UsernameMissing));
-    }
-    let username = new_user.username.unwrap();
-    if new_user.email.is_none() {
-        return Ok(Err(NewUserError::EmailMissing));
-    }
-    if new_user.password.is_none() {
-        return Ok(Err(NewUserError::PasswordMissing));
-    }
-    let password = new_user.password.unwrap().hash()?;
-    if password.is_none() {
-        return Ok(Err(PasswordDoesNotMatch));
-    }
-    let password = password.unwrap();
-    let email = new_user.email.unwrap();
-    let option = system::action::get_user_by_username(&username, conn)?;
-    if option.is_some() {
-        return Ok(Err(UsernameAlreadyExists));
-    }
-    let option = system::action::get_user_by_email(&email, conn)?;
-    if option.is_some() {
-        return Ok(Err(EmailAlreadyExists));
-    }
 
-    let user = User {
-        id: 0,
-        name: new_user.name,
-        username,
-        email,
-        password,
-        permissions: new_user.permissions,
-        created: get_current_time(),
-    };
-    add_new_user(&user, conn)?;
-    let user = get_user_by_username(&user.username, conn)?;
-    Ok(Ok(user))
-}
 
 pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, InternalError> {
     loop {

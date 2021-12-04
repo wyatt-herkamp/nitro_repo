@@ -155,6 +155,7 @@ export default defineComponent({
       }
     };
     getStorageByID();
+    console.log(apiURL);
     const getRepo = async () => {
       isLoading.value = true;
       try {
