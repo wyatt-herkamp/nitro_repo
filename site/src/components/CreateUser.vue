@@ -40,7 +40,8 @@
 
 <script lang="ts">
 import axios from "axios";
-import { AuthToken, BasicResponse, User } from "@/backend/Response";
+import { BasicResponse, User } from "@/backend/Response";
+import { createNewUser } from "@/backend/api/admin/User";
 import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
@@ -69,33 +70,21 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      let newUser = {
-        name: this.form.name,
-        username: this.form.username,
-        email: this.form.email,
-        password: this.form.password,
-        permissions: { deployer: false, admin: false },
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post("/api/admin/user/add", body, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + this.$cookie.getCookie("token"),
-        },
-      });
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
+      if (this.form.password.password != this.form.password.password_two) {
+        this.$notify({
+          title: "Passwords do not match",
+          type: "error",
+        });
       }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        let data = response.data as User;
+      const response = await createNewUser(
+        this.form.name,
+        this.form.username,
+        this.form.password.password,
+        this.form.email,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        let data = response.val as User;
         this.$props.updateList(data.id);
         this.$notify({
           title: "User Created",
@@ -104,7 +93,7 @@ export default defineComponent({
       } else {
         this.$notify({
           title: "Unable to Create user",
-          text: JSON.stringify(response.data),
+          text: JSON.stringify(response.val.user_friendly_message),
           type: "error",
         });
       }

@@ -42,7 +42,7 @@
 
 <script lang="ts">
 import axios from "axios";
-import { AuthToken, BasicResponse } from "@/backend/Response";
+import { BasicResponse } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
 import { computed, defineComponent, onMounted, ref } from "vue";
@@ -70,33 +70,7 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      let newUser = {
-        name: this.form.name,
-        public_name: this.form.public_name,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post("/api/admin/storages/update", body, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + this.$cookie.getCookie("token"),
-        },
-      });
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        this.form.error = "Unable to Update Storage";
-      } else {
-        this.form.error = "Unable to Update Storage";
-      }
+      console.log("Ouch");
     },
   },
 });

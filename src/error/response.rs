@@ -13,7 +13,7 @@ pub fn mismatching_passwords() -> SiteResponse {
             error_code: Some("MISMATCHING_PASSWORDS".to_string()),
         }),
     )
-    .error(StatusCode::BAD_REQUEST)
+        .error(StatusCode::BAD_REQUEST)
 }
 
 pub fn not_found() -> SiteResponse {
@@ -32,7 +32,18 @@ pub fn already_exists() -> SiteResponse {
             error_code: Some("ALREADY_EXISTS".to_string()),
         }),
     )
-    .error(StatusCode::BAD_REQUEST)
+        .error(StatusCode::CONFLICT)
+}
+
+pub fn already_exists_what<T: Into<String>>(value: T) -> SiteResponse {
+    APIResponse::new(
+        false,
+        Some(RequestErrorResponse {
+            user_friendly_message: None,
+            error_code: Some(value.into()),
+        }),
+    )
+        .error(StatusCode::CONFLICT)
 }
 
 pub fn uninstalled() -> SiteResponse {
@@ -43,7 +54,7 @@ pub fn uninstalled() -> SiteResponse {
             error_code: Some("UNINSTALLED".to_string()),
         }),
     )
-    .error(StatusCode::BAD_GATEWAY)
+        .error(StatusCode::BAD_GATEWAY)
 }
 
 pub fn i_am_a_teapot<S: Into<String>>(value: S) -> SiteResponse {
@@ -54,7 +65,7 @@ pub fn i_am_a_teapot<S: Into<String>>(value: S) -> SiteResponse {
             error_code: None,
         }),
     )
-    .error(StatusCode::IM_A_TEAPOT)
+        .error(StatusCode::IM_A_TEAPOT)
 }
 
 pub fn bad_request<S: Into<String>>(value: S) -> SiteResponse {
@@ -65,7 +76,7 @@ pub fn bad_request<S: Into<String>>(value: S) -> SiteResponse {
             error_code: None,
         }),
     )
-    .error(StatusCode::BAD_REQUEST)
+        .error(StatusCode::BAD_REQUEST)
 }
 
 pub fn missing_arguments<S: Into<String>>(value: S) -> SiteResponse {
@@ -76,7 +87,7 @@ pub fn missing_arguments<S: Into<String>>(value: S) -> SiteResponse {
             error_code: Some("MISSING_ARGUMENT".to_string()),
         }),
     )
-    .error(StatusCode::BAD_REQUEST)
+        .error(StatusCode::BAD_REQUEST)
 }
 
 pub fn error<S: Into<String>>(value: S, status: Option<StatusCode>) -> SiteResponse {
@@ -87,5 +98,5 @@ pub fn error<S: Into<String>>(value: S, status: Option<StatusCode>) -> SiteRespo
             error_code: None,
         }),
     )
-    .error(status.unwrap_or(StatusCode::BAD_REQUEST))
+        .error(status.unwrap_or(StatusCode::BAD_REQUEST))
 }

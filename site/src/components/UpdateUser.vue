@@ -4,6 +4,7 @@
     default-active="0"
     class="el-menu-demo"
     mode="horizontal"
+    v-loading="isLoading"
   >
     <el-menu-item @click="tab = 0" index="0">General Settings</el-menu-item>
     <el-menu-item @click="tab = 1" index="1">Password</el-menu-item>
@@ -25,10 +26,10 @@
     <el-form label-position="top" :model="settingForm" label-width="120px">
       <el-form-item>
         <el-form-item label="Name">
-          <el-input :disabled="me" v-model="settingForm.name"></el-input>
+          <el-input v-model="settingForm.name"></el-input>
         </el-form-item>
         <el-form-item label="Email">
-          <el-input :disabled="me" v-model="settingForm.email"></el-input>
+          <el-input v-model="settingForm.email"></el-input>
         </el-form-item>
         <!--Yeah, I know. But please don't judge -->
         <el-button
@@ -77,24 +78,20 @@
     </el-form>
   </div>
   <div v-if="tab == 2">
-    <el-alert
-      v-if="permissions.error.length != 0"
-      :title="permissions.error"
-      type="error"
-      closable="false"
-    />
-    <el-form label-position="top" :model="permissions" label-width="120px">
+    <el-form label-position="top" :model="user.permissions" label-width="120px">
       <el-form-item>
         <el-form-item label="Admin">
-          <el-switch :disabled="me" v-model="permissions.admin" />
+          <el-switch
+            v-model="user.permissions.admin"
+            @change="onPermissionUpdate('admin')"
+          />
         </el-form-item>
         <el-form-item label="Deployer">
-          <el-switch :disabled="me" v-model="permissions.deployer" />
+          <el-switch
+            v-model="user.permissions.deployer"
+            @change="onPermissionUpdate('deployer')"
+          />
         </el-form-item>
-        <!--Yeah, I know. But please don't judge -->
-        <el-button :disabled="me" type="primary" @click="onPermissionUpdate"
-          >Update Permissions</el-button
-        >
       </el-form-item>
     </el-form>
   </div>
@@ -103,7 +100,6 @@
 <script lang="ts">
 import axios from "axios";
 import {
-  AuthToken,
   BasicResponse,
   RepoSettings,
   Repository,
@@ -119,16 +115,18 @@ import { useCookie } from "vue-cookie-next";
 import { useRouter } from "vue-router";
 import { getStorage } from "@/backend/api/Storages";
 import { getUser, getUserByID } from "@/backend/api/User";
+import {
+  updateNameAndEmail,
+  updateOtherPassword,
+  updatePermission,
+} from "@/backend/api/admin/User";
+import { ANON_USER } from "@/store/user";
 
 export default defineComponent({
   props: {
     userResponse: {
       required: false,
       type: Object as () => UserListResponse,
-    },
-    me: {
-      required: true,
-      type: Boolean,
     },
   },
 
@@ -144,29 +142,19 @@ export default defineComponent({
       confirm: "",
       error: "",
     });
-    let permissions = ref({
-      admin: false,
-      deployer: false,
-      error: "",
-    });
     const isLoading = ref(false);
     const error = ref("");
     const cookie = useCookie();
     const tab = ref(0);
-    const user = ref<User | undefined>(undefined);
+    const user = ref<User>(ANON_USER);
     const loadUser = async () => {
       isLoading.value = true;
       try {
-        let value = undefined;
-        console.log(props.userResponse);
-        if (props.me) {
-          value = await getUser(cookie.getCookie("token"));
-        } else {
-          value = (await getUserByID(
-            cookie.getCookie("token"),
-            (props.userResponse as UserListResponse).id
-          )) as User;
-        }
+        let value = (await getUserByID(
+          cookie.getCookie("token"),
+          (props.userResponse as UserListResponse).id
+        )) as User;
+
         user.value = value as User;
 
         isLoading.value = false;
@@ -181,148 +169,117 @@ export default defineComponent({
           confirm: "",
           error: "",
         };
-        permissions.value = {
-          admin: user.value.permissions.admin,
-          deployer: user.value.permissions.deployer,
-          error: "",
-        };
       } catch (e) {
         error.value = "";
       }
     };
     loadUser();
 
-    return { user, settingForm, password, tab, permissions };
+    return { user, settingForm, password, tab, isLoading };
   },
   methods: {
     settingButton() {
       if (this.user == undefined) return true;
       let user = this.user as User;
       return (
-        this.$props.me ||
-        (user.name == this.settingForm.name &&
-          user.email == this.settingForm.email)
+        user.name == this.settingForm.name &&
+        user.email == this.settingForm.email
       );
     },
     async onSettingSubmit() {
       if (this.user == undefined) {
-        return;
-      }
-      let newUser = {
-        email: this.settingForm.email,
-        name: this.settingForm.name,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post(
-        "/api/admin/user/" + this.user.username + "/modify",
-        body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + this.$cookie.getCookie("token"),
-          },
-        }
-      );
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
         this.$notify({
-          title: "Updated User",
+          title: "Unable Update Name and Email",
+          text: "User is still undefined",
+          type: "error",
+        });
+        return;
+      }
+
+      const response = await updateNameAndEmail(
+        this.user.username,
+        this.settingForm.name,
+        this.settingForm.email,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        let data = response.val as User;
+        this.$notify({
+          title: "User Updated",
           type: "success",
         });
+        this.user = data;
       } else {
-        this.settingForm.error = "Unable to Update user";
-        console.log(response);
+        this.$notify({
+          title: "Unable Update User",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
       }
     },
-    async onPermissionUpdate() {
+    async onPermissionUpdate(permission: string) {
       if (this.user == undefined) {
-        return;
-      }
-      let newUser = {
-        permissions: {
-          deployer: this.permissions.deployer,
-          admin: this.permissions.admin,
-        },
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post(
-        "/api/admin/user/" + this.user.username + "/modify",
-        body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + this.$cookie.getCookie("token"),
-          },
-        }
-      );
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
         this.$notify({
-          title: "Updated User",
-          type: "success",
+          title: "Unable Update Permission",
+          text: "User is still undefined",
+          type: "error",
+        });
+        return;
+      }
+      let user = this.user as User;
+      let value: boolean = user.permissions[permission];
+
+      const response = await updatePermission(
+        this.user.username,
+        permission,
+        value,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        this.$notify({
+          title: "Updated Permission: " + permission + ": " + value,
+          type: "info",
         });
       } else {
-        this.settingForm.error = "Unable to Update user";
-        console.log(response);
+        this.$notify({
+          title: "Unable Update Password",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
       }
     },
     async updatePassword() {
       if (this.user == undefined) {
+        this.$notify({
+          title: "Unable Update Password",
+          text: "User is still undefined",
+          type: "error",
+        });
         return;
       }
-      let newUser = {
-        password: this.password.password,
-        password_two: this.password.confirm,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post(
-        this.$props.me
-          ? "/api/admin/user/password"
-          : "/api/admin/user/" + this.user.username + "/password",
-        body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + this.$cookie.getCookie("token"),
-          },
-        }
+      if (this.password.password != this.password.confirm) {
+        this.$notify({
+          title: "Passwords do not match",
+          type: "error",
+        });
+      }
+      const response = await updateOtherPassword(
+        this.user.username,
+        this.password.password,
+        this.$cookie.getCookie("token")
       );
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        this.settingForm.success = "Updated User";
+      if (response.ok) {
+        let data = response.val as User;
+        this.$notify({
+          title: "Password Updated",
+          type: "success",
+        });
       } else {
-        this.settingForm.error = "Unable to Update user";
-        console.log(response);
+        this.$notify({
+          title: "Unable Update Password",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
       }
     },
   },

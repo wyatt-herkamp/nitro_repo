@@ -45,7 +45,6 @@
 <script lang="ts">
 import axios from "axios";
 import {
-  AuthToken,
   BasicResponse,
   DEFAULT_STORAGE_LIST,
   Repository,
@@ -55,7 +54,7 @@ import http from "@/http-common";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { getStorages } from "@/backend/api/Storages";
-
+import { createNewRepository } from "@/backend/api/admin/Repository";
 export default defineComponent({
   props: {
     updateList: {
@@ -97,32 +96,14 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      let newUser = {
-        name: this.form.name,
-        storage: this.form.storage,
-        repo: this.form.type,
-        settings: {},
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post("/api/admin/repository/add", body, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + this.$cookie.getCookie("token"),
-        },
-      });
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        let data = response.data as Repository;
+      const response = await createNewRepository(
+        this.form.name,
+        this.form.storage,
+        this.form.type,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        let data = response.val as Repository;
         this.$props.updateList(data.id);
         this.$notify({
           title: "Repository Created",
@@ -131,7 +112,7 @@ export default defineComponent({
       } else {
         this.$notify({
           title: "Unable to Create Repository",
-          text: JSON.stringify(response.data),
+          text: JSON.stringify(response.val.user_friendly_message),
           type: "error",
         });
       }

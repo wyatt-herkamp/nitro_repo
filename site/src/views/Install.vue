@@ -35,6 +35,7 @@
 
 <script lang="ts">
 import { BasicResponse } from "@/backend/Response";
+import { installRequest } from "@/backend/api/Install";
 import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
@@ -52,36 +53,22 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      let newUser = {
-        name: this.form.name,
-        username: this.form.username,
-        email: this.form.email,
-        password: this.form.password,
-        password_two: this.form.confirm_password,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post("install", body);
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (!response.success) {
+      let install = await installRequest(
+        this.form.name,
+        this.form.username,
+        this.form.password,
+        this.form.confirm_password,
+        this.form.email
+      );
+      if (install.ok && install.val) {
         this.$notify({
           title: "Unable to Install Nitro_Repo. Check Logs",
-          type: "warn",
-        });
-      } else {
-        this.$notify({
-          title:
-            "Nitro_Repo Installed please restart program to load all features",
           type: "success",
+        });
+      } else if (install.err) {
+        this.$notify({
+          title: install.val.user_friendly_message,
+          type: "warn",
         });
       }
     },

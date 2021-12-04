@@ -178,6 +178,17 @@ pub struct RepositorySettings {
     pub badge: BadgeSettings,
 }
 
+impl Default for RepositorySettings {
+    fn default() -> Self {
+        RepositorySettings {
+            active: true,
+            policy: Policy::Mixed,
+            frontend: Default::default(),
+            badge: Default::default(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateSettings {
     pub active: bool,
