@@ -39,7 +39,7 @@ pub enum ReportValues {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ReportGeneration {
     pub active: bool,
-    pub values: Vec<ReportValues>,
+    pub values: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -64,7 +64,7 @@ impl PartialEq<String> for Webhook {
 
 impl Default for ReportGeneration {
     fn default() -> Self {
-        return ReportGeneration { active: true, values: vec![DeployerUsername, Time] };
+        return ReportGeneration { active: true, values: vec!["DeployerUsername".to_string(), "Time".to_string()] };
     }
 }
 
