@@ -32,12 +32,12 @@ pub fn update_user(user: i64, e: &String, n: &String, conn: &MysqlConnection) ->
 
 pub fn update_user_password(
     user: &i64,
-    _password: String,
+    p: String,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let _result1 = diesel::update(users.filter(id.eq(user)))
-        .set((password.eq(password), ))
+        .set((password.eq(p), ))
         .execute(conn);
     Ok(())
 }
