@@ -97,7 +97,7 @@ pub async fn modify_user(
     APIResponse::from((get_user_by_username(&name, &connection)?)).respond(&r)
 }
 
-#[post("/api/admin/user/{user}/modify/permission/{permission}/{value}")]
+#[patch("/api/admin/user/{user}/modify/permission/{permission}/{value}")]
 pub async fn update_permission(
     pool: web::Data<DbPool>,
     r: HttpRequest,

@@ -11,12 +11,12 @@ pub fn get_users(conn: &MysqlConnection) -> Result<Vec<UserListResponse>, diesel
 
 
 
-pub fn update_user(user: i64, email: &String, username: &String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn update_user(user: i64, e: &String, n: &String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let _result1 = diesel::update(users.filter(id.eq(user)))
         .set((
-            email.eq(email),
-            name.eq(name),
+            email.eq(e),
+            name.eq(n),
         ))
         .execute(conn);
     Ok(())

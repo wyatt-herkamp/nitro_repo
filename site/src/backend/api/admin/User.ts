@@ -77,10 +77,10 @@ export async function updateOtherPassword(user: string, password: string, token:
         });
 
 }
-export async function updateNameAndPassword(user: string, name: string, email: string, token: string) {
+export async function updateNameAndEmail(user: string, name: string, email: string, token: string) {
 
 
-    return await http.post("/api/admin/user/" + user + "/modify", { name: name, email: email }, {
+    return await http.patch("/api/admin/user/" + user + "/modify", { name: name, email: email }, {
         headers: {
             Authorization: "Bearer " + token,
         }
@@ -112,7 +112,7 @@ export async function updateNameAndPassword(user: string, name: string, email: s
 } export async function updatePermission(user: string, perm: string, value: boolean, token: string) {
 
 
-    return await http.post("/api/admin/user/" + user + "/permission/" + perm + "/" + value, {}, {
+    return await http.patch("/api/admin/user/" + user + "/modify/permission/" + perm + "/" + value, {}, {
         headers: {
             Authorization: "Bearer " + token,
         }
