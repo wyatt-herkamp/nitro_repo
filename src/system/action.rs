@@ -2,24 +2,34 @@ use diesel::MysqlConnection;
 use diesel::prelude::*;
 
 use crate::{system, utils};
-use crate::system::models::{AuthToken, SessionToken, User, UserListResponse, UserResponse};
+use crate::system::models::{AuthToken, SessionToken, User, UserListResponse, UserPermissions, UserResponse};
 
 pub fn get_users(conn: &MysqlConnection) -> Result<Vec<UserListResponse>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
     users.select((id, name)).load::<UserListResponse>(conn)
 }
-pub fn update_user(user: &User, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+
+
+
+pub fn update_user(user: i64, email: &String, username: &String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
-    let _result1 = diesel::update(users.filter(id.eq(user.id)))
+    let _result1 = diesel::update(users.filter(id.eq(user)))
         .set((
-            password.eq(user.password.clone()),
-            email.eq(user.email.clone()),
-            name.eq(user.name.clone()),
-            permissions.eq(user.permissions.clone()),
+            email.eq(email),
+            name.eq(name),
         ))
         .execute(conn);
     Ok(())
+}pub fn update_user_permissions(user: &i64, perms: &UserPermissions,conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::users::dsl::*;
+    let _result1 = diesel::update(users.filter(id.eq(user)))
+        .set((
+            permissions.eq(perms),
+      ))
+        .execute(conn);
+    Ok(())
 }
+
 pub fn update_user_password(
     user: &i64,
     _password: String,
@@ -27,7 +37,7 @@ pub fn update_user_password(
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let _result1 = diesel::update(users.filter(id.eq(user)))
-        .set((password.eq(password),))
+        .set((password.eq(password), ))
         .execute(conn);
     Ok(())
 }
@@ -45,6 +55,7 @@ pub fn get_user_by_id(
 
     Ok(found_mod)
 }
+
 pub fn get_user_by_id_response(
     d: &i64,
     conn: &MysqlConnection,

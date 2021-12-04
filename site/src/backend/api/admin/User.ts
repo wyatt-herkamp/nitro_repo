@@ -76,4 +76,69 @@ export async function updateOtherPassword(user: string, password: string, token:
             }
         });
 
+}
+export async function updateNameAndPassword(user: string, name: string, email: string, token: string) {
+
+
+    return await http.post("/api/admin/user/" + user + "/modify", { name: name, email: email }, {
+        headers: {
+            Authorization: "Bearer " + token,
+        }
+    })
+        .then((result) => {
+            const resultData = result.data;
+            let value = JSON.stringify(resultData);
+
+            let response: BasicResponse<unknown> = JSON.parse(value);
+
+            if (response.success) {
+                return Ok(response.data as User);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        }, (err) => {
+            if (err.response) {
+                if (err.response.status = 401) {
+                    return Err(NOT_AUTHORIZED);
+                }
+                return Err(INTERNAL_ERROR);
+            } else if (err.request) {
+                return Err(INTERNAL_ERROR);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        });
+
+} export async function updatePermission(user: string, perm: string, value: boolean, token: string) {
+
+
+    return await http.post("/api/admin/user/" + user + "/permission/" + perm + "/" + value, {}, {
+        headers: {
+            Authorization: "Bearer " + token,
+        }
+    })
+        .then((result) => {
+            const resultData = result.data;
+            let value = JSON.stringify(resultData);
+
+            let response: BasicResponse<unknown> = JSON.parse(value);
+
+            if (response.success) {
+                return Ok(response.data as User);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        }, (err) => {
+            if (err.response) {
+                if (err.response.status = 401) {
+                    return Err(NOT_AUTHORIZED);
+                }
+                return Err(INTERNAL_ERROR);
+            } else if (err.request) {
+                return Err(INTERNAL_ERROR);
+            } else {
+                return Err(INTERNAL_ERROR);
+            }
+        });
+
 } 

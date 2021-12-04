@@ -212,9 +212,8 @@ pub struct NewUser {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModifyUser {
-    pub name: Option<String>,
-    pub email: Option<String>,
-    pub permissions: Option<UserPermissions>,
+    pub name: String,
+    pub email: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

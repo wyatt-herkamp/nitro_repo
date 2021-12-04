@@ -11,6 +11,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(user::get_user)
         .service(user::delete_user)
         .service(user::modify_user)
+        .service(user::update_permission)
         .service(user::change_password)
         .service(me::change_my_password)
         .service(me::me);

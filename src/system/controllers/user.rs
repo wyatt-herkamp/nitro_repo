@@ -1,10 +1,10 @@
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, HttpRequest, post, patch, web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
 use crate::error::response::{already_exists_what, bad_request, mismatching_passwords, not_found, unauthorized};
-use crate::system::action::{add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username, get_users, update_user, update_user_password};
+use crate::system::action::{add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username, get_users, update_user, update_user_password, update_user_permissions};
 use crate::system::models::{User, UserListResponse, UserPermissions};
 use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser, NewUserError};
 use crate::utils::get_current_time;
@@ -73,18 +73,38 @@ pub async fn add_user(
         created: get_current_time(),
     };
     add_new_user(&user, &connection)?;
-    APIResponse::from(get_user_by_username(&user.username,&connection)?).respond(&r)
+    APIResponse::from(get_user_by_username(&user.username, &connection)?).respond(&r)
 }
 
-#[post("/api/admin/user/{user}/modify")]
+#[patch("/api/admin/user/{user}/modify")]
 pub async fn modify_user(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    user: web::Path<String>,
+    name: web::Path<String>,
     nc: web::Json<ModifyUser>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
+    let admin = get_user_by_header(r.headers(), &connection)?;
+    if admin.is_none() || !admin.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let user = get_user_by_username(&name, &connection)?;
+    if user.is_none() {
+        return not_found();
+    }
+    update_user(user.unwrap().id, &nc.email, &nc.name, &connection)?;
+    APIResponse::from((get_user_by_username(&name, &connection)?)).respond(&r)
+}
+
+#[post("/api/admin/user/{user}/modify/permission/{permission}/{value}")]
+pub async fn update_permission(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(String, String, bool)>,
+) -> SiteResponse {
+    let connection = pool.get()?;
+    let (user, permission, value) = path.into_inner();
     let admin = get_user_by_header(r.headers(), &connection)?;
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
@@ -94,8 +114,18 @@ pub async fn modify_user(
         return not_found();
     }
     let mut user = user.unwrap();
-    user.update(nc.0);
-    update_user(&user, &connection)?;
+    match permission.as_str() {
+        "admin" => {
+            user.permissions.admin = value;
+        }
+        "deployer" => {
+            user.permissions.deployer = value;
+        }
+        x => {
+            return bad_request(format!("Invalid Argument {}", x));
+        }
+    }
+    update_user_permissions(&user.id, &user.permissions, &connection)?;
     APIResponse::from(Some(user)).respond(&r)
 }
 
