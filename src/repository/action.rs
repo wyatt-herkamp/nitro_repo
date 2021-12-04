@@ -3,6 +3,7 @@ use diesel::prelude::*;
 
 use crate::repository;
 use crate::repository::models::{DeploySettings, Repository, RepositoryListResponse};
+use crate::repository::models::{ RepositorySettings, SecurityRules};
 
 pub fn update_repo(repo: &Repository, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
@@ -22,6 +23,26 @@ pub fn update_deploy_settings(repo: &i64, deploy: &DeploySettings, conn: &MysqlC
             deploy_settings.eq(deploy),
         ))
         .execute(conn);
+    Ok(())
+}
+
+pub fn update_repo_settings(repo: &i64, s: &RepositorySettings, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+    let _result1 = diesel::update(repositories.filter(id.eq(repo)))
+        .set((
+            settings.eq(s),
+        ))
+        .execute(conn)?;
+    Ok(())
+}
+
+pub fn update_repo_security(repo: &i64, rules: &SecurityRules, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+    use crate::schema::repositories::dsl::*;
+    let _result1 = diesel::update(repositories.filter(id.eq(repo)))
+        .set((
+            security.eq(rules),
+        ))
+        .execute(conn)?;
     Ok(())
 }
 

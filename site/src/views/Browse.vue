@@ -47,6 +47,7 @@ export default defineComponent({
     const repository = route.params.repo as string;
     let catchAll = route.params.catchAll as string;
     const loading = ref(true);
+    
     if (storage != undefined && storage != "") {
       values.value.push(storage);
       if (repository != undefined && repository != "") {

@@ -24,6 +24,7 @@ pub struct User {
     pub permissions: UserPermissions,
     pub created: i64,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct UserListResponse {
     pub id: i64,
@@ -44,17 +45,7 @@ impl User {
     pub fn set_password(&mut self, password: String) {
         self.password = password;
     }
-    pub fn update(&mut self, update: ModifyUser) {
-        if let Some(perms) = update.permissions {
-            self.permissions = perms;
-        }
-        if let Some(name) = update.name {
-            self.name = name;
-        }
-        if let Some(email) = update.email {
-            self.email = email;
-        }
-    }
+
 }
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
@@ -72,6 +63,12 @@ impl UserPermissions {
             admin: true,
             deployer: true,
         }
+    }
+}
+
+impl Default for UserPermissions {
+    fn default() -> Self {
+        UserPermissions { admin: false, deployer: false }
     }
 }
 

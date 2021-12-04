@@ -26,12 +26,12 @@
 
 <script lang="ts">
 import axios from "axios";
-import { AuthToken, BasicResponse, Storage } from "@/backend/Response";
+import { BasicResponse, Storage } from "@/backend/Response";
 import router from "@/router";
 import http from "@/http-common";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
-
+import { createNewStorage } from "@/backend/api/admin/Storage";
 export default defineComponent({
   props: {
     updateList: {
@@ -49,30 +49,14 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      let newUser = {
-        name: this.form.name,
-        public_name: this.form.public_name,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post("/api/admin/storages/add", body, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + this.$cookie.getCookie("token"),
-        },
-      });
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        let value = response.data as Storage;
-        this.updateList(value.id);
+      const response = await createNewStorage(
+        this.form.name,
+        this.form.public_name,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        let data = response.val as Storage;
+        this.$props.updateList(data.id);
         this.$notify({
           title: "Storage Created",
           type: "success",
@@ -80,9 +64,10 @@ export default defineComponent({
       } else {
         this.$notify({
           title: "Unable to Create Storage",
-          text: JSON.stringify(response.data),
+          text: JSON.stringify(response.val.user_friendly_message),
           type: "error",
-        });      }
+        });
+      }
     },
   },
 });
