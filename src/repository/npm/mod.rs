@@ -154,7 +154,8 @@ impl RepositoryType for NPMHandler {
                 Ok(NotAuthorized)
             };
         }
-        if !can_deploy_basic_auth(http.headers(), &request.repository, conn)? {
+        let result1 = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
+        if !result1.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let value: PublishRequest = serde_json::from_slice(bytes.as_ref()).unwrap();

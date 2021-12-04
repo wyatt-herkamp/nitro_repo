@@ -16,6 +16,8 @@ use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::repository::models::ReportValues;
+use crate::schema::settings::value;
 
 use crate::utils::Resources;
 
@@ -29,6 +31,7 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
+pub mod webhook;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type Database = web::Data<DbPool>;
@@ -67,7 +70,9 @@ async fn main() -> std::io::Result<()> {
         return install::load_installer(pool).await;
     }
     info!("Initializing Web Server");
+
     let server = HttpServer::new(move || {
+
         App::new()
             .wrap(
                 Cors::default()

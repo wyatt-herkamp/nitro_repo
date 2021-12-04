@@ -53,6 +53,7 @@ glob = "0.3.0"
 futures-util = "0.3.17"
 time = "0.3.5"
 base64 = "0.13.0"
+tokio = "1.14.0"
 # Log
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
@@ -60,13 +61,14 @@ log = "0.4.14"
 strum = { version = "0.23.0", features = ["derive"] }
 strum_macros = "0.23.0"
 derive_more = "0.99.14"
-
+async-trait = "0.1.51"
 # Badge Stuff
 badge-maker = "0.1.4"
 usvg = "0.19.0"
 resvg = "0.19.0"
 tiny-skia = "0.6.1"
-
+# Webhook
+webhook = "1.0.1"
 [features]
 # Defines a feature named `webp` that does not enable any other features.
 ssl = ["openssl", "actix-web/openssl"]

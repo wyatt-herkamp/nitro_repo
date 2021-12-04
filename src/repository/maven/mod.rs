@@ -3,10 +3,12 @@ use std::fs::{create_dir_all, OpenOptions, read_dir, remove_file};
 use std::io::Write;
 
 use actix_web::HttpRequest;
-use actix_web::web::{ Bytes};
+use actix_web::web::{Bytes};
 use diesel::MysqlConnection;
+use log::{debug, error};
 
 use crate::error::internal_error::InternalError;
+use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
@@ -83,7 +85,8 @@ impl RepositoryType for MavenHandler {
         conn: &MysqlConnection,
         bytes: Bytes,
     ) -> RepoResult {
-        if !can_deploy_basic_auth(http.headers(), &request.repository, conn)? {
+        let x = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
+        if !x.0 {
             return RepoResult::Ok(NotAuthorized);
         }
 
@@ -107,7 +110,7 @@ impl RepositoryType for MavenHandler {
             .join(&request.repository.name)
             .join(&request.value);
         let parent = buf.parent().unwrap().to_path_buf();
-        create_dir_all(parent)?;
+        create_dir_all(&parent)?;
 
         if buf.exists() {
             remove_file(&buf)?;
@@ -116,8 +119,26 @@ impl RepositoryType for MavenHandler {
             .write(true)
             .create_new(true)
             .create(true)
-            .open(buf)?;
+            .open(&buf)?;
         file.write_all(bytes.as_ref())?;
+        if buf.to_str().unwrap().to_string().ends_with(".pom") {
+            let info = DeployInfo {
+                user: x.1.unwrap(),
+                version: "".to_string(),
+                name: "SimpleAnnotation".to_string(),
+                report_location: parent.join("report.json"),
+            };
+            let repository = request.repository.clone();
+            debug!("Starting Post Deploy Tasks");
+            actix_web::rt::spawn(async move {
+                let deploy = handle_post_deploy(&repository, info).await;
+                if let Err(error) = deploy {
+                    error!("Error Handling Post Deploy Tasks {}", error);
+                } else {
+                    debug!("All Post Deploy Tasks Completed and Happy :)");
+                }
+            });
+        }
         Ok(RepoResponse::Ok)
     }
 

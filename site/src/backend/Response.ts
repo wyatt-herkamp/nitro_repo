@@ -66,11 +66,32 @@ export const DEFAULT_REPO_SETTINGS: RepoSettings = {
   frontend: DEFAULT_FRONTEND,
   badge: DEFAULT_BADGE
 }
+
+export interface DeploySettings {
+  report_generation: ReportGeneration;
+  webhooks: Array<Webhook>;
+
+}
+export const DEFAULT_DEPLOY_SETTINGS: DeploySettings = {
+  report_generation: {active: true, values: []},
+  webhooks: []
+}
+
+export interface ReportGeneration {
+  active: boolean;
+  values: Array<string>;
+}
+export interface Webhook {
+  id: string;
+  handler: string;
+  settings: Map<String, any>;
+}
 export interface Repository {
   id: number;
   name: string;
   repo_type: string;
   settings: RepoSettings;
+  deploy_settings: DeploySettings;
   security: SecurityRules;
   storage: number;
   created: number;
@@ -82,7 +103,8 @@ export const DEFAULT_REPO: Repository = {
   settings: DEFAULT_REPO_SETTINGS,
   security: DEFAULT_SECURITY,
   storage: 0,
-  created: 0
+  created: 0,
+  deploy_settings: DEFAULT_DEPLOY_SETTINGS
 }
 export interface User {
   id: number;

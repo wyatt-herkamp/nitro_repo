@@ -1,5 +1,8 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
+use std::iter::Map;
+use std::ops::Deref;
 
 use badge_maker::Style;
 use diesel::{deserialize, MysqlConnection, serialize};
@@ -9,9 +12,11 @@ use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
+use crate::repository::models::ReportValues::{DeployerUsername, Time};
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
 use crate::storage::action::get_storage_name_by_id;
@@ -23,6 +28,80 @@ pub struct RepositorySummary {
     pub page_provider: PageProvider,
     pub repo_type: String,
     pub visibility: Visibility,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ReportValues {
+    DeployerUsername,
+    Time,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ReportGeneration {
+    pub active: bool,
+    pub values: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Webhook {
+    pub id: String,
+    pub handler: String,
+    pub settings: HashMap<String, Value>,
+}
+
+impl PartialEq<Self> for Webhook {
+    fn eq(&self, other: &Self) -> bool {
+        other.id.eq_ignore_ascii_case(&self.id)
+    }
+}
+
+impl PartialEq<String> for Webhook {
+    fn eq(&self, other: &String) -> bool {
+        self.id.eq(other)
+    }
+}
+
+
+impl Default for ReportGeneration {
+    fn default() -> Self {
+        return ReportGeneration { active: true, values: vec!["DeployerUsername".to_string(), "Time".to_string()] };
+    }
+}
+
+
+#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
+#[sql_type = "Text"]
+pub struct DeploySettings {
+    #[serde(default)]
+    pub report_generation: ReportGeneration,
+    #[serde(default)]
+    pub webhooks: Vec<Webhook>,
+}
+
+impl DeploySettings {
+    pub fn add_webhook(&mut self, webhook: Webhook) {
+        for x in self.webhooks.iter_mut() {
+            if x.deref().eq(&webhook) {
+                //TODO update webhook properties
+                return;
+            }
+        }
+        self.webhooks.push(webhook);
+    }
+    pub fn remove_hook(&mut self, webhook: String) -> Option<Webhook> {
+        let option = self.webhooks.iter().position(|x| { x.eq(&webhook) });
+        return if let Some(value) = option {
+            Some(self.webhooks.remove(value))
+        } else {
+            None
+        };
+    }
+}
+
+impl Default for DeploySettings {
+    fn default() -> Self {
+        return DeploySettings { report_generation: Default::default(), webhooks: vec![] };
+    }
 }
 
 impl RepositorySummary {
@@ -261,6 +340,26 @@ impl ToSql<Text, Mysql> for SecurityRules {
     }
 }
 
+impl FromSql<Text, Mysql> for DeploySettings {
+    fn from_sql(
+        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+    ) -> deserialize::Result<DeploySettings> {
+        if bytes.is_none() {
+            return deserialize::Result::Ok(DeploySettings::default());
+        }
+        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
+        let result: DeploySettings = serde_json::from_str(t.as_str())?;
+        Ok(result)
+    }
+}
+
+impl ToSql<Text, Mysql> for DeploySettings {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+        let s = serde_json::to_string(&self)?;
+        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "repositories"]
 pub struct Repository {
@@ -270,6 +369,8 @@ pub struct Repository {
     pub storage: i64,
     pub settings: RepositorySettings,
     pub security: SecurityRules,
+    #[serde(default)]
+    pub deploy_settings: DeploySettings,
     pub created: i64,
 }
 

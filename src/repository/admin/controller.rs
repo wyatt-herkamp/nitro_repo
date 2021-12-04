@@ -1,14 +1,15 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::str::FromStr;
-
-use actix_web::{get, HttpRequest, post, patch, web};
+use actix_web::{get, HttpRequest, post, patch,delete,put,web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
-use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_repo, update_repo_security, update_repo_settings};
+use crate::repository::action::{add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories, update_deploy_settings, update_repo};
+use crate::repository::models::{ReportGeneration , Webhook};
+use crate::repository::action::{update_repo_security, update_repo_settings};
 use crate::repository::models::{BadgeSettings, Frontend, Policy, Repository, RepositoryListResponse, RepositorySettings, SecurityRules, UpdateFrontend, UpdateSettings, Visibility};
 use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
@@ -114,6 +115,7 @@ pub async fn add_repo(
             visibility: Visibility::Public,
             readers: vec![],
         },
+        deploy_settings: Default::default(),
         created: get_current_time(),
     };
     add_new_repository(&repository, &connection)?;
@@ -128,7 +130,6 @@ pub async fn add_repo(
 
     APIResponse::from(option).respond(&r)
 }
-
 #[patch("/api/admin/repository/{repo}/active/{active}")]
 pub async fn update_active_status(
     pool: web::Data<DbPool>,
@@ -328,3 +329,74 @@ pub async fn update_deployers_readers(
     update_repo_security(&repository.id, &repository.security, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
+#[patch("/api/admin/repository/{repository}/modify/deploy/report")]
+pub async fn modify_deploy(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(i64)>,
+    nc: web::Json<ReportGeneration>,
+) -> SiteResponse {
+    let (repository) = path.into_inner();
+
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repository_value = get_repo_by_id(&repository, &connection)?;
+
+    let repo = repository_value.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
+    deploy_settings.report_generation = nc.0;
+    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
+
+    APIResponse::respond_new(get_repo_by_id(&repository, &connection)?, &r)
+}
+
+#[put("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add")]
+pub async fn add_webhook(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(i64)>,
+    nc: web::Json<Webhook>,
+) -> SiteResponse {
+    let (repo) = path.into_inner();
+
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repository_value = get_repo_by_id(&repo, &connection)?;
+
+    let repo = repository_value.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
+    deploy_settings.add_webhook(nc.0);
+    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
+    APIResponse::respond_new(get_repo_by_id(&repo.id, &connection)?, &r)
+}
+
+#[delete("/api/admin/repository/{repo}/modify/deploy/webhook/{webhook}")]
+pub async fn remove_webhook(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(i64, String)>,
+) -> SiteResponse {
+    let (repo,webhook) = path.into_inner();
+
+    let connection = pool.get()?;
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repository_value = get_repo_by_id(&repo, &connection)?;
+
+    let repo = repository_value.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
+    deploy_settings.remove_hook(webhook);
+    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
+    APIResponse::respond_new(get_repo_by_id(&repo.id, &connection)?, &r)
+}
+
