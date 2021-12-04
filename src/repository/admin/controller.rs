@@ -1,7 +1,7 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::str::FromStr;
-use actix_web::{get, HttpRequest, post, patch,web};
+use actix_web::{get, HttpRequest, post, patch,delete,web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -329,14 +329,14 @@ pub async fn update_deployers_readers(
     update_repo_security(&repository.id, &repository.security, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
-#[post("/api/admin/repository/{storage}/{repository}/modify/deploy/report")]
+#[patch("/api/admin/repository/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String)>,
+    path: web::Path<(i64)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-    let (storage, repository) = path.into_inner();
+    let (repository) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -344,31 +344,24 @@ pub async fn modify_deploy(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&storage, &connection)?;
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository_value = get_repo_by_name_and_storage(&repository, &storage.id, &connection)?;
-    if repository_value.is_none() {
-        return not_found();
-    }
+    let repository_value = get_repo_by_id(&repository, &connection)?;
+
     let repo = repository_value.unwrap();
     let mut deploy_settings = repo.deploy_settings;
     deploy_settings.report_generation = nc.0;
     update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
 
-    APIResponse::respond_new(get_repo_by_name_and_storage(&repository, &storage.id, &connection)?, &r)
+    APIResponse::respond_new(get_repo_by_id(&repository, &connection)?, &r)
 }
 
-#[post("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add")]
+#[patch("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add")]
 pub async fn add_webhook(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String)>,
+    path: web::Path<(i64)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
-    let (storage, repo) = path.into_inner();
+    let (repo) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -376,47 +369,34 @@ pub async fn add_webhook(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&storage, &connection)?;
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository_value = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
-    if repository_value.is_none() {
-        return not_found();
-    }
-    let repository_value = repository_value.unwrap();
-    let mut deploy_settings = repository_value.deploy_settings;
+    let repository_value = get_repo_by_id(&repo, &connection)?;
+
+    let repo = repository_value.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
     deploy_settings.add_webhook(nc.0);
-    update_deploy_settings(&repository_value.id, &deploy_settings, &connection)?;
-    APIResponse::respond_new(get_repo_by_name_and_storage(&repo, &storage.id, &connection)?, &r)
+    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
+    APIResponse::respond_new(get_repo_by_id(&repo.id, &connection)?, &r)
 }
 
-#[post("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add/{webhook}")]
+#[delete("/api/admin/repository/{repo}/modify/deploy/webhook/{webhook}")]
 pub async fn remove_webhook(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,
+    path: web::Path<(i64, String)>,
 ) -> SiteResponse {
-    let (storage, repo,webhook) = path.into_inner();
+    let (repo,webhook) = path.into_inner();
 
     let connection = pool.get()?;
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&storage,  &connection)?;
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repo, &storage.id, &connection)?;
-    if repository.is_none() {
-        return not_found();
-    }
-    let repository = repository.unwrap();
-    let mut deploy_settings = repository.deploy_settings;
+    let repository_value = get_repo_by_id(&repo, &connection)?;
+
+    let repo = repository_value.unwrap();
+    let mut deploy_settings = repo.deploy_settings;
     deploy_settings.remove_hook(webhook);
-    APIResponse::respond_new(get_repo_by_name_and_storage(&repo, &storage.id, &connection)?, &r)
+    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
+    APIResponse::respond_new(get_repo_by_id(&repo.id, &connection)?, &r)
 }
 
