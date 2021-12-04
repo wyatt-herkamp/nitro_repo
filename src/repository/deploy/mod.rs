@@ -1,5 +1,6 @@
 
 use std::collections::HashMap;
+use std::fs::{File, remove_file};
 use std::io::Write;
 use std::path::PathBuf;
 use log::{debug, error};
@@ -40,7 +41,7 @@ pub async fn handle_post_deploy(repository: &Repository, deploy: DeployInfo) -> 
         for x in &repository.deploy_settings.report_generation.values {
             let x1 = match x.as_str() {
                 "DeployerUsername" => {
-                    deploy.name.clone()
+                    deploy.user.name.clone()
                 }
                 "Time" => {
                     get_current_time().to_string()
@@ -55,12 +56,14 @@ pub async fn handle_post_deploy(repository: &Repository, deploy: DeployInfo) -> 
             };
             report.insert(x.clone(), x1);
         }
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .create(true)
-            .open(&deploy.report_location)?;
-        file.write_all(serde_json::to_string(&report).unwrap().as_bytes())?;
+        let buf = deploy.report_location;
+        if buf.exists(){
+            remove_file(&buf);
+        }
+        let mut file = File::create(buf)?;
+        let string = serde_json::to_string(&report).unwrap();
+        let x1 = string.as_bytes();
+        file.write_all(x1)?;
     }
     return Ok(());
 }
