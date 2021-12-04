@@ -222,7 +222,7 @@ pub async fn modify_security(
     path: web::Path<(i64, Visibility)>,
 ) -> SiteResponse {
     let (repo, visibility) = path.into_inner();
-
+    println!("{:?}", &visibility);
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
@@ -232,7 +232,6 @@ pub async fn modify_security(
     let repository = get_repo_by_id(&repo, &connection)?;
 
     let mut repository = repository.unwrap();
-    //TODO BAD CODE
     repository.security.visibility = visibility;
     update_repo_security(&repository.id, &repository.security, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)

@@ -1,7 +1,7 @@
 <template>
-  <el-tabs v-model="activeName" @tab-click="handleClick" >
-    <el-tab-pane label="General" name="general" >
-      <el-form label-position="top" :model="settingForm" >
+  <el-tabs v-model="activeName" @tab-click="handleClick" v-loading="isLoading">
+    <el-tab-pane label="General" name="general">
+      <el-form label-position="top" :model="repository">
         <el-form-item>
           <el-form-item label="Name">
             <el-input disabled v-model="$props.repo.name"></el-input>
@@ -10,36 +10,46 @@
             <el-input disabled v-model="storage.name"></el-input>
           </el-form-item>
           <el-form-item label="Type">
-            <el-input disabled v-model="$props.repo.repo_type"></el-input>
+            <el-input disabled v-model="repository.repo_type"></el-input>
           </el-form-item>
           <el-form-item label="Created On">
             <el-input disabled v-model="date"></el-input>
           </el-form-item>
           <el-form-item label="Active">
-            <el-switch v-model="settingForm.active" />
+            <el-switch
+              v-model="repository.settings.active"
+              @change="updateActiveStatus()"
+            />
           </el-form-item>
           <el-form-item label="Repository Policy">
-            <el-select v-model="settingForm.policy">
-              <el-option label="Release" value="Release"></el-option>
-              <el-option label="Snapshot" value="Snapshot"></el-option>
-              <el-option label="Mixed" value="Mixed"></el-option>
+            <el-select v-model="repository.settings.policy">
+              <el-option
+                label="Release"
+                value="Release"
+                @click="updatePolicy()"
+              ></el-option>
+              <el-option
+                label="Snapshot"
+                value="Snapshot"
+                @click="updatePolicy()"
+              ></el-option>
+              <el-option
+                label="Mixed"
+                value="Mixed"
+                @click="updatePolicy()"
+              ></el-option>
             </el-select>
           </el-form-item>
-          <!--Yeah, I know. But please don't judge -->
-          <el-button type="primary" @click="onSettingSubmit"
-            >Update Settings</el-button
-          >
-        </el-form-item>
-      </el-form></el-tab-pane
-    >
+        </el-form-item> </el-form
+    ></el-tab-pane>
     <el-tab-pane label="Frontend" name="frontend">
-      <el-form label-position="top" :model="frontendForm" >
+      <el-form label-position="top" :model="repository.settings">
         <el-form-item>
           <el-form-item label="Frontend Page Enabled">
-            <el-switch v-model="frontendForm.frontend_enabled" />
+            <el-switch v-model="repository.settings.frontend.enabled" />
           </el-form-item>
           <el-form-item label="Page Provider">
-            <el-select v-model="frontendForm.frontend_page_provider">
+            <el-select v-model="repository.settings.frontend.page_provider">
               <el-option label="Readme Sent" value="ReadmeSent"></el-option>
               <el-option label="Readme Git" value="ReadmeGit"></el-option>
               <el-option label="None" value="None"></el-option>
@@ -50,17 +60,17 @@
           <img :src="exampleBadgeURL" />
           <el-divider></el-divider>
           <el-form-item label="Badge Style ">
-            <el-select v-model="frontendForm.badge_style">
+            <el-select v-model="repository.settings.badge.style">
               <el-option label="Flat" value="Flat"></el-option>
               <el-option label="FlatSquare" value="FlatSquare"></el-option>
               <el-option label="Plastic" value="Plastic"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="Badge Color ">
-            <el-color-picker v-model="frontendForm.badge_color" />
+            <el-color-picker v-model="repository.settings.badge.color" />
           </el-form-item>
           <el-form-item label="Badge Color ">
-            <el-color-picker v-model="frontendForm.badge_label_color" />
+            <el-color-picker v-model="repository.settings.badge.label_color" />
           </el-form-item>
 
           <!--Yeah, I know. But please don't judge -->
@@ -71,19 +81,17 @@
       </el-form></el-tab-pane
     >
     <el-tab-pane label="Security" name="security">
-      <el-form label-position="top" :model="securityForm" >
+      <el-form label-position="top" :model="repository.security">
         <el-form-item label="Visibility">
-          <el-select v-model="securityForm.visibility">
+          <el-select
+            @change="updateVisibility()"
+            v-model="repository.security.visibility"
+          >
             <el-option label="Public" value="Public"></el-option>
             <el-option label="Private" value="Private"></el-option>
             <el-option label="Hidden" value="Hidden"></el-option>
           </el-select>
         </el-form-item>
-
-          <!--Yeah, I know. But please don't judge -->
-          <el-button disabled type="primary" @click="submitSecurity"
-            >Update Security Settings</el-button
-          >
       </el-form>
     </el-tab-pane>
     <el-tab-pane label="Upload" name="upload"> HI </el-tab-pane>
@@ -92,13 +100,26 @@
 <style scoped>
 </style>
 <script lang="ts">
-import {BasicResponse, DEFAULT_STORAGE, Repository, RepositoryListResponse,} from "@/backend/Response";
-import http, {apiURL} from "@/http-common";
-import {defineComponent, ref} from "vue";
-import {useCookie} from "vue-cookie-next";
-import {useRouter} from "vue-router";
-import {getStorage} from "@/backend/api/Storages";
-import {getRepoByID} from "@/backend/api/Repository";
+import {
+  BasicResponse,
+  DEFAULT_STORAGE,
+  Repository,
+  DEFAULT_REPO,
+  RepositoryListResponse,
+} from "@/backend/Response";
+import http, { apiURL } from "@/http-common";
+import { defineComponent, ref } from "vue";
+import { useCookie } from "vue-cookie-next";
+import { useRouter } from "vue-router";
+import { getStorage } from "@/backend/api/Storages";
+import { getRepoByID } from "@/backend/api/Repository";
+import {
+  setActiveStatus,
+  setPolicy,
+  setVisibility,
+  updateBadge,
+  updateFrontend,
+} from "@/backend/api/admin/Repository";
 
 export default defineComponent({
   props: {
@@ -111,33 +132,13 @@ export default defineComponent({
   setup(props) {
     const router = useRouter();
 
-    let settingForm = ref({
-      active: false,
-      policy: "props.repo.settings.policy",
-      error: "",
-    });
-    let frontendForm = ref({
-      frontend_enabled: false,
-      frontend_page_provider: "props.repo.settings.frontend.page_provider",
-      badge_style: "props.repo.settings.badge.style",
-      badge_label_color: "props.repo.settings.badge.label_color",
-      badge_color: "props.repo.settings.badge.color",
 
-      error: "",
-    });
-    let securityForm = ref({
-      open_to_all_deployers: false,
-      open_to_all_readers: false,
-      visibility: "props.repo.security.visibility",
-      error: "",
-    });
-    let repository = ref<Repository | undefined>(undefined);
+
+    let repository = ref<Repository>(DEFAULT_REPO);
     let date = ref<string | undefined>(undefined);
     const cookie = useCookie();
     const isLoading = ref(false);
-    const tab = ref(0);
-    const activeName = ref("first");
-    const error = ref("");
+    const activeName = ref("general");
     let storage = ref(DEFAULT_STORAGE);
     const exampleBadgeURL = ref("");
 
@@ -151,7 +152,7 @@ export default defineComponent({
         storage.value = value;
         isLoading.value = false;
       } catch (e) {
-        error.value = "";
+        console.log(e);
       }
     };
     getStorageByID();
@@ -165,8 +166,8 @@ export default defineComponent({
         )) as Repository;
         repository.value = value;
         exampleBadgeURL.value =
-            apiURL +
-            "/badge/" +
+          apiURL +
+          "/badge/" +
           storage.value.name +
           "/" +
           props.repo.name +
@@ -175,39 +176,18 @@ export default defineComponent({
           "en-US"
         );
         isLoading.value = false;
-        settingForm.value = {
-          active: value.settings.active,
-          policy: value.settings.policy,
-          error: "",
-        };
-        frontendForm.value = {
-          frontend_enabled: value.settings.frontend.enabled,
-          frontend_page_provider: value.settings.frontend.page_provider,
-          badge_style: value.settings.badge.style,
-          badge_label_color: value.settings.badge.label_color,
-          badge_color: value.settings.badge.color,
 
-          error: "",
-        };
-        securityForm.value = {
-          open_to_all_deployers: value.security.open_to_all_deployers,
-          open_to_all_readers: value.security.open_to_all_readers,
-          visibility: value.security.visibility,
-          error: "",
-        };
+
         repository.value = value;
       } catch (e) {
-        error.value = "";
+        console.log(e);
       }
     };
     getRepo();
 
     return {
-      settingForm,
-      securityForm,
-      frontendForm,
       storage,
-      tab,
+      isLoading,
       activeName,
       date,
       exampleBadgeURL,
@@ -224,166 +204,141 @@ export default defineComponent({
         );
       }
     },
-    async updateValues(repository: Repository) {
-      this.settingForm = {
-        active: repository.settings.active,
-        policy: repository.settings.policy,
-        error: "",
-      };
-      this.frontendForm = {
-        frontend_enabled: repository.settings.frontend.enabled,
-        frontend_page_provider: repository.settings.frontend.page_provider,
-        badge_style: repository.settings.badge.style,
-        badge_label_color: repository.settings.badge.label_color,
-        badge_color: repository.settings.badge.color,
 
-        error: "",
-      };
-      this.securityForm = {
-        open_to_all_deployers: repository.security.open_to_all_deployers,
-        open_to_all_readers: repository.security.open_to_all_readers,
-        visibility: repository.security.visibility,
-        error: "",
-      };
-      this.repository = repository;
-    },
-    async onSettingSubmit() {
-      if (this.storage.id == 0) {
+    async updateActiveStatus() {
+      if (this.repository.id == 0) {
+        this.$notify({
+          title: "Unable Update Repository",
+          text: "Repository is still undefined",
+          type: "error",
+        });
         return;
       }
-      let newUser = {
-        active: this.settingForm.active,
-        policy: this.settingForm.policy,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post(
-        "/api/admin/repository/" +
-          this.storage.name +
-          "/" +
-          this.repo.name +
-          "/modify/settings/general",
-        body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + this.$cookie.getCookie("token"),
-          },
-        }
+
+      const response = await setActiveStatus(
+        this.repository.id,
+        this.repository.settings.active,
+        this.$cookie.getCookie("token")
       );
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        this.updateValues(response.data as Repository);
+      if (response.ok) {
         this.$notify({
           title: "Updated Repository",
-          type: "success",
+          type: "info",
         });
       } else {
-        this.settingForm.error = "Unable to Update Storage";
+        this.$notify({
+          title: "Unable Update Repository",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
       }
     },
-    async submitSecurity() {
-      if (this.storage.id == 0) {
+    async updatePolicy() {
+      if (this.repository.id == 0) {
+        this.$notify({
+          title: "Unable Update Repository",
+          text: "Repository is still undefined",
+          type: "error",
+        });
         return;
       }
-      let newUser = {
-        active: this.settingForm.active,
-        policy: this.settingForm.policy,
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post(
-        "/api/admin/repository/" +
-          this.storage.name +
-          "/" +
-          this.repo.name +
-          "/modify/settings/general",
-        body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + this.$cookie.getCookie("token"),
-          },
-        }
+      const response = await setPolicy(
+        this.repository.id,
+        this.repository.settings.policy,
+        this.$cookie.getCookie("token")
       );
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        this.updateValues(response.data as Repository);
+      if (response.ok) {
         this.$notify({
           title: "Updated Repository",
-          type: "success",
+          type: "info",
         });
       } else {
-        this.settingForm.error = "Unable to Update Storage";
+        this.$notify({
+          title: "Unable Update Repository",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
+      }
+    },
+    async updateVisibility() {
+      if (this.repository.id == 0) {
+        this.$notify({
+          title: "Unable Update Repository",
+          text: "Repository is still undefined",
+          type: "error",
+        });
+        return;
+      }
+      const response = await setVisibility(
+        this.repository.id,
+        this.repository.security.visibility,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        console.log(response.val.security.visibility);
+        this.$notify({
+          title: "Updated Repository",
+          type: "info",
+        });
+      } else {
+        this.$notify({
+          title: "Unable Update Repository",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
       }
     },
     async submitFrontend() {
-      if (this.storage.id == 0) {
-        return;
-      }
-      let newUser = {
-        frontend: {
-          enabled: this.frontendForm.frontend_enabled,
-          page_provider: this.frontendForm.frontend_page_provider,
-        },
-        badge: {
-          style: this.frontendForm.badge_style,
-          label_color: this.frontendForm.badge_label_color,
-          color: this.frontendForm.badge_color,
-        },
-      };
-      let body = JSON.stringify(newUser);
-      console.log(body);
-      const res = await http.post(
-        "/api/admin/repository/" +
-          this.storage.name +
-          "/" +
-          this.repo.name +
-          "/modify/settings/frontend",
-        body,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + this.$cookie.getCookie("token"),
-          },
-        }
-      );
-      if (res.status != 200) {
-        console.log("Data" + res.data);
-        return;
-      }
-      const result = res.data;
-      let value = JSON.stringify(result);
-      console.log(value);
-
-      let response: BasicResponse<unknown> = JSON.parse(value);
-
-      if (response.success) {
-        this.updateValues(response.data as Repository);
+      if (this.repository.id == 0) {
         this.$notify({
-          title: "Updated Repository",
-          type: "success",
+          title: "Unable Update Repository",
+          text: "Repository is still undefined",
+          type: "error",
         });
-      } else {
-        this.settingForm.error = "Unable to Update Storage";
+        return;
+      }
+      {
+        const response = await updateFrontend(
+          this.repository.id,
+          this.repository.settings.frontend.enabled,
+          this.repository.settings.frontend.page_provider,
+          this.$cookie.getCookie("token")
+        );
+        if (response.ok) {
+          console.log(response.val.security.visibility);
+          this.$notify({
+            title: "Updated Frontend",
+            type: "info",
+          });
+        } else {
+          this.$notify({
+            title: "Unable Update Repository",
+            text: JSON.stringify(response.val.user_friendly_message),
+            type: "error",
+          });
+        }
+      }
+      {
+        let response = await updateBadge(
+          this.repository.id,
+          this.repository.settings.badge.style,
+          this.repository.settings.badge.label_color,
+          this.repository.settings.badge.color,
+          this.$cookie.getCookie("token")
+        );
+        if (response.ok) {
+          console.log(response.val.security.visibility);
+          this.$notify({
+            title: "Updated Badge",
+            type: "info",
+          });
+        } else {
+          this.$notify({
+            title: "Unable Update Repository",
+            text: JSON.stringify(response.val.user_friendly_message),
+            type: "error",
+          });
+        }
       }
     },
   },

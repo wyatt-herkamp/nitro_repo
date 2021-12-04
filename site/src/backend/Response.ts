@@ -24,21 +24,33 @@ export const DEFAULT_STORAGE_LIST: StorageList = {
   storages: [],
 };
 export interface SecurityRules {
-  open_to_all_deployers: boolean;
-  open_to_all_readers: boolean;
+
   visibility: string;
   readers: Array<number>;
   deployers: Array<number>;
 }
-
+export const DEFAULT_SECURITY: SecurityRules = {
+  visibility: "",
+  readers: [],
+  deployers: []
+}
 export interface Frontend {
   page_provider: string;
   enabled: boolean;
+}
+export const DEFAULT_FRONTEND: Frontend = {
+  page_provider: "",
+  enabled: false
 }
 export interface BadgeSettings {
   style: string;
   label_color: string;
   color: string;
+}
+export const DEFAULT_BADGE: BadgeSettings = {
+  style: "",
+  label_color: "",
+  color: ""
 }
 export interface RepoSettings {
   policy: string;
@@ -46,6 +58,13 @@ export interface RepoSettings {
   re_deployment: boolean;
   frontend: Frontend;
   badge: BadgeSettings;
+}
+export const DEFAULT_REPO_SETTINGS: RepoSettings = {
+  policy: "",
+  active: false,
+  re_deployment: false,
+  frontend: DEFAULT_FRONTEND,
+  badge: DEFAULT_BADGE
 }
 export interface Repository {
   id: number;
@@ -56,7 +75,15 @@ export interface Repository {
   storage: number;
   created: number;
 }
-
+export const DEFAULT_REPO: Repository = {
+  id: 0,
+  name: "",
+  repo_type: "",
+  settings: DEFAULT_REPO_SETTINGS,
+  security: DEFAULT_SECURITY,
+  storage: 0,
+  created: 0
+}
 export interface User {
   id: number;
   name: string;

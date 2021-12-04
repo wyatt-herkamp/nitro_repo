@@ -25,11 +25,11 @@ pub fn update_repo_settings(repo: &i64, s: &RepositorySettings, conn: &MysqlConn
     Ok(())
 }
 
-pub fn update_repo_security(repo: &i64, settings: &SecurityRules, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn update_repo_security(repo: &i64, rules: &SecurityRules, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
     let _result1 = diesel::update(repositories.filter(id.eq(repo)))
         .set((
-            security.eq(settings),
+            security.eq(rules),
         ))
         .execute(conn)?;
     Ok(())
