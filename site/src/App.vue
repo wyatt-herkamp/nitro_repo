@@ -1,6 +1,6 @@
 <template>
   <Navbar :user="userStore.state.user" />
-
+  <metainfo> </metainfo>
   <router-view :key="$route.fullPath" />
   <notifications position="bottom right" />
 </template>
@@ -10,10 +10,22 @@ import userStore from "@/store/user";
 import Navbar from "@/components/Navbar.vue";
 import router from "@/router";
 import { defineComponent, onBeforeMount, onMounted } from "vue";
+import { useMeta } from "vue-meta";
 export default defineComponent({
   name: "App",
   components: { Navbar },
   setup() {
+    useMeta({
+      title: "Nitro Repo",
+      htmlAttrs: { lang: "en", amp: false, charset: "UTF-8" },
+      meta: [
+        {
+          property: "og:title",
+          content: "Reddit Nobility",
+        },
+        { property: "og:type", content: "website" },
+      ],
+    });
     onBeforeMount(userStore.getUser);
     return { userStore };
   },
