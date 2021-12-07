@@ -26,4 +26,5 @@ permalink: /getting-started/
 3. You can at this point execute `npm run dev` with the backend executable running and work on the frontend
 # Development Full Stack or Backend
 1. I recommend following the Frontend development steps because using the frontend development mode will be easier
+2. Ignore the --release argument. Because you are doing development. 
 
