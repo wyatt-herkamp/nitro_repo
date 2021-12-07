@@ -91,7 +91,6 @@ async fn main() -> std::io::Result<()> {
             .configure(system::controllers::init)
             .configure(frontend::init)
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
-            .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
         .workers(2);
 
