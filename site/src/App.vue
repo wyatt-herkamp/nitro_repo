@@ -21,7 +21,7 @@ export default defineComponent({
       meta: [
         {
           property: "og:title",
-          content: "Reddit Nobility",
+          content: "Nitro Repo",
         },
         { property: "og:type", content: "website" },
       ],
