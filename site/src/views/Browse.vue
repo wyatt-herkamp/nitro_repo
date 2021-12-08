@@ -1,42 +1,43 @@
 <template>
   <el-container
-      v-loading="loading"
-      element-loading-text="Loading..."
-      style="border: 1px solid #eee"
+    v-loading="loading"
+    element-loading-text="Loading..."
+    style="border: 1px solid #eee"
   >
     <el-header>
       <el-breadcrumb :separator-icon="ArrowRight">
         <el-breadcrumb-item :to="{ path: '/Browse' }"
-        >Browse
-        </el-breadcrumb-item
-        >
-        <el-breadcrumb-item v-for="path in values" :key="path">{{
-            path
-          }}
+          >Browse
+        </el-breadcrumb-item>
+        <el-breadcrumb-item v-for="path in values" :key="path"
+          >{{ path }}
         </el-breadcrumb-item>
       </el-breadcrumb>
     </el-header>
     <el-main>
       <el-table
-          class="pointer"
-          :data="tableData"
-          @row-click="onRowClick"
-          style="width: 100%"
+        class="pointer"
+        :data="tableData"
+        @row-click="onRowClick"
+        style="width: 100%"
       >
-        <el-table-column prop="name" label="name"/>
+        <el-table-column prop="name" label="name" />
       </el-table>
     </el-main>
   </el-container>
 </template>
 
 <script lang="ts">
-import {fileListing, getRepositoriesPublicAccess,} from "@/backend/api/Repository";
-import {getStoragesPublicAccess} from "@/backend/api/Storages";
-import {FileResponse} from "@/backend/Response";
+import {
+  fileListing,
+  getRepositoriesPublicAccess,
+} from "@/backend/api/Repository";
+import { getStoragesPublicAccess } from "@/backend/api/Storages";
+import { FileResponse } from "@/backend/Response";
 import router from "@/router";
-import {defineComponent, ref} from "vue";
-import {useRoute} from "vue-router";
-import {ArrowRight} from "@element-plus/icons";
+import { defineComponent, ref } from "vue";
+import { useRoute } from "vue-router";
+import { ArrowRight } from "@element-plus/icons";
 
 export default defineComponent({
   setup() {
@@ -47,7 +48,7 @@ export default defineComponent({
     const repository = route.params.repo as string;
     let catchAll = route.params.catchAll as string;
     const loading = ref(true);
-    
+
     if (storage != undefined && storage != "") {
       values.value.push(storage);
       if (repository != undefined && repository != "") {
@@ -97,7 +98,7 @@ export default defineComponent({
         try {
           const value = (await getStoragesPublicAccess()) as string[];
           for (const storage of value) {
-            tableData.value.push({name: storage});
+            tableData.value.push({ name: storage });
           }
           loading.value = false;
         } catch (e) {

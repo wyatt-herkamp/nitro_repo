@@ -1,21 +1,21 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, OpenOptions, read_dir, remove_file};
+use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
 use std::io::Write;
 
+use actix_web::web::Bytes;
 use actix_web::HttpRequest;
-use actix_web::web::{Bytes};
 use diesel::MysqlConnection;
 use log::{debug, error};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::deploy::{DeployInfo, handle_post_deploy};
+use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
 use crate::repository::models::{Policy, RepositorySummary};
-use crate::repository::repository::{
-    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
-};
 use crate::repository::repository::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
+};
+use crate::repository::repository::{
+    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;

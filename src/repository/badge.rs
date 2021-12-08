@@ -1,14 +1,13 @@
-use std::fs::{create_dir_all, File, read_to_string};
+use std::fs::{create_dir_all, read_to_string, File};
 use std::io::Write;
 use std::path::PathBuf;
 
 use actix_files::NamedFile;
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, web, HttpRequest};
 use badge_maker::{BadgeBuilder, Style};
 use usvg::Options;
 
 use crate::api_response::SiteResponse;
-use crate::DbPool;
 use crate::error::response::not_found;
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::maven::MavenHandler;
@@ -16,6 +15,7 @@ use crate::repository::models::BadgeSettings;
 use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
+use crate::DbPool;
 
 fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
     return format!(
@@ -47,7 +47,7 @@ pub async fn badge(
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
-    let (storage, repository, file,typ) = path.into_inner();
+    let (storage, repository, file, typ) = path.into_inner();
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(&storage, &connection)?;

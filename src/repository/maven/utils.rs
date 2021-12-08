@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{DirEntry, read_dir, read_to_string};
+use std::fs::{read_dir, read_to_string, DirEntry};
 use std::path::PathBuf;
 
 use crate::repository::maven::models::DeployMetadata;

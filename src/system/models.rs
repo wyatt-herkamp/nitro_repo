@@ -1,16 +1,15 @@
 use std::fmt::Debug;
 use std::io::Write;
 
-use diesel::{deserialize, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
+use diesel::{deserialize, serialize};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
-use crate::system::utils::ModifyUser;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
 #[table_name = "users"]
@@ -45,7 +44,6 @@ impl User {
     pub fn set_password(&mut self, password: String) {
         self.password = password;
     }
-
 }
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
@@ -68,7 +66,10 @@ impl UserPermissions {
 
 impl Default for UserPermissions {
     fn default() -> Self {
-        UserPermissions { admin: false, deployer: false }
+        UserPermissions {
+            admin: false,
+            deployer: false,
+        }
     }
 }
 

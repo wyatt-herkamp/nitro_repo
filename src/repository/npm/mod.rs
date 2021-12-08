@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, File, OpenOptions, read_dir, remove_file};
+use std::fs::{create_dir_all, read_dir, remove_file, File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::string::String;
 
+use actix_web::web::Bytes;
 use actix_web::HttpRequest;
-use actix_web::web::{Bytes};
 use diesel::MysqlConnection;
 use regex::Regex;
 
@@ -12,16 +12,16 @@ use crate::error::internal_error::InternalError;
 use crate::repository::models::RepositorySummary;
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{
-    Attachment, get_latest_version, GetResponse, LoginRequest, LoginResponse, PublishRequest,
+    get_latest_version, Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
     Version,
-};
-use crate::repository::repository::{
-    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
 use crate::repository::repository::RepoResponse::{
     CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse,
 };
 use crate::repository::repository::Version as RepoVersion;
+use crate::repository::repository::{
+    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
+};
 use crate::repository::utils::{build_artifact_directory, build_directory};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 

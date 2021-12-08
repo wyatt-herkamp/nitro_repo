@@ -43,7 +43,7 @@
         <Users />
       </div>
       <div v-else-if="index == 4">
-        <Me  />
+        <Me />
       </div>
       <div v-else-if="index == 5">
         <Settings />

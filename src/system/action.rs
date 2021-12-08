@@ -1,31 +1,36 @@
-use diesel::MysqlConnection;
 use diesel::prelude::*;
+use diesel::MysqlConnection;
 
+use crate::system::models::{
+    AuthToken, SessionToken, User, UserListResponse, UserPermissions, UserResponse,
+};
 use crate::{system, utils};
-use crate::system::models::{AuthToken, SessionToken, User, UserListResponse, UserPermissions, UserResponse};
 
 pub fn get_users(conn: &MysqlConnection) -> Result<Vec<UserListResponse>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
     users.select((id, name)).load::<UserListResponse>(conn)
 }
 
-
-
-pub fn update_user(user: i64, e: &String, n: &String, conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+pub fn update_user(
+    user: i64,
+    e: &String,
+    n: &String,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let _result1 = diesel::update(users.filter(id.eq(user)))
-        .set((
-            email.eq(e),
-            name.eq(n),
-        ))
+        .set((email.eq(e), name.eq(n)))
         .execute(conn);
     Ok(())
-}pub fn update_user_permissions(user: &i64, perms: &UserPermissions,conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+}
+pub fn update_user_permissions(
+    user: &i64,
+    perms: &UserPermissions,
+    conn: &MysqlConnection,
+) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let _result1 = diesel::update(users.filter(id.eq(user)))
-        .set((
-            permissions.eq(perms),
-      ))
+        .set((permissions.eq(perms),))
         .execute(conn);
     Ok(())
 }
@@ -37,7 +42,7 @@ pub fn update_user_password(
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
     let _result1 = diesel::update(users.filter(id.eq(user)))
-        .set((password.eq(p), ))
+        .set((password.eq(p),))
         .execute(conn);
     Ok(())
 }

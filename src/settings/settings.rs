@@ -1,12 +1,12 @@
 use std::io::Write;
 use std::str::FromStr;
 
-use diesel::{deserialize, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
+use diesel::{deserialize, serialize};
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;

@@ -1,22 +1,22 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
-use std::iter::Map;
+
 use std::ops::Deref;
 
 use badge_maker::Style;
-use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
+use diesel::{deserialize, serialize, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
-use crate::repository::models::ReportValues::{DeployerUsername, Time};
+
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
 use crate::storage::action::get_storage_name_by_id;
@@ -61,13 +61,14 @@ impl PartialEq<String> for Webhook {
     }
 }
 
-
 impl Default for ReportGeneration {
     fn default() -> Self {
-        return ReportGeneration { active: true, values: vec!["DeployerUsername".to_string(), "Time".to_string()] };
+        return ReportGeneration {
+            active: true,
+            values: vec!["DeployerUsername".to_string(), "Time".to_string()],
+        };
     }
 }
-
 
 #[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
 #[sql_type = "Text"]
@@ -89,7 +90,7 @@ impl DeploySettings {
         self.webhooks.push(webhook);
     }
     pub fn remove_hook(&mut self, webhook: String) -> Option<Webhook> {
-        let option = self.webhooks.iter().position(|x| { x.eq(&webhook) });
+        let option = self.webhooks.iter().position(|x| x.eq(&webhook));
         return if let Some(value) = option {
             Some(self.webhooks.remove(value))
         } else {
@@ -100,7 +101,10 @@ impl DeploySettings {
 
 impl Default for DeploySettings {
     fn default() -> Self {
-        return DeploySettings { report_generation: Default::default(), webhooks: vec![] };
+        return DeploySettings {
+            report_generation: Default::default(),
+            webhooks: vec![],
+        };
     }
 }
 

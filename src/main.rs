@@ -7,17 +7,15 @@ extern crate strum;
 extern crate strum_macros;
 
 use actix_cors::Cors;
-use actix_files::Files;
-use actix_web::{App, HttpRequest, HttpServer, middleware, web};
+
+use crate::api_response::{APIResponse, SiteResponse};
 use actix_web::web::PayloadConfig;
+use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
-use crate::api_response::{APIResponse, SiteResponse};
-use crate::repository::models::ReportValues;
-use crate::schema::settings::value;
 
 use crate::utils::Resources;
 
@@ -53,8 +51,7 @@ async fn main() -> std::io::Result<()> {
             panic!("Must be Release or Debug")
         }
     };
-    let config: Config =
-        serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
+    let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
     NitroLogger::load(config, None).unwrap();
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
@@ -72,7 +69,6 @@ async fn main() -> std::io::Result<()> {
     info!("Initializing Web Server");
 
     let server = HttpServer::new(move || {
-
         App::new()
             .wrap(
                 Cors::default()
@@ -90,30 +86,30 @@ async fn main() -> std::io::Result<()> {
             .configure(repository::admin::init)
             .configure(system::controllers::init)
             .configure(frontend::init)
-            // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
+        // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
     #[cfg(feature = "ssl")]
-        {
-            if std::env::var("PRIVATE_KEY").is_ok() {
-                use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+    {
+        if std::env::var("PRIVATE_KEY").is_ok() {
+            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-                let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-                builder
-                    .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-                    .unwrap();
-                builder
-                    .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-                    .unwrap();
-                return server
-                    .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
-                    .run()
-                    .await;
-            }
+            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+            builder
+                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                .unwrap();
+            builder
+                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                .unwrap();
+            return server
+                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                .run()
+                .await;
         }
+    }
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }

@@ -1,4 +1,3 @@
-
 use std::io::prelude::*;
 use std::io::{Seek, Write};
 use std::iter::Iterator;
@@ -7,17 +6,21 @@ use zip::write::FileOptions;
 
 use std::fs::File;
 use std::path::Path;
-use walkdir::{DirEntry, WalkDir};
 use std::path::PathBuf;
+use walkdir::{DirEntry, WalkDir};
 use zip::CompressionMethod;
 
 fn main() {
     let out_dir: PathBuf = std::env::var("OUT_DIR").unwrap().into();
     let out_dir = out_dir.join("frontend.zip");
-    doit("site/dist", out_dir.to_str().unwrap(), CompressionMethod::Stored).unwrap();
+    doit(
+        "site/dist",
+        out_dir.to_str().unwrap(),
+        CompressionMethod::Stored,
+    )
+    .unwrap();
     println!("{:?}", out_dir);
 }
-
 
 fn zip_dir<T>(
     it: &mut dyn Iterator<Item = DirEntry>,
@@ -25,8 +28,8 @@ fn zip_dir<T>(
     writer: T,
     method: zip::CompressionMethod,
 ) -> zip::result::ZipResult<()>
-    where
-        T: Write + Seek,
+where
+    T: Write + Seek,
 {
     let mut zip = zip::ZipWriter::new(writer);
     let options = FileOptions::default()
@@ -43,7 +46,7 @@ fn zip_dir<T>(
         if path.is_file() {
             println!("adding file {:?} as {:?} ...", path, name);
             #[allow(deprecated)]
-                zip.start_file(name.to_str().unwrap(), options)?;
+            zip.start_file(name.to_str().unwrap(), options)?;
             let mut f = File::open(path)?;
 
             f.read_to_end(&mut buffer)?;
@@ -53,7 +56,7 @@ fn zip_dir<T>(
             // Only if not root! Avoids path spec / warning
             // and mapname conversion failed error on unzip
             println!("adding dir {:?} as {:?} ...", path, name);
-                zip.add_directory(name.to_str().unwrap(), options)?;
+            zip.add_directory(name.to_str().unwrap(), options)?;
         }
     }
     zip.finish()?;

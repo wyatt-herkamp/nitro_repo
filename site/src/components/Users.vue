@@ -1,10 +1,7 @@
 <template>
   <el-container style="border: 1px solid #eee">
     <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-      <el-menu
-        default-active="0"
-        :collapse="false"
-      >
+      <el-menu default-active="0" :collapse="false">
         <el-menu-item @click="index = 0" index="0">
           <i class="el-icon-watermelon"></i>
           <template #title>Create new User</template>

@@ -1,15 +1,13 @@
+use actix_files::Files;
 use std::fs::{read_to_string, remove_dir_all};
 use std::io::Cursor;
 use std::path::Path;
-use actix_files::Files;
 
-use actix_web::{get, HttpRequest, HttpResponse, web};
+use actix_web::{get, web, HttpRequest, HttpResponse};
 use log::debug;
 use zip::ZipArchive;
 
 use crate::api_response::SiteResponse;
-use crate::error::internal_error::InternalError;
-use crate::frontend::dev_controllers;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
@@ -69,7 +67,6 @@ pub async fn install(_r: HttpRequest) -> SiteResponse {
 
 fn get_file() -> SiteResponse {
     //TODO cache this value at runtime
-    let content =
-        read_to_string(Path::new("frontend").join("index.html"))?;
+    let content = read_to_string(Path::new("frontend").join("index.html"))?;
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }

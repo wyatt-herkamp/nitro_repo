@@ -1,5 +1,5 @@
-use diesel::MysqlConnection;
 use diesel::prelude::*;
+use diesel::MysqlConnection;
 
 use crate::storage;
 use crate::storage::models::Storage;

@@ -1,8 +1,7 @@
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
-use crate::DbPool;
 use crate::error::response::not_found;
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::controller::handle_result;
@@ -11,6 +10,7 @@ use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
+use crate::DbPool;
 
 //
 

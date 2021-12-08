@@ -119,8 +119,7 @@
     <el-tab-pane label="Upload" name="upload"> HI </el-tab-pane>
   </el-tabs>
 </template>
-<style scoped>
-</style>
+<style scoped></style>
 <script lang="ts">
 import {
   BasicResponse,

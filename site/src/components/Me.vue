@@ -5,7 +5,6 @@
     class="el-menu-demo"
     mode="horizontal"
     v-loading="isLoading"
-
   >
     <el-menu-item @click="tab = 0" index="0">General Settings</el-menu-item>
     <el-menu-item @click="tab = 1" index="1">Password</el-menu-item>
@@ -86,7 +85,7 @@ import { useRouter } from "vue-router";
 import { getStorage } from "@/backend/api/Storages";
 import { getUser, getUserByID } from "@/backend/api/User";
 import { updateMyPassword } from "@/backend/api/backend/User";
-import {ANON_USER} from "@/store/user";
+import { ANON_USER } from "@/store/user";
 export default defineComponent({
   setup() {
     let password = ref({
@@ -107,8 +106,7 @@ export default defineComponent({
         user.value = value as User;
 
         isLoading.value = false;
-      } catch (e) {
-      }
+      } catch (e) {}
     };
     loadUser();
 

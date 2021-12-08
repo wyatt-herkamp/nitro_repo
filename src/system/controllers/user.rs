@@ -1,13 +1,16 @@
-use actix_web::{get, HttpRequest, post, patch, web};
+use actix_web::{get, patch, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::DbPool;
-use crate::error::response::{already_exists_what, bad_request, mismatching_passwords, not_found, unauthorized};
-use crate::system::action::{add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username, get_users, update_user, update_user_password, update_user_permissions};
+use crate::error::response::{already_exists_what, bad_request, not_found, unauthorized};
+use crate::system::action::{
+    add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username,
+    get_users, update_user, update_user_password, update_user_permissions,
+};
 use crate::system::models::{User, UserListResponse, UserPermissions};
-use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser, NewUserError};
+use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser};
 use crate::utils::get_current_time;
+use crate::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
@@ -94,7 +97,7 @@ pub async fn modify_user(
         return not_found();
     }
     update_user(user.unwrap().id, &nc.email, &nc.name, &connection)?;
-    APIResponse::from((get_user_by_username(&name, &connection)?)).respond(&r)
+    APIResponse::from(get_user_by_username(&name, &connection)?).respond(&r)
 }
 
 #[patch("/api/admin/user/{user}/modify/permission/{permission}/{value}")]

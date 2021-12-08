@@ -1,11 +1,11 @@
 use actix_cors::Cors;
 use actix_files::Files;
-use actix_web::{App, HttpServer, middleware, web};
+use actix_web::{middleware, web, App, HttpServer};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::response::mismatching_passwords;
-use crate::{DbPool, frontend, installed};
+use crate::{frontend, installed, DbPool};
 use actix_web::{post, HttpRequest};
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -14,7 +14,7 @@ use crate::settings::utils::quick_add;
 use crate::system::action::add_new_user;
 
 use crate::system::models::{User, UserPermissions};
-use crate::system::utils::{hash, NewPassword, NewUser};
+use crate::system::utils::hash;
 use crate::utils::get_current_time;
 
 pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
@@ -34,7 +34,10 @@ pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
             // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
             .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing())
     })
-        .workers(1).bind(std::env::var("ADDRESS").unwrap())?.run().await;
+    .workers(1)
+    .bind(std::env::var("ADDRESS").unwrap())?
+    .run()
+    .await;
     info!("Installer Loaded. Only 1 web worker. Please Setup your Environment ");
     return result;
 }
@@ -42,7 +45,6 @@ pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(install_post);
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstallUser {

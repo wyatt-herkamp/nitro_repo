@@ -1,23 +1,19 @@
 use actix_web::http::HeaderMap;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use diesel::insertable::ColumnInsertValue::Default;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+
 use diesel::MysqlConnection;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::error::response::already_exists;
+
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
-use crate::system::action::{add_new_user, get_session_token, get_user_by_username};
-use crate::system::models::{User, UserPermissions};
-use crate::system::utils::NewUserError::{
-    EmailAlreadyExists, PasswordDoesNotMatch, UsernameAlreadyExists,
-};
-use crate::utils::get_current_time;
+use crate::system::action::{get_session_token, get_user_by_username};
+use crate::system::models::User;
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -187,9 +183,9 @@ pub fn is_authed_read(
 pub fn user_has_deploy_access(user: &User, repo: &Repository) -> bool {
     if !user.permissions.admin {
         if !repo.security.deployers.is_empty() {
-            return (user.permissions.deployer.clone());
+            return user.permissions.deployer.clone();
         } else {
-            return (repo.security.deployers.contains(&user.id));
+            return repo.security.deployers.contains(&user.id);
         }
     }
     return true;
@@ -242,7 +238,6 @@ pub fn hash(password: String) -> Result<String, InternalError> {
         .to_string();
     Ok(password_hash)
 }
-
 
 pub fn generate_session_token(connection: &MysqlConnection) -> Result<String, InternalError> {
     loop {

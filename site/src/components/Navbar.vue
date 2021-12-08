@@ -41,7 +41,7 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import {  BasicResponse, User } from "@/backend/Response";
+import { BasicResponse, User } from "@/backend/Response";
 import http from "@/http-common";
 import { login } from "@/backend/api/backend/User";
 import { AuthToken } from "@/backend/api/User";

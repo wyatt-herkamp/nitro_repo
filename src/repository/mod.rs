@@ -5,13 +5,13 @@ pub mod admin;
 mod api;
 mod badge;
 pub mod controller;
+pub mod deploy;
 pub mod frontend;
 pub mod maven;
 pub mod models;
 mod npm;
 pub mod repository;
 pub mod utils;
-pub mod deploy;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)

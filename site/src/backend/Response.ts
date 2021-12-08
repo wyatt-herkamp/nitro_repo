@@ -4,7 +4,6 @@ export interface BasicResponse<T> {
   status_code: number;
 }
 
-
 export interface Storage {
   id: number;
   name: string;
@@ -24,7 +23,6 @@ export const DEFAULT_STORAGE_LIST: StorageList = {
   storages: [],
 };
 export interface SecurityRules {
-
   visibility: string;
   readers: Array<number>;
   deployers: Array<number>;
@@ -32,16 +30,16 @@ export interface SecurityRules {
 export const DEFAULT_SECURITY: SecurityRules = {
   visibility: "",
   readers: [],
-  deployers: []
-}
+  deployers: [],
+};
 export interface Frontend {
   page_provider: string;
   enabled: boolean;
 }
 export const DEFAULT_FRONTEND: Frontend = {
   page_provider: "",
-  enabled: false
-}
+  enabled: false,
+};
 export interface BadgeSettings {
   style: string;
   label_color: string;
@@ -50,8 +48,8 @@ export interface BadgeSettings {
 export const DEFAULT_BADGE: BadgeSettings = {
   style: "",
   label_color: "",
-  color: ""
-}
+  color: "",
+};
 export interface RepoSettings {
   policy: string;
   active: boolean;
@@ -64,18 +62,17 @@ export const DEFAULT_REPO_SETTINGS: RepoSettings = {
   active: false,
   re_deployment: false,
   frontend: DEFAULT_FRONTEND,
-  badge: DEFAULT_BADGE
-}
+  badge: DEFAULT_BADGE,
+};
 
 export interface DeploySettings {
   report_generation: ReportGeneration;
   webhooks: Array<Webhook>;
-
 }
 export const DEFAULT_DEPLOY_SETTINGS: DeploySettings = {
-  report_generation: {active: true, values: []},
-  webhooks: []
-}
+  report_generation: { active: true, values: [] },
+  webhooks: [],
+};
 
 export interface ReportGeneration {
   active: boolean;
@@ -104,8 +101,8 @@ export const DEFAULT_REPO: Repository = {
   security: DEFAULT_SECURITY,
   storage: 0,
   created: 0,
-  deploy_settings: DEFAULT_DEPLOY_SETTINGS
-}
+  deploy_settings: DEFAULT_DEPLOY_SETTINGS,
+};
 export interface User {
   id: number;
   name: string;

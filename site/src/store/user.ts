@@ -1,7 +1,7 @@
-import {computed, reactive} from "vue";
-import {User} from "@/backend/Response";
-import {getUser} from "@/backend/api/User";
-import {useCookie} from "vue-cookie-next";
+import { computed, reactive } from "vue";
+import { User } from "@/backend/Response";
+import { getUser } from "@/backend/api/User";
+import { useCookie } from "vue-cookie-next";
 
 export const ANON_USER: User = {
   id: 0,

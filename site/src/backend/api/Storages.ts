@@ -1,5 +1,11 @@
 import http from "@/http-common";
-import {BasicResponse, DEFAULT_STORAGE, DEFAULT_STORAGE_LIST, Storage, StorageList,} from "../Response";
+import {
+  BasicResponse,
+  DEFAULT_STORAGE,
+  DEFAULT_STORAGE_LIST,
+  Storage,
+  StorageList,
+} from "../Response";
 
 export async function getStorages(token: string) {
   const value = await http.get("/api/storages/list", {

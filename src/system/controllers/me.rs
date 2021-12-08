@@ -1,10 +1,10 @@
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, post, web, HttpRequest};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::DbPool;
-use crate::error::response::{mismatching_passwords, unauthorized};
+use crate::error::response::unauthorized;
 use crate::system::action::update_user_password;
 use crate::system::utils::{get_user_by_header, hash, NewPassword};
+use crate::DbPool;
 
 #[get("/api/me")]
 pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {

@@ -6,7 +6,7 @@
         class="el-menu-vertical-demo content"
         :collapse="false"
       >
-        <el-menu-item @click="index = 0" index=0>
+        <el-menu-item @click="index = 0" index="0">
           <i class="el-icon-watermelon"></i>
           <template #title>Create new Repository</template>
         </el-menu-item>
