@@ -9,6 +9,8 @@ and modern experience.
 |--|--|--|--| 
 | Maven | true | true | true |
 | NPM | Yes but Unstable | true | true |
+| NuGet | Coming Soon | true | true |
+| Project Pages | Coming Soon | false | false |
 | Badge Generation | true | false | false |
 
 ### History
