@@ -12,7 +12,6 @@ and modern experience.
 | NuGet | Coming Soon | true | true |
 | Project Pages | Coming Soon | false | false |
 | Token Based Security | Coming Soon | false | unsure |
-
 | Badge Generation | true | false | false |
 
 ### History
