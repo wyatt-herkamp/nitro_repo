@@ -5,8 +5,11 @@ and modern experience.
 
 ## Features
 
-| feature | nitro_repo | StrongBox | Sonatype Nexus | |--|--|--|--| | Maven | true | true | true | | NPM | Yes but
-Unstable | true | true | | Badge Generation | true | false | false |
+| feature | nitro_repo | StrongBox | Sonatype Nexus |
+|--|--|--|--| 
+| Maven | true | true | true |
+| NPM | Yes but Unstable | true | true |
+| Badge Generation | true | false | false |
 
 ### History
 
