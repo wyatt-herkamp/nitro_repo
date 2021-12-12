@@ -1,21 +1,24 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, read_dir, remove_file, OpenOptions};
+use std::fmt::format;
+use std::fs::{create_dir_all, File, OpenOptions, read_dir, read_to_string, remove_file};
 use std::io::Write;
 
-use actix_web::web::Bytes;
 use actix_web::HttpRequest;
+use actix_web::web::Bytes;
 use diesel::MysqlConnection;
-use log::{debug, error};
+use log::{debug, error, log_enabled, trace};
+use log::Level::Trace;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::deploy::{handle_post_deploy, DeployInfo};
-use crate::repository::maven::utils::{get_latest_version, get_version, get_versions};
+use crate::repository::deploy::{DeployInfo, handle_post_deploy};
+use crate::repository::maven::models::{NitroMavenVersions, Pom};
+use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, update_versions};
 use crate::repository::models::{Policy, RepositorySummary};
-use crate::repository::repository::RepoResponse::{
-    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
-};
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
+};
+use crate::repository::repository::RepoResponse::{
+    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
@@ -121,23 +124,40 @@ impl RepositoryType for MavenHandler {
             .create(true)
             .open(&buf)?;
         file.write_all(bytes.as_ref())?;
+        drop(file);
         if buf.to_str().unwrap().to_string().ends_with(".pom") {
-            let info = DeployInfo {
-                user: x.1.unwrap(),
-                version: "".to_string(),
-                name: "SimpleAnnotation".to_string(),
-                report_location: parent.join("report.json"),
-            };
-            let repository = request.repository.clone();
-            debug!("Starting Post Deploy Tasks");
-            actix_web::rt::spawn(async move {
-                let deploy = handle_post_deploy(&repository, info).await;
-                if let Err(error) = deploy {
-                    error!("Error Handling Post Deploy Tasks {}", error);
-                } else {
-                    debug!("All Post Deploy Tasks Completed and Happy :)");
-                }
-            });
+            let result = read_to_string(&buf)?;
+            let pom: Result<Pom, serde_xml_rs::Error> = serde_xml_rs::from_str(&result);
+            if let Err(error) = &pom {
+                error!("Unable to Parse Pom File {} Error {}", &buf.to_str().unwrap(),error);
+            }
+            if let Ok(pom) = pom {
+                let project_folder = parent.parent().unwrap().to_path_buf();
+                let repository = request.repository.clone();
+                actix_web::rt::spawn(async move {
+
+                    // let project = project_folder.join(".nitro.project.json");
+
+                    update_versions(&project_folder, pom.version.clone());
+                    let info = DeployInfo {
+                        user: x.1.unwrap(),
+                        version: pom.version,
+                        name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
+                        report_location: parent.join("report.json"),
+                    };
+                    ;
+                    debug!("Starting Post Deploy Tasks");
+                    if log_enabled!(Trace) {
+                        trace!("Data {}", &info);
+                    }
+                    let deploy = handle_post_deploy(&repository, &info).await;
+                    if let Err(error) = deploy {
+                        error!("Error Handling Post Deploy Tasks {}", error);
+                    } else {
+                        debug!("All Post Deploy Tasks Completed and Happy :)");
+                    }
+                });
+            }
         }
         Ok(RepoResponse::Ok)
     }

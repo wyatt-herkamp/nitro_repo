@@ -1,11 +1,13 @@
-use log::error;
 use std::collections::HashMap;
-use std::fs::{remove_file, File};
+use std::fmt::{Display, Formatter};
+use std::fs::{File, remove_file};
 use std::io::Write;
 use std::path::PathBuf;
 
+use log::error;
+use serde::{Deserialize, Serialize};
 use serde::de::value::MapDeserializer;
-use serde::Deserialize;
+use serde_json::Error;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
@@ -13,7 +15,7 @@ use crate::system::models::User;
 use crate::utils::get_current_time;
 use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct DeployInfo {
     pub user: User,
     pub version: String,
@@ -21,9 +23,15 @@ pub struct DeployInfo {
     pub report_location: PathBuf,
 }
 
+impl Display for DeployInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(self).unwrap())
+    }
+}
+
 pub async fn handle_post_deploy(
     repository: &Repository,
-    deploy: DeployInfo,
+    deploy: &DeployInfo,
 ) -> Result<(), InternalError> {
     for x in &repository.deploy_settings.webhooks {
         match x.handler.as_str() {
@@ -51,11 +59,10 @@ pub async fn handle_post_deploy(
             };
             report.insert(x.clone(), x1);
         }
-        let buf = deploy.report_location;
-        if buf.exists() {
-            remove_file(&buf)?;
+        if deploy.report_location.exists() {
+            remove_file(&deploy.report_location)?;
         }
-        let mut file = File::create(buf)?;
+        let mut file = File::create(&deploy.report_location)?;
         let string = serde_json::to_string(&report).unwrap();
         let x1 = string.as_bytes();
         file.write_all(x1)?;

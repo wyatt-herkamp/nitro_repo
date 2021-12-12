@@ -54,6 +54,12 @@ impl From<DecodeError> for InternalError {
     }
 }
 
+impl From<chrono::ParseError> for InternalError {
+    fn from(err: chrono::ParseError) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}
+
 impl From<FromUtf8Error> for InternalError {
     fn from(err: FromUtf8Error) -> InternalError {
         InternalError::UTF8Error(err)

@@ -1,8 +1,13 @@
 use std::collections::HashMap;
-use std::fs::{read_dir, read_to_string, DirEntry};
+use std::fs::{DirEntry, File, read_dir, read_to_string, remove_file};
+use std::io::Write;
 use std::path::PathBuf;
 
-use crate::repository::maven::models::DeployMetadata;
+use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
+use time::UtcOffset;
+
+use crate::error::internal_error::InternalError;
+use crate::repository::maven::models::{DeployMetadata, NitroMavenVersions};
 use crate::repository::repository::Version;
 
 pub fn get_versions(path: &PathBuf) -> Vec<Version> {
@@ -109,6 +114,25 @@ fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
     value.unwrap_or("".to_string())
 }
 
+pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
+    let versions = project_folder.join(".nitro.versions.json");
+    let mut versions_value: NitroMavenVersions =
+        if versions.exists() {
+            let value = serde_json::from_str(&read_to_string(&versions)?).unwrap();
+            remove_file(&versions)?;
+            value
+        } else {
+            NitroMavenVersions { version: vec![] }
+        };
+
+    versions_value.update_version(version);
+    let mut file = File::create(&versions).unwrap();
+    let string = serde_json::to_string(&versions)?;
+    let x1 = string.as_bytes();
+    file.write_all(x1)?;
+    return Ok(());
+}
+
 fn get_artifacts(path: &PathBuf) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
@@ -123,4 +147,19 @@ fn get_artifacts(path: &PathBuf) -> Vec<String> {
         }
     }
     values
+}
+
+pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
+    let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
+    return Ok(result);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::repository::maven::utils::parse_maven_date_time;
+
+    #[test]
+    fn parse_maven_date_time_test() {
+        println!("{}", parse_maven_date_time("20211201213303").unwrap().format("%Y-%m-%dT%H:%M:%S.%3fZ"));
+    }
 }
