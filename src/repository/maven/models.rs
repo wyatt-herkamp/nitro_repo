@@ -36,12 +36,12 @@ pub struct Pom {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NitroMavenVersions {
-    pub version: Vec<NitroVersion>,
+    pub versions: Vec<NitroVersion>,
 }
 
 impl NitroMavenVersions {
     pub fn update_version(&mut self, version: String) {
-        for v in self.version.iter_mut() {
+        for v in self.versions.iter_mut() {
             if v.version.eq(&version) {
                 if !v.snapshot {
                     v.time = get_current_time();
@@ -50,7 +50,7 @@ impl NitroMavenVersions {
             }
         }
         let snapshot = version.contains("-SNAPSHOT");
-        self.version.push(NitroVersion {
+        self.versions.push(NitroVersion {
             version,
             time: get_current_time(),
             snapshot,

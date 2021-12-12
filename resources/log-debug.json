@@ -42,6 +42,21 @@
           }
         }
       ]
+    },
+    {
+      "module": "serde_xml_rs::de",
+      "levels": [
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "console",
+          "properties": {
+            "format": "[%module%] %level_{color='true'}%: %message%"
+          }
+        }
+      ]
     }
   ]
 }

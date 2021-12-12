@@ -122,12 +122,12 @@ pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), 
             remove_file(&versions)?;
             value
         } else {
-            NitroMavenVersions { version: vec![] }
+            NitroMavenVersions { versions: vec![] }
         };
 
     versions_value.update_version(version);
     let mut file = File::create(&versions).unwrap();
-    let string = serde_json::to_string(&versions)?;
+    let string = serde_json::to_string_pretty(&versions_value)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
     return Ok(());

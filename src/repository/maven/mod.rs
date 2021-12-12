@@ -138,14 +138,19 @@ impl RepositoryType for MavenHandler {
 
                     // let project = project_folder.join(".nitro.project.json");
 
-                    update_versions(&project_folder, pom.version.clone());
+                    if let Err(error) = update_versions(&project_folder, pom.version.clone()) {
+                        error!("Unable to update .nitro.versions.json, {}", error);
+                        if log_enabled!(Trace) {
+                            trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
+                        }
+                    }
                     let info = DeployInfo {
                         user: x.1.unwrap(),
                         version: pom.version,
                         name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
                         report_location: parent.join("report.json"),
                     };
-                    ;
+
                     debug!("Starting Post Deploy Tasks");
                     if log_enabled!(Trace) {
                         trace!("Data {}", &info);
