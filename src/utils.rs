@@ -1,17 +1,16 @@
-use chrono::{DateTime, Duration, Local};
-use diesel::MysqlConnection;
-
-use serde::{Deserialize, Serialize};
-use std::ops::Add;
-
-use crate::settings::action::get_setting;
-
-use crate::error::internal_error::InternalError;
-use actix_web::http::HeaderMap;
-use rust_embed::RustEmbed;
 use std::fs::read;
+use std::ops::Add;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+
+use actix_web::http::header::HeaderMap;
+use chrono::{DateTime, Duration, Local};
+use diesel::MysqlConnection;
+use rust_embed::RustEmbed;
+use serde::{Deserialize, Serialize};
+
+use crate::error::internal_error::InternalError;
+use crate::settings::action::get_setting;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
