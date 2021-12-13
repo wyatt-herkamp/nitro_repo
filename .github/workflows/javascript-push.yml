@@ -8,9 +8,9 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
+    if: ${{ github.event.label.name == 'javascript' }}
     runs-on: ubuntu-latest
     steps:
-      - if: ${{ github.event.label.name == 'javascript' }}
       - uses: actions/checkout@v2
       - name: Use Node.js
         uses: actions/setup-node@v2
