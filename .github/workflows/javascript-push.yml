@@ -1,4 +1,4 @@
-name: Push
+name: Pull Request Javascript
 
 on:
   pull_request:
