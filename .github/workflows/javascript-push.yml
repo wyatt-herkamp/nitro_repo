@@ -1,0 +1,22 @@
+name: Push
+
+on:
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ github.event.label.name == 'javascript' }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          working-directory: site
+          node-version: 16.x
+      - name: Install Site
+        working-directory: site
+        run: npm install
