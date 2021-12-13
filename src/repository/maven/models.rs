@@ -64,3 +64,22 @@ pub struct NitroVersion {
     pub time: i64,
     pub snapshot: bool,
 }
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RepositoryListing {
+    pub values: Vec<String>,
+}
+
+impl RepositoryListing {
+    pub fn add_value(&mut self, project: String) -> bool {
+        for v in &self.values {
+            if v.eq(&project) {
+                return false;
+            }
+        }
+        self.values.push(project.clone());
+        return true;
+    }
+}
+

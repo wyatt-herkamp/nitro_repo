@@ -7,7 +7,7 @@ use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
 use time::UtcOffset;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::maven::models::{DeployMetadata, NitroMavenVersions};
+use crate::repository::maven::models::{DeployMetadata, NitroMavenVersions, RepositoryListing};
 use crate::repository::repository::Version;
 
 pub fn get_versions(path: &PathBuf) -> Vec<Version> {
@@ -128,6 +128,27 @@ pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), 
     versions_value.update_version(version);
     let mut file = File::create(&versions).unwrap();
     let string = serde_json::to_string_pretty(&versions_value)?;
+    let x1 = string.as_bytes();
+    file.write_all(x1)?;
+    return Ok(());
+}
+
+pub fn update_project_in_repositories(project: String, repo_location: PathBuf) -> Result<(), InternalError> {
+    let buf = repo_location.join("repository.json");
+
+    let mut repo_listing: RepositoryListing =
+        if buf.exists() {
+            let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
+            value
+        } else {
+            RepositoryListing { values: vec![] }
+        };
+
+    if !repo_listing.add_value(project) && buf.exists() {
+        remove_file(&buf)?;
+    }
+    let mut file = File::create(&buf).unwrap();
+    let string = serde_json::to_string_pretty(&repo_listing)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
     return Ok(());

@@ -12,7 +12,7 @@ use log::Level::Trace;
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::models::{NitroMavenVersions, Pom};
-use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, update_versions};
+use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, update_project_in_repositories, update_versions};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
@@ -107,10 +107,11 @@ impl RepositoryType for MavenHandler {
             }
             Policy::Mixed => {}
         }
-        let buf = get_storage_location()
+        let repo_location = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
-            .join(&request.repository.name)
+            .join(&request.repository.name);
+        let buf = repo_location
             .join(&request.value);
         let parent = buf.parent().unwrap().to_path_buf();
         create_dir_all(&parent)?;
@@ -140,6 +141,12 @@ impl RepositoryType for MavenHandler {
 
                     if let Err(error) = update_versions(&project_folder, pom.version.clone()) {
                         error!("Unable to update .nitro.versions.json, {}", error);
+                        if log_enabled!(Trace) {
+                            trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
+                        }
+                    }
+                    if let Err(error) = update_project_in_repositories(format!("{}:{}", &pom.group_id, &pom.artifact_id), repo_location) {
+                        error!("Unable to update repository.json, {}", error);
                         if log_enabled!(Trace) {
                             trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
                         }
