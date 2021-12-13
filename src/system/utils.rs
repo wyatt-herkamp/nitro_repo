@@ -1,15 +1,13 @@
-use actix_web::http::HeaderMap;
+use actix_web::http::header::HeaderMap;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-
 use diesel::MysqlConnection;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-
 use crate::repository::models::{Repository, Visibility};
 use crate::system;
 use crate::system::action::{get_session_token, get_user_by_username};
