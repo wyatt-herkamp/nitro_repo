@@ -1,35 +1,41 @@
-use std::io::prelude::*;
+use std::fs::File;
 use std::io::{Seek, Write};
+use std::io::prelude::*;
 use std::iter::Iterator;
+use std::path::Path;
+use std::path::PathBuf;
+
+use walkdir::{DirEntry, WalkDir};
+use zip::CompressionMethod;
 use zip::result::ZipError;
 use zip::write::FileOptions;
 
-use std::fs::File;
-use std::path::Path;
-use std::path::PathBuf;
-use walkdir::{DirEntry, WalkDir};
-use zip::CompressionMethod;
-
 fn main() {
-    let out_dir: PathBuf = std::env::var("OUT_DIR").unwrap().into();
-    let out_dir = out_dir.join("frontend.zip");
-    doit(
-        "site/dist",
-        out_dir.to_str().unwrap(),
-        CompressionMethod::Stored,
-    )
-    .unwrap();
-    println!("{:?}", out_dir);
+    let option = std::env::var_os("CARGO_FEATURE_FRONTEND");
+    if option.is_none() {
+        println!("cargo:warning=Frontend Not Being Used");
+    } else {
+        println!("{:?}", option.unwrap().to_str());
+        let out_dir: PathBuf = std::env::var("OUT_DIR").unwrap().into();
+        let out_dir = out_dir.join("frontend.zip");
+        doit(
+            "site/dist",
+            out_dir.to_str().unwrap(),
+            CompressionMethod::Stored,
+        )
+            .unwrap();
+        println!("{:?}", out_dir);
+    }
 }
 
 fn zip_dir<T>(
-    it: &mut dyn Iterator<Item = DirEntry>,
+    it: &mut dyn Iterator<Item=DirEntry>,
     prefix: &str,
     writer: T,
     method: zip::CompressionMethod,
 ) -> zip::result::ZipResult<()>
-where
-    T: Write + Seek,
+    where
+        T: Write + Seek,
 {
     let mut zip = zip::ZipWriter::new(writer);
     let options = FileOptions::default()
@@ -46,7 +52,7 @@ where
         if path.is_file() {
             println!("adding file {:?} as {:?} ...", path, name);
             #[allow(deprecated)]
-            zip.start_file(name.to_str().unwrap(), options)?;
+                zip.start_file(name.to_str().unwrap(), options)?;
             let mut f = File::open(path)?;
 
             f.read_to_end(&mut buffer)?;
