@@ -7,7 +7,7 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
-    if: contains(github.event.pull_request.labels.*.name, 'rust')    
+    if: contains(github.event.pull_request.labels.*.name, 'rust')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,4 +15,5 @@ jobs:
       - name: Update Rust
         run: rustup update
       - name: Test
-        run: cargo test
+        run: cargo test --no-default-features
+
