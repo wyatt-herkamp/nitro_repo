@@ -2,7 +2,7 @@ name: Pull Request Javascript
 
 on:
   pull_request:
-    branches: [ master ]
+    types: [ labeled ]
 
 env:
   CARGO_TERM_COLOR: always
