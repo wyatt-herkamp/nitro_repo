@@ -1,13 +1,13 @@
-name: Push
+name: Pull Request Javascript
 
 on:
-  push:
-    branches: [ master ]
+  pull_request:
 
 env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
+    if: contains(github.event.pull_request.labels.*.name, 'javascript')    
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -19,8 +19,3 @@ jobs:
       - name: Install Site
         working-directory: site
         run: npm install
-      - uses: Swatinem/rust-cache@v1
-      - name: Update Rust
-        run: rustup update
-      - name: Build
-        run: sh build.sh

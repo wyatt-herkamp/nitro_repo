@@ -1,0 +1,18 @@
+name: Pull Request Rust
+
+on:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  build:
+    if: contains(github.event.pull_request.labels.*.name, 'rust')    
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1
+      - name: Update Rust
+        run: rustup update
+      - name: Test
+        run: cargo test
