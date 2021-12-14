@@ -1,7 +1,9 @@
-use actix_web::{get, web, HttpRequest};
+use actix_web::{get, HttpRequest, web};
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
+use crate::DbPool;
 use crate::error::response::not_found;
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::controller::handle_result;
@@ -10,7 +12,6 @@ use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
-use crate::DbPool;
 
 //
 
@@ -19,13 +20,13 @@ pub struct ListRepositories {
     pub repositories: Vec<Repository>,
 }
 
-#[get("/api/versions/{storage}/{repository}/{file:.*}")]
+#[get("/api/versions/{storage}/{repository}/{project}")]
 pub async fn get_versions(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let (storage, repository, file) = path.into_inner();
+    let (storage, repository, project) = path.into_inner();
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(&storage, &connection)?;
@@ -40,7 +41,7 @@ pub async fn get_versions(
     let repository = repository.unwrap();
 
     let t = repository.repo_type.clone();
-    let string = file.clone();
+    let string = project.clone();
 
     let request = RepositoryRequest {
         storage,
@@ -54,10 +55,10 @@ pub async fn get_versions(
             panic!("Unknown REPO")
         }
     }?;
-    handle_result(x, file, r)
+    handle_result(x, project, r)
 }
 
-#[get("/api/project/{storage}/{repository}/{file:.*}")]
+#[get("/api/project/{storage}/{repository}/{project}")]
 pub async fn get_project(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -94,13 +95,13 @@ pub async fn get_project(
     handle_result(x, file, r)
 }
 
-#[get("/api/version/{storage}/{repository}/{file:.*}")]
+#[get("/api/version/{storage}/{repository}/{project}/{version}")]
 pub async fn get_version(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,
+    path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
-    let (storage, repository, file) = path.into_inner();
+    let (storage, repository, project, version) = path.into_inner();
     let connection = pool.get()?;
 
     let storage = get_storage_by_name(&storage, &connection)?;
@@ -115,7 +116,7 @@ pub async fn get_version(
     let repository = repository.unwrap();
 
     let t = repository.repo_type.clone();
-    let string = file.clone();
+    let string = project.clone();
 
     let request = RepositoryRequest {
         storage,
@@ -123,10 +124,10 @@ pub async fn get_version(
         value: string,
     };
     let x = match t.as_str() {
-        "maven" => MavenHandler::handle_version(&request, &r, &connection),
+        "maven" => MavenHandler::handle_version(&request, version, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }
     }?;
-    handle_result(x, file, r)
+    handle_result(x, project, r)
 }

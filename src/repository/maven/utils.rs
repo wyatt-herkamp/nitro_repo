@@ -7,33 +7,40 @@ use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
 use time::UtcOffset;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::maven::models::{DeployMetadata, NitroMavenVersions, RepositoryListing};
-use crate::repository::repository::Version;
+use crate::repository::maven::models::{DeployMetadata, RepositoryListing};
+use crate::repository::nitro::NitroMavenVersions;
+use crate::repository::repository::VersionResponse;
 
-pub fn get_versions(path: &PathBuf) -> Vec<Version> {
-    let maven_metadata = path.clone().join("maven-metadata.xml");
-    let value = if maven_metadata.exists() {
-        get_versions_generated(&maven_metadata)
-    } else {
-        get_versions_without_maven(path)
-    };
-    let mut versions = Vec::new();
-    for x in value {
-        versions.push(get_version(&path.join(x)))
-    }
-    versions
+pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
+    let versions = path.join(".nitro.versions.json");
+    return
+        if versions.exists() {
+            serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap()
+        } else {
+            NitroMavenVersions { latest_version: "".to_string(), latest_release: "".to_string(), versions: vec![] }
+        };
 }
 
-pub fn get_version(path: &PathBuf) -> Version {
-    let mut other = HashMap::new();
-    other.insert(
-        "artifacts".to_string(),
-        serde_json::to_value(get_artifacts(path)).unwrap(),
-    );
-    return Version {
-        version: path.file_name().unwrap().to_str().unwrap().to_string(),
-        other,
-    };
+pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
+    let buf = path.join(".nitro.versions.json");
+    let versions_value: NitroMavenVersions =
+        if buf.exists() {
+            let value = serde_json::from_str(&read_to_string(&buf).unwrap()).unwrap();
+            value
+        } else {
+            return None;
+        };
+    for x in versions_value.versions {
+        if x.version.eq(&version) {
+            return Some(VersionResponse { version: x, other: Default::default() });
+        }
+    }
+    return None;
+}
+
+/// Project format {groupID}:{artifactID}
+pub fn parse_project_to_directory(value: &String) -> String {
+    return value.replace(".", "/").replace(":", "/");
 }
 
 fn get_versions_generated(path: &PathBuf) -> Vec<String> {
@@ -122,7 +129,7 @@ pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), 
             remove_file(&versions)?;
             value
         } else {
-            NitroMavenVersions { versions: vec![] }
+            NitroMavenVersions { latest_version: "".to_string(), latest_release: "".to_string(), versions: vec![] }
         };
 
     versions_value.update_version(version);

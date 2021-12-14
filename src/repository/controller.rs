@@ -2,14 +2,15 @@ use std::fs::read_to_string;
 use std::path::Path;
 
 use actix_files::NamedFile;
+use actix_web::{get, head, HttpRequest, HttpResponse, patch, post, put, web};
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
 use diesel::MysqlConnection;
 use log::{debug, error, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
@@ -19,7 +20,6 @@ use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
-use crate::DbPool;
 
 //
 
@@ -160,7 +160,6 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::IAmATeapot(e) => {
             return i_am_a_teapot(e);
         }
-        RepoResponse::VersionResponse(value) => APIResponse::new(true, Some(value)).respond(&r),
         RepoResponse::ProjectResponse(project) => APIResponse::new(true, Some(project)).respond(&r),
         RepoResponse::VersionListingResponse(versions) => {
             APIResponse::new(true, Some(versions)).respond(&r)
@@ -179,6 +178,8 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
                 .body(json);
             return Ok(result);
         }
+        RepoResponse::NitroVersionListingResponse(value) => APIResponse::new(true, Some(value)).respond(&r),
+        RepoResponse::NitroVersionResponse(value) => APIResponse::new(true, Some(value)).respond(&r)
     };
 }
 

@@ -1,27 +1,26 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, read_dir, remove_file, File, OpenOptions};
+use std::fs::{create_dir_all, File, OpenOptions, read_dir, remove_file};
 use std::io::{BufReader, Write};
 use std::string::String;
 
-use actix_web::web::Bytes;
 use actix_web::HttpRequest;
+use actix_web::web::Bytes;
 use diesel::MysqlConnection;
 use regex::Regex;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::RepositorySummary;
+use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{
-    get_latest_version, Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
+    Attachment, get_latest_version, GetResponse, LoginRequest, LoginResponse, PublishRequest,
     Version,
 };
-use crate::repository::repository::RepoResponse::{
-    CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse,
-};
-use crate::repository::repository::Version as RepoVersion;
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
+use crate::repository::repository::RepoResponse::{CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized};
+use crate::repository::repository::VersionResponse as RepoVersion;
 use crate::repository::utils::{build_artifact_directory, build_directory};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
@@ -261,7 +260,7 @@ impl RepositoryType for NPMHandler {
         let mut versions = Vec::new();
         for x in times_map {
             versions.push(RepoVersion {
-                version: x.0,
+                version: x.0.into(),
                 other: HashMap::new(),
             });
         }
@@ -270,11 +269,13 @@ impl RepositoryType for NPMHandler {
 
     fn handle_version(
         request: &RepositoryRequest,
+        version: String,
         _http: &HttpRequest,
         _conn: &MysqlConnection,
     ) -> RepoResult {
-        return Ok(VersionResponse(RepoVersion {
-            version: request.value.split("/").last().unwrap().to_string(),
+        let string = request.value.split("/").last().unwrap().to_string();
+        return Ok(NitroVersionResponse(RepoVersion {
+            version: version.into(),
             other: HashMap::new(),
         }));
     }
@@ -293,13 +294,18 @@ impl RepositoryType for NPMHandler {
         let mut versions = Vec::new();
         for x in times_map {
             versions.push(RepoVersion {
-                version: x.0,
+                version: x.0.into(),
                 other: HashMap::new(),
             });
         }
+        //TODO fix NPM
         let project = Project {
             repo_summary: RepositorySummary::new(&request.repository, &conn)?,
-            versions: versions,
+            versions: NitroMavenVersions {
+                latest_version: "".to_string(),
+                latest_release: "".to_string(),
+                versions: vec![],
+            },
             frontend_response: None,
         };
         return Ok(RepoResponse::ProjectResponse(project));

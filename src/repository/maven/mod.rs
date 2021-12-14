@@ -11,8 +11,8 @@ use log::Level::Trace;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
-use crate::repository::maven::models::{NitroMavenVersions, Pom};
-use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, update_project_in_repositories, update_versions};
+use crate::repository::maven::models::Pom;
+use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, parse_project_to_directory, update_project_in_repositories, update_versions};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
@@ -232,35 +232,44 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let string = parse_project_to_directory(&request.value);
+
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(&string);
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
-        Ok(RepoResponse::VersionListingResponse(vec))
+        Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
     fn handle_version(
         request: &RepositoryRequest,
+        version: String,
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let string = parse_project_to_directory(&request.value);
+
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(string);
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
-        Ok(RepoResponse::VersionResponse(get_version(&buf)))
+        let option = get_version(&buf, version);
+        if option.is_none() {
+            return Ok(RepoResponse::NotFound);
+        }
+        Ok(RepoResponse::NitroVersionResponse(option.unwrap()))
     }
 
     fn handle_project(
@@ -271,11 +280,12 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let string = parse_project_to_directory(&request.value);
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(&string);
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
@@ -290,17 +300,20 @@ impl RepositoryType for MavenHandler {
 
     fn latest_version(
         request: &RepositoryRequest,
+
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> Result<String, InternalError> {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return Ok("".to_string());
         }
+        let string = parse_project_to_directory(&request.value);
+
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(string);
         if !buf.exists() {
             return Ok("".to_string());
         }
