@@ -12,7 +12,7 @@ use log::Level::Trace;
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, parse_project_to_directory, update_project_in_repositories, update_versions};
+use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, parse_project_to_directory, update_project, update_project_in_repositories, update_versions};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
@@ -136,9 +136,12 @@ impl RepositoryType for MavenHandler {
                 let project_folder = parent.parent().unwrap().to_path_buf();
                 let repository = request.repository.clone();
                 actix_web::rt::spawn(async move {
-
-                    // let project = project_folder.join(".nitro.project.json");
-
+                    if let Err(error) = update_project(&project_folder) {
+                        error!("Unable to update .nitro.project.json, {}", error);
+                        if log_enabled!(Trace) {
+                            trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
+                        }
+                    }
                     if let Err(error) = update_versions(&project_folder, pom.version.clone()) {
                         error!("Unable to update .nitro.versions.json, {}", error);
                         if log_enabled!(Trace) {

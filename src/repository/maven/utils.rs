@@ -8,8 +8,9 @@ use time::UtcOffset;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::{DeployMetadata, RepositoryListing};
-use crate::repository::nitro::NitroMavenVersions;
+use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::repository::VersionResponse;
+use crate::utils::get_current_time;
 
 pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
     let versions = path.join(".nitro.versions.json");
@@ -92,6 +93,25 @@ pub fn update_project_in_repositories(project: String, repo_location: PathBuf) -
     if !repo_listing.add_value(project) && buf.exists() {
         remove_file(&buf)?;
     }
+    let mut file = File::create(&buf).unwrap();
+    let string = serde_json::to_string_pretty(&repo_listing)?;
+    let x1 = string.as_bytes();
+    file.write_all(x1)?;
+    return Ok(());
+}
+
+pub fn update_project(project_folder: &PathBuf) -> Result<(), InternalError> {
+    let buf = project_folder.join(".nitro.project.json");
+
+    let mut repo_listing: ProjectData =
+        if buf.exists() {
+            let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
+            remove_file(&buf);
+            value
+        } else {
+            ProjectData { created: get_current_time() }
+        };
+    //TODO append updates
     let mut file = File::create(&buf).unwrap();
     let string = serde_json::to_string_pretty(&repo_listing)?;
     let x1 = string.as_bytes();

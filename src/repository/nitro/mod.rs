@@ -3,6 +3,12 @@ use serde::{Deserialize, Serialize};
 use crate::utils::get_current_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProjectData {
+    #[serde(default = "crate::utils::get_current_time")]
+    pub created: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NitroMavenVersions {
     #[serde(default)]
     pub latest_version: String,

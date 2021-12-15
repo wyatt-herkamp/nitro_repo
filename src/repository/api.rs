@@ -1,5 +1,4 @@
 use actix_web::{get, HttpRequest, web};
-use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
