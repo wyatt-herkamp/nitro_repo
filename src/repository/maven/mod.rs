@@ -300,7 +300,6 @@ impl RepositoryType for MavenHandler {
 
     fn latest_version(
         request: &RepositoryRequest,
-
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> Result<String, InternalError> {
@@ -318,6 +317,6 @@ impl RepositoryType for MavenHandler {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        Ok(vec)
+        Ok(vec.unwrap_or("".to_string()))
     }
 }

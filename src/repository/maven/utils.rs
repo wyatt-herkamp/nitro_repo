@@ -43,83 +43,21 @@ pub fn parse_project_to_directory(value: &String) -> String {
     return value.replace(".", "/").replace(":", "/");
 }
 
-fn get_versions_generated(path: &PathBuf) -> Vec<String> {
-    let string = read_to_string(path).unwrap();
-    let vec: DeployMetadata = serde_xml_rs::from_str(string.as_str()).unwrap();
-    vec.versioning.versions.version
-}
-
-fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
-    let dir = read_dir(path).unwrap();
-    let mut values = Vec::new();
-    for x in dir {
-        let x1 = x.unwrap();
-        if x1.file_type().unwrap().is_dir() {
-            values.push(x1.file_name().to_str().unwrap().to_string());
-        }
-    }
-    values
-}
-
-pub fn get_latest_version(path: &PathBuf, release: bool) -> String {
-    let maven_metadata = path.join("maven-metadata.xml");
-
-    if maven_metadata.exists() {
-        get_latest_version_generated(&maven_metadata, release)
-    } else {
-        get_latest_versions_without_maven(path, release)
-    }
-}
-
-fn get_latest_version_generated(path: &PathBuf, release: bool) -> String {
-    let string = read_to_string(path).unwrap();
-    let vec: DeployMetadata = serde_xml_rs::from_str(string.as_str()).unwrap();
-    let versioning = vec.versioning;
-    if release {
-        if let Some(value) = versioning.release {
-            return value;
-        }
-    }
-    let versions = versioning.versions.version;
-    for x in &versions {
-        if release && (x.ends_with("SNAPSHOT") || x.contains("pr")) {
-            continue;
-        }
-        return x.clone();
-    }
-    return versions.first().unwrap_or(&String::new()).clone();
-}
-
-fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
-    let dir = read_dir(path).unwrap();
-    let vec = dir.collect::<Vec<Result<DirEntry, std::io::Error>>>();
-    let mut values = vec
-        .iter()
-        .map(|e| e.as_ref().unwrap())
-        .collect::<Vec<&DirEntry>>();
-    values.sort_by(|a, b| {
-        a.metadata()
-            .unwrap()
-            .created()
-            .unwrap()
-            .cmp(&b.metadata().unwrap().created().unwrap())
-    });
-
-    let mut value = None;
-    for x in values {
-        if x.file_type().unwrap().is_dir() {
-            let string = x.file_name().to_str().unwrap().to_string();
-            if value.is_none() {
-                value = Some(string.clone());
+pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
+    let versions = path.join(".nitro.versions.json");
+    return
+        if versions.exists() {
+            let option: NitroMavenVersions = serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
+            if release {
+                Some(option.latest_release)
+            } else {
+                Some(option.latest_version)
             }
-            if release && (string.ends_with("SNAPSHOT") || string.contains("pr")) {
-                continue;
-            }
-            return string;
-        }
-    }
-    value.unwrap_or("".to_string())
+        } else {
+            None
+        };
 }
+
 
 pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
     let versions = project_folder.join(".nitro.versions.json");
