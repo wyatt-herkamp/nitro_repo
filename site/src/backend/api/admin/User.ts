@@ -27,7 +27,7 @@ export async function createNewUser(
     password: password,
     permissions: { deployer: false, admin: false },
   };
-  return await http
+  return http
     .post("/api/admin/user/add", newUser, {
       headers: {
         Authorization: "Bearer " + token,
@@ -73,7 +73,7 @@ export async function updateOtherPassword(
   password: string,
   token: string
 ) {
-  return await http
+  return http
     .post(
       "/api/admin/user/" + user + "/password",
       { password: password },
@@ -116,7 +116,7 @@ export async function updateNameAndEmail(
   email: string,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/user/" + user + "/modify",
       { name: name, email: email },
@@ -159,7 +159,7 @@ export async function updatePermission(
   value: boolean,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/user/" + user + "/modify/permission/" + perm + "/" + value,
       {},

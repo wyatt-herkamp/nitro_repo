@@ -16,7 +16,7 @@ export async function updateSetting(
   value: string,
   token: string
 ) {
-  return await http
+  return http
     .post(
       "/api/admin/setting/" + name + "/update",
       { value: value },

@@ -15,7 +15,7 @@ export async function createNewStorage(
   public_name: string,
   token: string
 ) {
-  return await http
+  return http
     .post(
       "/api/admin/storages/add",
       { name: name, public_name: public_name },

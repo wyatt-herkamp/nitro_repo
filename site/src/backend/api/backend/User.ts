@@ -13,7 +13,7 @@ export async function login(username: string, password: string) {
     username: username,
     password: password,
   };
-  return await http.post("api/login", loginRequest).then(
+  return http.post("api/login", loginRequest).then(
     (result) => {
       const resultData = result.data;
       let value = JSON.stringify(resultData);
@@ -44,7 +44,7 @@ export async function login(username: string, password: string) {
 }
 
 export async function updateMyPassword(password: string, token: string) {
-  return await http
+  return http
     .post(
       "/api/me/user/password",
       { password: password },
@@ -83,7 +83,7 @@ export async function updateMyPassword(password: string, token: string) {
 }
 
 export async function getUser(token: string) {
-  return await http
+  return http
     .get("/api/me", {
       headers: {
         Authorization: "Bearer " + token,
