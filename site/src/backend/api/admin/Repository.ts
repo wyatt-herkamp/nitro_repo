@@ -16,7 +16,7 @@ export async function createNewRepository(
   type: string,
   token: string
 ) {
-  return await http
+  return http
     .post(
       "/api/admin/repository/add",
       { name: name, storage: storage, repo: type },
@@ -66,7 +66,7 @@ export async function setActiveStatus(
   active: boolean,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" + id + "/active/" + active,
       {},
@@ -104,7 +104,7 @@ export async function setActiveStatus(
     );
 }
 export async function setPolicy(id: number, policy: string, token: string) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" + id + "/policy/" + policy,
       {},
@@ -148,7 +148,7 @@ export async function updateBadge(
   color: string,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" + id + "/modify/settings/badge",
       { style: badgeStyle, label_color: labelColor, color: color },
@@ -191,7 +191,7 @@ export async function updateFrontend(
   pageProvider: string,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" + id + "/modify/settings/frontend",
       { enabled: enabled, page_provider: pageProvider },
@@ -234,7 +234,7 @@ export async function setVisibility(
   visibility: string,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" +
         id +
@@ -275,7 +275,7 @@ export async function setVisibility(
     );
 }
 export async function clearAll(id: number, what: string, token: string) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" + id + "/clear/security/" + what,
       {},
@@ -319,7 +319,7 @@ export async function addOrRemoveReadersOrDeployers(
   user: number,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" +
         id +
@@ -370,7 +370,7 @@ export async function updateDeployReport(
   values: Array<string>,
   token: string
 ) {
-  return await http
+  return http
     .patch(
       "/api/admin/repository/" + id + "/modify/deploy/report",
       { active: active, values: values },
@@ -415,7 +415,7 @@ export async function updateOrAddWebhppl(
   settings: Map<string, any>,
   token: string
 ) {
-  return await http
+  return http
     .put(
       "/api/admin/repository/" + id + "/modify/deploy/webhook/add",
       { id: name, handler: handler, settings: settings },
@@ -453,7 +453,7 @@ export async function updateOrAddWebhppl(
     );
 }
 export async function deleteWebhook(id: number, name: string, token: string) {
-  return await http
+  return http
     .delete("/api/admin/repository/" + id + "/modify/deploy/webhook/" + name, {
       headers: {
         Authorization: "Bearer " + token,

@@ -17,7 +17,7 @@ export async function installRequest(
     password: password,
     password_two: password_two,
   };
-  return await http.post("install", installRequest).then(
+  return http.post("install", installRequest).then(
     (result) => {
       const resultData = result.data;
       let value = JSON.stringify(resultData);
