@@ -33,23 +33,3 @@ pub struct Pom {
     pub version: String,
     pub name: Option<String>,
 }
-
-
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RepositoryListing {
-    pub values: Vec<String>,
-}
-
-impl RepositoryListing {
-    pub fn add_value(&mut self, project: String) -> bool {
-        for v in &self.values {
-            if v.eq(&project) {
-                return false;
-            }
-        }
-        self.values.push(project.clone());
-        return true;
-    }
-}
-

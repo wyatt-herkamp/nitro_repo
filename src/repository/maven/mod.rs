@@ -12,7 +12,9 @@ use log::Level::Trace;
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{get_latest_version, get_version, get_versions, parse_project_to_directory, update_project, update_project_in_repositories, update_versions};
+use crate::repository::maven::utils::{
+    get_latest_version, get_version, get_versions, parse_project_to_directory,
+};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
@@ -111,8 +113,7 @@ impl RepositoryType for MavenHandler {
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name);
-        let buf = repo_location
-            .join(&request.value);
+        let buf = repo_location.join(&request.value);
         let parent = buf.parent().unwrap().to_path_buf();
         create_dir_all(&parent)?;
 
@@ -130,28 +131,50 @@ impl RepositoryType for MavenHandler {
             let result = read_to_string(&buf)?;
             let pom: Result<Pom, serde_xml_rs::Error> = serde_xml_rs::from_str(&result);
             if let Err(error) = &pom {
-                error!("Unable to Parse Pom File {} Error {}", &buf.to_str().unwrap(),error);
+                error!(
+                    "Unable to Parse Pom File {} Error {}",
+                    &buf.to_str().unwrap(),
+                    error
+                );
             }
             if let Ok(pom) = pom {
                 let project_folder = parent.parent().unwrap().to_path_buf();
                 let repository = request.repository.clone();
                 actix_web::rt::spawn(async move {
-                    if let Err(error) = update_project(&project_folder) {
+                    if let Err(error) = crate::repository::utils::update_project(&project_folder) {
                         error!("Unable to update .nitro.project.json, {}", error);
                         if log_enabled!(Trace) {
-                            trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
+                            trace!(
+                                "Version {} Name: {}",
+                                &pom.version,
+                                format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                            );
                         }
                     }
-                    if let Err(error) = update_versions(&project_folder, pom.version.clone()) {
+                    if let Err(error) = crate::repository::utils::update_versions(
+                        &project_folder,
+                        pom.version.clone(),
+                    ) {
                         error!("Unable to update .nitro.versions.json, {}", error);
                         if log_enabled!(Trace) {
-                            trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
+                            trace!(
+                                "Version {} Name: {}",
+                                &pom.version,
+                                format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                            );
                         }
                     }
-                    if let Err(error) = update_project_in_repositories(format!("{}:{}", &pom.group_id, &pom.artifact_id), repo_location) {
+                    if let Err(error) = crate::repository::utils::update_project_in_repositories(
+                        format!("{}:{}", &pom.group_id, &pom.artifact_id),
+                        repo_location,
+                    ) {
                         error!("Unable to update repository.json, {}", error);
                         if log_enabled!(Trace) {
-                            trace!("Version {} Name: {}", &pom.version,format!("{}:{}", &pom.group_id, &pom.artifact_id));
+                            trace!(
+                                "Version {} Name: {}",
+                                &pom.version,
+                                format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                            );
                         }
                     }
                     let info = DeployInfo {

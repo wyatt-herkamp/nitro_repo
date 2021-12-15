@@ -7,33 +7,38 @@ use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
 use time::UtcOffset;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::maven::models::{DeployMetadata, RepositoryListing};
+use crate::repository::maven::models::DeployMetadata;
 use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::repository::VersionResponse;
 use crate::utils::get_current_time;
 
 pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
     let versions = path.join(".nitro.versions.json");
-    return
-        if versions.exists() {
-            serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap()
-        } else {
-            NitroMavenVersions { latest_version: "".to_string(), latest_release: "".to_string(), versions: vec![] }
-        };
+    return if versions.exists() {
+        serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap()
+    } else {
+        NitroMavenVersions {
+            latest_version: "".to_string(),
+            latest_release: "".to_string(),
+            versions: vec![],
+        }
+    };
 }
 
 pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
     let buf = path.join(".nitro.versions.json");
-    let versions_value: NitroMavenVersions =
-        if buf.exists() {
-            let value = serde_json::from_str(&read_to_string(&buf).unwrap()).unwrap();
-            value
-        } else {
-            return None;
-        };
+    let versions_value: NitroMavenVersions = if buf.exists() {
+        let value = serde_json::from_str(&read_to_string(&buf).unwrap()).unwrap();
+        value
+    } else {
+        return None;
+    };
     for x in versions_value.versions {
         if x.version.eq(&version) {
-            return Some(VersionResponse { version: x, other: Default::default() });
+            return Some(VersionResponse {
+                version: x,
+                other: Default::default(),
+            });
         }
     }
     return None;
@@ -46,77 +51,17 @@ pub fn parse_project_to_directory(value: &String) -> String {
 
 pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
     let versions = path.join(".nitro.versions.json");
-    return
-        if versions.exists() {
-            let option: NitroMavenVersions = serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
-            if release {
-                Some(option.latest_release)
-            } else {
-                Some(option.latest_version)
-            }
+    return if versions.exists() {
+        let option: NitroMavenVersions =
+            serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
+        if release {
+            Some(option.latest_release)
         } else {
-            None
-        };
-}
-
-
-pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
-    let versions = project_folder.join(".nitro.versions.json");
-    let mut versions_value: NitroMavenVersions =
-        if versions.exists() {
-            let value = serde_json::from_str(&read_to_string(&versions)?).unwrap();
-            remove_file(&versions)?;
-            value
-        } else {
-            NitroMavenVersions { latest_version: "".to_string(), latest_release: "".to_string(), versions: vec![] }
-        };
-
-    versions_value.update_version(version);
-    let mut file = File::create(&versions).unwrap();
-    let string = serde_json::to_string_pretty(&versions_value)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
-    return Ok(());
-}
-
-pub fn update_project_in_repositories(project: String, repo_location: PathBuf) -> Result<(), InternalError> {
-    let buf = repo_location.join("repository.json");
-
-    let mut repo_listing: RepositoryListing =
-        if buf.exists() {
-            let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-            value
-        } else {
-            RepositoryListing { values: vec![] }
-        };
-
-    if !repo_listing.add_value(project) && buf.exists() {
-        remove_file(&buf)?;
-    }
-    let mut file = File::create(&buf).unwrap();
-    let string = serde_json::to_string_pretty(&repo_listing)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
-    return Ok(());
-}
-
-pub fn update_project(project_folder: &PathBuf) -> Result<(), InternalError> {
-    let buf = project_folder.join(".nitro.project.json");
-
-    let mut repo_listing: ProjectData =
-        if buf.exists() {
-            let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-            remove_file(&buf);
-            value
-        } else {
-            ProjectData { created: get_current_time() }
-        };
-    //TODO append updates
-    let mut file = File::create(&buf).unwrap();
-    let string = serde_json::to_string_pretty(&repo_listing)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
-    return Ok(());
+            Some(option.latest_version)
+        }
+    } else {
+        None
+    };
 }
 
 fn get_artifacts(path: &PathBuf) -> Vec<String> {
@@ -146,6 +91,11 @@ mod tests {
 
     #[test]
     fn parse_maven_date_time_test() {
-        println!("{}", parse_maven_date_time("20211201213303").unwrap().format("%Y-%m-%dT%H:%M:%S.%3fZ"));
+        println!(
+            "{}",
+            parse_maven_date_time("20211201213303")
+                .unwrap()
+                .format("%Y-%m-%dT%H:%M:%S.%3fZ")
+        );
     }
 }

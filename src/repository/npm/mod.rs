@@ -19,7 +19,9 @@ use crate::repository::npm::models::{
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
-use crate::repository::repository::RepoResponse::{CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized};
+use crate::repository::repository::RepoResponse::{
+    CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized,
+};
 use crate::repository::repository::VersionResponse as RepoVersion;
 use crate::repository::utils::{build_artifact_directory, build_directory};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
@@ -30,6 +32,7 @@ mod utils;
 
 pub struct NPMHandler;
 
+// name/version
 impl RepositoryType for NPMHandler {
     fn handle_get(
         request: &RepositoryRequest,
@@ -39,6 +42,10 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        for x in http.headers() {
+            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
+        }
+        log::trace!("URL: {}", request.value);
         if http.headers().contains_key("npm-command") {
             let buf = build_directory(&request);
             if request.value.ends_with(".tgz") {
@@ -87,8 +94,8 @@ impl RepositoryType for NPMHandler {
                     other: version.other.clone(),
                     versions,
                     times,
+                    dist_tags: latest_version.into(),
                 };
-                println!("{}", &string);
                 return Ok(RepoResponse::OkWithJSON(serde_json::to_string(&response)?));
             }
         } else {
@@ -176,12 +183,7 @@ impl RepositoryType for NPMHandler {
             if file.exists() {
                 remove_file(&file).unwrap();
             }
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .create(true)
-                .open(file)
-                .unwrap();
+            let mut file = File::create(&file)?;
             let result: Attachment = serde_json::from_value(x.1).unwrap();
             let attachment = base64::decode(result.data)?;
 
@@ -193,7 +195,6 @@ impl RepositoryType for NPMHandler {
             &request.repository,
             &request.value,
         );
-
         if !times_json.exists() {
             let time = chrono::Utc::now();
             let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
@@ -202,17 +203,14 @@ impl RepositoryType for NPMHandler {
             times.insert("created", time.clone());
             file.write_all(serde_json::to_string(&times)?.as_bytes())?;
         }
+
         for (key, value) in value.versions {
             let version = artifact.join(format!("version-{}.json", &key));
             if version.exists() {
                 remove_file(&version)?;
             }
             let result = serde_json::to_string_pretty(&value)?;
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .create(true)
-                .open(version)?;
+            let mut file = File::create(&version)?;
             file.write_all(result.as_bytes())?;
 
             //Append Time

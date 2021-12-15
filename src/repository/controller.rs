@@ -178,8 +178,12 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
                 .body(json);
             return Ok(result);
         }
-        RepoResponse::NitroVersionListingResponse(value) => APIResponse::new(true, Some(value)).respond(&r),
-        RepoResponse::NitroVersionResponse(value) => APIResponse::new(true, Some(value)).respond(&r)
+        RepoResponse::NitroVersionListingResponse(value) => {
+            APIResponse::new(true, Some(value)).respond(&r)
+        }
+        RepoResponse::NitroVersionResponse(value) => {
+            APIResponse::new(true, Some(value)).respond(&r)
+        }
     };
 }
 
