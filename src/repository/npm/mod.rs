@@ -6,9 +6,12 @@ use std::string::String;
 use actix_web::HttpRequest;
 use actix_web::web::Bytes;
 use diesel::MysqlConnection;
+use log::{debug, error, log_enabled, trace};
+use log::Level::Trace;
 use regex::Regex;
 
 use crate::error::internal_error::InternalError;
+use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::models::RepositorySummary;
 use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::npm::auth::is_valid;
@@ -165,8 +168,8 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let value: PublishRequest = serde_json::from_slice(bytes.as_ref()).unwrap();
-        let buf = build_directory(&request);
-        let artifact = buf.join(&value.name);
+        let repo_location = build_directory(&request);
+        let artifact = repo_location.join(&value.name);
         create_dir_all(&artifact)?;
 
         for x in value._attachments {
@@ -189,20 +192,7 @@ impl RepositoryType for NPMHandler {
 
             file.write_all(&attachment)?;
         }
-
-        let times_json = crate::repository::npm::utils::get_time_file(
-            &request.storage,
-            &request.repository,
-            &request.value,
-        );
-        if !times_json.exists() {
-            let time = chrono::Utc::now();
-            let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-            let mut file = File::create(&times_json)?;
-            let mut times = HashMap::new();
-            times.insert("created", time.clone());
-            file.write_all(serde_json::to_string(&times)?.as_bytes())?;
-        }
+        let user1 = result1.1.unwrap();
 
         for (key, value) in value.versions {
             let version = artifact.join(format!("version-{}.json", &key));
@@ -213,15 +203,66 @@ impl RepositoryType for NPMHandler {
             let mut file = File::create(&version)?;
             file.write_all(result.as_bytes())?;
 
-            //Append Time
-            let time = chrono::Utc::now();
-            let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
-            let mut times_map: HashMap<String, String> =
-                serde_json::from_reader(File::open(&times_json)?)?;
-            remove_file(&times_json)?;
-            times_map.insert(key.clone(), time);
-            let mut times_json = File::create(&times_json)?;
-            times_json.write_all(serde_json::to_string_pretty(&times_map)?.as_bytes())?;
+            let repo_location = build_directory(&request);
+            let project_folder = artifact.clone();
+            let repository1 = request.repository.clone();
+            let user2 = user1.clone();
+
+            actix_web::rt::spawn(async move {
+                if let Err(error) = crate::repository::utils::update_project(&project_folder) {
+                    error!("Unable to update .nitro.project.json, {}", error);
+                    if log_enabled!(Trace) {
+                        trace!(
+                                "Version {} Name: {}",
+                                &key,
+                                &value.name
+                            );
+                    }
+                }
+                if let Err(error) = crate::repository::utils::update_versions(
+                    &project_folder,
+                    key.clone(),
+                ) {
+                    error!("Unable to update .nitro.versions.json, {}", error);
+                    if log_enabled!(Trace) {
+                        trace!(
+                                "Version {} Name: {}",
+                                          &key,
+                                &value.name
+                            );
+                    }
+                }
+                if let Err(error) = crate::repository::utils::update_project_in_repositories(
+                    value.name.clone(),
+                    repo_location,
+                ) {
+                    error!("Unable to update repository.json, {}", error);
+                    if log_enabled!(Trace) {
+                        trace!(
+                                "Version {} Name: {}",
+                                &key,
+                                &value.name
+                            );
+                    }
+                }
+                let info = DeployInfo {
+                    user: user2,
+                    version: value.version.clone(),
+                    name: value.name.clone(),
+                    report_location: project_folder.join(format!("report-{}.json", value.version)),
+                };
+
+                debug!("Starting Post Deploy Tasks");
+                if log_enabled!(Trace) {
+                    trace!("Data {}", &info);
+                }
+                let deploy = handle_post_deploy(&repository1, &info).await;
+                if let Err(error) = deploy {
+                    error!("Error Handling Post Deploy Tasks {}", error);
+                } else {
+                    debug!("All Post Deploy Tasks Completed and Happy :)");
+                }
+            });
         }
         // Everything is a ok.... OR is IT??????
         return Ok(RepoResponse::Ok);
