@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use std::fs::{create_dir_all, File, OpenOptions, read_dir, read_to_string, remove_file};
+use std::fs::{create_dir_all, OpenOptions, read_dir, read_to_string, remove_file};
 use std::io::Write;
 
 use actix_web::HttpRequest;

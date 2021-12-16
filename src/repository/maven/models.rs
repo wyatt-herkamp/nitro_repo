@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::utils::get_current_time;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeployMetadata {
     #[serde(rename = "groupId")]

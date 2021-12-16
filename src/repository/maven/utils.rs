@@ -1,16 +1,11 @@
-use std::collections::HashMap;
-use std::fs::{DirEntry, File, read_dir, read_to_string, remove_file};
-use std::io::Write;
+use std::fs::{read_dir, read_to_string};
 use std::path::PathBuf;
 
-use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
-use time::UtcOffset;
+use chrono::NaiveDateTime;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::maven::models::DeployMetadata;
-use crate::repository::nitro::{NitroMavenVersions, ProjectData};
+use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::repository::VersionResponse;
-use crate::utils::get_current_time;
 
 pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
     let versions = path.join(".nitro.versions.json");
@@ -63,7 +58,6 @@ pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
         None
     };
 }
-
 fn get_artifacts(path: &PathBuf) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
@@ -79,7 +73,6 @@ fn get_artifacts(path: &PathBuf) -> Vec<String> {
     }
     values
 }
-
 pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
     let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
     return Ok(result);

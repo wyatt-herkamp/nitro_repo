@@ -25,7 +25,7 @@ impl From<NitroMavenVersions> for HashMap<String, String> {
     }
 }
 
-pub fn get_time_file<S: Into<String>>(storage: &Storage, repo: &Repository, id: S) -> PathBuf {
+pub fn get_time_file<S: Into<String>>(storage: &Storage, repo: &Repository, id: S) -> std::io::Result<PathBuf> {
     let string = id.into();
     let buf = get_storage_location()
         .join("storages")
@@ -33,9 +33,9 @@ pub fn get_time_file<S: Into<String>>(storage: &Storage, repo: &Repository, id: 
         .join(&repo.name)
         .join(string.replace("%2f", "/"));
     if !buf.exists() {
-        create_dir_all(&buf);
+        create_dir_all(&buf)?;
     }
-    return buf.join("times.json");
+    return Ok(buf.join("times.json"));
 }
 
 pub fn read_time_file<S: Into<String>>(
@@ -43,7 +43,7 @@ pub fn read_time_file<S: Into<String>>(
     repo: &Repository,
     id: S,
 ) -> Result<HashMap<String, String>, InternalError> {
-    let times_json = get_time_file(&storage, &repo, id);
+    let times_json = get_time_file(&storage, &repo, id)?;
     let times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
     return Ok(times_map);
 }

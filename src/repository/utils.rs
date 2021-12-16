@@ -66,9 +66,9 @@ pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), 
 pub fn update_project(project_folder: &PathBuf) -> Result<(), InternalError> {
     let buf = project_folder.join(".nitro.project.json");
 
-    let mut repo_listing: ProjectData = if buf.exists() {
+    let repo_listing: ProjectData = if buf.exists() {
         let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-        remove_file(&buf);
+        remove_file(&buf)?;
         value
     } else {
         ProjectData {

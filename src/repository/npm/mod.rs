@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, File, OpenOptions, read_dir, remove_file};
+use std::fs::{create_dir_all, File, read_dir, remove_file};
 use std::io::{BufReader, Write};
 use std::string::String;
 
@@ -83,7 +83,7 @@ impl RepositoryType for NPMHandler {
                         serde_json::from_reader(BufReader::new(File::open(buf1)?))?;
                     versions.insert(version.version.clone(), version);
                 }
-                let string = serde_json::to_string_pretty(&versions)?;
+                let _string = serde_json::to_string_pretty(&versions)?;
                 let times = crate::repository::npm::utils::read_time_file(
                     &request.storage,
                     &request.repository,
@@ -312,7 +312,7 @@ impl RepositoryType for NPMHandler {
         _http: &HttpRequest,
         _conn: &MysqlConnection,
     ) -> RepoResult {
-        let string = request.value.split("/").last().unwrap().to_string();
+        let _string = request.value.split("/").last().unwrap().to_string();
         return Ok(NitroVersionResponse(RepoVersion {
             version: version.into(),
             other: HashMap::new(),

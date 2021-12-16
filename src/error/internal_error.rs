@@ -1,12 +1,10 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter};
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use base64::DecodeError;
-use log::debug;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
