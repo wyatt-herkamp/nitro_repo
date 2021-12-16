@@ -21,6 +21,8 @@ impl RepositoryListing {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectData {
+    #[serde(default)]
+    pub versions: NitroMavenVersions,
     #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
 }
@@ -32,6 +34,16 @@ pub struct NitroMavenVersions {
     #[serde(default)]
     pub latest_release: String,
     pub versions: Vec<NitroVersion>,
+}
+
+impl Default for NitroMavenVersions {
+    fn default() -> Self {
+        return NitroMavenVersions {
+            latest_version: "".to_string(),
+            latest_release: "".to_string(),
+            versions: vec![],
+        };
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -75,5 +87,13 @@ impl NitroMavenVersions {
             time: get_current_time(),
             snapshot,
         })
+    }
+    pub fn get(&self, version: &String) -> Option<NitroVersion> {
+        for x in &self.versions {
+            if x.version.eq(version) {
+                return Some(x.clone());
+            }
+        }
+        return None;
     }
 }

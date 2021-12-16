@@ -16,18 +16,18 @@ use crate::repository::models::RepositorySummary;
 use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{
-    Attachment, get_latest_version, GetResponse, LoginRequest, LoginResponse, PublishRequest,
+    Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
     Version,
 };
+use crate::repository::npm::utils::get_version;
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
-use crate::repository::repository::RepoResponse::{
-    CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized,
-};
+use crate::repository::repository::RepoResponse::{CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized, NotFound, ProjectResponse};
 use crate::repository::repository::VersionResponse as RepoVersion;
-use crate::repository::utils::{build_artifact_directory, build_directory};
+use crate::repository::utils::{build_artifact_directory, build_directory, get_latest_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
+use crate::utils::get_storage_location;
 
 mod auth;
 mod models;
@@ -76,27 +76,22 @@ impl RepositoryType for NPMHandler {
                 let pattern = format!("{}", files.to_str().unwrap());
                 println!("{}", &pattern);
                 let result = glob::glob(pattern.as_str()).unwrap();
-                let mut versions = HashMap::new();
+                let mut npm_versions = HashMap::new();
                 for x in result {
                     let buf1 = x.unwrap();
                     let version: Version =
                         serde_json::from_reader(BufReader::new(File::open(buf1)?))?;
-                    versions.insert(version.version.clone(), version);
+                    npm_versions.insert(version.version.clone(), version);
                 }
-                let _string = serde_json::to_string_pretty(&versions)?;
-                let times = crate::repository::npm::utils::read_time_file(
-                    &request.storage,
-                    &request.repository,
-                    &request.value,
-                )?;
-                let latest_version = get_latest_version(&times);
-                let version = versions.get(&latest_version).unwrap().clone();
+                let nitro_versions = get_versions(&buf);
+                let latest_version = get_latest_version(&buf, true).unwrap();
+                let version = npm_versions.get(&latest_version).unwrap();
                 let response = GetResponse {
                     id: version.name.clone(),
                     name: version.name.clone(),
                     other: version.other.clone(),
-                    versions,
-                    times,
+                    versions: npm_versions,
+                    times: nitro_versions.into(),
                     dist_tags: latest_version.into(),
                 };
                 return Ok(RepoResponse::OkWithJSON(serde_json::to_string(&response)?));
@@ -176,12 +171,15 @@ impl RepositoryType for NPMHandler {
             let attachments = artifact.join("attachments");
             create_dir_all(&attachments)?;
 
-            let name =
+            let name = if x.0.contains("/") {
                 x.0.split("/")
                     .collect::<Vec<&str>>()
                     .get(1)
                     .unwrap()
-                    .to_string();
+                    .to_string()
+            } else {
+                x.0.clone()
+            };
             let file = attachments.join(name);
             if file.exists() {
                 remove_file(&file).unwrap();
@@ -209,25 +207,12 @@ impl RepositoryType for NPMHandler {
             let user2 = user1.clone();
 
             actix_web::rt::spawn(async move {
-                if let Err(error) = crate::repository::utils::update_project(&project_folder) {
+                if let Err(error) = crate::repository::utils::update_project(&project_folder, key.clone()) {
                     error!("Unable to update .nitro.project.json, {}", error);
                     if log_enabled!(Trace) {
                         trace!(
                                 "Version {} Name: {}",
                                 &key,
-                                &value.name
-                            );
-                    }
-                }
-                if let Err(error) = crate::repository::utils::update_versions(
-                    &project_folder,
-                    key.clone(),
-                ) {
-                    error!("Unable to update .nitro.versions.json, {}", error);
-                    if log_enabled!(Trace) {
-                        trace!(
-                                "Version {} Name: {}",
-                                          &key,
                                 &value.name
                             );
                     }
@@ -285,81 +270,92 @@ impl RepositoryType for NPMHandler {
         Ok(IAmATeapot("HEAD is not handled in NPM".to_string()))
     }
 
-    fn handle_versions(
-        request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-    ) -> RepoResult {
-        let times_map = crate::repository::npm::utils::read_time_file(
-            &request.storage,
-            &request.repository,
-            &request.value,
-        )?;
-
-        let mut versions = Vec::new();
-        for x in times_map {
-            versions.push(RepoVersion {
-                version: x.0.into(),
-                other: HashMap::new(),
-            });
+    fn handle_versions(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
         }
-        return Ok(RepoResponse::VersionListingResponse(versions));
+
+        let buf = get_storage_location()
+            .join("storages")
+            .join(&request.storage.name)
+            .join(&request.repository.name)
+            .join(&request.value);
+        if !buf.exists() {
+            return RepoResult::Ok(NotFound);
+        }
+        let vec = get_versions(&buf);
+        Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
+
 
     fn handle_version(
         request: &RepositoryRequest,
         version: String,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
     ) -> RepoResult {
-        let _string = request.value.split("/").last().unwrap().to_string();
-        return Ok(NitroVersionResponse(RepoVersion {
-            version: version.into(),
-            other: HashMap::new(),
-        }));
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
+        }
+
+        let buf = get_storage_location()
+            .join("storages")
+            .join(&request.storage.name)
+            .join(&request.repository.name)
+            .join(&request.value);
+        if !buf.exists() {
+            return RepoResult::Ok(NotFound);
+        }
+        let option = get_version(&buf, version);
+        if option.is_none() {
+            return Ok(RepoResponse::NotFound);
+        }
+        Ok(RepoResponse::NitroVersionResponse(option.unwrap()))
     }
 
     fn handle_project(
         request: &RepositoryRequest,
-        _http: &HttpRequest,
+        http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        let times_map = crate::repository::npm::utils::read_time_file(
-            &request.storage,
-            &request.repository,
-            &request.value,
-        )?;
-
-        let mut versions = Vec::new();
-        for x in times_map {
-            versions.push(RepoVersion {
-                version: x.0.into(),
-                other: HashMap::new(),
-            });
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+            return RepoResult::Ok(NotAuthorized);
         }
-        //TODO fix NPM
+        let buf = get_storage_location()
+            .join("storages")
+            .join(&request.storage.name)
+            .join(&request.repository.name)
+            .join(&request.value);
+        if !buf.exists() {
+            return RepoResult::Ok(NotFound);
+        }
+        let vec = get_versions(&buf);
         let project = Project {
             repo_summary: RepositorySummary::new(&request.repository, &conn)?,
-            versions: NitroMavenVersions {
-                latest_version: "".to_string(),
-                latest_release: "".to_string(),
-                versions: vec![],
-            },
+            versions: vec,
             frontend_response: None,
         };
-        return Ok(RepoResponse::ProjectResponse(project));
+        return Ok(ProjectResponse(project));
     }
 
     fn latest_version(
         request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
     ) -> Result<String, InternalError> {
-        let times_map = crate::repository::npm::utils::read_time_file(
-            &request.storage,
-            &request.repository,
-            &request.value,
-        )?;
-        Ok(get_latest_version(&times_map))
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+            return Ok("".to_string());
+        }
+
+        let buf = get_storage_location()
+            .join("storages")
+            .join(&request.storage.name)
+            .join(&request.repository.name)
+            .join(&request.value);
+        if !buf.exists() {
+            return Ok("".to_string());
+        }
+        let vec = get_latest_version(&buf, false);
+        Ok(vec.unwrap_or("".to_string()))
     }
 }

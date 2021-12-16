@@ -7,6 +7,8 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::repository::nitro::NitroMavenVersions;
+use crate::repository::repository::VersionResponse;
+use crate::repository::utils::get_versions;
 use crate::storage::models::Storage;
 use crate::utils::get_storage_location;
 
@@ -25,25 +27,19 @@ impl From<NitroMavenVersions> for HashMap<String, String> {
     }
 }
 
-pub fn get_time_file<S: Into<String>>(storage: &Storage, repo: &Repository, id: S) -> std::io::Result<PathBuf> {
-    let string = id.into();
-    let buf = get_storage_location()
-        .join("storages")
-        .join(&storage.name)
-        .join(&repo.name)
-        .join(string.replace("%2f", "/"));
-    if !buf.exists() {
-        create_dir_all(&buf)?;
-    }
-    return Ok(buf.join("times.json"));
+pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
+    let versions_value = get_versions(path);
+    return get_version_by_data(&versions_value, version);
 }
 
-pub fn read_time_file<S: Into<String>>(
-    storage: &Storage,
-    repo: &Repository,
-    id: S,
-) -> Result<HashMap<String, String>, InternalError> {
-    let times_json = get_time_file(&storage, &repo, id)?;
-    let times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
-    return Ok(times_map);
+pub fn get_version_by_data(versions_value: &NitroMavenVersions, version: String) -> Option<VersionResponse> {
+    for x in &versions_value.versions {
+        if x.version.eq(&version) {
+            return Some(VersionResponse {
+                version: x.clone(),
+                other: Default::default(),
+            });
+        }
+    }
+    return None;
 }

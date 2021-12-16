@@ -6,32 +6,18 @@ use chrono::NaiveDateTime;
 use crate::error::internal_error::InternalError;
 use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::repository::VersionResponse;
-
-pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
-    let versions = path.join(".nitro.versions.json");
-    return if versions.exists() {
-        serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap()
-    } else {
-        NitroMavenVersions {
-            latest_version: "".to_string(),
-            latest_release: "".to_string(),
-            versions: vec![],
-        }
-    };
-}
+use crate::repository::utils::get_versions;
 
 pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
-    let buf = path.join(".nitro.versions.json");
-    let versions_value: NitroMavenVersions = if buf.exists() {
-        let value = serde_json::from_str(&read_to_string(&buf).unwrap()).unwrap();
-        value
-    } else {
-        return None;
-    };
-    for x in versions_value.versions {
+    let versions_value = get_versions(path);
+    return get_version_by_data(&versions_value, version);
+}
+
+pub fn get_version_by_data(versions_value: &NitroMavenVersions, version: String) -> Option<VersionResponse> {
+    for x in &versions_value.versions {
         if x.version.eq(&version) {
             return Some(VersionResponse {
-                version: x,
+                version: x.clone(),
                 other: Default::default(),
             });
         }
@@ -44,20 +30,7 @@ pub fn parse_project_to_directory(value: &String) -> String {
     return value.replace(".", "/").replace(":", "/");
 }
 
-pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
-    let versions = path.join(".nitro.versions.json");
-    return if versions.exists() {
-        let option: NitroMavenVersions =
-            serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
-        if release {
-            Some(option.latest_release)
-        } else {
-            Some(option.latest_version)
-        }
-    } else {
-        None
-    };
-}
+
 fn get_artifacts(path: &PathBuf) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
@@ -73,6 +46,7 @@ fn get_artifacts(path: &PathBuf) -> Vec<String> {
     }
     values
 }
+
 pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
     let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
     return Ok(result);

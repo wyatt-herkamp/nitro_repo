@@ -12,7 +12,7 @@ use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::models::Pom;
 use crate::repository::maven::utils::{
-    get_latest_version, get_version, get_versions, parse_project_to_directory,
+    get_version, parse_project_to_directory,
 };
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
@@ -21,6 +21,7 @@ use crate::repository::repository::{
 use crate::repository::repository::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
+use crate::repository::utils::{get_latest_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -140,7 +141,7 @@ impl RepositoryType for MavenHandler {
                 let project_folder = parent.parent().unwrap().to_path_buf();
                 let repository = request.repository.clone();
                 actix_web::rt::spawn(async move {
-                    if let Err(error) = crate::repository::utils::update_project(&project_folder) {
+                    if let Err(error) = crate::repository::utils::update_project(&project_folder, pom.version.clone()) {
                         error!("Unable to update .nitro.project.json, {}", error);
                         if log_enabled!(Trace) {
                             trace!(
@@ -150,19 +151,7 @@ impl RepositoryType for MavenHandler {
                             );
                         }
                     }
-                    if let Err(error) = crate::repository::utils::update_versions(
-                        &project_folder,
-                        pom.version.clone(),
-                    ) {
-                        error!("Unable to update .nitro.versions.json, {}", error);
-                        if log_enabled!(Trace) {
-                            trace!(
-                                "Version {} Name: {}",
-                                &pom.version,
-                                format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                            );
-                        }
-                    }
+
                     if let Err(error) = crate::repository::utils::update_project_in_repositories(
                         format!("{}:{}", &pom.group_id, &pom.artifact_id),
                         repo_location,

@@ -41,43 +41,53 @@ pub fn update_project_in_repositories(
     return Ok(());
 }
 
-pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
-    let versions = project_folder.join(".nitro.versions.json");
-    let mut versions_value: NitroMavenVersions = if versions.exists() {
-        let value = serde_json::from_str(&read_to_string(&versions)?).unwrap();
-        remove_file(&versions)?;
-        value
+pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
+    let versions = path.join(".nitro.project.json");
+    return if versions.exists() {
+        serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap()
     } else {
-        NitroMavenVersions {
-            latest_version: "".to_string(),
-            latest_release: "".to_string(),
-            versions: vec![],
+        ProjectData {
+            versions: Default::default(),
+            created: 0,
         }
-    };
-
-    versions_value.update_version(version);
-    let mut file = File::create(&versions).unwrap();
-    let string = serde_json::to_string_pretty(&versions_value)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
-    return Ok(());
+    }.versions;
 }
 
-pub fn update_project(project_folder: &PathBuf) -> Result<(), InternalError> {
+pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
+    let versions = path.join(".nitro.versions.json");
+    return if versions.exists() {
+        let option: NitroMavenVersions =
+            serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
+        get_latest_version_data(&option, release)
+    } else {
+        None
+    };
+}
+
+pub fn get_latest_version_data(versions_value: &NitroMavenVersions, release: bool) -> Option<String> {
+    if release {
+        Some(versions_value.latest_release.clone())
+    } else {
+        Some(versions_value.latest_version.clone())
+    }
+}
+
+pub fn update_project(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
     let buf = project_folder.join(".nitro.project.json");
 
-    let repo_listing: ProjectData = if buf.exists() {
+    let mut project_data: ProjectData = if buf.exists() {
         let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
         remove_file(&buf)?;
         value
     } else {
         ProjectData {
+            versions: Default::default(),
             created: get_current_time(),
         }
     };
-    //TODO append updates
+    project_data.versions.update_version(version);
     let mut file = File::create(&buf).unwrap();
-    let string = serde_json::to_string_pretty(&repo_listing)?;
+    let string = serde_json::to_string_pretty(&project_data)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
     return Ok(());
