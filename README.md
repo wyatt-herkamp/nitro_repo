@@ -1,5 +1,9 @@
 # nitro_repo
 [![Discord](https://img.shields.io/discord/701531356609511555)](https://discord.gg/CyK4admCSY)
+[![Push](https://github.com/wherkamp/nitro_repo/actions/workflows/push.yml/badge.svg)](https://github.com/wherkamp/nitro_repo/actions/workflows/push.yml)
+[![issues](https://img.shields.io/github/issues/wherkamp/nitro_repo/help%20wanted)](https://github.com/wherkamp/nitro_repo/issues)
+
+
 Nitro Repo is an open source free artifact manager. Written with a Rust back end and a Vue front end to create a fast
 and modern experience.
 
