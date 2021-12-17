@@ -1,5 +1,5 @@
 # nitro_repo
-
+[![Discord](https://img.shields.io/discord/701531356609511555)](https://discord.gg/CyK4admCSY)
 Nitro Repo is an open source free artifact manager. Written with a Rust back end and a Vue front end to create a fast
 and modern experience.
 
