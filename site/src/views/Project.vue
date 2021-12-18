@@ -1,13 +1,19 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
+  <el-container>
+    <el-aside width="200px">Aside</el-aside>
+    <el-container>
+      <el-header>{{ project. }}</el-header>
+      <el-main>Main</el-main>
+    </el-container>
   </el-container>
+
 </template>
 
 <script lang="ts">
-import { getProject } from "@/backend/api/Repository";
-import { Project } from "@/backend/Response";
-import { defineComponent, ref } from "vue";
-import { useRoute } from "vue-router";
+import {getProject} from "@/backend/api/Repository";
+import {Project} from "@/backend/Response";
+import {defineComponent, ref} from "vue";
+import {useRoute} from "vue-router";
 
 export default defineComponent({
   setup() {
@@ -21,6 +27,7 @@ export default defineComponent({
       project.value = value;
     };
     getInfo();
+    return {project}
   },
 });
 </script>
