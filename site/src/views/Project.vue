@@ -2,7 +2,7 @@
   <el-container>
     <el-aside width="200px">Aside</el-aside>
     <el-container>
-      <el-header>{{ project. }}</el-header>
+      <el-header>My Project</el-header>
       <el-main>Main</el-main>
     </el-container>
   </el-container>
