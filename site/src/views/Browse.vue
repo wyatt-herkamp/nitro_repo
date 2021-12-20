@@ -28,16 +28,13 @@
 </template>
 
 <script lang="ts">
-import {
-  fileListing,
-  getRepositoriesPublicAccess,
-} from "@/backend/api/Repository";
-import { getStoragesPublicAccess } from "@/backend/api/Storages";
-import { FileResponse } from "@/backend/Response";
+import {fileListing, getRepositoriesPublicAccess,} from "@/backend/api/Repository";
+import {getStoragesPublicAccess} from "@/backend/api/Storages";
+import {FileResponse} from "@/backend/Response";
 import router from "@/router";
-import { defineComponent, ref } from "vue";
-import { useRoute } from "vue-router";
-import { ArrowRight } from "@element-plus/icons";
+import {defineComponent, ref} from "vue";
+import {useRoute} from "vue-router";
+import {ArrowRight} from "@element-plus/icons";
 
 export default defineComponent({
   setup() {

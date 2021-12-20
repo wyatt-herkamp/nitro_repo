@@ -34,11 +34,8 @@
 </template>
 
 <script lang="ts">
-import { BasicResponse } from "@/backend/Response";
-import { installRequest } from "@/backend/api/Install";
-import router from "@/router";
-import http from "@/http-common";
-import { defineComponent, ref } from "vue";
+import {installRequest} from "@/backend/api/Install";
+import {defineComponent, ref} from "vue";
 
 export default defineComponent({
   setup() {

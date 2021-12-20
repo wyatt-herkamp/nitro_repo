@@ -1,10 +1,10 @@
 /* eslint-disable */
-import { createApp } from "vue";
+import {createApp} from "vue";
 import App from "./App.vue";
 import router from "./router";
-import { VueCookieNext } from "vue-cookie-next";
+import {VueCookieNext} from "vue-cookie-next";
 import Notifications from "@kyvg/vue3-notification";
-import { createMetaManager } from "vue-meta";
+import {createMetaManager} from "vue-meta";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import "~/styles/index.scss";

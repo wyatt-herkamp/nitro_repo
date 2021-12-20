@@ -116,14 +116,13 @@ fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
 
 pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
     let versions = project_folder.join(".nitro.versions.json");
-    let mut versions_value: NitroMavenVersions =
-        if versions.exists() {
-            let value = serde_json::from_str(&read_to_string(&versions)?).unwrap();
-            remove_file(&versions)?;
-            value
-        } else {
-            NitroMavenVersions { versions: vec![] }
-        };
+    let mut versions_value: NitroMavenVersions = if versions.exists() {
+        let value = serde_json::from_str(&read_to_string(&versions)?).unwrap();
+        remove_file(&versions)?;
+        value
+    } else {
+        NitroMavenVersions { versions: vec![] }
+    };
 
     versions_value.update_version(version);
     let mut file = File::create(&versions).unwrap();
@@ -133,16 +132,18 @@ pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), 
     return Ok(());
 }
 
-pub fn update_project_in_repositories(project: String, repo_location: PathBuf) -> Result<(), InternalError> {
+pub fn update_project_in_repositories(
+    project: String,
+    repo_location: PathBuf,
+) -> Result<(), InternalError> {
     let buf = repo_location.join("repository.json");
 
-    let mut repo_listing: RepositoryListing =
-        if buf.exists() {
-            let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-            value
-        } else {
-            RepositoryListing { values: vec![] }
-        };
+    let mut repo_listing: RepositoryListing = if buf.exists() {
+        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
+        value
+    } else {
+        RepositoryListing { values: vec![] }
+    };
 
     if !repo_listing.add_value(project) && buf.exists() {
         remove_file(&buf)?;
@@ -181,6 +182,11 @@ mod tests {
 
     #[test]
     fn parse_maven_date_time_test() {
-        println!("{}", parse_maven_date_time("20211201213303").unwrap().format("%Y-%m-%dT%H:%M:%S.%3fZ"));
+        println!(
+            "{}",
+            parse_maven_date_time("20211201213303")
+                .unwrap()
+                .format("%Y-%m-%dT%H:%M:%S.%3fZ")
+        );
     }
 }

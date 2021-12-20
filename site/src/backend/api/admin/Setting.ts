@@ -1,15 +1,7 @@
-import { BasicResponse, DBSetting, Setting, User } from "../../Response";
+import {BasicResponse, DBSetting} from "../../Response";
 import http from "@/http-common";
-import { Err, Ok, Result } from "ts-results";
-import {
-  APIError,
-  createAPIError,
-  INTERNAL_ERROR,
-  INVALID_LOGIN,
-  NOT_AUTHORIZED,
-} from "../../NitroRepoAPI";
-import { AuthToken } from "../User";
-import { Repository } from "@/backend/Response";
+import {Err, Ok} from "ts-results";
+import {INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";
 
 export async function updateSetting(
   name: string,

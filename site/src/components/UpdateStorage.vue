@@ -41,13 +41,7 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
-import { BasicResponse } from "@/backend/Response";
-import router from "@/router";
-import http from "@/http-common";
-import { computed, defineComponent, onMounted, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { useRouter } from "vue-router";
+import {computed, defineComponent, ref} from "vue";
 
 export default defineComponent({
   props: {

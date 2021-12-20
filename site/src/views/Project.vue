@@ -4,10 +4,10 @@
 </template>
 
 <script lang="ts">
-import { getProject } from "@/backend/api/Repository";
-import { Project } from "@/backend/Response";
-import { defineComponent, ref } from "vue";
-import { useRoute } from "vue-router";
+import {getProject} from "@/backend/api/Repository";
+import {Project} from "@/backend/Response";
+import {defineComponent, ref} from "vue";
+import {useRoute} from "vue-router";
 
 export default defineComponent({
   setup() {

@@ -9,14 +9,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, ref } from "vue";
+import {defineComponent, onBeforeMount, ref} from "vue";
 
 import userStore from "@/store/user";
-import { Repository } from "@/backend/Response";
-import { useCookie } from "vue-cookie-next";
+import {Repository} from "@/backend/Response";
+import {useCookie} from "vue-cookie-next";
 import MavenUpload from "@/components/upload/MavenUpload.vue";
-import { getRepoByNameAndStorage } from "@/backend/api/Repository";
-import { useRoute } from "vue-router";
+import {getRepoByNameAndStorage} from "@/backend/api/Repository";
+import {useRoute} from "vue-router";
 
 export default defineComponent({
   components: { MavenUpload },

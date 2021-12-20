@@ -24,17 +24,17 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 fn web_data() {
     debug!("Loading Zip!");
     #[cfg(feature = "frontend")]
-        {
-            let data = include_bytes!(concat!(env!("OUT_DIR"), "/frontend.zip")).as_ref();
-            let mut archive = ZipArchive::new(Cursor::new(data)).unwrap();
-            let path = Path::new("frontend");
-            if path.exists() {
-                debug!("Deleting Old Frontend");
-                remove_dir_all(&path).unwrap();
-            }
-            debug!("Extracting Zip!");
-            archive.extract(&path).unwrap();
+    {
+        let data = include_bytes!(concat!(env!("OUT_DIR"), "/frontend.zip")).as_ref();
+        let mut archive = ZipArchive::new(Cursor::new(data)).unwrap();
+        let path = Path::new("frontend");
+        if path.exists() {
+            debug!("Deleting Old Frontend");
+            remove_dir_all(&path).unwrap();
         }
+        debug!("Extracting Zip!");
+        archive.extract(&path).unwrap();
+    }
 }
 
 #[get("/")]

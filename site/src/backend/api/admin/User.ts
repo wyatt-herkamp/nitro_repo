@@ -1,18 +1,8 @@
-import {
-  BasicResponse,
-  DEFAULT_USER_LIST,
-  User,
-  UserList,
-} from "../../Response";
+import {BasicResponse, User,} from "../../Response";
 import http from "@/http-common";
-import { Err, Ok, Result } from "ts-results";
-import {
-  APIError,
-  createAPIError,
-  INTERNAL_ERROR,
-  INVALID_LOGIN,
-  NOT_AUTHORIZED,
-} from "../../NitroRepoAPI";
+import {Err, Ok} from "ts-results";
+import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";
+
 export async function createNewUser(
   name: string,
   username: string,

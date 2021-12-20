@@ -1,7 +1,6 @@
-import { BasicResponse, DEFAULT_USER_LIST, User, UserList } from "../Response";
+import {BasicResponse, DEFAULT_USER_LIST, User, UserList} from "../Response";
 import http from "@/http-common";
-import { Err, Ok, Result } from "ts-results";
-import { APIError, INTERNAL_ERROR, INVALID_LOGIN } from "../NitroRepoAPI";
+
 export interface AuthToken {
   id: number;
   user: number;

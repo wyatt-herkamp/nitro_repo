@@ -65,7 +65,6 @@ pub struct NitroVersion {
     pub snapshot: bool,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RepositoryListing {
     pub values: Vec<String>,
@@ -82,4 +81,3 @@ impl RepositoryListing {
         return true;
     }
 }
-

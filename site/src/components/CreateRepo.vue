@@ -43,18 +43,12 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
-import {
-  BasicResponse,
-  DEFAULT_STORAGE_LIST,
-  Repository,
-} from "@/backend/Response";
-import router from "@/router";
-import http from "@/http-common";
-import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { getStorages } from "@/backend/api/Storages";
-import { createNewRepository } from "@/backend/api/admin/Repository";
+import {DEFAULT_STORAGE_LIST, Repository,} from "@/backend/Response";
+import {defineComponent, ref} from "vue";
+import {useCookie} from "vue-cookie-next";
+import {getStorages} from "@/backend/api/Storages";
+import {createNewRepository} from "@/backend/api/admin/Repository";
+
 export default defineComponent({
   props: {
     updateList: {

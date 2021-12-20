@@ -75,15 +75,14 @@
 </style>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import {defineComponent, ref} from "vue";
 
-import { useCookie } from "vue-cookie-next";
-import { getUsers } from "@/backend/api/User";
-import { DEFAULT_USER_LIST, Repository } from "@/backend/Response";
-import { ref, SetupContext } from "vue";
+import {useCookie} from "vue-cookie-next";
+import {Repository} from "@/backend/Response";
 import FileUpload from "../../../src/FileUpload.vue";
-import { VueUploadItem } from "vue-upload-component";
+import {VueUploadItem} from "vue-upload-component";
 import http from "@/http-common";
+
 /**
  * How does the manual upload work?
  * Basically I let the backend do it's thing with one adition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes

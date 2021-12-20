@@ -25,13 +25,10 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
-import { BasicResponse, Storage } from "@/backend/Response";
-import router from "@/router";
-import http from "@/http-common";
-import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { createNewStorage } from "@/backend/api/admin/Storage";
+import {Storage} from "@/backend/Response";
+import {defineComponent, ref} from "vue";
+import {createNewStorage} from "@/backend/api/admin/Storage";
+
 export default defineComponent({
   props: {
     updateList: {

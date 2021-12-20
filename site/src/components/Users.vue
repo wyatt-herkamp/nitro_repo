@@ -38,12 +38,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import {defineComponent, ref} from "vue";
 import CreateUser from "@/components/CreateUser.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
-import { useCookie } from "vue-cookie-next";
-import { getUsers } from "@/backend/api/User";
-import { DEFAULT_USER_LIST } from "@/backend/Response";
+import {useCookie} from "vue-cookie-next";
+import {getUsers} from "@/backend/api/User";
+import {DEFAULT_USER_LIST} from "@/backend/Response";
 
 export default defineComponent({
   components: { CreateUser, UpdateUser },

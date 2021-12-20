@@ -57,23 +57,10 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
-import {
-  AuthToken,
-  BasicResponse,
-  RepoSettings,
-  Repository,
-  DEFAULT_STORAGE,
-  Storage,
-  User,
-  SettingReport,
-} from "@/backend/Response";
-import router from "@/router";
+import {BasicResponse, SettingReport,} from "@/backend/Response";
 import http from "@/http-common";
-import { computed, defineComponent, onMounted, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { useRouter } from "vue-router";
-import { getStorage } from "@/backend/api/Storages";
+import {defineComponent, ref} from "vue";
+import {useCookie} from "vue-cookie-next";
 
 export default defineComponent({
   setup() {
