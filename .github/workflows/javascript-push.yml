@@ -2,7 +2,7 @@ name: Pull Request Javascript
 
 on:
   pull_request:
-
+    branches: master
 env:
   CARGO_TERM_COLOR: always
 jobs:
