@@ -53,7 +53,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, onMounted, ref } from "vue";
+import {defineComponent, onBeforeMount, ref} from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Me from "@/components/Me.vue";

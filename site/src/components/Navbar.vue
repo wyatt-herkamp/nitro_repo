@@ -39,12 +39,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
-import { useRouter } from "vue-router";
-import { BasicResponse, User } from "@/backend/Response";
-import http from "@/http-common";
-import { login } from "@/backend/api/backend/User";
-import { AuthToken } from "@/backend/api/User";
+import {defineComponent, ref} from "vue";
+import {useRouter} from "vue-router";
+import {User} from "@/backend/Response";
+import {login} from "@/backend/api/backend/User";
+import {AuthToken} from "@/backend/api/User";
 
 export default defineComponent({
   props: {

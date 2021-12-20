@@ -23,19 +23,19 @@ fn main() {
             out_dir.to_str().unwrap(),
             CompressionMethod::Stored,
         )
-            .unwrap();
+        .unwrap();
         println!("{:?}", out_dir);
     }
 }
 
 fn zip_dir<T>(
-    it: &mut dyn Iterator<Item=DirEntry>,
+    it: &mut dyn Iterator<Item = DirEntry>,
     prefix: &str,
     writer: T,
     method: zip::CompressionMethod,
 ) -> zip::result::ZipResult<()>
-    where
-        T: Write + Seek,
+where
+    T: Write + Seek,
 {
     let mut zip = zip::ZipWriter::new(writer);
     let options = FileOptions::default()
@@ -52,7 +52,7 @@ fn zip_dir<T>(
         if path.is_file() {
             println!("adding file {:?} as {:?} ...", path, name);
             #[allow(deprecated)]
-                zip.start_file(name.to_str().unwrap(), options)?;
+            zip.start_file(name.to_str().unwrap(), options)?;
             let mut f = File::open(path)?;
 
             f.read_to_end(&mut buffer)?;

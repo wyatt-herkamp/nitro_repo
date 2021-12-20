@@ -39,13 +39,9 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
-import { BasicResponse, User } from "@/backend/Response";
-import { createNewUser } from "@/backend/api/admin/User";
-import router from "@/router";
-import http from "@/http-common";
-import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
+import {User} from "@/backend/Response";
+import {createNewUser} from "@/backend/api/admin/User";
+import {defineComponent, ref} from "vue";
 
 export default defineComponent({
   props: {

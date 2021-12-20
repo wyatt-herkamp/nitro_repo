@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from "axios";
+import axios, {AxiosInstance} from "axios";
 
 export let apiURL;
 if (import.meta.env.VITE_API_URL == undefined) {

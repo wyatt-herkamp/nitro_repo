@@ -1,15 +1,9 @@
-import { BasicResponse, User } from "../../Response";
+import {BasicResponse} from "../../Response";
 import http from "@/http-common";
-import { Err, Ok, Result } from "ts-results";
-import {
-  APIError,
-  createAPIError,
-  INTERNAL_ERROR,
-  INVALID_LOGIN,
-  NOT_AUTHORIZED,
-} from "../../NitroRepoAPI";
-import { AuthToken } from "../User";
-import { Repository } from "@/backend/Response";
+import {Err, Ok} from "ts-results";
+import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";
+import {Repository} from "@/backend/Response";
+
 export async function createNewRepository(
   name: string,
   storage: string,

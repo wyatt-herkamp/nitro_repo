@@ -46,12 +46,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import {defineComponent, ref} from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
 import UpdateRepository from "@/components/UpdateRepository.vue";
-import { useCookie } from "vue-cookie-next";
-import { getRepositories } from "@/backend/api/Repository";
-import { DEFAULT_REPO_LIST } from "@/backend/Response";
+import {useCookie} from "vue-cookie-next";
+import {getRepositories} from "@/backend/api/Repository";
+import {DEFAULT_REPO_LIST} from "@/backend/Response";
 
 export default defineComponent({
   components: { CreateRepo, UpdateRepository },

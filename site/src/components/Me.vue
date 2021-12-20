@@ -67,25 +67,13 @@
 </template>
 
 <script lang="ts">
-import axios from "axios";
-import {
-  BasicResponse,
-  RepoSettings,
-  Repository,
-  DEFAULT_STORAGE,
-  Storage,
-  User,
-  UserListResponse,
-} from "@/backend/Response";
-import router from "@/router";
-import http from "@/http-common";
-import { computed, defineComponent, onMounted, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { useRouter } from "vue-router";
-import { getStorage } from "@/backend/api/Storages";
-import { getUser, getUserByID } from "@/backend/api/User";
-import { updateMyPassword } from "@/backend/api/backend/User";
-import { ANON_USER } from "@/store/user";
+import {User,} from "@/backend/Response";
+import {defineComponent, ref} from "vue";
+import {useCookie} from "vue-cookie-next";
+import {getUser} from "@/backend/api/User";
+import {updateMyPassword} from "@/backend/api/backend/User";
+import {ANON_USER} from "@/store/user";
+
 export default defineComponent({
   setup() {
     let password = ref({

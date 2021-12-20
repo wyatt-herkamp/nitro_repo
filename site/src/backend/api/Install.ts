@@ -1,7 +1,7 @@
-import { BasicResponse, DEFAULT_USER_LIST, User, UserList } from "../Response";
+import {BasicResponse} from "../Response";
 import http from "@/http-common";
-import { Err, Ok, Result } from "ts-results";
-import { APIError, INTERNAL_ERROR, INVALID_LOGIN } from "../NitroRepoAPI";
+import {Err, Ok} from "ts-results";
+import {INTERNAL_ERROR} from "../NitroRepoAPI";
 
 export async function installRequest(
   name: string,
