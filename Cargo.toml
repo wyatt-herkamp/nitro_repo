@@ -68,7 +68,7 @@ usvg = "0.19.0"
 resvg = "0.19.0"
 tiny-skia = "0.6.1"
 # Webhook
-webhook = "1.0.1"
+webhook = "2.0.0"
 zip = "0.5.13"
 
 [build-dependencies]
