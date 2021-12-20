@@ -16,16 +16,20 @@ use crate::repository::models::RepositorySummary;
 use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{
-    Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
-    Version,
+    Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest, Version,
 };
 use crate::repository::npm::utils::get_version;
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
-use crate::repository::repository::RepoResponse::{CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized, NotFound, ProjectResponse};
+use crate::repository::repository::RepoResponse::{
+    CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized, NotFound,
+    ProjectResponse,
+};
 use crate::repository::repository::VersionResponse as RepoVersion;
-use crate::repository::utils::{build_artifact_directory, build_directory, get_latest_version, get_versions};
+use crate::repository::utils::{
+    build_artifact_directory, build_directory, get_latest_version, get_versions,
+};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -207,14 +211,12 @@ impl RepositoryType for NPMHandler {
             let user2 = user1.clone();
 
             actix_web::rt::spawn(async move {
-                if let Err(error) = crate::repository::utils::update_project(&project_folder, key.clone()) {
+                if let Err(error) =
+                crate::repository::utils::update_project(&project_folder, key.clone())
+                {
                     error!("Unable to update .nitro.project.json, {}", error);
                     if log_enabled!(Trace) {
-                        trace!(
-                                "Version {} Name: {}",
-                                &key,
-                                &value.name
-                            );
+                        trace!("Version {} Name: {}", &key, &value.name);
                     }
                 }
                 if let Err(error) = crate::repository::utils::update_project_in_repositories(
@@ -223,11 +225,7 @@ impl RepositoryType for NPMHandler {
                 ) {
                     error!("Unable to update repository.json, {}", error);
                     if log_enabled!(Trace) {
-                        trace!(
-                                "Version {} Name: {}",
-                                &key,
-                                &value.name
-                            );
+                        trace!("Version {} Name: {}", &key, &value.name);
                     }
                 }
                 let info = DeployInfo {
@@ -270,7 +268,11 @@ impl RepositoryType for NPMHandler {
         Ok(IAmATeapot("HEAD is not handled in NPM".to_string()))
     }
 
-    fn handle_versions(request: &RepositoryRequest, http: &HttpRequest, conn: &MysqlConnection) -> RepoResult {
+    fn handle_versions(
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &MysqlConnection,
+    ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -286,7 +288,6 @@ impl RepositoryType for NPMHandler {
         let vec = get_versions(&buf);
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
-
 
     fn handle_version(
         request: &RepositoryRequest,

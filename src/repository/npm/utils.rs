@@ -32,7 +32,10 @@ pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
     return get_version_by_data(&versions_value, version);
 }
 
-pub fn get_version_by_data(versions_value: &NitroMavenVersions, version: String) -> Option<VersionResponse> {
+pub fn get_version_by_data(
+    versions_value: &NitroMavenVersions,
+    version: String,
+) -> Option<VersionResponse> {
     for x in &versions_value.versions {
         if x.version.eq(&version) {
             return Some(VersionResponse {

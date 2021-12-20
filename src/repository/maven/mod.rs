@@ -11,9 +11,7 @@ use log::Level::Trace;
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{
-    get_version, parse_project_to_directory,
-};
+use crate::repository::maven::utils::{get_version, parse_project_to_directory};
 use crate::repository::models::{Policy, RepositorySummary};
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
@@ -141,7 +139,10 @@ impl RepositoryType for MavenHandler {
                 let project_folder = parent.parent().unwrap().to_path_buf();
                 let repository = request.repository.clone();
                 actix_web::rt::spawn(async move {
-                    if let Err(error) = crate::repository::utils::update_project(&project_folder, pom.version.clone()) {
+                    if let Err(error) = crate::repository::utils::update_project(
+                        &project_folder,
+                        pom.version.clone(),
+                    ) {
                         error!("Unable to update .nitro.project.json, {}", error);
                         if log_enabled!(Trace) {
                             trace!(

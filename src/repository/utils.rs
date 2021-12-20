@@ -50,7 +50,8 @@ pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
             versions: Default::default(),
             created: 0,
         }
-    }.versions;
+    }
+        .versions;
 }
 
 pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
@@ -64,7 +65,10 @@ pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
     };
 }
 
-pub fn get_latest_version_data(versions_value: &NitroMavenVersions, release: bool) -> Option<String> {
+pub fn get_latest_version_data(
+    versions_value: &NitroMavenVersions,
+    release: bool,
+) -> Option<String> {
     if release {
         Some(versions_value.latest_release.clone())
     } else {

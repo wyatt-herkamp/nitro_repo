@@ -13,7 +13,10 @@ pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
     return get_version_by_data(&versions_value, version);
 }
 
-pub fn get_version_by_data(versions_value: &NitroMavenVersions, version: String) -> Option<VersionResponse> {
+pub fn get_version_by_data(
+    versions_value: &NitroMavenVersions,
+    version: String,
+) -> Option<VersionResponse> {
     for x in &versions_value.versions {
         if x.version.eq(&version) {
             return Some(VersionResponse {
@@ -29,7 +32,6 @@ pub fn get_version_by_data(versions_value: &NitroMavenVersions, version: String)
 pub fn parse_project_to_directory(value: &String) -> String {
     return value.replace(".", "/").replace(":", "/");
 }
-
 
 fn get_artifacts(path: &PathBuf) -> Vec<String> {
     let dir = read_dir(path).unwrap();
