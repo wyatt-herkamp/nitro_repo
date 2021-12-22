@@ -44,14 +44,11 @@ pub fn update_project_in_repositories(
 pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
     let versions = path.join(".nitro.project.json");
     return if versions.exists() {
-        serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap()
+        let data: ProjectData = serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
+        data.versions
     } else {
-        ProjectData {
-            versions: Default::default(),
-            created: 0,
-        }
-    }
-        .versions;
+        Default::default()
+    };
 }
 
 pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
@@ -76,23 +73,3 @@ pub fn get_latest_version_data(
     }
 }
 
-pub fn update_project(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
-    let buf = project_folder.join(".nitro.project.json");
-
-    let mut project_data: ProjectData = if buf.exists() {
-        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-        remove_file(&buf)?;
-        value
-    } else {
-        ProjectData {
-            versions: Default::default(),
-            created: get_current_time(),
-        }
-    };
-    project_data.versions.update_version(version);
-    let mut file = File::create(&buf).unwrap();
-    let string = serde_json::to_string_pretty(&project_data)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
-    return Ok(());
-}

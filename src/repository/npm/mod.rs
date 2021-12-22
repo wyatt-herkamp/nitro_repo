@@ -212,7 +212,7 @@ impl RepositoryType for NPMHandler {
 
             actix_web::rt::spawn(async move {
                 if let Err(error) =
-                crate::repository::utils::update_project(&project_folder, key.clone())
+                crate::repository::npm::utils::update_project(&project_folder, key.clone())
                 {
                     error!("Unable to update .nitro.project.json, {}", error);
                     if log_enabled!(Trace) {

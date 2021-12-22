@@ -21,11 +21,27 @@ impl RepositoryListing {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectData {
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    pub source: Option<ProjectSource>,
+    pub licence: Option<Licence>,
+
     #[serde(default)]
     pub versions: NitroMavenVersions,
     #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProjectSource {
+    pub name: String,
+    pub url: String,
+
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Licence {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NitroMavenVersions {

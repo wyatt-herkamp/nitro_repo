@@ -1,16 +1,17 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, File};
+use std::fs::{create_dir_all, File, read_to_string, remove_file};
+use std::io::Write;
 use std::path::PathBuf;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
-use crate::repository::nitro::NitroMavenVersions;
+use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::repository::VersionResponse;
 use crate::repository::utils::get_versions;
 use crate::storage::models::Storage;
-use crate::utils::get_storage_location;
+use crate::utils::{get_current_time, get_storage_location};
 
 static NPM_TIME_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S.%3fZ";
 
@@ -30,6 +31,32 @@ impl From<NitroMavenVersions> for HashMap<String, String> {
 pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
     let versions_value = get_versions(path);
     return get_version_by_data(&versions_value, version);
+}
+
+pub fn update_project(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
+    let buf = project_folder.join(".nitro.project.json");
+
+    let mut project_data: ProjectData = if buf.exists() {
+        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
+        remove_file(&buf)?;
+        value
+    } else {
+        //TODO Pull NPM Data
+        ProjectData {
+            name: "".to_string(),
+            description: "".to_string(),
+            source: None,
+            licence: None,
+            versions: Default::default(),
+            created: get_current_time(),
+        }
+    };
+    project_data.versions.update_version(version);
+    let mut file = File::create(&buf).unwrap();
+    let string = serde_json::to_string_pretty(&project_data)?;
+    let x1 = string.as_bytes();
+    file.write_all(x1)?;
+    return Ok(());
 }
 
 pub fn get_version_by_data(

@@ -139,9 +139,10 @@ impl RepositoryType for MavenHandler {
                 let project_folder = parent.parent().unwrap().to_path_buf();
                 let repository = request.repository.clone();
                 actix_web::rt::spawn(async move {
-                    if let Err(error) = crate::repository::utils::update_project(
+                    if let Err(error) = crate::repository::maven::utils::update_project(
                         &project_folder,
                         pom.version.clone(),
+                        pom.clone(),
                     ) {
                         error!("Unable to update .nitro.project.json, {}", error);
                         if log_enabled!(Trace) {
