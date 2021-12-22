@@ -2,7 +2,6 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 use actix_web::{delete, get, HttpRequest, patch, post, put, web};
-use actix_web::web::Bytes;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -59,7 +58,24 @@ pub async fn get_repo(
     APIResponse::respond_new(repo, &r)
 }
 
+#[get("/api/repositories/get/{storage}/{repo}")]
+pub async fn get_repo_deployer(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(String, String)>,
+) -> SiteResponse {
+    let (storage, repo) = path.into_inner();
+    let connection = pool.get()?;
 
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.deployer {
+        return unauthorized();
+    }
+
+    let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
+
+    APIResponse::respond_new(repo, &r)
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewRepo {
@@ -86,16 +102,15 @@ pub async fn add_repo(
     }
     let storage = storage.unwrap();
 
-    let option = get_repo_by_name_and_storage(&nc.name, &storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&nc.repo, &storage.name, &connection)?;
     if option.is_some() {
         return already_exists();
     }
     let repository = Repository {
         id: 0,
-
         name: nc.0.name,
         repo_type: nc.0.repo,
-        storage: storage.id,
+        storage: nc.0.storage,
         settings: RepositorySettings::default(),
         security: SecurityRules {
             deployers: vec![],
@@ -113,7 +128,7 @@ pub async fn add_repo(
     if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_repo_by_name_and_storage(&repository.name, &storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&repository.name, &storage.name, &connection)?;
 
     APIResponse::from(option).respond(&r)
 }
@@ -135,30 +150,6 @@ pub async fn update_active_status(
 
     let mut repository = repository.unwrap();
     repository.settings.active = active;
-    update_repo_settings(&repo, &repository.settings, &connection)?;
-    APIResponse::new(true, Some(repository)).respond(&r)
-}
-
-#[patch("/api/admin/repository/{repo}/description")]
-pub async fn update_description(
-    pool: web::Data<DbPool>,
-    r: HttpRequest,
-    path: web::Path<(i64)>,
-    bytes: Bytes,
-) -> SiteResponse {
-    let (repo) = path.into_inner();
-
-    let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
-        return unauthorized();
-    }
-    let repository = get_repo_by_id(&repo, &connection)?;
-    let vec = bytes.to_vec();
-    let desc = String::from_utf8(vec)?;
-    let mut repository = repository.unwrap();
-    repository.settings.description = desc;
     update_repo_settings(&repo, &repository.settings, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }

@@ -7,7 +7,7 @@
             <el-input disabled v-model="$props.repo.name"></el-input>
           </el-form-item>
           <el-form-item label="Storage">
-            <el-input disabled v-model="storage.name"></el-input>
+            <el-input v-model="repository.storage" disabled></el-input>
           </el-form-item>
           <el-form-item label="Type">
             <el-input disabled v-model="repository.repo_type"></el-input>
@@ -121,12 +121,11 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import {DEFAULT_REPO, DEFAULT_STORAGE, Repository, RepositoryListResponse,} from "@/backend/Response";
+import {DEFAULT_REPO, Repository, RepositoryListResponse,} from "@/backend/Response";
 import {apiURL} from "@/http-common";
 import {defineComponent, ref} from "vue";
 import {useCookie} from "vue-cookie-next";
 import {useRouter} from "vue-router";
-import {getStorage} from "@/backend/api/Storages";
 import {getRepoByID} from "@/backend/api/Repository";
 import {
   setActiveStatus,
@@ -156,23 +155,9 @@ export default defineComponent({
     const cookie = useCookie();
     const isLoading = ref(false);
     const activeName = ref("general");
-    let storage = ref(DEFAULT_STORAGE);
     const exampleBadgeURL = ref("");
 
-    const getStorageByID = async () => {
-      isLoading.value = true;
-      try {
-        const value = await getStorage(
-          cookie.getCookie("token"),
-          props.repo.storage
-        );
-        storage.value = value;
-        isLoading.value = false;
-      } catch (e) {
-        console.log(e);
-      }
-    };
-    getStorageByID();
+
     console.log(apiURL);
     const getRepo = async () => {
       isLoading.value = true;
@@ -183,10 +168,10 @@ export default defineComponent({
         )) as Repository;
         repository.value = value;
         exampleBadgeURL.value =
-          apiURL +
-          "/badge/" +
-          storage.value.name +
-          "/" +
+            apiURL +
+            "/badge/" +
+            props.repo.storage +
+            "/" +
           props.repo.name +
           "/nitro_repo_example/badge.svg";
         date.value = new Date(repository.value.created).toLocaleDateString(
@@ -200,7 +185,6 @@ export default defineComponent({
     getRepo();
 
     return {
-      storage,
       isLoading,
       activeName,
       date,

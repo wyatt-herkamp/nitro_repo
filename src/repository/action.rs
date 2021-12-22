@@ -1,5 +1,5 @@
-use diesel::prelude::*;
 use diesel::MysqlConnection;
+use diesel::prelude::*;
 
 use crate::repository;
 use crate::repository::models::{DeploySettings, Repository, RepositoryListResponse};
@@ -54,13 +54,13 @@ pub fn update_repo_security(
 
 pub fn get_repo_by_name_and_storage(
     repo: &String,
-    _storage: &i64,
+    sto: &String,
     conn: &MysqlConnection,
 ) -> Result<Option<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
 
     let found_mod = repositories
-        .filter(name.like(repo).and(storage.eq(storage)))
+        .filter(name.like(repo).and(storage.eq(sto)))
         .first::<repository::models::Repository>(conn)
         .optional()?;
 
@@ -102,11 +102,11 @@ pub fn get_repositories(
 }
 
 pub fn get_repositories_by_storage(
-    _storage: &i64,
+    stor: &String,
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
     repositories
-        .filter(storage.eq(storage))
+        .filter(storage.eq(stor))
         .load::<repository::models::Repository>(conn)
 }

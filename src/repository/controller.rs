@@ -2,14 +2,15 @@ use std::fs::read_to_string;
 use std::path::Path;
 
 use actix_files::NamedFile;
+use actix_web::{get, head, HttpRequest, HttpResponse, patch, post, put, web};
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
 use diesel::MysqlConnection;
 use log::{debug, error, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
@@ -19,7 +20,6 @@ use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
-use crate::DbPool;
 
 //
 
@@ -28,7 +28,7 @@ pub struct ListRepositories {
     pub repositories: Vec<Repository>,
 }
 
-fn to_request(
+pub fn to_request(
     storage_name: String,
     repo_name: String,
     file: String,
@@ -40,7 +40,7 @@ fn to_request(
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repo_name, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo_name, &storage_name, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
         return Err(InternalError::NotFound);
@@ -78,7 +78,7 @@ pub async fn browse_storage(
         return not_found();
     }
     let storage = storage.unwrap();
-    let vec = get_repositories_by_storage(&storage.id, &connection)?;
+    let vec = get_repositories_by_storage(&string, &connection)?;
     let mut repos = Vec::new();
     for x in vec {
         repos.push(x.name);

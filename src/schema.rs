@@ -59,7 +59,7 @@ table! {
         id -> Bigint,
         name -> Text,
         repo_type -> Text,
-        storage -> Bigint,
+        storage -> Text,
         settings -> Text,
         deploy_settings -> Text,
         security -> Text,
