@@ -1,22 +1,20 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
-
 use std::ops::Deref;
 
 use badge_maker::Style;
+use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
-
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
 use crate::storage::action::get_storage_name_by_id;
@@ -253,6 +251,8 @@ pub struct SecurityRules {
 pub struct RepositorySettings {
     #[serde(default = "default")]
     pub active: bool,
+    #[serde(default)]
+    pub description: String,
     #[serde(default = "Policy::default")]
     pub policy: Policy,
     #[serde(default = "Frontend::default")]
@@ -265,6 +265,7 @@ impl Default for RepositorySettings {
     fn default() -> Self {
         RepositorySettings {
             active: true,
+            description: "".to_string(),
             policy: Policy::Mixed,
             frontend: Default::default(),
             badge: Default::default(),

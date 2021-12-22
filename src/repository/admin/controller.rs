@@ -1,10 +1,12 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-use actix_web::{delete, get, patch, post, put, web, HttpRequest};
+use actix_web::{delete, get, HttpRequest, patch, post, put, web};
+use actix_web::web::Bytes;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{
     add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories,
@@ -20,7 +22,6 @@ use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -154,6 +155,30 @@ pub async fn update_active_status(
 
     let mut repository = repository.unwrap();
     repository.settings.active = active;
+    update_repo_settings(&repo, &repository.settings, &connection)?;
+    APIResponse::new(true, Some(repository)).respond(&r)
+}
+
+#[patch("/api/admin/repository/{repo}/description")]
+pub async fn update_description(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    path: web::Path<(i64)>,
+    bytes: Bytes,
+) -> SiteResponse {
+    let (repo) = path.into_inner();
+
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repository = get_repo_by_id(&repo, &connection)?;
+    let vec = bytes.to_vec();
+    let desc = String::from_utf8(vec)?;
+    let mut repository = repository.unwrap();
+    repository.settings.description = desc;
     update_repo_settings(&repo, &repository.settings, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }

@@ -16,5 +16,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(controller::update_active_status)
         .service(controller::update_policy)
         .service(controller::clear_all)
-        .service(controller::modify_badge_settings);
+        .service(controller::modify_badge_settings)
+        .service(controller::update_description);
 }
