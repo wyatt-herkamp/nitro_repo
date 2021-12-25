@@ -1,6 +1,5 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
-  </el-container>
+
 </template>
 
 <script lang="ts">

@@ -1,44 +1,5 @@
 <template>
-  <el-container style="border: 1px solid #eee">
-    <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-      <el-menu
-        default-active="0"
-        class="el-menu-vertical-demo"
-        :collapse="false"
-      >
-        <el-menu-item @click="index = 0" index="0">
-          <i class="el-icon-watermelon"></i>
-          <template #title>Create new Storage</template>
-        </el-menu-item>
-        <el-menu-item v-if="isLoading">
-          <i class="el-icon-watermelon"></i>
-          <template #title>Loading </template>
-        </el-menu-item>
-        <div v-else-if="error != ''">
-          {{ error }} <button @click="getStorage">try again</button>
-        </div>
-        <el-menu-item
-          v-for="storage in storages.storages"
-          :key="storage.id"
-          @click="index = storage.id"
-          :index="storage.id.toString()"
-        >
-          <i class="el-icon-watermelon"></i>
-          <template #title>{{ storage.public_name }}</template>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
-    <el-container>
-      <div v-if="index == 0">
-        <CreateStorage :updateList="updateList" />
-      </div>
-      <div v-for="storage in storages.storages" :key="storage.id">
-        <div v-if="index == storage.id">
-          <UpdateStorage :storage="storage" />
-        </div>
-      </div>
-    </el-container>
-  </el-container>
+
 </template>
 
 <script lang="ts">

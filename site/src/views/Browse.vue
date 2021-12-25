@@ -1,30 +1,5 @@
 <template>
-  <el-container
-    v-loading="loading"
-    element-loading-text="Loading..."
-    style="border: 1px solid #eee"
-  >
-    <el-header>
-      <el-breadcrumb :separator-icon="ArrowRight">
-        <el-breadcrumb-item :to="{ path: '/Browse' }"
-          >Browse
-        </el-breadcrumb-item>
-        <el-breadcrumb-item v-for="path in values" :key="path"
-          >{{ path }}
-        </el-breadcrumb-item>
-      </el-breadcrumb>
-    </el-header>
-    <el-main>
-      <el-table
-        class="pointer"
-        :data="tableData"
-        @row-click="onRowClick"
-        style="width: 100%"
-      >
-        <el-table-column prop="name" label="name" />
-      </el-table>
-    </el-main>
-  </el-container>
+
 </template>
 
 <script lang="ts">

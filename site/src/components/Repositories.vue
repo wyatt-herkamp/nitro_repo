@@ -1,48 +1,5 @@
 <template>
-  <el-container style="border: 1px solid #eee">
-    <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-      <el-menu
-        default-active="0"
-        class="el-menu-vertical-demo content"
-        :collapse="false"
-      >
-        <el-menu-item @click="index = 0" index="0">
-          <i class="el-icon-watermelon"></i>
-          <template #title>Create new Repository</template>
-        </el-menu-item>
-        <el-menu-item v-if="isLoading">
-          <i class="el-icon-watermelon"></i>
-          <template #title>Loading </template>
-        </el-menu-item>
-        <div v-else-if="error != ''">
-          {{ error }} <button @click="getRepos">try again</button>
-        </div>
-        <el-menu-item
-          v-for="repo in repositories.repositories"
-          :key="repo.id"
-          @click="index = repo.id"
-          :index="repo.id.toString()"
-        >
-          <i class="el-icon-watermelon"></i>
-          <template #title>{{ repo.name }}</template>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
-    <el-container class="content">
-      <div class="content" v-if="index == 0">
-        <CreateRepo :updateList="updateList" />
-      </div>
-      <div
-        class="content"
-        v-for="repo in repositories.repositories"
-        :key="repo.id"
-      >
-        <div class="content" v-if="index === repo.id">
-          <UpdateRepository :repo="repo" />
-        </div>
-      </div>
-    </el-container>
-  </el-container>
+
 </template>
 
 <script lang="ts">

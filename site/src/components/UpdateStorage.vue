@@ -1,43 +1,5 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
-    <el-main>
-      <el-alert
-        v-if="form.error.length != 0"
-        :title="form.error"
-        type="error"
-        closable="false"
-      />
-      <el-form label-position="top" :model="form" label-width="120px">
-        <el-form-item label="Name">
-          <el-input
-            disabled
-            v-model="form.name"
-            :placeholder="computedStorage.name"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="Public Name">
-          <el-input
-            disabled
-            v-model="form.public_name"
-            :placeholder="computedStorage.public_name"
-          ></el-input>
-        </el-form-item>
 
-        <el-form-item>
-          <!--Yeah, I know. But please don't judge -->
-          <el-button
-            :disabled="
-              form.name == computedStorage.name &&
-              form.public_name == computedStorage.public_name
-            "
-            type="primary"
-            @click="onSubmit"
-            >Update Storage</el-button
-          >
-        </el-form-item>
-      </el-form>
-    </el-main>
-  </el-container>
 </template>
 
 <script lang="ts">

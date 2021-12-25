@@ -1,11 +1,5 @@
 <template>
-  <el-container style="border: 1px solid #eee">
-    <MavenUpload
-      v-if="repository != undefined && repository.repo_type == 'maven'"
-      :repo="repository"
-      :storage="storage"
-    />
-  </el-container>
+
 </template>
 
 <script lang="ts">

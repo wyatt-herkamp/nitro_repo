@@ -1,45 +1,5 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
-    <el-main>
-      <el-alert
-        v-if="form.error.length != 0"
-        :title="form.error"
-        type="error"
-      />
-      <el-form label-position="top" :model="form" label-width="120px">
-        <el-form-item label="Name">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-        <el-form-item label="Repository Type">
-          <el-select
-            v-model="form.type"
-            placeholder="Please select your Repo Type"
-          >
-            <el-option label="Maven" value="maven"></el-option>
-            <el-option label="NPM" value="npm"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="Storage">
-          <el-select
-            v-model="form.storage"
-            placeholder="Please select your storage"
-          >
-            <el-option
-              v-for="storage in storages.storages"
-              :key="storage.id"
-              :label="storage.public_name"
-              :value="storage.name"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit"
-            >Create Repository</el-button
-          >
-        </el-form-item>
-      </el-form>
-    </el-main>
-  </el-container>
+
 </template>
 
 <script lang="ts">

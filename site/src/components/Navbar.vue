@@ -1,41 +1,5 @@
 <template>
-  <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
-    <el-menu-item index="Home" @click="router.push('/')">Index</el-menu-item>
-    <el-menu-item index="Browse" @click="router.push('/browse')"
-      >Browse</el-menu-item
-    >
-    <el-menu-item
-      v-if="user.id != 0"
-      index="Admin"
-      @click="router.push('/admin')"
-      >Admin
-    </el-menu-item>
-    <el-menu-item v-else index="Login" @click="dialogVisible = true"
-      >Login
-    </el-menu-item>
-  </el-menu>
-  <el-dialog v-model="dialogVisible" title="Login" width="30%">
-    <el-form
-      :model="form"
-      label-position="top"
-      label-width="120px"
-      v-on:submit="onSubmit"
-    >
-      <el-form-item label="Username">
-        <el-input v-model="form.username"></el-input>
-      </el-form-item>
-      <el-form-item label="Password">
-        <el-input
-          v-model="this.form.password"
-          placeholder="Please input password"
-          show-password
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button block native-type="submit" type="primary">Log In </el-button>
-      </el-form-item>
-    </el-form>
-  </el-dialog>
+
 </template>
 
 <script lang="ts">

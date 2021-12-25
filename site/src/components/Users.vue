@@ -1,40 +1,5 @@
 <template>
-  <el-container style="border: 1px solid #eee">
-    <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-      <el-menu default-active="0" :collapse="false">
-        <el-menu-item @click="index = 0" index="0">
-          <i class="el-icon-watermelon"></i>
-          <template #title>Create new User</template>
-        </el-menu-item>
-        <el-menu-item v-if="isLoading">
-          <i class="el-icon-watermelon"></i>
-          <template #title>Loading </template>
-        </el-menu-item>
-        <div v-else-if="error != ''">
-          {{ error }} <button @click="getUser">try again</button>
-        </div>
-        <el-menu-item
-          v-for="user in users.users"
-          :key="user.id"
-          @click="index = user.id"
-          :index="user.id.toString()"
-        >
-          <i class="el-icon-user"></i>
-          <template #title>{{ user.name }}</template>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
-    <el-container>
-      <div v-if="index == 0">
-        <CreateUser :updateList="updateList" />
-      </div>
-      <div v-for="user in users.users" :key="user.id">
-        <div v-if="index == user.id">
-          <UpdateUser :userResponse="user" :me="false" />
-        </div>
-      </div>
-    </el-container>
-  </el-container>
+
 </template>
 
 <script lang="ts">
