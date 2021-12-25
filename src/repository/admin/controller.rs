@@ -2,6 +2,8 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 use actix_web::{delete, get, HttpRequest, patch, post, put, web};
+use actix_web::web::Bytes;
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -27,7 +29,7 @@ pub struct ListRepositories {
     pub repositories: Vec<RepositoryListResponse>,
 }
 
-#[get("/api/repositories/list")]
+#[get("/api/admin/repositories/list")]
 pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -41,7 +43,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
     APIResponse::new(true, Some(response)).respond(&r)
 }
 
-#[get("/api/repositories/get/{repo}")]
+#[get("/api/admin/repositories/get/{repo}")]
 pub async fn get_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -58,24 +60,23 @@ pub async fn get_repo(
     APIResponse::respond_new(repo, &r)
 }
 
-#[get("/api/repositories/get/{storage}/{repo}")]
-pub async fn get_repo_deployer(
+#[get("/api/admin/repositories/get/{storage}/{repo}")]
+pub async fn get_repo_admin_by_name(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
     let connection = pool.get()?;
-
     let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.deployer {
+    if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-
     let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
 
     APIResponse::respond_new(repo, &r)
 }
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewRepo {
@@ -132,6 +133,7 @@ pub async fn add_repo(
 
     APIResponse::from(option).respond(&r)
 }
+
 #[patch("/api/admin/repository/{repo}/active/{active}")]
 pub async fn update_active_status(
     pool: web::Data<DbPool>,
@@ -176,6 +178,35 @@ pub async fn update_policy(
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
+#[patch("/api/admin/repository/{repo}/description")]
+pub async fn update_description(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    b: Bytes,
+    path: web::Path<(i64, Policy)>,
+) -> SiteResponse {
+    let (repo, policy) = path.into_inner();
+
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repository = get_repo_by_id(&repo, &connection)?;
+
+    let mut repository = repository.unwrap();
+    let vec = b.to_vec();
+    let string = String::from_utf8(vec);
+    if let Err(error) = string {
+        error!("Unable to Parse String from Request: {}",error);
+        return bad_request("Bad Description");
+    }
+    repository.settings.description = string.unwrap();
+    update_repo_settings(&repo, &repository.settings, &connection)?;
+    APIResponse::new(true, Some(repository)).respond(&r)
+}
+
 #[patch("/api/admin/repository/{repo}/modify/settings/frontend")]
 pub async fn modify_frontend_settings(
     pool: web::Data<DbPool>,
@@ -196,6 +227,7 @@ pub async fn modify_frontend_settings(
     update_repo_settings(&repository.id, &repository.settings, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
+
 #[patch("/api/admin/repository/{repo}/modify/settings/badge")]
 pub async fn modify_badge_settings(
     pool: web::Data<DbPool>,
@@ -326,6 +358,7 @@ pub async fn update_deployers_readers(
     update_repo_security(&repository.id, &repository.security, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
+
 #[patch("/api/admin/repository/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
     pool: web::Data<DbPool>,

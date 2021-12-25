@@ -20,8 +20,35 @@ use crate::repository::models::{
 use crate::repository::models::{ReportGeneration, Webhook};
 use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
-use crate::system::utils::get_user_by_header;
+use crate::system::utils::{can_read_basic_auth, get_user_by_header};
 use crate::utils::get_current_time;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublicRepositoryResponse {
+    pub id: i64,
+    pub name: String,
+    pub repo_type: String,
+    pub storage: String,
+    pub description: String,
+    pub active: bool,
+    pub policy: Policy,
+    pub created: i64,
+}
+
+impl From<Repository> for PublicRepositoryResponse {
+    fn from(repo: Repository) -> Self {
+        PublicRepositoryResponse {
+            id: repo.id,
+            name: repo.name,
+            repo_type: repo.repo_type,
+            storage: repo.storage,
+            description: repo.settings.description,
+            active: repo.settings.active,
+            policy: repo.settings.policy,
+            created: repo.created,
+        }
+    }
+}
 
 #[get("/api/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
@@ -31,12 +58,15 @@ pub async fn get_repo(
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
     let connection = pool.get()?;
-    let user = get_user_by_header(r.headers(), &connection)?;
-    let storage = get_storage_by_name(&storage, &connection)?;
-    if storage.is_none() {
+
+    let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
+    if repo.is_none() {
         return not_found();
     }
-    let repo = get_repo_by_name_and_storage(&repo, &storage.unwrap().id, &connection)?;
+    let repository = repo.unwrap();
+    if !can_read_basic_auth(&r.headers(), &repository, &connection)? {
+        return unauthorized();
+    }
 
-    APIResponse::respond_new(repo, &r)
+    APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r)
 }

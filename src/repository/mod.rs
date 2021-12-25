@@ -25,5 +25,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(api::get_versions)
         .service(api::get_version)
         .service(api::get_project)
-        .service(badge::badge);
+        .service(badge::badge)
+        .service(public::get_repo);
 }
