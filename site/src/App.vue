@@ -7,7 +7,7 @@
 
 <script lang="ts">
 import userStore from "@/store/user";
-import Navbar from "@/components/Navbar.vue";
+import Navbar from "@/components/nav/Navbar.vue";
 import {defineComponent, onBeforeMount} from "vue";
 import {useMeta} from "vue-meta";
 

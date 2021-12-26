@@ -4,5 +4,9 @@
 
 body,
 html {
-    @apply bg-gray-800;
+    background-color: hsla(208, 23%, 23%, 1);
+}
+
+p {
+    @apply text-white;
 }
