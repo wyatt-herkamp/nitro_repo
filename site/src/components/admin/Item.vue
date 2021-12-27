@@ -1,7 +1,7 @@
 <template>
   <li>
-    <a
-        :href="href"
+    <router-link
+        :to="href"
         class="
         flex flex-row
         items-center
@@ -28,7 +28,7 @@
         <box-icon :name="icon"></box-icon>
       </span>
       <span class="text-sm font-medium">{{ name }}</span>
-    </a>
+    </router-link>
   </li>
 </template>
 <script>
