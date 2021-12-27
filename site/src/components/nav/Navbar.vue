@@ -6,8 +6,11 @@
     <router-link to="/browse">
       <MenuButton> Browse</MenuButton>
     </router-link>
-    <router-link v-if="user.id != 0" class="end" to="/admin">
-      <MenuButton class="end"> Welcome {{ user.name }}</MenuButton>
+    <router-link v-if="user.id != 0" to="/admin">
+      <MenuButton> Admin</MenuButton>
+    </router-link>
+    <router-link v-if="user.id != 0" class="end" to="/me">
+      <MenuButton class="end"> Welcome, {{ user.name }}</MenuButton>
     </router-link>
 
     <Login v-if="user.id == 0" class="end">
@@ -41,7 +44,6 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-
 .end {
   margin-left: auto;
 }

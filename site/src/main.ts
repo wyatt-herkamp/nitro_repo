@@ -6,6 +6,8 @@ import {VueCookieNext} from "vue-cookie-next";
 import Notifications from "@kyvg/vue3-notification";
 import {createMetaManager} from "vue-meta";
 import "@/styles/app.css"
+import "boxicons/css/boxicons.min.css";
+import "boxicons/dist/boxicons.js";
 import VueUploadComponent from "vue-upload-component";
 import vfmPlugin from 'vue-final-modal';
 

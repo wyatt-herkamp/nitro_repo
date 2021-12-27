@@ -8,9 +8,9 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@element-plus/icons": "^0.0.11",
     "@kyvg/vue3-notification": "^2.3.4",
     "axios": "^0.24.0",
+    "boxicons": "^2.1.1",
     "core-js": "^3.20.1",
     "equal-vue": "^0.79.3",
     "ts-results": "^3.3.0",
