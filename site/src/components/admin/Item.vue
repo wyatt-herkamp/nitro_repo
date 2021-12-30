@@ -27,7 +27,7 @@
       >
         <box-icon :name="icon"></box-icon>
       </span>
-      <span class="text-sm font-medium">{{ name }}</span>
+      <span class="font-bold text-sm font-medium">{{ name }}</span>
     </router-link>
   </li>
 </template>
