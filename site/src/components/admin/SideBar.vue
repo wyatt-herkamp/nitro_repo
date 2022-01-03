@@ -1,5 +1,6 @@
 <template>
-  <div class="flex flex-row min-h-full">
+
+  <div class="flex flex-row ">
     <div class="flex flex-col w-56 bg-slate-800 rounded-r-3xl overflow-hidden">
       <ul class="flex flex-col py-4">
         <Item href="/admin/users" icon="user" name="Users"/>

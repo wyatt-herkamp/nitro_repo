@@ -2,10 +2,10 @@ import http from "@/http-common";
 import {BasicResponse, DEFAULT_REPO_LIST, FileResponse, Project, Repository, RepositoryList,} from "../Response";
 
 export async function getRepositories(token: string) {
-  const value = await http.get("/api/repositories/list", {
-    headers: {
-      Authorization: "Bearer " + token,
-    },
+  const value = await http.get("/api/admin/repositories/list", {
+      headers: {
+          Authorization: "Bearer " + token,
+      },
   });
 
   if (value.status != 200) {
