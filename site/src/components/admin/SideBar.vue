@@ -1,7 +1,7 @@
 <template>
 
-  <div class="flex flex-row ">
-    <div class="flex flex-col w-56 bg-slate-800 rounded-r-3xl overflow-hidden">
+  <div class="min-h-screen flex ">
+    <div class="flex flex-col w-56 bg-slate-800 rounded-r-3xl ">
       <ul class="flex flex-col py-4">
         <Item href="/admin/users" icon="user" name="Users"/>
         <Item href="/admin/repositories" icon="package" name="Repositories"/>

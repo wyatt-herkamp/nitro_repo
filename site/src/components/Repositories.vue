@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <div class="flex p-4  ">
+    <div class="flex p-4">
       <div class="w-full float-left">
         <div class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4">
           <div class="block text-slate-50 text-lg font-semibold py-2 px-2">
@@ -85,7 +85,8 @@
           <div>
             <ul v-if="repositories != undefined">
               <li v-for="repo in repositories.repositories" :key="repo.id">
-                <div
+                <router-link
+                    :to="'/admin/repository/' + repo.id"
                     class="
                     cursor-pointer
                     py-2
@@ -99,7 +100,7 @@
                   "
                 >
                   <div class="px-1">{{ repo.name }}</div>
-                </div>
+                </router-link>
               </li>
             </ul>
           </div>
@@ -112,13 +113,12 @@
 <script lang="ts">
 import {defineComponent, ref} from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
-import UpdateRepository from "@/components/UpdateRepository.vue";
 import {useCookie} from "vue-cookie-next";
 import {getRepositories} from "@/backend/api/Repository";
 import {RepositoryList} from "@/backend/Response";
 
 export default defineComponent({
-  components: { CreateRepo, UpdateRepository },
+  components: {CreateRepo},
 
   setup() {
     const index = ref<number>(0);

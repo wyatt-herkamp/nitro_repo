@@ -1,14 +1,10 @@
 <template>
-
+  <div v-if="repository != undefined">
+    <h1>{{ repository.name }}</h1>
+  </div>
 </template>
 <style scoped></style>
 <script lang="ts">
-import {DEFAULT_REPO, Repository, RepositoryListResponse,} from "@/backend/Response";
-import {apiURL} from "@/http-common";
-import {defineComponent, ref} from "vue";
-import {useCookie} from "vue-cookie-next";
-import {useRouter} from "vue-router";
-import {getRepoByID} from "@/backend/api/Repository";
 import {
   setActiveStatus,
   setPolicy,
@@ -17,49 +13,45 @@ import {
   updateDeployReport,
   updateFrontend,
 } from "@/backend/api/admin/Repository";
+import {getRepoByID} from "@/backend/api/Repository";
+import {Repository} from "@/backend/Response";
+import SideBar from "@/components/admin/SideBar.vue";
+import {defineComponent, ref} from "vue";
+import {useCookie} from "vue-cookie-next";
+import {useMeta} from "vue-meta";
+import {useRoute, useRouter} from "vue-router";
 
 export default defineComponent({
-  props: {
-    repo: {
-      required: true,
-      type: Object as () => RepositoryListResponse,
-    },
-  },
-
-  setup(props) {
+  components: {SideBar},
+  setup() {
     const router = useRouter();
+    const route = useRoute();
+
     const options = ref([
-      { value: "DeployerUsername", label: "Deploy Username" },
-      { value: "Time", label: "Time" },
+      {value: "DeployerUsername", label: "Deploy Username"},
+      {value: "Time", label: "Time"},
     ]);
-    let repository = ref<Repository>(DEFAULT_REPO);
+    let repository = ref<Repository | undefined>(undefined);
     let date = ref<string | undefined>(undefined);
     const cookie = useCookie();
     const isLoading = ref(false);
-    const activeName = ref("general");
     const exampleBadgeURL = ref("");
+    const repoID = route.params.repo as string;
+    const {meta} = useMeta({
+      title: "Nitro Repo",
+    });
 
-
-    console.log(apiURL);
     const getRepo = async () => {
-      isLoading.value = true;
       try {
         const value = (await getRepoByID(
-          cookie.getCookie("token"),
-          props.repo.id
+            cookie.getCookie("token"),
+            Number.parseInt(repoID)
         )) as Repository;
         repository.value = value;
-        exampleBadgeURL.value =
-            apiURL +
-            "/badge/" +
-            props.repo.storage +
-            "/" +
-          props.repo.name +
-          "/nitro_repo_example/badge.svg";
         date.value = new Date(repository.value.created).toLocaleDateString(
-          "en-US"
+            "en-US"
         );
-        isLoading.value = false;
+        meta.title = value.name;
       } catch (e) {
         console.log(e);
       }
@@ -67,8 +59,6 @@ export default defineComponent({
     getRepo();
 
     return {
-      isLoading,
-      activeName,
       date,
       exampleBadgeURL,
       repository,
@@ -78,16 +68,16 @@ export default defineComponent({
   },
   methods: {
     handleClick(tab: any, event: any) {
-      console.log(tab.paneName);
+      if (this.repository == undefined) return;
       if (tab.paneName === "upload") {
         this.router.replace(
-          "/upload/" + this.storage.name + "/" + this.repo.name
+            "/upload/" + this.repository.storage + "/" + this.repository.name
         );
       }
     },
 
     async updateActiveStatus() {
-      if (this.repository.id == 0) {
+      if (this.repository == undefined) {
         this.$notify({
           title: "Unable Update Repository",
           text: "Repository is still undefined",
@@ -97,9 +87,9 @@ export default defineComponent({
       }
 
       const response = await setActiveStatus(
-        this.repository.id,
-        this.repository.settings.active,
-        this.$cookie.getCookie("token")
+          this.repository.id,
+          this.repository.settings.active,
+          this.$cookie.getCookie("token")
       );
       if (response.ok) {
         this.$notify({
@@ -115,7 +105,7 @@ export default defineComponent({
       }
     },
     async updatePolicy() {
-      if (this.repository.id == 0) {
+      if (this.repository == undefined) {
         this.$notify({
           title: "Unable Update Repository",
           text: "Repository is still undefined",
@@ -124,9 +114,9 @@ export default defineComponent({
         return;
       }
       const response = await setPolicy(
-        this.repository.id,
-        this.repository.settings.policy,
-        this.$cookie.getCookie("token")
+          this.repository.id,
+          this.repository.settings.policy,
+          this.$cookie.getCookie("token")
       );
       if (response.ok) {
         this.$notify({
@@ -142,7 +132,7 @@ export default defineComponent({
       }
     },
     async updateVisibility() {
-      if (this.repository.id == 0) {
+      if (this.repository == undefined) {
         this.$notify({
           title: "Unable Update Repository",
           text: "Repository is still undefined",
@@ -151,9 +141,9 @@ export default defineComponent({
         return;
       }
       const response = await setVisibility(
-        this.repository.id,
-        this.repository.security.visibility,
-        this.$cookie.getCookie("token")
+          this.repository.id,
+          this.repository.security.visibility,
+          this.$cookie.getCookie("token")
       );
       if (response.ok) {
         console.log(response.val.security.visibility);
@@ -170,7 +160,7 @@ export default defineComponent({
       }
     },
     async submitFrontend() {
-      if (this.repository.id == 0) {
+      if (this.repository == undefined) {
         this.$notify({
           title: "Unable Update Repository",
           text: "Repository is still undefined",
@@ -180,10 +170,10 @@ export default defineComponent({
       }
       {
         const response = await updateFrontend(
-          this.repository.id,
-          this.repository.settings.frontend.enabled,
-          this.repository.settings.frontend.page_provider,
-          this.$cookie.getCookie("token")
+            this.repository.id,
+            this.repository.settings.frontend.enabled,
+            this.repository.settings.frontend.page_provider,
+            this.$cookie.getCookie("token")
         );
         if (response.ok) {
           console.log(response.val.security.visibility);
@@ -201,11 +191,11 @@ export default defineComponent({
       }
       {
         let response = await updateBadge(
-          this.repository.id,
-          this.repository.settings.badge.style,
-          this.repository.settings.badge.label_color,
-          this.repository.settings.badge.color,
-          this.$cookie.getCookie("token")
+            this.repository.id,
+            this.repository.settings.badge.style,
+            this.repository.settings.badge.label_color,
+            this.repository.settings.badge.color,
+            this.$cookie.getCookie("token")
         );
         if (response.ok) {
           console.log(response.val.security.visibility);
@@ -223,7 +213,7 @@ export default defineComponent({
       }
     },
     async updateReport() {
-      if (this.repository.id == 0) {
+      if (this.repository == undefined) {
         this.$notify({
           title: "Unable Update Repository",
           text: "Repository is still undefined",
@@ -233,10 +223,10 @@ export default defineComponent({
       }
 
       const response = await updateDeployReport(
-        this.repository.id,
-        this.repository.deploy_settings.report_generation.active,
-        this.repository.deploy_settings.report_generation.values,
-        this.$cookie.getCookie("token")
+          this.repository.id,
+          this.repository.deploy_settings.report_generation.active,
+          this.repository.deploy_settings.report_generation.values,
+          this.$cookie.getCookie("token")
       );
       if (response.ok) {
         console.log(response.val.security.visibility);

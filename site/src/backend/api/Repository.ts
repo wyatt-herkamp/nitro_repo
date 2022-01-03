@@ -23,10 +23,10 @@ export async function getRepoByID(
   token: string,
   id: number
 ): Promise<Repository | undefined> {
-  const value = await http.get("/api/repositories/get/" + id, {
-    headers: {
-      Authorization: "Bearer " + token,
-    },
+  const value = await http.get("/api/admin/repositories/get/" + id, {
+      headers: {
+          Authorization: "Bearer " + token,
+      },
   });
 
   if (value.status != 200) {

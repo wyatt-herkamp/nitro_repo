@@ -5,6 +5,7 @@ import Admin from "../views/admin/Admin.vue";
 import Storages from "../views/admin/Storages.vue";
 import Users from "../views/admin/Users.vue";
 import Repositories from "../views/admin/Repositories.vue";
+import ViewRepository from "../views/admin/ViewRepository.vue";
 import Settings from "../views/admin/Settings.vue";
 import Browse from "../views/Browse.vue";
 import Upload from "../views/Upload.vue";
@@ -40,6 +41,10 @@ const routes: Array<RouteRecordRaw> = [
         name: "AdminRepos",
         component: Repositories,
     }, {
+        path: "/admin/repository/:repo",
+        name: "AdminRepoView",
+        component: ViewRepository,
+    }, {
         path: "/admin/users",
         name: "AdminUsers",
         component: Users,
@@ -59,15 +64,15 @@ const routes: Array<RouteRecordRaw> = [
         component: Browse,
     },
     {
-    path: "/browse/:storage/:repo/:catchAll(.*)",
-    name: "Project",
-    component: Project,
-  },
+        path: "/browse/:storage/:repo/:catchAll(.*)",
+        name: "Project",
+        component: Project,
+    },
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes,
 });
 
 export default router;
