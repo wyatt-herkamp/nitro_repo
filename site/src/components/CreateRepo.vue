@@ -1,21 +1,87 @@
 <template>
+  <div>
+    <vue-final-modal
+        v-model="showModel"
+        classes="flex justify-center items-center"
+    >
+      <div
+          class="
+          relative
+          border
+          bg-white
+          dark:bg-slate-900
+          border-slate-100
+          dark:border-black
+          m-w-20
+          py-5
+          px-10
+          rounded-2xl
+          shadow-xl
+          text-center
+        "
+      >
+        <p class="font-bold text-xl pb-4">Create Repository</p>
+        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
+          <input
+              id="Repository Name"
+              v-model="form.name"
+              class="input"
+              placeholder="Repository Name"
+              type="text"
+          />
+          <select
+              v-model="form.type"
+              class="
+              border border-gray-300
+              rounded-full
+              text-gray-600
+              h-10
+              pl-5
+              pr-10
+              bg-white
+              hover:border-gray-400
+              focus:outline-none
+              appearance-none
+            "
+          >
+            <option>Maven</option>
+            <option>NPM</option>
 
+          </select>
+          <button
+              class="
+              bg-slate-100
+              dark:bg-slate-800
+              py-2
+              my-3
+              rounded-md
+              cursor-pointer
+              text-white
+            "
+          >
+            Sign in
+          </button>
+        </form>
+
+        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
+          🗙
+        </button>
+      </div>
+    </vue-final-modal>
+    <div @click="showModel = true">
+      <slot name="button"></slot>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
-import {DEFAULT_STORAGE_LIST, Repository,} from "@/backend/Response";
+import {DEFAULT_STORAGE_LIST, Repository} from "@/backend/Response";
 import {defineComponent, ref} from "vue";
 import {useCookie} from "vue-cookie-next";
 import {getStorages} from "@/backend/api/Storages";
 import {createNewRepository} from "@/backend/api/admin/Repository";
 
 export default defineComponent({
-  props: {
-    updateList: {
-      required: true,
-      type: Function,
-    },
-  },
   setup() {
     let form = ref({
       name: "",
@@ -25,6 +91,7 @@ export default defineComponent({
     });
     const cookie = useCookie();
     const isLoading = ref(false);
+    const showModel = ref(false);
 
     const error = ref("");
     let storages = ref(DEFAULT_STORAGE_LIST);
@@ -39,6 +106,8 @@ export default defineComponent({
         error.value = "Error";
       }
     };
+    const close = () => (showModel.value = false);
+
     getStorage();
     return {
       form,
@@ -46,6 +115,8 @@ export default defineComponent({
       isLoading,
       error,
       getStorage,
+      showModel,
+      close,
     };
   },
   methods: {
@@ -58,7 +129,6 @@ export default defineComponent({
       );
       if (response.ok) {
         let data = response.val as Repository;
-        this.$props.updateList(data.id);
         this.$notify({
           title: "Repository Created",
           type: "success",
