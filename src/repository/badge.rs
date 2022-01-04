@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use actix_files::NamedFile;
 use actix_web::{get, HttpRequest, web};
 use badge_maker::{BadgeBuilder, Style};
+use tiny_skia::Transform;
 use usvg::Options;
 
 use crate::api_response::SiteResponse;
@@ -96,6 +97,8 @@ pub async fn badge(
         file1.write_all(svg.as_bytes())?;
     }
     if typ.eq("png") {
+        //TODO Improve the SVG rendering process
+
         let string1 = read_to_string(svg_file)?;
         let options = Options {
             resources_dir: None,
@@ -118,7 +121,7 @@ pub async fn badge(
             .unwrap();
         let mut pixmap1 = tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
         let pixmap = pixmap1.as_mut();
-        resvg::render(&result, fit_to, pixmap).unwrap();
+        resvg::render(&result, fit_to, Transform::default(), pixmap).unwrap();
         let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
 
         pixmap1.save_png(svg_file).unwrap();

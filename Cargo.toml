@@ -63,9 +63,9 @@ strum_macros = "0.23.1"
 derive_more = "0.99.14"
 async-trait = "0.1.51"
 # Badge Stuff
-badge-maker = "0.1.4"
-usvg = "0.19.0"
-resvg = "0.19.0"
+badge-maker = "0.2.0"
+usvg = "0.20.0"
+resvg = "0.20.0"
 tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"
