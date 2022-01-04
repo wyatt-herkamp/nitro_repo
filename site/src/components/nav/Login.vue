@@ -21,10 +21,11 @@
         "
       >
         <p class="font-bold text-xl pb-4">Login</p>
-        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit(form.username, form.password)">
+        <form class="flex flex-col w-96 sm:w-65" @submit.prevent="onSubmit(form.username, form.password)">
           <input
               id="username"
               v-model="form.username"
+              autocomplete="username"
               class="input"
               placeholder="Username"
               type="text"
@@ -33,6 +34,7 @@
           <input
               id="password"
               v-model="form.password"
+              autocomplete="current-password"
               class="input"
               placeholder="Password"
               type="password"

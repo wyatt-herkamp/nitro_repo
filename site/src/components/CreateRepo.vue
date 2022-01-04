@@ -22,32 +22,98 @@
       >
         <p class="font-bold text-xl pb-4">Create Repository</p>
         <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-          <input
-              id="Repository Name"
-              v-model="form.name"
-              class="input"
-              placeholder="Repository Name"
-              type="text"
-          />
-          <select
-              v-model="form.type"
-              class="
-              border border-gray-300
-              rounded-full
-              text-gray-600
-              h-10
-              pl-5
-              pr-10
-              bg-white
-              hover:border-gray-400
-              focus:outline-none
-              appearance-none
-            "
-          >
-            <option>Maven</option>
-            <option>NPM</option>
+          <div class="mb-4">
+            <label
+                class="block text-slate-50 text-sm font-bold mb-2"
+                for="name"
+            >
+              Repository Name
+            </label>
+            <input
+                id="name"
+                v-model="form.name"
+                autocomplete="off"
+                class="
+                shadow
+                appearance-none
+                border
+                rounded
+                w-full
+                py-2
+                px-3
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:shadow-outline
+              "
+                placeholder="Repository Name"
+                type="text"
+            />
+          </div>
+          <div class="flex flex-row">
+            <div class="grow pr-2">
+              <label
+                  class="block text-slate-50 text-sm font-bold mb-2"
+                  for="name"
+              >
+                Repository Type
+              </label>
+              <select
+                  id="type"
+                  v-model="form.type"
+                  class="
+                  border border-gray-300
+                  rounded
+                  text-gray-600
+                  h-10
+                  px-5
+                  w-full
+                  bg-white
+                  hover:border-gray-400
+                  focus:outline-none
+                  appearance-none
+                "
+              >
+                <option disabled selected value="">Repository Type</option>
 
-          </select>
+                <option>Maven</option>
+                <option>NPM</option>
+              </select>
+            </div>
+            <div class="grow pl-2">
+              <label
+                  class="block text-slate-50 text-sm font-bold mb-2"
+                  for="name"
+              >
+                Storage
+              </label>
+              <select
+                  id="storage"
+                  v-model="form.storage"
+                  class="
+                  border border-gray-300
+                  rounded
+                  text-gray-600
+                  w-full
+                  h-10
+                  px-5
+                  bg-white
+                  hover:border-gray-400
+                  focus:outline-none
+                  appearance-none
+                "
+              >
+                <option disabled selected value="">Select your Storage</option>
+
+                <option
+                    v-for="storage in storages.storages"
+                    :key="storage.id"
+                    :value="storage.name"
+                >
+                  {{ storage.public_name }}
+                </option>
+              </select>
+            </div>
+          </div>
           <button
               class="
               bg-slate-100
@@ -133,6 +199,7 @@ export default defineComponent({
           title: "Repository Created",
           type: "success",
         });
+        this.$router.push("/admin/repository/" + data.id);
       } else {
         this.$notify({
           title: "Unable to Create Repository",

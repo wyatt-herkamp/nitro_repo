@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use actix_web::{delete, get, HttpRequest, patch, post, put, web};
 use actix_web::web::Bytes;
-use log::error;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -103,8 +103,9 @@ pub async fn add_repo(
     }
     let storage = storage.unwrap();
 
-    let option = get_repo_by_name_and_storage(&nc.repo, &storage.name, &connection)?;
-    if option.is_some() {
+    let option = get_repo_by_name_and_storage(&nc.name, &storage.name, &connection)?;
+    if let Some(repo) = option {
+        debug!("Repository {} already exists with ID {}",nc.name, repo.id );
         return already_exists();
     }
     let repository = Repository {
