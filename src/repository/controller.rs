@@ -28,7 +28,7 @@ pub struct ListRepositories {
     pub repositories: Vec<Repository>,
 }
 
-fn to_request(
+pub fn to_request(
     storage_name: String,
     repo_name: String,
     file: String,
@@ -40,7 +40,7 @@ fn to_request(
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repo_name, &storage.id, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo_name, &storage_name, &connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
         return Err(InternalError::NotFound);
@@ -78,7 +78,7 @@ pub async fn browse_storage(
         return not_found();
     }
     let storage = storage.unwrap();
-    let vec = get_repositories_by_storage(&storage.id, &connection)?;
+    let vec = get_repositories_by_storage(&string, &connection)?;
     let mut repos = Vec::new();
     for x in vec {
         repos.push(x.name);

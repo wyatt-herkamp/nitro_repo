@@ -1,22 +1,20 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Write;
-
 use std::ops::Deref;
 
 use badge_maker::Style;
+use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
-use diesel::{deserialize, serialize, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
-
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
 use crate::storage::action::get_storage_name_by_id;
@@ -115,7 +113,7 @@ impl RepositorySummary {
     ) -> Result<RepositorySummary, InternalError> {
         return Ok(RepositorySummary {
             name: repo.name.clone(),
-            storage: get_storage_name_by_id(&repo.storage, conn)?.unwrap(),
+            storage: repo.storage.clone(),
             page_provider: repo.settings.frontend.page_provider.clone(),
             repo_type: repo.repo_type.clone(),
             visibility: repo.security.visibility.clone(),
@@ -370,7 +368,7 @@ pub struct Repository {
     pub id: i64,
     pub name: String,
     pub repo_type: String,
-    pub storage: i64,
+    pub storage: String,
     pub settings: RepositorySettings,
     pub security: SecurityRules,
     #[serde(default)]
@@ -383,5 +381,5 @@ pub struct RepositoryListResponse {
     pub id: i64,
     pub name: String,
     pub repo_type: String,
-    pub storage: i64,
+    pub storage: String,
 }

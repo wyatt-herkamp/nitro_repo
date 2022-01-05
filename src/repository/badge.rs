@@ -1,21 +1,23 @@
-use std::fs::{create_dir_all, read_to_string, File};
+use std::fs::{create_dir_all, File, read_to_string};
 use std::io::Write;
 use std::path::PathBuf;
 
 use actix_files::NamedFile;
-use actix_web::{get, web, HttpRequest};
+use actix_web::{get, HttpRequest, web};
 use badge_maker::{BadgeBuilder, Style};
+use tiny_skia::Transform;
 use usvg::Options;
 
 use crate::api_response::SiteResponse;
+use crate::DbPool;
 use crate::error::response::not_found;
 use crate::repository::action::get_repo_by_name_and_storage;
+use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::BadgeSettings;
 use crate::repository::npm::NPMHandler;
 use crate::repository::repository::{RepositoryRequest, RepositoryType};
 use crate::storage::action::get_storage_by_name;
-use crate::DbPool;
 
 fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
     return format!(
@@ -50,21 +52,8 @@ pub async fn badge(
     let (storage, repository, file, typ) = path.into_inner();
     let connection = pool.get()?;
 
-    let storage = get_storage_by_name(&storage, &connection)?;
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repository, &storage.id, &connection)?;
-    if repository.is_none() {
-        return not_found();
-    }
-    let repository = repository.unwrap();
-    let request = RepositoryRequest {
-        storage,
-        repository,
-        value: file.clone(),
-    };
+    let request = to_request(storage, repository, file, &connection)?;
+
     let x = if request.value.eq("nitro_repo_example") {
         "example".to_string()
     } else {
@@ -108,6 +97,8 @@ pub async fn badge(
         file1.write_all(svg.as_bytes())?;
     }
     if typ.eq("png") {
+        //TODO Improve the SVG rendering process
+
         let string1 = read_to_string(svg_file)?;
         let options = Options {
             resources_dir: None,
@@ -130,7 +121,7 @@ pub async fn badge(
             .unwrap();
         let mut pixmap1 = tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
         let pixmap = pixmap1.as_mut();
-        resvg::render(&result, fit_to, pixmap).unwrap();
+        resvg::render(&result, fit_to, Transform::default(), pixmap).unwrap();
         let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
 
         pixmap1.save_png(svg_file).unwrap();

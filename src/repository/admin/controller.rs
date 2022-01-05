@@ -1,10 +1,11 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-use actix_web::{delete, get, patch, post, put, web, HttpRequest};
+use actix_web::{delete, get, HttpRequest, patch, post, put, web};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{
     add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories,
@@ -20,7 +21,6 @@ use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -71,11 +71,8 @@ pub async fn get_repo_deployer(
     if user.is_none() || !user.unwrap().permissions.deployer {
         return unauthorized();
     }
-    let storage = get_storage_by_name(&storage, &connection)?;
-    if storage.is_none() {
-        return not_found();
-    }
-    let repo = get_repo_by_name_and_storage(&repo, &storage.unwrap().id, &connection)?;
+
+    let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
 
     APIResponse::respond_new(repo, &r)
 }
@@ -105,16 +102,15 @@ pub async fn add_repo(
     }
     let storage = storage.unwrap();
 
-    let option = get_repo_by_name_and_storage(&nc.name, &storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&nc.repo, &storage.name, &connection)?;
     if option.is_some() {
         return already_exists();
     }
     let repository = Repository {
         id: 0,
-
         name: nc.0.name,
         repo_type: nc.0.repo,
-        storage: storage.id,
+        storage: nc.0.storage,
         settings: RepositorySettings::default(),
         security: SecurityRules {
             deployers: vec![],
@@ -132,7 +128,7 @@ pub async fn add_repo(
     if !buf.exists() {
         create_dir_all(buf)?;
     }
-    let option = get_repo_by_name_and_storage(&repository.name, &storage.id, &connection)?;
+    let option = get_repo_by_name_and_storage(&repository.name, &storage.name, &connection)?;
 
     APIResponse::from(option).respond(&r)
 }
