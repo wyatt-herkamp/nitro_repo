@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use std::fs::{create_dir_all, File, OpenOptions, read_dir, read_to_string, remove_file};
+use std::fs::{create_dir_all, OpenOptions, read_dir, read_to_string, remove_file};
 use std::io::Write;
 
 use actix_web::HttpRequest;
@@ -11,7 +10,7 @@ use log::Level::Trace;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{DeployInfo, handle_post_deploy};
-use crate::repository::maven::models::{NitroMavenVersions, Pom};
+use crate::repository::maven::models::Pom;
 use crate::repository::maven::utils::{
     get_latest_version, get_version, get_versions, update_project_in_repositories, update_versions,
 };

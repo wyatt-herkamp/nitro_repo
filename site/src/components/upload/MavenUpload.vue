@@ -1,6 +1,4 @@
-<template>
-
-</template>
+<template></template>
 <style>
 .example-typescript label.btn {
   margin-bottom: 0;

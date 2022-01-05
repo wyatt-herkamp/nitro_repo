@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-row">
-    <SideBar/>
-    <Repositories/>
+    <SideBar />
+    <Repositories />
   </div>
 </template>
 
@@ -16,7 +16,6 @@ export default defineComponent({
     SideBar,
   },
 
-  setup() {
-  },
+  setup() {},
 });
 </script>

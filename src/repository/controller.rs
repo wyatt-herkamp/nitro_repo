@@ -77,7 +77,6 @@ pub async fn browse_storage(
         trace!("Storage {} not found", &string);
         return not_found();
     }
-    let storage = storage.unwrap();
     let vec = get_repositories_by_storage(&string, &connection)?;
     let mut repos = Vec::new();
     for x in vec {

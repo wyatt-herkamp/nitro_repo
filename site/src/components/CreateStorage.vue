@@ -1,6 +1,4 @@
-<template>
-
-</template>
+<template></template>
 
 <script lang="ts">
 import {Storage} from "@/backend/Response";

@@ -10,14 +10,11 @@ use usvg::Options;
 
 use crate::api_response::SiteResponse;
 use crate::DbPool;
-use crate::error::response::not_found;
-use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::BadgeSettings;
 use crate::repository::npm::NPMHandler;
-use crate::repository::repository::{RepositoryRequest, RepositoryType};
-use crate::storage::action::get_storage_by_name;
+use crate::repository::repository::RepositoryType;
 
 fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
     return format!(

@@ -1,12 +1,15 @@
 <template>
-
-  <div class="min-h-screen flex ">
-    <div class="flex flex-col w-56 bg-slate-800 rounded-r-3xl ">
+  <div class="min-h-screen flex">
+    <div class="flex flex-col w-56 bg-slate-800 rounded-r-3xl">
       <ul class="flex flex-col py-4">
-        <Item href="/admin/users" icon="user" name="Users"/>
-        <Item href="/admin/repositories" icon="package" name="Repositories"/>
-        <Item href="/admin/storages" icon="box" name="Storages"/>
-        <Item href="/admin/settings" icon="dots-horizontal-rounded" name="Settings"/>
+        <Item href="/admin/users" icon="user" name="Users" />
+        <Item href="/admin/repositories" icon="package" name="Repositories" />
+        <Item href="/admin/storages" icon="box" name="Storages" />
+        <Item
+          href="/admin/settings"
+          icon="dots-horizontal-rounded"
+          name="Settings"
+        />
       </ul>
     </div>
   </div>
@@ -24,7 +27,7 @@ import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
 
 export default defineComponent({
-  components: {Storages, Repositories, Users, UpdateUser, Settings, Me, Item},
+  components: { Storages, Repositories, Users, UpdateUser, Settings, Me, Item },
 
   setup() {
     let index = ref(4);

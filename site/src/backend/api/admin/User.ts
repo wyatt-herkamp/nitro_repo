@@ -1,4 +1,4 @@
-import {BasicResponse, User,} from "../../Response";
+import {BasicResponse, User} from "../../Response";
 import http from "@/http-common";
 import {Err, Ok} from "ts-results";
 import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";

@@ -1,54 +1,36 @@
 <template>
   <div id="login-modal">
     <vue-final-modal
-        v-model="showLogin"
-        classes="flex justify-center items-center"
+      v-model="showLogin"
+      classes="flex justify-center items-center"
     >
       <div
-          class="
-          relative
-          border
-          bg-white
-          dark:bg-slate-900
-          border-slate-100
-          dark:border-black
-          m-w-20
-          py-5
-          px-10
-          rounded-2xl
-          shadow-xl
-          text-center
-        "
+        class="relative border bg-white dark:bg-slate-900 border-slate-100 dark:border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
       >
         <p class="font-bold text-xl pb-4">Login</p>
-        <form class="flex flex-col w-96 sm:w-65" @submit.prevent="onSubmit(form.username, form.password)">
+        <form
+          class="flex flex-col w-96 sm:w-65"
+          @submit.prevent="onSubmit(form.username, form.password)"
+        >
           <input
-              id="username"
-              v-model="form.username"
-              autocomplete="username"
-              class="input"
-              placeholder="Username"
-              type="text"
+            id="username"
+            v-model="form.username"
+            autocomplete="username"
+            class="input"
+            placeholder="Username"
+            type="text"
           />
 
           <input
-              id="password"
-              v-model="form.password"
-              autocomplete="current-password"
-              class="input"
-              placeholder="Password"
-              type="password"
+            id="password"
+            v-model="form.password"
+            autocomplete="current-password"
+            class="input"
+            placeholder="Password"
+            type="password"
           />
           <button
-              class="
-              bg-slate-100
-              dark:bg-slate-800
-              py-2
-              my-3
-              rounded-md
-              cursor-pointer
-              text-white
-            "
+            class="bg-slate-100 dark:bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
           >
             Sign in
           </button>
@@ -83,7 +65,7 @@ export default defineComponent({
     const router = useRouter();
     const activeIndex = ref(router.currentRoute.value.name);
     const dialogVisible = ref(false);
-    return {activeIndex, router, dialogVisible, form, showLogin, close};
+    return { activeIndex, router, dialogVisible, form, showLogin, close };
   },
   methods: {
     async onSubmit(username: string, password: string) {
@@ -114,7 +96,7 @@ export default defineComponent({
   @apply my-1;
   @apply bg-slate-50 dark:bg-slate-800;
   @apply rounded-md;
-  @apply text-white
+  @apply text-white;
 }
 
 #login-modal button:hover {

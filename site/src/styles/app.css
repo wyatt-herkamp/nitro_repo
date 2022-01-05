@@ -4,9 +4,9 @@
 
 body,
 html {
-    background-color: hsla(208, 23%, 23%, 1);
+  background-color: hsla(208, 23%, 23%, 1);
 }
 
 p {
-    @apply text-white;
+  @apply text-white;
 }

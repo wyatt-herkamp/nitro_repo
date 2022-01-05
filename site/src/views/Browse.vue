@@ -1,6 +1,4 @@
-<template>
-
-</template>
+<template></template>
 
 <script lang="ts">
 import {fileListing, getRepositoriesPublicAccess,} from "@/backend/api/Repository";

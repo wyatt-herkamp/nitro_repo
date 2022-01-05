@@ -1,6 +1,4 @@
-<template>
-
-</template>
+<template></template>
 
 <script lang="ts">
 import {defineComponent, onBeforeMount, ref} from "vue";

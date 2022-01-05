@@ -1,9 +1,7 @@
-<template>
-
-</template>
+<template></template>
 
 <script lang="ts">
-import {User, UserListResponse,} from "@/backend/Response";
+import {User, UserListResponse} from "@/backend/Response";
 import {defineComponent, ref} from "vue";
 import {useCookie} from "vue-cookie-next";
 import {getUserByID} from "@/backend/api/User";

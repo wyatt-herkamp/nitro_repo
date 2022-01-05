@@ -3,14 +3,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
 use crate::DbPool;
-use crate::error::response::not_found;
-use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
-use crate::repository::repository::{RepositoryRequest, RepositoryType};
-use crate::storage::action::get_storage_by_name;
+use crate::repository::repository::RepositoryType;
 
 //
 
@@ -27,7 +24,6 @@ pub async fn get_versions(
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
-
 
     let request = to_request(storage, repository, file, &connection)?;
 

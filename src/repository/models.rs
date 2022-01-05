@@ -17,7 +17,6 @@ use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
-use crate::storage::action::get_storage_name_by_id;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositorySummary {
@@ -109,7 +108,7 @@ impl Default for DeploySettings {
 impl RepositorySummary {
     pub fn new(
         repo: &Repository,
-        conn: &MysqlConnection,
+        _conn: &MysqlConnection,
     ) -> Result<RepositorySummary, InternalError> {
         return Ok(RepositorySummary {
             name: repo.name.clone(),

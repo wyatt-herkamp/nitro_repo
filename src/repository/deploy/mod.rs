@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde::de::value::MapDeserializer;
-use serde_json::Error;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-row">
-    <SideBar/>
-    <ViewRepo/>
+    <SideBar />
+    <ViewRepo />
   </div>
 </template>
 <style scoped></style>
@@ -12,6 +12,6 @@ import SideBar from "@/components/admin/SideBar.vue";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
 
 export default defineComponent({
-  components: {SideBar, ViewRepo},
+  components: { SideBar, ViewRepo },
 });
 </script>

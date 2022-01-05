@@ -1,6 +1,7 @@
 <template>
-  <div class="mx-2 py-1.5 rounded-full bg-white dark:bg-gray-800 font-bold px-6  text-white cursor-pointer">
-    <slot/>
+  <div
+    class="mx-2 py-1.5 rounded-full bg-white dark:bg-gray-800 font-bold px-6 text-white cursor-pointer"
+  >
+    <slot />
   </div>
 </template>
-

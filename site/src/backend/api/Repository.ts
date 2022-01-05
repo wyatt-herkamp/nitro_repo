@@ -3,9 +3,9 @@ import {BasicResponse, DEFAULT_REPO_LIST, FileResponse, Project, Repository, Rep
 
 export async function getRepositories(token: string) {
   const value = await http.get("/api/admin/repositories/list", {
-      headers: {
-          Authorization: "Bearer " + token,
-      },
+    headers: {
+      Authorization: "Bearer " + token,
+    },
   });
 
   if (value.status != 200) {
@@ -24,9 +24,9 @@ export async function getRepoByID(
   id: number
 ): Promise<Repository | undefined> {
   const value = await http.get("/api/admin/repositories/get/" + id, {
-      headers: {
-          Authorization: "Bearer " + token,
-      },
+    headers: {
+      Authorization: "Bearer " + token,
+    },
   });
 
   if (value.status != 200) {

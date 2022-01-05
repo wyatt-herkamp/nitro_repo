@@ -1,7 +1,7 @@
 import {BasicResponse, DBSetting} from "../../Response";
 import http from "@/http-common";
 import {Err, Ok} from "ts-results";
-import {INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";
+import {INTERNAL_ERROR, NOT_AUTHORIZED} from "../../NitroRepoAPI";
 
 export async function updateSetting(
   name: string,

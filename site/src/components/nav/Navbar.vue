@@ -35,11 +35,11 @@ export default defineComponent({
       type: Object as () => User,
     },
   },
-  components: {MenuButton, Login},
+  components: { MenuButton, Login },
   setup() {
     const router = useRouter();
     const activeIndex = ref(router.currentRoute.value.name);
-    return {activeIndex, router};
+    return { activeIndex, router };
   },
 });
 </script>

@@ -22,14 +22,14 @@ import {useMeta} from "vue-meta";
 import {useRoute, useRouter} from "vue-router";
 
 export default defineComponent({
-  components: {SideBar},
+  components: { SideBar },
   setup() {
     const router = useRouter();
     const route = useRoute();
 
     const options = ref([
-      {value: "DeployerUsername", label: "Deploy Username"},
-      {value: "Time", label: "Time"},
+      { value: "DeployerUsername", label: "Deploy Username" },
+      { value: "Time", label: "Time" },
     ]);
     let repository = ref<Repository | undefined>(undefined);
     let date = ref<string | undefined>(undefined);
@@ -37,19 +37,19 @@ export default defineComponent({
     const isLoading = ref(false);
     const exampleBadgeURL = ref("");
     const repoID = route.params.repo as string;
-    const {meta} = useMeta({
+    const { meta } = useMeta({
       title: "Nitro Repo",
     });
 
     const getRepo = async () => {
       try {
         const value = (await getRepoByID(
-            cookie.getCookie("token"),
-            Number.parseInt(repoID)
+          cookie.getCookie("token"),
+          Number.parseInt(repoID)
         )) as Repository;
         repository.value = value;
         date.value = new Date(repository.value.created).toLocaleDateString(
-            "en-US"
+          "en-US"
         );
         meta.title = value.name;
       } catch (e) {
@@ -71,7 +71,7 @@ export default defineComponent({
       if (this.repository == undefined) return;
       if (tab.paneName === "upload") {
         this.router.replace(
-            "/upload/" + this.repository.storage + "/" + this.repository.name
+          "/upload/" + this.repository.storage + "/" + this.repository.name
         );
       }
     },
@@ -87,9 +87,9 @@ export default defineComponent({
       }
 
       const response = await setActiveStatus(
-          this.repository.id,
-          this.repository.settings.active,
-          this.$cookie.getCookie("token")
+        this.repository.id,
+        this.repository.settings.active,
+        this.$cookie.getCookie("token")
       );
       if (response.ok) {
         this.$notify({
@@ -114,9 +114,9 @@ export default defineComponent({
         return;
       }
       const response = await setPolicy(
-          this.repository.id,
-          this.repository.settings.policy,
-          this.$cookie.getCookie("token")
+        this.repository.id,
+        this.repository.settings.policy,
+        this.$cookie.getCookie("token")
       );
       if (response.ok) {
         this.$notify({
@@ -141,9 +141,9 @@ export default defineComponent({
         return;
       }
       const response = await setVisibility(
-          this.repository.id,
-          this.repository.security.visibility,
-          this.$cookie.getCookie("token")
+        this.repository.id,
+        this.repository.security.visibility,
+        this.$cookie.getCookie("token")
       );
       if (response.ok) {
         console.log(response.val.security.visibility);
@@ -170,10 +170,10 @@ export default defineComponent({
       }
       {
         const response = await updateFrontend(
-            this.repository.id,
-            this.repository.settings.frontend.enabled,
-            this.repository.settings.frontend.page_provider,
-            this.$cookie.getCookie("token")
+          this.repository.id,
+          this.repository.settings.frontend.enabled,
+          this.repository.settings.frontend.page_provider,
+          this.$cookie.getCookie("token")
         );
         if (response.ok) {
           console.log(response.val.security.visibility);
@@ -191,11 +191,11 @@ export default defineComponent({
       }
       {
         let response = await updateBadge(
-            this.repository.id,
-            this.repository.settings.badge.style,
-            this.repository.settings.badge.label_color,
-            this.repository.settings.badge.color,
-            this.$cookie.getCookie("token")
+          this.repository.id,
+          this.repository.settings.badge.style,
+          this.repository.settings.badge.label_color,
+          this.repository.settings.badge.color,
+          this.$cookie.getCookie("token")
         );
         if (response.ok) {
           console.log(response.val.security.visibility);
@@ -223,10 +223,10 @@ export default defineComponent({
       }
 
       const response = await updateDeployReport(
-          this.repository.id,
-          this.repository.deploy_settings.report_generation.active,
-          this.repository.deploy_settings.report_generation.values,
-          this.$cookie.getCookie("token")
+        this.repository.id,
+        this.repository.deploy_settings.report_generation.active,
+        this.repository.deploy_settings.report_generation.values,
+        this.$cookie.getCookie("token")
       );
       if (response.ok) {
         console.log(response.val.security.visibility);

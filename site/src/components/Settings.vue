@@ -1,9 +1,7 @@
-<template>
-
-</template>
+<template></template>
 
 <script lang="ts">
-import {BasicResponse, SettingReport,} from "@/backend/Response";
+import {BasicResponse, SettingReport} from "@/backend/Response";
 import http from "@/http-common";
 import {defineComponent, ref} from "vue";
 import {useCookie} from "vue-cookie-next";

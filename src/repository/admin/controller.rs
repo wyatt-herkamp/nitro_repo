@@ -19,7 +19,6 @@ use crate::repository::models::{
     SecurityRules, Visibility,
 };
 use crate::repository::models::{ReportGeneration, Webhook};
-use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
@@ -77,7 +76,6 @@ pub async fn get_repo_admin_by_name(
     APIResponse::respond_new(repo, &r)
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewRepo {
     pub name: String,
@@ -105,7 +103,7 @@ pub async fn add_repo(
 
     let option = get_repo_by_name_and_storage(&nc.name, &storage.name, &connection)?;
     if let Some(repo) = option {
-        debug!("Repository {} already exists with ID {}",nc.name, repo.id );
+        debug!("Repository {} already exists with ID {}", nc.name, repo.id);
         return already_exists();
     }
     let repository = Repository {
@@ -184,9 +182,9 @@ pub async fn update_description(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     b: Bytes,
-    path: web::Path<(i64, Policy)>,
+    path: web::Path<i64>,
 ) -> SiteResponse {
-    let (repo, policy) = path.into_inner();
+    let repo = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -200,7 +198,7 @@ pub async fn update_description(
     let vec = b.to_vec();
     let string = String::from_utf8(vec);
     if let Err(error) = string {
-        error!("Unable to Parse String from Request: {}",error);
+        error!("Unable to Parse String from Request: {}", error);
         return bad_request("Bad Description");
     }
     repository.settings.description = string.unwrap();

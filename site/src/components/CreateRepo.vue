@@ -1,77 +1,42 @@
 <template>
   <div>
     <vue-final-modal
-        v-model="showModel"
-        classes="flex justify-center items-center"
+      v-model="showModel"
+      classes="flex justify-center items-center"
     >
       <div
-          class="
-          relative
-          border
-          bg-white
-          dark:bg-slate-900
-          border-slate-100
-          dark:border-black
-          m-w-20
-          py-5
-          px-10
-          rounded-2xl
-          shadow-xl
-          text-center
-        "
+        class="relative border bg-white dark:bg-slate-900 border-slate-100 dark:border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
       >
         <p class="font-bold text-xl pb-4">Create Repository</p>
         <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
           <div class="mb-4">
             <label
-                class="block text-slate-50 text-sm font-bold mb-2"
-                for="name"
+              class="block text-slate-50 text-sm font-bold mb-2"
+              for="name"
             >
               Repository Name
             </label>
             <input
-                id="name"
-                v-model="form.name"
-                autocomplete="off"
-                class="
-                shadow
-                appearance-none
-                border
-                rounded
-                w-full
-                py-2
-                px-3
-                text-gray-700
-                leading-tight
-                focus:outline-none focus:shadow-outline
-              "
-                placeholder="Repository Name"
-                type="text"
+              id="name"
+              v-model="form.name"
+              autocomplete="off"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="Repository Name"
+              type="text"
             />
           </div>
           <div class="flex flex-row">
             <div class="grow pr-2">
               <label
-                  class="block text-slate-50 text-sm font-bold mb-2"
-                  for="name"
+                class="block text-slate-50 text-sm font-bold mb-2"
+                for="name"
               >
                 Repository Type
               </label>
               <select
-                  id="type"
-                  v-model="form.type"
-                  class="
-                  border border-gray-300
-                  rounded
-                  text-gray-600
-                  h-10
-                  px-5
-                  w-full
-                  bg-white
-                  hover:border-gray-400
-                  focus:outline-none
-                  appearance-none
-                "
+                id="type"
+                v-model="form.type"
+                class="border border-gray-300 rounded text-gray-600 h-10 px-5 w-full bg-white hover:border-gray-400 focus:outline-none appearance-none"
               >
                 <option disabled selected value="">Repository Type</option>
 
@@ -81,33 +46,22 @@
             </div>
             <div class="grow pl-2">
               <label
-                  class="block text-slate-50 text-sm font-bold mb-2"
-                  for="name"
+                class="block text-slate-50 text-sm font-bold mb-2"
+                for="name"
               >
                 Storage
               </label>
               <select
-                  id="storage"
-                  v-model="form.storage"
-                  class="
-                  border border-gray-300
-                  rounded
-                  text-gray-600
-                  w-full
-                  h-10
-                  px-5
-                  bg-white
-                  hover:border-gray-400
-                  focus:outline-none
-                  appearance-none
-                "
+                id="storage"
+                v-model="form.storage"
+                class="border border-gray-300 rounded text-gray-600 w-full h-10 px-5 bg-white hover:border-gray-400 focus:outline-none appearance-none"
               >
                 <option disabled selected value="">Select your Storage</option>
 
                 <option
-                    v-for="storage in storages.storages"
-                    :key="storage.id"
-                    :value="storage.name"
+                  v-for="storage in storages.storages"
+                  :key="storage.id"
+                  :value="storage.name"
                 >
                   {{ storage.public_name }}
                 </option>
@@ -115,15 +69,7 @@
             </div>
           </div>
           <button
-              class="
-              bg-slate-100
-              dark:bg-slate-800
-              py-2
-              my-3
-              rounded-md
-              cursor-pointer
-              text-white
-            "
+            class="bg-slate-100 dark:bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
           >
             Create Repository
           </button>

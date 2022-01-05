@@ -3,8 +3,7 @@ use std::fs::{DirEntry, File, read_dir, read_to_string, remove_file};
 use std::io::Write;
 use std::path::PathBuf;
 
-use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
-use time::UtcOffset;
+use chrono::NaiveDateTime;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::{DeployMetadata, NitroMavenVersions, RepositoryListing};
