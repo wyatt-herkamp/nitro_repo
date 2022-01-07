@@ -83,7 +83,6 @@ export default defineComponent({
       storage,
       repository,
       catchAll,
-      ArrowRight,
     };
   },
   methods: {
@@ -127,8 +126,3 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-.pointer:hover {
-  cursor: pointer;
-}
-</style>

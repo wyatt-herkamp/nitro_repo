@@ -115,15 +115,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import {defineComponent, ref} from "vue";
 import CreateStorage from "@/components/CreateStorage.vue";
 import UpdateStorage from "@/components/UpdateStorage.vue";
-import { useCookie } from "vue-cookie-next";
-import { getStorages } from "@/backend/api/Storages";
-import { DEFAULT_STORAGE_LIST } from "@/backend/Response";
+import {useCookie} from "vue-cookie-next";
+import {getStorages} from "@/backend/api/Storages";
+import {DEFAULT_STORAGE_LIST} from "@/backend/Response";
 
 export default defineComponent({
-  components: { CreateStorage, UpdateStorage },
+  components: {CreateStorage, UpdateStorage},
 
   setup() {
     let index = ref(1);
@@ -170,9 +170,3 @@ export default defineComponent({
 });
 </script>
 
-<style>
-.el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 200px;
-  min-height: 400px;
-}
-</style>

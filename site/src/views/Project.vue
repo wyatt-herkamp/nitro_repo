@@ -21,8 +21,3 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-.pointer:hover {
-  cursor: pointer;
-}
-</style>
