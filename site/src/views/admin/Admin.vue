@@ -1,9 +1,15 @@
 <template>
-  <SideBar />
+  <div class="flex flex-row">
+    <SideBar/>
+
+    <Repositories v-if="page == 'repositories'"/>
+    <Storages v-if="page == 'storages'"/>
+    <Users v-if="page == 'users'"/>
+  </div>
 </template>
 
 <script lang="ts">
-import {defineComponent, onBeforeMount, ref} from "vue";
+import {defineComponent, onBeforeMount} from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Me from "@/components/Me.vue";
@@ -12,6 +18,7 @@ import SideBar from "@/components/admin/SideBar.vue";
 import Settings from "@/components/Settings.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
+import {useRoute} from "vue-router";
 
 export default defineComponent({
   components: {
@@ -25,11 +32,13 @@ export default defineComponent({
   },
 
   setup() {
-    let index = ref(4);
+    const route = useRoute();
+    let page = route.params.page;
+
     onBeforeMount(userStore.getUser);
     return {
-      index,
       userStore,
+      page
     };
   },
 });
