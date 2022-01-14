@@ -5,7 +5,7 @@
       classes="flex justify-center items-center"
     >
       <div
-        class="relative border bg-white dark:bg-slate-900 border-slate-100 dark:border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
+        class="relative border bg-slate-900 border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
       >
         <p class="font-bold text-xl pb-4">Create Repository</p>
         <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">

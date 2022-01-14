@@ -8,10 +8,8 @@
         class="
           relative
           border
-          bg-white
-          dark:bg-slate-900
-          border-slate-100
-          dark:border-black
+          bg-slate-900
+          border-black
           m-w-20
           py-5
           px-10
@@ -78,8 +76,7 @@
           </div>
           <button
             class="
-              bg-slate-100
-              dark:bg-slate-800
+             bg-slate-800
               py-2
               my-3
               rounded-md

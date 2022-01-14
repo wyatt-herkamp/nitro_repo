@@ -1,6 +1,6 @@
 use actix_web::{get, HttpRequest, post, web};
 use diesel::MysqlConnection;
-use log::{debug, warn};
+use log::{warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{DbPool, settings};

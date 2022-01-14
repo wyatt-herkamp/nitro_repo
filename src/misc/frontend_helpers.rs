@@ -1,9 +1,8 @@
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, HttpRequest};
 use diesel::MysqlConnection;
-use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::{APIResponse, Database, DbPool, SiteResponse};
+use crate::{APIResponse, Database, SiteResponse};
 use crate::error::internal_error::InternalError;
 use crate::settings::controller::get_setting_or_empty;
 
