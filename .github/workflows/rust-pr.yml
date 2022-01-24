@@ -8,6 +8,7 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
+    if: contains(github.event.pull_request.labels.*.name, 'rust')
     runs-on: ubuntu-latest
     strategy:
       matrix:
