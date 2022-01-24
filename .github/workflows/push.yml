@@ -9,6 +9,11 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - 1.58.1
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
@@ -19,8 +24,12 @@ jobs:
       - name: Install Site
         working-directory: site
         run: npm install
-      - uses: Swatinem/rust-cache@v1
-      - name: Update Rust
-        run: rustup update
-      - name: Build
-        run: sh build.sh
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build --no-default-features

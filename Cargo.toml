@@ -19,12 +19,12 @@ assets = [
 [dependencies]
 # Web
 actix = "0.12.0"
-actix-web = { version = "4.0.0-beta.18", features = ["openssl"] }
+actix-web = { version = "4.0.0-beta.21", features = ["openssl"] }
 actix-cors = "0.6.0-beta.8"
 actix-service = "2.0.1"
-actix-multipart = "0.4.0-beta.10"
-openssl = { version = "0.10", features = ["v110"], optional = true }
-actix-files = "0.6.0-beta.12"
+actix-multipart = "0.4.0-beta.12"
+openssl = { version = "0.10.38", features = ["v110"], optional = true }
+actix-files = "0.6.0-beta.15"
 # Partly Web
 lettre = "0.10.0-rc.4"
 # Database

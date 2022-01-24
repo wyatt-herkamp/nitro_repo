@@ -8,13 +8,20 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
-    if: contains(github.event.pull_request.labels.*.name, 'rust')
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - 1.58.1
     steps:
       - uses: actions/checkout@v2
-      - uses: Swatinem/rust-cache@v1
-      - name: Update Rust
-        run: rustup update
-      - name: Test
-        run: cargo test --no-default-features
-
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build --no-default-features
