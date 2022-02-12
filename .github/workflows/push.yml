@@ -9,11 +9,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - 1.58.1
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
@@ -24,13 +19,16 @@ jobs:
       - name: Install Site
         working-directory: site
         run: npm install
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: Swatinem/rust-cache@v1
+      - name: Update Rust
+        run: rustup update
+      - name: Build
+        run: sh build.sh
+  clippy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
         with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --no-default-features
+          token: ${{ secrets.GITHUB_TOKEN }}

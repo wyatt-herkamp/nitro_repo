@@ -42,7 +42,7 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
     let file = match std::env::var("MODE")
-        .unwrap_or("DEBUG".to_string())
+        .expect("Mode Must be RELEASE OR DEBUG")
         .as_str()
     {
         "DEBUG" => "log-debug.json",
@@ -78,7 +78,7 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
+            .app_data(web::Data::new(PayloadConfig::new(1024 * 1024 * 1024)))
             .configure(error::handlers::init)
             .configure(settings::init)
             .configure(repository::init)

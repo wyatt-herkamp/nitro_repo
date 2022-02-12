@@ -10,8 +10,7 @@ pub mod frontend;
 pub mod maven;
 pub mod models;
 mod npm;
-pub mod public;
-pub mod repository;
+pub mod types;
 pub mod utils;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -25,6 +24,5 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(api::get_versions)
         .service(api::get_version)
         .service(api::get_project)
-        .service(badge::badge)
-        .service(public::get_repo);
+        .service(badge::badge);
 }

@@ -15,11 +15,11 @@ use crate::repository::npm::models::{
     get_latest_version, Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
     Version,
 };
-use crate::repository::repository::RepoResponse::{
+use crate::repository::types::RepoResponse::{
     CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse,
 };
-use crate::repository::repository::Version as RepoVersion;
-use crate::repository::repository::{
+use crate::repository::types::Version as RepoVersion;
+use crate::repository::types::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
 use crate::repository::utils::{build_artifact_directory, build_directory};
@@ -41,7 +41,7 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         if http.headers().contains_key("npm-command") {
-            let buf = build_directory(&request);
+            let buf = build_directory(request);
             if request.value.ends_with(".tgz") {
                 let mut id = buf;
                 for x in request
@@ -50,11 +50,11 @@ impl RepositoryType for NPMHandler {
                     .collect::<Vec<&str>>()
                     .first()
                     .unwrap()
-                    .split("/")
+                    .split('/')
                 {
                     id = id.join(x);
                 }
-                let vec = request.value.split("/").collect::<Vec<&str>>();
+                let vec = request.value.split('/').collect::<Vec<&str>>();
                 let file_name = vec.last().unwrap().to_string();
                 let file = id.join("attachments").join(file_name);
                 println!("{:?}", &file);
@@ -64,7 +64,7 @@ impl RepositoryType for NPMHandler {
                 let buf = buf.join(&request.value.replace("%2f", "/"));
                 // Return Info Response
                 let files = buf.join("version-*");
-                let pattern = format!("{}", files.to_str().unwrap());
+                let pattern = files.to_str().unwrap().to_string();
                 println!("{}", &pattern);
                 let result = glob::glob(pattern.as_str()).unwrap();
                 let mut versions = HashMap::new();
@@ -81,7 +81,7 @@ impl RepositoryType for NPMHandler {
                     &request.value,
                 )?;
                 let latest_version = get_latest_version(&times);
-                let version = versions.get(&latest_version).unwrap().clone();
+                let version = versions.get(&latest_version).unwrap();
                 let response = GetResponse {
                     id: version.name.clone(),
                     name: version.name.clone(),
@@ -93,7 +93,7 @@ impl RepositoryType for NPMHandler {
                 return Ok(RepoResponse::OkWithJSON(serde_json::to_string(&response)?));
             }
         } else {
-            let buf = build_artifact_directory(&request);
+            let buf = build_artifact_directory(request);
             let path = format!(
                 "{}/{}/{}",
                 &request.storage.name, &request.repository.name, &request.value
@@ -121,7 +121,7 @@ impl RepositoryType for NPMHandler {
                 }
             }
         }
-        return Ok(RepoResponse::Ok);
+        Ok(RepoResponse::Ok)
     }
 
     fn handle_post(
@@ -130,7 +130,7 @@ impl RepositoryType for NPMHandler {
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
-        return Ok(NotAuthorized);
+        Ok(NotAuthorized)
     }
 
     fn handle_put(
@@ -144,7 +144,7 @@ impl RepositoryType for NPMHandler {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = request.value.replace("-/user/org.couchdb.user:", "");
-            return if is_valid(&username.to_string(), &json, &conn)? {
+            return if is_valid(&username, &json, conn)? {
                 let message = format!("user '{}' created", username);
                 Ok(CreatedWithJSON(serde_json::to_string(&LoginResponse {
                     ok: message,
@@ -159,7 +159,7 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let value: PublishRequest = serde_json::from_slice(bytes.as_ref()).unwrap();
-        let buf = build_directory(&request);
+        let buf = build_directory(request);
         let artifact = buf.join(&value.name);
         create_dir_all(&artifact)?;
 
@@ -168,7 +168,7 @@ impl RepositoryType for NPMHandler {
             create_dir_all(&attachments)?;
 
             let name =
-                x.0.split("/")
+                x.0.split('/')
                     .collect::<Vec<&str>>()
                     .get(1)
                     .unwrap()
@@ -200,7 +200,7 @@ impl RepositoryType for NPMHandler {
             let time = time.format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
             let mut file = File::create(&times_json)?;
             let mut times = HashMap::new();
-            times.insert("created", time.clone());
+            times.insert("created", time);
             file.write_all(serde_json::to_string(&times)?.as_bytes())?;
         }
         for (key, value) in value.versions {
@@ -227,7 +227,7 @@ impl RepositoryType for NPMHandler {
             times_json.write_all(serde_json::to_string_pretty(&times_map)?.as_bytes())?;
         }
         // Everything is a ok.... OR is IT??????
-        return Ok(RepoResponse::Ok);
+        Ok(RepoResponse::Ok)
     }
 
     fn handle_patch(
@@ -265,7 +265,7 @@ impl RepositoryType for NPMHandler {
                 other: HashMap::new(),
             });
         }
-        return Ok(RepoResponse::VersionListingResponse(versions));
+        Ok(RepoResponse::VersionListingResponse(versions))
     }
 
     fn handle_version(
@@ -274,7 +274,7 @@ impl RepositoryType for NPMHandler {
         _conn: &MysqlConnection,
     ) -> RepoResult {
         return Ok(VersionResponse(RepoVersion {
-            version: request.value.split("/").last().unwrap().to_string(),
+            version: request.value.split('/').last().unwrap().to_string(),
             other: HashMap::new(),
         }));
     }
@@ -298,11 +298,11 @@ impl RepositoryType for NPMHandler {
             });
         }
         let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, &conn)?,
-            versions: versions,
+            repo_summary: RepositorySummary::new(&request.repository, conn)?,
+            versions,
             frontend_response: None,
         };
-        return Ok(RepoResponse::ProjectResponse(project));
+        Ok(RepoResponse::ProjectResponse(project))
     }
 
     fn latest_version(

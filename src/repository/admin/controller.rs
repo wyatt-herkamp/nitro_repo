@@ -2,8 +2,6 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 use actix_web::{delete, get, HttpRequest, patch, post, put, web};
-use actix_web::web::Bytes;
-use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -19,6 +17,7 @@ use crate::repository::models::{
     SecurityRules, Visibility,
 };
 use crate::repository::models::{ReportGeneration, Webhook};
+use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
@@ -28,7 +27,7 @@ pub struct ListRepositories {
     pub repositories: Vec<RepositoryListResponse>,
 }
 
-#[get("/api/admin/repositories/list")]
+#[get("/api/repositories/list")]
 pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -42,7 +41,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
     APIResponse::new(true, Some(response)).respond(&r)
 }
 
-#[get("/api/admin/repositories/get/{repo}")]
+#[get("/api/repositories/get/{repo}")]
 pub async fn get_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -59,18 +58,20 @@ pub async fn get_repo(
     APIResponse::respond_new(repo, &r)
 }
 
-#[get("/api/admin/repositories/get/{storage}/{repo}")]
-pub async fn get_repo_admin_by_name(
+#[get("/api/repositories/get/{storage}/{repo}")]
+pub async fn get_repo_deployer(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
     let connection = pool.get()?;
+
     let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if user.is_none() || !user.unwrap().permissions.deployer {
         return unauthorized();
     }
+
     let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
 
     APIResponse::respond_new(repo, &r)
@@ -101,9 +102,8 @@ pub async fn add_repo(
     }
     let storage = storage.unwrap();
 
-    let option = get_repo_by_name_and_storage(&nc.name, &storage.name, &connection)?;
-    if let Some(repo) = option {
-        debug!("Repository {} already exists with ID {}", nc.name, repo.id);
+    let option = get_repo_by_name_and_storage(&nc.repo, &storage.name, &connection)?;
+    if option.is_some() {
         return already_exists();
     }
     let repository = Repository {
@@ -132,7 +132,6 @@ pub async fn add_repo(
 
     APIResponse::from(option).respond(&r)
 }
-
 #[patch("/api/admin/repository/{repo}/active/{active}")]
 pub async fn update_active_status(
     pool: web::Data<DbPool>,
@@ -226,7 +225,6 @@ pub async fn modify_frontend_settings(
     update_repo_settings(&repository.id, &repository.settings, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
-
 #[patch("/api/admin/repository/{repo}/modify/settings/badge")]
 pub async fn modify_badge_settings(
     pool: web::Data<DbPool>,
@@ -357,7 +355,6 @@ pub async fn update_deployers_readers(
     update_repo_security(&repository.id, &repository.security, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
-
 #[patch("/api/admin/repository/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
     pool: web::Data<DbPool>,

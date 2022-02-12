@@ -77,7 +77,7 @@ impl RepositoryListing {
                 return false;
             }
         }
-        self.values.push(project.clone());
-        return true;
+        self.values.push(project);
+        true
     }
 }

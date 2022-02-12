@@ -1,13 +1,14 @@
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
 use crate::DbPool;
+
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
-use crate::repository::repository::RepositoryType;
+use crate::repository::types::RepositoryType;
 
 //
 

@@ -8,7 +8,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError;
 use crate::error::response::unauthorized;
 use crate::settings::action::get_setting;
-use crate::settings::settings::{DBSetting, SettingManager};
+use crate::settings::models::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
@@ -17,7 +17,7 @@ pub fn get_setting_or_empty(
     string: &str,
     connection: &MysqlConnection,
 ) -> Result<DBSetting, InternalError> {
-    let result = get_setting(string.clone(), connection)?;
+    let result = get_setting(string, connection)?;
     if let Some(some) = result {
         Ok(some)
     } else {
@@ -27,7 +27,7 @@ pub fn get_setting_or_empty(
 
 pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
-        .ok_or(InternalError::Error("Unable to find setting".to_string()))
+        .ok_or_else(|| InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
     warn!("{} not found. Using default value", string);
     Ok(DBSetting {

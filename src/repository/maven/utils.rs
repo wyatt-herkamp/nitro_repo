@@ -1,16 +1,16 @@
 use std::collections::HashMap;
-use std::fs::{DirEntry, File, read_dir, read_to_string, remove_file};
+use std::fs::{read_dir, read_to_string, remove_file, DirEntry, File};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use chrono::NaiveDateTime;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::{DeployMetadata, NitroMavenVersions, RepositoryListing};
-use crate::repository::repository::Version;
+use crate::repository::types::Version;
 
-pub fn get_versions(path: &PathBuf) -> Vec<Version> {
-    let maven_metadata = path.clone().join("maven-metadata.xml");
+pub fn get_versions(path: &Path) -> Vec<Version> {
+    let maven_metadata = path.join("maven-metadata.xml");
     let value = if maven_metadata.exists() {
         get_versions_generated(&maven_metadata)
     } else {
@@ -23,7 +23,7 @@ pub fn get_versions(path: &PathBuf) -> Vec<Version> {
     versions
 }
 
-pub fn get_version(path: &PathBuf) -> Version {
+pub fn get_version(path: &Path) -> Version {
     let mut other = HashMap::new();
     other.insert(
         "artifacts".to_string(),
@@ -35,13 +35,13 @@ pub fn get_version(path: &PathBuf) -> Version {
     };
 }
 
-fn get_versions_generated(path: &PathBuf) -> Vec<String> {
+fn get_versions_generated(path: &Path) -> Vec<String> {
     let string = read_to_string(path).unwrap();
     let vec: DeployMetadata = serde_xml_rs::from_str(string.as_str()).unwrap();
     vec.versioning.versions.version
 }
 
-fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
+fn get_versions_without_maven(path: &Path) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
     for x in dir {
@@ -53,7 +53,7 @@ fn get_versions_without_maven(path: &PathBuf) -> Vec<String> {
     values
 }
 
-pub fn get_latest_version(path: &PathBuf, release: bool) -> String {
+pub fn get_latest_version(path: &Path, release: bool) -> String {
     let maven_metadata = path.join("maven-metadata.xml");
 
     if maven_metadata.exists() {
@@ -63,7 +63,7 @@ pub fn get_latest_version(path: &PathBuf, release: bool) -> String {
     }
 }
 
-fn get_latest_version_generated(path: &PathBuf, release: bool) -> String {
+fn get_latest_version_generated(path: &Path, release: bool) -> String {
     let string = read_to_string(path).unwrap();
     let vec: DeployMetadata = serde_xml_rs::from_str(string.as_str()).unwrap();
     let versioning = vec.versioning;
@@ -82,7 +82,7 @@ fn get_latest_version_generated(path: &PathBuf, release: bool) -> String {
     return versions.first().unwrap_or(&String::new()).clone();
 }
 
-fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
+fn get_latest_versions_without_maven(path: &Path, release: bool) -> String {
     let dir = read_dir(path).unwrap();
     let vec = dir.collect::<Vec<Result<DirEntry, std::io::Error>>>();
     let mut values = vec
@@ -110,10 +110,10 @@ fn get_latest_versions_without_maven(path: &PathBuf, release: bool) -> String {
             return string;
         }
     }
-    value.unwrap_or("".to_string())
+    value.unwrap_or_else(|| "".to_string())
 }
 
-pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
+pub fn update_versions(project_folder: &Path, version: String) -> Result<(), InternalError> {
     let versions = project_folder.join(".nitro.versions.json");
     let mut versions_value: NitroMavenVersions = if versions.exists() {
         let value = serde_json::from_str(&read_to_string(&versions)?).unwrap();
@@ -128,7 +128,7 @@ pub fn update_versions(project_folder: &PathBuf, version: String) -> Result<(), 
     let string = serde_json::to_string_pretty(&versions_value)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
-    return Ok(());
+    Ok(())
 }
 
 pub fn update_project_in_repositories(
@@ -138,8 +138,7 @@ pub fn update_project_in_repositories(
     let buf = repo_location.join("repository.json");
 
     let mut repo_listing: RepositoryListing = if buf.exists() {
-        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-        value
+        serde_json::from_str(&read_to_string(&buf)?).unwrap()
     } else {
         RepositoryListing { values: vec![] }
     };
@@ -151,10 +150,10 @@ pub fn update_project_in_repositories(
     let string = serde_json::to_string_pretty(&repo_listing)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
-    return Ok(());
+    Ok(())
 }
 
-fn get_artifacts(path: &PathBuf) -> Vec<String> {
+fn get_artifacts(path: &Path) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
     for x in dir {
@@ -169,10 +168,10 @@ fn get_artifacts(path: &PathBuf) -> Vec<String> {
     }
     values
 }
-
+#[allow(dead_code)]
 pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
     let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
-    return Ok(result);
+    Ok(result)
 }
 
 #[cfg(test)]

@@ -20,7 +20,7 @@ pub struct DiscordConfig {
 }
 
 pub struct DiscordHandler;
-
+#[allow(clippy::redundant_pattern_matching)]
 #[async_trait]
 impl WebhookHandler for DiscordHandler {
     type WebhookConfig = DiscordConfig;
@@ -31,7 +31,7 @@ impl WebhookHandler for DiscordHandler {
     ) -> Result<(), InternalError> {
         let d_hook = webhook::client::WebhookClient::new(&config.url);
         let result = d_hook.send(|x| x.content("Deploy Happening!")).await;
-        if let Err(error) = result {
+        if let Err(_) = result {
             //TODO more details
             error!(
                 "Unable to Call Discord Webhook {}. Error {}",
