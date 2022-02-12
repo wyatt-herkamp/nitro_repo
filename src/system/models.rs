@@ -46,7 +46,7 @@ impl User {
     }
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
+#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Default)]
 #[sql_type = "Text"]
 pub struct UserPermissions {
     #[serde(default = "default_permission")]
@@ -60,15 +60,6 @@ impl UserPermissions {
         UserPermissions {
             admin: true,
             deployer: true,
-        }
-    }
-}
-
-impl Default for UserPermissions {
-    fn default() -> Self {
-        UserPermissions {
-            admin: false,
-            deployer: false,
         }
     }
 }

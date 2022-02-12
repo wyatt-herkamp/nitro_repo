@@ -2,24 +2,24 @@ use std::fs::read_to_string;
 use std::path::Path;
 
 use actix_files::NamedFile;
-use actix_web::{get, head, HttpRequest, HttpResponse, patch, post, put, web};
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
+use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
 use diesel::MysqlConnection;
 use log::{debug, error, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
-use crate::repository::repository::{RepoResponse, RepositoryRequest, RepositoryType};
+use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
+use crate::DbPool;
 
 //
 
@@ -34,13 +34,13 @@ pub fn to_request(
     file: String,
     connection: &MysqlConnection,
 ) -> Result<RepositoryRequest, InternalError> {
-    let storage = get_storage_by_name(&storage_name, &connection)?;
+    let storage = get_storage_by_name(&storage_name, connection)?;
     if storage.is_none() {
         trace!("Storage {} not found", &storage_name);
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repo_name, &storage_name, &connection)?;
+    let repository = get_repo_by_name_and_storage(&repo_name, &storage_name, connection)?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
         return Err(InternalError::NotFound);
@@ -48,7 +48,7 @@ pub fn to_request(
     let repository = repository.unwrap();
 
     let request = RepositoryRequest::new(storage, repository, file);
-    return Ok(request);
+    Ok(request)
 }
 
 #[get("/storages.json")]
@@ -77,7 +77,7 @@ pub async fn browse_storage(
         trace!("Storage {} not found", &string);
         return not_found();
     }
-    let storage = storage.unwrap();
+    let _storage = storage.unwrap();
     let vec = get_repositories_by_storage(&string, &connection)?;
     let mut repos = Vec::new();
     for x in vec {
@@ -115,7 +115,7 @@ pub async fn get_repository(
 
 /// TODO look into this method
 pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> SiteResponse {
-    let x = get_accept(r.headers())?.unwrap_or("text/html".to_string());
+    let x = get_accept(r.headers())?.unwrap_or_else(|| "text/html".to_string());
     return match response {
         RepoResponse::FileList(files) => {
             if x.contains(&"application/json".to_string()) {

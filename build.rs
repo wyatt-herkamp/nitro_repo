@@ -1,14 +1,14 @@
 use std::fs::File;
-use std::io::{Seek, Write};
 use std::io::prelude::*;
+use std::io::{Seek, Write};
 use std::iter::Iterator;
 use std::path::Path;
 use std::path::PathBuf;
 
 use walkdir::{DirEntry, WalkDir};
-use zip::CompressionMethod;
 use zip::result::ZipError;
 use zip::write::FileOptions;
+use zip::CompressionMethod;
 
 fn main() {
     let option = std::env::var_os("CARGO_FEATURE_FRONTEND");
@@ -58,7 +58,7 @@ where
             f.read_to_end(&mut buffer)?;
             zip.write_all(&*buffer)?;
             buffer.clear();
-        } else if name.as_os_str().len() != 0 {
+        } else if !name.as_os_str().is_empty() {
             // Only if not root! Avoids path spec / warning
             // and mapname conversion failed error on unzip
             println!("adding dir {:?} as {:?} ...", path, name);

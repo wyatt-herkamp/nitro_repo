@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::fs::{File, remove_file};
+use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::PathBuf;
 
 use log::error;
-use serde::{Deserialize, Serialize};
 use serde::de::value::MapDeserializer;
-use serde_json::Error;
+use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
@@ -34,14 +33,10 @@ pub async fn handle_post_deploy(
     deploy: &DeployInfo,
 ) -> Result<(), InternalError> {
     for x in &repository.deploy_settings.webhooks {
-        match x.handler.as_str() {
-            "discord" => {
-                let result = DiscordConfig::deserialize(MapDeserializer::new(
-                    x.settings.clone().into_iter(),
-                ))?;
-                DiscordHandler::handle(&result, &deploy).await?;
-            }
-            _ => {}
+        if x.handler.as_str() == "discord" {
+            let result =
+                DiscordConfig::deserialize(MapDeserializer::new(x.settings.clone().into_iter()))?;
+            DiscordHandler::handle(&result, deploy).await?;
         }
     }
     if repository.deploy_settings.report_generation.active {
@@ -67,5 +62,5 @@ pub async fn handle_post_deploy(
         let x1 = string.as_bytes();
         file.write_all(x1)?;
     }
-    return Ok(());
+    Ok(())
 }

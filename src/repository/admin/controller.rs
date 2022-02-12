@@ -1,11 +1,10 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-use actix_web::{delete, get, HttpRequest, patch, post, put, web};
+use actix_web::{delete, get, patch, post, put, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{
     add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories,
@@ -17,10 +16,10 @@ use crate::repository::models::{
     SecurityRules, Visibility,
 };
 use crate::repository::models::{ReportGeneration, Webhook};
-use crate::storage::action::get_storage_by_name;
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
+use crate::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {

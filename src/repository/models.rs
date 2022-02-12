@@ -4,12 +4,12 @@ use std::io::Write;
 use std::ops::Deref;
 
 use badge_maker::Style;
-use diesel::{deserialize, MysqlConnection, serialize};
 use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::mysql::Mysql;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
+use diesel::{deserialize, serialize, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -17,7 +17,6 @@ use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
 use crate::repository::models::Visibility::Public;
 use crate::schema::*;
-use crate::storage::action::get_storage_name_by_id;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositorySummary {
@@ -61,14 +60,14 @@ impl PartialEq<String> for Webhook {
 
 impl Default for ReportGeneration {
     fn default() -> Self {
-        return ReportGeneration {
+        ReportGeneration {
             active: true,
             values: vec!["DeployerUsername".to_string(), "Time".to_string()],
-        };
+        }
     }
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
+#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Default)]
 #[sql_type = "Text"]
 pub struct DeploySettings {
     #[serde(default)]
@@ -89,35 +88,23 @@ impl DeploySettings {
     }
     pub fn remove_hook(&mut self, webhook: String) -> Option<Webhook> {
         let option = self.webhooks.iter().position(|x| x.eq(&webhook));
-        return if let Some(value) = option {
+        if let Some(value) = option {
             Some(self.webhooks.remove(value))
         } else {
             None
-        };
-    }
-}
-
-impl Default for DeploySettings {
-    fn default() -> Self {
-        return DeploySettings {
-            report_generation: Default::default(),
-            webhooks: vec![],
-        };
+        }
     }
 }
 
 impl RepositorySummary {
-    pub fn new(
-        repo: &Repository,
-        conn: &MysqlConnection,
-    ) -> Result<RepositorySummary, InternalError> {
-        return Ok(RepositorySummary {
+    pub fn new(repo: &Repository, _: &MysqlConnection) -> Result<RepositorySummary, InternalError> {
+        Ok(RepositorySummary {
             name: repo.name.clone(),
             storage: repo.storage.clone(),
             page_provider: repo.settings.frontend.page_provider.clone(),
             repo_type: repo.repo_type.clone(),
             visibility: repo.security.visibility.clone(),
-        });
+        })
     }
 }
 

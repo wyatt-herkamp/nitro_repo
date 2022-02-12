@@ -1,25 +1,23 @@
-use std::fs::{create_dir_all, File, read_to_string};
+use std::fs::{create_dir_all, read_to_string, File};
 use std::io::Write;
 use std::path::PathBuf;
 
 use actix_files::NamedFile;
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, web, HttpRequest};
 use badge_maker::{BadgeBuilder, Style};
 use tiny_skia::Transform;
 use usvg::Options;
 
 use crate::api_response::SiteResponse;
 use crate::DbPool;
-use crate::error::response::not_found;
-use crate::repository::action::get_repo_by_name_and_storage;
+
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::BadgeSettings;
 use crate::repository::npm::NPMHandler;
-use crate::repository::repository::{RepositoryRequest, RepositoryType};
-use crate::storage::action::get_storage_by_name;
+use crate::repository::types::RepositoryType;
 
-fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
+fn file_name(b_s: &BadgeSettings, version: &str, t: &str) -> String {
     return format!(
         "badge-{}-{}-{}-{}.{}",
         b_s.style.to_badge_maker_style(),
@@ -129,5 +127,5 @@ pub async fn badge(
 
     let buf = buf1.join(format!("badge-{}.{}", &x, &typ));
     let response = NamedFile::open(buf)?.into_response(&r);
-    return SiteResponse::Ok(response);
+    SiteResponse::Ok(response)
 }

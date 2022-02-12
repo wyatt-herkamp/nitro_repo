@@ -1,4 +1,4 @@
-use crate::settings::settings::DBSetting;
+use crate::settings::models::DBSetting;
 use crate::{settings, utils};
 use diesel::prelude::*;
 use diesel::MysqlConnection;
@@ -31,7 +31,7 @@ pub fn update_setting(s: &DBSetting, conn: &MysqlConnection) -> Result<(), diese
 pub fn get_setting(
     k: &str,
     conn: &MysqlConnection,
-) -> Result<Option<settings::settings::DBSetting>, diesel::result::Error> {
+) -> Result<Option<settings::models::DBSetting>, diesel::result::Error> {
     use crate::schema::settings::dsl::*;
     let found_user = settings
         .filter(setting.like(k.to_string()))
@@ -42,7 +42,7 @@ pub fn get_setting(
 
 pub fn get_settings(
     conn: &MysqlConnection,
-) -> Result<Vec<settings::settings::DBSetting>, diesel::result::Error> {
+) -> Result<Vec<settings::models::DBSetting>, diesel::result::Error> {
     use crate::schema::settings::dsl::*;
     settings.load::<DBSetting>(conn)
 }

@@ -5,7 +5,7 @@ use crate::storage;
 use crate::storage::models::Storage;
 
 pub fn get_storage_by_name(
-    d: &String,
+    d: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<storage::models::Storage>, diesel::result::Error> {
     use crate::schema::storages::dsl::*;

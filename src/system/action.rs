@@ -13,8 +13,8 @@ pub fn get_users(conn: &MysqlConnection) -> Result<Vec<UserListResponse>, diesel
 
 pub fn update_user(
     user: i64,
-    e: &String,
-    n: &String,
+    e: &str,
+    n: &str,
     conn: &MysqlConnection,
 ) -> Result<(), diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -75,7 +75,7 @@ pub fn get_user_by_id_response(
 }
 
 pub fn get_user_by_email(
-    d: &String,
+    d: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -95,7 +95,7 @@ pub fn delete_user_db(d: &i64, conn: &MysqlConnection) -> Result<bool, diesel::r
 }
 
 pub fn get_user_by_username(
-    d: &String,
+    d: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
@@ -116,7 +116,7 @@ pub fn add_new_user(s: &User, conn: &MysqlConnection) -> Result<(), diesel::resu
 
 //Session Token
 pub fn get_session_token(
-    a_token: &String,
+    a_token: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::SessionToken>, diesel::result::Error> {
     use crate::schema::session_tokens::dsl::*;
@@ -140,7 +140,7 @@ pub fn add_new_session_token(
 }
 
 pub fn get_user_from_session_token(
-    token: &String,
+    token: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<system::models::User>, diesel::result::Error> {
     let result = get_session_token(token, conn)?;
