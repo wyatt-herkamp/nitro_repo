@@ -7,8 +7,8 @@ extern crate strum;
 extern crate strum_macros;
 
 use actix_cors::Cors;
-use actix_web::{App, HttpRequest, HttpServer, middleware, web};
 use actix_web::web::PayloadConfig;
+use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use log::info;
@@ -22,6 +22,7 @@ pub mod api_response;
 pub mod error;
 pub mod frontend;
 pub mod install;
+mod misc;
 pub mod repository;
 pub mod schema;
 pub mod settings;
@@ -29,7 +30,6 @@ pub mod storage;
 pub mod system;
 pub mod utils;
 pub mod webhook;
-mod misc;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type Database = web::Data<DbPool>;
@@ -89,28 +89,28 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
         // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
     #[cfg(feature = "ssl")]
-        {
-            if std::env::var("PRIVATE_KEY").is_ok() {
-                use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+    {
+        if std::env::var("PRIVATE_KEY").is_ok() {
+            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
-                let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-                builder
-                    .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
-                    .unwrap();
-                builder
-                    .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
-                    .unwrap();
-                return server
-                    .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
-                    .run()
-                    .await;
-            }
+            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+            builder
+                .set_private_key_file(std::env::var("PRIVATE_KEY").unwrap(), SslFiletype::PEM)
+                .unwrap();
+            builder
+                .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
+                .unwrap();
+            return server
+                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                .run()
+                .await;
         }
+    }
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }

@@ -5,7 +5,6 @@ pub mod controller;
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::add_repo)
         .service(controller::get_repo)
-        .service(controller::get_repo_admin_by_name)
         .service(controller::list_repos)
         .service(controller::modify_security)
         .service(controller::update_deployers_readers)

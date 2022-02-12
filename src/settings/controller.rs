@@ -1,9 +1,8 @@
-use actix_web::{get, HttpRequest, post, web};
+use actix_web::{get, post, web, HttpRequest};
 use diesel::MysqlConnection;
-use log::{warn};
+use log::warn;
 use serde::{Deserialize, Serialize};
 
-use crate::{DbPool, settings};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError;
 use crate::error::response::unauthorized;
@@ -12,6 +11,7 @@ use crate::settings::models::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
+use crate::{settings, DbPool};
 
 pub fn get_setting_or_empty(
     string: &str,
