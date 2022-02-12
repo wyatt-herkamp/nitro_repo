@@ -25,8 +25,8 @@ jobs:
       - name: Build
         run: sh build.sh
       - name: Clippy Check Setup
-      - run: rustup component add clippy
+        run: rustup component add clippy
       - name: Clippy Check Run
-      - uses: actions-rs/clippy-check@v1
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
