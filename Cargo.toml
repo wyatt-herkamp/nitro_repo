@@ -65,7 +65,7 @@ async-trait = "0.1.51"
 # Badge Stuff
 badge-maker = "0.2.0"
 usvg = "0.20.0"
-resvg = "0.20.0"
+resvg = "0.21.0"
 tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"
