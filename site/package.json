@@ -45,6 +45,6 @@
     "sass": "^1.49.7",
     "typescript": "~4.5.5",
     "unplugin-vue-components": "^0.17.18",
-    "vite": "^2.8.0"
+    "vite": "^2.8.4"
   }
 }
