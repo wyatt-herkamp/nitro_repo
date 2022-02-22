@@ -59,7 +59,7 @@ nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time",
 log = "0.4.14"
 # Rust Internal
 strum = { version = "0.23.0", features = ["derive"] }
-strum_macros = "0.23.1"
+strum_macros = "0.24.0"
 derive_more = "0.99.14"
 async-trait = "0.1.51"
 # Badge Stuff
