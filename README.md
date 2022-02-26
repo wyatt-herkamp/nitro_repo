@@ -1,4 +1,4 @@
-# nitro_repo
+# nitro_repo [![Powered By Actix](https://img.shields.io/badge/Powered%20By-Actix-red?style=for-the-badge&logo=rust)]
 [![Discord](https://img.shields.io/discord/701531356609511555)](https://discord.gg/CyK4admCSY)
 [![Push](https://github.com/wherkamp/nitro_repo/actions/workflows/push.yml/badge.svg)](https://github.com/wherkamp/nitro_repo/actions/workflows/push.yml)
 [![issues](https://img.shields.io/github/issues/wherkamp/nitro_repo/help%20wanted)](https://github.com/wherkamp/nitro_repo/issues)
