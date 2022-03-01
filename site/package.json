@@ -23,7 +23,7 @@
     "vue-router": "^4.0.13",
     "vue-upload-component": "^3.1.2",
     "vuex": "^4.0.2",
-    "vue-meta": "3.0.0-alpha.9"
+    "vue-meta": "3.0.0-alpha.10"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.12.1",
