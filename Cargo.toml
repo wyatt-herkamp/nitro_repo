@@ -18,7 +18,7 @@ assets = [
 
 [dependencies]
 # Web
-actix = "0.12.0"
+actix = "0.13.0"
 actix-web = { version = "4.0.0", features = ["openssl"] }
 actix-cors = "0.6.0"
 actix-service = "2.0.1"
@@ -64,8 +64,8 @@ derive_more = "0.99.14"
 async-trait = "0.1.51"
 # Badge Stuff
 badge-maker = "0.2.0"
-usvg = "0.20.0"
-resvg = "0.20.0"
+usvg = "0.22.0"
+resvg = "0.22.0"
 tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"
