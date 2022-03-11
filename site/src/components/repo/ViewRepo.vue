@@ -1,23 +1,27 @@
 <template>
   <div v-if="repository != undefined">
-    <h1 class="text-slate-50">
+    <h1 class="text-slate-50 text-lg">
       {{ repository.storage }}/{{ repository.name }}
-      <RepoInfo :repository="repository" />
     </h1>
+
+    <MavenRepoInfo
+      v-if="repository.repo_type == 'maven'"
+      :repository="repository"
+    />
   </div>
 </template>
 <style scoped></style>
 <script lang="ts">
 import { getRepoByNameAndStorage } from "@/backend/api/Repository";
 import { Repository } from "@/backend/Response";
-import RepoInfo from "@/components/repo/types/maven/RepoInfo.vue";
+import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
-  components: { RepoInfo },
+  components: { MavenRepoInfo },
   props: {
     storage: {
       required: false,

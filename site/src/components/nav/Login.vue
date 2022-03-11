@@ -96,7 +96,7 @@ export default defineComponent({
   @apply my-1;
   @apply bg-slate-50 dark:bg-slate-800;
   @apply rounded-md;
-  @apply text-white;
+  @apply text-black;
 }
 
 #login-modal button:hover {
