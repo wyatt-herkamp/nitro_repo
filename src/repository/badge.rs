@@ -110,6 +110,7 @@ pub async fn badge(
             keep_named_groups: false,
             default_size: usvg::Size::new(100.0, 100.0).unwrap(),
             fontdb: load_fonts(),
+            image_href_resolver: Default::default()
         };
         let result = usvg::Tree::from_str(string1.as_str(), &options.to_ref()).unwrap();
 
