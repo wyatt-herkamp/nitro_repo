@@ -1,6 +1,6 @@
 <template>
   <div v-if="repository != undefined">
-    <h1>{{ repository.name }}</h1>
+    <h1 class="text-slate-50">{{ repository.storage }}/{{ repository.name }}</h1>
   </div>
 </template>
 <style scoped></style>
@@ -13,13 +13,13 @@ import {
   updateDeployReport,
   updateFrontend,
 } from "@/backend/api/admin/Repository";
-import {getRepoByID} from "@/backend/api/Repository";
-import {Repository} from "@/backend/Response";
+import { getRepoByID } from "@/backend/api/Repository";
+import { Repository } from "@/backend/Response";
 import SideBar from "@/components/admin/SideBar.vue";
-import {defineComponent, ref} from "vue";
-import {useCookie} from "vue-cookie-next";
-import {useMeta} from "vue-meta";
-import {useRoute, useRouter} from "vue-router";
+import { defineComponent, ref } from "vue";
+import { useCookie } from "vue-cookie-next";
+import { useMeta } from "vue-meta";
+import { useRoute, useRouter } from "vue-router";
 
 export default defineComponent({
   components: { SideBar },
@@ -37,6 +37,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const exampleBadgeURL = ref("");
     const repoID = route.params.repo as string;
+    console.log(repoID);
     const { meta } = useMeta({
       title: "Nitro Repo",
     });

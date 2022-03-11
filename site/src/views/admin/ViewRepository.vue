@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-row">
-    <SideBar />
+    <SideBar back="repositories" />
     <ViewRepo />
   </div>
 </template>

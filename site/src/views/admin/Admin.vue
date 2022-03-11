@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-row">
-    <SideBar/>
+    <SideBar :currentPage="page"/>
 
     <Repositories v-if="page == 'repositories'"/>
     <Storages v-if="page == 'storages'"/>

@@ -42,7 +42,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
     APIResponse::new(true, Some(response)).respond(&r)
 }
 
-#[get("/api/repositories/get/{repo}")]
+#[get("/api/admin/repositories/get/{repo}")]
 pub async fn get_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
