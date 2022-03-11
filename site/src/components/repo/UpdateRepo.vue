@@ -1,12 +1,12 @@
 <template>
   <div v-if="repository != undefined" class="min-h-screen w-full flex">
     <div class="flex flex-col w-full">
-      <EditMenu @changeView="view = $event" />
+      <EditMenu :repository="repository" @changeView="view = $event" />
       <h1 class="text-slate-50">
         {{ repository.storage }}/{{ repository.name }} Data: {{ view }}
       </h1>
-      <div class="w-full content-start " v-if="view == 'General'">
-        <form class=" content-start  max-w-lg">
+      <div class="w-full content-start" v-if="view == 'General'">
+        <form class="content-start max-w-lg">
           <div class="flex flex-wrap -mx-3 mb-6">
             <div class="w-full md:w-1/2 px-3 mb-6 md:mb-0">
               <label for="grid-name"> name </label>
@@ -61,7 +61,6 @@
   </div>
 </template>
 <style scoped>
-
 label {
   @apply block;
   @apply uppercase;

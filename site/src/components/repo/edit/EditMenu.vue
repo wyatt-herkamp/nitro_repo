@@ -13,6 +13,17 @@
     <a @click="changeViewValue('Deploy')">
       <EditItem> Deploy Settings </EditItem>
     </a>
+    <img
+      class="mx-2 py-1.5 rounded-lg font-bold px-6 m-1"
+      :src="
+        url +
+        '/badge/' +
+        repository.storage +
+        '/' +
+        repository.name +
+        '/nitro_repo_status/badge.svg'
+      "
+    />
   </nav>
 </template>
 
@@ -20,13 +31,24 @@
 import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 import EditItem from "@/components/repo/edit/EditItem.vue";
+import { Repository } from "@/backend/Response";
+import { apiURL } from "@/http-common";
 
 export default defineComponent({
   components: { EditItem },
-  setup() {},
-    methods: {
-    changeViewValue(value:string) {
-      console.log(value)
+  props: {
+    repository: {
+      required: true,
+      type: Object as () => Repository,
+    },
+  },
+  setup() {
+    const url = apiURL;
+    return { url };
+  },
+  methods: {
+    changeViewValue(value: string) {
+      console.log(value);
       this.$emit("changeView", value);
     },
   },
