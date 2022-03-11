@@ -27,7 +27,6 @@ import Repositories from "@/components/Repositories.vue";
 import Item from "@/components/admin/Item.vue";
 import Settings from "@/components/Settings.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
-import userStore from "@/store/user";
 
 export default defineComponent({
   components: { Storages, Repositories, Users, UpdateUser, Settings, Me, Item },
@@ -40,14 +39,6 @@ export default defineComponent({
       required: false,
       type: String,
     },
-  },
-  setup() {
-    let index = ref(4);
-    onBeforeMount(userStore.getUser);
-    return {
-      index,
-      userStore,
-    };
   },
 });
 </script>

@@ -61,9 +61,7 @@
   </div>
 </template>
 <style scoped>
-.content{
 
-}
 label {
   @apply block;
   @apply uppercase;
