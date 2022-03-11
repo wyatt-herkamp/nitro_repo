@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-row">
     <SideBar back="repositories" />
-    <ViewRepo />
+    <UpdateRepo />
   </div>
 </template>
 <style scoped></style>
@@ -9,9 +9,9 @@
 import {defineComponent} from "vue";
 
 import SideBar from "@/components/admin/SideBar.vue";
-import ViewRepo from "@/components/repo/ViewRepo.vue";
+import UpdateRepo from "@/components/repo/UpdateRepo.vue";
 
 export default defineComponent({
-  components: { SideBar, ViewRepo },
+  components: { SideBar, UpdateRepo },
 });
 </script>

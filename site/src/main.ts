@@ -10,6 +10,8 @@ import "boxicons/css/boxicons.min.css";
 import "boxicons/dist/boxicons.js";
 import VueUploadComponent from "vue-upload-component";
 import vfmPlugin from "vue-final-modal";
+import VueHighlightJS from 'vue3-highlightjs'
+import 'highlight.js/styles/atom-one-dark.css'
 
 const app = createApp(App);
 app.use(VueCookieNext);
@@ -17,6 +19,8 @@ app.use(Notifications);
 app.use(router);
 app.use(vfmPlugin);
 app.use(createMetaManager());
+app.use(VueHighlightJS);
+
 app.component("file-upload", VueUploadComponent);
 
 app.mount("#app");
