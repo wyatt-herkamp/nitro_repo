@@ -1,69 +1,173 @@
 <template>
-  <div v-if="repository != undefined" class="min-h-screen w-full flex">
+  <div
+    v-if="repository != undefined"
+    class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
+  >
     <div class="flex flex-col w-full">
       <EditMenu :repository="repository" @changeView="view = $event" />
-      <h1 class="text-slate-50">
-        {{ repository.storage }}/{{ repository.name }} Data: {{ view }}
-      </h1>
-      <div class="w-full content-start" v-if="view == 'General'">
-        <form class="content-start max-w-lg">
-          <div class="flex flex-wrap -mx-3 mb-6">
-            <div class="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+      <div class="flex flex-col float-right w-auto">
+        <div class="settingContent" v-if="view == 'General'">
+          <h2 class="text-white m-3 text-left">Repository Rules</h2>
+
+          <div class="flex flex-wrap mb-6 justify-center">
+            <div class="md:w-1/2 px-3 mb-6 md:mb-0">
               <label for="grid-name"> name </label>
               <input
-                class="text-input"
+                class="disabled"
                 id="grid-name"
                 type="text"
                 v-model="repository.name"
                 disabled
               />
             </div>
-            <div class="w-full md:w-1/2 px-3">
+            <div class="settingBox">
               <label for="grid-Storage"> Storage </label>
               <input
-                class="text-input"
+                class="disabled"
                 id="grid-Storage"
                 type="text"
                 v-model="repository.storage"
                 disabled
               />
             </div>
-            <div class="w-full md:w-1/2 px-3">
+            <div class="settingBox">
               <label for="grid-created"> Date Created </label>
               <input
-                class="text-input"
+                class="disabled"
                 id="grid-created"
                 type="text"
                 v-model="date"
                 disabled
               />
             </div>
-            <div class="w-full md:w-1/2 px-3">
+            <div class="md:w-1/2 px-3">
               <label for="grid-type"> Repo Type</label>
               <input
-                class="text-input"
+                class="disabled"
                 id="grid-type"
                 type="text"
                 v-model="repository.repo_type"
                 disabled
               />
             </div>
-            <div   class="w-full md:w-1/2 px-3">
-             
+          </div>
+          <h2 class="text-white m-3 text-left">
+            Repository General Properties
+          </h2>
+          <div class="flex flex-wrap mb-6">
+            <div class="settingBox">
+              <label for="grid-policy"> Repo Policy</label>
+              <select v-model="repository.settings.policy" class="text-input">
+                <option>Mixed</option>
+                <option>Release</option>
+                <option>Snapshot</option>
+              </select>
+            </div>
+
+            <div class="settingBox">
+              <label for="grid-active">Repo Active</label>
+              <select v-model="repository.settings.active" class="text-input">
+                <option>true</option>
+                <option>false</option>
+              </select>
             </div>
           </div>
-        </form>
+        </div>
+        <div class="settingContent" v-if="view == 'Frontend'">
+          <h2 class="text-white m-3 text-left">Repository Badge Settings</h2>
+
+          <div class="flex flex-wrap mb-6 justify-center">
+            <div class="settingBox">
+              <label for="grid-policy">Page Provider</label>
+              <select
+                v-model="repository.settings.badge.style"
+                class="text-input"
+              >
+                <option value="FLAT">Flat</option>
+                <option value="FlatSquare">Flat Square</option>
+                <option value="Plastic">Platic</option>
+              </select>
+            </div>
+          </div>
+          <h2 class="text-white m-3 text-left">Repository Page Settings</h2>
+          <div class="flex flex-wrap mb-6">
+            <div class="settingBox">
+              <label for="grid-policy">Page Provider</label>
+              <select
+                v-model="repository.settings.frontend.page_provider"
+                class="text-input"
+              >
+                <option>None</option>
+                <option value="README_SENT">README Sent</option>
+                <option value="README_GIT">README Git</option>
+              </select>
+            </div>
+
+            <div class="settingBox">
+              <label for="grid-active">Frontend Page Enabled</label>
+              <select
+                v-model="repository.settings.frontend.enabled"
+                class="text-input"
+              >
+                <option>true</option>
+                <option>false</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="settingContent" v-if="view == 'Security'">
+          <h2 class="text-white m-3 text-left">Repository General Security</h2>
+
+          <div class="flex flex-wrap mb-6 justify-center">
+            <div class="settingBox">
+              <label for="grid-policy">Page Provider</label>
+              <select
+                v-model="repository.security.visibility"
+                class="text-input"
+              >
+                <option value="Public">Public</option>
+                <option value="Private">Private</option>
+                <option value="Hidden">Hidden</option>
+              </select>
+            </div>
+          </div>
+          <h2 class="text-white m-3 text-left">Repository Page Settings</h2>
+          <div class="flex flex-wrap mb-6">
+            
+          </div>
+        </div>
+        <div class="settingContent" v-if="view == 'Deploy'">
+          <h2 class="text-white m-3 text-left">Repository Report Generation Settings</h2>
+          <div class="flex flex-wrap mb-6">
+            <div class="settingBox">
+              <label for="grid-policy">Report Values</label>
+   
+            </div>
+
+            <div class="settingBox">
+              <label for="grid-active">Report Generation</label>
+              <select
+                v-model="repository.deploy_settings.report_generation.active"
+                class="text-input"
+              >
+                <option>true</option>
+                <option>false</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
-      <div v-if="view == 'Frontend'"></div>
-      <div v-if="view == 'Security'"></div>
-      <div v-if="view == 'Deploy'"></div>
     </div>
-    <div class="flex flex-col float-right w-auto bg-slate-800">
+    <div class="flex flex-col float-right w-full lg:w-auto bg-slate-800">
       <ViewRepo :repositoryType="repository" />
     </div>
   </div>
 </template>
 <style scoped>
+.settingContent {
+  @apply max-w-lg;
+  @apply mx-auto;
+}
 label {
   @apply block;
   @apply uppercase;
@@ -71,47 +175,25 @@ label {
   @apply text-white;
   @apply text-xs;
   @apply font-bold;
-  @apply mb-2;
+  @apply text-left;
+  @apply my-3;
 }
-.dropDownButton {
-  @apply text-white;
-  @apply bg-blue-700;
-  @apply hover:bg-blue-800;
-  @apply focus:ring-4 focus:ring-blue-300;
-  @apply font-medium;
-  @apply rounded-lg;
-  @apply text-sm;
-  @apply px-4;
-  @apply py-2.5;
-  @apply text-center;
-  @apply inline-flex;
-  @apply items-center;
-  @apply dark:bg-blue-600;
-  @apply dark:hover:bg-blue-700;
-  @apply dark:focus:ring-blue-800;
+.settingBox {
+  @apply md:w-1/2;
+  @apply px-3;
 }
-.dropDown {
-  @apply hidden;
-  @apply z-10;
-  @apply w-44;
-  @apply text-base;
-  @apply list-none;
-  @apply bg-white;
-  @apply rounded;
-  @apply divide-y divide-gray-100;
-  @apply shadow;
-  @apply dark:bg-gray-700;
-}
-.dropDownItem {
+.disabled {
+  @apply appearance-none;
   @apply block;
-  @apply py-2;
-  @apply px-4;
-  @apply text-sm;
+  @apply w-full;
+  @apply bg-gray-300;
   @apply text-gray-700;
-  @apply hover:bg-gray-100;
-  @apply dark:hover:bg-gray-600;
-  @apply dark:text-gray-200;
-  @apply dark:hover:text-white;
+  @apply border;
+  @apply border-gray-800;
+  @apply rounded;
+  @apply py-3;
+  @apply px-4;
+  @apply leading-tight;
 }
 .text-input {
   @apply appearance-none;

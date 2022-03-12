@@ -7,6 +7,8 @@ declare module 'vue' {
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
     CreateStorage: typeof import('./src/components/CreateStorage.vue')['default']
     CreateUser: typeof import('./src/components/CreateUser.vue')['default']
+    DropDown: typeof import('./src/components/forms/input/DropDown.vue')['default']
+    DropDownItem: typeof import('./src/components/forms/input/DropDownItem.vue')['default']
     EditItem: typeof import('./src/components/repo/edit/EditItem.vue')['default']
     EditMenu: typeof import('./src/components/repo/edit/EditMenu.vue')['default']
     Input: typeof import('./src/components/forms/Input.vue')['default']

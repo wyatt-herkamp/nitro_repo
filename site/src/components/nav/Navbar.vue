@@ -22,9 +22,9 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref} from "vue";
-import {useRouter} from "vue-router";
-import {User} from "@/backend/Response";
+import { defineComponent, ref } from "vue";
+import { useRouter } from "vue-router";
+import { User } from "@/backend/Response";
 import MenuButton from "@/components/nav/MenuButton.vue";
 import Login from "@/components/nav/Login.vue";
 
