@@ -48,6 +48,9 @@
                 disabled
               />
             </div>
+            <div   class="w-full md:w-1/2 px-3">
+             
+            </div>
           </div>
         </form>
       </div>
@@ -70,6 +73,46 @@ label {
   @apply font-bold;
   @apply mb-2;
 }
+.dropDownButton {
+  @apply text-white;
+  @apply bg-blue-700;
+  @apply hover:bg-blue-800;
+  @apply focus:ring-4 focus:ring-blue-300;
+  @apply font-medium;
+  @apply rounded-lg;
+  @apply text-sm;
+  @apply px-4;
+  @apply py-2.5;
+  @apply text-center;
+  @apply inline-flex;
+  @apply items-center;
+  @apply dark:bg-blue-600;
+  @apply dark:hover:bg-blue-700;
+  @apply dark:focus:ring-blue-800;
+}
+.dropDown {
+  @apply hidden;
+  @apply z-10;
+  @apply w-44;
+  @apply text-base;
+  @apply list-none;
+  @apply bg-white;
+  @apply rounded;
+  @apply divide-y divide-gray-100;
+  @apply shadow;
+  @apply dark:bg-gray-700;
+}
+.dropDownItem {
+  @apply block;
+  @apply py-2;
+  @apply px-4;
+  @apply text-sm;
+  @apply text-gray-700;
+  @apply hover:bg-gray-100;
+  @apply dark:hover:bg-gray-600;
+  @apply dark:text-gray-200;
+  @apply dark:hover:text-white;
+}
 .text-input {
   @apply appearance-none;
   @apply block;
@@ -85,6 +128,19 @@ label {
   @apply focus:outline-none;
   @apply focus:bg-white;
   @apply focus:border-gray-500;
+}
+.toggle-bg:after {
+  content: "";
+  @apply absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-5 w-5 transition shadow-sm;
+}
+
+input:checked + .toggle-bg:after {
+  transform: translateX(100%);
+  @apply border-white;
+}
+
+input:checked + .toggle-bg {
+  @apply bg-blue-600 border-blue-600;
 }
 </style>
 <script lang="ts">

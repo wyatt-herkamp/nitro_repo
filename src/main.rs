@@ -6,6 +6,7 @@ extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 
+use std::str::FromStr;
 use actix_cors::Cors;
 use actix_web::web::PayloadConfig;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
@@ -67,6 +68,8 @@ async fn main() -> std::io::Result<()> {
         return install::load_installer(pool).await;
     }
     info!("Initializing Web Server");
+    let max_upload = std::env::var("MAX_UPLOAD").unwrap_or_else(|_| "1024".to_string());
+    let max_upload = i64::from_str(&max_upload).unwrap();
 
     let server = HttpServer::new(move || {
         App::new()
@@ -78,7 +81,7 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(PayloadConfig::new(1024 * 1024 * 1024)))
+            .app_data(web::Data::new(PayloadConfig::new((max_upload * 1024 * 1024) as usize)))
             .configure(error::handlers::init)
             .configure(settings::init)
             .configure(repository::init)
@@ -89,7 +92,7 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
         // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
