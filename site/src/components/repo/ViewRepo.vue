@@ -12,7 +12,7 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { getRepoByNameAndStorage } from "@/backend/api/Repository";
+import { getRepoPublic, PublicRepositoryInfo } from "@/backend/api/Repository";
 import { Repository } from "@/backend/Response";
 import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
 import { defineComponent, ref } from "vue";
@@ -43,27 +43,25 @@ export default defineComponent({
       { value: "DeployerUsername", label: "Deploy Username" },
       { value: "Time", label: "Time" },
     ]);
-    let repository = ref<Repository | undefined>(props.repositoryType);
-    let date = ref<string | undefined>(undefined);
+    let repository = ref<Repository | PublicRepositoryInfo | undefined>(
+      props.repositoryType
+    );
     const cookie = useCookie();
     const isLoading = ref(props.repositoryType == undefined);
     const exampleBadgeURL = ref("");
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
-    if (repository.value != undefined) {
+    if (repository.value == undefined) {
       if (props.repository != undefined && props.storage != undefined) {
         const getRepo = async () => {
           try {
-            const value = (await getRepoByNameAndStorage(
+            const value = (await getRepoPublic(
               cookie.getCookie("token"),
               props.storage,
               props.repository
-            )) as Repository;
+            )) as PublicRepositoryInfo;
             repository.value = value;
-            date.value = new Date(repository.value.created).toLocaleDateString(
-              "en-US"
-            );
             meta.title = value.name;
           } catch (e) {
             console.log(e);
@@ -72,14 +70,10 @@ export default defineComponent({
         getRepo();
       }
     } else {
-      date.value = new Date(repository.value.created).toLocaleDateString(
-        "en-US"
-      );
       meta.title = repository.value.name;
     }
 
     return {
-      date,
       exampleBadgeURL,
       repository,
       router,

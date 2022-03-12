@@ -9,6 +9,7 @@
 </template>
 <style scoped></style>
 <script lang="ts">
+import { PublicRepositoryInfo } from "@/backend/api/Repository";
 import { Repository } from "@/backend/Response";
 import { apiURL } from "@/http-common";
 import { defineComponent, ref } from "vue";
@@ -17,7 +18,7 @@ export default defineComponent({
   props: {
     repository: {
       required: true,
-      type: Object as () => Repository,
+      type: Object as () => Repository|PublicRepositoryInfo,
     },
   },
   setup() {

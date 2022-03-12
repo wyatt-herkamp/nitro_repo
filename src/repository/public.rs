@@ -5,7 +5,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::DbPool;
 use crate::error::response::{not_found, unauthorized};
 use crate::repository::action::get_repo_by_name_and_storage;
-use crate::repository::models::{Policy, Repository};
+use crate::repository::models::{Policy, Repository, Visibility};
 use crate::system::utils::can_read_basic_auth;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,6 +16,7 @@ pub struct PublicRepositoryResponse {
     pub storage: String,
     pub description: String,
     pub active: bool,
+    pub visibility: Visibility,
     pub policy: Policy,
     pub created: i64,
 }
@@ -29,6 +30,7 @@ impl From<Repository> for PublicRepositoryResponse {
             storage: repo.storage,
             description: repo.settings.description,
             active: repo.settings.active,
+            visibility: repo.security.visibility,
             policy: repo.settings.policy,
             created: repo.created,
         }
@@ -49,7 +51,7 @@ pub async fn get_repo(
         return not_found();
     }
     let repository = repo.unwrap();
-    if !can_read_basic_auth(&r.headers(), &repository, &connection)? {
+    if !can_read_basic_auth(r.headers(), &repository, &connection)? {
         return unauthorized();
     }
 

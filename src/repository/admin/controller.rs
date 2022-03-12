@@ -59,7 +59,7 @@ pub async fn get_repo(
     APIResponse::respond_new(repo, &r)
 }
 
-#[get("/api/repositories/get/{storage}/{repo}")]
+#[get("/api/deployer/repositories/get/{storage}/{repo}")]
 pub async fn get_repo_deployer(
     pool: web::Data<DbPool>,
     r: HttpRequest,
