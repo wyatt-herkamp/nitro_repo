@@ -160,7 +160,6 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::IAmATeapot(e) => {
             return i_am_a_teapot(e);
         }
-        RepoResponse::VersionResponse(value) => APIResponse::new(true, Some(value)).respond(&r),
         RepoResponse::ProjectResponse(project) => APIResponse::new(true, Some(project)).respond(&r),
         RepoResponse::VersionListingResponse(versions) => {
             APIResponse::new(true, Some(versions)).respond(&r)
@@ -178,6 +177,12 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
                 .content_type("application/json")
                 .body(json);
             return Ok(result);
+        }
+        RepoResponse::NitroVersionListingResponse(value) => {
+            APIResponse::new(true, Some(value)).respond(&r)
+        }
+        RepoResponse::NitroVersionResponse(value) => {
+            APIResponse::new(true, Some(value)).respond(&r)
         }
     };
 }

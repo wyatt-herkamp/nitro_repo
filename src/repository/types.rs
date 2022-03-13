@@ -10,6 +10,7 @@ use serde_json::Value;
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
+use crate::repository::nitro::{NitroMavenVersions, NitroVersion};
 use crate::storage::models::Storage;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -23,7 +24,7 @@ pub struct RepositoryFile {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Project {
     pub repo_summary: RepositorySummary,
-    pub versions: Vec<Version>,
+    pub versions: NitroMavenVersions,
     pub frontend_response: Option<FrontendResponse>,
 }
 
@@ -49,8 +50,10 @@ pub enum RepoResponse {
     /// I am A Teapot. This is a joke. And is used inside Maven to state that Such as POST and PATCH
     IAmATeapot(String),
     /// A list of versions in a specific artifact. This is generated in Maven by bad code
-    VersionListingResponse(Vec<Version>),
-    VersionResponse(Version),
+    VersionListingResponse(Vec<VersionResponse>),
+    /// Classic Version Response will be removed
+    NitroVersionListingResponse(NitroMavenVersions),
+    NitroVersionResponse(VersionResponse),
 }
 
 /// RepoResult
@@ -77,8 +80,8 @@ impl RepositoryRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Version {
-    pub version: String,
+pub struct VersionResponse {
+    pub version: NitroVersion,
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
@@ -125,6 +128,7 @@ pub trait RepositoryType {
     ) -> RepoResult;
     fn handle_version(
         request: &RepositoryRequest,
+        version: String,
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult;

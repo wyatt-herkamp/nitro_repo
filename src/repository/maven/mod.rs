@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-
 use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, OpenOptions};
+
 use std::io::Write;
 
 use actix_web::web::Bytes;
@@ -12,16 +12,15 @@ use log::{debug, error, log_enabled, trace};
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{
-    get_latest_version, get_version, get_versions, update_project_in_repositories, update_versions,
-};
+use crate::repository::maven::utils::{get_version, parse_project_to_directory};
 use crate::repository::models::{Policy, RepositorySummary};
+
 use crate::repository::types::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{
-    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
-};
+use crate::repository::types::RepositoryRequest;
+use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryType};
+use crate::repository::utils::{get_latest_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -141,10 +140,12 @@ impl RepositoryType for MavenHandler {
                 let project_folder = parent.parent().unwrap().to_path_buf();
                 let repository = request.repository.clone();
                 actix_web::rt::spawn(async move {
-                    // let project = project_folder.join(".nitro.project.json");
-
-                    if let Err(error) = update_versions(&project_folder, pom.version.clone()) {
-                        error!("Unable to update .nitro.versions.json, {}", error);
+                    if let Err(error) = crate::repository::maven::utils::update_project(
+                        &project_folder,
+                        pom.version.clone(),
+                        pom.clone(),
+                    ) {
+                        error!("Unable to update .nitro.project.json, {}", error);
                         if log_enabled!(Trace) {
                             trace!(
                                 "Version {} Name: {}",
@@ -153,7 +154,8 @@ impl RepositoryType for MavenHandler {
                             );
                         }
                     }
-                    if let Err(error) = update_project_in_repositories(
+
+                    if let Err(error) = crate::repository::utils::update_project_in_repositories(
                         format!("{}:{}", &pom.group_id, &pom.artifact_id),
                         repo_location,
                     ) {
@@ -247,35 +249,44 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let string = parse_project_to_directory(&request.value);
+
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(&string);
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
-        Ok(RepoResponse::VersionListingResponse(vec))
+        Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
     fn handle_version(
         request: &RepositoryRequest,
+        version: String,
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let string = parse_project_to_directory(&request.value);
+
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(string);
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
-        Ok(RepoResponse::VersionResponse(get_version(&buf)))
+        let option = get_version(&buf, version);
+        if option.is_none() {
+            return Ok(RepoResponse::NotFound);
+        }
+        Ok(RepoResponse::NitroVersionResponse(option.unwrap()))
     }
 
     fn handle_project(
@@ -286,11 +297,12 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let string = parse_project_to_directory(&request.value);
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(&string);
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
@@ -311,15 +323,17 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return Ok("".to_string());
         }
+        let string = parse_project_to_directory(&request.value);
+
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(&request.value);
+            .join(string);
         if !buf.exists() {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        Ok(vec)
+        Ok(vec.unwrap_or_else(||"".to_string()))
     }
 }

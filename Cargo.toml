@@ -62,6 +62,7 @@ strum = { version = "0.24.0", features = ["derive"] }
 strum_macros = "0.24.0"
 derive_more = "0.99.14"
 async-trait = "0.1.51"
+thiserror = "1.0.30"
 # Badge Stuff
 badge-maker = "0.2.0"
 usvg = "0.22.0"

@@ -1,25 +1,37 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter};
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use base64::DecodeError;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum InternalError {
+    #[error("JSON error {0}")]
     JSONError(serde_json::Error),
+    #[error("IO error {0}")]
     IOError(std::io::Error),
+    #[error("DB error {0}")]
     DBError(diesel::result::Error),
+    #[error("Actix Error")]
     ActixWebError(actix_web::Error),
+    #[error("R2d2 Parse Error")]
     R2D2Error(r2d2::Error),
+    #[error("Boolean Parse Error")]
     BooleanParseError(ParseBoolError),
+    #[error("Decode Error")]
     DecodeError(DecodeError),
+    #[error("UTF Decode Error")]
     UTF8Error(FromUtf8Error),
+    #[error("SMTP Error")]
     SMTPTransportError(lettre::transport::smtp::Error),
+    #[error("Missing Argument {0}")]
     MissingArgument(String),
+    #[error("Not Found")]
     NotFound,
+    #[error("Internal Error {0}")]
     Error(String),
 }
 
@@ -27,8 +39,8 @@ impl InternalError {
     pub fn json_error(&self) -> HttpResponse {
         let result = HttpResponse::Ok()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .content_type("application/json")
-            .body("");
+            .content_type("text/plain")
+            .body(self.to_string());
         result
     }
 }
@@ -38,14 +50,6 @@ impl actix_web::error::ResponseError for InternalError {
         self.json_error()
     }
 }
-
-impl Display for InternalError {
-    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "{}", self)
-    }
-}
-
-impl Error for InternalError {}
 
 //from<Error>
 impl From<DecodeError> for InternalError {

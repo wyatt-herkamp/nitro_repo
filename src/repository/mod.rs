@@ -9,10 +9,11 @@ pub mod deploy;
 pub mod frontend;
 pub mod maven;
 pub mod models;
+pub mod nitro;
 mod npm;
+pub mod public;
 pub mod types;
 pub mod utils;
-pub mod public;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)
@@ -25,6 +26,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(api::get_versions)
         .service(api::get_version)
         .service(api::get_project)
-        .service(badge::badge).
-        service(public::get_repo);
+        .service(badge::badge)
+        .service(public::get_repo);
 }
