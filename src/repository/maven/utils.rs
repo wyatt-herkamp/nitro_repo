@@ -35,7 +35,7 @@ pub fn get_version_by_data(
 pub fn parse_project_to_directory(value: &str) -> String {
     value.replace('.', "/").replace(':', "/")
 }
-
+#[allow(dead_code)]
 fn get_artifacts(path: &Path) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
@@ -51,7 +51,7 @@ fn get_artifacts(path: &Path) -> Vec<String> {
     }
     values
 }
-
+#[allow(dead_code)]
 pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
     let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
     Ok(result)

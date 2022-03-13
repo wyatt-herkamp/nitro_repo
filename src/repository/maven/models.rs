@@ -24,7 +24,7 @@ pub struct Versions {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SCM {
+pub struct Scm {
     pub url: String,
 }
 
@@ -38,6 +38,6 @@ pub struct Pom {
     pub name: Option<String>,
     pub description: Option<String>,
     pub url: Option<String>,
-    pub scm: Option<SCM>,
+    pub scm: Option<Scm>,
 }
 
