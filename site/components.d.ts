@@ -14,6 +14,8 @@ declare module 'vue' {
     EditMenu: typeof import('./src/components/repo/edit/EditMenu.vue')['default']
     Item: typeof import('./src/components/admin/Item.vue')['default']
     Login: typeof import('./src/components/nav/Login.vue')['default']
+    MavenProjectCopy: typeof import('./src/components/project/types/maven/copy/MavenProjectCopy.vue')['default']
+    MavenProjectInfo: typeof import('./src/components/project/types/maven/MavenProjectInfo.vue')['default']
     MavenRepoInfo: typeof import('./src/components/repo/types/maven/MavenRepoInfo.vue')['default']
     MavenUpload: typeof import('./src/components/upload/MavenUpload.vue')['default']
     Me: typeof import('./src/components/Me.vue')['default']
@@ -28,6 +30,7 @@ declare module 'vue' {
     UpdateStorage: typeof import('./src/components/UpdateStorage.vue')['default']
     UpdateUser: typeof import('./src/components/UpdateUser.vue')['default']
     Users: typeof import('./src/components/Users.vue')['default']
+    ViewProject: typeof import('./src/components/project/ViewProject.vue')['default']
     ViewRepo: typeof import('./src/components/repo/ViewRepo.vue')['default']
   }
 }

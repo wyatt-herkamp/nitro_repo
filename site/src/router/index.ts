@@ -51,6 +51,7 @@ const routes: Array<RouteRecordRaw> = [
         name: "ViewRepository",
         component: Repository,
     },
+
     {
         path: "/browse/:storage/:repo/:catchAll(.*)",
         name: "Project",
