@@ -1,6 +1,6 @@
 <template>
   <prism-editor
-    class="card-editor"
+    class="card-editor relative"
     v-model="highlighterComputed.snippet"
     :highlight="highlighterComputed.highlighter"
     line-numbers

@@ -20,6 +20,7 @@ declare module 'vue' {
     MenuButton: typeof import('./src/components/nav/MenuButton.vue')['default']
     Navbar: typeof import('./src/components/nav/Navbar.vue')['default']
     Repositories: typeof import('./src/components/Repositories.vue')['default']
+    RepositoryBadge: typeof import('./src/components/repo/badge/RepositoryBadge.vue')['default']
     Settings: typeof import('./src/components/Settings.vue')['default']
     SideBar: typeof import('./src/components/SideBar.vue')['default']
     Storages: typeof import('./src/components/Storages.vue')['default']

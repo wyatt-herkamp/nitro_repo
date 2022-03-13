@@ -157,7 +157,7 @@
         </div>
       </div>
     </div>
-    <div class="float-right w-auto bg-slate-800">
+    <div class="float-right lg:w-1/4 bg-slate-800">
       <ViewRepo :child="true" :repositoryType="repository" />
     </div>
   </div>

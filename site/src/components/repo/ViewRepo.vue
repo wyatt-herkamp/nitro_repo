@@ -1,9 +1,18 @@
 <template>
   <div v-if="repository != undefined">
-    <MavenRepoInfo class="m-5"
-      v-if="repository.repo_type == 'maven'"
-      :repository="repository" :child="child"
-    />
+    <div :class="child ? 'my-3' : 'flex flex-wrap'">
+      <MavenRepoInfo
+        :class="child ? '' : 'm-3 flex flex-col'"
+        v-if="repository.repo_type == 'maven'"
+        :repository="repository"
+        :child="child"
+      />
+      <RepositoryBadge
+        :class="child ? 'my-3' : 'm-3 flex flex-col'"
+        :repository="repository"
+        :child="child"
+      />
+    </div>
   </div>
 </template>
 <style scoped></style>
@@ -15,9 +24,10 @@ import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
+import RepositoryBadge from "./badge/RepositoryBadge.vue";
 
 export default defineComponent({
-  components: { MavenRepoInfo },
+  components: { MavenRepoInfo, RepositoryBadge },
   props: {
     storage: {
       required: false,
@@ -31,9 +41,9 @@ export default defineComponent({
       required: false,
       type: Object as () => Repository,
     },
-        child:{
+    child: {
       default: false,
-      type: Boolean
+      type: Boolean,
     },
   },
   setup(props) {
