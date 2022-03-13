@@ -1,20 +1,19 @@
-use std::fs::{File, read_dir, read_to_string, remove_file};
+use std::fs::{read_dir, read_to_string, remove_file, File};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::Path;
 
-use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
-use time::UtcOffset;
+use chrono::{NaiveDateTime};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::Pom;
 use crate::repository::nitro::{NitroMavenVersions, ProjectData};
-use crate::repository::repository::VersionResponse;
+use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
 use crate::utils::get_current_time;
 
-pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
+pub fn get_version(path: &Path, version: String) -> Option<VersionResponse> {
     let versions_value = get_versions(path);
-    return get_version_by_data(&versions_value, version);
+    get_version_by_data(&versions_value, version)
 }
 
 pub fn get_version_by_data(
@@ -29,15 +28,15 @@ pub fn get_version_by_data(
             });
         }
     }
-    return None;
+    None
 }
 
 /// Project format {groupID}:{artifactID}
-pub fn parse_project_to_directory(value: &String) -> String {
-    return value.replace(".", "/").replace(":", "/");
+pub fn parse_project_to_directory(value: &str) -> String {
+    value.replace('.', "/").replace(':', "/")
 }
 
-fn get_artifacts(path: &PathBuf) -> Vec<String> {
+fn get_artifacts(path: &Path) -> Vec<String> {
     let dir = read_dir(path).unwrap();
     let mut values = Vec::new();
     for x in dir {
@@ -55,7 +54,7 @@ fn get_artifacts(path: &PathBuf) -> Vec<String> {
 
 pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
     let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
-    return Ok(result);
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -73,7 +72,11 @@ mod tests {
     }
 }
 
-pub fn update_project(project_folder: &PathBuf, version: String, pom: Pom) -> Result<(), InternalError> {
+pub fn update_project(
+    project_folder: &Path,
+    version: String,
+    pom: Pom,
+) -> Result<(), InternalError> {
     let buf = project_folder.join(".nitro.project.json");
 
     let mut project_data: ProjectData = if buf.exists() {
@@ -90,11 +93,11 @@ pub fn update_project(project_folder: &PathBuf, version: String, pom: Pom) -> Re
             created: get_current_time(),
         }
     };
-    project_data.description = pom.description.unwrap_or("".to_string());
+    project_data.description = pom.description.unwrap_or_else(||"".to_string());
     project_data.versions.update_version(version);
     let mut file = File::create(&buf).unwrap();
     let string = serde_json::to_string_pretty(&project_data)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
-    return Ok(());
+    Ok(())
 }

@@ -1,3 +1,4 @@
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -40,50 +41,3 @@ pub struct Pom {
     pub scm: Option<SCM>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NitroMavenVersions {
-    pub versions: Vec<NitroVersion>,
-}
-
-impl NitroMavenVersions {
-    pub fn update_version(&mut self, version: String) {
-        for v in self.versions.iter_mut() {
-            if v.version.eq(&version) {
-                if !v.snapshot {
-                    v.time = get_current_time();
-                }
-                return;
-            }
-        }
-        let snapshot = version.contains("-SNAPSHOT");
-        self.versions.push(NitroVersion {
-            version,
-            time: get_current_time(),
-            snapshot,
-        })
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NitroVersion {
-    pub version: String,
-    pub time: i64,
-    pub snapshot: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct RepositoryListing {
-    pub values: Vec<String>,
-}
-
-impl RepositoryListing {
-    pub fn add_value(&mut self, project: String) -> bool {
-        for v in &self.values {
-            if v.eq(&project) {
-                return false;
-            }
-        }
-        self.values.push(project);
-        true
-    }
-}

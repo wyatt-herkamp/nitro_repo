@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, OpenOptions, read_dir, read_to_string, remove_file};
-
 use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, OpenOptions};
+
 use std::io::Write;
 
 use actix_web::web::Bytes;
@@ -11,23 +10,16 @@ use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::deploy::{DeployInfo, handle_post_deploy};
-use crate::repository::maven::utils::{parse_project_to_directory};
+use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{
-    get_latest_version, get_version, get_versions, update_project_in_repositories, update_versions,
-};
+use crate::repository::maven::utils::{get_version, parse_project_to_directory};
 use crate::repository::models::{Policy, RepositorySummary};
+
 use crate::repository::types::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{
-    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
-};
-use crate::repository::repository::RepoResponse::{
-    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
-};
-use crate::repository::repository::RepositoryRequest;
+use crate::repository::types::RepositoryRequest;
+use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryType};
 use crate::repository::utils::{get_latest_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
@@ -316,11 +308,11 @@ impl RepositoryType for MavenHandler {
         }
         let vec = get_versions(&buf);
         let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, &conn)?,
+            repo_summary: RepositorySummary::new(&request.repository, conn)?,
             versions: vec,
             frontend_response: None,
         };
-        return Ok(ProjectResponse(project));
+        Ok(ProjectResponse(project))
     }
 
     fn latest_version(
@@ -342,6 +334,6 @@ impl RepositoryType for MavenHandler {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        Ok(vec.unwrap_or("".to_string()))
+        Ok(vec.unwrap_or_else(||"".to_string()))
     }
 }

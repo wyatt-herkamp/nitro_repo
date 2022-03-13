@@ -1,6 +1,10 @@
-use std::path::PathBuf;
+use crate::error::internal_error::InternalError;
+use crate::repository::nitro::{NitroMavenVersions, ProjectData, RepositoryListing};
+use crate::repository::types::RepositoryRequest;
+use std::fs::{read_to_string, remove_file, File};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 
-use crate::repository::repository::RepositoryRequest;
 use crate::utils::get_storage_location;
 
 pub fn build_artifact_directory(request: &RepositoryRequest) -> PathBuf {
@@ -21,8 +25,8 @@ pub fn update_project_in_repositories(
     let buf = repo_location.join("repository.json");
 
     let mut repo_listing: RepositoryListing = if buf.exists() {
-        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-        value
+        
+        serde_json::from_str(&read_to_string(&buf)?).unwrap()
     } else {
         RepositoryListing { values: vec![] }
     };
@@ -34,28 +38,28 @@ pub fn update_project_in_repositories(
     let string = serde_json::to_string_pretty(&repo_listing)?;
     let x1 = string.as_bytes();
     file.write_all(x1)?;
-    return Ok(());
+    Ok(())
 }
 
-pub fn get_versions(path: &PathBuf) -> NitroMavenVersions {
+pub fn get_versions(path:  &Path) -> NitroMavenVersions {
     let versions = path.join(".nitro.project.json");
-    return if versions.exists() {
+    if versions.exists() {
         let data: ProjectData = serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
         data.versions
     } else {
         Default::default()
-    };
+    }
 }
 
-pub fn get_latest_version(path: &PathBuf, release: bool) -> Option<String> {
+pub fn get_latest_version(path: &Path, release: bool) -> Option<String> {
     let versions = path.join(".nitro.versions.json");
-    return if versions.exists() {
+    if versions.exists() {
         let option: NitroMavenVersions =
             serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
         get_latest_version_data(&option, release)
     } else {
         None
-    };
+    }
 }
 
 pub fn get_latest_version_data(
@@ -68,4 +72,3 @@ pub fn get_latest_version_data(
         Some(versions_value.latest_version.clone())
     }
 }
-

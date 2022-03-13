@@ -1,38 +1,36 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, read_dir, remove_file, File, OpenOptions};
+use std::fs::{create_dir_all, read_dir, remove_file, File};
 use std::io::{BufReader, Write};
 use std::string::String;
 
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
+use log::Level::Trace;
+use log::{debug, error, log_enabled, trace};
 use regex::Regex;
 
 use crate::error::internal_error::InternalError;
+use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::models::RepositorySummary;
+
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{
-    get_latest_version, Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
-    Version,
+    Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest, Version,
 };
-use crate::repository::types::RepoResponse::{
-    CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse,
-};
-use crate::repository::types::Version as RepoVersion;
-use crate::repository::types::{
 use crate::repository::npm::utils::get_version;
-use crate::repository::repository::{
+
+use crate::repository::types::RepoResponse::{
+    CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
+};
+use crate::repository::types::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
-use crate::repository::repository::RepoResponse::{
-    CreatedWithJSON, FileResponse, IAmATeapot, NitroVersionResponse, NotAuthorized, NotFound,
-    ProjectResponse,
-};
-use crate::repository::repository::VersionResponse as RepoVersion;
 use crate::repository::utils::{
     build_artifact_directory, build_directory, get_latest_version, get_versions,
 };
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
+use crate::utils::get_storage_location;
 
 mod auth;
 mod models;
@@ -40,6 +38,7 @@ mod utils;
 
 pub struct NPMHandler;
 
+// name/version
 impl RepositoryType for NPMHandler {
     fn handle_get(
         request: &RepositoryRequest,
@@ -80,12 +79,12 @@ impl RepositoryType for NPMHandler {
                 let pattern = files.to_str().unwrap().to_string();
                 println!("{}", &pattern);
                 let result = glob::glob(pattern.as_str()).unwrap();
-                let mut versions = HashMap::new();
+                let mut npm_versions = HashMap::new();
                 for x in result {
                     let buf1 = x.unwrap();
                     let version: Version =
                         serde_json::from_reader(BufReader::new(File::open(buf1)?))?;
-                    versions.insert(version.version.clone(), version);
+                    npm_versions.insert(version.version.clone(), version);
                 }
                 let nitro_versions = get_versions(&buf);
                 let latest_version = get_latest_version(&buf, true).unwrap();
@@ -94,14 +93,14 @@ impl RepositoryType for NPMHandler {
                     id: version.name.clone(),
                     name: version.name.clone(),
                     other: version.other.clone(),
-                    versions,
-                    times,
+                    versions: npm_versions,
+                    times: nitro_versions.into(),
+                    dist_tags: latest_version.into(),
                 };
-                println!("{}", &string);
                 return Ok(RepoResponse::OkWithJSON(serde_json::to_string(&response)?));
             }
         } else {
-            let buf = build_artifact_directory(&request);
+            let buf = build_artifact_directory(request);
             let path = format!(
                 "{}/{}/{}",
                 &request.storage.name, &request.repository.name, &request.value
@@ -129,7 +128,7 @@ impl RepositoryType for NPMHandler {
                 }
             }
         }
-        return Ok(RepoResponse::Ok);
+        Ok(RepoResponse::Ok)
     }
 
     fn handle_post(
@@ -138,7 +137,7 @@ impl RepositoryType for NPMHandler {
         _conn: &MysqlConnection,
         _bytes: Bytes,
     ) -> RepoResult {
-        return Ok(NotAuthorized);
+        Ok(NotAuthorized)
     }
 
     fn handle_put(
@@ -152,7 +151,7 @@ impl RepositoryType for NPMHandler {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = request.value.replace("-/user/org.couchdb.user:", "");
-            return if is_valid(&username.to_string(), &json, &conn)? {
+            return if is_valid(&username, &json, conn)? {
                 let message = format!("user '{}' created", username);
                 Ok(CreatedWithJSON(serde_json::to_string(&LoginResponse {
                     ok: message,
@@ -167,7 +166,7 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let value: PublishRequest = serde_json::from_slice(bytes.as_ref()).unwrap();
-        let repo_location = build_directory(&request);
+        let repo_location = build_directory(request);
         let artifact = repo_location.join(&value.name);
         create_dir_all(&artifact)?;
 
@@ -175,8 +174,8 @@ impl RepositoryType for NPMHandler {
             let attachments = artifact.join("attachments");
             create_dir_all(&attachments)?;
 
-            let name = if x.0.contains("/") {
-                x.0.split("/")
+            let name = if x.0.contains('/') {
+                x.0.split('/')
                     .collect::<Vec<&str>>()
                     .get(1)
                     .unwrap()
@@ -205,14 +204,14 @@ impl RepositoryType for NPMHandler {
             let mut file = File::create(&version)?;
             file.write_all(result.as_bytes())?;
 
-            let repo_location = build_directory(&request);
+            let repo_location = build_directory(request);
             let project_folder = artifact.clone();
             let repository1 = request.repository.clone();
             let user2 = user1.clone();
 
             actix_web::rt::spawn(async move {
                 if let Err(error) =
-                crate::repository::npm::utils::update_project(&project_folder, key.clone())
+                    crate::repository::npm::utils::update_project(&project_folder, key.clone())
                 {
                     error!("Unable to update .nitro.project.json, {}", error);
                     if log_enabled!(Trace) {
@@ -248,7 +247,7 @@ impl RepositoryType for NPMHandler {
             });
         }
         // Everything is a ok.... OR is IT??????
-        return Ok(RepoResponse::Ok);
+        Ok(RepoResponse::Ok)
     }
 
     fn handle_patch(
@@ -332,11 +331,11 @@ impl RepositoryType for NPMHandler {
         }
         let vec = get_versions(&buf);
         let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, &conn)?,
+            repo_summary: RepositorySummary::new(&request.repository, conn)?,
             versions: vec,
             frontend_response: None,
         };
-        return Ok(ProjectResponse(project));
+        Ok(ProjectResponse(project))
     }
 
     fn latest_version(
@@ -357,6 +356,6 @@ impl RepositoryType for NPMHandler {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        Ok(vec.unwrap_or("".to_string()))
+        Ok(vec.unwrap_or_else(||"".to_string()))
     }
 }

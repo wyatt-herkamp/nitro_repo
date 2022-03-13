@@ -28,7 +28,6 @@ pub async fn get_versions(
 
     let request = to_request(storage, repository, file, &connection)?;
 
-
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_versions(&request, &r, &connection),
         "npm" => NPMHandler::handle_versions(&request, &r, &connection),
@@ -63,7 +62,8 @@ pub async fn get_project(
 pub async fn get_version(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String, String)>, ) -> SiteResponse {
+    path: web::Path<(String, String, String, String)>,
+) -> SiteResponse {
     let (storage, repository, project, version) = path.into_inner();
     let connection = pool.get()?;
 

@@ -1,12 +1,12 @@
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::DbPool;
 use crate::error::response::{not_found, unauthorized};
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::models::{Policy, Repository, Visibility};
 use crate::system::utils::can_read_basic_auth;
+use crate::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {

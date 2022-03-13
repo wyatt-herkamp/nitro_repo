@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use actix_web::HttpRequest;
 use actix_web::web::Bytes;
+use actix_web::HttpRequest;
 use diesel::MysqlConnection;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

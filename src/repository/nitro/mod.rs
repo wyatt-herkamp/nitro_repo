@@ -14,8 +14,8 @@ impl RepositoryListing {
                 return false;
             }
         }
-        self.values.push(project.clone());
-        return true;
+        self.values.push(project);
+        true
     }
 }
 
@@ -37,7 +37,6 @@ pub struct ProjectData {
 pub struct ProjectSource {
     pub name: String,
     pub url: String,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -54,11 +53,11 @@ pub struct NitroMavenVersions {
 
 impl Default for NitroMavenVersions {
     fn default() -> Self {
-        return NitroMavenVersions {
+        NitroMavenVersions {
             latest_version: "".to_string(),
             latest_release: "".to_string(),
             versions: vec![],
-        };
+        }
     }
 }
 
@@ -72,11 +71,11 @@ pub struct NitroVersion {
 impl From<String> for NitroVersion {
     fn from(value: String) -> Self {
         let x = value.contains("-SNAPSHOT");
-        return NitroVersion {
+        NitroVersion {
             version: value,
             time: 0,
             snapshot: x,
-        };
+        }
     }
 }
 
@@ -104,12 +103,12 @@ impl NitroMavenVersions {
             snapshot,
         })
     }
-    pub fn get(&self, version: &String) -> Option<NitroVersion> {
+    pub fn get(&self, version: &str) -> Option<NitroVersion> {
         for x in &self.versions {
             if x.version.eq(version) {
                 return Some(x.clone());
             }
         }
-        return None;
+        None
     }
 }

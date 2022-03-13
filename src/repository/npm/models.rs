@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use chrono::{TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -42,7 +41,7 @@ pub struct DistTags {
 
 impl From<String> for DistTags {
     fn from(value: String) -> Self {
-        return DistTags { latest: value };
+        DistTags { latest: value }
     }
 }
 
@@ -58,30 +57,3 @@ pub struct GetResponse {
     pub other: HashMap<String, Value>,
 }
 
-pub fn get_latest_version(map: &HashMap<String, String>) -> String {
-    let value = map.values().cloned().collect::<Vec<String>>();
-    let mut times = Vec::new();
-    for x in value {
-        println!("{}", &x);
-        let result = Utc.datetime_from_str(&x, "%Y-%m-%dT%H:%M:%S.%3fZ");
-        if let Err(err) = result {
-            println!("{}", err);
-            continue;
-        }
-        times.push(result.unwrap());
-    }
-    println!("{}", times.len());
-    times.sort();
-    times.reverse();
-    let first_time = times
-        .first()
-        .unwrap()
-        .format("%Y-%m-%dT%H:%M:%S.%3fZ")
-        .to_string();
-    for (version, time) in map {
-        if time.eq(&first_time) {
-            return version.clone();
-        }
-    }
-    "unknown".to_string()
-}

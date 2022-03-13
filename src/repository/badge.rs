@@ -53,12 +53,18 @@ pub async fn badge(
     let request = to_request(storage, repository, file, &connection)?;
 
     let (label, message) = if request.value.eq("nitro_repo_example") {
-        (request.repository.name.clone(),"example".to_string())
-    }else if request.value.eq("nitro_repo_status"){
-        (request.repository.name.clone(), request.repository.settings.active.to_string())
-    }else if request.value.eq("nitro_repo_info"){
-        (format!("{} Repository", &request.repository.repo_type), request.repository.name.clone())
-    }  else {
+        (request.repository.name.clone(), "example".to_string())
+    } else if request.value.eq("nitro_repo_status") {
+        (
+            request.repository.name.clone(),
+            request.repository.settings.active.to_string(),
+        )
+    } else if request.value.eq("nitro_repo_info") {
+        (
+            format!("{} Repository", &request.repository.repo_type),
+            request.repository.name.clone(),
+        )
+    } else {
         let version = match request.repository.repo_type.as_str() {
             "maven" => MavenHandler::latest_version(&request, &r, &connection),
             "npm" => NPMHandler::latest_version(&request, &r, &connection),
@@ -66,7 +72,7 @@ pub async fn badge(
                 panic!("Unknown REPO")
             }
         }?;
-        (request.repository.name.clone(),version)
+        (request.repository.name.clone(), version)
     };
     let buf1 = PathBuf::new()
         .join("storages")
@@ -115,7 +121,7 @@ pub async fn badge(
             keep_named_groups: false,
             default_size: usvg::Size::new(100.0, 100.0).unwrap(),
             fontdb: load_fonts(),
-            image_href_resolver: Default::default()
+            image_href_resolver: Default::default(),
         };
         let result = usvg::Tree::from_str(string1.as_str(), &options.to_ref()).unwrap();
 
