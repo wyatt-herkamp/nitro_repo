@@ -2,7 +2,8 @@ use std::fs::{File, read_dir, read_to_string, remove_file};
 use std::io::Write;
 use std::path::PathBuf;
 
-use chrono::NaiveDateTime;
+use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
+use time::UtcOffset;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::Pom;

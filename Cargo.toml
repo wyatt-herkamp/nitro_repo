@@ -18,13 +18,13 @@ assets = [
 
 [dependencies]
 # Web
-actix = "0.12.0"
-actix-web = { version = "4.0.0-beta.18", features = ["openssl"] }
-actix-cors = "0.6.0-beta.8"
+actix = "0.13.0"
+actix-web = { version = "4.0.0", features = ["openssl"] }
+actix-cors = "0.6.0"
 actix-service = "2.0.1"
-actix-multipart = "0.4.0-beta.10"
+actix-multipart = "0.4.0"
 openssl = { version = "0.10", features = ["v110"], optional = true }
-actix-files = "0.6.0-beta.12"
+actix-files = "0.6.0"
 # Partly Web
 lettre = "0.10.0-rc.4"
 # Database
@@ -58,15 +58,15 @@ tokio = "1.14.0"
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
 # Rust Internal
-strum = { version = "0.23.0", features = ["derive"] }
-strum_macros = "0.23.1"
+strum = { version = "0.24.0", features = ["derive"] }
+strum_macros = "0.24.0"
 derive_more = "0.99.14"
 async-trait = "0.1.51"
 thiserror = "1.0.30"
 # Badge Stuff
 badge-maker = "0.2.0"
-usvg = "0.20.0"
-resvg = "0.20.0"
+usvg = "0.22.0"
+resvg = "0.22.0"
 tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"

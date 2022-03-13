@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use log::{error, log};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
@@ -20,7 +20,7 @@ pub struct DiscordConfig {
 }
 
 pub struct DiscordHandler;
-
+#[allow(clippy::redundant_pattern_matching)]
 #[async_trait]
 impl WebhookHandler for DiscordHandler {
     type WebhookConfig = DiscordConfig;
@@ -33,7 +33,10 @@ impl WebhookHandler for DiscordHandler {
         let result = d_hook.send(|x| x.content("Deploy Happening!")).await;
         if let Err(error) = result {
             //TODO more details
-            error!("Unable to Call Discord Webhook {}", config.url);
+            error!(
+                "Unable to Call Discord Webhook {}. Error {}",
+                config.url, error
+            );
             return Err(InternalError::Error("Bad Webhook".to_string()));
         }
         return Ok(());

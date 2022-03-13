@@ -1,6 +1,6 @@
 import axios, {AxiosInstance} from "axios";
 
-export let apiURL;
+export let apiURL: string;
 if (import.meta.env.VITE_API_URL == undefined) {
   apiURL = import.meta.env.BASE_URL;
 } else {

@@ -6,7 +6,7 @@ use crate::repository::npm::models::LoginRequest;
 use crate::system::action::get_user_by_username;
 
 pub fn is_valid(
-    username: &String,
+    username: &str,
     request: &LoginRequest,
     conn: &MysqlConnection,
 ) -> Result<bool, InternalError> {
@@ -23,5 +23,5 @@ pub fn is_valid(
     {
         return Ok(false);
     }
-    return Ok(true);
+    Ok(true)
 }

@@ -130,7 +130,7 @@ impl FromStr for Setting {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         SettingManager::get_setting(s.to_string())
-            .ok_or(InternalError::Error("Missing Setting".to_string()))
+            .ok_or_else(|| InternalError::Error("Missing Setting".to_string()))
     }
 }
 pub trait SettingVec {

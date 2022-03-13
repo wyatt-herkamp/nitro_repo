@@ -1,21 +1,17 @@
-use std::fs::{File, read_to_string, remove_file};
-use std::io::Write;
 use std::path::PathBuf;
 
-use crate::error::internal_error::InternalError;
-use crate::repository::nitro::{NitroMavenVersions, ProjectData, RepositoryListing};
 use crate::repository::repository::RepositoryRequest;
-use crate::utils::{get_current_time, get_storage_location};
+use crate::utils::get_storage_location;
 
 pub fn build_artifact_directory(request: &RepositoryRequest) -> PathBuf {
-    return build_directory(&request).join(&request.value);
+    build_directory(request).join(&request.value)
 }
 
 pub fn build_directory(request: &RepositoryRequest) -> PathBuf {
-    return get_storage_location()
+    get_storage_location()
         .join("storages")
         .join(&request.storage.name)
-        .join(&request.repository.name);
+        .join(&request.repository.name)
 }
 
 pub fn update_project_in_repositories(

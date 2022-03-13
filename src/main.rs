@@ -6,9 +6,8 @@ extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 
+use std::str::FromStr;
 use actix_cors::Cors;
-
-use crate::api_response::{APIResponse, SiteResponse};
 use actix_web::web::PayloadConfig;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 use diesel::prelude::*;
@@ -17,12 +16,14 @@ use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 
+use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
 
 pub mod api_response;
 pub mod error;
 pub mod frontend;
 pub mod install;
+mod misc;
 pub mod repository;
 pub mod schema;
 pub mod settings;
@@ -42,7 +43,7 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
     let file = match std::env::var("MODE")
-        .unwrap_or("DEBUG".to_string())
+        .expect("Mode Must be RELEASE OR DEBUG")
         .as_str()
     {
         "DEBUG" => "log-debug.json",
@@ -67,6 +68,8 @@ async fn main() -> std::io::Result<()> {
         return install::load_installer(pool).await;
     }
     info!("Initializing Web Server");
+    let max_upload = std::env::var("MAX_UPLOAD").unwrap_or_else(|_| "1024".to_string());
+    let max_upload = i64::from_str(&max_upload).unwrap();
 
     let server = HttpServer::new(move || {
         App::new()
@@ -78,17 +81,18 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(PayloadConfig::new(1 * 1024 * 1024 * 1024)))
+            .app_data(web::Data::new(PayloadConfig::new((max_upload * 1024 * 1024) as usize)))
             .configure(error::handlers::init)
             .configure(settings::init)
             .configure(repository::init)
             .configure(storage::admin::init)
             .configure(repository::admin::init)
             .configure(system::controllers::init)
+            .configure(misc::init)
             .configure(frontend::init)
         // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

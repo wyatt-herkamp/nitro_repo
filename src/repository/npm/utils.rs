@@ -32,6 +32,14 @@ pub fn get_version(path: &PathBuf, version: String) -> Option<VersionResponse> {
     let versions_value = get_versions(path);
     return get_version_by_data(&versions_value, version);
 }
+pub fn get_time_file<S: Into<String>>(storage: &Storage, repo: &Repository, id: S) -> PathBuf {
+    get_storage_location()
+        .join("storages")
+        .join(&storage.name)
+        .join(&repo.name)
+        .join(id.into())
+        .join("times.json")
+}
 
 pub fn update_project(project_folder: &PathBuf, version: String) -> Result<(), InternalError> {
     let buf = project_folder.join(".nitro.project.json");
@@ -72,4 +80,12 @@ pub fn get_version_by_data(
         }
     }
     return None;
+pub fn read_time_file<S: Into<String>>(
+    storage: &Storage,
+    repo: &Repository,
+    id: S,
+) -> Result<HashMap<String, String>, InternalError> {
+    let times_json = get_time_file(storage, repo, id);
+    let times_map: HashMap<String, String> = serde_json::from_reader(File::open(&times_json)?)?;
+    Ok(times_map)
 }

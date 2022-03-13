@@ -1,23 +1,25 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, File, read_dir, remove_file};
+use std::fs::{create_dir_all, read_dir, remove_file, File, OpenOptions};
 use std::io::{BufReader, Write};
 use std::string::String;
 
-use actix_web::HttpRequest;
 use actix_web::web::Bytes;
+use actix_web::HttpRequest;
 use diesel::MysqlConnection;
-use log::{debug, error, log_enabled, trace};
-use log::Level::Trace;
 use regex::Regex;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::deploy::{DeployInfo, handle_post_deploy};
 use crate::repository::models::RepositorySummary;
-use crate::repository::nitro::NitroMavenVersions;
 use crate::repository::npm::auth::is_valid;
 use crate::repository::npm::models::{
-    Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest, Version,
+    get_latest_version, Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest,
+    Version,
 };
+use crate::repository::types::RepoResponse::{
+    CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, VersionResponse,
+};
+use crate::repository::types::Version as RepoVersion;
+use crate::repository::types::{
 use crate::repository::npm::utils::get_version;
 use crate::repository::repository::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
@@ -31,7 +33,6 @@ use crate::repository::utils::{
     build_artifact_directory, build_directory, get_latest_version, get_versions,
 };
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
-use crate::utils::get_storage_location;
 
 mod auth;
 mod models;
@@ -39,7 +40,6 @@ mod utils;
 
 pub struct NPMHandler;
 
-// name/version
 impl RepositoryType for NPMHandler {
     fn handle_get(
         request: &RepositoryRequest,
@@ -54,7 +54,7 @@ impl RepositoryType for NPMHandler {
         }
         log::trace!("URL: {}", request.value);
         if http.headers().contains_key("npm-command") {
-            let buf = build_directory(&request);
+            let buf = build_directory(request);
             if request.value.ends_with(".tgz") {
                 let mut id = buf;
                 for x in request
@@ -63,11 +63,11 @@ impl RepositoryType for NPMHandler {
                     .collect::<Vec<&str>>()
                     .first()
                     .unwrap()
-                    .split("/")
+                    .split('/')
                 {
                     id = id.join(x);
                 }
-                let vec = request.value.split("/").collect::<Vec<&str>>();
+                let vec = request.value.split('/').collect::<Vec<&str>>();
                 let file_name = vec.last().unwrap().to_string();
                 let file = id.join("attachments").join(file_name);
                 println!("{:?}", &file);
@@ -77,15 +77,15 @@ impl RepositoryType for NPMHandler {
                 let buf = buf.join(&request.value.replace("%2f", "/"));
                 // Return Info Response
                 let files = buf.join("version-*");
-                let pattern = format!("{}", files.to_str().unwrap());
+                let pattern = files.to_str().unwrap().to_string();
                 println!("{}", &pattern);
                 let result = glob::glob(pattern.as_str()).unwrap();
-                let mut npm_versions = HashMap::new();
+                let mut versions = HashMap::new();
                 for x in result {
                     let buf1 = x.unwrap();
                     let version: Version =
                         serde_json::from_reader(BufReader::new(File::open(buf1)?))?;
-                    npm_versions.insert(version.version.clone(), version);
+                    versions.insert(version.version.clone(), version);
                 }
                 let nitro_versions = get_versions(&buf);
                 let latest_version = get_latest_version(&buf, true).unwrap();
@@ -94,10 +94,10 @@ impl RepositoryType for NPMHandler {
                     id: version.name.clone(),
                     name: version.name.clone(),
                     other: version.other.clone(),
-                    versions: npm_versions,
-                    times: nitro_versions.into(),
-                    dist_tags: latest_version.into(),
+                    versions,
+                    times,
                 };
+                println!("{}", &string);
                 return Ok(RepoResponse::OkWithJSON(serde_json::to_string(&response)?));
             }
         } else {

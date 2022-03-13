@@ -3,7 +3,7 @@ use std::io::Cursor;
 use std::path::Path;
 
 use actix_files::Files;
-use actix_web::{get, HttpRequest, HttpResponse, web};
+use actix_web::{get, web, HttpRequest, HttpResponse};
 use log::debug;
 use zip::ZipArchive;
 

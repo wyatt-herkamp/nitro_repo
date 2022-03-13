@@ -45,3 +45,9 @@ name = "Public Name"
 type = "string"
 default = "Nitro Repo"
 public = true
+[[settings]]
+key = "description"
+name = "Website Description"
+type = "string"
+default = "An open source artifact manager. Written in Rust back end and an Vue front end to create a fast and modern experience"
+public = true

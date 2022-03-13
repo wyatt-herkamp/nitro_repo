@@ -39,7 +39,7 @@ pub async fn load_installer(pool: DbPool) -> std::io::Result<()> {
     .run()
     .await;
     info!("Installer Loaded. Only 1 web worker. Please Setup your Environment ");
-    return result;
+    result
 }
 
 pub fn init(cfg: &mut web::ServiceConfig) {

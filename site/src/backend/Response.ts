@@ -84,24 +84,24 @@ export interface Webhook {
   settings: Map<String, any>;
 }
 export interface Repository {
-    id: number;
-    name: string;
-    repo_type: string;
-    settings: RepoSettings;
-    deploy_settings: DeploySettings;
-    security: SecurityRules;
-    storage: string;
-    created: number;
+  id: number;
+  name: string;
+  repo_type: string;
+  settings: RepoSettings;
+  deploy_settings: DeploySettings;
+  security: SecurityRules;
+  storage: string;
+  created: number;
 }
 export const DEFAULT_REPO: Repository = {
-    id: 0,
-    name: "",
-    repo_type: "",
-    settings: DEFAULT_REPO_SETTINGS,
-    security: DEFAULT_SECURITY,
-    storage: "",
-    created: 0,
-    deploy_settings: DEFAULT_DEPLOY_SETTINGS,
+  id: 0,
+  name: "",
+  repo_type: "",
+  settings: DEFAULT_REPO_SETTINGS,
+  security: DEFAULT_SECURITY,
+  storage: "",
+  created: 0,
+  deploy_settings: DEFAULT_DEPLOY_SETTINGS,
 };
 export interface User {
   id: number;
@@ -123,10 +123,10 @@ export interface UserPermissions {
 }
 
 export interface RepositoryListResponse {
-    id: number;
-    name: string;
-    repo_type: string;
-    storage: string;
+  id: number;
+  name: string;
+  repo_type: string;
+  storage: string;
 }
 export interface RepositoryList {
   repositories: Array<RepositoryListResponse>;

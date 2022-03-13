@@ -2,7 +2,7 @@ use crate::error::internal_error::InternalError;
 
 use crate::settings::action::{add_new_setting, get_setting, get_settings, update_setting};
 use crate::settings::controller::default_setting;
-use crate::settings::settings::{
+use crate::settings::models::{
     DBSetting, EmailSetting, GeneralSettings, SecuritySettings, SettingReport, SettingVec,
 };
 use crate::utils::get_current_time;

@@ -1,5 +1,5 @@
-use diesel::MysqlConnection;
 use diesel::prelude::*;
+use diesel::MysqlConnection;
 
 use crate::repository;
 use crate::repository::models::{DeploySettings, Repository, RepositoryListResponse};
@@ -53,8 +53,8 @@ pub fn update_repo_security(
 }
 
 pub fn get_repo_by_name_and_storage(
-    repo: &String,
-    sto: &String,
+    repo: &str,
+    sto: &str,
     conn: &MysqlConnection,
 ) -> Result<Option<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;
@@ -102,7 +102,7 @@ pub fn get_repositories(
 }
 
 pub fn get_repositories_by_storage(
-    stor: &String,
+    stor: &str,
     conn: &MysqlConnection,
 ) -> Result<Vec<repository::models::Repository>, diesel::result::Error> {
     use crate::schema::repositories::dsl::*;

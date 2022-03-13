@@ -65,7 +65,7 @@ pub fn get_latest_version(map: &HashMap<String, String>) -> String {
         println!("{}", &x);
         let result = Utc.datetime_from_str(&x, "%Y-%m-%dT%H:%M:%S.%3fZ");
         if let Err(err) = result {
-            println!("{}", err.to_string());
+            println!("{}", err);
             continue;
         }
         times.push(result.unwrap());
@@ -83,5 +83,5 @@ pub fn get_latest_version(map: &HashMap<String, String>) -> String {
             return version.clone();
         }
     }
-    return "unknown".to_string();
+    "unknown".to_string()
 }

@@ -1,7 +1,7 @@
 use actix_web::http::header::HeaderMap;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use diesel::MysqlConnection;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -69,14 +69,14 @@ pub fn can_deploy_basic_auth(
     if key.eq("Basic") {
         return is_authed_deploy(value, repo, conn);
     } else if key.eq("Bearer") {
-        let result = system::action::get_user_from_session_token(&value, &conn)?;
+        let result = system::action::get_user_from_session_token(&value, conn)?;
         if result.is_none() {
             return Ok((false, None));
         }
         let user = result.unwrap();
         return Ok((user_has_deploy_access(&user, repo), Some(user)));
     }
-    return Ok((false, None));
+    Ok((false, None))
 }
 
 pub fn can_read_basic_auth(
@@ -109,7 +109,7 @@ pub fn can_read_basic_auth(
             if key.eq("Basic") {
                 return is_authed_read(value, repo, conn);
             } else if key.eq("Bearer") {
-                let result = system::action::get_user_from_session_token(&value, &conn)?;
+                let result = system::action::get_user_from_session_token(&value, conn)?;
                 if result.is_none() {
                     return Ok(false);
                 }
@@ -147,7 +147,7 @@ pub fn is_authed_deploy(
         return Ok((false, None));
     }
     let result2 = user_has_deploy_access(&user, repo);
-    return Ok((result2, Some(user)));
+    Ok((result2, Some(user)))
 }
 
 pub fn is_authed_read(
@@ -175,27 +175,27 @@ pub fn is_authed_read(
     {
         return Ok(false);
     }
-    return Ok(true);
+    Ok(true)
 }
 
 pub fn user_has_deploy_access(user: &User, repo: &Repository) -> bool {
     if !user.permissions.admin {
         if !repo.security.deployers.is_empty() {
-            return user.permissions.deployer.clone();
+            return user.permissions.deployer;
         } else {
             return repo.security.deployers.contains(&user.id);
         }
     }
-    return true;
+    true
 }
 
 /// TODO call this method for reading
 pub fn user_has_read_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
-    return if !repo.security.readers.is_empty() {
+    if !repo.security.readers.is_empty() {
         Ok(true)
     } else {
         Ok(repo.security.readers.contains(&user.id))
-    };
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

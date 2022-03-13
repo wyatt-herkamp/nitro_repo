@@ -1,56 +1,113 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
-    <el-main>
-      <el-alert
-        v-if="form.error.length != 0"
-        :title="form.error"
-        type="error"
-      />
-      <el-form label-position="top" :model="form" label-width="120px">
-        <el-form-item label="Email">
-          <el-input v-model="form.email" autocomplete="email"></el-input>
-        </el-form-item>
-        <el-form-item label="Name">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-        <el-form-item label="Username">
-          <el-input v-model="form.username"></el-input>
-        </el-form-item>
-        <el-form-item label="Password">
-          <el-input
-            v-model="this.form.password.password"
-            placeholder="Please input password"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="Confirm Password">
-          <el-input
-            v-model="form.password.password_two"
-            placeholder="Please input password"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit">Login</el-button>
-        </el-form-item>
-      </el-form>
-    </el-main>
-  </el-container>
-</template>
+  <div>
+    <vue-final-modal
+        v-model="showModel"
+        classes="flex justify-center items-center"
+    >
+      <div
+          class="
+          relative
+          border
+          bg-slate-900
+          border-black
+          m-w-20
+          py-5
+          px-10
+          rounded-2xl
+          shadow-xl
+          text-center
+        "
+      >
+        <p class="font-bold text-xl pb-4">Create Storage</p>
+        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
+          <div class="mb-4">
+            <label
+                class="block text-slate-50 text-sm font-bold mb-2"
+                for="name"
+            >
+              Storage ID/Name
+            </label>
+            <input
+                id="name"
+                v-model="form.name"
+                autocomplete="off"
+                class="
+                shadow
+                appearance-none
+                border
+                rounded
+                w-full
+                py-2
+                px-3
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:shadow-outline
+              "
+                placeholder="Storage ID/Name"
+                type="text"
+            />
+          </div>
+          <div class="mb-4">
+            <label
+                class="block text-slate-50 text-sm font-bold mb-2"
+                for="name"
+            >
+              Storage Public Name
+            </label>
+            <input
+                id="name"
+                v-model="form.public_name"
+                autocomplete="off"
+                class="
+                shadow
+                appearance-none
+                border
+                rounded
+                w-full
+                py-2
+                px-3
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:shadow-outline
+              "
+                placeholder="Public Name"
+                type="text"
+            />
+          </div>
+          <button
+              class="
+              bg-slate-800
+              py-2
+              my-3
+              rounded-md
+              cursor-pointer
+              text-white
+            "
+          >
+            Create Storage
+          </button>
+        </form>
 
+        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
+          🗙
+        </button>
+      </div>
+    </vue-final-modal>
+    <div @click="showModel = true">
+      <slot name="button"></slot>
+    </div>
+  </div>
+</template>
 <script lang="ts">
 import {User} from "@/backend/Response";
 import {createNewUser} from "@/backend/api/admin/User";
 import {defineComponent, ref} from "vue";
 
 export default defineComponent({
-  props: {
-    updateList: {
-      required: true,
-      type: Function,
-    },
-  },
   setup() {
+    const showModel = ref(false);
+    const close = () => (showModel.value = false);
+
     let form = ref({
       error: "",
       name: "",
@@ -62,7 +119,7 @@ export default defineComponent({
       },
       permissions: { deployer: false, admin: false },
     });
-    return { form };
+    return {form, showModel, close};
   },
   methods: {
     async onSubmit() {
@@ -81,7 +138,6 @@ export default defineComponent({
       );
       if (response.ok) {
         let data = response.val as User;
-        this.$props.updateList(data.id);
         this.$notify({
           title: "User Created",
           type: "success",

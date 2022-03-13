@@ -1,12 +1,4 @@
-<template>
-  <el-container style="border: 1px solid #eee">
-    <MavenUpload
-      v-if="repository != undefined && repository.repo_type == 'maven'"
-      :repo="repository"
-      :storage="storage"
-    />
-  </el-container>
-</template>
+<template></template>
 
 <script lang="ts">
 import {defineComponent, onBeforeMount, ref} from "vue";
@@ -46,10 +38,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style>
-.el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 200px;
-  min-height: 400px;
-}
-</style>

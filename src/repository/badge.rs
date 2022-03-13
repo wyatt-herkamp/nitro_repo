@@ -1,25 +1,23 @@
-use std::fs::{create_dir_all, File, read_to_string};
+use std::fs::{create_dir_all, read_to_string, File};
 use std::io::Write;
 use std::path::PathBuf;
 
 use actix_files::NamedFile;
-use actix_web::{get, HttpRequest, web};
+use actix_web::{get, web, HttpRequest};
 use badge_maker::{BadgeBuilder, Style};
 use tiny_skia::Transform;
 use usvg::Options;
 
 use crate::api_response::SiteResponse;
 use crate::DbPool;
-use crate::error::response::not_found;
-use crate::repository::action::get_repo_by_name_and_storage;
+
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::BadgeSettings;
 use crate::repository::npm::NPMHandler;
-use crate::repository::repository::{RepositoryRequest, RepositoryType};
-use crate::storage::action::get_storage_by_name;
+use crate::repository::types::RepositoryType;
 
-fn file_name(b_s: &BadgeSettings, version: &String, t: &str) -> String {
+fn file_name(b_s: &BadgeSettings, version: &str, t: &str) -> String {
     return format!(
         "badge-{}-{}-{}-{}.{}",
         b_s.style.to_badge_maker_style(),
@@ -54,16 +52,21 @@ pub async fn badge(
 
     let request = to_request(storage, repository, file, &connection)?;
 
-    let x = if request.value.eq("nitro_repo_example") {
-        "example".to_string()
-    } else {
-        match request.repository.repo_type.as_str() {
+    let (label, message) = if request.value.eq("nitro_repo_example") {
+        (request.repository.name.clone(),"example".to_string())
+    }else if request.value.eq("nitro_repo_status"){
+        (request.repository.name.clone(), request.repository.settings.active.to_string())
+    }else if request.value.eq("nitro_repo_info"){
+        (format!("{} Repository", &request.repository.repo_type), request.repository.name.clone())
+    }  else {
+        let version = match request.repository.repo_type.as_str() {
             "maven" => MavenHandler::latest_version(&request, &r, &connection),
             "npm" => NPMHandler::latest_version(&request, &r, &connection),
             _ => {
                 panic!("Unknown REPO")
             }
-        }?
+        }?;
+        (request.repository.name.clone(),version)
     };
     let buf1 = PathBuf::new()
         .join("storages")
@@ -75,18 +78,18 @@ pub async fn badge(
         create_dir_all(&buf1)?;
     }
     let b_s = request.repository.settings.badge;
-    let buf = buf1.join(file_name(&b_s, &x, typ.as_str()));
+    let buf = buf1.join(file_name(&b_s, &message, typ.as_str()));
     if buf.exists() {
         let response = NamedFile::open(buf)?.into_response(&r);
         return SiteResponse::Ok(response);
     }
-    let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
+    let svg_file = buf1.join(file_name(&b_s, &message, typ.as_str()));
 
     if !svg_file.exists() {
         let svg: String = BadgeBuilder::new()
             .style(Style::Flat)
-            .label(request.repository.name.as_str())
-            .message(x.as_str())
+            .label(&label)
+            .message(message.as_str())
             .style(b_s.style.to_badge_maker_style())
             .color_parse(b_s.color.as_str())
             .label_color_parse(b_s.label_color.as_str())
@@ -112,6 +115,7 @@ pub async fn badge(
             keep_named_groups: false,
             default_size: usvg::Size::new(100.0, 100.0).unwrap(),
             fontdb: load_fonts(),
+            image_href_resolver: Default::default()
         };
         let result = usvg::Tree::from_str(string1.as_str(), &options.to_ref()).unwrap();
 
@@ -122,12 +126,12 @@ pub async fn badge(
         let mut pixmap1 = tiny_skia::Pixmap::new(size.width(), size.height()).unwrap();
         let pixmap = pixmap1.as_mut();
         resvg::render(&result, fit_to, Transform::default(), pixmap).unwrap();
-        let svg_file = buf1.join(file_name(&b_s, &x, typ.as_str()));
+        let svg_file = buf1.join(file_name(&b_s, &message, typ.as_str()));
 
         pixmap1.save_png(svg_file).unwrap();
     }
 
-    let buf = buf1.join(format!("badge-{}.{}", &x, &typ));
+    let buf = buf1.join(file_name(&b_s, &message, typ.as_str()));
     let response = NamedFile::open(buf)?.into_response(&r);
-    return SiteResponse::Ok(response);
+    SiteResponse::Ok(response)
 }
