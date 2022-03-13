@@ -4,6 +4,7 @@
 
 declare module 'vue' {
   export interface GlobalComponents {
+    CodeViewComp: typeof import('./src/components/repo/CodeViewComp.vue')['default']
     CopyItem: typeof import('./src/components/repo/types/maven/copy/CopyItem.vue')['default']
     CopyMenu: typeof import('./src/components/repo/types/maven/copy/CopyMenu.vue')['default']
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
@@ -20,7 +21,7 @@ declare module 'vue' {
     Navbar: typeof import('./src/components/nav/Navbar.vue')['default']
     Repositories: typeof import('./src/components/Repositories.vue')['default']
     Settings: typeof import('./src/components/Settings.vue')['default']
-    SideBar: typeof import('./src/components/admin/SideBar.vue')['default']
+    SideBar: typeof import('./src/components/SideBar.vue')['default']
     Storages: typeof import('./src/components/Storages.vue')['default']
     UpdateRepo: typeof import('./src/components/repo/UpdateRepo.vue')['default']
     UpdateStorage: typeof import('./src/components/UpdateStorage.vue')['default']

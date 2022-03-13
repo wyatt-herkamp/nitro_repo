@@ -1,5 +1,5 @@
 <template>
-  <CopyMenu :repository="repository"/>
+  <CopyMenu :child="child" class="rounded-md" :repository="repository"/>
 </template>
 <style scoped></style>
 <script lang="ts">
@@ -14,6 +14,10 @@ export default defineComponent({
     repository: {
       required: true,
       type: Object as () => Repository | PublicRepositoryInfo,
+    },
+        child:{
+      default: false,
+      type: Boolean
     },
   },
   setup() {

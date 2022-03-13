@@ -8,7 +8,7 @@
 <script lang="ts">
 import {defineComponent} from "vue";
 
-import SideBar from "@/components/admin/SideBar.vue";
+import SideBar from "@/components/SideBar.vue";
 import UpdateRepo from "@/components/repo/UpdateRepo.vue";
 
 export default defineComponent({

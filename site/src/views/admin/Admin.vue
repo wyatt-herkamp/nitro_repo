@@ -14,7 +14,7 @@ import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Me from "@/components/Me.vue";
 import Repositories from "@/components/Repositories.vue";
-import SideBar from "@/components/admin/SideBar.vue";
+import SideBar from "@/components/SideBar.vue";
 import Settings from "@/components/Settings.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
@@ -33,7 +33,7 @@ export default defineComponent({
 
   setup() {
     const route = useRoute();
-    let page = route.params.page;
+    let page = route.params.page as string;
 
     onBeforeMount(userStore.getUser);
     return {
@@ -43,10 +43,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style>
-.el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 200px;
-  min-height: 400px;
-}
-</style>

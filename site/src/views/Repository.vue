@@ -1,11 +1,6 @@
 <template>
-  <div
-    v-if="repository != undefined"
-    class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
-  >
-    <div class="flex flex-col w-full bg-slate-800">
-      <ViewRepo :storage="storage" :repository="repository" />
-    </div>
+  <div v-if="repository != undefined">
+    <ViewRepo :storage="storage" :repository="repository" />
   </div>
 </template>
 

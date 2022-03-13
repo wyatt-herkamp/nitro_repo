@@ -132,16 +132,15 @@
             </div>
           </div>
           <h2 class="text-white m-3 text-left">Repository Page Settings</h2>
-          <div class="flex flex-wrap mb-6">
-            
-          </div>
+          <div class="flex flex-wrap mb-6"></div>
         </div>
         <div class="settingContent" v-if="view == 'Deploy'">
-          <h2 class="text-white m-3 text-left">Repository Report Generation Settings</h2>
+          <h2 class="text-white m-3 text-left">
+            Repository Report Generation Settings
+          </h2>
           <div class="flex flex-wrap mb-6">
             <div class="settingBox">
               <label for="grid-policy">Report Values</label>
-   
             </div>
 
             <div class="settingBox">
@@ -158,12 +157,15 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-col float-right w-full lg:w-auto bg-slate-800">
-      <ViewRepo :repositoryType="repository" />
+    <div class="float-right w-auto bg-slate-800">
+      <ViewRepo :child="true" :repositoryType="repository" />
     </div>
   </div>
 </template>
 <style scoped>
+.repositoryDetails {
+  @apply min-w-full;
+}
 .settingContent {
   @apply max-w-lg;
   @apply mx-auto;

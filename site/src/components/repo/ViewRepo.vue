@@ -1,12 +1,8 @@
 <template>
   <div v-if="repository != undefined">
-    <h1 class="text-slate-50 text-lg">
-      {{ repository.storage }}/{{ repository.name }}
-    </h1>
-
-    <MavenRepoInfo
+    <MavenRepoInfo class="m-5"
       v-if="repository.repo_type == 'maven'"
-      :repository="repository"
+      :repository="repository" :child="child"
     />
   </div>
 </template>
@@ -34,6 +30,10 @@ export default defineComponent({
     repositoryType: {
       required: false,
       type: Object as () => Repository,
+    },
+        child:{
+      default: false,
+      type: Boolean
     },
   },
   setup(props) {
