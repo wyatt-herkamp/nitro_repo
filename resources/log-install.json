@@ -1,0 +1,19 @@
+{
+  "default_loggers": [
+    {
+      "levels": [
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "file-logger",
+          "properties": {
+            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
+            "file": "install.log"
+          }
+        }
+      ]
+    }
+  ]
+}

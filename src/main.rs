@@ -35,25 +35,32 @@ pub mod webhook;
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type Database = web::Data<DbPool>;
 embed_migrations!();
+fn load_logger(logger: &str){
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    if let Err(error) = dotenv::dotenv() {
-        println!("Unable to load dotenv {}", error);
-        return Ok(());
-    }
     let file = match std::env::var("MODE")
         .expect("Mode Must be RELEASE OR DEBUG")
         .as_str()
     {
         "DEBUG" => "log-debug.json",
         "RELEASE" => "log-release.json",
+        "INSTALL" => "log-install.json",
         _ => {
             panic!("Must be Release or Debug")
         }
     };
     let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
     NitroLogger::load(config, None).unwrap();
+}
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    if let Err(error) = dotenv::dotenv() {
+        println!("Unable to load dotenv {}", error);
+        return Ok(());
+    }
+    let logger = std::env::var("MODE")
+        .expect("Mode Must be RELEASE OR DEBUG");
+
+
     info!("Initializing Database");
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<MysqlConnection>::new(connspec);
@@ -62,11 +69,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to create pool.");
     let connection = pool.get().unwrap();
     embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
-    std::env::set_var("INSTALLED", "false");
-    if !crate::utils::installed(&connection).unwrap() {
-        info!("Nitro Repo is not installed!!!!! Loading Installer Web Site. SSL will be disabled!");
-        return install::load_installer(pool).await;
-    }
+
     info!("Initializing Web Server");
     let max_upload = std::env::var("MAX_UPLOAD").unwrap_or_else(|_| "1024".to_string());
     let max_upload = i64::from_str(&max_upload).unwrap();
