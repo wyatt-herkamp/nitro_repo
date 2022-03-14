@@ -31,7 +31,7 @@ import { useRouter } from "vue-router";
 import { Repository } from "@/backend/Response";
 import { apiURL } from "@/http-common";
 import { PublicRepositoryInfo } from "@/backend/api/Repository";
-import CodeViewComp from "@/components/repo/CodeViewComp.vue";
+import CodeViewComp from "@/components/CodeViewComp.vue";
 import createRepositoryInfo from "@/api/maven/CodeGen";
 
 export default defineComponent({

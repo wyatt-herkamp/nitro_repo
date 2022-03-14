@@ -184,6 +184,9 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::NitroVersionResponse(value) => {
             APIResponse::new(true, Some(value)).respond(&r)
         }
+        RepoResponse::NitroProjectResponse(value) => {
+            APIResponse::new(true, Some(value)).respond(&r)
+        }
     };
 }
 

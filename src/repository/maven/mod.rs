@@ -20,7 +20,7 @@ use crate::repository::types::RepoResponse::{
 };
 use crate::repository::types::RepositoryRequest;
 use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryType};
-use crate::repository::utils::{get_latest_version, get_versions};
+use crate::repository::utils::{get_latest_version, get_project_data, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -263,6 +263,7 @@ impl RepositoryType for MavenHandler {
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
+
     fn handle_version(
         request: &RepositoryRequest,
         version: String,
@@ -307,9 +308,13 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotFound);
         }
         let vec = get_versions(&buf);
+        let project_data = get_project_data(&buf)?;
+        if project_data.is_none() {
+            return RepoResult::Ok(NotFound);
+        }
         let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, conn)?,
-            versions: vec,
+            repo_summary: RepositorySummary::new(&request.repository, &conn)?,
+            project: project_data.unwrap(),
             frontend_response: None,
         };
         Ok(ProjectResponse(project))
@@ -334,6 +339,6 @@ impl RepositoryType for MavenHandler {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        Ok(vec.unwrap_or_else(||"".to_string()))
+        Ok(vec.unwrap_or("".to_string()))
     }
 }

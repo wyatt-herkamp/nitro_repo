@@ -11,6 +11,7 @@ use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
 use crate::utils::get_current_time;
 
+
 pub fn get_version(path: &Path, version: String) -> Option<VersionResponse> {
     let versions_value = get_versions(path);
     get_version_by_data(&versions_value, version)
@@ -35,6 +36,7 @@ pub fn get_version_by_data(
 pub fn parse_project_to_directory(value: &str) -> String {
     value.replace('.', "/").replace(':', "/")
 }
+
 #[allow(dead_code)]
 fn get_artifacts(path: &Path) -> Vec<String> {
     let dir = read_dir(path).unwrap();
@@ -51,6 +53,7 @@ fn get_artifacts(path: &Path) -> Vec<String> {
     }
     values
 }
+
 #[allow(dead_code)]
 pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
     let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
@@ -71,6 +74,7 @@ mod tests {
         );
     }
 }
+
 
 pub fn update_project(
     project_folder: &Path,
@@ -93,7 +97,7 @@ pub fn update_project(
             created: get_current_time(),
         }
     };
-    project_data.description = pom.description.unwrap_or_else(||"".to_string());
+    project_data.description = pom.description.unwrap_or_else(|| "".to_string());
     project_data.versions.update_version(version);
     let mut file = File::create(&buf).unwrap();
     let string = serde_json::to_string_pretty(&project_data)?;

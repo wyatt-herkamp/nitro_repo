@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory, RouteRecordRaw} from "vue-router";
+import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import Home from "../views/Home.vue";
 import Install from "../views/Install.vue";
 import Admin from "../views/admin/Admin.vue";
@@ -25,11 +25,11 @@ const routes: Array<RouteRecordRaw> = [
     name: "Install",
     component: Install,
   },
-    {
-        path: "/admin/:page?",
-        name: "Admin",
-        component: Admin,
-    },
+  {
+    path: "/admin/:page?",
+    name: "Admin",
+    component: Admin,
+  },
   {
     path: "/admin/repository/:repo",
     name: "AdminRepoView",
@@ -37,26 +37,28 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: "/upload/:storage/:repo",
-      name: "Upload",
-      component: Upload,
+    name: "Upload",
+    component: Upload,
   },
 
-    {
-        path: "/browse/:storage?/:repo?/:catchAll(.*)?",
-        name: "Browse",
-        component: Browse,
-    },
-    {
-        path: "/repository/:storage/:repo/",
-        name: "ViewRepository",
-        component: Repository,
-    },
+  {
+    path: "/browse/:storage?/:repo?/:catchAll(.*)?",
+    name: "Browse",
+    component: Browse,
+  },
+  {
+    path: "/repository/:storage/:repo/",
+    name: "ViewRepository",
+    component: Repository,
+  },
 
-    {
-        path: "/browse/:storage/:repo/:catchAll(.*)",
-        name: "Project",
-        component: Project,
-    },
+  {
+    path: "/project/:storage/:repo/:id/:version?",
+    name: "Project",
+    component: Project,
+  },
+
+
 ];
 
 const router = createRouter({

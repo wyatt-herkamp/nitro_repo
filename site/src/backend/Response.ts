@@ -198,9 +198,31 @@ export interface RepoSummary {
 
 export interface Project {
   repo_summary: RepoSummary;
-  versions: Version[];
+  project: ProjectData;
   frontend_response: null;
 }
+
+export interface ProjectData {
+  name:        string;
+  description: string;
+  source:      null;
+  licence:     null;
+  versions:    Versions;
+  created:     number;
+}
+
+export interface Versions {
+  latest_version: string;
+  latest_release: string;
+  versions:       Version[];
+}
+
+export interface Version {
+  version:  string;
+  time:     number;
+  snapshot: boolean;
+}
+
 enum Policy {
   Release,
   Snapshot,

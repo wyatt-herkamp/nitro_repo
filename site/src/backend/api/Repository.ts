@@ -134,16 +134,30 @@ export async function fileListing(storage: string, repo: string, path: string) {
 }
 
 export async function getProject(
+  token: string | undefined,
   storage: string,
   repo: string,
-  path: string
+  project: string,
+  version: string,
+
 ): Promise<Project | undefined> {
-  const url = "/api/project/" + storage + "/" + repo + "/" + path;
-  const value = await http.get(url, {});
+  let url = `/api/project/${storage}/${repo}/${project}`;
+  if (version != undefined && version !== "") {
+    url = url + "/${version}"
+  }
+  console.log(url);
+  const value = (token == undefined) ? await http.get(url) : await http.get(
+    url, {
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  }
+  );
 
   if (value.status != 200) {
     return undefined;
   }
+
   const data = value.data as BasicResponse<unknown>;
   if (data.success) {
     return data.data as Project;

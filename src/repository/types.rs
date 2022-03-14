@@ -10,7 +10,7 @@ use serde_json::Value;
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::nitro::{NitroMavenVersions, NitroVersion};
+use crate::repository::nitro::{NitroMavenVersions, NitroVersion, ProjectData};
 use crate::storage::models::Storage;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -24,7 +24,7 @@ pub struct RepositoryFile {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Project {
     pub repo_summary: RepositorySummary,
-    pub versions: NitroMavenVersions,
+    pub project: ProjectData,
     pub frontend_response: Option<FrontendResponse>,
 }
 
@@ -52,6 +52,7 @@ pub enum RepoResponse {
     /// A list of versions in a specific artifact. This is generated in Maven by bad code
     VersionListingResponse(Vec<VersionResponse>),
     /// Classic Version Response will be removed
+    NitroProjectResponse(ProjectData),
     NitroVersionListingResponse(NitroMavenVersions),
     NitroVersionResponse(VersionResponse),
 }

@@ -72,3 +72,10 @@ pub fn get_latest_version_data(
         Some(versions_value.latest_version.clone())
     }
 }
+pub fn get_project_data(path: &Path) -> Result<Option<ProjectData>, InternalError> {
+    let buf = path.join(".nitro.project.json");
+    if !buf.exists() {
+        return Ok(None);
+    }
+    Ok(Some(serde_json::from_str(&read_to_string(buf)?).unwrap()))
+}
