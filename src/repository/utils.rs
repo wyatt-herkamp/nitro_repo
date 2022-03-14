@@ -25,7 +25,6 @@ pub fn update_project_in_repositories(
     let buf = repo_location.join("repository.json");
 
     let mut repo_listing: RepositoryListing = if buf.exists() {
-        
         serde_json::from_str(&read_to_string(&buf)?).unwrap()
     } else {
         RepositoryListing { values: vec![] }
@@ -41,7 +40,7 @@ pub fn update_project_in_repositories(
     Ok(())
 }
 
-pub fn get_versions(path:  &Path) -> NitroMavenVersions {
+pub fn get_versions(path: &Path) -> NitroMavenVersions {
     let versions = path.join(".nitro.project.json");
     if versions.exists() {
         let data: ProjectData = serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();

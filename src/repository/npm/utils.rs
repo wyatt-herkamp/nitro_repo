@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::{read_to_string, remove_file, File};
 use std::io::Write;
-use std::path::{Path};
+use std::path::Path;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
@@ -31,7 +31,7 @@ pub fn get_version(path: &Path, version: String) -> Option<VersionResponse> {
     get_version_by_data(&versions_value, version)
 }
 
-pub fn update_project(project_folder:  &Path, version: String) -> Result<(), InternalError> {
+pub fn update_project(project_folder: &Path, version: String) -> Result<(), InternalError> {
     let buf = project_folder.join(".nitro.project.json");
 
     let mut project_data: ProjectData = if buf.exists() {

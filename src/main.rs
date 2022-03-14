@@ -6,10 +6,10 @@ extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 
-use std::path::Path;
 use actix_cors::Cors;
 use actix_web::web::PayloadConfig;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
+use std::path::Path;
 
 use log::info;
 use nitro_log::config::Config;
@@ -34,9 +34,9 @@ pub mod system;
 pub mod utils;
 pub mod webhook;
 
-use clap::Parser;
 use crate::database::Database;
 use crate::install::load_installer;
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -67,7 +67,9 @@ async fn main() -> std::io::Result<()> {
             load_installer().expect("Unable to successfully install application");
             return Ok(());
         } else {
-            println!("Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag");
+            println!(
+                "Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag"
+            );
             std::process::exit(1);
         }
     }
@@ -75,8 +77,7 @@ async fn main() -> std::io::Result<()> {
         println!("Unable to load dotenv {}", error);
         return Ok(());
     }
-    let logger = std::env::var("MODE")
-        .expect("Mode Must be RELEASE OR DEBUG");
+    let logger = std::env::var("MODE").expect("Mode Must be RELEASE OR DEBUG");
     load_logger(&logger);
 
     info!("Initializing Database");
@@ -109,7 +110,7 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
         // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

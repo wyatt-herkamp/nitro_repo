@@ -1,8 +1,8 @@
 use actix_web::web;
-use diesel::{Connection, MysqlConnection};
-use diesel::r2d2::ConnectionManager;
-use diesel_migrations::embed_migrations;
 use anyhow::Result;
+use diesel::r2d2::ConnectionManager;
+use diesel::{Connection, MysqlConnection};
+use diesel_migrations::embed_migrations;
 use log::info;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;

@@ -2,7 +2,7 @@ use std::fs::{read_dir, read_to_string, remove_file, File};
 use std::io::Write;
 use std::path::Path;
 
-use chrono::{NaiveDateTime};
+use chrono::NaiveDateTime;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::Pom;
@@ -10,7 +10,6 @@ use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
 use crate::utils::get_current_time;
-
 
 pub fn get_version(path: &Path, version: String) -> Option<VersionResponse> {
     let versions_value = get_versions(path);
@@ -74,7 +73,6 @@ mod tests {
         );
     }
 }
-
 
 pub fn update_project(
     project_folder: &Path,

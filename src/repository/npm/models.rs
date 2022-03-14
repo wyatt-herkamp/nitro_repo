@@ -56,4 +56,3 @@ pub struct GetResponse {
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
-

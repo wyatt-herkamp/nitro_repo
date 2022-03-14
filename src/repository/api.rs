@@ -45,7 +45,7 @@ pub async fn get_project(
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    println!("{}",file);
+    println!("{}", file);
     let connection = pool.get()?;
 
     let request = to_request(storage, repository, file, &connection)?;

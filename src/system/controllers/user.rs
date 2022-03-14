@@ -2,6 +2,7 @@ use actix_web::{get, patch, post, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::database::DbPool;
 use crate::error::response::{already_exists_what, bad_request, not_found, unauthorized};
 use crate::system::action::{
     add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username,
@@ -10,7 +11,6 @@ use crate::system::action::{
 use crate::system::models::{User, UserListResponse, UserPermissions};
 use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser};
 use crate::utils::get_current_time;
-use crate::database::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {

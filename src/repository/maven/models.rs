@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -40,4 +39,3 @@ pub struct Pom {
     pub url: Option<String>,
     pub scm: Option<Scm>,
 }
-

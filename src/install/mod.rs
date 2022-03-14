@@ -1,9 +1,6 @@
-use std::{io};
+use std::io;
 
-
-
-
-use crate::database::{init_single_connection};
+use crate::database::init_single_connection;
 
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
@@ -13,16 +10,15 @@ use crate::system::action::add_new_user;
 
 use crate::system::models::{User, UserPermissions};
 
-
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::fmt::{Display, Formatter};
-use std::fs::{OpenOptions};
-use std::io::{Stdout, Write};
 use diesel::MysqlConnection;
+use std::fmt::{Display, Formatter};
+use std::fs::OpenOptions;
+use std::io::{Stdout, Write};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -32,10 +28,9 @@ use tui::{
     Frame, Terminal,
 };
 
-
-use unicode_width::UnicodeWidthStr;
 use crate::system::utils::hash;
 use crate::utils::get_current_time;
+use unicode_width::UnicodeWidthStr;
 
 //mysql://newuser:"password"@127.0.0.1/nitro_repo
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -49,7 +44,14 @@ struct DatabaseStage {
 impl Display for DatabaseStage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let my_db = self.clone();
-        write!(f, "mysql://{}:{}@{}/{}", my_db.user.unwrap(), my_db.password.unwrap(), my_db.host.unwrap(), my_db.database.unwrap())
+        write!(
+            f,
+            "mysql://{}:{}@{}/{}",
+            my_db.user.unwrap(),
+            my_db.password.unwrap(),
+            my_db.host.unwrap(),
+            my_db.database.unwrap()
+        )
     }
 }
 
@@ -70,7 +72,10 @@ impl From<UserStage> for User {
             username: value.username.unwrap_or_default(),
             email: value.email.unwrap_or_default(),
             password: hash(value.password.unwrap_or_default()).unwrap(),
-            permissions: UserPermissions { admin: true, deployer: true },
+            permissions: UserPermissions {
+                admin: true,
+                deployer: true,
+            },
             created: get_current_time(),
         }
     }
@@ -84,7 +89,6 @@ pub struct OtherStage {
     max_upload: Option<String>,
 }
 
-
 /// App holds the state of the application
 struct App {
     /// Current value of the input box
@@ -96,7 +100,6 @@ struct App {
     user_stage: UserStage,
     other_stage: OtherStage,
     connection: Option<MysqlConnection>,
-
 }
 
 impl Default for App {
@@ -128,8 +131,10 @@ impl Default for App {
     }
 }
 
-
-fn run_app(mut terminal: Terminal<CrosstermBackend<Stdout>>, mut app: App) -> io::Result<Option<App>> {
+fn run_app(
+    mut terminal: Terminal<CrosstermBackend<Stdout>>,
+    mut app: App,
+) -> io::Result<Option<App>> {
     loop {
         if app.stage >= 3 {
             close(terminal);
@@ -138,12 +143,13 @@ fn run_app(mut terminal: Terminal<CrosstermBackend<Stdout>>, mut app: App) -> io
         terminal.draw(|f| ui(f, &app))?;
 
         if let Event::Key(key) = event::read()? {
-            match key.code
-            {
+            match key.code {
                 KeyCode::Enter => {
                     let value = if app.input.is_empty() {
                         get_next_default(&app)
-                    } else { Some(app.input.clone()) };
+                    } else {
+                        Some(app.input.clone())
+                    };
                     app.input.clear();
                     match app.stage {
                         0 => {
@@ -165,7 +171,10 @@ fn run_app(mut terminal: Terminal<CrosstermBackend<Stdout>>, mut app: App) -> io
                                         app.stage = 1;
                                     }
                                     Err(error) => {
-                                        error!("Unable to Connect to Database {} :{}",string,error);
+                                        error!(
+                                            "Unable to Connect to Database {} :{}",
+                                            string, error
+                                        );
                                         app.database_stage = DatabaseStage {
                                             user: None,
                                             password: None,
@@ -191,7 +200,7 @@ fn run_app(mut terminal: Terminal<CrosstermBackend<Stdout>>, mut app: App) -> io
 
                                 //TODO dont kill program on failure to create user
                                 if let Err(error) = add_new_user(&stage.into(), connection) {
-                                    error!("Unable to Create user, {}",error);
+                                    error!("Unable to Create user, {}", error);
                                     std::process::exit(1);
                                 }
 
@@ -235,9 +244,9 @@ fn run_app(mut terminal: Terminal<CrosstermBackend<Stdout>>, mut app: App) -> io
 fn get_next_default(app: &App) -> Option<String> {
     match app.stage {
         0 => {
-            if app.database_stage.user.is_none()|| app.database_stage.password.is_none() {
+            if app.database_stage.user.is_none() || app.database_stage.password.is_none() {
                 None
-            }  else if app.database_stage.host.is_none() {
+            } else if app.database_stage.host.is_none() {
                 Some("127.0.0.1".to_string())
             } else if app.database_stage.database.is_none() {
                 Some("nitro_repo".to_string())
@@ -248,17 +257,17 @@ fn get_next_default(app: &App) -> Option<String> {
         2 => {
             if app.other_stage.address.is_none() {
                 Some("0.0.0.0:6742".to_string())
-            } else if app.other_stage.log_location.is_none()||app.other_stage.storage_location.is_none() {
+            } else if app.other_stage.log_location.is_none()
+                || app.other_stage.storage_location.is_none()
+            {
                 Some("./".to_string())
-            }else if app.other_stage.max_upload.is_none() {
+            } else if app.other_stage.max_upload.is_none() {
                 Some("1024".to_string())
             } else {
                 None
             }
         }
-        _ => {
-            None
-        }
+        _ => None,
     }
 }
 
@@ -303,9 +312,7 @@ fn get_next_step(app: &App) -> String {
                 "Confirm".to_string()
             }
         }
-        _ => {
-            "".to_string()
-        }
+        _ => "".to_string(),
     }
 }
 
@@ -329,26 +336,87 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
 
-    create_line("Database Username", app.database_stage.user.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("Database Password", app.database_stage.password.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("Database Host", app.database_stage.host.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("Database Database", app.database_stage.database.as_ref().unwrap_or(&"".to_string()), &mut messages);
+    create_line(
+        "Database Username",
+        app.database_stage.user.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "Database Password",
+        app.database_stage
+            .password
+            .as_ref()
+            .unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "Database Host",
+        app.database_stage.host.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "Database Database",
+        app.database_stage
+            .database
+            .as_ref()
+            .unwrap_or(&"".to_string()),
+        &mut messages,
+    );
     let content = vec![Spans::from(Span::raw("______________User_______________"))];
     messages.push(ListItem::new(content));
-    create_line("User Name", app.user_stage.name.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("User Username", app.user_stage.username.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("User Email", app.user_stage.email.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("User Password", app.user_stage.password.as_ref().unwrap_or(&"".to_string()), &mut messages);
+    create_line(
+        "User Name",
+        app.user_stage.name.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "User Username",
+        app.user_stage.username.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "User Email",
+        app.user_stage.email.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "User Password",
+        app.user_stage.password.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
     let content = vec![Spans::from(Span::raw("______________Other_______________"))];
     messages.push(ListItem::new(content));
-    create_line("Bind Address", app.other_stage.address.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("Log Location", app.other_stage.log_location.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("Storage Location", app.other_stage.storage_location.as_ref().unwrap_or(&"".to_string()), &mut messages);
-    create_line("Max Upload", app.other_stage.max_upload.as_ref().unwrap_or(&"".to_string()), &mut messages);
+    create_line(
+        "Bind Address",
+        app.other_stage.address.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "Log Location",
+        app.other_stage
+            .log_location
+            .as_ref()
+            .unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "Storage Location",
+        app.other_stage
+            .storage_location
+            .as_ref()
+            .unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "Max Upload",
+        app.other_stage
+            .max_upload
+            .as_ref()
+            .unwrap_or(&"".to_string()),
+        &mut messages,
+    );
 
-
-    let messages =
-        List::new(messages).block(Block::default().borders(Borders::ALL).title("Data"));
+    let messages = List::new(messages).block(Block::default().borders(Borders::ALL).title("Data"));
     f.render_widget(messages, chunks[0]);
 
     let string = get_next_step(app);
@@ -362,7 +430,10 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     } else {
         vec![
             Span::raw("Please Enter "),
-            Span::styled(format!("{}[{}]", string, get_next_default(app).unwrap_or_default()), Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                format!("{}[{}]", string, get_next_default(app).unwrap_or_default()),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::styled(". Enter", Style::default().add_modifier(Modifier::BOLD)),
             Span::raw(format!(" to record the data. {}", app.stage)),
         ]
@@ -408,11 +479,7 @@ pub fn load_installer() -> anyhow::Result<()> {
     let connection = app.connection.as_ref().unwrap();
 
     quick_add("installed", "true".to_string(), connection).unwrap();
-    quick_add(
-        "version",
-        env!("CARGO_PKG_VERSION").to_string(),
-        connection,
-    ).unwrap();
+    quick_add("version", env!("CARGO_PKG_VERSION").to_string(), connection).unwrap();
     info!("Installation Complete");
     println!("Installation Complete!");
     Ok(())
@@ -424,7 +491,8 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
-    ).unwrap();
+    )
+        .unwrap();
     terminal.show_cursor().unwrap();
 }
 
@@ -435,12 +503,30 @@ fn save_env(app: &App) -> anyhow::Result<()> {
         .create(true)
         .open(".env")?;
     let my_db = app.database_stage.clone();
-    writeln!(&mut file, "DATABASE_URL=mysql://{}:\"{}\"@{}/{}", my_db.user.unwrap(), my_db.password.unwrap(), my_db.host.unwrap(), my_db.database.unwrap())?;
-    writeln!(&mut file, "STORAGE_LOCATION={}", &app.other_stage.storage_location.as_ref().unwrap())?;
-    writeln!(&mut file, "LOGG_LOCATION={}", &app.other_stage.log_location.as_ref().unwrap())?;
-    writeln!(&mut file, "ADDRESS={}", &app.other_stage.address.as_ref().unwrap())?;
+    writeln!(
+        &mut file,
+        "DATABASE_URL=mysql://{}:\"{}\"@{}/{}",
+        my_db.user.unwrap(),
+        my_db.password.unwrap(),
+        my_db.host.unwrap(),
+        my_db.database.unwrap()
+    )?;
+    writeln!(
+        &mut file,
+        "STORAGE_LOCATION={}",
+        &app.other_stage.storage_location.as_ref().unwrap()
+    )?;
+    writeln!(
+        &mut file,
+        "LOGG_LOCATION={}",
+        &app.other_stage.log_location.as_ref().unwrap()
+    )?;
+    writeln!(
+        &mut file,
+        "ADDRESS={}",
+        &app.other_stage.address.as_ref().unwrap()
+    )?;
     writeln!(&mut file, "MODE=RELEASE")?;
-
 
     Ok(())
 }

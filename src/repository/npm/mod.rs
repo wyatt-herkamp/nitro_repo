@@ -26,7 +26,9 @@ use crate::repository::types::RepoResponse::{
 use crate::repository::types::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
-use crate::repository::utils::{build_artifact_directory, build_directory, get_latest_version, get_project_data, get_versions};
+use crate::repository::utils::{
+    build_artifact_directory, build_directory, get_latest_version, get_project_data, get_versions,
+};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -328,14 +330,13 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotFound);
         }
         let project_data = get_project_data(&buf)?;
-        if project_data.is_none(){
+        if project_data.is_none() {
             return RepoResult::Ok(NotFound);
-
         }
         let project = Project {
             repo_summary: RepositorySummary::new(&request.repository, conn)?,
             frontend_response: None,
-            project: project_data.unwrap()
+            project: project_data.unwrap(),
         };
         Ok(ProjectResponse(project))
     }
@@ -358,6 +359,6 @@ impl RepositoryType for NPMHandler {
             return Ok("".to_string());
         }
         let vec = get_latest_version(&buf, false);
-        Ok(vec.unwrap_or_else(||"".to_string()))
+        Ok(vec.unwrap_or_else(|| "".to_string()))
     }
 }

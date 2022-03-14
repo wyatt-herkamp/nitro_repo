@@ -263,7 +263,6 @@ impl RepositoryType for MavenHandler {
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
-
     fn handle_version(
         request: &RepositoryRequest,
         version: String,
