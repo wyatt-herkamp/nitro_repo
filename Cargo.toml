@@ -54,6 +54,7 @@ futures-util = "0.3.17"
 time = "0.3.5"
 base64 = "0.13.0"
 tokio = "1.14.0"
+
 # Log
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
@@ -63,6 +64,7 @@ strum_macros = "0.24.0"
 derive_more = "0.99.14"
 async-trait = "0.1.51"
 thiserror = "1.0.30"
+anyhow = "1.0.56"
 # Badge Stuff
 badge-maker = "0.2.0"
 usvg = "0.22.0"
@@ -71,7 +73,11 @@ tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"
 zip = "0.5.13"
-
+# Installer
+tui = "0.17"
+crossterm = "0.22"
+clap = { version = "3.1.6", features = ["derive"] }
+unicode-width = "0.1.9"
 [build-dependencies]
 zip = "0.5.13"
 walkdir = "2.3.2"

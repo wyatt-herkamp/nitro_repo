@@ -6,7 +6,7 @@ use crate::error::response::{not_found, unauthorized};
 use crate::repository::action::get_repo_by_name_and_storage;
 use crate::repository::models::{Policy, Repository, Visibility};
 use crate::system::utils::can_read_basic_auth;
-use crate::DbPool;
+use crate::database::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {

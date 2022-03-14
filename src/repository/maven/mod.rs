@@ -20,7 +20,7 @@ use crate::repository::types::RepoResponse::{
 };
 use crate::repository::types::RepositoryRequest;
 use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryType};
-use crate::repository::utils::{get_latest_version, get_project_data, get_versions};
+use crate::repository::utils::{get_project_data, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 

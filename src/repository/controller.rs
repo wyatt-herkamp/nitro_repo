@@ -19,7 +19,7 @@ use crate::repository::npm::NPMHandler;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
-use crate::DbPool;
+use crate::database::DbPool;
 
 //
 

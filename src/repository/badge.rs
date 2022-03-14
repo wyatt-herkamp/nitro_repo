@@ -9,7 +9,7 @@ use tiny_skia::Transform;
 use usvg::Options;
 
 use crate::api_response::SiteResponse;
-use crate::DbPool;
+use crate::database::DbPool;
 
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;

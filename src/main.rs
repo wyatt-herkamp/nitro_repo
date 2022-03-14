@@ -6,11 +6,11 @@ extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 
+use std::path::Path;
 use actix_cors::Cors;
 use actix_web::web::PayloadConfig;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
-use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
+use diesel::r2d2::{ ConnectionManager};
 use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
@@ -18,6 +18,8 @@ use std::str::FromStr;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
+
+pub mod database;
 
 pub mod api_response;
 pub mod error;
@@ -32,15 +34,19 @@ pub mod system;
 pub mod utils;
 pub mod webhook;
 
-type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
-type Database = web::Data<DbPool>;
-embed_migrations!();
-fn load_logger(logger: &str){
+use clap::Parser;
+use crate::database::Database;
+use crate::install::load_installer;
 
-    let file = match std::env::var("MODE")
-        .expect("Mode Must be RELEASE OR DEBUG")
-        .as_str()
-    {
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
+    #[clap(short, long)]
+    install: bool,
+}
+
+fn load_logger(logger: &str) {
+    let file = match logger {
         "DEBUG" => "log-debug.json",
         "RELEASE" => "log-release.json",
         "INSTALL" => "log-install.json",
@@ -51,25 +57,31 @@ fn load_logger(logger: &str){
     let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
     NitroLogger::load(config, None).unwrap();
 }
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    if !Path::new(".env").exists() {
+        let parse: Cli = Cli::parse();
+        if parse.install {
+            load_logger("INSTALL");
+            load_installer().expect("Unable to successfully install application");
+            return Ok(());
+        } else {
+            println!("Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag");
+            std::process::exit(1);
+        }
+    }
     if let Err(error) = dotenv::dotenv() {
         println!("Unable to load dotenv {}", error);
         return Ok(());
     }
     let logger = std::env::var("MODE")
         .expect("Mode Must be RELEASE OR DEBUG");
-
+    load_logger(&logger);
 
     info!("Initializing Database");
-    let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
-    let manager = ConnectionManager::<MysqlConnection>::new(connspec);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
-    let connection = pool.get().unwrap();
-    embedded_migrations::run_with_output(&connection, &mut std::io::stdout()).unwrap();
-
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
+    let pool = database::init(&db_url).expect("Unable to Load Database");
     info!("Initializing Web Server");
     let max_upload = std::env::var("MAX_UPLOAD").unwrap_or_else(|_| "1024".to_string());
     let max_upload = i64::from_str(&max_upload).unwrap();
@@ -97,7 +109,7 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
         // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

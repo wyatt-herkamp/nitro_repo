@@ -10,7 +10,7 @@ use crate::system::action::{
 use crate::system::models::{User, UserListResponse, UserPermissions};
 use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser};
 use crate::utils::get_current_time;
-use crate::DbPool;
+use crate::database::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
