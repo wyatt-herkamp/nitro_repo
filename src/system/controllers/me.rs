@@ -4,7 +4,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::unauthorized;
 use crate::system::action::update_user_password;
 use crate::system::utils::{get_user_by_header, hash, NewPassword};
-use crate::DbPool;
+use crate::database::DbPool;
 
 #[get("/api/me")]
 pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {

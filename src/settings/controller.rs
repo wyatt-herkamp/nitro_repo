@@ -11,7 +11,8 @@ use crate::settings::models::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::{settings, DbPool};
+use crate::{settings};
+use crate::database::DbPool;
 
 pub fn get_setting_or_empty(
     string: &str,

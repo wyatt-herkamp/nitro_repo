@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::settings::controller::get_setting_or_empty;
-use crate::{APIResponse, Database, SiteResponse};
-
+use crate::{APIResponse, SiteResponse};
+use crate::database::Database;
 #[derive(Serialize, Deserialize)]
 pub struct SiteInfo {
     pub name: String,

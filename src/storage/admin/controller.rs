@@ -11,7 +11,7 @@ use crate::storage::action::{
 use crate::storage::models::Storage;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::DbPool;
+use crate::database::DbPool;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
