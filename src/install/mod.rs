@@ -1,12 +1,9 @@
-use actix_web::{web, HttpServer};
-use std::{io, thread, time::Duration};
+use std::{io};
 
-use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::error::response::mismatching_passwords;
-use crate::{installed};
-use crate::database::{DbPool, init, init_single_connection};
-use actix_web::{post, HttpRequest};
+
+
+use crate::database::{init_single_connection};
 
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
@@ -22,12 +19,10 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use std::{error::Error};
 use std::fmt::{Display, Formatter};
-use std::fs::{File, OpenOptions};
+use std::fs::{OpenOptions};
 use std::io::{Stdout, Write};
 use diesel::MysqlConnection;
-use diesel::types::IsNull::No;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -238,13 +233,11 @@ fn run_app(mut terminal: Terminal<CrosstermBackend<Stdout>>, mut app: App) -> io
 }
 
 fn get_next_default(app: &App) -> Option<String> {
-    return match app.stage {
+    match app.stage {
         0 => {
-            if app.database_stage.user.is_none() {
+            if app.database_stage.user.is_none()|| app.database_stage.password.is_none() {
                 None
-            } else if app.database_stage.password.is_none() {
-                None
-            } else if app.database_stage.host.is_none() {
+            }  else if app.database_stage.host.is_none() {
                 Some("127.0.0.1".to_string())
             } else if app.database_stage.database.is_none() {
                 Some("nitro_repo".to_string())
@@ -255,11 +248,9 @@ fn get_next_default(app: &App) -> Option<String> {
         2 => {
             if app.other_stage.address.is_none() {
                 Some("0.0.0.0:6742".to_string())
-            } else if app.other_stage.log_location.is_none() {
+            } else if app.other_stage.log_location.is_none()||app.other_stage.storage_location.is_none() {
                 Some("./".to_string())
-            } else if app.other_stage.storage_location.is_none() {
-                Some("./".to_string())
-            } else if app.other_stage.max_upload.is_none() {
+            }else if app.other_stage.max_upload.is_none() {
                 Some("1024".to_string())
             } else {
                 None
@@ -268,7 +259,7 @@ fn get_next_default(app: &App) -> Option<String> {
         _ => {
             None
         }
-    };
+    }
 }
 
 fn get_next_step(app: &App) -> String {
@@ -318,7 +309,7 @@ fn get_next_step(app: &App) -> String {
     }
 }
 
-fn create_line(key: &str, value: &String, messages: &mut Vec<ListItem>) {
+fn create_line(key: &str, value: &str, messages: &mut Vec<ListItem>) {
     let content = vec![Spans::from(Span::raw(format!("{key}: {value}")))];
     messages.push(ListItem::new(content))
 }
@@ -398,7 +389,7 @@ pub fn load_installer() -> anyhow::Result<()> {
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let terminal = Terminal::new(backend)?;
 
     // create app and run it
     let app = App::default();
@@ -447,7 +438,7 @@ fn save_env(app: &App) -> anyhow::Result<()> {
     writeln!(&mut file, "DATABASE_URL=mysql://{}:\"{}\"@{}/{}", my_db.user.unwrap(), my_db.password.unwrap(), my_db.host.unwrap(), my_db.database.unwrap())?;
     writeln!(&mut file, "STORAGE_LOCATION={}", &app.other_stage.storage_location.as_ref().unwrap())?;
     writeln!(&mut file, "LOGG_LOCATION={}", &app.other_stage.log_location.as_ref().unwrap())?;
-    writeln!(&mut file, "ADDRESS={}", &app.other_stage.address.as_ref().unwrap())?;I
+    writeln!(&mut file, "ADDRESS={}", &app.other_stage.address.as_ref().unwrap())?;
     writeln!(&mut file, "MODE=RELEASE")?;
 
 

@@ -10,7 +10,7 @@ use std::path::Path;
 use actix_cors::Cors;
 use actix_web::web::PayloadConfig;
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
-use diesel::r2d2::{ ConnectionManager};
+
 use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
