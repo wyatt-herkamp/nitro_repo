@@ -4,7 +4,7 @@
       <div class="grid grid-cols-2">
         <div>
           <h1 class="text-left text-white mt-5 ml-5 font-bold">
-            Repository Badge
+            Project Badge
           </h1>
         </div>
         <div >
@@ -13,10 +13,10 @@
             :src="
               url +
               '/badge/' +
-              repository.storage +
+              project.repo_summary.storage +
               '/' +
-              repository.name +
-              '/nitro_repo_info/badge.png'
+              project.repo_summary.name +
+              '/'+projectPath+'/badge.png'
             "
           />
         </div>
@@ -45,11 +45,11 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import { Repository } from "@/backend/Response";
+import { Project, Repository } from "@/backend/Response";
 import { apiURL } from "@/http-common";
 import { PublicRepositoryInfo } from "@/backend/api/Repository";
 import CodeViewComp from "@/components/CodeViewComp.vue";;
-import {createBadgeSnippets} from "@/api/repository/BadgeGen";
+import {createProjectSnippet} from "@/api/repository/BadgeGen";
 
 export default defineComponent({
   components: { CodeViewComp },
@@ -58,22 +58,22 @@ export default defineComponent({
       default: false,
       type: Boolean,
     },
-    repository: {
+    project: {
       required: true,
-      type: Object as () => Repository | PublicRepositoryInfo,
+      type: Object as () =>Project,
     },
   },
   setup(props) {
     const url = apiURL;
-    const repoURL =
-      url + "/" + props.repository.storage + "/" + props.repository.name;
-    const snippets = createBadgeSnippets(
-      props.repository.storage,
-      props.repository.name
+    const projectPath = props.project.project.name.replace(":","/").replace(".","/");
+    const snippets = createProjectSnippet(
+      props.project.repo_summary.storage,
+      props.project.repo_summary.name,projectPath
+      
     );
     let page = ref(snippets[0].name);
     console.log(props.child);
-    return { url, page, snippets };
+    return { url, page, snippets,projectPath };
   },
 
   methods: {

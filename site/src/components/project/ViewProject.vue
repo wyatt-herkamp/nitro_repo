@@ -1,7 +1,15 @@
 <template>
   <div v-if="project != undefined">
     <div :class="child ? 'my-3' : 'flex flex-wrap'">
-      <MavenProjectInfo1
+      <MavenProjectInfo
+        :class="child ? '' : 'm-3 flex flex-col'"
+        v-if="project.repo_summary.repo_type == 'maven'"
+        :project="project"
+        :child="child"
+      />
+    </div>
+    <div :class="child ? 'my-3' : 'flex flex-wrap'">
+      <ProjectBadge
         :class="child ? '' : 'm-3 flex flex-col'"
         v-if="project.repo_summary.repo_type == 'maven'"
         :project="project"
@@ -17,10 +25,10 @@ import MavenProjectInfo from "@/components/project/types/maven/MavenProjectInfo.
 import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
-import MavenProjectInfo1 from "@/components/project/types/maven/MavenProjectInfo.vue";
+import ProjectBadge from "./badge/ProjectBadge.vue";
 
 export default defineComponent({
-  components: { MavenProjectInfo, MavenProjectInfo1 },
+  components: { MavenProjectInfo, ProjectBadge },
   props: {
     project: {
       required: true,

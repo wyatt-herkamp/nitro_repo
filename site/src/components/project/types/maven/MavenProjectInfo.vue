@@ -1,4 +1,6 @@
-<template><MavenProjectCopy :child="child" :project="project" /></template>
+<template>
+  <MavenProjectCopy :child="child" :project="project" />
+</template>
 <style scoped></style>
 <script lang="ts">
 import { Project } from "@/backend/Response";

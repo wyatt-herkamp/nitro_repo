@@ -307,7 +307,6 @@ impl RepositoryType for MavenHandler {
         if !buf.exists() {
             return RepoResult::Ok(NotFound);
         }
-        let vec = get_versions(&buf);
         let project_data = get_project_data(&buf)?;
         if project_data.is_none() {
             return RepoResult::Ok(NotFound);
@@ -329,16 +328,18 @@ impl RepositoryType for MavenHandler {
             return Ok("".to_string());
         }
         let string = parse_project_to_directory(&request.value);
-
         let buf = get_storage_location()
             .join("storages")
             .join(&request.storage.name)
             .join(&request.repository.name)
-            .join(string);
+            .join(&string);
         if !buf.exists() {
             return Ok("".to_string());
         }
-        let vec = get_latest_version(&buf, false);
-        Ok(vec.unwrap_or("".to_string()))
+        let project_data = get_project_data(&buf)?;
+        if project_data.is_none() {
+            return Ok("".to_string());
+        }
+        Ok(project_data.unwrap().versions.latest_release)
     }
 }

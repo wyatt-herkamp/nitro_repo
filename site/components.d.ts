@@ -21,6 +21,7 @@ declare module 'vue' {
     Me: typeof import('./src/components/Me.vue')['default']
     MenuButton: typeof import('./src/components/nav/MenuButton.vue')['default']
     Navbar: typeof import('./src/components/nav/Navbar.vue')['default']
+    ProjectBadge: typeof import('./src/components/project/badge/ProjectBadge.vue')['default']
     Repositories: typeof import('./src/components/Repositories.vue')['default']
     RepositoryBadge: typeof import('./src/components/repo/badge/RepositoryBadge.vue')['default']
     Settings: typeof import('./src/components/Settings.vue')['default']
