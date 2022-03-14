@@ -5,7 +5,7 @@
       classes="flex justify-center items-center"
     >
       <div
-        class="relative border bg-slate-900 border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
+        class="relative border bg-slate-800 border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
       >
         <p class="font-bold text-xl pb-4">Create Repository</p>
         <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
@@ -69,7 +69,7 @@
             </div>
           </div>
           <button
-            class="bg-slate-100 dark:bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
+            class="bg-slate-900 py-2 my-3 rounded-md cursor-pointer text-white"
           >
             Create Repository
           </button>

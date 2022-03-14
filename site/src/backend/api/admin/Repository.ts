@@ -35,13 +35,14 @@ export async function createNewRepository(
       },
       (err) => {
         if (err.response) {
-          if ((err.response.status = 401)) {
+          if ((err.response.status == 401)) {
             return Err(NOT_AUTHORIZED);
-          } else if ((err.response.status = 409)) {
+          } else if ((err.response.status == 409)) {
+            console.log("HEY");
             return Err(
               createAPIError(409, "A Repository by that name already exists")
             );
-          } else if ((err.response.status = 404)) {
+          } else if ((err.response.status == 404)) {
             return Err(
               createAPIError(404, "Unable to find a Storage by that name")
             );

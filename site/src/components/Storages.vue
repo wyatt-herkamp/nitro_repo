@@ -90,7 +90,7 @@
             <ul v-if="storages != undefined">
               <li v-for="storage in storages.storages" :key="storage.id">
                 <router-link
-                  :to="'/admin/storage/' + storage.name"
+                  :to="'/admin/storage/' + storage.id"
                   class="
                     cursor-pointer
                     py-2

@@ -38,9 +38,9 @@ export async function createNewUser(
       },
       (err) => {
         if (err.response) {
-          if ((err.response.status = 401)) {
+          if ((err.response.status == 401)) {
             return Err(NOT_AUTHORIZED);
-          } else if ((err.response.status = 409)) {
+          } else if ((err.response.status == 409)) {
             return Err(
               createAPIError(
                 409,

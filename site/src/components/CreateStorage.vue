@@ -75,14 +75,7 @@
             />
           </div>
           <button
-            class="
-             bg-slate-800
-              py-2
-              my-3
-              rounded-md
-              cursor-pointer
-              text-white
-            "
+            class="bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
           >
             Create Storage
           </button>
@@ -129,6 +122,7 @@ export default defineComponent({
           title: "Storage Created",
           type: "success",
         });
+        this.$router.push("/admin/storage/" + data.id);
       } else {
         this.$notify({
           title: "Unable to Create Storage",

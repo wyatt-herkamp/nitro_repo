@@ -3,6 +3,8 @@ import Home from "../views/Home.vue";
 import Install from "../views/Install.vue";
 import Admin from "../views/admin/Admin.vue";
 import ViewRepository from "../views/admin/ViewRepository.vue";
+import ViewStorage from "../views/admin/ViewStorage.vue";
+import ViewUser from "../views/admin/ViewUser.vue";
 import Browse from "../views/Browse.vue";
 import Upload from "../views/Upload.vue";
 import Project from "../views/Project.vue";
@@ -34,6 +36,16 @@ const routes: Array<RouteRecordRaw> = [
     path: "/admin/repository/:repo",
     name: "AdminRepoView",
     component: ViewRepository,
+  },
+  {
+    path: "/admin/storage/:storage",
+    name: "AdminStorageView",
+    component: ViewStorage,
+  },
+  {
+    path: "/admin/user/:user",
+    name: "AdminUserView",
+    component: ViewUser,
   },
   {
     path: "/upload/:storage/:repo",

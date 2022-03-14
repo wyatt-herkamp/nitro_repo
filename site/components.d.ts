@@ -30,6 +30,7 @@ declare module 'vue' {
     UpdateRepo: typeof import('./src/components/repo/UpdateRepo.vue')['default']
     UpdateStorage: typeof import('./src/components/UpdateStorage.vue')['default']
     UpdateUser: typeof import('./src/components/UpdateUser.vue')['default']
+    UserEditMenu: typeof import('./src/components/user/edit/UserEditMenu.vue')['default']
     Users: typeof import('./src/components/Users.vue')['default']
     ViewProject: typeof import('./src/components/project/ViewProject.vue')['default']
     ViewRepo: typeof import('./src/components/repo/ViewRepo.vue')['default']
