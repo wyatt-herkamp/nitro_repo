@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import Home from "../views/Home.vue";
-import Install from "../views/Install.vue";
 import Admin from "../views/admin/Admin.vue";
 import ViewRepository from "../views/admin/ViewRepository.vue";
 import ViewStorage from "../views/admin/ViewStorage.vue";
@@ -22,11 +21,7 @@ const routes: Array<RouteRecordRaw> = [
     name: "Me",
     component: Me,
   },
-  {
-    path: "/install",
-    name: "Install",
-    component: Install,
-  },
+
   {
     path: "/admin/:page?",
     name: "Admin",

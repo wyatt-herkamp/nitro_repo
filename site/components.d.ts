@@ -5,7 +5,6 @@
 declare module 'vue' {
   export interface GlobalComponents {
     CodeViewComp: typeof import('./src/components/CodeViewComp.vue')['default']
-    CopyItem: typeof import('./src/components/repo/types/maven/copy/CopyItem.vue')['default']
     CopyMenu: typeof import('./src/components/repo/types/maven/copy/CopyMenu.vue')['default']
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
     CreateStorage: typeof import('./src/components/CreateStorage.vue')['default']
@@ -38,7 +37,6 @@ declare module 'vue' {
     UserEditMenu: typeof import('./src/components/user/edit/UserEditMenu.vue')['default']
     UserGeneral: typeof import('./src/components/user/update/UserGeneral.vue')['default']
     UserPassword: typeof import('./src/components/user/update/UserPassword.vue')['default']
-    UserPermissions: typeof import('./src/components/user/update/UserPermissions.vue')['default']
     Users: typeof import('./src/components/Users.vue')['default']
     ViewProject: typeof import('./src/components/project/ViewProject.vue')['default']
     ViewRepo: typeof import('./src/components/repo/ViewRepo.vue')['default']

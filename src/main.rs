@@ -7,7 +7,7 @@ extern crate strum;
 extern crate strum_macros;
 
 use actix_cors::Cors;
-use actix_web::web::PayloadConfig;
+use actix_web::web::{PayloadConfig, ServiceConfig};
 use actix_web::{middleware, web, App, HttpRequest, HttpServer};
 use std::path::Path;
 
@@ -135,6 +135,7 @@ async fn main() -> std::io::Result<()> {
 
     return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
 }
+
 
 #[actix_web::get("/api/installed")]
 pub async fn installed(pool: Database, r: HttpRequest) -> SiteResponse {
