@@ -12,7 +12,7 @@
     "@kyvg/vue3-notification": "^2.3.4",
     "axios": "^0.26.0",
     "core-js": "^3.21.1",
-    "element-plus": "2.0.5",
+    "element-plus": "2.1.2",
     "equal-vue": "^0.79.3",
     "ts-results": "^3.3.0",
     "vue": "^3.2.31",
