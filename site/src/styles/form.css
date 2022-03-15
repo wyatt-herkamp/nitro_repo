@@ -1,11 +1,14 @@
 .settingContent {
   @apply max-w-lg;
   @apply mx-auto;
+  @apply my-0;
 }
 
 .settingBox {
   @apply md:w-1/2;
   @apply px-3;
+  @apply my-0;
+
 }
 
 .nitroLabel {
@@ -59,13 +62,11 @@
 }
 .settingHeader{
   @apply text-slate-100;
-  @apply shadow-sm;
-  @apply shadow-slate-400;
-  @apply  m-4;
+  @apply  mx-auto;
+  @apply  my-4;
   @apply py-2;
   @apply  text-left;
   @apply font-bold;
-  
 }
 .settingSection{
   @apply flex;

@@ -35,24 +35,21 @@
         Password
       </div>
     </a>
-    <a @click="changeViewValue('Permissions')">
-      <div
-        class="
-          mx-2
-          py-1.5
-          rounded-lg
-          bg-slate-700
-          font-bold
-          px-6
-          m-1
-          text-white
-          cursor-pointer
-        "
-      >
-        Permissions
-      </div>
-    </a>
-
+    <div
+      class="
+        mx-2
+        py-1.5
+        rounded-lg
+        bg-slate-700
+        font-bold
+        px-6
+        m-1
+        text-white
+        cursor-pointer
+      "
+    >
+      {{ user }}
+    </div>
   </nav>
 </template>
 
@@ -62,6 +59,12 @@ import { defineComponent, ref } from "vue";
 import { apiURL } from "@/http-common";
 
 export default defineComponent({
+  props: {
+    user: {
+      type: String,
+      required: true,
+    },
+  },
   setup() {
     const url = apiURL;
     return { url };
