@@ -1,11 +1,11 @@
 <template>
   <div>
     <vue-final-modal
-        v-model="showModel"
-        classes="flex justify-center items-center"
+      v-model="showModel"
+      classes="flex justify-center items-center"
     >
       <div
-          class="
+        class="
           relative
           border
           bg-slate-900
@@ -18,73 +18,63 @@
           text-center
         "
       >
-        <p class="font-bold text-xl pb-4">Create Storage</p>
-        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-          <div class="mb-4">
-            <label
-                class="block text-slate-50 text-sm font-bold mb-2"
-                for="name"
-            >
-              Storage ID/Name
-            </label>
-            <input
-                id="name"
+        <p class="font-bold text-xl pb-4">Create User</p>
+        <form class="flex flex-col w-96 sm:w-65" @submit.prevent="onSubmit()">
+          <div class="flex flex-row">
+            <div class="settingBox">
+              <label for="grid-name"> Name </label>
+              <input
+                class="text-input"
+                id="grid-name"
+                type="text"
                 v-model="form.name"
-                autocomplete="off"
-                class="
-                shadow
-                appearance-none
-                border
-                rounded
-                w-full
-                py-2
-                px-3
-                text-gray-700
-                leading-tight
-                focus:outline-none focus:shadow-outline
-              "
-                placeholder="Storage ID/Name"
+              />
+            </div>
+            <div class="settingBox">
+              <label for="grid-name"> Username </label>
+              <input
+                class="text-input"
+                id="grid-name"
                 type="text"
-            />
+                v-model="form.username"
+              />
+            </div>
           </div>
-          <div class="mb-4">
-            <label
-                class="block text-slate-50 text-sm font-bold mb-2"
-                for="name"
-            >
-              Storage Public Name
-            </label>
-            <input
-                id="name"
-                v-model="form.public_name"
-                autocomplete="off"
-                class="
-                shadow
-                appearance-none
-                border
-                rounded
-                w-full
-                py-2
-                px-3
-                text-gray-700
-                leading-tight
-                focus:outline-none focus:shadow-outline
-              "
-                placeholder="Public Name"
-                type="text"
-            />
+          <div class="flex flex-row flex-grow my-2">
+            <div class="settingBox">
+              <label for="grid-name"> Email </label>
+              <input
+                class="email"
+                id="grid-name"
+                type="email"
+                v-model="form.email"
+              />
+            </div>
+          </div>
+          <div class="flex flex-row my-2">
+            <div class="settingBox">
+              <label for="grid-name"> Password </label>
+              <input
+                class="text-input"
+                id="grid-name"
+                type="password"
+                v-model="form.password.password"
+              />
+            </div>
+            <div class="settingBox">
+              <label for="grid-name"> Confirm Password </label>
+              <input
+                class="text-input"
+                id="grid-name"
+                type="password"
+                v-model="form.password.password_two"
+              />
+            </div>
           </div>
           <button
-              class="
-              bg-slate-800
-              py-2
-              my-3
-              rounded-md
-              cursor-pointer
-              text-white
-            "
+            class="bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
           >
-            Create Storage
+            Create User
           </button>
         </form>
 
@@ -99,9 +89,9 @@
   </div>
 </template>
 <script lang="ts">
-import {User} from "@/backend/Response";
-import {createNewUser} from "@/backend/api/admin/User";
-import {defineComponent, ref} from "vue";
+import { User } from "@/backend/Response";
+import { createNewUser } from "@/backend/api/admin/User";
+import { defineComponent, ref } from "vue";
 
 export default defineComponent({
   setup() {
@@ -119,7 +109,7 @@ export default defineComponent({
       },
       permissions: { deployer: false, admin: false },
     });
-    return {form, showModel, close};
+    return { form, showModel, close };
   },
   methods: {
     async onSubmit() {
@@ -142,6 +132,7 @@ export default defineComponent({
           title: "User Created",
           type: "success",
         });
+        this.$router.push("/admin/user/" + data.id);
       } else {
         this.$notify({
           title: "Unable to Create user",
@@ -153,4 +144,64 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped></style>
+<style scoped>
+label {
+  @apply block;
+  @apply uppercase;
+  @apply tracking-wide;
+  @apply text-white;
+  @apply text-xs;
+  @apply font-bold;
+  @apply text-left;
+  @apply my-3;
+}
+.settingBox {
+  @apply md:w-1/2;
+  @apply px-3;
+}
+.disabled {
+  @apply appearance-none;
+  @apply block;
+  @apply w-full;
+  @apply bg-gray-300;
+  @apply text-gray-700;
+  @apply border;
+  @apply border-gray-800;
+  @apply rounded;
+  @apply py-3;
+  @apply px-4;
+  @apply leading-tight;
+}
+.text-input {
+  @apply appearance-none;
+  @apply block;
+  @apply w-full;
+  @apply bg-gray-200;
+  @apply text-gray-700;
+  @apply border;
+  @apply border-gray-200;
+  @apply rounded;
+  @apply py-3;
+  @apply px-4;
+  @apply leading-tight;
+  @apply focus:outline-none;
+  @apply focus:bg-white;
+  @apply focus:border-gray-500;
+}
+.email {
+  @apply appearance-none;
+  @apply block;
+  @apply bg-gray-200;
+  @apply text-gray-700;
+  @apply border;
+  @apply w-80;
+  @apply border-gray-200;
+  @apply rounded;
+  @apply py-3;
+  @apply px-4;
+  @apply leading-tight;
+  @apply focus:outline-none;
+  @apply focus:bg-white;
+  @apply focus:border-gray-500;
+}
+</style>

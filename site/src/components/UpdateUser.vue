@@ -7,7 +7,7 @@
       <UserEditMenu @changeView="view = $event" />
       <div class="flex flex-col float-right w-auto">
         <div class="settingContent" v-if="view == 'General'">
-          <h2 class="text-white m-3 text-left">User</h2>
+          <h2 class="text-white m-3 text-left">User: {{user.username}}</h2>
 
           <div class="flex flex-wrap mb-6 justify-center">
             <div class="settingBox">
@@ -20,13 +20,14 @@
                 disabled
               />
             </div>
+
             <div class="settingBox">
-              <label for="grid-name"> Username </label>
+              <label for="grid-name"> Email </label>
               <input
                 class="disabled"
                 id="grid-name"
                 type="text"
-                v-model="user.username"
+                v-model="user.email"
                 disabled
               />
             </div>
