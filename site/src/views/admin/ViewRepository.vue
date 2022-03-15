@@ -9,7 +9,7 @@
 import {defineComponent} from "vue";
 
 import SideBar from "@/components/SideBar.vue";
-import UpdateRepo from "@/components/repo/UpdateRepo.vue";
+import UpdateRepo from "@/components/repo/update/UpdateRepo.vue";
 
 export default defineComponent({
   components: { SideBar, UpdateRepo },
