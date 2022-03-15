@@ -44,10 +44,19 @@ impl RepositoryType for MavenHandler {
             .join(&request.storage.name)
             .join(&request.repository.name)
             .join(&request.value);
-        let path = format!(
-            "{}/{}/{}",
-            &request.storage.name, &request.repository.name, &request.value
+        let mut path = format!(
+            "{}/{}",
+            &request.storage.name, &request.repository.name
         );
+
+
+        for x in request.value.split('/') {
+            if !x.is_empty(){
+                path = format!("{}/{}",path, x);
+
+            }
+        }
+        println!("path {path}");
 
         if buf.exists() {
             if buf.is_dir() {
