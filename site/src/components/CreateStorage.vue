@@ -1,48 +1,113 @@
 <template>
-  <el-container direction="horizontal" style="border: 1px solid #eee">
-    <el-main>
-      <el-alert
-        v-if="form.error.length != 0"
-        :title="form.error"
-        type="error"
-      />
-      <el-form label-position="top" :model="form" label-width="120px">
-        <el-form-item label="Name">
-          <el-input v-model="form.name"></el-input>
-        </el-form-item>
-        <el-form-item label="Public Name">
-          <el-input v-model="form.public_name"></el-input>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit"
-            >Create New Storage</el-button
+  <div>
+    <vue-final-modal
+      v-model="showModel"
+      classes="flex justify-center items-center"
+    >
+      <div
+        class="
+          relative
+          border
+          bg-slate-900
+          border-black
+          m-w-20
+          py-5
+          px-10
+          rounded-2xl
+          shadow-xl
+          text-center
+        "
+      >
+        <p class="font-bold text-xl pb-4">Create Storage</p>
+        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
+          <div class="mb-4">
+            <label
+              class="block text-slate-50 text-sm font-bold mb-2"
+              for="name"
+            >
+              Storage ID/Name
+            </label>
+            <input
+              id="name"
+              v-model="form.name"
+              autocomplete="off"
+              class="
+                shadow
+                appearance-none
+                border
+                rounded
+                w-full
+                py-2
+                px-3
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:shadow-outline
+              "
+              placeholder="Storage ID/Name"
+              type="text"
+            />
+          </div>
+          <div class="mb-4">
+            <label
+              class="block text-slate-50 text-sm font-bold mb-2"
+              for="name"
+            >
+              Storage Public Name
+            </label>
+            <input
+              id="name"
+              v-model="form.public_name"
+              autocomplete="off"
+              class="
+                shadow
+                appearance-none
+                border
+                rounded
+                w-full
+                py-2
+                px-3
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:shadow-outline
+              "
+              placeholder="Public Name"
+              type="text"
+            />
+          </div>
+          <button
+            class="bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
           >
-        </el-form-item>
-      </el-form>
-    </el-main>
-  </el-container>
+            Create Storage
+          </button>
+        </form>
+
+        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
+          🗙
+        </button>
+      </div>
+    </vue-final-modal>
+    <div @click="showModel = true">
+      <slot name="button"></slot>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
-import {Storage} from "@/backend/Response";
-import {defineComponent, ref} from "vue";
-import {createNewStorage} from "@/backend/api/admin/Storage";
+import { Storage } from "@/backend/Response";
+import { defineComponent, ref } from "vue";
+import { createNewStorage } from "@/backend/api/admin/Storage";
 
 export default defineComponent({
-  props: {
-    updateList: {
-      required: true,
-      type: Function,
-    },
-  },
   setup() {
+    const showModel = ref(false);
+    const close = () => (showModel.value = false);
+
     let form = ref({
       name: "",
       public_name: "",
       error: "",
     });
-    return { form };
+    return { form, showModel, close };
   },
   methods: {
     async onSubmit() {
@@ -53,11 +118,11 @@ export default defineComponent({
       );
       if (response.ok) {
         let data = response.val as Storage;
-        this.$props.updateList(data.id);
         this.$notify({
           title: "Storage Created",
           type: "success",
         });
+        this.$router.push("/admin/storage/" + data.id);
       } else {
         this.$notify({
           title: "Unable to Create Storage",

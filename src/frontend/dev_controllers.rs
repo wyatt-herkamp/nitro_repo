@@ -10,16 +10,22 @@ use crate::api_response::SiteResponse;
 pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Development Frontend!");
     cfg.service(index)
+        .service(me)
         .service(admin)
-        .service(install)
+        .service(admin_extra)
         .service(browse)
         .service(browse_extend)
-        .service(login)
+        .service(upload)
+        .service(repository)
+        .service(project)
         .service(Files::new("/", std::env::var("SITE_DIR").unwrap()).show_files_listing());
 }
 
 #[get("/")]
 pub async fn index(_r: HttpRequest) -> SiteResponse {
+    get_file()
+}#[get("/me")]
+pub async fn me(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
 
@@ -38,15 +44,25 @@ pub async fn admin(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
 
-#[get("/login")]
-pub async fn login(_r: HttpRequest) -> SiteResponse {
+#[get("/admin/{file:.*}")]
+pub async fn admin_extra(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
 
-#[get("/install")]
-pub async fn install(_r: HttpRequest) -> SiteResponse {
+#[get("/upload/{file:.*}")]
+pub async fn upload(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
+
+#[get("/repository/{file:.*}")]
+pub async fn repository(_r: HttpRequest) -> SiteResponse {
+    get_file()
+}
+#[get("/project/{file:.*}")]
+pub async fn project(_r: HttpRequest) -> SiteResponse {
+    get_file()
+}
+
 
 fn get_file() -> SiteResponse {
     //TODO cache this value at runtime

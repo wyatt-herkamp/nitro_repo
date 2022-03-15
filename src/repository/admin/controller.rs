@@ -1,10 +1,13 @@
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
+use actix_web::web::Bytes;
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::database::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
 use crate::repository::action::{
     add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories,
@@ -19,14 +22,13 @@ use crate::repository::models::{ReportGeneration, Webhook};
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::DbPool;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
     pub repositories: Vec<RepositoryListResponse>,
 }
 
-#[get("/api/repositories/list")]
+#[get("/api/admin/repositories/list")]
 pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -40,7 +42,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
     APIResponse::new(true, Some(response)).respond(&r)
 }
 
-#[get("/api/repositories/get/{repo}")]
+#[get("/api/admin/repositories/get/{repo}")]
 pub async fn get_repo(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -57,7 +59,7 @@ pub async fn get_repo(
     APIResponse::respond_new(repo, &r)
 }
 
-#[get("/api/repositories/get/{storage}/{repo}")]
+#[get("/api/deployer/repositories/get/{storage}/{repo}")]
 pub async fn get_repo_deployer(
     pool: web::Data<DbPool>,
     r: HttpRequest,
@@ -171,6 +173,35 @@ pub async fn update_policy(
 
     let mut repository = repository.unwrap();
     repository.settings.policy = policy;
+    update_repo_settings(&repo, &repository.settings, &connection)?;
+    APIResponse::new(true, Some(repository)).respond(&r)
+}
+
+#[patch("/api/admin/repository/{repo}/description")]
+pub async fn update_description(
+    pool: web::Data<DbPool>,
+    r: HttpRequest,
+    b: Bytes,
+    path: web::Path<i64>,
+) -> SiteResponse {
+    let repo = path.into_inner();
+
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let repository = get_repo_by_id(&repo, &connection)?;
+
+    let mut repository = repository.unwrap();
+    let vec = b.to_vec();
+    let string = String::from_utf8(vec);
+    if let Err(error) = string {
+        error!("Unable to Parse String from Request: {}", error);
+        return bad_request("Bad Description");
+    }
+    repository.settings.description = string.unwrap();
     update_repo_settings(&repo, &repository.settings, &connection)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }

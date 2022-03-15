@@ -7,7 +7,8 @@
 
 <script lang="ts">
 import userStore from "@/store/user";
-import Navbar from "@/components/Navbar.vue";
+import siteStore from "@/store/site";
+import Navbar from "@/components/nav/Navbar.vue";
 import {defineComponent, onBeforeMount} from "vue";
 import {useMeta} from "vue-meta";
 
@@ -15,18 +16,25 @@ export default defineComponent({
   name: "App",
   components: { Navbar },
   setup() {
+    onBeforeMount(userStore.getUser);
+    siteStore.getSiteInfo();
+
     useMeta({
-      title: "Nitro Repo",
-      htmlAttrs: { lang: "en", amp: false, charset: "UTF-8" },
+      title: siteStore.state.name,
+      description: siteStore.state.description,
+      htmlAttrs: {lang: "en", amp: false, charset: "UTF-8"},
       meta: [
         {
           property: "og:title",
-          content: "Nitro Repo",
+          content: siteStore.state.name,
         },
-        { property: "og:type", content: "website" },
+        {
+          property: "og:description",
+          content: siteStore.state.description,
+        },
+        {property: "og:type", content: "website"},
       ],
     });
-    onBeforeMount(userStore.getUser);
     return { userStore };
   },
 });
@@ -37,7 +45,7 @@ export default defineComponent({
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: white;
 }
 
 #nav {

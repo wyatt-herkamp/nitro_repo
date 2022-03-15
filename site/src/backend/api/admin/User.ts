@@ -1,4 +1,4 @@
-import {BasicResponse, User,} from "../../Response";
+import {BasicResponse, User} from "../../Response";
 import http from "@/http-common";
 import {Err, Ok} from "ts-results";
 import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";
@@ -38,9 +38,9 @@ export async function createNewUser(
       },
       (err) => {
         if (err.response) {
-          if ((err.response.status = 401)) {
+          if ((err.response.status == 401)) {
             return Err(NOT_AUTHORIZED);
-          } else if ((err.response.status = 409)) {
+          } else if ((err.response.status == 409)) {
             return Err(
               createAPIError(
                 409,

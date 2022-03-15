@@ -31,9 +31,12 @@ impl WebhookHandler for DiscordHandler {
     ) -> Result<(), InternalError> {
         let d_hook = webhook::client::WebhookClient::new(&config.url);
         let result = d_hook.send(|x| x.content("Deploy Happening!")).await;
-        if let Err(_) = result {
+        if let Err(error) = result {
             //TODO more details
-            error!("Unable to Call Discord Webhook {}", config.url);
+            error!(
+                "Unable to Call Discord Webhook {}. Error {}",
+                config.url, error
+            );
             return Err(InternalError::Error("Bad Webhook".to_string()));
         }
         return Ok(());

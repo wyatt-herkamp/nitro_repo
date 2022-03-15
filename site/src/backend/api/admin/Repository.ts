@@ -1,8 +1,9 @@
-import {BasicResponse} from "../../Response";
+import { BasicResponse, Frontend } from "../../Response";
 import http from "@/http-common";
-import {Err, Ok} from "ts-results";
-import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED,} from "../../NitroRepoAPI";
-import {Repository} from "@/backend/Response";
+import { Err, Ok } from "ts-results";
+import { createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED, } from "../../NitroRepoAPI";
+import { Repository } from "@/backend/Response";
+import { stringifyQuery } from "vue-router";
 
 export async function createNewRepository(
   name: string,
@@ -35,13 +36,14 @@ export async function createNewRepository(
       },
       (err) => {
         if (err.response) {
-          if ((err.response.status = 401)) {
+          if ((err.response.status == 401)) {
             return Err(NOT_AUTHORIZED);
-          } else if ((err.response.status = 409)) {
+          } else if ((err.response.status == 409)) {
+            console.log("HEY");
             return Err(
               createAPIError(409, "A Repository by that name already exists")
             );
-          } else if ((err.response.status = 404)) {
+          } else if ((err.response.status == 404)) {
             return Err(
               createAPIError(404, "Unable to find a Storage by that name")
             );
@@ -185,10 +187,11 @@ export async function updateFrontend(
   pageProvider: string,
   token: string
 ) {
+// Manually converting data to JSON because JSON.stringify is convering booleans to strings?
   return http
     .patch(
       "/api/admin/repository/" + id + "/modify/settings/frontend",
-      { enabled: enabled, page_provider: pageProvider },
+      `{"page_provider":"${pageProvider}","enabled":${enabled}}`,
       {
         headers: {
           Authorization: "Bearer " + token,
@@ -231,9 +234,9 @@ export async function setVisibility(
   return http
     .patch(
       "/api/admin/repository/" +
-        id +
-        "/modify/security/visibility/" +
-        visibility,
+      id +
+      "/modify/security/visibility/" +
+      visibility,
       {},
       {
         headers: {
@@ -316,13 +319,13 @@ export async function addOrRemoveReadersOrDeployers(
   return http
     .patch(
       "/api/admin/repository/" +
-        id +
-        "/modify/security/" +
-        what +
-        "/" +
-        action +
-        "/" +
-        user,
+      id +
+      "/modify/security/" +
+      what +
+      "/" +
+      action +
+      "/" +
+      user,
       {},
       {
         headers: {

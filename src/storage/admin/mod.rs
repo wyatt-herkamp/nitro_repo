@@ -4,6 +4,7 @@ pub mod controller;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::add_storage)
+        .service(controller::delete_by_id)
         .service(controller::list_storages)
         .service(controller::get_by_id);
 }

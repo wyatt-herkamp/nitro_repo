@@ -238,6 +238,8 @@ pub struct SecurityRules {
 pub struct RepositorySettings {
     #[serde(default = "default")]
     pub active: bool,
+    #[serde(default)]
+    pub description: String,
     #[serde(default = "Policy::default")]
     pub policy: Policy,
     #[serde(default = "Frontend::default")]
@@ -250,6 +252,7 @@ impl Default for RepositorySettings {
     fn default() -> Self {
         RepositorySettings {
             active: true,
+            description: "".to_string(),
             policy: Policy::Mixed,
             frontend: Default::default(),
             badge: Default::default(),

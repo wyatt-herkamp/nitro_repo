@@ -133,7 +133,7 @@ pub fn is_authed_deploy(
     if !split.len().eq(&2) {
         return Ok((false, None));
     }
-    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), conn)?;
+    let result1 = get_user_by_username(split.get(0).unwrap(), conn)?;
     if result1.is_none() {
         return Ok((false, None));
     }
@@ -162,7 +162,7 @@ pub fn is_authed_read(
     if !split.len().eq(&2) {
         return Ok(false);
     }
-    let result1 = get_user_by_username(&split.get(0).unwrap().to_string(), conn)?;
+    let result1 = get_user_by_username(split.get(0).unwrap(), conn)?;
     if result1.is_none() {
         return Ok(false);
     }

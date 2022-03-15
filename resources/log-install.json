@@ -1,0 +1,43 @@
+{
+  "default_loggers": [
+    {
+      "levels": [
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "file-logger",
+          "properties": {
+            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
+            "file": "install.log"
+          }
+        }
+      ]
+    }
+  ],
+  "loggers": [
+    {
+      "module": "nitro_repo",
+      "levels": [
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR"
+      ],
+      "targets": [
+        {
+          "type": "file-logger",
+          "properties": {
+            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
+            "file": "install.log"
+          }
+        }
+      ]
+    }
+  ]
+}

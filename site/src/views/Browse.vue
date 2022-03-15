@@ -1,58 +1,104 @@
 <template>
-  <el-container
-    v-loading="loading"
-    element-loading-text="Loading..."
-    style="border: 1px solid #eee"
-  >
-    <el-header>
-      <el-breadcrumb :separator-icon="ArrowRight">
-        <el-breadcrumb-item :to="{ path: '/Browse' }"
-          >Browse
-        </el-breadcrumb-item>
-        <el-breadcrumb-item v-for="path in values" :key="path"
-          >{{ path }}
-        </el-breadcrumb-item>
-      </el-breadcrumb>
-    </el-header>
-    <el-main>
-      <el-table
-        class="pointer"
-        :data="tableData"
-        @row-click="onRowClick"
-        style="width: 100%"
+  <div class="m-3">
+    <div class="flex flex-wrap">
+      <router-link class="py-3 my-1 min-w-max hover:text-red-400" to="/browse">
+        <span>Browse</span>
+      </router-link>
+      <router-link
+        class="py-3 my-1 min-w-max hover:text-red-400"
+        v-for="value in values"
+        :key="value.name"
+        :to="'/browse' + '/' + value.path"
       >
-        <el-table-column prop="name" label="name" />
-      </el-table>
-    </el-main>
-  </el-container>
+        <span>/</span>
+        <span> {{ value.name }} </span>
+      </router-link>
+    </div>
+    <div class="flex">
+      <div class="min-w-full grid auto-cols-auto grid-rows-1 text-left">
+        <div class="link-box" v-for="value in tableData" :key="value.name">
+          <router-link
+            class="link"
+            :to="path + '/' + value.name"
+            v-if="value.directory"
+          >
+            <span class="linkText">
+              {{ value.name }}
+            </span>
+          </router-link>
+          <a
+            class="link"
+            :href="url + '/storages/' + value.full_path"
+            v-if="!value.directory"
+          >
+            <span class="linkText">
+              {{ value.name }}
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
+<style scoped>
+.link {
+  @apply block;
+  @apply min-w-max;
 
+  @apply hover:text-red-400;
+  @apply p-3;
+}
+.linkText {
+  @apply pl-2;
+}
+.link-box {
+  @apply min-w-max;
+  @apply my-1;
+  @apply py-1;
+  @apply border-2;
+}
+</style>
 <script lang="ts">
-import {fileListing, getRepositoriesPublicAccess,} from "@/backend/api/Repository";
-import {getStoragesPublicAccess} from "@/backend/api/Storages";
-import {FileResponse} from "@/backend/Response";
+import {
+  fileListing,
+  getRepositoriesPublicAccess,
+} from "@/backend/api/Repository";
+import { getStoragesPublicAccess } from "@/backend/api/Storages";
+import { FileResponse } from "@/backend/Response";
+import { apiURL } from "@/http-common";
 import router from "@/router";
-import {defineComponent, ref} from "vue";
-import {useRoute} from "vue-router";
-import {ArrowRight} from "@element-plus/icons";
+import { defineComponent, ref } from "vue";
+import { useRoute } from "vue-router";
 
 export default defineComponent({
   setup() {
+    let url = apiURL;
     const route = useRoute();
-    let values = ref<string[]>([]);
-    const tableData = ref([{}]);
+    let values = ref([]);
+    const tableData = ref([]);
     const storage = route.params.storage as string;
     const repository = route.params.repo as string;
     let catchAll = route.params.catchAll as string;
     const loading = ref(true);
-
+    const path = route.fullPath;
     if (storage != undefined && storage != "") {
-      values.value.push(storage);
+      let value = { name: storage, path: storage };
+      values.value.push(value);
       if (repository != undefined && repository != "") {
-        values.value.push(repository as string);
+        let value = {
+          name: repository,
+          path: values.value[values.value.length - 1].path + "/" + repository,
+        };
+
+        values.value.push(value);
         if (route.params.catchAll != undefined) {
           for (var s of catchAll.split("/")) {
-            values.value.push(s);
+            let value = {
+              name: s,
+              path: values.value[values.value.length - 1].path + "/" + s,
+            };
+
+            values.value.push(value);
           }
           loading.value = false;
         } else {
@@ -66,6 +112,7 @@ export default defineComponent({
               catchAll
             )) as FileResponse[];
             for (const storage of value) {
+              console.log(storage);
               tableData.value.push(storage);
             }
             loading.value = false;
@@ -81,7 +128,7 @@ export default defineComponent({
               storage
             )) as string[];
             for (const storage of value) {
-              tableData.value.push({ name: storage });
+              tableData.value.push({ name: storage,directory: true });
             }
             loading.value = false;
           } catch (e) {
@@ -95,7 +142,7 @@ export default defineComponent({
         try {
           const value = (await getStoragesPublicAccess()) as string[];
           for (const storage of value) {
-            tableData.value.push({ name: storage });
+            tableData.value.push({ name: storage, directory: true });
           }
           loading.value = false;
         } catch (e) {
@@ -104,6 +151,7 @@ export default defineComponent({
       };
       getLocalStorage();
     }
+    console.log(values.value);
     return {
       loading,
       values,
@@ -111,7 +159,8 @@ export default defineComponent({
       storage,
       repository,
       catchAll,
-      ArrowRight,
+      path,
+      url,
     };
   },
   methods: {
@@ -155,8 +204,3 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-.pointer:hover {
-  cursor: pointer;
-}
-</style>

@@ -2,7 +2,7 @@ use actix_web::{get, web, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
-use crate::DbPool;
+use crate::database::DbPool;
 
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::maven::MavenHandler;
@@ -45,6 +45,7 @@ pub async fn get_project(
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
+    println!("{}", file);
     let connection = pool.get()?;
 
     let request = to_request(storage, repository, file, &connection)?;
@@ -58,19 +59,19 @@ pub async fn get_project(
     handle_result(x, request.value, r)
 }
 
-#[get("/api/version/{storage}/{repository}/{file:.*}")]
+#[get("/api/version/{storage}/{repository}/{project}/{version}")]
 pub async fn get_version(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,
+    path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
-    let (storage, repository, file) = path.into_inner();
+    let (storage, repository, project, version) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, &connection)?;
+    let request = to_request(storage, repository, project, &connection)?;
 
     let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_version(&request, &r, &connection),
+        "maven" => MavenHandler::handle_version(&request, version, &r, &connection),
         _ => {
             panic!("Unknown REPO")
         }

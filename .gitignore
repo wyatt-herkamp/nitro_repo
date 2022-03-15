@@ -9,3 +9,4 @@ site/out
 config.json
 Cargo.lock
 node_modules
+testInstall.sh

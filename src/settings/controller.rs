@@ -1,18 +1,18 @@
 use actix_web::{get, post, web, HttpRequest};
+use diesel::MysqlConnection;
+use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-
+use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
-
 use crate::error::response::unauthorized;
+use crate::settings;
 use crate::settings::action::get_setting;
 use crate::settings::models::{DBSetting, SettingManager};
 use crate::settings::utils::get_setting_report;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use crate::{settings, DbPool};
-use diesel::MysqlConnection;
 
 pub fn get_setting_or_empty(
     string: &str,
@@ -30,6 +30,7 @@ pub fn default_setting(string: &str) -> Result<DBSetting, InternalError> {
     let setting = SettingManager::get_setting(string.to_string())
         .ok_or_else(|| InternalError::Error("Unable to find setting".to_string()))
         .unwrap();
+    warn!("{} not found. Using default value", string);
     Ok(DBSetting {
         id: 0,
         setting: setting.clone(),

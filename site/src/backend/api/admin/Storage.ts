@@ -33,9 +33,53 @@ export async function createNewStorage(
       },
       (err) => {
         if (err.response) {
-          if ((err.response.status = 401)) {
+          if ((err.response.status == 401)) {
             return Err(NOT_AUTHORIZED);
-          } else if ((err.response.status = 409)) {
+          } else if ((err.response.status == 409)) {
+            return Err(
+              createAPIError(409, "A Storage by that name already exists")
+            );
+          }
+          return Err(INTERNAL_ERROR);
+        } else if (err.request) {
+          return Err(INTERNAL_ERROR);
+        } else {
+          return Err(INTERNAL_ERROR);
+        }
+      }
+    );
+}
+export async function deleteStorage(
+  id: number,
+  token: string
+) {
+  return http
+    .delete(
+      "/api/admin/storages/"+id,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    )
+    .then(
+      (result) => {
+        const resultData = result.data;
+        let value = JSON.stringify(resultData);
+
+        let response: BasicResponse<unknown> = JSON.parse(value);
+
+        if (response.success) {
+          return Ok(response.data as Storage);
+        } else {
+          return Err(INTERNAL_ERROR);
+        }
+      },
+      (err) => {
+        if (err.response) {
+          if ((err.response.status == 401)) {
+            return Err(NOT_AUTHORIZED);
+          } else if ((err.response.status == 409)) {
             return Err(
               createAPIError(409, "A Storage by that name already exists")
             );
