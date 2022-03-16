@@ -13,12 +13,10 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
-use crate::repository::action::{get_repo_by_name_and_storage, get_repositories_by_storage};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
-use crate::storage::action::{get_storage_by_name, get_storages};
 use crate::utils::get_accept;
 
 //

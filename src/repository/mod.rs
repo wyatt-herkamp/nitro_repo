@@ -1,6 +1,5 @@
 use actix_web::web;
 
-pub mod action;
 pub mod admin;
 mod api;
 mod badge;

@@ -9,11 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
-use crate::repository::action::{
-    add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories,
-    update_deploy_settings,
-};
-use crate::repository::action::{update_repo_security, update_repo_settings};
+
 use crate::repository::models::{
     BadgeSettings, Frontend, Policy, Repository, RepositoryListResponse, RepositorySettings,
     SecurityRules, Visibility,

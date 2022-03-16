@@ -14,7 +14,6 @@ use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::{Path};
 use log::warn;
-use uuid::Uuid;
 use crate::{NitroRepoData};
 
 
@@ -40,7 +39,7 @@ pub async fn delete_by_id(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     site: NitroRepoData,
-    id: web::Path<Uuid>,
+    id: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -64,7 +63,7 @@ pub async fn get_by_id(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     site: NitroRepoData,
-    id: web::Path<Uuid>,
+    id: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -106,16 +105,16 @@ pub async fn add_storage(
         create_dir_all(&path);
     }
     let path = canonicalize(path)?;
-    let uuid = Uuid::new_v4();
+    let string = nc.0.name;
     let storage = Storage {
         public_name: nc.0.public_name,
-        name: nc.0.name,
+        name: string.clone(),
         created: get_current_time(),
         location_type: LocationType::LocalStorage,
         location: HashMap::from([("location".to_string(), path.to_str().unwrap().to_string())]),
     };
-    guard.insert(uuid.clone(), storage);
+    guard.insert(string.clone(), storage);
     save_storages(guard.deref());
 
-    APIResponse::new(true, guard.get(&uuid)).respond(&r)
+    APIResponse::new(true, guard.get(&string)).respond(&r)
 }

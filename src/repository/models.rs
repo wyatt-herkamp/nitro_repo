@@ -10,14 +10,11 @@ use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
 use crate::repository::models::Visibility::Public;
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositorySummary {
     pub name: String,
     pub storage: String,
-    pub page_provider: PageProvider,
     pub repo_type: String,
-    pub visibility: Visibility,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -93,9 +90,7 @@ impl RepositorySummary {
         Ok(RepositorySummary {
             name: repo.name.clone(),
             storage: repo.storage.clone(),
-            page_provider: repo.settings.frontend.page_provider.clone(),
             repo_type: repo.repo_type.clone(),
-            visibility: repo.security.visibility.clone(),
         })
     }
 }
@@ -189,7 +184,7 @@ pub enum Policy {
     Mixed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Visibility {
     Public,
     Private,
@@ -291,7 +286,6 @@ fn default() -> bool {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Repository {
-    pub id: i64,
     pub name: String,
     pub repo_type: String,
     pub storage: String,
@@ -304,7 +298,6 @@ pub struct Repository {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepositoryListResponse {
-    pub id: i64,
     pub name: String,
     pub repo_type: String,
     pub storage: String,

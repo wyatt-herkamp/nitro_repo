@@ -4,13 +4,12 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::response::{not_found, unauthorized};
-use crate::repository::action::get_repo_by_name_and_storage;
+use crate::NitroRepoData;
 use crate::repository::models::{Policy, Repository, Visibility};
 use crate::system::utils::can_read_basic_auth;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
-    pub id: i64,
     pub name: String,
     pub repo_type: String,
     pub storage: String,
@@ -24,7 +23,6 @@ pub struct PublicRepositoryResponse {
 impl From<Repository> for PublicRepositoryResponse {
     fn from(repo: Repository) -> Self {
         PublicRepositoryResponse {
-            id: repo.id,
             name: repo.name,
             repo_type: repo.repo_type,
             storage: repo.storage,
@@ -40,20 +38,24 @@ impl From<Repository> for PublicRepositoryResponse {
 #[get("/api/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
-    let connection = pool.get()?;
-
-    let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
-    if repo.is_none() {
-        return not_found();
+    let guard = site.storages.lock().unwrap();
+    if let Some(storage) = guard.get(&storage) {
+        let option = storage.get_repository(&repo)?;
+        if let Some(repository) = option {
+            if repository.security.visibility.eq(&Visibility::Private) {
+                let connection = pool.get()?;
+                if !can_read_basic_auth(r.headers(), &repository, &connection)? {
+                    return unauthorized();
+                }
+            }
+            return APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r);
+        }
     }
-    let repository = repo.unwrap();
-    if !can_read_basic_auth(r.headers(), &repository, &connection)? {
-        return unauthorized();
-    }
-
-    APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r)
+    return not_found();
 }
+
