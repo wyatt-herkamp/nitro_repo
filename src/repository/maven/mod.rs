@@ -320,7 +320,7 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotFound);
         }
         let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, conn)?,
+            repo_summary: RepositorySummary::new(&request.repository)?,
             project: project_data.unwrap(),
             frontend_response: None,
         };

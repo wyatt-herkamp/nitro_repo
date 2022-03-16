@@ -5,16 +5,18 @@ extern crate diesel_migrations;
 extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
+extern crate core;
 
+use std::fs::read_to_string;
 use actix_cors::Cors;
-use actix_web::web::{PayloadConfig, ServiceConfig};
-use actix_web::{middleware, web, App, HttpRequest, HttpServer};
+use actix_web::web::{Data, PayloadConfig};
+use actix_web::{middleware, web, App, HttpServer};
 use std::path::Path;
 
 use log::info;
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
-use std::str::FromStr;
+use std::sync::Mutex;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
@@ -37,6 +39,8 @@ pub mod webhook;
 use crate::database::Database;
 use crate::install::load_installer;
 use clap::Parser;
+use crate::settings::models::{EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting, StringMap};
+use crate::storage::models::{Storages};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -44,15 +48,41 @@ struct Cli {
     #[clap(short, long)]
     install: bool,
 }
+#[derive(Debug)]
+pub struct NitroRepo {
+    storages: Mutex<Storages>,
+    settings: Mutex<Settings>,
+    core: GeneralSettings,
+}
+pub type NitroRepoData = Data<NitroRepo>;
+pub static STORAGE_FILE: &str = "storages.json";
 
-fn load_logger(logger: &str) {
+pub fn load_storages() -> anyhow::Result<Storages> {
+    let path = Path::new(STORAGE_FILE);
+    let string = read_to_string(&path)?;
+    let result: Storages = toml::from_str(&string)?;
+    return Ok(result);
+}
+
+fn load_configs() -> anyhow::Result<Settings> {
+    let cfgs = Path::new("cfg");
+
+    let security: SecuritySettings = toml::from_str(&read_to_string(cfgs.join("security.json"))?)?;
+    let site: SiteSetting = toml::from_str(&read_to_string(cfgs.join("site.json"))?)?;
+    let email: EmailSetting = toml::from_str(&read_to_string(cfgs.join("email.json"))?)?;
+
+    return Ok(Settings {
+        email,
+        site,
+        security,
+    });
+}
+
+fn load_logger(logger: &Mode) {
     let file = match logger {
-        "DEBUG" => "log-debug.json",
-        "RELEASE" => "log-release.json",
-        "INSTALL" => "log-install.json",
-        _ => {
-            panic!("Must be Release or Debug")
-        }
+        Mode::Debug => "log-debug.json",
+        Mode::Release => "log-release.json",
+        Mode::Install => "log-release.json",
     };
     let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
     NitroLogger::load(config, None).unwrap();
@@ -60,11 +90,13 @@ fn load_logger(logger: &str) {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    if !Path::new(".env").exists() {
+    let path = Path::new("cfg");
+    let main_config = path.join("nitro_repo.toml");
+    if !main_config.exists() {
         let parse: Cli = Cli::parse();
         if parse.install {
-            load_logger("INSTALL");
-            load_installer().expect("Unable to successfully install application");
+            load_logger(&Mode::Install);
+            load_installer(path).expect("Unable to successfully install application");
             return Ok(());
         } else {
             println!(
@@ -73,20 +105,37 @@ async fn main() -> std::io::Result<()> {
             std::process::exit(1);
         }
     }
-    if let Err(error) = dotenv::dotenv() {
-        println!("Unable to load dotenv {}", error);
-        return Ok(());
-    }
-    let logger = std::env::var("MODE").expect("Mode Must be RELEASE OR DEBUG");
-    load_logger(&logger);
+    info!("Loading Main Config");
+    let string = read_to_string(&main_config)?;
+    let init_settings: GeneralSettings = toml::from_str(&string)?;
+    load_logger(&init_settings.application.mode);
 
     info!("Initializing Database");
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
-    let pool = database::init(&db_url).expect("Unable to Load Database");
-    info!("Initializing Web Server");
-    let max_upload = std::env::var("MAX_UPLOAD").unwrap_or_else(|_| "1024".to_string());
-    let max_upload = i64::from_str(&max_upload).unwrap();
+    let pool = match init_settings.database.db_type.as_str() {
+        "mysql" => {
+            let settings: MysqlSettings = init_settings.database.settings.clone().try_into().unwrap();
+            let result = database::init(&settings.to_string()).unwrap();
+            result
+        }
+        _ => {
+            panic!("Invalid Database Type")
+        }
+    };
+    info!("Loading Other Configs");
+    let settings = load_configs().unwrap();
+    info!("Loading Storages");
+    let storages = load_storages().unwrap();
 
+    info!("Initializing Web Server");
+    let storages = load_storages().unwrap();
+    let settings = load_configs().unwrap();
+    let nitro_repo = NitroRepo {
+        storages: Mutex::new(storages),
+        settings: Mutex::new(settings),
+        core: init_settings,
+    };
+    let data = web::Data::new(nitro_repo);
+    let max_upload = init_settings.application.max_upload.clone();
     let server = HttpServer::new(move || {
         App::new()
             .wrap(
@@ -97,6 +146,7 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(middleware::Logger::default())
             .app_data(web::Data::new(pool.clone()))
+            .app_data(data.clone())
             .app_data(web::Data::new(PayloadConfig::new(
                 (max_upload * 1024 * 1024) as usize,
             )))
@@ -110,7 +160,7 @@ async fn main() -> std::io::Result<()> {
             .configure(frontend::init)
         // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
@@ -137,9 +187,3 @@ async fn main() -> std::io::Result<()> {
 }
 
 
-#[actix_web::get("/api/installed")]
-pub async fn installed(pool: Database, r: HttpRequest) -> SiteResponse {
-    let connection = pool.get()?;
-    let result = crate::utils::installed(&connection)?;
-    APIResponse::new(true, Some(result)).respond(&r)
-}

@@ -1,16 +1,13 @@
 use std::fs::read;
 use std::ops::Add;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, Local};
-use diesel::MysqlConnection;
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::settings::action::get_setting;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -31,18 +28,7 @@ impl Resources {
     }
 }
 
-pub fn installed(conn: &MysqlConnection) -> Result<bool, InternalError> {
-    let installed: bool = bool::from_str(std::env::var("INSTALLED").unwrap().as_str()).unwrap();
-    if installed {
-        return Ok(true);
-    }
-    let option = get_setting("INSTALLED", conn)?;
-    if option.is_none() {
-        return Ok(false);
-    }
-    std::env::set_var("INSTALLED", "true");
-    Ok(true)
-}
+
 
 pub fn get_current_time() -> i64 {
     Local::now().timestamp_millis()

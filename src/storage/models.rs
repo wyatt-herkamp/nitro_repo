@@ -2,13 +2,12 @@ use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::schema::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-#[table_name = "storages"]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Storage {
     pub id: i64,
     pub public_name: String,
     pub name: String,
     pub created: i64,
 }
+pub type Storages = Vec<Storage>;

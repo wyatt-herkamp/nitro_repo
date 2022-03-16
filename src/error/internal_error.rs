@@ -7,6 +7,7 @@ use actix_web::HttpResponse;
 use base64::DecodeError;
 use thiserror::Error;
 
+
 #[derive(Error, Debug)]
 pub enum InternalError {
     #[error("JSON error {0}")]
@@ -33,6 +34,10 @@ pub enum InternalError {
     NotFound,
     #[error("Internal Error {0}")]
     Error(String),
+    #[error("Missing Config Value {0}")]
+    ConfigError(String),
+    #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
+    DeadSite,
 }
 
 impl InternalError {
@@ -44,6 +49,8 @@ impl InternalError {
         result
     }
 }
+
+
 
 impl actix_web::error::ResponseError for InternalError {
     fn error_response(&self) -> HttpResponse {

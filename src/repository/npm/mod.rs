@@ -334,7 +334,7 @@ impl RepositoryType for NPMHandler {
             return RepoResult::Ok(NotFound);
         }
         let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, conn)?,
+            repo_summary: RepositorySummary::new(&request.repository)?,
             frontend_response: None,
             project: project_data.unwrap(),
         };

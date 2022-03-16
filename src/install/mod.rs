@@ -5,7 +5,6 @@ use crate::database::init_single_connection;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 
-use crate::settings::utils::quick_add;
 use crate::system::action::add_new_user;
 
 use crate::system::models::{User, UserPermissions};
@@ -19,6 +18,7 @@ use diesel::MysqlConnection;
 use std::fmt::{Display, Formatter};
 use std::fs::OpenOptions;
 use std::io::{Stdout, Write};
+use std::path::{Path};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -31,6 +31,8 @@ use tui::{
 use crate::system::utils::hash;
 use crate::utils::get_current_time;
 use unicode_width::UnicodeWidthStr;
+use crate::settings::models::{Application, Database};
+use crate::{EmailSetting, Mode, SiteSetting, StringMap};
 
 //mysql://newuser:"password"@127.0.0.1/nitro_repo
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -39,6 +41,17 @@ struct DatabaseStage {
     pub password: Option<String>,
     pub host: Option<String>,
     pub database: Option<String>,
+}
+
+impl From<DatabaseStage> for Database<StringMap> {
+    fn from(db: DatabaseStage) -> Self {
+        let mut map = StringMap::new();
+        map.insert("user".to_string(), db.user.unwrap());
+        map.insert("password".to_string(), db.password.unwrap());
+        map.insert("host".to_string(), db.host.unwrap());
+        map.insert("database".to_string(), db.database.unwrap());
+        return Self { db_type: "mysql".to_string(), settings: map };
+    }
 }
 
 impl Display for DatabaseStage {
@@ -83,10 +96,21 @@ impl From<UserStage> for User {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OtherStage {
-    storage_location: Option<String>,
     log_location: Option<String>,
     address: Option<String>,
     max_upload: Option<String>,
+}
+
+impl From<OtherStage> for Application {
+    fn from(other: OtherStage) -> Self {
+        Self {
+            frontend: "../site/dist".to_string(),
+            log: other.log_location.unwrap(),
+            address: other.address.unwrap(),
+            max_upload: other.max_upload.unwrap().parse().unwrap(),
+            mode: Mode::Release,
+        }
+    }
 }
 
 /// App holds the state of the application
@@ -122,7 +146,6 @@ impl Default for App {
                 password_two: None,
             },
             other_stage: OtherStage {
-                storage_location: None,
                 log_location: None,
                 address: None,
                 max_upload: None,
@@ -210,8 +233,6 @@ fn run_app(
                         2 => {
                             if app.other_stage.address.is_none() {
                                 app.other_stage.address = value;
-                            } else if app.other_stage.storage_location.is_none() {
-                                app.other_stage.storage_location = value;
                             } else if app.other_stage.log_location.is_none() {
                                 app.other_stage.log_location = value;
                             } else if app.other_stage.max_upload.is_none() {
@@ -258,7 +279,7 @@ fn get_next_default(app: &App) -> Option<String> {
             if app.other_stage.address.is_none() {
                 Some("0.0.0.0:6742".to_string())
             } else if app.other_stage.log_location.is_none()
-                || app.other_stage.storage_location.is_none()
+
             {
                 Some("./".to_string())
             } else if app.other_stage.max_upload.is_none() {
@@ -302,8 +323,6 @@ fn get_next_step(app: &App) -> String {
         2 => {
             if app.other_stage.address.is_none() {
                 "Bind Address".to_string()
-            } else if app.other_stage.storage_location.is_none() {
-                "Storage Location".to_string()
             } else if app.other_stage.log_location.is_none() {
                 "Log Location".to_string()
             } else if app.other_stage.max_upload.is_none() {
@@ -399,14 +418,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
             .unwrap_or(&"".to_string()),
         &mut messages,
     );
-    create_line(
-        "Storage Location",
-        app.other_stage
-            .storage_location
-            .as_ref()
-            .unwrap_or(&"".to_string()),
-        &mut messages,
-    );
+
     create_line(
         "Max Upload",
         app.other_stage
@@ -455,7 +467,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     )
 }
 
-pub fn load_installer() -> anyhow::Result<()> {
+pub fn load_installer(config: &Path) -> anyhow::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -470,16 +482,40 @@ pub fn load_installer() -> anyhow::Result<()> {
         return Ok(());
     }
     let app = app.unwrap();
-    save_env(&app).unwrap();
 
     if app.connection.is_none() {
         println!("Failure to Install");
         return Ok(());
     }
-    let connection = app.connection.as_ref().unwrap();
+    let database = toml::to_string_pretty(&Database::from(app.database_stage))?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(config.join("database.toml"))?;
+    file.write_all(database.as_bytes())?;
+    let other = toml::to_string_pretty(&Application::from(app.other_stage))?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(config.join("nitro_repo.toml"))?;
+    file.write_all(other.as_bytes())?;
 
-    quick_add("installed", "true".to_string(), connection).unwrap();
-    quick_add("version", env!("CARGO_PKG_VERSION").to_string(), connection).unwrap();
+    let email = toml::to_string_pretty(&EmailSetting::default())?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(config.join("email.toml"))?;
+    file.write_all(email.as_bytes())?;
+    let site = toml::to_string_pretty(&SiteSetting::default())?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(config.join("site.toml"))?;
+    file.write_all(site.as_bytes())?;
     info!("Installation Complete");
     println!("Installation Complete!");
     Ok(())
@@ -496,37 +532,4 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
     terminal.show_cursor().unwrap();
 }
 
-fn save_env(app: &App) -> anyhow::Result<()> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .create(true)
-        .open(".env")?;
-    let my_db = app.database_stage.clone();
-    writeln!(
-        &mut file,
-        "DATABASE_URL=mysql://{}:\"{}\"@{}/{}",
-        my_db.user.unwrap(),
-        my_db.password.unwrap(),
-        my_db.host.unwrap(),
-        my_db.database.unwrap()
-    )?;
-    writeln!(
-        &mut file,
-        "STORAGE_LOCATION={}",
-        &app.other_stage.storage_location.as_ref().unwrap()
-    )?;
-    writeln!(
-        &mut file,
-        "LOGG_LOCATION={}",
-        &app.other_stage.log_location.as_ref().unwrap()
-    )?;
-    writeln!(
-        &mut file,
-        "ADDRESS={}",
-        &app.other_stage.address.as_ref().unwrap()
-    )?;
-    writeln!(&mut file, "MODE=RELEASE")?;
 
-    Ok(())
-}

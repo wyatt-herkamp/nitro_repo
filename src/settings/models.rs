@@ -1,23 +1,99 @@
-use std::io::Write;
-use std::str::FromStr;
-
-use diesel::backend::Backend;
-use diesel::deserialize::FromSql;
-use diesel::mysql::Mysql;
-use diesel::serialize::{Output, ToSql};
-use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
-
 use crate::error::internal_error::InternalError;
-use crate::schema::*;
-use crate::utils::Resources;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum Mode {
+    Debug,
+    Release,
+    Install,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Settings {
+    pub email: EmailSetting,
+    pub site: SiteSetting,
+    pub security: SecuritySettings,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Internal {
+    pub installed: bool,
+    pub version: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Database<T> {
+    #[serde(rename = "type")]
+    pub db_type: String,
+    #[serde(flatten)]
+    pub settings: T,
+}
+
+pub type StringMap = HashMap<String, String>;
+pub type GenericDatabase = Database<StringMap>;
+
+
+impl Display for MysqlSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "mysql://{}:{}@{}/{}",
+            self.user,
+            self.password,
+            self.host,
+            self.database
+        )
+    }
+}
+
+impl TryFrom<StringMap> for MysqlSettings {
+    type Error = InternalError;
+
+    fn try_from(mut value: StringMap) -> Result<Self, Self::Error> {
+        let user = value.remove("user").ok_or_else(|| InternalError::ConfigError("database.user".to_string()))?;
+        let password = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
+        let host = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
+        let database = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
+        return Ok(MysqlSettings {
+            user,
+            password,
+            host,
+            database,
+        });
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MysqlSettings {
+    pub user: String,
+    pub password: String,
+    pub host: String,
+    pub database: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Application {
+    pub frontend: String,
+    pub log: String,
+    pub address: String,
+    pub max_upload: usize,
+    pub mode: Mode,
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
-    pub name: DBSetting,
-    pub installed: DBSetting,
-    pub version: DBSetting,
+    pub database: Database<StringMap>,
+    pub application: Application,
+    pub internal: Internal,
+}
+
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SiteSetting {
+    pub name: String,
+    pub description: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -25,124 +101,39 @@ pub struct SecuritySettings {}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct EmailSetting {
-    pub email_username: DBSetting,
-    pub email_password: DBSetting,
-    pub email_host: DBSetting,
-    pub encryption: DBSetting,
-    pub from: DBSetting,
-    pub port: DBSetting,
+    pub username: String,
+    pub password: String,
+    pub host: String,
+    pub encryption: String,
+    pub from: String,
+    pub port: u16,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct SettingReport {
-    pub email: EmailSetting,
-    pub general: GeneralSettings,
-    pub security: SecuritySettings,
-}
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
-#[sql_type = "Text"]
-pub struct Setting {
-    pub key: String,
-    pub name: String,
-    pub default: Option<String>,
-    pub optional: Option<bool>,
-    pub properties: Option<Vec<String>>,
-    pub options: Option<Vec<String>>,
-    pub public: Option<bool>,
-}
-
-impl FromSql<Text, Mysql> for Setting {
-    fn from_sql(
-        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<Setting> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes).unwrap();
-        let result = SettingManager::get_setting(t);
-        Ok(result.unwrap())
+impl Default for SecuritySettings {
+    fn default() -> Self {
+        SecuritySettings {}
     }
 }
 
-impl ToSql<Text, Mysql> for Setting {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = self.key.clone();
-        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-#[table_name = "settings"]
-pub struct DBSetting {
-    pub id: i64,
-    pub setting: Setting,
-    pub value: String,
-    pub updated: i64,
-}
-
-impl DBSetting {
-    pub fn set_value(&mut self, value: String) {
-        self.value = value;
-    }
-}
-
-pub fn get_file() -> String {
-    let cow = Resources::get("settings.toml").unwrap().data;
-
-    String::from_utf8(cow.to_vec()).unwrap()
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Settings {
-    pub settings: Vec<Setting>,
-}
-
-pub struct SettingManager {}
-
-impl SettingManager {
-    pub fn get_setting(key: String) -> Option<Setting> {
-        let settings = SettingManager::get_settings();
-        for setting in settings {
-            if setting.key == key {
-                return Some(setting);
-            }
+impl Default for SiteSetting {
+    fn default() -> Self {
+        SiteSetting {
+            name: "nitro_repo".to_string(),
+            description: "nitro_repo".to_string(),
         }
-        None
-    }
-    pub fn get_settings() -> Vec<Setting> {
-        let settings: Settings = toml::from_str(&*get_file()).unwrap();
-        settings.settings
     }
 }
 
-impl From<String> for Setting {
-    fn from(value: String) -> Self {
-        SettingManager::get_setting(value).unwrap()
-    }
-}
-
-impl From<&str> for Setting {
-    fn from(value: &str) -> Self {
-        SettingManager::get_setting(value.to_string()).unwrap()
-    }
-}
-
-impl FromStr for Setting {
-    type Err = InternalError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        SettingManager::get_setting(s.to_string())
-            .ok_or_else(|| InternalError::Error("Missing Setting".to_string()))
-    }
-}
-pub trait SettingVec {
-    fn get_setting_by_key(&self, key: &str) -> Option<&DBSetting>;
-}
-impl SettingVec for Vec<DBSetting> {
-    fn get_setting_by_key(&self, key: &str) -> Option<&DBSetting> {
-        for x in self {
-            if x.setting.key.eq(key) {
-                return Option::Some(x);
-            }
+impl Default for EmailSetting {
+    fn default() -> Self {
+        EmailSetting {
+            username: "no-reply@example.com".to_string(),
+            password: "".to_string(),
+            host: "example.com".to_string(),
+            encryption: "TLS".to_string(),
+            from: "no-reply@example.com".to_string(),
+            port: 587,
         }
-        None
     }
 }
