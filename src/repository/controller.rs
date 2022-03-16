@@ -5,7 +5,6 @@ use actix_files::NamedFile;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
-use diesel::MysqlConnection;
 use log::{debug, error, trace};
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +12,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
+use crate::NitroRepoData;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
@@ -30,69 +30,69 @@ pub fn to_request(
     storage_name: String,
     repo_name: String,
     file: String,
-    connection: &MysqlConnection,
+    site: NitroRepoData,
 ) -> Result<RepositoryRequest, InternalError> {
-    let storage = get_storage_by_name(&storage_name, connection)?;
+    let storages = site.storages.lock().unwrap();
+    let storage = storages.get(&storage_name);
     if storage.is_none() {
         trace!("Storage {} not found", &storage_name);
         return Err(InternalError::NotFound);
     }
-    let storage = storage.unwrap();
-    let repository = get_repo_by_name_and_storage(&repo_name, &storage_name, connection)?;
+    let storage = storage.unwrap().clone();
+    let repository = storage.get_repository(&repo_name)?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
         return Err(InternalError::NotFound);
     }
     let repository = repository.unwrap();
 
-    let request = RepositoryRequest::new(storage, repository, file);
+    let request = RepositoryRequest {
+        storage,
+        repository,
+        value: file,
+    };
     Ok(request)
 }
 
 #[get("/storages.json")]
-pub async fn browse(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
-    let connection = pool.get()?;
-
-    let vec = get_storages(&connection)?;
+pub async fn browse(site: NitroRepoData, r: HttpRequest) -> SiteResponse {
     let mut storages = Vec::new();
-    for x in vec {
-        storages.push(x.name);
+    for (name, _) in site.storages.lock().unwrap().iter() {
+        storages.push(name.clone());
     }
     APIResponse::respond_new(Some(storages), &r)
 }
 
 #[get("/storages/{storage}.json")]
 pub async fn browse_storage(
-    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<String>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
     let string = path.into_inner();
-    let storage = get_storage_by_name(&string, &connection)?;
+    let storages = site.storages.lock().unwrap();
+
+    let storage = storages.get(&string);
     if storage.is_none() {
         trace!("Storage {} not found", &string);
-        return not_found();
+        return Err(InternalError::NotFound);
     }
-    let _storage = storage.unwrap();
-    let vec = get_repositories_by_storage(&string, &connection)?;
-    let mut repos = Vec::new();
-    for x in vec {
-        repos.push(x.name);
-    }
+    let storage = storage.unwrap();
+    let  repos = storage.get_repositories()?;
     APIResponse::respond_new(Some(repos), &r)
 }
+
 
 #[get("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn get_repository(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let connection = pool.get()?;
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, &connection);
+    let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -191,13 +191,14 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
 #[post("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn post_repository(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
 ) -> SiteResponse {
     let connection = pool.get()?;
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, &connection);
+    let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -226,6 +227,7 @@ pub async fn post_repository(
 #[patch("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn patch_repository(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
@@ -233,7 +235,7 @@ pub async fn patch_repository(
     let connection = pool.get()?;
 
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, &connection);
+    let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -260,14 +262,14 @@ pub async fn patch_repository(
 
 #[put("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn put_repository(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DbPool>, site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
 ) -> SiteResponse {
     let connection = pool.get()?;
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, &connection);
+    let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -295,14 +297,14 @@ pub async fn put_repository(
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn head_repository(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DbPool>, site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, &connection);
+    let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),

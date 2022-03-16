@@ -56,6 +56,6 @@ pub async fn get_repo(
             return APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r);
         }
     }
-    return not_found();
+     not_found()
 }
 

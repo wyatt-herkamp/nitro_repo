@@ -5,7 +5,11 @@
     <div class="flex flex-wrap mb-6 justify-center">
       <div class="settingBox">
         <label for="grid-policy">Page Provider</label>
-        <select v-model="repository.security.visibility" @change="updateVisibility()" class="nitroTextInput">
+        <select
+          v-model="repository.security.visibility"
+          @change="updateVisibility()"
+          class="nitroTextInput"
+        >
           <option value="Public">Public</option>
           <option value="Private">Private</option>
           <option value="Hidden">Hidden</option>
@@ -20,7 +24,10 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { Repository } from "@/backend/Response";
-import { setVisibility, updateDeployReport } from "@/backend/api/admin/Repository";
+import {
+  setVisibility,
+  updateDeployReport,
+} from "@/backend/api/admin/Repository";
 export default defineComponent({
   props: {
     repository: {
@@ -32,7 +39,8 @@ export default defineComponent({
   methods: {
     async updateVisibility() {
       const response = await setVisibility(
-        this.repository.id,
+        this.repository.storage,
+        this.repository.name,
         this.repository.security.visibility,
         this.$cookie.getCookie("token")
       );

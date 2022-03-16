@@ -51,7 +51,7 @@ pub async fn delete_by_id(
     if let Some(storage) = guard.remove(&id.into_inner()) {
         //Yes I am exporting everything being deleted
         warn!(" Deleted Storage {}",serde_json::to_string(&storage).unwrap());
-        save_storages(guard.deref());
+        save_storages(guard.deref())?;
         APIResponse::new(true, Some(true)).respond(&r)
     } else {
         APIResponse::new(true, Some(false)).respond(&r)
@@ -95,14 +95,14 @@ pub async fn add_storage(
         return unauthorized();
     }
     let mut guard = site.storages.lock().unwrap();
-    for (id, storage) in guard.iter() {
+    for (_, storage) in guard.iter() {
         if storage.name.eq(&nc.name) || storage.public_name.eq(&nc.public_name) {
             return already_exists();
         }
     }
     let path = Path::new("storages").join(&nc.0.name);
     if !path.exists() {
-        create_dir_all(&path);
+        create_dir_all(&path)?;
     }
     let path = canonicalize(path)?;
     let string = nc.0.name;
@@ -114,7 +114,7 @@ pub async fn add_storage(
         location: HashMap::from([("location".to_string(), path.to_str().unwrap().to_string())]),
     };
     guard.insert(string.clone(), storage);
-    save_storages(guard.deref());
+    save_storages(guard.deref())?;
 
     APIResponse::new(true, guard.get(&string)).respond(&r)
 }

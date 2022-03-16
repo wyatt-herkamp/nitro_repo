@@ -123,7 +123,6 @@ export interface UserPermissions {
 }
 
 export interface RepositoryListResponse {
-  id: number;
   name: string;
   repo_type: string;
   storage: string;

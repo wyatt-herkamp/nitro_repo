@@ -57,14 +57,21 @@ impl Default for ReportGeneration {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DeploySettings {
     #[serde(default)]
     pub report_generation: ReportGeneration,
     #[serde(default)]
     pub webhooks: Vec<Webhook>,
 }
-
+impl Default for DeploySettings{
+    fn default() -> Self {
+        DeploySettings{
+            report_generation: Default::default(),
+            webhooks: vec![]
+        }
+    }
+}
 impl DeploySettings {
     pub fn add_webhook(&mut self, webhook: Webhook) {
         for x in self.webhooks.iter_mut() {
@@ -197,7 +204,7 @@ impl Policy {
     }
 }
 
-impl Visibility {
+impl Default for Visibility {
     fn default() -> Self {
         Public
     }
@@ -218,7 +225,15 @@ pub struct SecurityRules {
     #[serde(default = "Vec::new")]
     pub readers: Vec<i64>,
 }
-
+impl Default for SecurityRules{
+    fn default() -> Self {
+         SecurityRules{
+            deployers: vec![],
+            visibility: Default::default(),
+            readers: vec![]
+        }
+    }
+}
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RepositorySettings {
     #[serde(default = "default")]
@@ -295,6 +310,7 @@ pub struct Repository {
     pub deploy_settings: DeploySettings,
     pub created: i64,
 }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepositoryListResponse {

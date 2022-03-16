@@ -56,12 +56,12 @@ impl TryFrom<StringMap> for MysqlSettings {
         let password = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
         let host = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
         let database = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
-        return Ok(MysqlSettings {
+         Ok(MysqlSettings {
             user,
             password,
             host,
             database,
-        });
+        })
     }
 }
 

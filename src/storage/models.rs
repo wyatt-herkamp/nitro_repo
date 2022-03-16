@@ -22,7 +22,7 @@ pub fn load_storages() -> anyhow::Result<Storages> {
     }
     let string = read_to_string(&path)?;
     let result: Storages = toml::from_str(&string)?;
-    return Ok(result);
+     Ok(result)
 }
 
 pub fn save_storages(storages: &Storages) -> Result<(), InternalError> {
@@ -40,7 +40,7 @@ pub fn save_storages(storages: &Storages) -> Result<(), InternalError> {
         .create(true)
         .open(path)?;
     file.write_all(result.as_bytes())?;
-    return Ok(());
+     Ok(())
 }
 
 

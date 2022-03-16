@@ -10,6 +10,7 @@ use usvg::Options;
 
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
+use crate::NitroRepoData;
 
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
@@ -44,13 +45,14 @@ fn load_fonts() -> usvg::fontdb::Database {
 #[get("/badge/{storage}/{repository}/{file:.*}/badge.{typ}")]
 pub async fn badge(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file, typ) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, &connection)?;
+    let request = to_request(storage, repository, file, site)?;
 
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())

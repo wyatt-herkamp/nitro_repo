@@ -64,11 +64,11 @@ fn load_configs() -> anyhow::Result<Settings> {
     let site: SiteSetting = toml::from_str(&read_to_string(cfgs.join("site.json"))?)?;
     let email: EmailSetting = toml::from_str(&read_to_string(cfgs.join("email.json"))?)?;
 
-    return Ok(Settings {
+     Ok(Settings {
         email,
         site,
         security,
-    });
+    })
 }
 
 fn load_logger(logger: &Mode) {
@@ -107,8 +107,8 @@ async fn main() -> std::io::Result<()> {
     let pool = match init_settings.database.db_type.as_str() {
         "mysql" => {
             let settings: MysqlSettings = init_settings.database.settings.clone().try_into().unwrap();
-            let result = database::init(&settings.to_string()).unwrap();
-            result
+             database::init(&settings.to_string()).unwrap()
+
         }
         _ => {
             panic!("Invalid Database Type")
@@ -125,8 +125,9 @@ async fn main() -> std::io::Result<()> {
         settings: Mutex::new(settings),
         core: init_settings,
     };
+    let max_upload = nitro_repo.core.application.max_upload;
     let data = web::Data::new(nitro_repo);
-    let max_upload = init_settings.application.max_upload.clone();
+
     let server = HttpServer::new(move || {
         App::new()
             .wrap(

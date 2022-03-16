@@ -71,15 +71,6 @@ pub struct RepositoryRequest {
     pub value: String,
 }
 
-impl RepositoryRequest {
-    pub fn new(storage: Storage<StringMap>, repository: Repository, value: String) -> RepositoryRequest {
-        RepositoryRequest {
-            storage,
-            repository,
-            value,
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VersionResponse {

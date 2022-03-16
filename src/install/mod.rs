@@ -50,7 +50,7 @@ impl From<DatabaseStage> for Database<StringMap> {
         map.insert("password".to_string(), db.password.unwrap());
         map.insert("host".to_string(), db.host.unwrap());
         map.insert("database".to_string(), db.database.unwrap());
-        return Self { db_type: "mysql".to_string(), settings: map };
+         Self { db_type: "mysql".to_string(), settings: map }
     }
 }
 

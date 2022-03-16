@@ -37,7 +37,7 @@ input:checked + .toggle-bg {
 </style>
 <script lang="ts">
 
-import { getRepoByID } from "@/backend/api/Repository";
+import { getRepoByNameAndStorage } from "@/backend/api/Repository";
 import { Repository } from "@/backend/Response";
 import EditMenu from "@/components/repo/edit/EditMenu.vue";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
@@ -68,17 +68,16 @@ export default defineComponent({
     const cookie = useCookie();
     const isLoading = ref(false);
     const exampleBadgeURL = ref("");
-    const repoID = route.params.repo as string;
-    console.log(repoID);
+    const storage = route.params.storage as string;
+    const repo = route.params.repo as string;
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
 
     const getRepo = async () => {
       try {
-        const value = (await getRepoByID(
-          cookie.getCookie("token"),
-          Number.parseInt(repoID)
+        const value = (await getRepoByNameAndStorage(
+          cookie.getCookie("token"),storage,repo
         )) as Repository;
         repository.value = value;
 

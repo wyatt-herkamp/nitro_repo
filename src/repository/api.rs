@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
+use crate::NitroRepoData;
 
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::maven::MavenHandler;
@@ -20,13 +21,14 @@ pub struct ListRepositories {
 #[get("/api/versions/{storage}/{repository}/{file:.*}")]
 pub async fn get_versions(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, &connection)?;
+    let request = to_request(storage, repository, file, site)?;
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_versions(&request, &r, &connection),
@@ -41,6 +43,7 @@ pub async fn get_versions(
 #[get("/api/project/{storage}/{repository}/{file:.*}")]
 pub async fn get_project(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
@@ -48,7 +51,7 @@ pub async fn get_project(
     println!("{}", file);
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, &connection)?;
+    let request = to_request(storage, repository, file, site)?;
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_project(&request, &r, &connection),
@@ -62,13 +65,14 @@ pub async fn get_project(
 #[get("/api/version/{storage}/{repository}/{project}/{version}")]
 pub async fn get_version(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, project, version) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, project, &connection)?;
+    let request = to_request(storage, repository, project, site)?;
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_version(&request, version, &r, &connection),

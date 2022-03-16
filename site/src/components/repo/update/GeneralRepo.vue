@@ -92,7 +92,7 @@ export default defineComponent({
       }
 
       const response = await setActiveStatus(
-        this.repository.id,
+                this.repository.storage,this.repository.name,
         this.repository.settings.active,
         this.$cookie.getCookie("token")
       );
@@ -119,7 +119,7 @@ export default defineComponent({
         return;
       }
       const response = await setPolicy(
-        this.repository.id,
+                this.repository.storage,this.repository.name,
         this.repository.settings.policy,
         this.$cookie.getCookie("token")
       );

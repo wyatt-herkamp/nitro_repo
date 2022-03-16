@@ -19,33 +19,13 @@ export async function getRepositories(token: string) {
   return DEFAULT_REPO_LIST;
 }
 
-export async function getRepoByID(
-  token: string,
-  id: number
-): Promise<Repository | undefined> {
-  const value = await http.get("/api/admin/repositories/get/" + id, {
-    headers: {
-      Authorization: "Bearer " + token,
-    },
-  });
-
-  if (value.status != 200) {
-    return undefined;
-  }
-  const data = value.data as BasicResponse<unknown>;
-  if (data.success) {
-    return data.data as Repository;
-  }
-
-  return undefined;
-}
 
 export async function getRepoByNameAndStorage(
   token: string | undefined,
   storage: string,
   repo: string
 ): Promise<Repository | undefined> {
-  const url = "/api/deployer/repositories/get/" + storage + "/" + repo;
+  const url = "/api/repositories/get/" + storage + "/" + repo;
   const value = token == undefined ? await http.get(url) : await http.get(
     url, {
     headers: {
