@@ -35,7 +35,7 @@
     "@vue/cli-plugin-babel": "~5.0.2",
     "@vue/cli-plugin-eslint": "~5.0.2",
     "@vue/cli-plugin-router": "~5.0.2",
-    "@vue/cli-plugin-typescript": "~5.0.2",
+    "@vue/cli-plugin-typescript": "~5.0.3",
     "@vue/cli-plugin-vuex": "~5.0.2",
     "@vue/cli-service": "~5.0.2",
     "@vue/compiler-sfc": "^3.2.31",
