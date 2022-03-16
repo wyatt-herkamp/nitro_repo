@@ -40,7 +40,7 @@ use crate::database::Database;
 use crate::install::load_installer;
 use clap::Parser;
 use crate::settings::models::{EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting, StringMap};
-use crate::storage::models::{Storages};
+use crate::storage::models::{load_storages, Storages};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -55,14 +55,7 @@ pub struct NitroRepo {
     core: GeneralSettings,
 }
 pub type NitroRepoData = Data<NitroRepo>;
-pub static STORAGE_FILE: &str = "storages.json";
 
-pub fn load_storages() -> anyhow::Result<Storages> {
-    let path = Path::new(STORAGE_FILE);
-    let string = read_to_string(&path)?;
-    let result: Storages = toml::from_str(&string)?;
-    return Ok(result);
-}
 
 fn load_configs() -> anyhow::Result<Settings> {
     let cfgs = Path::new("cfg");
@@ -127,8 +120,6 @@ async fn main() -> std::io::Result<()> {
     let storages = load_storages().unwrap();
 
     info!("Initializing Web Server");
-    let storages = load_storages().unwrap();
-    let settings = load_configs().unwrap();
     let nitro_repo = NitroRepo {
         storages: Mutex::new(storages),
         settings: Mutex::new(settings),

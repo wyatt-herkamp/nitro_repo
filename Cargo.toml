@@ -54,6 +54,7 @@ futures-util = "0.3.17"
 time = "0.3.5"
 base64 = "0.13.0"
 tokio = "1.14.0"
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
 
 # Log
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }

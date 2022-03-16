@@ -12,6 +12,7 @@ use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{NitroMavenVersions, NitroVersion, ProjectData};
 use crate::storage::models::Storage;
+use crate::StringMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -63,7 +64,7 @@ pub type RepoResult = Result<RepoResponse, InternalError>;
 /// This is a Request to a Repository Handler
 pub struct RepositoryRequest {
     /// The Storage that the Repo needs to be in
-    pub storage: Storage,
+    pub storage: Storage<StringMap>,
     /// The Repository it needs to be in
     pub repository: Repository,
     /// Everything in the URL path after /storages/{STORAGE}/{REPOSITORY}
@@ -71,7 +72,7 @@ pub struct RepositoryRequest {
 }
 
 impl RepositoryRequest {
-    pub fn new(storage: Storage, repository: Repository, value: String) -> RepositoryRequest {
+    pub fn new(storage: Storage<StringMap>, repository: Repository, value: String) -> RepositoryRequest {
         RepositoryRequest {
             storage,
             repository,

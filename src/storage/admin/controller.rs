@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use actix_web::{get, post, delete, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
@@ -5,22 +6,22 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
-use crate::error::response::{already_exists, not_found, unauthorized};
-use crate::storage::action::{add_new_storage, delete_storage_by_id, get_storage_by_id, get_storage_by_name, get_storage_by_public_name, get_storages};
-use crate::storage::models::Storage;
+use crate::error::response::{already_exists, unauthorized};
+use crate::storage::models::{LocationType, save_storages, Storage};
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
-use std::fs::create_dir_all;
-use std::path::PathBuf;
+use std::fs::{canonicalize, create_dir_all};
+use std::ops::Deref;
+use std::path::{Path};
+use log::warn;
+use uuid::Uuid;
+use crate::{NitroRepoData};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListStorages {
-    pub storages: Vec<Storage>,
-}
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
 ) -> Result<HttpResponse, InternalError> {
     let connection = pool.get()?;
@@ -29,16 +30,17 @@ pub async fn list_storages(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let vec = get_storages(&connection)?;
+    let guard = site.storages.lock().unwrap();
 
-    let response = ListStorages { storages: vec };
-    APIResponse::new(true, Some(response)).respond(&r)
+    APIResponse::new(true, Some(guard.deref())).respond(&r)
 }
+
 #[delete("/api/admin/storages/{id}")]
 pub async fn delete_by_id(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    id: web::Path<i64>,
+    site: NitroRepoData,
+    id: web::Path<Uuid>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -46,15 +48,23 @@ pub async fn delete_by_id(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let result = delete_storage_by_id(&id.into_inner(), &connection)?;
-
-    APIResponse::new(true, Some(result)).respond(&r)
+    let mut guard = site.storages.lock().unwrap();
+    if let Some(storage) = guard.remove(&id.into_inner()) {
+        //Yes I am exporting everything being deleted
+        warn!(" Deleted Storage {}",serde_json::to_string(&storage).unwrap());
+        save_storages(guard.deref());
+        APIResponse::new(true, Some(true)).respond(&r)
+    } else {
+        APIResponse::new(true, Some(false)).respond(&r)
+    }
 }
+
 #[get("/api/storages/id/{id}")]
 pub async fn get_by_id(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    id: web::Path<i64>,
+    site: NitroRepoData,
+    id: web::Path<Uuid>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -62,12 +72,8 @@ pub async fn get_by_id(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let vec = get_storage_by_id(&id.into_inner(), &connection)?;
-    if vec.is_none() {
-        return not_found();
-    }
-
-    APIResponse::new(true, vec).respond(&r)
+    let guard = site.storages.lock().unwrap();
+    return APIResponse::new(true, guard.get(&id.into_inner())).respond(&r);
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -81,6 +87,7 @@ pub async fn add_storage(
     pool: web::Data<DbPool>,
     r: HttpRequest,
     nc: web::Json<NewStorage>,
+    site: NitroRepoData,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -88,27 +95,27 @@ pub async fn add_storage(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    if get_storage_by_public_name(&nc.public_name, &connection)?.is_some() {
-        return already_exists();
+    let mut guard = site.storages.lock().unwrap();
+    for (id, storage) in guard.iter() {
+        if storage.name.eq(&nc.name) || storage.public_name.eq(&nc.public_name) {
+            return already_exists();
+        }
     }
-    if get_storage_by_name(&nc.name, &connection)?.is_some() {
-        return already_exists();
+    let path = Path::new("storages").join(&nc.0.name);
+    if !path.exists() {
+        create_dir_all(&path);
     }
+    let path = canonicalize(path)?;
+    let uuid = Uuid::new_v4();
     let storage = Storage {
-        id: 0,
-
         public_name: nc.0.public_name,
         name: nc.0.name,
         created: get_current_time(),
+        location_type: LocationType::LocalStorage,
+        location: HashMap::from([("location".to_string(), path.to_str().unwrap().to_string())]),
     };
-    add_new_storage(&storage, &connection)?;
-    let buf = PathBuf::new().join("storages").join(&storage.name);
-    if !buf.exists() {
-        create_dir_all(buf)?;
-    }
-    let option = get_storage_by_name(&storage.name, &connection)?;
-    if option.is_none() {
-        return not_found();
-    }
-    APIResponse::new(true, option).respond(&r)
+    guard.insert(uuid.clone(), storage);
+    save_storages(guard.deref());
+
+    APIResponse::new(true, guard.get(&uuid)).respond(&r)
 }
