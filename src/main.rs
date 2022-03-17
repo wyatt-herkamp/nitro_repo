@@ -2,7 +2,6 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-extern crate dotenv;
 extern crate strum;
 extern crate strum_macros;
 extern crate core;
@@ -35,6 +34,7 @@ pub mod storage;
 pub mod system;
 pub mod utils;
 pub mod webhook;
+pub mod constants;
 
 use crate::database::Database;
 use crate::install::load_installer;

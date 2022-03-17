@@ -3,14 +3,16 @@ use std::fmt::Debug;
 use std::fs;
 use std::fs::{OpenOptions, read_to_string};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
+use actix_web::HttpRequest;
+use either::{Either, Left, Right};
 
 use serde::{Deserialize, Serialize};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::storage::{LocationHandler, RepositoriesFile, StorageFile};
-use crate::storage::local_storage::LocalStorage;
-use crate::StringMap;
+use crate::storage::{LocationHandler, RepositoriesFile, StorageFile, StorageFileResponse};
+use crate::storage::local_storage::{ LocalStorage};
+use crate::{SiteResponse, StringMap};
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
@@ -22,7 +24,7 @@ pub fn load_storages() -> anyhow::Result<Storages> {
     }
     let string = read_to_string(&path)?;
     let result: Storages = serde_json::from_str(&string)?;
-     Ok(result)
+    Ok(result)
 }
 
 pub fn save_storages(storages: &Storages) -> Result<(), InternalError> {
@@ -40,7 +42,7 @@ pub fn save_storages(storages: &Storages) -> Result<(), InternalError> {
         .create(true)
         .open(path)?;
     file.write_all(result.as_bytes())?;
-     Ok(())
+    Ok(())
 }
 
 
@@ -61,8 +63,10 @@ pub struct Storage<T> {
     pub location: T,
 }
 
+pub type StringStorage = Storage<StringMap>;
+
 impl Storage<StringMap> {
-    pub  fn create_repository(&self, repository: RepositorySummary) -> Result<Repository, InternalError> {
+    pub fn create_repository(&self, repository: RepositorySummary) -> Result<Repository, InternalError> {
         match self.location_type {
             LocationType::LocalStorage => {
                 LocalStorage::create_repository(self, repository)
@@ -94,7 +98,7 @@ impl Storage<StringMap> {
         }
     }
 
-    pub  fn save_file(&self, repository: &Repository, file: &[u8], location: String) -> Result<(), InternalError> {
+    pub fn save_file(&self, repository: &Repository, file: &[u8], location: &str) -> Result<(), InternalError> {
         match self.location_type {
             LocationType::LocalStorage => {
                 LocalStorage::save_file(self, repository, file, location)
@@ -102,7 +106,7 @@ impl Storage<StringMap> {
         }
     }
 
-    pub fn delete_file(&self, repository: &Repository, location: String) -> Result<(), InternalError> {
+    pub fn delete_file(&self, repository: &Repository, location: &str) -> Result<(), InternalError> {
         match self.location_type {
             LocationType::LocalStorage => {
                 LocalStorage::delete_file(self, repository, location)
@@ -110,15 +114,20 @@ impl Storage<StringMap> {
         }
     }
 
-    pub fn list_files(&self, repository: &Repository, location: String) -> Result<Vec<StorageFile>, InternalError> {
-        match self.location_type {
+    pub fn get_file_as_response(&self, repository: &Repository, location: &str, request: &HttpRequest) -> Result<Either<SiteResponse, Vec<StorageFile>>, InternalError> {
+        return match self.location_type {
             LocationType::LocalStorage => {
-                LocalStorage::list_files(self, repository, location)
+                let response = LocalStorage::get_file_as_response(self, repository, location)?;
+                if response.is_left() {
+                    Ok(Left(response.left().unwrap().to_request(request)))
+                } else {
+                    Ok(Right(response.right().unwrap()))
+                }
             }
-        }
+        };
     }
 
-    pub fn get_file(&self, repository: &Repository, location: String) -> Result<PathBuf, InternalError> {
+    pub fn get_file(&self, repository: &Repository, location: &str) -> Result<Option<Vec<u8>>, InternalError> {
         match self.location_type {
             LocationType::LocalStorage => {
                 LocalStorage::get_file(self, repository, location)

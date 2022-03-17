@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
+use either::Either;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -12,7 +13,8 @@ use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{NitroMavenVersions, NitroVersion, ProjectData};
 use crate::storage::models::Storage;
-use crate::StringMap;
+use crate::{SiteResponse, StringMap};
+use crate::storage::StorageFile;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -31,11 +33,11 @@ pub struct Project {
 
 /// Types of Valid Repo Responses
 pub enum RepoResponse {
-    FileList(Vec<RepositoryFile>),
+    FileList(Vec<StorageFile>),
     /// Responds all the information about the project
     ProjectResponse(Project),
     /// Respond a file so it can be downloaded
-    FileResponse(PathBuf),
+    FileResponse(SiteResponse),
     /// Ok
     Ok,
     //Ok With Json

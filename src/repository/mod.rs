@@ -9,7 +9,6 @@ pub mod frontend;
 pub mod maven;
 pub mod models;
 pub mod nitro;
-mod npm;
 pub mod public;
 pub mod types;
 pub mod utils;

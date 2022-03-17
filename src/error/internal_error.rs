@@ -130,3 +130,8 @@ impl From<ParseBoolError> for InternalError {
         InternalError::BooleanParseError(err)
     }
 }
+impl From<&str> for InternalError {
+    fn from(error: &str) -> Self {
+        InternalError::Error(error.to_string())
+    }
+}

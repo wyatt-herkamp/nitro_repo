@@ -64,6 +64,7 @@ derive_more = "0.99.14"
 async-trait = "0.1.51"
 thiserror = "1.0.30"
 anyhow = "1.0.56"
+either = "1.6.1"
 # Badge Stuff
 badge-maker = "0.2.0"
 usvg = "0.22.0"

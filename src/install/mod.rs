@@ -17,7 +17,7 @@ use crossterm::{
 use diesel::MysqlConnection;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
-use std::io::{Error, Stdout, Write};
+use std::io::{Stdout, Write};
 use std::path::{Path};
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -35,7 +35,7 @@ use crate::system::utils::hash;
 use crate::utils::get_current_time;
 use unicode_width::UnicodeWidthStr;
 use crate::settings::models::{Application, Database};
-use crate::{EmailSetting, GeneralSettings, Mode, SiteSetting, StringMap};
+use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -515,6 +515,14 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
         .create(true)
         .open(config.join("nitro_repo.toml"))?;
     file.write_all(other.as_bytes())?;
+
+    let security = toml::to_string_pretty(&SecuritySettings::default())?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(config.join("security.toml"))?;
+    file.write_all(security.as_bytes())?;
 
     let email = toml::to_string_pretty(&EmailSetting::default())?;
     let mut file = OpenOptions::new()

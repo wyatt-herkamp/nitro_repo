@@ -1,7 +1,6 @@
 use std::fs::read_to_string;
 use std::path::Path;
 
-use actix_files::NamedFile;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
@@ -15,7 +14,6 @@ use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::NitroRepoData;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
-use crate::repository::npm::NPMHandler;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::utils::get_accept;
 
@@ -78,7 +76,7 @@ pub async fn browse_storage(
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let  repos :Vec<String>= storage.get_repositories()?.keys().cloned().collect();
+    let repos: Vec<String> = storage.get_repositories()?.keys().cloned().collect();
     APIResponse::respond_new(Some(repos), &r)
 }
 
@@ -102,7 +100,6 @@ pub async fn get_repository(
     let request = result.unwrap();
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
-        "npm" => NPMHandler::handle_get(&request, &r, &connection),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
@@ -119,15 +116,13 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
             if x.contains(&"application/json".to_string()) {
                 APIResponse::new(true, Some(files)).respond(&r)
             } else {
-                let result1 = read_to_string(
-                    Path::new(&std::env::var("SITE_DIR").unwrap()).join("browse/[...browse].html"),
-                );
+                trace!("Access to Simple Dir Listing {}" ,r.uri());
                 Ok(HttpResponse::Ok()
                     .content_type("text/html")
-                    .body(result1.unwrap()))
+                    .body("Coming Soon(Simple DIR Listing)"))
             }
         }
-        RepoResponse::FileResponse(file) => Ok(NamedFile::open(file)?.into_response(&r)),
+        RepoResponse::FileResponse(file) => file,
         RepoResponse::Ok => APIResponse::new(true, Some(false)).respond(&r),
         RepoResponse::NotFound => {
             if x.contains(&"application/json".to_string()) {
@@ -215,7 +210,6 @@ pub async fn post_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
-        "npm" => NPMHandler::handle_post(&request, &r, &connection, bytes),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
@@ -252,7 +246,6 @@ pub async fn patch_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
-        "npm" => NPMHandler::handle_patch(&request, &r, &connection, bytes),
         _ => {
             panic!("Unknown REPO")
         }
@@ -286,7 +279,6 @@ pub async fn put_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
-        "npm" => NPMHandler::handle_put(&request, &r, &connection, bytes),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
@@ -321,7 +313,6 @@ pub async fn head_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_head(&request, &r, &connection),
-        "npm" => NPMHandler::handle_head(&request, &r, &connection),
         _ => {
             error!("Invalid Repo Type {}", request.repository.repo_type);
             panic!("Unknown REPO")
