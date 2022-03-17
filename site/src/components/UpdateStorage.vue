@@ -128,7 +128,7 @@ import { deleteStorage } from "@/backend/api/admin/Storage";
 export default defineComponent({
   props: {
     storageId: {
-      type: Number,
+      type: String,
       required: true,
     },
   },

@@ -56,7 +56,7 @@ export default defineComponent({
       }
 
       const response = await updateDeployReport(
-        this.repository.storage,this.repository.name
+        this.repository.storage,this.repository.name,
         this.repository.deploy_settings.report_generation.active,
         this.repository.deploy_settings.report_generation.values,
         this.$cookie.getCookie("token")

@@ -3,11 +3,12 @@ use std::fs;
 use std::fs::{create_dir_all, OpenOptions, read_to_string, remove_file};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use log::info;
 use crate::error::internal_error::InternalError;
 use crate::StringMap;
 use serde::{Serialize, Deserialize};
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::REPOSITORY_CONF;
+use crate::repository::{REPOSITORY_CONF, REPOSITORY_CONF_BAK};
 use crate::storage::{LocationHandler, RepositoriesFile, STORAGE_CONFIG, StorageFile};
 use crate::storage::models::{LocationType, Storage};
 use crate::utils::get_current_time;
@@ -35,8 +36,31 @@ impl LocationHandler for LocalStorage {
 
     fn create_repository(storage: &Storage<StringMap>, repository: RepositorySummary) -> Result<Repository, InternalError> {
         let location = storage.location.get("location").unwrap();
-        let location = Path::new(location).join(&repository.name);
-        create_dir_all(&repository.name);
+        let storages = Path::new(location);
+        let location = storages.join(&repository.name);
+
+        {
+            let storage_config = storages.join(STORAGE_CONFIG);
+            info!("Adding Value to Storage Config {}", storage_config.to_str().unwrap());
+            let mut repos = if storage_config.exists() {
+                let string = read_to_string(&storage_config)?;
+                remove_file(&storage_config)?;
+                serde_json::from_str(&string)?
+            } else {
+                HashMap::<String, RepositorySummary>::new()
+            };
+            repos.insert(repository.name.clone(), repository.clone());
+            let result = serde_json::to_string_pretty(&repos)?;
+
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .open(storage_config)?;
+            file.write_all(result.as_bytes())?;
+        }
+        info!("Creating Directory {}",location.to_str().unwrap());
+
+        create_dir_all(&location)?;
         let repo = Repository {
             name: repository.name,
             repo_type: repository.repo_type,
@@ -46,7 +70,7 @@ impl LocationHandler for LocalStorage {
             deploy_settings: Default::default(),
             created: get_current_time(),
         };
-        let result = serde_json::to_string(&repo)?;
+        let result = serde_json::to_string_pretty(&repo)?;
 
         let config = location.join(REPOSITORY_CONF);
         let mut file = OpenOptions::new()
@@ -54,7 +78,7 @@ impl LocationHandler for LocalStorage {
             .create(true)
             .open(config)?;
         file.write_all(result.as_bytes())?;
-        return Ok(repo);
+        Ok(repo)
     }
 
     fn get_repositories(storage: &Storage<StringMap>) -> Result<RepositoriesFile, InternalError>
@@ -73,6 +97,7 @@ impl LocationHandler for LocalStorage {
     fn get_repository(storage: &Storage<StringMap>, repository: &str) -> Result<Option<Repository>, InternalError> {
         let location = storage.location.get("location").unwrap();
         let path = Path::new(location).join(repository).join(REPOSITORY_CONF);
+
         if !path.exists() {
             return Ok(None);
         }
@@ -85,7 +110,8 @@ impl LocationHandler for LocalStorage {
         let location = storage.location.get("location").unwrap();
         let location = Path::new(location).join(&repository.name);
         let config = location.join(REPOSITORY_CONF);
-        let bak = location.join(REPOSITORY_CONF);
+        println!("{:?}", &config);
+        let bak = location.join(REPOSITORY_CONF_BAK);
         if !config.exists() {
             return Err(InternalError::NotFound);
         }

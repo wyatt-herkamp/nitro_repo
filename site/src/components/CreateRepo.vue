@@ -59,8 +59,8 @@
                 <option disabled selected value="">Select your Storage</option>
 
                 <option
-                  v-for="storage in storages.storages"
-                  :key="storage.id"
+                  v-for="storage in storages  "
+                  :key="storage.name"
                   :value="storage.name"
                 >
                   {{ storage.public_name }}

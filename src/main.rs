@@ -60,9 +60,9 @@ pub type NitroRepoData = Data<NitroRepo>;
 fn load_configs() -> anyhow::Result<Settings> {
     let cfgs = Path::new("cfg");
 
-    let security: SecuritySettings = toml::from_str(&read_to_string(cfgs.join("security.json"))?)?;
-    let site: SiteSetting = toml::from_str(&read_to_string(cfgs.join("site.json"))?)?;
-    let email: EmailSetting = toml::from_str(&read_to_string(cfgs.join("email.json"))?)?;
+    let security: SecuritySettings = toml::from_str(&read_to_string(cfgs.join("security.toml"))?)?;
+    let site: SiteSetting = toml::from_str(&read_to_string(cfgs.join("site.toml"))?)?;
+    let email: EmailSetting = toml::from_str(&read_to_string(cfgs.join("email.toml"))?)?;
 
      Ok(Settings {
         email,
@@ -126,6 +126,7 @@ async fn main() -> std::io::Result<()> {
         core: init_settings,
     };
     let max_upload = nitro_repo.core.application.max_upload;
+    let address = nitro_repo.core.application.address.clone();
     let data = web::Data::new(nitro_repo);
 
     let server = HttpServer::new(move || {
@@ -169,13 +170,13 @@ async fn main() -> std::io::Result<()> {
                 .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
                 .unwrap();
             return server
-                .bind_openssl(std::env::var("ADDRESS").unwrap(), builder)?
+                .bind_openssl(address, builder)?
                 .run()
                 .await;
         }
     }
 
-    return server.bind(std::env::var("ADDRESS").unwrap())?.run().await;
+    return server.bind(address)?.run().await;
 }
 
 

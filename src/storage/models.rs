@@ -21,7 +21,7 @@ pub fn load_storages() -> anyhow::Result<Storages> {
         return Ok(HashMap::new());
     }
     let string = read_to_string(&path)?;
-    let result: Storages = toml::from_str(&string)?;
+    let result: Storages = serde_json::from_str(&string)?;
      Ok(result)
 }
 

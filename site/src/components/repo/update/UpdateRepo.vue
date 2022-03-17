@@ -79,6 +79,7 @@ export default defineComponent({
         const value = (await getRepoByNameAndStorage(
           cookie.getCookie("token"),storage,repo
         )) as Repository;
+        console.log(value);
         repository.value = value;
 
         meta.title = value.name;

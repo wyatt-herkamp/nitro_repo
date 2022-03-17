@@ -1,5 +1,3 @@
-use std::fs::create_dir_all;
-use std::path::PathBuf;
 
 use actix_web::web::Bytes;
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
@@ -8,10 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
-use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
+use crate::error::response::{ bad_request, not_found, unauthorized};
 use crate::NitroRepoData;
 
-use crate::repository::models::{BadgeSettings, Frontend, Policy, Repository, RepositoryListResponse, RepositorySettings, RepositorySummary, SecurityRules, Visibility};
+use crate::repository::models::{BadgeSettings, Frontend, Policy, RepositoryListResponse, RepositorySettings, RepositorySummary, SecurityRules, Visibility};
 use crate::repository::models::{ReportGeneration, Webhook};
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
@@ -42,7 +40,7 @@ pub async fn list_repos(pool: web::Data<DbPool>, site: NitroRepoData, r: HttpReq
 }
 
 
-#[get("/api/repositories/get/{storage}/{repo}")]
+#[get("/api/admin/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
     pool: web::Data<DbPool>,
     site: NitroRepoData,

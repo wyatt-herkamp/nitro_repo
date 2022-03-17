@@ -25,7 +25,7 @@ export async function getRepoByNameAndStorage(
   storage: string,
   repo: string
 ): Promise<Repository | undefined> {
-  const url = "/api/repositories/get/" + storage + "/" + repo;
+  const url = "/api/admin/repositories/get/" + storage + "/" + repo;
   const value = token == undefined ? await http.get(url) : await http.get(
     url, {
     headers: {
@@ -39,6 +39,7 @@ export async function getRepoByNameAndStorage(
   }
   const data = value.data as BasicResponse<unknown>;
   if (data.success) {
+  
     return data.data as Repository;
   }
 

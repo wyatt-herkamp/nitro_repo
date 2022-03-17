@@ -67,5 +67,5 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
 }
 
 pub fn get_storage_location() -> PathBuf {
-    PathBuf::from(std::env::var("STORAGE_LOCATION").unwrap())
+    PathBuf::from("./")
 }

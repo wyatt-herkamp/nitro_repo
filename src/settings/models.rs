@@ -54,8 +54,8 @@ impl TryFrom<StringMap> for MysqlSettings {
     fn try_from(mut value: StringMap) -> Result<Self, Self::Error> {
         let user = value.remove("user").ok_or_else(|| InternalError::ConfigError("database.user".to_string()))?;
         let password = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
-        let host = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
-        let database = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
+        let host = value.remove("host").ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
+        let database = value.remove("database").ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
          Ok(MysqlSettings {
             user,
             password,

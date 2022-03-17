@@ -78,7 +78,7 @@ pub async fn browse_storage(
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let  repos = storage.get_repositories()?;
+    let  repos :Vec<String>= storage.get_repositories()?.keys().cloned().collect();
     APIResponse::respond_new(Some(repos), &r)
 }
 

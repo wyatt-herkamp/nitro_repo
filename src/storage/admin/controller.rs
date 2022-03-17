@@ -14,7 +14,7 @@ use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::{Path};
 use log::warn;
-use crate::{NitroRepoData};
+use crate::{NitroRepoData, StringMap};
 
 
 #[get("/api/storages/list")]
@@ -30,8 +30,8 @@ pub async fn list_storages(
         return unauthorized();
     }
     let guard = site.storages.lock().unwrap();
-
-    APIResponse::new(true, Some(guard.deref())).respond(&r)
+    let values: Vec<Storage<StringMap>> = guard.values().cloned().collect();
+    APIResponse::new(true, Some(values)).respond(&r)
 }
 
 #[delete("/api/admin/storages/{id}")]
@@ -72,6 +72,7 @@ pub async fn get_by_id(
         return unauthorized();
     }
     let guard = site.storages.lock().unwrap();
+
     return APIResponse::new(true, guard.get(&id.into_inner())).respond(&r);
 }
 
