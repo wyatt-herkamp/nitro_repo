@@ -16,8 +16,8 @@ use crossterm::{
 };
 use diesel::MysqlConnection;
 use std::fmt::{Display, Formatter};
-use std::fs::OpenOptions;
-use std::io::{Stdout, Write};
+use std::fs::{create_dir_all, OpenOptions};
+use std::io::{Error, Stdout, Write};
 use std::path::{Path};
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -28,11 +28,35 @@ use tui::{
     Frame, Terminal,
 };
 
+
+use thiserror::Error;
+
 use crate::system::utils::hash;
 use crate::utils::get_current_time;
 use unicode_width::UnicodeWidthStr;
 use crate::settings::models::{Application, Database};
-use crate::{EmailSetting, Mode, SiteSetting, StringMap};
+use crate::{EmailSetting, GeneralSettings, Mode, SiteSetting, StringMap};
+
+#[derive(Error, Debug)]
+pub enum InstallError {
+    #[error("Unable to Install Nitro Repo. {0}")]
+    InstallError(String),
+    #[error("IO Error. Installer. {0}")]
+    IOError(std::io::Error),
+}
+
+impl From<&str> for InstallError {
+    fn from(error: &str) -> Self {
+        InstallError::InstallError(error.to_string())
+    }
+}
+
+impl From<std::io::Error> for InstallError {
+    fn from(error: std::io::Error) -> Self {
+        InstallError::IOError(error)
+    }
+}
+
 
 //mysql://newuser:"password"@127.0.0.1/nitro_repo
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -50,7 +74,7 @@ impl From<DatabaseStage> for Database<StringMap> {
         map.insert("password".to_string(), db.password.unwrap());
         map.insert("host".to_string(), db.host.unwrap());
         map.insert("database".to_string(), db.database.unwrap());
-         Self { db_type: "mysql".to_string(), settings: map }
+        Self { db_type: "mysql".to_string(), settings: map }
     }
 }
 
@@ -157,11 +181,11 @@ impl Default for App {
 fn run_app(
     mut terminal: Terminal<CrosstermBackend<Stdout>>,
     mut app: App,
-) -> io::Result<Option<App>> {
+) -> Result<App, InstallError> {
     loop {
         if app.stage >= 3 {
             close(terminal);
-            return Ok(Some(app));
+            return Ok(app);
         }
         terminal.draw(|f| ui(f, &app))?;
 
@@ -259,7 +283,7 @@ fn run_app(
     }
     close(terminal);
 
-    Ok(None)
+    Err("Unknown Error. Final Catch!".into())
 }
 
 fn get_next_default(app: &App) -> Option<String> {
@@ -474,27 +498,17 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
 
-    // create app and run it
-    let app = App::default();
-    let app = run_app(terminal, app).unwrap();
-    if app.is_none() {
-        println!("Failure to Install");
-        return Ok(());
-    }
-    let app = app.unwrap();
 
-    if app.connection.is_none() {
-        println!("Failure to Install");
-        return Ok(());
-    }
-    let database = toml::to_string_pretty(&Database::from(app.database_stage))?;
-    let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .create(true)
-        .open(config.join("database.toml"))?;
-    file.write_all(database.as_bytes())?;
-    let other = toml::to_string_pretty(&Application::from(app.other_stage))?;
+    let app = run_app(terminal, App::default())?;
+
+    let general = GeneralSettings {
+        database: app.database_stage.into(),
+        application: Application::from(app.other_stage),
+        internal: Default::default(),
+    };
+    create_dir_all(config)?;
+
+    let other = toml::to_string_pretty(&general)?;
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
@@ -517,7 +531,6 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
         .open(config.join("site.toml"))?;
     file.write_all(site.as_bytes())?;
     info!("Installation Complete");
-    println!("Installation Complete!");
     Ok(())
 }
 

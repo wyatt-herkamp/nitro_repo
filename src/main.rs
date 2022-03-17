@@ -13,7 +13,7 @@ use actix_web::web::{Data, PayloadConfig};
 use actix_web::{middleware, web, App, HttpServer};
 use std::path::Path;
 
-use log::info;
+use log::{error, info};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use std::sync::Mutex;
@@ -39,6 +39,7 @@ pub mod webhook;
 use crate::database::Database;
 use crate::install::load_installer;
 use clap::Parser;
+use crossterm::style::Stylize;
 use crate::settings::models::{EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting, StringMap};
 use crate::storage::models::{load_storages, Storages};
 
@@ -48,12 +49,14 @@ struct Cli {
     #[clap(short, long)]
     install: bool,
 }
+
 #[derive(Debug)]
 pub struct NitroRepo {
     storages: Mutex<Storages>,
     settings: Mutex<Settings>,
     core: GeneralSettings,
 }
+
 pub type NitroRepoData = Data<NitroRepo>;
 
 
@@ -64,18 +67,18 @@ fn load_configs() -> anyhow::Result<Settings> {
     let site: SiteSetting = toml::from_str(&read_to_string(cfgs.join("site.toml"))?)?;
     let email: EmailSetting = toml::from_str(&read_to_string(cfgs.join("email.toml"))?)?;
 
-     Ok(Settings {
+    Ok(Settings {
         email,
         site,
         security,
     })
 }
 
-fn load_logger(logger: &Mode) {
-    let file = match logger {
+fn load_logger<T: AsRef<Mode>>(logger: T) {
+    let file = match logger.as_ref() {
         Mode::Debug => "log-debug.json",
         Mode::Release => "log-release.json",
-        Mode::Install => "log-release.json",
+        Mode::Install => "log-install.json",
     };
     let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
     NitroLogger::load(config, None).unwrap();
@@ -88,8 +91,13 @@ async fn main() -> std::io::Result<()> {
     if !main_config.exists() {
         let parse: Cli = Cli::parse();
         if parse.install {
-            load_logger(&Mode::Install);
-            load_installer(path).expect("Unable to successfully install application");
+            load_logger(Mode::Install);
+            if let Err(error) = load_installer(path) {
+                error!("Unable to complete Install {error}");
+                println!("{}", "Unable to Complete Installation".red());
+                std::process::exit(1);
+            }
+            println!("{}", "Installation Complete".green());
             return Ok(());
         } else {
             println!(
@@ -101,24 +109,45 @@ async fn main() -> std::io::Result<()> {
     info!("Loading Main Config");
     let string = read_to_string(&main_config)?;
     let init_settings: GeneralSettings = toml::from_str(&string)?;
+    // Sets the Log Location
+    std::env::set_var("LOG_LOCATION", &init_settings.application.log);
+
     load_logger(&init_settings.application.mode);
 
     info!("Initializing Database");
     let pool = match init_settings.database.db_type.as_str() {
         "mysql" => {
-            let settings: MysqlSettings = init_settings.database.settings.clone().try_into().unwrap();
-             database::init(&settings.to_string()).unwrap()
-
+            let result = MysqlSettings::try_from(init_settings.database.settings.clone());
+            if let Err(error) = result {
+                error!("Unable to load database Settings {error}");
+                std::process::exit(1);
+            }
+            database::init(&result.unwrap().to_string())
         }
         _ => {
-            panic!("Invalid Database Type")
+            error!("Invalid Database Type");
+            std::process::exit(1);
         }
     };
+    if let Err(error) = pool {
+        error!("Unable to load database {error}");
+        std::process::exit(1);
+    }
+    let pool = pool.unwrap();
     info!("Loading Other Configs");
-    let settings = load_configs().unwrap();
+    let settings = load_configs();
+    if let Err(error) = settings {
+        error!("Unable to load Settings {error}");
+        std::process::exit(1);
+    }
+    let settings = settings.unwrap();
     info!("Loading Storages");
-    let storages = load_storages().unwrap();
-
+    let storages = load_storages();
+    if let Err(error) = storages {
+        error!("Unable to load Settings {error}");
+        std::process::exit(1);
+    }
+    let storages = storages.unwrap();
     info!("Initializing Web Server");
     let nitro_repo = NitroRepo {
         storages: Mutex::new(storages),
@@ -151,7 +180,6 @@ async fn main() -> std::io::Result<()> {
             .configure(system::controllers::init)
             .configure(misc::init)
             .configure(frontend::init)
-        // TODO Make sure this is the correct way of handling vue and actix together. Also learn about packaging the website.
     })
         .workers(2);
 

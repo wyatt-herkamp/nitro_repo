@@ -10,6 +10,12 @@ pub enum Mode {
     Install,
 }
 
+impl AsRef<Mode> for Mode {
+    fn as_ref(&self) -> &Mode {
+        self
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Settings {
     pub email: EmailSetting,
@@ -21,6 +27,15 @@ pub struct Settings {
 pub struct Internal {
     pub installed: bool,
     pub version: String,
+}
+
+impl Default for Internal {
+    fn default() -> Self {
+        Self {
+            installed: true,
+            version: env!("CARGO_PKG_VERSION").to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -56,7 +71,7 @@ impl TryFrom<StringMap> for MysqlSettings {
         let password = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
         let host = value.remove("host").ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
         let database = value.remove("database").ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
-         Ok(MysqlSettings {
+        Ok(MysqlSettings {
             user,
             password,
             host,
