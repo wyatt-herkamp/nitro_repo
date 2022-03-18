@@ -41,6 +41,7 @@
                 <option disabled selected value="">Repository Type</option>
 
                 <option value="maven">Maven</option>
+                <option value="npm">NPM</option>
               </select>
             </div>
             <div class="grow pl-2">

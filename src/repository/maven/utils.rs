@@ -8,7 +8,7 @@ use log::trace;
 use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::maven::models::Pom;
 use crate::repository::models::Repository;
-use crate::repository::nitro::{NitroMavenVersions, ProjectData};
+use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
 use crate::storage::models::StringStorage;
@@ -25,7 +25,7 @@ pub fn get_version(
 }
 
 pub fn get_version_by_data(
-    versions_value: &NitroMavenVersions,
+    versions_value: &NitroRepoVersions,
     version: String,
 ) -> Option<VersionResponse> {
     for x in &versions_value.versions {

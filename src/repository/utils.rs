@@ -1,7 +1,7 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
-use crate::repository::nitro::{NitroMavenVersions, ProjectData, RepositoryListing};
+use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing};
 use crate::repository::types::RepositoryRequest;
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
@@ -9,16 +9,6 @@ use std::path::{Path, PathBuf};
 
 use crate::utils::get_storage_location;
 
-pub fn build_artifact_directory(request: &RepositoryRequest) -> PathBuf {
-    build_directory(request).join(&request.value)
-}
-
-pub fn build_directory(request: &RepositoryRequest) -> PathBuf {
-    get_storage_location()
-        .join("storages")
-        .join(&request.storage.name)
-        .join(&request.repository.name)
-}
 
 pub fn update_project_in_repositories(
     storage: &StringStorage,
@@ -44,7 +34,7 @@ pub fn get_versions(
     storage: &StringStorage,
     repository: &Repository,
     path: String,
-) -> Result<NitroMavenVersions, InternalError> {
+) -> Result<NitroRepoVersions, InternalError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
     let option = storage.get_file(repository, &string)?;
     Ok(if let Some(vec) = option {
@@ -58,7 +48,7 @@ pub fn get_versions(
 pub fn get_latest_version(path: &Path, release: bool) -> Option<String> {
     let versions = path.join(".nitro.versions.json");
     if versions.exists() {
-        let option: NitroMavenVersions =
+        let option: NitroRepoVersions =
             serde_json::from_str(&read_to_string(&versions).unwrap()).unwrap();
         get_latest_version_data(&option, release)
     } else {
@@ -67,7 +57,7 @@ pub fn get_latest_version(path: &Path, release: bool) -> Option<String> {
 }
 
 pub fn get_latest_version_data(
-    versions_value: &NitroMavenVersions,
+    versions_value: &NitroRepoVersions,
     release: bool,
 ) -> Option<String> {
     if release {

@@ -15,6 +15,7 @@ use crate::repository::models::Repository;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::utils::get_accept;
 use crate::NitroRepoData;
+use crate::repository::npm::NPMHandler;
 
 //
 
@@ -98,6 +99,7 @@ pub async fn get_repository(
     let request = result.unwrap();
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
+        "npm" => NPMHandler::handle_get(&request, &r, &connection),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
@@ -205,6 +207,7 @@ pub async fn post_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_post(&request, &r, &connection, bytes),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
@@ -238,6 +241,7 @@ pub async fn patch_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_patch(&request, &r, &connection, bytes),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
@@ -270,6 +274,7 @@ pub async fn put_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
+        "npm" => NPMHandler::handle_put(&request, &r, &connection, bytes),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
@@ -302,6 +307,7 @@ pub async fn head_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_head(&request, &r, &connection),
+        "npm" => NPMHandler::handle_head(&request, &r, &connection),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
