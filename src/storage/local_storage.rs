@@ -195,21 +195,6 @@ impl LocationHandler<LocalFile> for LocalStorage {
         Ok(())
     }
 
-    fn get_file(
-        storage: &Storage<StringMap>,
-        repository: &Repository,
-        location: &str,
-    ) -> Result<Option<Vec<u8>>, InternalError> {
-        let file_location =
-            LocalStorage::get_repository_folder(storage, &repository.name).join(location);
-        if !file_location.exists() {
-            return Ok(None);
-        }
-        let mut file = File::open(file_location)?;
-        let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes)?;
-        Ok(Some(bytes))
-    }
     fn get_file_as_response(
         storage: &Storage<StringMap>,
         repository: &Repository,
@@ -235,6 +220,10 @@ impl LocationHandler<LocalFile> for LocalStorage {
             for x in dir {
                 let entry = x?;
                 let string = entry.file_name().into_string().unwrap();
+                if string.ends_with(".nitro_repo") || string.starts_with(".nitro_repo"){
+                    //Hide All .nitro_repo files from File Listings
+                    continue;
+                }
                 let full = format!("{}/{}", path, &string);
                 let file = StorageFile {
                     name: string,
@@ -250,6 +239,21 @@ impl LocationHandler<LocalFile> for LocalStorage {
         Ok(Either::Left(LocalFile {
             path: file_location,
         }))
+    }
+    fn get_file(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<Option<Vec<u8>>, InternalError> {
+        let file_location =
+            LocalStorage::get_repository_folder(storage, &repository.name).join(location);
+        if !file_location.exists() {
+            return Ok(None);
+        }
+        let mut file = File::open(file_location)?;
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes)?;
+        Ok(Some(bytes))
     }
 }
 
