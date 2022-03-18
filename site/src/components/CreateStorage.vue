@@ -122,7 +122,7 @@ export default defineComponent({
           title: "Storage Created",
           type: "success",
         });
-        this.$router.push("/admin/storage/" + data.id);
+        this.$router.push("/admin/storage/" + data.name);
       } else {
         this.$notify({
           title: "Unable to Create Storage",

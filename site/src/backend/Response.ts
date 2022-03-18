@@ -5,13 +5,11 @@ export interface BasicResponse<T> {
 }
 
 export interface Storage {
-  id: number;
   name: string;
   public_name: string;
   created: number;
 }
 export const DEFAULT_STORAGE: Storage = {
-  id: 0,
   name: "",
   public_name: "",
   created: 0,
@@ -123,7 +121,6 @@ export interface UserPermissions {
 }
 
 export interface RepositoryListResponse {
-  id: number;
   name: string;
   repo_type: string;
   storage: string;

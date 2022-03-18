@@ -10,11 +10,12 @@ use usvg::Options;
 
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
+use crate::error::internal_error::InternalError::InvalidRepositoryType;
+use crate::NitroRepoData;
 
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::BadgeSettings;
-use crate::repository::npm::NPMHandler;
 use crate::repository::types::RepositoryType;
 
 fn file_name(b_s: &BadgeSettings, version: &str, t: &str) -> String {
@@ -44,13 +45,14 @@ fn load_fonts() -> usvg::fontdb::Database {
 #[get("/badge/{storage}/{repository}/{file:.*}/badge.{typ}")]
 pub async fn badge(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file, typ) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, &connection)?;
+    let request = to_request(storage, repository, file, site)?;
 
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())
@@ -67,12 +69,13 @@ pub async fn badge(
     } else {
         let version = match request.repository.repo_type.as_str() {
             "maven" => MavenHandler::latest_version(&request, &r, &connection),
-            "npm" => NPMHandler::latest_version(&request, &r, &connection),
-            _ => {
-                panic!("Unknown REPO")
-            }
+            value => return Err(InvalidRepositoryType(value.to_string())),
         }?;
-        (request.repository.name.clone(), version)
+
+        (
+            request.repository.name.clone(),
+            version.unwrap_or_else(|| "404".to_string()),
+        )
     };
     let buf1 = PathBuf::new()
         .join("storages")

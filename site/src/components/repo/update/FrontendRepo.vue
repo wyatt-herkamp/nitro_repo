@@ -118,7 +118,7 @@ export default defineComponent({
     },
     async submitBadge() {
       let response = await updateBadge(
-        this.repository.id,
+        this.repository.storage,this.repository.name,
         this.repository.settings.badge.style,
         this.repository.settings.badge.label_color,
         this.repository.settings.badge.color,
@@ -140,7 +140,7 @@ export default defineComponent({
     },
     async submitFrontend() {
       const response = await updateFrontend(
-        this.repository.id,
+                this.repository.storage,this.repository.name,
         this.repository.settings.frontend.enabled,
         this.repository.settings.frontend.page_provider,
         this.$cookie.getCookie("token")

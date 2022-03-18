@@ -1,6 +1,6 @@
 [package]
 name = "nitro_repo"
-version = "0.1.0"
+version = "0.1.0-BETA"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
@@ -32,8 +32,6 @@ diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
 diesel_migrations = "1.4.0"
 r2d2 = "0.8.9"
 r2d2_mysql = "*"
-# Config
-dotenv = "0.15.0"
 # Serde
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.71"
@@ -54,7 +52,8 @@ futures-util = "0.3.17"
 time = "0.3.5"
 base64 = "0.13.0"
 tokio = "1.14.0"
-
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+colored = "2.0.0"
 # Log
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"
@@ -65,6 +64,7 @@ derive_more = "0.99.14"
 async-trait = "0.1.51"
 thiserror = "1.0.30"
 anyhow = "1.0.56"
+either = "1.6.1"
 # Badge Stuff
 badge-maker = "0.2.0"
 usvg = "0.22.0"

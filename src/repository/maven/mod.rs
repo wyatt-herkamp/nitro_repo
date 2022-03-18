@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, OpenOptions};
 
-use std::io::Write;
 
+use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
@@ -19,10 +17,9 @@ use crate::repository::types::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
 use crate::repository::types::RepositoryRequest;
-use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryType};
+use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryType};
 use crate::repository::utils::{get_project_data, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
-use crate::utils::get_storage_location;
 
 mod models;
 mod utils;
@@ -39,48 +36,19 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotAuthorized);
         }
 
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&request.value);
-        let mut path = format!(
-            "{}/{}",
-            &request.storage.name, &request.repository.name
-        );
-
-
-        for x in request.value.split('/') {
-            if !x.is_empty(){
-                path = format!("{}/{}",path, x);
-
+        let result =
+            request
+                .storage
+                .get_file_as_response(&request.repository, &request.value, http)?;
+        if result.is_left() {
+            Ok(RepoResponse::FileResponse(result.left().unwrap()))
+        } else {
+            let vec = result.right().unwrap();
+            if vec.is_empty() {
+                return Ok(RepoResponse::NotFound);
             }
+            Ok(RepoResponse::FileList(vec))
         }
-        println!("path {path}");
-
-        if buf.exists() {
-            if buf.is_dir() {
-                let dir = read_dir(buf)?;
-                let mut files = Vec::new();
-                for x in dir {
-                    let entry = x?;
-                    let string = entry.file_name().into_string().unwrap();
-                    let full = format!("{}/{}", path, &string);
-                    let file = RepositoryFile {
-                        name: string,
-                        full_path: full,
-                        directory: entry.file_type()?.is_dir(),
-                        data: HashMap::new(),
-                    };
-                    files.push(file);
-                }
-                return Ok(RepoResponse::FileList(files));
-            } else {
-                return Ok(RepoResponse::FileResponse(buf));
-            }
-        }
-
-        Ok(NotFound)
     }
 
     fn handle_post(
@@ -117,44 +85,34 @@ impl RepositoryType for MavenHandler {
             }
             Policy::Mixed => {}
         }
-        let repo_location = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name);
-        let buf = repo_location.join(&request.value);
-        let parent = buf.parent().unwrap().to_path_buf();
-        create_dir_all(&parent)?;
-
-        if buf.exists() {
-            remove_file(&buf)?;
-        }
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .create(true)
-            .open(&buf)?;
-        file.write_all(bytes.as_ref())?;
-        drop(file);
-        if buf.to_str().unwrap().to_string().ends_with(".pom") {
-            let result = read_to_string(&buf)?;
+        request
+            .storage
+            .save_file(&request.repository, bytes.as_ref(), &request.value)?;
+        if request.value.ends_with(".pom") {
+            let vec = bytes.as_ref().to_vec();
+            let result = String::from_utf8(vec)?;
             let pom: Result<Pom, serde_xml_rs::Error> = serde_xml_rs::from_str(&result);
             if let Err(error) = &pom {
                 error!(
                     "Unable to Parse Pom File {} Error {}",
-                    &buf.to_str().unwrap(),
-                    error
+                    &request.value, error
                 );
             }
             if let Ok(pom) = pom {
-                let project_folder = parent.parent().unwrap().to_path_buf();
+                let project_folder =
+                    format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
+                trace!("Project Folder Location {}", project_folder);
                 let repository = request.repository.clone();
+                let storage = request.storage.clone();
                 actix_web::rt::spawn(async move {
                     if let Err(error) = crate::repository::maven::utils::update_project(
+                        &storage,
+                        &repository,
                         &project_folder,
                         pom.version.clone(),
                         pom.clone(),
                     ) {
-                        error!("Unable to update .nitro.project.json, {}", error);
+                        error!("Unable to update {}, {}", PROJECT_FILE, error);
                         if log_enabled!(Trace) {
                             trace!(
                                 "Version {} Name: {}",
@@ -165,8 +123,9 @@ impl RepositoryType for MavenHandler {
                     }
 
                     if let Err(error) = crate::repository::utils::update_project_in_repositories(
+                        &storage,
+                        &repository,
                         format!("{}:{}", &pom.group_id, &pom.artifact_id),
-                        repo_location,
                     ) {
                         error!("Unable to update repository.json, {}", error);
                         if log_enabled!(Trace) {
@@ -177,18 +136,19 @@ impl RepositoryType for MavenHandler {
                             );
                         }
                     }
+                    let string = format!("{}/{}", project_folder, &pom.version);
                     let info = DeployInfo {
                         user: x.1.unwrap(),
                         version: pom.version,
                         name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
-                        report_location: parent.join("report.json"),
+                        version_folder: string,
                     };
 
                     debug!("Starting Post Deploy Tasks");
                     if log_enabled!(Trace) {
                         trace!("Data {}", &info);
                     }
-                    let deploy = handle_post_deploy(&repository, &info).await;
+                    let deploy = handle_post_deploy(&storage, &repository, &info).await;
                     if let Err(error) = deploy {
                         error!("Error Handling Post Deploy Tasks {}", error);
                     } else {
@@ -211,43 +171,18 @@ impl RepositoryType for MavenHandler {
 
     fn handle_head(
         request: &RepositoryRequest,
-        _http: &HttpRequest,
+        http: &HttpRequest,
         _conn: &MysqlConnection,
     ) -> RepoResult {
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&request.value);
-        let path = format!(
-            "{}/{}/{}",
-            &request.storage.name, &request.repository.name, &request.value
-        );
-
-        //TODO do not return the body
-        if buf.exists() {
-            if buf.is_dir() {
-                let dir = read_dir(buf)?;
-                let mut files = Vec::new();
-                for x in dir {
-                    let entry = x?;
-                    let string = entry.file_name().into_string().unwrap();
-                    let full = format!("{}/{}", path, &string);
-                    let file = RepositoryFile {
-                        name: string,
-                        full_path: full,
-                        directory: entry.file_type()?.is_dir(),
-                        data: HashMap::new(),
-                    };
-                    files.push(file);
-                }
-                return Ok(RepoResponse::FileList(files));
-            } else {
-                return Ok(RepoResponse::FileResponse(buf));
-            }
+        let result =
+            request
+                .storage
+                .get_file_as_response(&request.repository, &request.value, http)?;
+        if result.is_left() {
+            Ok(RepoResponse::FileResponse(result.left().unwrap()))
+        } else {
+            Ok(RepoResponse::FileList(result.right().unwrap()))
         }
-
-        Ok(NotFound)
     }
 
     fn handle_versions(
@@ -258,17 +193,9 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let string = parse_project_to_directory(&request.value);
+        let project_dir = parse_project_to_directory(&request.value);
 
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&string);
-        if !buf.exists() {
-            return RepoResult::Ok(NotFound);
-        }
-        let vec = get_versions(&buf);
+        let vec = get_versions(&request.storage, &request.repository, project_dir)?;
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
@@ -281,21 +208,13 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let string = parse_project_to_directory(&request.value);
+        let project_dir = parse_project_to_directory(&request.value);
 
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(string);
-        if !buf.exists() {
-            return RepoResult::Ok(NotFound);
+        let result = get_version(&request.storage, &request.repository, project_dir, version)?;
+        if let Some(version) = result {
+            return Ok(RepoResponse::NitroVersionResponse(version));
         }
-        let option = get_version(&buf, version);
-        if option.is_none() {
-            return Ok(RepoResponse::NotFound);
-        }
-        Ok(RepoResponse::NitroVersionResponse(option.unwrap()))
+        Ok(RepoResponse::NotFound)
     }
 
     fn handle_project(
@@ -307,47 +226,33 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let string = parse_project_to_directory(&request.value);
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&string);
-        if !buf.exists() {
-            return RepoResult::Ok(NotFound);
+
+        let project_data = get_project_data(&request.storage, &request.repository, string)?;
+        if let Some(project_data) = project_data {
+            let project = Project {
+                repo_summary: RepositorySummary::new(&request.repository)?,
+                project: project_data,
+                frontend_response: None,
+            };
+            return Ok(ProjectResponse(project));
         }
-        let project_data = get_project_data(&buf)?;
-        if project_data.is_none() {
-            return RepoResult::Ok(NotFound);
-        }
-        let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository, conn)?,
-            project: project_data.unwrap(),
-            frontend_response: None,
-        };
-        Ok(ProjectResponse(project))
+        RepoResult::Ok(NotFound)
     }
 
     fn latest_version(
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &MysqlConnection,
-    ) -> Result<String, InternalError> {
+    ) -> Result<Option<String>, InternalError> {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
-            return Ok("".to_string());
+            return Ok(None);
         }
         let string = parse_project_to_directory(&request.value);
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&string);
-        if !buf.exists() {
-            return Ok("".to_string());
-        }
-        let project_data = get_project_data(&buf)?;
-        if project_data.is_none() {
-            return Ok("".to_string());
-        }
-        Ok(project_data.unwrap().versions.latest_release)
+        let project_data = get_project_data(&request.storage, &request.repository, string)?;
+        Ok(if let Some(project_data) = project_data {
+            Some(project_data.versions.latest_release)
+        } else {
+            None
+        })
     }
 }

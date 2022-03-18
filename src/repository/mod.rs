@@ -1,6 +1,5 @@
 use actix_web::web;
 
-pub mod action;
 pub mod admin;
 mod api;
 mod badge;
@@ -10,10 +9,11 @@ pub mod frontend;
 pub mod maven;
 pub mod models;
 pub mod nitro;
-mod npm;
 pub mod public;
 pub mod types;
 pub mod utils;
+pub static REPOSITORY_CONF: &str = "repository.nitro_repo";
+pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::browse)

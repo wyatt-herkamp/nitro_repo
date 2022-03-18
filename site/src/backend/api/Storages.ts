@@ -11,6 +11,7 @@ export async function getStorages(token: string) {
   if (value.status != 200) {
     return DEFAULT_STORAGE_LIST;
   }
+  console.log(value.data);
   const data = value.data as BasicResponse<unknown>;
   if (data.success) {
     return data.data as StorageList;
@@ -32,7 +33,7 @@ export async function getStoragesPublicAccess() {
 
   return [];
 }
-export async function getStorage(token: string, id: number) {
+export async function getStorage(token: string, id: string) {
   const value = await http.get("/api/storages/id/" + id, {
     headers: {
       Authorization: "Bearer " + token,

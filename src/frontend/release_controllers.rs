@@ -21,7 +21,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(upload)
         .service(repository)
         .service(project)
-
         .service(Files::new("/", "frontend").show_files_listing());
 }
 
@@ -44,7 +43,8 @@ fn web_data() {
 #[get("/")]
 pub async fn index(_r: HttpRequest) -> SiteResponse {
     get_file()
-}#[get("/me")]
+}
+#[get("/me")]
 pub async fn me(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
@@ -82,7 +82,6 @@ pub async fn repository(_r: HttpRequest) -> SiteResponse {
 pub async fn project(_r: HttpRequest) -> SiteResponse {
     get_file()
 }
-
 
 fn get_file() -> SiteResponse {
     //TODO cache this value at runtime

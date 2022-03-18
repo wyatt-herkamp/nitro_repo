@@ -22,7 +22,16 @@
               </div>
               <input
                 id="search"
-                class="w-full rounded-md bg-gray-200 text-gray-700 leading-tight focus:outline-none py-2 px-2"
+                class="
+                  w-full
+                  rounded-md
+                  bg-gray-200
+                  text-gray-700
+                  leading-tight
+                  focus:outline-none
+                  py-2
+                  px-2
+                "
                 placeholder="Repository Name"
                 type="text"
               />
@@ -30,13 +39,47 @@
             <CreateRepo>
               <template v-slot:button>
                 <button
-                  class="relative inline-flex items-center justify-center px-10 overflow-hidden font-mono font-medium tracking-tighter text-white bg-gray-800 rounded-lg group"
+                  class="
+                    relative
+                    inline-flex
+                    items-center
+                    justify-center
+                    px-10
+                    overflow-hidden
+                    font-mono font-medium
+                    tracking-tighter
+                    text-white
+                    bg-gray-800
+                    rounded-lg
+                    group
+                  "
                 >
                   <span
-                    class="absolute w-0 h-max transition-all duration-500 ease-out bg-slate-900 rounded-full group-hover:w-56 group-hover:h-56"
+                    class="
+                      absolute
+                      w-0
+                      h-max
+                      transition-all
+                      duration-500
+                      ease-out
+                      bg-slate-900
+                      rounded-full
+                      group-hover:w-56 group-hover:h-56
+                    "
                   ></span>
                   <span
-                    class="absolute inset-0 w-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-gray-700"
+                    class="
+                      absolute
+                      inset-0
+                      w-full
+                      -mt-1
+                      rounded-lg
+                      opacity-30
+                      bg-gradient-to-b
+                      from-transparent
+                      via-transparent
+                      to-gray-700
+                    "
                   ></span>
                   <span class="relative">Create Repository</span>
                 </button>
@@ -45,10 +88,20 @@
           </div>
           <div>
             <ul v-if="repositories != undefined">
-              <li v-for="repo in repositories.repositories" :key="repo.id">
+              <li v-for="repo in repositories.repositories" :key="repo.name">
                 <router-link
-                  :to="'/admin/repository/' + repo.id"
-                  class="cursor-pointer py-2 text-slate-50 flex flex-row m-1 hover:translate-x-2 transition-transform ease-in duration-200"
+                  :to="'/admin/repository/' + repo.storage + '/' + repo.name"
+                  class="
+                    cursor-pointer
+                    py-2
+                    text-slate-50
+                    flex flex-row
+                    m-1
+                    hover:translate-x-2
+                    transition-transform
+                    ease-in
+                    duration-200
+                  "
                 >
                   <div class="px-1">{{ repo.name }}</div>
                 </router-link>
@@ -62,11 +115,11 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref} from "vue";
+import { defineComponent, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
-import {useCookie} from "vue-cookie-next";
-import {getRepositories} from "@/backend/api/Repository";
-import {RepositoryList} from "@/backend/Response";
+import { useCookie } from "vue-cookie-next";
+import { getRepositories } from "@/backend/api/Repository";
+import { RepositoryList, RepositoryListResponse } from "@/backend/Response";
 
 export default defineComponent({
   components: { CreateRepo },
@@ -77,13 +130,12 @@ export default defineComponent({
     const cookie = useCookie();
 
     const error = ref("");
-    let repositories = ref<RepositoryList | undefined>(undefined);
+    let repositories = ref<RepositoryListResponse | undefined>(undefined);
     const getRepos = async () => {
       isLoading.value = true;
       try {
         const value = await getRepositories(cookie.getCookie("token"));
         repositories.value = value;
-
         isLoading.value = false;
       } catch (e) {
         error.value = "Error";

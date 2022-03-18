@@ -17,7 +17,7 @@ export default defineComponent({
   components: { SideBar, UpdateStorage },
   setup() {
     const route = useRoute();
-    const storage = Number.parseInt(route.params.storage as string);
+    const storage = route.params.storage as string;
     return {storage};
   },
 });

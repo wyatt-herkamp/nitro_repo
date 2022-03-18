@@ -28,7 +28,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Admin,
   },
   {
-    path: "/admin/repository/:repo",
+    path: "/admin/repository/:storage/:repo",
     name: "AdminRepoView",
     component: ViewRepository,
   },

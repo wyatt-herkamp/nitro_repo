@@ -1,13 +1,4 @@
 table! {
-    settings (id) {
-        id -> Bigint,
-        setting -> Text,
-        value ->Text,
-        updated ->Bigint,
-
-    }
-}
-table! {
     users (id) {
         id -> Bigint,
         name -> Text,
@@ -43,26 +34,6 @@ table! {
         user -> Bigint,
         token -> Text,
         expiration ->Bigint,
-        created ->Bigint,
-    }
-}
-table! {
-     storages(id) {
-        id -> Bigint,
-        public_name -> Text,
-        name -> Text,
-        created ->Bigint,
-    }
-}
-table! {
-     repositories(id) {
-        id -> Bigint,
-        name -> Text,
-        repo_type -> Text,
-        storage -> Text,
-        settings -> Text,
-        deploy_settings -> Text,
-        security -> Text,
         created ->Bigint,
     }
 }

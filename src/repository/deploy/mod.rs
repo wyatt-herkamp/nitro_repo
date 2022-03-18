@@ -1,15 +1,14 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::fs::{remove_file, File};
-use std::io::Write;
-use std::path::PathBuf;
 
+use crate::constants::REPORT_DATA;
 use log::error;
 use serde::de::value::MapDeserializer;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
+use crate::storage::models::StringStorage;
 use crate::system::models::User;
 use crate::utils::get_current_time;
 use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
@@ -19,7 +18,7 @@ pub struct DeployInfo {
     pub user: User,
     pub version: String,
     pub name: String,
-    pub report_location: PathBuf,
+    pub version_folder: String,
 }
 
 impl Display for DeployInfo {
@@ -29,6 +28,7 @@ impl Display for DeployInfo {
 }
 
 pub async fn handle_post_deploy(
+    storage: &StringStorage,
     repository: &Repository,
     deploy: &DeployInfo,
 ) -> Result<(), InternalError> {
@@ -54,13 +54,13 @@ pub async fn handle_post_deploy(
             };
             report.insert(x.clone(), x1);
         }
-        if deploy.report_location.exists() {
-            remove_file(&deploy.report_location)?;
-        }
-        let mut file = File::create(&deploy.report_location)?;
+
         let string = serde_json::to_string(&report).unwrap();
-        let x1 = string.as_bytes();
-        file.write_all(x1)?;
+        storage.save_file(
+            repository,
+            string.as_bytes(),
+            &format!("{}/{}", deploy.version_folder, REPORT_DATA),
+        )?
     }
     Ok(())
 }

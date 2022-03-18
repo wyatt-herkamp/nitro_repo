@@ -41,7 +41,6 @@
                 <option disabled selected value="">Repository Type</option>
 
                 <option value="maven">Maven</option>
-                <option value="npm">NPM</option>
               </select>
             </div>
             <div class="grow pl-2">
@@ -59,8 +58,8 @@
                 <option disabled selected value="">Select your Storage</option>
 
                 <option
-                  v-for="storage in storages.storages"
-                  :key="storage.id"
+                  v-for="storage in storages  "
+                  :key="storage.name"
                   :value="storage.name"
                 >
                   {{ storage.public_name }}
@@ -145,7 +144,7 @@ export default defineComponent({
           title: "Repository Created",
           type: "success",
         });
-        this.$router.push("/admin/repository/" + data.id);
+        this.$router.push("/admin/repository/" + data.storage+"/"+data.name);
       } else {
         this.$notify({
           title: "Unable to Create Repository",

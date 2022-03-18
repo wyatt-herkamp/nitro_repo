@@ -14,7 +14,7 @@ export async function createNewRepository(
   return http
     .post(
       "/api/admin/repository/add",
-      { name: name, storage: storage, repo: type },
+      { name: name, storage: storage, repo_type: type },
       {
         headers: {
           Authorization: "Bearer " + token,
@@ -58,13 +58,14 @@ export async function createNewRepository(
     );
 }
 export async function setActiveStatus(
-  id: number,
+  storage: String,
+  repository: String,
   active: boolean,
   token: string
 ) {
   return http
     .patch(
-      "/api/admin/repository/" + id + "/active/" + active,
+      "/api/admin/repository/" + storage + "/" + repository + "/active/" + active,
       {},
       {
         headers: {
@@ -99,10 +100,11 @@ export async function setActiveStatus(
       }
     );
 }
-export async function setPolicy(id: number, policy: string, token: string) {
+export async function setPolicy(storage: String,
+  repository: String, policy: string, token: string) {
   return http
     .patch(
-      "/api/admin/repository/" + id + "/policy/" + policy,
+      "/api/admin/repository/" + storage + "/" + repository + "/policy/" + policy,
       {},
       {
         headers: {
@@ -138,7 +140,8 @@ export async function setPolicy(id: number, policy: string, token: string) {
     );
 }
 export async function updateBadge(
-  id: number,
+  storage: String,
+  repository: String,
   badgeStyle: string,
   labelColor: string,
   color: string,
@@ -146,7 +149,7 @@ export async function updateBadge(
 ) {
   return http
     .patch(
-      "/api/admin/repository/" + id + "/modify/settings/badge",
+      "/api/admin/repository/" + storage + "/" + repository + "/modify/settings/badge",
       { style: badgeStyle, label_color: labelColor, color: color },
       {
         headers: {
@@ -182,15 +185,16 @@ export async function updateBadge(
     );
 }
 export async function updateFrontend(
-  id: number,
+  storage: String,
+  repository: String,
   enabled: boolean,
   pageProvider: string,
   token: string
 ) {
-// Manually converting data to JSON because JSON.stringify is convering booleans to strings?
+  // Manually converting data to JSON because JSON.stringify is convering booleans to strings?
   return http
     .patch(
-      "/api/admin/repository/" + id + "/modify/settings/frontend",
+      "/api/admin/repository/" + storage + "/" + repository + "/modify/settings/frontend",
       `{"page_provider":"${pageProvider}","enabled":${enabled}}`,
       {
         headers: {
@@ -227,14 +231,15 @@ export async function updateFrontend(
 }
 
 export async function setVisibility(
-  id: number,
+  storage: String,
+  repository: String,
   visibility: string,
   token: string
 ) {
   return http
     .patch(
-      "/api/admin/repository/" +
-      id +
+      "/api/admin/repository/"
+      + storage + "/" + repository +
       "/modify/security/visibility/" +
       visibility,
       {},
@@ -271,10 +276,11 @@ export async function setVisibility(
       }
     );
 }
-export async function clearAll(id: number, what: string, token: string) {
+export async function clearAll(storage: String,
+  repository: String, what: string, token: string) {
   return http
     .patch(
-      "/api/admin/repository/" + id + "/clear/security/" + what,
+      "/api/admin/repository/" + storage + "/" + repository + "/clear/security/" + what,
       {},
       {
         headers: {
@@ -310,7 +316,8 @@ export async function clearAll(id: number, what: string, token: string) {
     );
 }
 export async function addOrRemoveReadersOrDeployers(
-  id: number,
+  storage: String,
+  repository: String,
   what: string,
   action: string,
   user: number,
@@ -318,8 +325,8 @@ export async function addOrRemoveReadersOrDeployers(
 ) {
   return http
     .patch(
-      "/api/admin/repository/" +
-      id +
+      "/api/admin/repository/"
+      + storage + "/" + repository +
       "/modify/security/" +
       what +
       "/" +
@@ -362,14 +369,15 @@ export async function addOrRemoveReadersOrDeployers(
 }
 
 export async function updateDeployReport(
-  id: number,
+  storage: String,
+  repository: String,
   active: boolean,
   values: Array<string>,
   token: string
 ) {
   return http
     .patch(
-      "/api/admin/repository/" + id + "/modify/deploy/report",
+      "/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/report",
       { active: active, values: values },
       {
         headers: {
@@ -406,7 +414,8 @@ export async function updateDeployReport(
 }
 
 export async function updateOrAddWebhppl(
-  id: number,
+  storage: String,
+  repository: String,
   name: string,
   handler: string,
   settings: Map<string, any>,
@@ -414,7 +423,7 @@ export async function updateOrAddWebhppl(
 ) {
   return http
     .put(
-      "/api/admin/repository/" + id + "/modify/deploy/webhook/add",
+      "/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/webhook/add",
       { id: name, handler: handler, settings: settings },
       {
         headers: {
@@ -449,9 +458,10 @@ export async function updateOrAddWebhppl(
       }
     );
 }
-export async function deleteWebhook(id: number, name: string, token: string) {
+export async function deleteWebhook(storage: String,
+  repository: String, name: string, token: string) {
   return http
-    .delete("/api/admin/repository/" + id + "/modify/deploy/webhook/" + name, {
+    .delete("/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/webhook/" + name, {
       headers: {
         Authorization: "Bearer " + token,
       },

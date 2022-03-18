@@ -33,8 +33,14 @@ pub enum InternalError {
     NotFound,
     #[error("Internal Error {0}")]
     Error(String),
+    #[error("Missing Config Value {0}")]
+    ConfigError(String),
+    #[error("Invalid Repository Type {0}")]
+    InvalidRepositoryType(String),
+    #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
+    DeadSite,
 }
-
+pub type NResult<T> = Result<T, InternalError>;
 impl InternalError {
     pub fn json_error(&self) -> HttpResponse {
         let result = HttpResponse::Ok()
@@ -121,5 +127,10 @@ impl From<lettre::transport::smtp::Error> for InternalError {
 impl From<ParseBoolError> for InternalError {
     fn from(err: ParseBoolError) -> InternalError {
         InternalError::BooleanParseError(err)
+    }
+}
+impl From<&str> for InternalError {
+    fn from(error: &str) -> Self {
+        InternalError::Error(error.to_string())
     }
 }

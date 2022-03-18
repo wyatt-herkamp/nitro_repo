@@ -1,30 +1,20 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::io::Write;
 use std::ops::Deref;
 
 use badge_maker::Style;
-use diesel::backend::Backend;
-use diesel::deserialize::FromSql;
-use diesel::mysql::Mysql;
-use diesel::serialize::{Output, ToSql};
-use diesel::sql_types::Text;
-use diesel::{deserialize, serialize, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
 use crate::repository::models::Visibility::Public;
-use crate::schema::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositorySummary {
     pub name: String,
     pub storage: String,
-    pub page_provider: PageProvider,
     pub repo_type: String,
-    pub visibility: Visibility,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -67,8 +57,7 @@ impl Default for ReportGeneration {
     }
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Default)]
-#[sql_type = "Text"]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct DeploySettings {
     #[serde(default)]
     pub report_generation: ReportGeneration,
@@ -97,13 +86,11 @@ impl DeploySettings {
 }
 
 impl RepositorySummary {
-    pub fn new(repo: &Repository, _: &MysqlConnection) -> Result<RepositorySummary, InternalError> {
+    pub fn new(repo: &Repository) -> Result<RepositorySummary, InternalError> {
         Ok(RepositorySummary {
             name: repo.name.clone(),
             storage: repo.storage.clone(),
-            page_provider: repo.settings.frontend.page_provider.clone(),
             repo_type: repo.repo_type.clone(),
-            visibility: repo.security.visibility.clone(),
         })
     }
 }
@@ -197,7 +184,7 @@ pub enum Policy {
     Mixed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Visibility {
     Public,
     Private,
@@ -210,14 +197,13 @@ impl Policy {
     }
 }
 
-impl Visibility {
+impl Default for Visibility {
     fn default() -> Self {
         Public
     }
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
-#[sql_type = "Text"]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct SecurityRules {
     ///Default true. If false only people listed in deployers can deploy
     ///List of deployers
@@ -233,8 +219,7 @@ pub struct SecurityRules {
     pub readers: Vec<i64>,
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone)]
-#[sql_type = "Text"]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RepositorySettings {
     #[serde(default = "default")]
     pub active: bool,
@@ -298,64 +283,8 @@ fn default() -> bool {
     true
 }
 
-impl FromSql<Text, Mysql> for RepositorySettings {
-    fn from_sql(
-        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<RepositorySettings> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
-        let result: RepositorySettings = serde_json::from_str(t.as_str())?;
-        Ok(result)
-    }
-}
-
-impl ToSql<Text, Mysql> for RepositorySettings {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = serde_json::to_string(&self)?;
-        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
-    }
-}
-
-impl FromSql<Text, Mysql> for SecurityRules {
-    fn from_sql(
-        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<SecurityRules> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
-        let result: SecurityRules = serde_json::from_str(t.as_str())?;
-        Ok(result)
-    }
-}
-
-impl ToSql<Text, Mysql> for SecurityRules {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = serde_json::to_string(&self)?;
-        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
-    }
-}
-
-impl FromSql<Text, Mysql> for DeploySettings {
-    fn from_sql(
-        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<DeploySettings> {
-        if bytes.is_none() {
-            return deserialize::Result::Ok(DeploySettings::default());
-        }
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
-        let result: DeploySettings = serde_json::from_str(t.as_str())?;
-        Ok(result)
-    }
-}
-
-impl ToSql<Text, Mysql> for DeploySettings {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = serde_json::to_string(&self)?;
-        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-#[table_name = "repositories"]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Repository {
-    pub id: i64,
     pub name: String,
     pub repo_type: String,
     pub storage: String,
@@ -366,9 +295,8 @@ pub struct Repository {
     pub created: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepositoryListResponse {
-    pub id: i64,
     pub name: String,
     pub repo_type: String,
     pub storage: String,

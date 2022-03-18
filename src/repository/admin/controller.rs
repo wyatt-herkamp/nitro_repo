@@ -1,6 +1,3 @@
-use std::fs::create_dir_all;
-use std::path::PathBuf;
-
 use actix_web::web::Bytes;
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
 use log::error;
@@ -8,45 +5,24 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
-use crate::error::response::{already_exists, bad_request, not_found, unauthorized};
-use crate::repository::action::{
-    add_new_repository, get_repo_by_id, get_repo_by_name_and_storage, get_repositories,
-    update_deploy_settings,
-};
-use crate::repository::action::{update_repo_security, update_repo_settings};
-use crate::repository::models::{
-    BadgeSettings, Frontend, Policy, Repository, RepositoryListResponse, RepositorySettings,
-    SecurityRules, Visibility,
-};
+use crate::error::response::{bad_request, not_found, unauthorized};
+use crate::NitroRepoData;
+
+use crate::repository::models::{BadgeSettings, Frontend, Policy, RepositorySummary, Visibility};
 use crate::repository::models::{ReportGeneration, Webhook};
 use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
-use crate::utils::get_current_time;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
-    pub repositories: Vec<RepositoryListResponse>,
+    pub repositories: Vec<RepositorySummary>,
 }
 
 #[get("/api/admin/repositories/list")]
-pub async fn list_repos(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
-    let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
-        return unauthorized();
-    }
-    let vec = get_repositories(&connection)?;
-
-    let response = ListRepositories { repositories: vec };
-    APIResponse::new(true, Some(response)).respond(&r)
-}
-
-#[get("/api/admin/repositories/get/{repo}")]
-pub async fn get_repo(
+pub async fn list_repos(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<i64>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -54,14 +30,22 @@ pub async fn get_repo(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repo = get_repo_by_id(&path.into_inner(), &connection)?;
-
-    APIResponse::respond_new(repo, &r)
+    //TODO Change the frontend to only show repos based on the current storage being looked at.
+    let mut vec = Vec::new();
+    let result = site.storages.lock().unwrap();
+    for (_, storage) in result.iter() {
+        for (_, repo) in storage.get_repositories()? {
+            vec.push(repo);
+        }
+    }
+    let response = ListRepositories { repositories: vec };
+    APIResponse::new(true, Some(response)).respond(&r)
 }
 
-#[get("/api/deployer/repositories/get/{storage}/{repo}")]
-pub async fn get_repo_deployer(
+#[get("/api/admin/repositories/get/{storage}/{repo}")]
+pub async fn get_repo(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
@@ -69,27 +53,29 @@ pub async fn get_repo_deployer(
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.deployer {
+    if user.is_none() {
         return unauthorized();
     }
-
-    let repo = get_repo_by_name_and_storage(&repo, &storage, &connection)?;
-
-    APIResponse::respond_new(repo, &r)
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NewRepo {
-    pub name: String,
-    pub storage: String,
-    pub repo: String,
+    let user = user.unwrap();
+    if !user.permissions.deployer && !user.permissions.admin {
+        return unauthorized();
+    }
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repo)?;
+    APIResponse::from(repository).respond(&r)
 }
 
 #[post("/api/admin/repository/add")]
 pub async fn add_repo(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    nc: web::Json<NewRepo>,
+    nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
     let connection = pool.get()?;
 
@@ -97,49 +83,25 @@ pub async fn add_repo(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let storage = crate::storage::action::get_storage_by_name(&nc.storage, &connection)?;
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&nc.storage);
     if storage.is_none() {
         return not_found();
     }
     let storage = storage.unwrap();
+    let repository = storage.create_repository(nc.0)?;
 
-    let option = get_repo_by_name_and_storage(&nc.repo, &storage.name, &connection)?;
-    if option.is_some() {
-        return already_exists();
-    }
-    let repository = Repository {
-        id: 0,
-        name: nc.0.name,
-        repo_type: nc.0.repo,
-        storage: nc.0.storage,
-        settings: RepositorySettings::default(),
-        security: SecurityRules {
-            deployers: vec![],
-            visibility: Visibility::Public,
-            readers: vec![],
-        },
-        deploy_settings: Default::default(),
-        created: get_current_time(),
-    };
-    add_new_repository(&repository, &connection)?;
-    let buf = PathBuf::new()
-        .join("storages")
-        .join(&storage.name)
-        .join(&repository.name);
-    if !buf.exists() {
-        create_dir_all(buf)?;
-    }
-    let option = get_repo_by_name_and_storage(&repository.name, &storage.name, &connection)?;
-
-    APIResponse::from(option).respond(&r)
+    APIResponse::from(Some(repository)).respond(&r)
 }
-#[patch("/api/admin/repository/{repo}/active/{active}")]
+
+#[patch("/api/admin/repository/{storage}/{repository}/active/{active}")]
 pub async fn update_active_status(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(i64, bool)>,
+    path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
-    let (repo, active) = path.into_inner();
+    let (storage, repo, active) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -147,21 +109,30 @@ pub async fn update_active_status(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&repo, &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repo)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
     repository.settings.active = active;
-    update_repo_settings(&repo, &repository.settings, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{repo}/policy/{policy}")]
+#[patch("/api/admin/repository/{storage}/{repository}/policy/{policy}")]
 pub async fn update_policy(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(i64, Policy)>,
+    path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
-    let (repo, policy) = path.into_inner();
+    let (storage, repository, policy) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -169,22 +140,31 @@ pub async fn update_policy(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&repo, &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
     repository.settings.policy = policy;
-    update_repo_settings(&repo, &repository.settings, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{repo}/description")]
+#[patch("/api/admin/repository/{storage}/{repository}/description")]
 pub async fn update_description(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     b: Bytes,
-    path: web::Path<i64>,
+    path: web::Path<(String, String)>,
 ) -> SiteResponse {
-    let repo = path.into_inner();
+    let (storage, repository) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -192,68 +172,101 @@ pub async fn update_description(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&repo, &connection)?;
 
-    let mut repository = repository.unwrap();
     let vec = b.to_vec();
     let string = String::from_utf8(vec);
     if let Err(error) = string {
         error!("Unable to Parse String from Request: {}", error);
         return bad_request("Bad Description");
     }
+
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
+    let mut repository = repository.unwrap();
     repository.settings.description = string.unwrap();
-    update_repo_settings(&repo, &repository.settings, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{repo}/modify/settings/frontend")]
+#[patch("/api/admin/repository/{storage}/{repository}/modify/settings/frontend")]
 pub async fn modify_frontend_settings(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<i64>,
+    path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
 ) -> SiteResponse {
+    let (storage, repository) = path.into_inner();
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&path.into_inner(), &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
     repository.settings.frontend = nc.0;
-    update_repo_settings(&repository.id, &repository.settings, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
-#[patch("/api/admin/repository/{repo}/modify/settings/badge")]
+
+#[patch("/api/admin/repository/{storage}/{repository}/modify/settings/badge")]
 pub async fn modify_badge_settings(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<i64>,
+    path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
 ) -> SiteResponse {
+    let (storage, repository) = path.into_inner();
+
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&path.into_inner(), &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
     repository.settings.badge = nc.0;
-    update_repo_settings(&repository.id, &repository.settings, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{repo}/modify/security/visibility/{visibility}")]
+#[patch("/api/admin/repository/{storage}/{repository}/modify/security/visibility/{visibility}")]
 pub async fn modify_security(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(i64, Visibility)>,
+    path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
-    let (repo, visibility) = path.into_inner();
+    let (storage, repository, visibility) = path.into_inner();
     println!("{:?}", &visibility);
     let connection = pool.get()?;
 
@@ -261,21 +274,30 @@ pub async fn modify_security(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&repo, &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
     repository.security.visibility = visibility;
-    update_repo_security(&repository.id, &repository.security, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{repo}/clear/security/{what}")]
+#[patch("/api/admin/repository/{storage}/{repository}/clear/security/{what}")]
 pub async fn clear_all(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(i64, String)>,
+    path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let (repo, what) = path.into_inner();
+    let (storage, repository, what) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -283,8 +305,16 @@ pub async fn clear_all(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&repo, &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
 
     match what.as_str() {
@@ -292,17 +322,18 @@ pub async fn clear_all(
         "readers" => repository.security.readers.clear(),
         _ => return bad_request("Must be Deployers or Readers"),
     }
-    update_repo_security(&repository.id, &repository.security, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{repo}/modify/security/{what}/{action}/{user}")]
+#[patch("/api/admin/repository/{storage}/{repository}/modify/security/{what}/{action}/{user}")]
 pub async fn update_deployers_readers(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(i64, String, String, String)>,
+    path: web::Path<(String, String, String, String, String)>,
 ) -> SiteResponse {
-    let (repo, what, action, user) = path.into_inner();
+    let (storage, repository, what, action, user) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -310,8 +341,16 @@ pub async fn update_deployers_readers(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository = get_repo_by_id(&repo, &connection)?;
-
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
     let mut repository = repository.unwrap();
     let user = get_user_by_username(&user, &connection)?;
     if user.is_none() {
@@ -353,17 +392,19 @@ pub async fn update_deployers_readers(
         },
         _ => return bad_request("Must be Deployers or Readers"),
     }
-    update_repo_security(&repository.id, &repository.security, &connection)?;
+    storage.update_repository(&repository)?;
     APIResponse::new(true, Some(repository)).respond(&r)
 }
-#[patch("/api/admin/repository/{repository}/modify/deploy/report")]
+
+#[patch("/api/admin/repository/{storage}/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<i64>,
+    path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-    let repository = path.into_inner();
+    let (storage, repository) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -371,24 +412,32 @@ pub async fn modify_deploy(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository_value = get_repo_by_id(&repository, &connection)?;
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
+    let mut repository = repository.unwrap();
+    repository.deploy_settings.report_generation = nc.0;
+    storage.update_repository(&repository)?;
 
-    let repo = repository_value.unwrap();
-    let mut deploy_settings = repo.deploy_settings;
-    deploy_settings.report_generation = nc.0;
-    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
-
-    APIResponse::respond_new(get_repo_by_id(&repository, &connection)?, &r)
+    APIResponse::respond_new(Some(repository), &r)
 }
 
-#[put("/api/admin/repository/{storage}/{repo}/modify/deploy/webhook/add")]
+#[put("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/add")]
 pub async fn add_webhook(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<i64>,
+    path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
-    let repo = path.into_inner();
+    let (storage, repository) = path.into_inner();
 
     let connection = pool.get()?;
 
@@ -396,33 +445,48 @@ pub async fn add_webhook(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository_value = get_repo_by_id(&repo, &connection)?;
-
-    let repo = repository_value.unwrap();
-    let mut deploy_settings = repo.deploy_settings;
-    deploy_settings.add_webhook(nc.0);
-    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
-    APIResponse::respond_new(get_repo_by_id(&repo.id, &connection)?, &r)
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
+    let mut repository = repository.unwrap();
+    repository.deploy_settings.add_webhook(nc.0);
+    storage.update_repository(&repository)?;
+    APIResponse::respond_new(Some(repository), &r)
 }
 
-#[delete("/api/admin/repository/{repo}/modify/deploy/webhook/{webhook}")]
+#[delete("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/{webhook}")]
 pub async fn remove_webhook(
     pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(i64, String)>,
+    path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let (repo, webhook) = path.into_inner();
+    let (storage, repository, webhook) = path.into_inner();
 
     let connection = pool.get()?;
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let repository_value = get_repo_by_id(&repo, &connection)?;
-
-    let repo = repository_value.unwrap();
-    let mut deploy_settings = repo.deploy_settings;
-    deploy_settings.remove_hook(webhook);
-    update_deploy_settings(&repo.id, &deploy_settings, &connection)?;
-    APIResponse::respond_new(get_repo_by_id(&repo.id, &connection)?, &r)
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
+    let mut repository = repository.unwrap();
+    repository.deploy_settings.remove_hook(webhook);
+    storage.update_repository(&repository)?;
+    APIResponse::respond_new(Some(repository), &r)
 }

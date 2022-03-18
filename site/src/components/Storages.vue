@@ -88,9 +88,9 @@
           </div>
           <div>
             <ul v-if="storages != undefined">
-              <li v-for="storage in storages.storages" :key="storage.id">
+              <li v-for="storage in storages" :key="storage.name">
                 <router-link
-                  :to="'/admin/storage/' + storage.id"
+                  :to="'/admin/storage/' + storage.name"
                   class="
                     cursor-pointer
                     py-2
@@ -139,6 +139,7 @@ export default defineComponent({
         storages.value = value;
 
         isLoading.value = false;
+        console.log(storages.value.length());
       } catch (e) {
         error.value = "Error";
       }

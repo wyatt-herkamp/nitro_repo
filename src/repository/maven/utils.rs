@@ -1,19 +1,27 @@
-use std::fs::{read_dir, read_to_string, remove_file, File};
-use std::io::Write;
+use std::fs::{read_dir};
 use std::path::Path;
 
+use crate::constants::PROJECT_FILE;
 use chrono::NaiveDateTime;
+use log::trace;
 
-use crate::error::internal_error::InternalError;
+use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::maven::models::Pom;
+use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
+use crate::storage::models::StringStorage;
 use crate::utils::get_current_time;
 
-pub fn get_version(path: &Path, version: String) -> Option<VersionResponse> {
-    let versions_value = get_versions(path);
-    get_version_by_data(&versions_value, version)
+pub fn get_version(
+    storage: &StringStorage,
+    repository: &Repository,
+    project: String,
+    version: String,
+) -> NResult<Option<VersionResponse>> {
+    let versions_value = get_versions(storage, repository, project)?;
+    Ok(get_version_by_data(&versions_value, version))
 }
 
 pub fn get_version_by_data(
@@ -75,15 +83,19 @@ mod tests {
 }
 
 pub fn update_project(
-    project_folder: &Path,
+    storage: &StringStorage,
+    repository: &Repository,
+    project_folder: &str,
     version: String,
     pom: Pom,
 ) -> Result<(), InternalError> {
-    let buf = project_folder.join(".nitro.project.json");
-
-    let mut project_data: ProjectData = if buf.exists() {
-        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-        remove_file(&buf)?;
+    let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
+    trace!("Project File Location {}", project_file);
+    let option = storage.get_file(repository, &project_file)?;
+    let mut project_data: ProjectData = if let Some(data) = option {
+        let string = String::from_utf8(data)?;
+        let value = serde_json::from_str(&string)?;
+        storage.delete_file(repository, &project_file)?;
         value
     } else {
         ProjectData {
@@ -97,9 +109,10 @@ pub fn update_project(
     };
     project_data.description = pom.description.unwrap_or_else(|| "".to_string());
     project_data.versions.update_version(version);
-    let mut file = File::create(&buf).unwrap();
-    let string = serde_json::to_string_pretty(&project_data)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
+    storage.save_file(
+        repository,
+        serde_json::to_string_pretty(&project_data)?.as_bytes(),
+        &project_file,
+    )?;
     Ok(())
 }

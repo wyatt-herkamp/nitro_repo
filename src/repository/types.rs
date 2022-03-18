@@ -1,9 +1,10 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+
 
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -12,6 +13,8 @@ use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{NitroMavenVersions, NitroVersion, ProjectData};
 use crate::storage::models::Storage;
+use crate::storage::StorageFile;
+use crate::{SiteResponse, StringMap};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -30,11 +33,11 @@ pub struct Project {
 
 /// Types of Valid Repo Responses
 pub enum RepoResponse {
-    FileList(Vec<RepositoryFile>),
+    FileList(Vec<StorageFile>),
     /// Responds all the information about the project
     ProjectResponse(Project),
     /// Respond a file so it can be downloaded
-    FileResponse(PathBuf),
+    FileResponse(SiteResponse),
     /// Ok
     Ok,
     //Ok With Json
@@ -63,21 +66,11 @@ pub type RepoResult = Result<RepoResponse, InternalError>;
 /// This is a Request to a Repository Handler
 pub struct RepositoryRequest {
     /// The Storage that the Repo needs to be in
-    pub storage: Storage,
+    pub storage: Storage<StringMap>,
     /// The Repository it needs to be in
     pub repository: Repository,
     /// Everything in the URL path after /storages/{STORAGE}/{REPOSITORY}
     pub value: String,
-}
-
-impl RepositoryRequest {
-    pub fn new(storage: Storage, repository: Repository, value: String) -> RepositoryRequest {
-        RepositoryRequest {
-            storage,
-            repository,
-            value,
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -143,5 +136,5 @@ pub trait RepositoryType {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &MysqlConnection,
-    ) -> Result<String, InternalError>;
+    ) -> Result<Option<String>, InternalError>;
 }
