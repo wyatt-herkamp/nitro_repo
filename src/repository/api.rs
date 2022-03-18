@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
+use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::NitroRepoData;
 
 use crate::repository::controller::{handle_result, to_request};
@@ -31,8 +32,8 @@ pub async fn get_versions(
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_versions(&request, &r, &connection),
-        _ => {
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)
@@ -46,15 +47,14 @@ pub async fn get_project(
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    println!("{}", file);
     let connection = pool.get()?;
 
     let request = to_request(storage, repository, file, site)?;
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_project(&request, &r, &connection),
-        _ => {
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)
@@ -74,8 +74,8 @@ pub async fn get_version(
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_version(&request, version, &r, &connection),
-        _ => {
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)

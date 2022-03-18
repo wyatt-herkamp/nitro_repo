@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
+use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::NitroRepoData;
 use crate::repository::maven::MavenHandler;
@@ -100,9 +101,8 @@ pub async fn get_repository(
     let request = result.unwrap();
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
-        _ => {
-            error!("Invalid Repo Type {}", request.repository.repo_type);
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)
@@ -210,9 +210,8 @@ pub async fn post_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
-        _ => {
-            error!("Invalid Repo Type {}", request.repository.repo_type);
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)
@@ -246,8 +245,8 @@ pub async fn patch_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
-        _ => {
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)
@@ -279,9 +278,8 @@ pub async fn put_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
-        _ => {
-            error!("Invalid Repo Type {}", request.repository.repo_type);
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)
@@ -313,9 +311,8 @@ pub async fn head_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_head(&request, &r, &connection),
-        _ => {
-            error!("Invalid Repo Type {}", request.repository.repo_type);
-            panic!("Unknown REPO")
+        value => {
+            return Err(InvalidRepositoryType(value.to_string()))
         }
     }?;
     handle_result(x, request.value, r)

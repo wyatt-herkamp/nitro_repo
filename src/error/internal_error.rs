@@ -36,10 +36,12 @@ pub enum InternalError {
     Error(String),
     #[error("Missing Config Value {0}")]
     ConfigError(String),
+    #[error("Invalid Repository Type {0}")]
+    InvalidRepositoryType(String),
     #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
     DeadSite,
 }
-
+pub type NResult<T> = Result<T, InternalError>;
 impl InternalError {
     pub fn json_error(&self) -> HttpResponse {
         let result = HttpResponse::Ok()

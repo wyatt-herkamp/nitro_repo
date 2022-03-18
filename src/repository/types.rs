@@ -137,5 +137,5 @@ pub trait RepositoryType {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &MysqlConnection,
-    ) -> Result<String, InternalError>;
+    ) -> Result<Option<String>, InternalError>;
 }

@@ -7,6 +7,7 @@ use actix_web::HttpRequest;
 use diesel::MysqlConnection;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
+use crate::constants::PROJECT_FILE;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
@@ -39,14 +40,14 @@ impl RepositoryType for MavenHandler {
         }
 
         let result = request.storage.get_file_as_response(&request.repository, &request.value, http)?;
-         if result.is_left() {
+        if result.is_left() {
             Ok(RepoResponse::FileResponse(result.left().unwrap()))
         } else {
-             let vec = result.right().unwrap();
-             if vec.is_empty(){
-                 return Ok(RepoResponse::NotFound);
-             }
-             Ok(RepoResponse::FileList(vec))
+            let vec = result.right().unwrap();
+            if vec.is_empty() {
+                return Ok(RepoResponse::NotFound);
+            }
+            Ok(RepoResponse::FileList(vec))
         }
     }
 
@@ -107,7 +108,7 @@ impl RepositoryType for MavenHandler {
                         pom.version.clone(),
                         pom.clone(),
                     ) {
-                        error!("Unable to update .nitro.project.json, {}", error);
+                        error!("Unable to update {}, {}",PROJECT_FILE, error);
                         if log_enabled!(Trace) {
                             trace!(
                                 "Version {} Name: {}",
@@ -166,7 +167,6 @@ impl RepositoryType for MavenHandler {
         http: &HttpRequest,
         _conn: &MysqlConnection,
     ) -> RepoResult {
-
         let result = request.storage.get_file_as_response(&request.repository, &request.value, http)?;
         if result.is_left() {
             Ok(RepoResponse::FileResponse(result.left().unwrap()))
@@ -183,17 +183,9 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let string = parse_project_to_directory(&request.value);
+        let project_dir = parse_project_to_directory(&request.value);
 
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&string);
-        if !buf.exists() {
-            return RepoResult::Ok(NotFound);
-        }
-        let vec = get_versions(&buf);
+        let vec = get_versions(&request.storage, &request.repository, project_dir)?;
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
@@ -206,21 +198,13 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let string = parse_project_to_directory(&request.value);
+        let project_dir = parse_project_to_directory(&request.value);
 
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(string);
-        if !buf.exists() {
-            return RepoResult::Ok(NotFound);
+        let result = get_version(&request.storage, &request.repository, project_dir, version)?;
+        if let Some(version) = result {
+            return Ok(RepoResponse::NitroVersionResponse(version));
         }
-        let option = get_version(&buf, version);
-        if option.is_none() {
-            return Ok(RepoResponse::NotFound);
-        }
-        Ok(RepoResponse::NitroVersionResponse(option.unwrap()))
+         Ok(RepoResponse::NotFound)
     }
 
     fn handle_project(
@@ -232,47 +216,33 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotAuthorized);
         }
         let string = parse_project_to_directory(&request.value);
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&string);
-        if !buf.exists() {
-            return RepoResult::Ok(NotFound);
+
+        let project_data = get_project_data(&request.storage, &request.repository, string)?;
+        if let Some(project_data) = project_data {
+            let project = Project {
+                repo_summary: RepositorySummary::new(&request.repository)?,
+                project: project_data,
+                frontend_response: None,
+            };
+            return Ok(ProjectResponse(project));
         }
-        let project_data = get_project_data(&buf)?;
-        if project_data.is_none() {
-            return RepoResult::Ok(NotFound);
-        }
-        let project = Project {
-            repo_summary: RepositorySummary::new(&request.repository)?,
-            project: project_data.unwrap(),
-            frontend_response: None,
-        };
-        Ok(ProjectResponse(project))
+         RepoResult::Ok(NotFound)
     }
 
     fn latest_version(
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &MysqlConnection,
-    ) -> Result<String, InternalError> {
+    ) -> Result<Option<String>, InternalError> {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
-            return Ok("".to_string());
+            return Ok(None);
         }
         let string = parse_project_to_directory(&request.value);
-        let buf = get_storage_location()
-            .join("storages")
-            .join(&request.storage.name)
-            .join(&request.repository.name)
-            .join(&string);
-        if !buf.exists() {
-            return Ok("".to_string());
-        }
-        let project_data = get_project_data(&buf)?;
-        if project_data.is_none() {
-            return Ok("".to_string());
-        }
-        Ok(project_data.unwrap().versions.latest_release)
+        let project_data = get_project_data(&request.storage, &request.repository, string)?;
+        Ok(if let Some(project_data) = project_data {
+            Some(project_data.versions.latest_release)
+        } else {
+            None
+        })
     }
 }

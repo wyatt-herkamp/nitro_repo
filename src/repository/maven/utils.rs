@@ -5,18 +5,18 @@ use chrono::NaiveDateTime;
 use log::trace;
 use crate::constants::PROJECT_FILE;
 
-use crate::error::internal_error::InternalError;
+use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::maven::models::Pom;
 use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
-use crate::storage::models::{ StringStorage};
+use crate::storage::models::{StringStorage};
 use crate::utils::get_current_time;
 
-pub fn get_version(path: &Path, version: String) -> Option<VersionResponse> {
-    let versions_value = get_versions(path);
-    get_version_by_data(&versions_value, version)
+pub fn get_version(storage: &StringStorage, repository: &Repository, project: String, version: String) -> NResult<Option<VersionResponse>> {
+    let versions_value = get_versions(storage, repository, project)?;
+    Ok(get_version_by_data(&versions_value, version))
 }
 
 pub fn get_version_by_data(
