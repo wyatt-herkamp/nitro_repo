@@ -67,9 +67,6 @@ anyhow = "1.0.56"
 either = "1.6.1"
 # Badge Stuff
 badge-maker = "0.2.0"
-usvg = "0.22.0"
-resvg = "0.22.0"
-tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"
 zip = "0.5.13"

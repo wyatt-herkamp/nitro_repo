@@ -3,7 +3,7 @@ import { SnippetInfo } from "../CodeGenGeneral";
 
 export function createBadgeSnippets(storage: string, repository: string): SnippetInfo[] {
     const url = apiURL;
-    const badgeURL=`${url}/badge/${storage}/${repository}/nitro_repo_info/badge.svg`;
+    const badgeURL=`${url}/badge/${storage}/${repository}/nitro_repo_info/badge`;
     const appURL=`${url}/repositories/${storage}/${repository}/`;
     const text=`${repository} Repository`;
     return [
@@ -23,7 +23,7 @@ export function createBadgeSnippets(storage: string, repository: string): Snippe
 }
 export  function createProjectSnippet(storage: string, repository: string, project: string): SnippetInfo[] {
     const url = apiURL;
-    const badgeURL=`${url}/badge/${storage}/${repository}/${project}/badge.svg`;
+    const badgeURL=`${url}/badge/${storage}/${repository}/${project}/badge`;
     const appURL=`${url}/project/${storage}/${repository}/${project}`;
     const text=`${repository} Repository`;
     return [
