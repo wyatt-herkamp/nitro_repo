@@ -1,4 +1,3 @@
-
 use actix_web::web::Bytes;
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
 use log::error;
@@ -6,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
-use crate::error::response::{ bad_request, not_found, unauthorized};
+use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::NitroRepoData;
 
 use crate::repository::models::{BadgeSettings, Frontend, Policy, RepositorySummary, Visibility};
@@ -20,7 +19,11 @@ pub struct ListRepositories {
 }
 
 #[get("/api/admin/repositories/list")]
-pub async fn list_repos(pool: web::Data<DbPool>, site: NitroRepoData, r: HttpRequest) -> SiteResponse {
+pub async fn list_repos(
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
+    r: HttpRequest,
+) -> SiteResponse {
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
@@ -38,7 +41,6 @@ pub async fn list_repos(pool: web::Data<DbPool>, site: NitroRepoData, r: HttpReq
     let response = ListRepositories { repositories: vec };
     APIResponse::new(true, Some(response)).respond(&r)
 }
-
 
 #[get("/api/admin/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
@@ -68,10 +70,10 @@ pub async fn get_repo(
     APIResponse::from(repository).respond(&r)
 }
 
-
 #[post("/api/admin/repository/add")]
 pub async fn add_repo(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
@@ -94,7 +96,8 @@ pub async fn add_repo(
 
 #[patch("/api/admin/repository/{storage}/{repository}/active/{active}")]
 pub async fn update_active_status(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
@@ -124,7 +127,8 @@ pub async fn update_active_status(
 
 #[patch("/api/admin/repository/{storage}/{repository}/policy/{policy}")]
 pub async fn update_policy(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
@@ -154,7 +158,8 @@ pub async fn update_policy(
 
 #[patch("/api/admin/repository/{storage}/{repository}/description")]
 pub async fn update_description(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     b: Bytes,
     path: web::Path<(String, String)>,
@@ -175,7 +180,6 @@ pub async fn update_description(
         return bad_request("Bad Description");
     }
 
-
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -194,7 +198,8 @@ pub async fn update_description(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/settings/frontend")]
 pub async fn modify_frontend_settings(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
@@ -224,7 +229,8 @@ pub async fn modify_frontend_settings(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/settings/badge")]
 pub async fn modify_badge_settings(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
@@ -255,7 +261,8 @@ pub async fn modify_badge_settings(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/security/visibility/{visibility}")]
 pub async fn modify_security(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
@@ -285,7 +292,8 @@ pub async fn modify_security(
 
 #[patch("/api/admin/repository/{storage}/{repository}/clear/security/{what}")]
 pub async fn clear_all(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
@@ -320,7 +328,8 @@ pub async fn clear_all(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/security/{what}/{action}/{user}")]
 pub async fn update_deployers_readers(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String, String, String)>,
 ) -> SiteResponse {
@@ -389,7 +398,8 @@ pub async fn update_deployers_readers(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
@@ -421,7 +431,8 @@ pub async fn modify_deploy(
 
 #[put("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/add")]
 pub async fn add_webhook(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
@@ -452,7 +463,8 @@ pub async fn add_webhook(
 
 #[delete("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/{webhook}")]
 pub async fn remove_webhook(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {

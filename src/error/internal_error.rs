@@ -7,7 +7,6 @@ use actix_web::HttpResponse;
 use base64::DecodeError;
 use thiserror::Error;
 
-
 #[derive(Error, Debug)]
 pub enum InternalError {
     #[error("JSON error {0}")]
@@ -51,8 +50,6 @@ impl InternalError {
         result
     }
 }
-
-
 
 impl actix_web::error::ResponseError for InternalError {
     fn error_response(&self) -> HttpResponse {

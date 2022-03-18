@@ -28,8 +28,6 @@ impl Resources {
     }
 }
 
-
-
 pub fn get_current_time() -> i64 {
     Local::now().timestamp_millis()
 }

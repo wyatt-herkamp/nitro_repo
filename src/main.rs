@@ -2,14 +2,14 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
+extern crate core;
 extern crate strum;
 extern crate strum_macros;
-extern crate core;
 
-use std::fs::read_to_string;
 use actix_cors::Cors;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{middleware, web, App, HttpServer};
+use std::fs::read_to_string;
 use std::path::Path;
 
 use log::{error, info};
@@ -23,6 +23,7 @@ use crate::utils::Resources;
 pub mod database;
 
 pub mod api_response;
+pub mod constants;
 pub mod error;
 pub mod frontend;
 pub mod install;
@@ -34,14 +35,16 @@ pub mod storage;
 pub mod system;
 pub mod utils;
 pub mod webhook;
-pub mod constants;
 
 use crate::database::Database;
 use crate::install::load_installer;
+use crate::settings::models::{
+    EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,
+    StringMap,
+};
+use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
 use crossterm::style::Stylize;
-use crate::settings::models::{EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting, StringMap};
-use crate::storage::models::{load_storages, Storages};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -58,7 +61,6 @@ pub struct NitroRepo {
 }
 
 pub type NitroRepoData = Data<NitroRepo>;
-
 
 fn load_configs() -> anyhow::Result<Settings> {
     let cfgs = Path::new("cfg");
@@ -181,7 +183,7 @@ async fn main() -> std::io::Result<()> {
             .configure(misc::init)
             .configure(frontend::init)
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
@@ -197,14 +199,9 @@ async fn main() -> std::io::Result<()> {
             builder
                 .set_certificate_chain_file(std::env::var("CERT_KEY").unwrap())
                 .unwrap();
-            return server
-                .bind_openssl(address, builder)?
-                .run()
-                .await;
+            return server.bind_openssl(address, builder)?.run().await;
         }
     }
 
     return server.bind(address)?.run().await;
 }
-
-

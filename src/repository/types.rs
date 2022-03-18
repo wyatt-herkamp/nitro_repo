@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+
 
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
-use either::Either;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -13,8 +13,8 @@ use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{NitroMavenVersions, NitroVersion, ProjectData};
 use crate::storage::models::Storage;
-use crate::{SiteResponse, StringMap};
 use crate::storage::StorageFile;
+use crate::{SiteResponse, StringMap};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -72,7 +72,6 @@ pub struct RepositoryRequest {
     /// Everything in the URL path after /storages/{STORAGE}/{REPOSITORY}
     pub value: String,
 }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VersionResponse {

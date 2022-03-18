@@ -1,10 +1,8 @@
-use std::fs::read_to_string;
-use std::path::Path;
 
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
-use log::{debug, error, trace};
+use log::{debug, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
@@ -12,11 +10,11 @@ use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
-use crate::NitroRepoData;
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::utils::get_accept;
+use crate::NitroRepoData;
 
 //
 
@@ -81,7 +79,6 @@ pub async fn browse_storage(
     APIResponse::respond_new(Some(repos), &r)
 }
 
-
 #[get("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn get_repository(
     pool: web::Data<DbPool>,
@@ -101,9 +98,7 @@ pub async fn get_repository(
     let request = result.unwrap();
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_get(&request, &r, &connection),
-        value => {
-            return Err(InvalidRepositoryType(value.to_string()))
-        }
+        value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
 }
@@ -116,7 +111,7 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
             if x.contains(&"application/json".to_string()) {
                 APIResponse::new(true, Some(files)).respond(&r)
             } else {
-                trace!("Access to Simple Dir Listing {}" ,r.uri());
+                trace!("Access to Simple Dir Listing {}", r.uri());
                 Ok(HttpResponse::Ok()
                     .content_type("text/html")
                     .body("Coming Soon(Simple DIR Listing)"))
@@ -210,9 +205,7 @@ pub async fn post_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
-        value => {
-            return Err(InvalidRepositoryType(value.to_string()))
-        }
+        value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
 }
@@ -245,16 +238,15 @@ pub async fn patch_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
-        value => {
-            return Err(InvalidRepositoryType(value.to_string()))
-        }
+        value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
 }
 
 #[put("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn put_repository(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
@@ -278,16 +270,15 @@ pub async fn put_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
-        value => {
-            return Err(InvalidRepositoryType(value.to_string()))
-        }
+        value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
 }
 
 #[head("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn head_repository(
-    pool: web::Data<DbPool>, site: NitroRepoData,
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
@@ -311,9 +302,7 @@ pub async fn head_repository(
     );
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_head(&request, &r, &connection),
-        value => {
-            return Err(InvalidRepositoryType(value.to_string()))
-        }
+        value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
 }

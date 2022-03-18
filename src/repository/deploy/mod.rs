@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::fs::{ File};
 
-
+use crate::constants::REPORT_DATA;
 use log::error;
 use serde::de::value::MapDeserializer;
 use serde::{Deserialize, Serialize};
-use crate::constants::REPORT_DATA;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
@@ -58,7 +56,11 @@ pub async fn handle_post_deploy(
         }
 
         let string = serde_json::to_string(&report).unwrap();
-        storage.save_file(repository, string.as_bytes(), &format!("{}/{}", deploy.version_folder, REPORT_DATA))?
+        storage.save_file(
+            repository,
+            string.as_bytes(),
+            &format!("{}/{}", deploy.version_folder, REPORT_DATA),
+        )?
     }
     Ok(())
 }

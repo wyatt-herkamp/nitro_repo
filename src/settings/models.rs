@@ -1,7 +1,7 @@
+use crate::error::internal_error::InternalError;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use serde::{Deserialize, Serialize};
-use crate::error::internal_error::InternalError;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -49,16 +49,12 @@ pub struct Database<T> {
 pub type StringMap = HashMap<String, String>;
 pub type GenericDatabase = Database<StringMap>;
 
-
 impl Display for MysqlSettings {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "mysql://{}:{}@{}/{}",
-            self.user,
-            self.password,
-            self.host,
-            self.database
+            self.user, self.password, self.host, self.database
         )
     }
 }
@@ -67,10 +63,18 @@ impl TryFrom<StringMap> for MysqlSettings {
     type Error = InternalError;
 
     fn try_from(mut value: StringMap) -> Result<Self, Self::Error> {
-        let user = value.remove("user").ok_or_else(|| InternalError::ConfigError("database.user".to_string()))?;
-        let password = value.remove("password").ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
-        let host = value.remove("host").ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
-        let database = value.remove("database").ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
+        let user = value
+            .remove("user")
+            .ok_or_else(|| InternalError::ConfigError("database.user".to_string()))?;
+        let password = value
+            .remove("password")
+            .ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
+        let host = value
+            .remove("host")
+            .ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
+        let database = value
+            .remove("database")
+            .ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
         Ok(MysqlSettings {
             user,
             password,
@@ -104,7 +108,6 @@ pub struct GeneralSettings {
     pub internal: Internal,
 }
 
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SiteSetting {
     pub name: String,
@@ -123,8 +126,7 @@ pub struct EmailSetting {
     pub from: String,
     pub port: u16,
 }
-
-
+#[allow(clippy::derivable_impls)]
 impl Default for SecuritySettings {
     fn default() -> Self {
         SecuritySettings {}

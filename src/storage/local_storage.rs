@@ -1,21 +1,23 @@
-use std::collections::HashMap;
-use std::fs;
-use std::fs::{create_dir_all, File, OpenOptions, read_dir, read_to_string, remove_file};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use crate::error::internal_error::InternalError;
+use crate::repository::models::{Repository, RepositorySummary};
+use crate::repository::{REPOSITORY_CONF, REPOSITORY_CONF_BAK};
+use crate::storage::models::{LocationType, Storage};
+use crate::storage::{
+    FileResponse, LocationHandler, RepositoriesFile, StorageFile, StorageFileResponse,
+    STORAGE_CONFIG,
+};
+use crate::utils::get_current_time;
+use crate::{SiteResponse, StringMap};
 use actix_files::NamedFile;
 use actix_web::HttpRequest;
 use either::Either;
-use log::{trace, info};
-use crate::error::internal_error::InternalError;
-use crate::{SiteResponse, StringMap};
-use serde::{Serialize, Deserialize};
-use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::{REPOSITORY_CONF, REPOSITORY_CONF_BAK};
-use crate::storage::{FileResponse, LocationHandler, RepositoriesFile, STORAGE_CONFIG, StorageFile, StorageFileResponse};
-use crate::storage::models::{LocationType, Storage};
-use crate::utils::get_current_time;
-
+use log::{info, trace};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, File, OpenOptions};
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalStorage {
@@ -57,14 +59,20 @@ impl LocationHandler<LocalFile> for LocalStorage {
         Ok(())
     }
 
-    fn create_repository(storage: &Storage<StringMap>, repository: RepositorySummary) -> Result<Repository, InternalError> {
+    fn create_repository(
+        storage: &Storage<StringMap>,
+        repository: RepositorySummary,
+    ) -> Result<Repository, InternalError> {
         let location = storage.location.get("location").unwrap();
         let storages = Path::new(location);
         let location = storages.join(&repository.name);
 
         {
             let storage_config = storages.join(STORAGE_CONFIG);
-            info!("Adding Value to Storage Config {}", storage_config.to_str().unwrap());
+            info!(
+                "Adding Value to Storage Config {}",
+                storage_config.to_str().unwrap()
+            );
             let mut repos = if storage_config.exists() {
                 let string = read_to_string(&storage_config)?;
                 remove_file(&storage_config)?;
@@ -81,7 +89,7 @@ impl LocationHandler<LocalFile> for LocalStorage {
                 .open(storage_config)?;
             file.write_all(result.as_bytes())?;
         }
-        info!("Creating Directory {}",location.to_str().unwrap());
+        info!("Creating Directory {}", location.to_str().unwrap());
 
         create_dir_all(&location)?;
         let repo = Repository {
@@ -96,16 +104,12 @@ impl LocationHandler<LocalFile> for LocalStorage {
         let result = serde_json::to_string_pretty(&repo)?;
 
         let config = location.join(REPOSITORY_CONF);
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(config)?;
+        let mut file = OpenOptions::new().write(true).create(true).open(config)?;
         file.write_all(result.as_bytes())?;
         Ok(repo)
     }
 
-    fn get_repositories(storage: &Storage<StringMap>) -> Result<RepositoriesFile, InternalError>
-    {
+    fn get_repositories(storage: &Storage<StringMap>) -> Result<RepositoriesFile, InternalError> {
         let location = storage.location.get("location").unwrap();
 
         let path = Path::new(location).join(STORAGE_CONFIG);
@@ -114,10 +118,13 @@ impl LocationHandler<LocalFile> for LocalStorage {
         }
         let string = read_to_string(&path)?;
         let result: RepositoriesFile = serde_json::from_str(&string)?;
-        return Ok(result);
+        Ok(result)
     }
 
-    fn get_repository(storage: &Storage<StringMap>, repository: &str) -> Result<Option<Repository>, InternalError> {
+    fn get_repository(
+        storage: &Storage<StringMap>,
+        repository: &str,
+    ) -> Result<Option<Repository>, InternalError> {
         let location = storage.location.get("location").unwrap();
         let path = Path::new(location).join(repository).join(REPOSITORY_CONF);
 
@@ -129,7 +136,10 @@ impl LocationHandler<LocalFile> for LocalStorage {
         Ok(Some(result))
     }
 
-    fn update_repository(storage: &Storage<StringMap>, repository: &Repository) -> Result<(), InternalError> {
+    fn update_repository(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+    ) -> Result<(), InternalError> {
         let location = storage.location.get("location").unwrap();
         let location = Path::new(location).join(&repository.name);
         let config = location.join(REPOSITORY_CONF);
@@ -142,18 +152,25 @@ impl LocationHandler<LocalFile> for LocalStorage {
         }
         fs::rename(&config, bak)?;
         let result = serde_json::to_string(repository)?;
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(config)?;
+        let mut file = OpenOptions::new().write(true).create(true).open(config)?;
         file.write_all(result.as_bytes())?;
         Ok(())
     }
 
-    fn save_file(storage: &Storage<StringMap>, repository: &Repository, data: &[u8], location: &str) -> Result<(), InternalError> {
-        let file_location = LocalStorage::get_repository_folder(storage, &repository.name).join(location);
+    fn save_file(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+        data: &[u8],
+        location: &str,
+    ) -> Result<(), InternalError> {
+        let file_location =
+            LocalStorage::get_repository_folder(storage, &repository.name).join(location);
         trace!("Saving File {:?}", &file_location);
-        create_dir_all(file_location.parent().ok_or_else(|| InternalError::from("Unable to Find Parent Location"))?)?;
+        create_dir_all(
+            file_location
+                .parent()
+                .ok_or_else(|| InternalError::from("Unable to Find Parent Location"))?,
+        )?;
 
         if file_location.exists() {
             remove_file(&file_location)?;
@@ -167,25 +184,39 @@ impl LocationHandler<LocalFile> for LocalStorage {
         Ok(())
     }
 
-    fn delete_file(storage: &Storage<StringMap>, repository: &Repository, location: &str) -> Result<(), InternalError> {
-        let file_location = LocalStorage::get_repository_folder(storage, &repository.name).join(location);
+    fn delete_file(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<(), InternalError> {
+        let file_location =
+            LocalStorage::get_repository_folder(storage, &repository.name).join(location);
         remove_file(file_location)?;
-        return Ok(());
+        Ok(())
     }
 
-
-    fn get_file(storage: &Storage<StringMap>, repository: &Repository, location: &str) -> Result<Option<Vec<u8>>, InternalError> {
-        let file_location = LocalStorage::get_repository_folder(storage, &repository.name).join(location);
+    fn get_file(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<Option<Vec<u8>>, InternalError> {
+        let file_location =
+            LocalStorage::get_repository_folder(storage, &repository.name).join(location);
         if !file_location.exists() {
             return Ok(None);
         }
         let mut file = File::open(file_location)?;
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes)?;
-        return Ok(Some(bytes));
+        Ok(Some(bytes))
     }
-    fn get_file_as_response(storage: &Storage<StringMap>, repository: &Repository, location: &str) -> Result<FileResponse<LocalFile>, InternalError> {
-        let file_location = LocalStorage::get_repository_folder(storage, &repository.name).join(location);
+    fn get_file_as_response(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<FileResponse<LocalFile>, InternalError> {
+        let file_location =
+            LocalStorage::get_repository_folder(storage, &repository.name).join(location);
         if !file_location.exists() {
             return Ok(Either::Right(vec![]));
         }
@@ -216,7 +247,9 @@ impl LocationHandler<LocalFile> for LocalStorage {
             return Ok(Either::Right(files));
         }
         trace!("Returning File {:?}", &file_location);
-        Ok(Either::Left(LocalFile { path: file_location }))
+        Ok(Either::Left(LocalFile {
+            path: file_location,
+        }))
     }
 }
 
@@ -238,8 +271,10 @@ impl TryFrom<StringMap> for LocalStorage {
     type Error = InternalError;
 
     fn try_from(mut value: StringMap) -> Result<LocalStorage, Self::Error> {
-        let location = value.remove("location").ok_or_else(|| InternalError::ConfigError("storage missing location".to_string()))?;
+        let location = value
+            .remove("location")
+            .ok_or_else(|| InternalError::ConfigError("storage missing location".to_string()))?;
 
-        return Ok(LocalStorage { location });
+        Ok(LocalStorage { location })
     }
 }

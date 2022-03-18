@@ -1,4 +1,3 @@
-
 table! {
     users (id) {
         id -> Bigint,

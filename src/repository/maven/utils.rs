@@ -1,9 +1,9 @@
-use std::fs::{read_dir, File};
+use std::fs::{read_dir};
 use std::path::Path;
 
+use crate::constants::PROJECT_FILE;
 use chrono::NaiveDateTime;
 use log::trace;
-use crate::constants::PROJECT_FILE;
 
 use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::maven::models::Pom;
@@ -11,10 +11,15 @@ use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroMavenVersions, ProjectData};
 use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
-use crate::storage::models::{StringStorage};
+use crate::storage::models::StringStorage;
 use crate::utils::get_current_time;
 
-pub fn get_version(storage: &StringStorage, repository: &Repository, project: String, version: String) -> NResult<Option<VersionResponse>> {
+pub fn get_version(
+    storage: &StringStorage,
+    repository: &Repository,
+    project: String,
+    version: String,
+) -> NResult<Option<VersionResponse>> {
     let versions_value = get_versions(storage, repository, project)?;
     Ok(get_version_by_data(&versions_value, version))
 }
@@ -104,6 +109,10 @@ pub fn update_project(
     };
     project_data.description = pom.description.unwrap_or_else(|| "".to_string());
     project_data.versions.update_version(version);
-    storage.save_file(repository, serde_json::to_string_pretty(&project_data)?.as_bytes(), &project_file)?;
+    storage.save_file(
+        repository,
+        serde_json::to_string_pretty(&project_data)?.as_bytes(),
+        &project_file,
+    )?;
     Ok(())
 }

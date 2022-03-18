@@ -18,7 +18,7 @@ use diesel::MysqlConnection;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
-use std::path::{Path};
+use std::path::Path;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -28,14 +28,13 @@ use tui::{
     Frame, Terminal,
 };
 
-
 use thiserror::Error;
 
+use crate::settings::models::{Application, Database};
 use crate::system::utils::hash;
 use crate::utils::get_current_time;
-use unicode_width::UnicodeWidthStr;
-use crate::settings::models::{Application, Database};
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
+use unicode_width::UnicodeWidthStr;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -57,7 +56,6 @@ impl From<std::io::Error> for InstallError {
     }
 }
 
-
 //mysql://newuser:"password"@127.0.0.1/nitro_repo
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct DatabaseStage {
@@ -74,7 +72,10 @@ impl From<DatabaseStage> for Database<StringMap> {
         map.insert("password".to_string(), db.password.unwrap());
         map.insert("host".to_string(), db.host.unwrap());
         map.insert("database".to_string(), db.database.unwrap());
-        Self { db_type: "mysql".to_string(), settings: map }
+        Self {
+            db_type: "mysql".to_string(),
+            settings: map,
+        }
     }
 }
 
@@ -302,9 +303,7 @@ fn get_next_default(app: &App) -> Option<String> {
         2 => {
             if app.other_stage.address.is_none() {
                 Some("0.0.0.0:6742".to_string())
-            } else if app.other_stage.log_location.is_none()
-
-            {
+            } else if app.other_stage.log_location.is_none() {
                 Some("./".to_string())
             } else if app.other_stage.max_upload.is_none() {
                 Some("1024".to_string())
@@ -374,7 +373,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-                .as_ref(),
+            .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -498,7 +497,6 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
 
-
     let app = run_app(terminal, App::default())?;
 
     let general = GeneralSettings {
@@ -549,8 +547,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-        .unwrap();
+    .unwrap();
     terminal.show_cursor().unwrap();
 }
-
-

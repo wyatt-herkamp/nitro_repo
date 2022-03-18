@@ -1,11 +1,11 @@
+use crate::constants::{PROJECTS_FILE, PROJECT_FILE};
 use crate::error::internal_error::InternalError;
+use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroMavenVersions, ProjectData, RepositoryListing};
 use crate::repository::types::RepositoryRequest;
-use std::fs::{read_to_string};
-use std::path::{Path, PathBuf};
-use crate::constants::{PROJECT_FILE, PROJECTS_FILE};
-use crate::repository::models::Repository;
 use crate::storage::models::StringStorage;
+use std::fs::read_to_string;
+use std::path::{Path, PathBuf};
 
 use crate::utils::get_storage_location;
 
@@ -23,7 +23,8 @@ pub fn build_directory(request: &RepositoryRequest) -> PathBuf {
 pub fn update_project_in_repositories(
     storage: &StringStorage,
     repository: &Repository,
-    project: String) -> Result<(), InternalError> {
+    project: String,
+) -> Result<(), InternalError> {
     let option = storage.get_file(repository, PROJECTS_FILE)?;
     let mut repo_listing: RepositoryListing = if let Some(data) = option {
         let data = String::from_utf8(data)?;
@@ -39,7 +40,11 @@ pub fn update_project_in_repositories(
     Ok(())
 }
 
-pub fn get_versions(storage: &StringStorage, repository: &Repository, path: String) -> Result<NitroMavenVersions, InternalError> {
+pub fn get_versions(
+    storage: &StringStorage,
+    repository: &Repository,
+    path: String,
+) -> Result<NitroMavenVersions, InternalError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
     let option = storage.get_file(repository, &string)?;
     Ok(if let Some(vec) = option {
@@ -72,7 +77,11 @@ pub fn get_latest_version_data(
     }
 }
 
-pub fn get_project_data(storage: &StringStorage, repository: &Repository, project: String) -> Result<Option<ProjectData>, InternalError> {
+pub fn get_project_data(
+    storage: &StringStorage,
+    repository: &Repository,
+    project: String,
+) -> Result<Option<ProjectData>, InternalError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
     let option = storage.get_file(repository, &string)?;
     Ok(if let Some(vec) = option {

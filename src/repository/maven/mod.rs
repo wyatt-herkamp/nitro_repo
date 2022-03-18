@@ -1,13 +1,11 @@
-use std::collections::HashMap;
-use std::fs::{read_dir, remove_file, OpenOptions};
 
 
+use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
-use crate::constants::PROJECT_FILE;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
@@ -19,10 +17,9 @@ use crate::repository::types::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
 use crate::repository::types::RepositoryRequest;
-use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryFile, RepositoryType};
+use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryType};
 use crate::repository::utils::{get_project_data, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
-use crate::utils::get_storage_location;
 
 mod models;
 mod utils;
@@ -39,7 +36,10 @@ impl RepositoryType for MavenHandler {
             return RepoResult::Ok(NotAuthorized);
         }
 
-        let result = request.storage.get_file_as_response(&request.repository, &request.value, http)?;
+        let result =
+            request
+                .storage
+                .get_file_as_response(&request.repository, &request.value, http)?;
         if result.is_left() {
             Ok(RepoResponse::FileResponse(result.left().unwrap()))
         } else {
@@ -85,7 +85,9 @@ impl RepositoryType for MavenHandler {
             }
             Policy::Mixed => {}
         }
-        request.storage.save_file(&request.repository, bytes.as_ref(), &request.value)?;
+        request
+            .storage
+            .save_file(&request.repository, bytes.as_ref(), &request.value)?;
         if request.value.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec)?;
@@ -93,22 +95,24 @@ impl RepositoryType for MavenHandler {
             if let Err(error) = &pom {
                 error!(
                     "Unable to Parse Pom File {} Error {}",
-                    &request.value,
-                    error
+                    &request.value, error
                 );
             }
             if let Ok(pom) = pom {
-                let project_folder = format!("{}/{}", pom.group_id.replace(".", "/"), pom.artifact_id);
+                let project_folder =
+                    format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
                 trace!("Project Folder Location {}", project_folder);
                 let repository = request.repository.clone();
                 let storage = request.storage.clone();
                 actix_web::rt::spawn(async move {
                     if let Err(error) = crate::repository::maven::utils::update_project(
-                        &storage, &repository, &project_folder,
+                        &storage,
+                        &repository,
+                        &project_folder,
                         pom.version.clone(),
                         pom.clone(),
                     ) {
-                        error!("Unable to update {}, {}",PROJECT_FILE, error);
+                        error!("Unable to update {}, {}", PROJECT_FILE, error);
                         if log_enabled!(Trace) {
                             trace!(
                                 "Version {} Name: {}",
@@ -118,8 +122,11 @@ impl RepositoryType for MavenHandler {
                         }
                     }
 
-                    if let Err(error) = crate::repository::utils::update_project_in_repositories(&storage, &repository,
-                                                                                                 format!("{}:{}", &pom.group_id, &pom.artifact_id)) {
+                    if let Err(error) = crate::repository::utils::update_project_in_repositories(
+                        &storage,
+                        &repository,
+                        format!("{}:{}", &pom.group_id, &pom.artifact_id),
+                    ) {
                         error!("Unable to update repository.json, {}", error);
                         if log_enabled!(Trace) {
                             trace!(
@@ -167,7 +174,10 @@ impl RepositoryType for MavenHandler {
         http: &HttpRequest,
         _conn: &MysqlConnection,
     ) -> RepoResult {
-        let result = request.storage.get_file_as_response(&request.repository, &request.value, http)?;
+        let result =
+            request
+                .storage
+                .get_file_as_response(&request.repository, &request.value, http)?;
         if result.is_left() {
             Ok(RepoResponse::FileResponse(result.left().unwrap()))
         } else {
@@ -204,7 +214,7 @@ impl RepositoryType for MavenHandler {
         if let Some(version) = result {
             return Ok(RepoResponse::NitroVersionResponse(version));
         }
-         Ok(RepoResponse::NotFound)
+        Ok(RepoResponse::NotFound)
     }
 
     fn handle_project(
@@ -226,7 +236,7 @@ impl RepositoryType for MavenHandler {
             };
             return Ok(ProjectResponse(project));
         }
-         RepoResult::Ok(NotFound)
+        RepoResult::Ok(NotFound)
     }
 
     fn latest_version(

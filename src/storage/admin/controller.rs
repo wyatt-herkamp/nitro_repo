@@ -1,21 +1,20 @@
-use std::collections::HashMap;
-use actix_web::{get, post, delete, web, HttpRequest, HttpResponse};
+use actix_web::{delete, get, post, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{already_exists, unauthorized};
-use crate::storage::models::{LocationType, save_storages, Storage};
+use crate::storage::models::{save_storages, LocationType, Storage};
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
+use crate::{NitroRepoData, StringMap};
+use log::warn;
 use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
-use std::path::{Path};
-use log::warn;
-use crate::{NitroRepoData, StringMap};
-
+use std::path::Path;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
@@ -50,7 +49,10 @@ pub async fn delete_by_id(
     let mut guard = site.storages.lock().unwrap();
     if let Some(storage) = guard.remove(&id.into_inner()) {
         //Yes I am exporting everything being deleted
-        warn!(" Deleted Storage {}",serde_json::to_string(&storage).unwrap());
+        warn!(
+            " Deleted Storage {}",
+            serde_json::to_string(&storage).unwrap()
+        );
         save_storages(guard.deref())?;
         APIResponse::new(true, Some(true)).respond(&r)
     } else {

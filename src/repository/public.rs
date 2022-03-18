@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::response::{not_found, unauthorized};
-use crate::NitroRepoData;
 use crate::repository::models::{Policy, Repository, Visibility};
 use crate::system::utils::can_read_basic_auth;
+use crate::NitroRepoData;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -56,6 +56,5 @@ pub async fn get_repo(
             return APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r);
         }
     }
-     not_found()
+    not_found()
 }
-
