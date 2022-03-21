@@ -44,7 +44,7 @@ toml = "0.5.8"
 rand = "0.8.4"
 rand_core = { version = "0.6.3", features = ["std"] }
 rust-embed = { version = "6.2.0", features = ["interpolate-folder-path"] }
-argon2 = "0.3.1"
+argon2 = "0.4.0"
 chrono = "0.4.19"
 regex = "1.5.4"
 glob = "0.3.0"
