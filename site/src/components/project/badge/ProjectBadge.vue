@@ -16,7 +16,7 @@
               project.repo_summary.storage +
               '/' +
               project.repo_summary.name +
-              '/'+projectPath+'/badge.png'
+              '/'+projectPath+'/badge'
             "
           />
         </div>

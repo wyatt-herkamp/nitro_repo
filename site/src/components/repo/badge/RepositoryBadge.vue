@@ -16,7 +16,7 @@
               repository.storage +
               '/' +
               repository.name +
-              '/nitro_repo_info/badge.png'
+              '/nitro_repo_info/badge'
             "
           />
         </div>

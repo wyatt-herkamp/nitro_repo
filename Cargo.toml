@@ -27,6 +27,7 @@ openssl = { version = "0.10", features = ["v110"], optional = true }
 actix-files = "0.6.0"
 # Partly Web
 lettre = "0.10.0-rc.4"
+handlebars = "4.2.2"
 # Database
 diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
 diesel_migrations = "1.4.0"
@@ -44,7 +45,7 @@ toml = "0.5.8"
 rand = "0.8.4"
 rand_core = { version = "0.6.3", features = ["std"] }
 rust-embed = { version = "6.2.0", features = ["interpolate-folder-path"] }
-argon2 = "0.3.1"
+argon2 = "0.4.0"
 chrono = "0.4.19"
 regex = "1.5.4"
 glob = "0.3.0"
@@ -67,19 +68,17 @@ anyhow = "1.0.56"
 either = "1.6.1"
 # Badge Stuff
 badge-maker = "0.2.0"
-usvg = "0.22.0"
-resvg = "0.22.0"
-tiny-skia = "0.6.1"
 # Webhook
 webhook = "2.0.0"
-zip = "0.5.13"
+zip = "0.6.0"
 # Installer
 tui = "0.17"
 crossterm = "0.23"
 clap = { version = "3.1.6", features = ["derive"] }
 unicode-width = "0.1.9"
+
 [build-dependencies]
-zip = "0.5.13"
+zip = "0.6.0"
 walkdir = "2.3.2"
 [features]
 default = ["frontend"]
