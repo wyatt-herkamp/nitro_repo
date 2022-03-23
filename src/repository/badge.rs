@@ -1,5 +1,3 @@
-use std::fs::{File};
-
 use actix_web::{get, web, HttpRequest, HttpResponse};
 use badge_maker::{BadgeBuilder};
 use crate::api_response::SiteResponse;
