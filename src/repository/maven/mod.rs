@@ -1,5 +1,3 @@
-
-
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
@@ -250,7 +248,12 @@ impl RepositoryType for MavenHandler {
         let string = parse_project_to_directory(&request.value);
         let project_data = get_project_data(&request.storage, &request.repository, string)?;
         Ok(if let Some(project_data) = project_data {
-            Some(project_data.versions.latest_release)
+            let latest_release = project_data.versions.latest_release;
+            if latest_release.is_empty() {
+                Some(project_data.versions.latest_version)
+            } else {
+                Some(latest_release)
+            }
         } else {
             None
         })

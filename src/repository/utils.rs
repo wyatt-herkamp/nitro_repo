@@ -85,7 +85,10 @@ pub fn get_project_data(
     let string = format!("{}/{}", project, PROJECT_FILE);
     let option = storage.get_file(repository, &string)?;
     Ok(if let Some(vec) = option {
-        let data: ProjectData = serde_json::from_str(&String::from_utf8(vec)?)?;
+        let mut data: ProjectData = serde_json::from_str(&String::from_utf8(vec)?)?;
+        if data.versions.latest_release.is_empty() {
+            data.versions.latest_release = data.versions.latest_version.clone();
+        }
         Some(data)
     } else {
         None
