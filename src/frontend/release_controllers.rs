@@ -3,24 +3,34 @@ use std::io::Cursor;
 use std::path::Path;
 
 use actix_files::Files;
-use actix_web::{get, web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpResponse};
+use actix_web::web::Data;
+use handlebars::Handlebars;
 use log::debug;
 use zip::ZipArchive;
+use serde_json::json;
 
 use crate::api_response::SiteResponse;
+use crate::{NitroRepoData};
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
     web_data();
-    cfg.service(index)
-        .service(me)
-        .service(admin)
-        .service(admin_extra)
-        .service(browse)
-        .service(browse_extend)
-        .service(upload)
-        .service(repository)
-        .service(project)
+    let mut reg = Handlebars::new();
+    let content = read_to_string(Path::new("frontend").join("index.html")).expect("Unable to read index.html");
+    reg.register_template_string("index", content).expect("Unable to Parse Template");
+    let reg = Data::new(reg);
+    cfg
+        .app_data(reg.clone())
+        .route("/me", web::get().to(frontend_handler))
+        .route("/browse/{file:.*}", web::get().to(frontend_handler))
+        .route("/browse", web::get().to(frontend_handler))
+        .route("/admin", web::get().to(frontend_handler))
+        .route("/admin/{file:.*}", web::get().to(frontend_handler))
+        .route("/upload/{file:.*}", web::get().to(frontend_handler))
+        .route("/repository/{file:.*}", web::get().to(frontend_handler))
+        .route("/project/{file:.*}", web::get().to(frontend_handler))
+        .route("/", web::get().to(frontend_handler))
         .service(Files::new("/", "frontend").show_files_listing());
 }
 
@@ -40,51 +50,9 @@ fn web_data() {
     }
 }
 
-#[get("/")]
-pub async fn index(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-#[get("/me")]
-pub async fn me(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
 
-#[get("/browse/{file:.*}")]
-pub async fn browse_extend(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-
-#[get("/browse")]
-pub async fn browse(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-
-#[get("/admin")]
-pub async fn admin(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-
-#[get("/admin/{file:.*}")]
-pub async fn admin_extra(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-
-#[get("/upload/{file:.*}")]
-pub async fn upload(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-
-#[get("/repository/{file:.*}")]
-pub async fn repository(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-#[get("/project/{file:.*}")]
-pub async fn project(_r: HttpRequest) -> SiteResponse {
-    get_file()
-}
-
-fn get_file() -> SiteResponse {
-    //TODO cache this value at runtime
-    let content = read_to_string(Path::new("frontend").join("index.html"))?;
+pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
+    let value = json!({"base_url":     site.core.application.app_url});
+    let content = hb.render("index.html", &value)?;
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }

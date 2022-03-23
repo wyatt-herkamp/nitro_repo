@@ -40,7 +40,9 @@ pub enum InternalError {
     #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
     DeadSite,
 }
+
 pub type NResult<T> = Result<T, InternalError>;
+
 impl InternalError {
     pub fn json_error(&self) -> HttpResponse {
         let result = HttpResponse::Ok()
@@ -100,6 +102,12 @@ impl From<argon2::password_hash::Error> for InternalError {
     }
 }
 
+impl From<handlebars::RenderError> for InternalError {
+    fn from(err: handlebars::RenderError) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}
+
 impl From<serde_json::Error> for InternalError {
     fn from(err: serde_json::Error) -> InternalError {
         InternalError::JSONError(err)
@@ -129,6 +137,7 @@ impl From<ParseBoolError> for InternalError {
         InternalError::BooleanParseError(err)
     }
 }
+
 impl From<&str> for InternalError {
     fn from(error: &str) -> Self {
         InternalError::Error(error.to_string())

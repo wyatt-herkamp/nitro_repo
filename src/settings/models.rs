@@ -97,6 +97,7 @@ pub struct Application {
     pub frontend: String,
     pub log: String,
     pub address: String,
+    pub app_url: String,
     pub max_upload: usize,
     pub mode: Mode,
     pub ssl_private_key: Option<String>,

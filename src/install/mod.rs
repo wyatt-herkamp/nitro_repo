@@ -123,6 +123,7 @@ impl From<UserStage> for User {
 pub struct OtherStage {
     log_location: Option<String>,
     address: Option<String>,
+    app_url: Option<String>,
     max_upload: Option<String>,
 }
 
@@ -132,6 +133,7 @@ impl From<OtherStage> for Application {
             frontend: "../site/dist".to_string(),
             log: other.log_location.unwrap(),
             address: other.address.unwrap(),
+            app_url: other.app_url.unwrap(),
             max_upload: other.max_upload.unwrap().parse().unwrap(),
             mode: Mode::Release,
             ssl_private_key: None,
@@ -175,6 +177,7 @@ impl Default for App {
             other_stage: OtherStage {
                 log_location: None,
                 address: None,
+                app_url: None,
                 max_upload: None,
             },
         }
@@ -260,7 +263,9 @@ fn run_app(
                         2 => {
                             if app.other_stage.address.is_none() {
                                 app.other_stage.address = value;
-                            } else if app.other_stage.log_location.is_none() {
+                            } else if app.other_stage.app_url.is_none() {
+                                app.other_stage.app_url = value;
+                            }  else if app.other_stage.log_location.is_none() {
                                 app.other_stage.log_location = value;
                             } else if app.other_stage.max_upload.is_none() {
                                 app.other_stage.max_upload = value;
@@ -305,6 +310,8 @@ fn get_next_default(app: &App) -> Option<String> {
         2 => {
             if app.other_stage.address.is_none() {
                 Some("0.0.0.0:6742".to_string())
+            } else if app.other_stage.app_url.is_none() {
+                Some("http://127.0.0.1:6742".to_string())
             } else if app.other_stage.log_location.is_none() {
                 Some("./".to_string())
             } else if app.other_stage.max_upload.is_none() {
@@ -348,6 +355,8 @@ fn get_next_step(app: &App) -> String {
         2 => {
             if app.other_stage.address.is_none() {
                 "Bind Address".to_string()
+            } else if app.other_stage.app_url.is_none() {
+                "App URL".to_string()
             } else if app.other_stage.log_location.is_none() {
                 "Log Location".to_string()
             } else if app.other_stage.max_upload.is_none() {
@@ -433,6 +442,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     create_line(
         "Bind Address",
         app.other_stage.address.as_ref().unwrap_or(&"".to_string()),
+        &mut messages,
+    );
+    create_line(
+        "App URL",
+        app.other_stage.app_url.as_ref().unwrap_or(&"".to_string()),
         &mut messages,
     );
     create_line(
