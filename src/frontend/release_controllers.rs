@@ -17,7 +17,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
     web_data();
     let mut reg = Handlebars::new();
-    let content = read_to_string(Path::new("frontend").join("index.html")).expect("Unable to read index.html");
+    let content = read_to_string(Path::new("frontend").join("index")).expect("Unable to read index.html");
     reg.register_template_string("index", content).expect("Unable to Parse Template");
     let reg = Data::new(reg);
     cfg
@@ -53,6 +53,6 @@ fn web_data() {
 
 pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
     let value = json!({"base_url":     site.core.application.app_url});
-    let content = hb.render("index.html", &value)?;
+    let content = hb.render("index", &value)?;
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }
