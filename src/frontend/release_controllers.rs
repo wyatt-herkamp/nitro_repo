@@ -52,7 +52,9 @@ fn web_data() {
 
 
 pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
-    let value = json!({"base_url":     site.core.application.app_url});
+    let guard = site.settings.lock().unwrap();
+
+    let value = json!({"base_url":     site.core.application.app_url, "title": guard.site.name,"description": guard.site.description});
     let content = hb.render("index", &value)?;
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }

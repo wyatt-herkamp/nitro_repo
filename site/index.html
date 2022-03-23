@@ -3,15 +3,32 @@
 <head>
     <meta charset="UTF-8"/>
     <link href="/icon.png" rel="icon"/>
+    <link href="/icon-64.png" rel="icon" sizes="64x64"/>
+    <link href="/icon-128.png" rel="icon" sizes="128x128"/>
     <% if(!isDev){ %>
+    <title>{{title}}</title>
+    <meta property="og:title" name="" content="{title}}">
+    <meta property="description" content="{{description}}">
+    <meta property="og:description" content="{{description}}">
+    <meta property="og:image" content="{{base_url}}/icon-128.png">
+    <meta property="og:url" content="{{base_url}}">
+    <meta property="og:type" content="website">
     <base href="{{base_url}}" target="_blank">
+
     <script>
         const appURL = "{{base_url}}";
+
     </script>
+    <% } else { %>
+    <title>Nitro Repo</title>
+    <meta property="og:title" content="Nitro Repo">
+    <meta property="description" content="An Open Source and easy to use Artifact Manager. (Development Mode)">
+    <meta property="og:description" content="An Open Source and easy to use Artifact Manager. (Development Mode)">
+    <meta property="og:image" content="An Open Source and easy to use Artifact Manager. (Development Mode)">
+
     <% } %>
 
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Nitro Repo</title>
 </head>
 <body>
 <div id="app"></div>
