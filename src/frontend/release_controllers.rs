@@ -17,7 +17,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
     web_data();
     let mut reg = Handlebars::new();
-    let content = read_to_string(Path::new("frontend").join("index")).expect("Unable to read index.html");
+    let content = read_to_string(Path::new("frontend").join("index.html")).expect("Unable to read index.html");
     reg.register_template_string("index", content).expect("Unable to Parse Template");
     let reg = Data::new(reg);
     cfg
