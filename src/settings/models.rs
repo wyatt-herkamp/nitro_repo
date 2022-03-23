@@ -99,6 +99,9 @@ pub struct Application {
     pub address: String,
     pub max_upload: usize,
     pub mode: Mode,
+    pub ssl_private_key: Option<String>,
+    pub ssl_cert_key: Option<String>,
+
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

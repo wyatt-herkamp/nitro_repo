@@ -134,6 +134,8 @@ impl From<OtherStage> for Application {
             address: other.address.unwrap(),
             max_upload: other.max_upload.unwrap().parse().unwrap(),
             mode: Mode::Release,
+            ssl_private_key: None,
+            ssl_cert_key: None
         }
     }
 }
