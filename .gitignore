@@ -4,6 +4,8 @@ nitro_repo.iml
 .idea
 log
 site/node_modules
+docs/node_modules
+docs/docs/.vitepress/dist/
 site/out
 .next
 config.json
