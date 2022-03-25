@@ -5,6 +5,7 @@ on:
     branches: [ master ]
 env:
   CARGO_TERM_COLOR: always
+  VCPKGRS_DYNAMIC: 1
 jobs:
   build:
     strategy:
@@ -53,7 +54,8 @@ jobs:
   clippy_check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1
       - run: rustup component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
