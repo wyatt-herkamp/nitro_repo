@@ -36,7 +36,7 @@
                 type="text"
               />
             </div>
-            <CreateRepo>
+            <CreateRepo :storage="storage">
               <template v-slot:button>
                 <button
                   class="
@@ -118,13 +118,18 @@
 import { defineComponent, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
 import { useCookie } from "vue-cookie-next";
-import { getRepositories } from "@/backend/api/Repository";
+import { getRepositoriesByStorage } from "@/backend/api/Repository";
 import { RepositoryList, RepositoryListResponse } from "@/backend/Response";
 
 export default defineComponent({
   components: { CreateRepo },
-
-  setup() {
+  props: {
+    storage: {
+      type: Object as () => Storage,
+      required: true,
+    },
+  },
+  setup(props) {
     const index = ref<number>(0);
     const isLoading = ref(false);
     const cookie = useCookie();
@@ -134,7 +139,7 @@ export default defineComponent({
     const getRepos = async () => {
       isLoading.value = true;
       try {
-        const value = await getRepositories(cookie.getCookie("token"));
+        const value = await getRepositoriesByStorage(cookie.getCookie("token"), props.storage.name);
         repositories.value = value;
         isLoading.value = false;
       } catch (e) {

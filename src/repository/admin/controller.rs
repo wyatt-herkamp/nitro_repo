@@ -1,4 +1,4 @@
-use actix_web::web::Bytes;
+use actix_web::web::{Bytes, Path};
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -37,6 +37,34 @@ pub async fn list_repos(
         for (_, repo) in storage.get_repositories()? {
             vec.push(repo);
         }
+    }
+    let response = ListRepositories { repositories: vec };
+    APIResponse::new(true, Some(response)).respond(&r)
+}
+
+#[get("/api/admin/repositories/{storage}/list")]
+pub async fn list_repos_by_storage(
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
+    r: HttpRequest,
+    storage: Path<String>,
+) -> SiteResponse {
+    let connection = pool.get()?;
+
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let result = site.storages.lock().unwrap();
+    let storage = storage.into_inner();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage  = storage.unwrap();
+    let mut vec = Vec::new();
+    for (_, repo) in storage.get_repositories()? {
+        vec.push(repo);
     }
     let response = ListRepositories { repositories: vec };
     APIResponse::new(true, Some(response)).respond(&r)

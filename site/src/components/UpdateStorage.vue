@@ -2,9 +2,9 @@
 <style scoped></style>
 <template>
   <div v-if="storage != undefined" class="min-h-screen w-full">
-    <h2 class="text-white m-3 text-left">Storage</h2>
-
-    <div class="settingContent">
+    <StorageNav @changeView="storageTab = $event" />
+    <Repositories :storage="storage" v-if="storageTab == 'Repositories'" />
+    <div v-else-if="storageTab == 'General'" class="settingContent">
       <div class="settingBox">
         <label for="grid-name"> name </label>
         <input
@@ -125,6 +125,8 @@ import { useMeta } from "vue-meta";
 import { useRoute, useRouter } from "vue-router";
 import { Storage } from "@/backend/Response";
 import { deleteStorage } from "@/backend/api/admin/Storage";
+import StorageNav from "@/components/storages/nav/StorageNav.vue";
+import Repositories from "./Repositories.vue";
 export default defineComponent({
   props: {
     storageId: {
@@ -139,7 +141,7 @@ export default defineComponent({
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
-
+    const storageTab = ref("General");
     const getStorageInternal = async () => {
       try {
         const value = (await getStorage(
@@ -156,10 +158,10 @@ export default defineComponent({
       }
     };
     getStorageInternal();
-
     return {
       date,
       storage,
+      storageTab,
     };
   },
   methods: {
@@ -186,5 +188,6 @@ export default defineComponent({
       }
     },
   },
+  components: { StorageNav, Repositories },
 });
 </script>

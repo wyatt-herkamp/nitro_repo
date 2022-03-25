@@ -1,9 +1,9 @@
 [Unit]
-AssertPathExists=/usr/bin/nitro_repo
+Description=Nitro Repository
+After=mysql.service
 
 [Service]
-WorkingDirectory=/etc/nitro_repo
-ExecStart=/usr/bin/nitro_repo
+WorkingDirectory=/opt/nitro_repo
+ExecStart=/opt/nitro_repo/nitro_repo
 Restart=always
-PrivateTmp=true
 NoNewPrivileges=true
