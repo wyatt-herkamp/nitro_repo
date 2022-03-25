@@ -28,7 +28,6 @@ jobs:
       - name: Build
         run: sh build.sh ssl
       - name: Upload Artifact Linux
-        if: matrix.target.triple == 'x86_64-unknown-linux-gnu'
         uses: actions/upload-artifact@v2
         with:
           name: nitro_repo stable Linux
