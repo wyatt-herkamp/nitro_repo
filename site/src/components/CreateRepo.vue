@@ -43,29 +43,6 @@
                 <option value="maven">Maven</option>
               </select>
             </div>
-            <div class="grow pl-2">
-              <label
-                class="block text-slate-50 text-sm font-bold mb-2"
-                for="name"
-              >
-                Storage
-              </label>
-              <select
-                id="storage"
-                v-model="form.storage"
-                class="border border-gray-300 rounded text-gray-600 w-full h-10 px-5 bg-white hover:border-gray-400 focus:outline-none appearance-none"
-              >
-                <option disabled selected value="">Select your Storage</option>
-
-                <option
-                  v-for="storage in storages  "
-                  :key="storage.name"
-                  :value="storage.name"
-                >
-                  {{ storage.public_name }}
-                </option>
-              </select>
-            </div>
           </div>
           <button
             class="bg-slate-900 py-2 my-3 rounded-md cursor-pointer text-white"
@@ -93,10 +70,15 @@ import {getStorages} from "@/backend/api/Storages";
 import {createNewRepository} from "@/backend/api/admin/Repository";
 
 export default defineComponent({
+  props: {
+    storage: {
+      type: Object as () => Storage,
+      required: true,
+    },
+  },
   setup() {
     let form = ref({
       name: "",
-      storage: "",
       type: "",
       error: "",
     });
@@ -134,7 +116,7 @@ export default defineComponent({
     async onSubmit() {
       const response = await createNewRepository(
         this.form.name,
-        this.form.storage,
+        this.$props.storage.name,
         this.form.type,
         this.$cookie.getCookie("token")
       );

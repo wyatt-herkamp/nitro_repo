@@ -2,7 +2,6 @@
   <div class="flex flex-row">
     <SideBar :currentPage="page"/>
 
-    <Repositories v-if="page == 'repositories'"/>
     <Storages v-if="page == 'storages'"/>
     <Users v-if="page == 'users'"/>
   </div>

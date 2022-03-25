@@ -5,7 +5,6 @@
         
         <Item v-if="back != undefined" :href="'/admin/'+back" icon="arrow-back" name="Back" :active="back != undefined" />
         <Item href="/admin/users" icon="user" name="Users" :active="currentPage=='users'" />
-        <Item href="/admin/repositories" icon="package" name="Repositories" :active="currentPage=='repositories'" />
         <Item href="/admin/storages" icon="box" name="Storages" :active="currentPage=='storages'" />
         <Item
           href="/admin/settings"
