@@ -32,7 +32,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           working-directory: site
-          node-version-file: '.nvmrc'
+          node-version-file: 'site/.nvmrc'
       - name: Install Site
         working-directory: site
         run: npm install
