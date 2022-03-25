@@ -5,24 +5,12 @@ on:
     branches: [ master ]
 env:
   CARGO_TERM_COLOR: always
-  VCPKGRS_DYNAMIC: 1
 jobs:
   build:
-    strategy:
-      matrix:
-        target:
-          - { name: Linux, os: ubuntu-latest, triple: x86_64-unknown-linux-gnu }
-          - { name: Windows, os: windows-2022, triple: x86_64-pc-windows-msvc }
-    name: ${{ matrix.target.name }} / Stable
-    runs-on: ${{ matrix.target.os }}
+    name: Linux / Stable
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Set vcpkg root
-        if: matrix.target.triple == 'x86_64-pc-windows-msvc'
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
-      - name: Install OpenSSL
-        if: matrix.target.triple == 'x86_64-pc-windows-msvc'
-        run: vcpkg install openssl:x64-windows
       - uses: Swatinem/rust-cache@v1
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
@@ -39,12 +27,6 @@ jobs:
         run: npm install
       - name: Build
         run: sh build.sh ssl
-      - name: Upload Artifact Windows
-        if: matrix.target.triple == 'x86_64-pc-windows-msvc'
-        uses: actions/upload-artifact@v2
-        with:
-          name: nitro_repo stable ${{ matrix.target.name }}
-          path: target/release/nitro_repo.exe
       - name: Upload Artifact Linux
         if: matrix.target.triple == 'x86_64-unknown-linux-gnu'
         uses: actions/upload-artifact@v2
