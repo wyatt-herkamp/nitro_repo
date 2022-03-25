@@ -40,6 +40,7 @@ function generalInfo() {
       text: 'Nitro Repo',
       children: [
         { text: 'What is Nitro Repo?', link: '/' },
+        { text: 'Features', link: '/features' },
       ]
     }
   ]
