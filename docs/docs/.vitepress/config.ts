@@ -41,6 +41,7 @@ function generalInfo() {
       children: [
         { text: 'What is Nitro Repo?', link: '/' },
         { text: 'Features', link: '/features' },
+        { text: 'Compiling', link: '/compiling' },
       ]
     }
   ]
