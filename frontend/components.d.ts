@@ -27,7 +27,6 @@ declare module 'vue' {
     Repositories: typeof import('./src/components/Repositories.vue')['default']
     RepositoryBadge: typeof import('./src/components/repo/badge/RepositoryBadge.vue')['default']
     SecurityRepo: typeof import('./src/components/repo/update/SecurityRepo.vue')['default']
-    Settings: typeof import('./src/components/Settings.vue')['default']
     SideBar: typeof import('./src/components/SideBar.vue')['default']
     StorageNav: typeof import('./src/components/storages/nav/StorageNav.vue')['default']
     Storages: typeof import('./src/components/Storages.vue')['default']

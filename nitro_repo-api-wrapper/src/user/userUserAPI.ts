@@ -1,14 +1,14 @@
 
 import {Err, Ok} from "ts-results";
 import {apiClient, BasicResponse, INTERNAL_ERROR, INVALID_LOGIN, NOT_AUTHORIZED,} from "../NitroRepoAPI";
-import {AuthToken, User} from "./types";
+import {AuthToken, User} from "./userTypes";
 
 export async function login(username: string, password: string) {
   let loginRequest = {
     username: username,
     password: password,
   };
-  return apiClient.post("api/login", loginRequest).then(
+    return apiClient.post("api/login", loginRequest).then(
     (result) => {
       const resultData = result.data;
       let value = JSON.stringify(resultData);
@@ -28,6 +28,9 @@ export async function login(username: string, password: string) {
           return Err(INVALID_LOGIN);
         } else if (err.response.status != 200) {
           return Err(INTERNAL_ERROR);
+        }else{
+            return Err(INTERNAL_ERROR);
+
         }
       } else if (err.request) {
         return Err(INTERNAL_ERROR);

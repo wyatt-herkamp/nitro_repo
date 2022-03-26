@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "linklib": "npm run --prefix ../nitro_repo-api-wrapper build && npm link ../nitro_repo-api-wrapper"
   },
   "dependencies": {
     "@element-plus/icons": "^0.0.11",
@@ -28,7 +29,7 @@
     "vue-router": "^4.0.14",
     "vue-upload-component": "^3.0.50",
     "vuex": "^4.0.2",
-    "nitro_repo-api-wrapper": "file:../nitro_repo-api-wrapper"
+    "nitro_repo-api-wrapper": "1.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.16.0",

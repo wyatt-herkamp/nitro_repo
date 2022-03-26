@@ -1,4 +1,4 @@
-import { User, UserList} from "./types";
+import { User, UserList} from "./userTypes";
 import {apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED} from "../NitroRepoAPI";
 import {Err, Ok} from "ts-results";
 

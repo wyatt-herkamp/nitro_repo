@@ -14,7 +14,6 @@ import Users from "@/components/Users.vue";
 import Me from "@/components/Me.vue";
 import Repositories from "@/components/Repositories.vue";
 import SideBar from "@/components/SideBar.vue";
-import Settings from "@/components/Settings.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
 import {useRoute} from "vue-router";
@@ -25,7 +24,6 @@ export default defineComponent({
     Repositories,
     Users,
     UpdateUser,
-    Settings,
     Me,
     SideBar,
   },

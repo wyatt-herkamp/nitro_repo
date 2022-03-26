@@ -6,6 +6,11 @@
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "npm run clean && npm run build:ts ",
+    "build:ts": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
   "dependencies": {
     "axios": "^0.26.1",
     "ts-results": "^3.3.0"

@@ -1,4 +1,4 @@
-/target
+backend/target
 /test
 nitro_repo.iml
 .idea

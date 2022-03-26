@@ -20,10 +20,13 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
-          working-directory: site
-          node-version-file: 'site/.nvmrc'
-      - name: Install Site
-        working-directory: site
+          working-directory: frontend
+          node-version-file: 'frontend/.nvmrc'
+      - name: Build API Wrapper
+        working-directory: nitro_repo_api-wrapper
+        run: npm run full-build
+      - name: Install Frontend
+        working-directory: frontend-wrapper
         run: npm install
       - name: Build
         run: sh build.sh ssl

@@ -1,5 +1,5 @@
 import {apiClient, BasicResponse} from "../NitroRepoAPI";
-import {FileResponse, Project} from "./types";
+import {FileResponse, Project} from "./repositoryTypes";
 
 export interface PublicRepositoryInfo {
     id: number;
@@ -39,7 +39,6 @@ export async function getRepoPublic(
 }
 export async function getRepositoriesPublicAccess(storage: string) {
     const url = "/storages/" + storage + ".json";
-    console.log(url);
     const value = await apiClient.get(url, {});
 
     if (value.status != 200) {
@@ -55,7 +54,6 @@ export async function getRepositoriesPublicAccess(storage: string) {
 
 export async function fileListing(storage: string, repo: string, path: string) {
     const url = "/storages/" + storage + "/" + repo + "/" + path;
-    console.log(url);
     const value = await apiClient.get(url, {});
 
     if (value.status != 200) {
@@ -81,7 +79,6 @@ export async function getProject(
     if (version != undefined && version !== "") {
         url = url + "/${version}"
     }
-    console.log(url);
     const value = (token == undefined) ? await apiClient.get(url) : await apiClient.get(
         url, {
             headers: {

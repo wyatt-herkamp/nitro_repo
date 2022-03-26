@@ -1,6 +1,6 @@
 import {Err, Ok} from "ts-results";
 import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED, apiClient, BasicResponse} from "../NitroRepoAPI";
-import {Repository, RepositoryList} from "./types";
+import {Repository, RepositoryList} from "./repositoryTypes";
 
 export async function createNewRepository(
     name: string,
@@ -36,7 +36,6 @@ export async function createNewRepository(
                     if ((err.response.status == 401)) {
                         return Err(NOT_AUTHORIZED);
                     } else if ((err.response.status == 409)) {
-                        console.log("HEY");
                         return Err(
                             createAPIError(409, "A Repository by that name already exists")
                         );
