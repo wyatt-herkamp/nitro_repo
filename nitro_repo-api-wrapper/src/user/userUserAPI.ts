@@ -30,7 +30,6 @@ export async function login(username: string, password: string) {
           return Err(INTERNAL_ERROR);
         }else{
             return Err(INTERNAL_ERROR);
-
         }
       } else if (err.request) {
         return Err(INTERNAL_ERROR);

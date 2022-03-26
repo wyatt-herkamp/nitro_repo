@@ -136,11 +136,12 @@ export default defineComponent({
     const cookie = useCookie();
 
     const error = ref("");
-    let repositories = ref<RepositoryListResponse | undefined>(undefined);
+    let repositories = ref<RepositoryList | undefined>(undefined);
     const getRepos = async () => {
       isLoading.value = true;
       try {
         const value = await getRepositoriesByStorage(cookie.getCookie("token"), props.storage.name);
+        console.log(value);
         repositories.value = value;
         isLoading.value = false;
       } catch (e) {

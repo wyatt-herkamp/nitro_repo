@@ -19,7 +19,7 @@ fn main() {
         let out_dir: PathBuf = std::env::var("OUT_DIR").unwrap().into();
         let out_dir = out_dir.join("frontend.zip");
         doit(
-            "site/dist",
+            "../frontend/dist",
             out_dir.to_str().unwrap(),
             CompressionMethod::Stored,
         )

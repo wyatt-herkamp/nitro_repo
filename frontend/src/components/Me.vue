@@ -6,7 +6,6 @@ import {defineComponent, ref} from "vue";
 import {useCookie} from "vue-cookie-next";
 import {getUser} from "nitro_repo-api-wrapper";
 import {updateMyPassword} from "nitro_repo-api-wrapper";
-import {ANON_USER} from "@/store/user";
 
 export default defineComponent({
   setup() {
@@ -19,7 +18,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const cookie = useCookie();
     const tab = ref(0);
-    const user = ref<User>(ANON_USER);
+    const user = ref<User|undefined>(undefined);
     const loadUser = async () => {
       isLoading.value = true;
       try {

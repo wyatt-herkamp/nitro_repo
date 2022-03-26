@@ -1,5 +1,5 @@
 backend/target
-/test
+backend/test
 nitro_repo.iml
 .idea
 log
