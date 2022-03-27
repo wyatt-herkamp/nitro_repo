@@ -22,12 +22,9 @@ jobs:
         with:
           working-directory: frontend
           node-version-file: 'frontend/.nvmrc'
-      - name: Build API Wrapper
-        working-directory: nitro_repo_api-wrapper
-        run: npm run full-build
       - name: Install Frontend
-        working-directory: frontend-wrapper
-        run: npm install
+        working-directory: frontend
+        run: npm run liblink && npm install
       - name: Build
         run: sh build.sh ssl
       - name: Upload Artifact Linux
