@@ -15,6 +15,7 @@ jobs:
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
+          working-directory: backend
           toolchain: stable
           override: true
       - name: Run cargo build
