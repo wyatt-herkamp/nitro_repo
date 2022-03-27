@@ -18,4 +18,4 @@ jobs:
           node-version-file: 'frontend/.nvmrc'
       - name: Install Site
         working-directory: frontend
-        run: npm run linklib && npm install
+        run: npm run ci-linklib && npm install

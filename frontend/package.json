@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "linklib": "npm run --prefix ../nitro_repo-api-wrapper build && npm link ../nitro_repo-api-wrapper"
+    "linklib": "npm run --prefix ../nitro_repo-api-wrapper build && npm link ../nitro_repo-api-wrapper",
+    "ci-linklib": "npm run --prefix ../nitro_repo-api-wrapper ci-build && npm link ../nitro_repo-api-wrapper"
   },
   "dependencies": {
     "@element-plus/icons": "^0.0.11",
