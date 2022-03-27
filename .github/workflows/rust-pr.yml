@@ -10,20 +10,28 @@ jobs:
   build:
     if: contains(github.event.pull_request.labels.*.name, 'rust')
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - 1.58.1
     steps:
       - uses: actions/checkout@v2
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           override: true
       - name: Run cargo build
         uses: actions-rs/cargo@v1
         with:
+          working-directory: backend
           command: build
+          args: --no-default-features
+  clippy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1
+      - run: rustup component add clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          working-directory: backend
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Yes by doing this we are not checking the feature code. However, it is a small point. And I really dont want to have to run the build script
           args: --no-default-features

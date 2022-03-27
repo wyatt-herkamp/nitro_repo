@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: nitro_repo stable Linux
-          path: target/release/nitro_repo
+          path: backend/target/release/nitro_repo
   clippy_check:
     runs-on: ubuntu-latest
     steps:
@@ -40,6 +40,7 @@ jobs:
       - run: rustup component add clippy
       - uses: actions-rs/clippy-check@v1
         with:
+          working-directory: backend
           token: ${{ secrets.GITHUB_TOKEN }}
           # Yes by doing this we are not checking the feature code. However, it is a small point. And I really dont want to have to run the build script
           args: --no-default-features
