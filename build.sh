@@ -1,12 +1,11 @@
 #!/bin/sh
 (
-  cd site
+  cd frontend
   npm run build
 )
-if [ "$1" = "ssl" ]
-then
+if [ "$1" = "ssl" ]; then
   echo "Compiling with SSL"
-  cargo build --features ssl --release
+  cargo build --features ssl --release --manifest-path backend/Cargo.toml
 else
-    cargo build --release
+  cargo build --release --manifest-path backend/Cargo.toml
 fi
