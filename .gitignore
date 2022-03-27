@@ -1,10 +1,13 @@
-/target
-/test
+backend/target
+backend/test
 nitro_repo.iml
 .idea
 log
-site/node_modules
-site/out
+frontend/node_modules
+frontend/out
+frontend/dist
+nitro_repo-api-wrapper/dist
+nitro_repo-api-wrapper/node_modules
 .next
 config.json
 Cargo.lock
