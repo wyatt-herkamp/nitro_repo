@@ -2,7 +2,6 @@ use crate::constants::{PROJECTS_FILE, PROJECT_FILE};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing};
-use crate::repository::types::RepositoryRequest;
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};

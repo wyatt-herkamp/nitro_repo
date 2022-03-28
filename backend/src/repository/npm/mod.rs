@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::{create_dir_all, read_dir, remove_file, File};
 use std::io::{BufReader, Write};
 use std::string::String;
-
+use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
@@ -105,11 +105,11 @@ impl RepositoryType for NPMHandler {
             };
         }
         //Handle Normal Request
-        let result1 = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
-        if !result1.0 {
+        let (allowed, user) = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
+        if !allowed {
             return RepoResult::Ok(NotAuthorized);
         }
-
+        let user = user.unwrap();
         if let Some(npm_command) = http.headers().get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
             trace!("NPM {} Command {}",&request.value, &npm_command);
@@ -129,8 +129,67 @@ impl RepositoryType for NPMHandler {
                         let npm_version_data = format!("{}/{}/package.json", &publish_request.name, version);
                         request.storage.save_file(&request.repository, attachment_data.as_ref(), &attachment_file_loc)?;
                         request.storage.save_file(&request.repository, version_data_string.as_bytes(), &npm_version_data)?;
+
+                        let project_folder = publish_request.name.clone();
+                        trace!("Project Folder Location {}", project_folder);
+                        let repository = request.repository.clone();
+                        let storage = request.storage.clone();
+                        let version_for_saving = version_data.clone();
+                        let user = user.clone();
+                        actix_web::rt::spawn(async move {
+                            if let Err(error) = crate::repository::npm::utils::update_project(
+                                &storage,
+                                &repository,
+                                &project_folder,
+                                version_for_saving.clone(),
+                            ) {
+                                error!("Unable to update {}, {}", PROJECT_FILE, error);
+                                if log_enabled!(Trace) {
+                                    trace!(
+                                "Version {} Name: {}",
+                                &version_for_saving.version,
+                                &version_for_saving.name
+                            );
+                                }
+                            }
+
+                            if let Err(error) = crate::repository::utils::update_project_in_repositories(
+                                &storage,
+                                &repository,
+                                version_for_saving.name.clone(),
+                            ) {
+                                error!("Unable to update repository.json, {}", error);
+                                if log_enabled!(Trace) {
+                                    trace!(
+                                "Version {} Name: {}",
+                                &version_for_saving.version,
+                                &version_for_saving.name
+                            );
+                                }
+                            }
+                            let info = DeployInfo {
+                                user: user.clone(),
+                                version: version_for_saving.version.clone(),
+                                name: version_for_saving.name.clone(),
+                                version_folder: format!("{}/{}", &project_folder, &version_for_saving.version),
+                            };
+
+                            debug!("Starting Post Deploy Tasks");
+                            if log_enabled!(Trace) {
+                                trace!("Data {}", &info);
+                            }
+                            let deploy = handle_post_deploy(&storage, &repository, &info).await;
+                            if let Err(error) = deploy {
+                                error!("Error Handling Post Deploy Tasks {}", error);
+                            } else {
+                                debug!("All Post Deploy Tasks Completed and Happy :)");
+                            }
+                        });
                     }
                 }
+
+
+                return Ok(RepoResponse::Ok);
             }
             Ok(BadRequest(format!("Bad Request {}", npm_command)))
         } else {

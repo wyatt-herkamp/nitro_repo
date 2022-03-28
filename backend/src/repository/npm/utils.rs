@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::{read_to_string, remove_file, File};
 use std::io::Write;
 use std::path::{Path};
+use log::trace;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
@@ -13,8 +14,12 @@ use crate::utils::get_current_time;
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use diesel::MysqlConnection;
+use serde_json::Value;
+use crate::constants::PROJECT_FILE;
+use crate::repository::models::Repository;
 
-use crate::repository::npm::models::LoginRequest;
+use crate::repository::npm::models::{LoginRequest, Version};
+use crate::storage::models::StringStorage;
 use crate::system::action::get_user_by_username;
 
 pub fn is_valid(
@@ -55,17 +60,23 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
 
 
 
-pub fn update_project(project_folder:  &Path, version: String) -> Result<(), InternalError> {
-    let buf = project_folder.join(".nitro.project.json");
-
-    let mut project_data: ProjectData = if buf.exists() {
-        let value = serde_json::from_str(&read_to_string(&buf)?).unwrap();
-        remove_file(&buf)?;
+pub fn update_project(
+    storage: &StringStorage,
+    repository: &Repository,
+    project_folder: &str,
+    version: Version,
+) -> Result<(), InternalError> {
+    let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
+    trace!("Project File Location {}", project_file);
+    let option = storage.get_file(repository, &project_file)?;
+    let mut project_data: ProjectData = if let Some(data) = option {
+        let string = String::from_utf8(data)?;
+        let value = serde_json::from_str(&string)?;
+        storage.delete_file(repository, &project_file)?;
         value
     } else {
-        //TODO Pull NPM Data
         ProjectData {
-            name: "".to_string(),
+            name: version.name,
             description: "".to_string(),
             source: None,
             licence: None,
@@ -73,11 +84,18 @@ pub fn update_project(project_folder:  &Path, version: String) -> Result<(), Int
             created: get_current_time(),
         }
     };
-    project_data.versions.update_version(version);
-    let mut file = File::create(&buf).unwrap();
-    let string = serde_json::to_string_pretty(&project_data)?;
-    let x1 = string.as_bytes();
-    file.write_all(x1)?;
+    let horrible_line_of_code = if let Some(desc) = version.other.get("description"){
+        desc.as_str().unwrap().to_string()
+    }else{
+        "".to_string()
+    };
+
+    project_data.description = horrible_line_of_code;
+    project_data.versions.update_version(version.version);
+    storage.save_file(
+        repository,
+        serde_json::to_string_pretty(&project_data)?.as_bytes(),
+        &project_file,
+    )?;
     Ok(())
 }
-

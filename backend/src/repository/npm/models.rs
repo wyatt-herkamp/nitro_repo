@@ -27,7 +27,7 @@ pub struct PublishRequest {
     pub versions: HashMap<String, Version>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Version {
     pub version: String,
     pub name: String,
