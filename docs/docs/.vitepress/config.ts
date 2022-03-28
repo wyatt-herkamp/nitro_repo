@@ -42,6 +42,7 @@ function generalInfo() {
         { text: 'What is Nitro Repo?', link: '/' },
         { text: 'Features', link: '/features' },
         { text: 'Compiling', link: '/compiling' },
+        { text: 'Contributing', link: '/contributing' },
       ]
     }
   ]

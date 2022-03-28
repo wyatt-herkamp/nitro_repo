@@ -7,10 +7,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "ci-build": "npm install && npm run clean && npm run build:ts ",
-    "build": "npm run clean && npm run build:ts ",
-    "build:ts": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist"
+    "ci-build": "npm install && npm run build:ts ",
+    "build": "npm run build:ts",
+    "build:ts": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "axios": "^0.26.1",
