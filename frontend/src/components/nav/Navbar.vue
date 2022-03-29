@@ -6,14 +6,14 @@
     <router-link to="/browse">
       <MenuButton> Browse</MenuButton>
     </router-link>
-    <router-link v-if="user.id != undefined" to="/admin">
+    <router-link v-if="user != undefined" to="/admin">
       <MenuButton> Admin</MenuButton>
     </router-link>
-    <router-link v-if="user.id != undefined" class="end" to="/me">
+    <router-link v-if="user != undefined" class="end" to="/me">
       <MenuButton class="end"> Welcome, {{ user.name }}</MenuButton>
     </router-link>
 
-    <Login v-if="user.id == 0" class="end">
+    <Login v-if="user == undefined" class="end">
       <template v-slot:button>
         <MenuButton> Sign in</MenuButton>
       </template>
