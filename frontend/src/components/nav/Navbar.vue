@@ -6,10 +6,10 @@
     <router-link to="/browse">
       <MenuButton> Browse</MenuButton>
     </router-link>
-    <router-link v-if="user.id != 0" to="/admin">
+    <router-link v-if="user.id != undefined" to="/admin">
       <MenuButton> Admin</MenuButton>
     </router-link>
-    <router-link v-if="user.id != 0" class="end" to="/me">
+    <router-link v-if="user.id != undefined" class="end" to="/me">
       <MenuButton class="end"> Welcome, {{ user.name }}</MenuButton>
     </router-link>
 

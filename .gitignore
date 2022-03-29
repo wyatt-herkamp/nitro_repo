@@ -15,3 +15,4 @@ node_modules
 testInstall.sh
 docs/node_modules
 docs/docs/.vitepress/dist/
+*.log
