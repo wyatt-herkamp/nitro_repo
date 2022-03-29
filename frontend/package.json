@@ -33,7 +33,7 @@
     "nitro_repo-api-wrapper": "1.0.0"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
+    "@typescript-eslint/eslint-plugin": "^5.17.0",
     "@typescript-eslint/parser": "^5.17.0",
     "@vitejs/plugin-vue": "^2.2.4",
     "@vue/cli-plugin-babel": "~5.0.4",
