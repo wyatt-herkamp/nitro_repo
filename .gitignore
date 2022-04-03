@@ -1,6 +1,6 @@
 backend/target
 backend/test
-nitro_repo.iml
+*.iml
 .idea
 log
 frontend/node_modules

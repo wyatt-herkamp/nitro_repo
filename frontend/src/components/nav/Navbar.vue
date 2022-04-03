@@ -31,7 +31,7 @@ import Login from "@/components/nav/Login.vue";
 export default defineComponent({
   props: {
     user: {
-      required: true,
+      required: false,
       type: Object as () => User,
     },
   },
