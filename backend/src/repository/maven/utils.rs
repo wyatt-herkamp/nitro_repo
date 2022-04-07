@@ -14,30 +14,6 @@ use crate::repository::utils::get_versions;
 use crate::storage::models::StringStorage;
 use crate::utils::get_current_time;
 
-pub fn get_version(
-    storage: &StringStorage,
-    repository: &Repository,
-    project: String,
-    version: String,
-) -> NResult<Option<VersionResponse>> {
-    let versions_value = get_versions(storage, repository, project)?;
-    Ok(get_version_by_data(&versions_value, version))
-}
-
-pub fn get_version_by_data(
-    versions_value: &NitroRepoVersions,
-    version: String,
-) -> Option<VersionResponse> {
-    for x in &versions_value.versions {
-        if x.version.eq(&version) {
-            return Some(VersionResponse {
-                version: x.clone(),
-                other: Default::default(),
-            });
-        }
-    }
-    None
-}
 
 /// Project format {groupID}:{artifactID}
 pub fn parse_project_to_directory(value: &str) -> String {

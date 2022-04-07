@@ -24,8 +24,7 @@ use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, FileRe
 use crate::repository::types::{
     Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
 };
-use crate::repository::utils::{get_versions,
-};
+use crate::repository::utils::{get_project_data, get_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 use crate::utils::get_storage_location;
 
@@ -222,8 +221,10 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let project_dir = parse_project_to_directory(&request.value);
 
-        todo!()
+        let vec = get_versions(&request.storage, &request.repository, project_dir)?;
+        Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
     fn handle_version(
@@ -235,7 +236,12 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        todo!()
+
+        let result = get_version(&request.storage, &request.repository, request.value.clone(), version)?;
+        if let Some(version) = result {
+            return Ok(RepoResponse::NitroVersionResponse(version));
+        }
+        Ok(RepoResponse::NotFound)
     }
 
     fn handle_project(
@@ -246,7 +252,17 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        todo!()
+
+        let project_data = get_project_data(&request.storage, &request.repository, request.value.clone())?;
+        if let Some(project_data) = project_data {
+            let project = Project {
+                repo_summary: RepositorySummary::new(&request.repository)?,
+                project: project_data,
+                frontend_response: None,
+            };
+            return Ok(ProjectResponse(project));
+        }
+        RepoResult::Ok(NotFound)
     }
 
     fn latest_version(
@@ -255,9 +271,18 @@ impl RepositoryType for NPMHandler {
         conn: &MysqlConnection,
     ) -> Result<Option<String>, InternalError> {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
-            return Ok(Some("401".to_string()));
+            return Ok(None);
         }
-
-        todo!()
+        let project_data = get_project_data(&request.storage, &request.repository, request.value.clone())?;
+        Ok(if let Some(project_data) = project_data {
+            let latest_release = project_data.versions.latest_release;
+            if latest_release.is_empty() {
+                Some(project_data.versions.latest_version)
+            } else {
+                Some(latest_release)
+            }
+        } else {
+            None
+        })
     }
 }

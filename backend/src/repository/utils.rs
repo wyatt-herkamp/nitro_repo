@@ -1,12 +1,37 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE};
-use crate::error::internal_error::InternalError;
+use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing};
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
+use crate::repository::types::VersionResponse;
 
 use crate::utils::get_storage_location;
+pub fn get_version(
+    storage: &StringStorage,
+    repository: &Repository,
+    project: String,
+    version: String,
+) -> NResult<Option<VersionResponse>> {
+    let versions_value = get_versions(storage, repository, project)?;
+    Ok(get_version_by_data(&versions_value, version))
+}
+
+pub fn get_version_by_data(
+    versions_value: &NitroRepoVersions,
+    version: String,
+) -> Option<VersionResponse> {
+    for x in &versions_value.versions {
+        if x.version.eq(&version) {
+            return Some(VersionResponse {
+                version: x.clone(),
+                other: Default::default(),
+            });
+        }
+    }
+    None
+}
 
 
 pub fn update_project_in_repositories(
