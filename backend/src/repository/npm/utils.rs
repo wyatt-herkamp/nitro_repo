@@ -2,14 +2,15 @@ use std::collections::HashMap;
 use std::fs::{read_to_string, remove_file, File};
 use std::io::Write;
 use std::path::{Path};
-use log::trace;
+use actix::fut::ok;
+use log::{trace, warn};
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData};
-use crate::repository::types::VersionResponse;
-use crate::repository::utils::get_versions;
+use crate::repository::types::{Project, VersionResponse};
+use crate::repository::utils::{get_project_data, get_versions};
 use crate::utils::get_current_time;
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
@@ -18,7 +19,7 @@ use serde_json::Value;
 use crate::constants::PROJECT_FILE;
 use crate::repository::models::Repository;
 
-use crate::repository::npm::models::{LoginRequest, Version};
+use crate::repository::npm::models::{DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version};
 use crate::storage::models::StringStorage;
 use crate::system::action::get_user_by_username;
 
@@ -45,6 +46,12 @@ pub fn is_valid(
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
 
+pub fn format_time(time: i64) -> String {
+    let naive = NaiveDateTime::from_timestamp(time, 0);
+    let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+    date_time.format(NPM_TIME_FORMAT).to_string()
+}
+
 impl From<NitroRepoVersions> for HashMap<String, String> {
     fn from(value: NitroRepoVersions) -> Self {
         let mut map = HashMap::new();
@@ -57,7 +64,6 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
         map
     }
 }
-
 
 
 pub fn update_project(
@@ -82,11 +88,13 @@ pub fn update_project(
             licence: None,
             versions: Default::default(),
             created: get_current_time(),
+            updated: get_current_time(),
         }
     };
-    let horrible_line_of_code = if let Some(desc) = version.other.get("description"){
+    project_data.updated = get_current_time();
+    let horrible_line_of_code = if let Some(desc) = version.other.get("description") {
         desc.as_str().unwrap().to_string()
-    }else{
+    } else {
         "".to_string()
     };
 
@@ -98,4 +106,58 @@ pub fn update_project(
         &project_file,
     )?;
     Ok(())
+}
+
+pub fn get_version_data(storage: &StringStorage,
+                        repository: &Repository,
+                        project_folder: &str, project: &ProjectData) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
+    let mut times = NPMTimes {
+        created: format_time(project.created),
+        modified: format_time(project.updated),
+        times: Default::default(),
+    };
+    let mut dist_tags = DistTags {
+        latest: project.versions.latest_version.clone()
+    };
+    let mut npm_versions = HashMap::default();
+
+    for version in &project.versions.versions {
+        times.times.insert(version.version.clone(), format_time(version.time));
+        let version_path = format!("{}/{}/package.json", project_folder, &version.version);
+        let result = storage.get_file(repository, &version_path)?;
+        if result.is_none() {
+            warn!("{} not found",version_path);
+            continue;
+        }
+        let version_data = result.unwrap();
+        let version_data: Version = serde_json::from_slice(version_data.as_slice())?;
+        npm_versions.insert(version.version.clone(), version_data);
+    }
+
+    return Ok((times, dist_tags, npm_versions));
+}
+
+pub fn generate_get_response(storage: &StringStorage,
+                             repository: &Repository,
+                             project_folder: &str) -> Result<Option<GetResponse>, InternalError> {
+    let option = get_project_data(storage, repository, project_folder.to_string())?;
+    if option.is_none() {
+        return Ok(None);
+    }
+    let project_data = option.unwrap();
+    let (times, dist_tags, versions) = get_version_data(storage, repository, project_folder, &project_data)?;
+    let version_path = format!("{}/{}/package.json", project_folder, &dist_tags.latest);
+    let result = storage.get_file(repository, &version_path)?;
+    if result.is_none() {
+        warn!("{} not found",version_path);
+        return Ok(None);
+    }
+    let version_data = result.unwrap();
+    let version_data: Version = serde_json::from_slice(version_data.as_slice())?;
+    return Ok(Some(GetResponse {
+        version_data,
+        versions,
+        times,
+        dist_tags,
+    }));
 }

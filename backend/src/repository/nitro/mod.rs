@@ -31,6 +31,8 @@ pub struct ProjectData {
     pub versions: NitroRepoVersions,
     #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
+    #[serde(default = "crate::utils::get_current_time")]
+    pub updated: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

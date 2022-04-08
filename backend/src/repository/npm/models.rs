@@ -47,14 +47,20 @@ impl From<String> for DistTags {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GetResponse {
-    pub id: String,
-    pub name: String,
-    pub versions: HashMap<String, Version>,
+pub struct NPMTimes{
+    pub created: String,
+    pub modified: String,
+    #[serde(flatten)]
     pub times: HashMap<String, String>,
+}
+pub type NPMVersions= HashMap<String, Version>;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GetResponse {
+    #[serde(flatten)]
+    pub version_data: Version,
+    pub versions: NPMVersions,
+    pub times: NPMTimes,
     #[serde(rename = "dist-tags")]
     pub dist_tags: DistTags,
-    #[serde(flatten)]
-    pub other: HashMap<String, Value>,
 }
 

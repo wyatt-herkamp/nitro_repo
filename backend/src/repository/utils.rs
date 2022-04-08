@@ -5,6 +5,7 @@ use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
+use log::debug;
 use crate::repository::types::VersionResponse;
 
 use crate::utils::get_storage_location;
@@ -97,6 +98,7 @@ pub fn get_project_data(
     project: String,
 ) -> Result<Option<ProjectData>, InternalError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
+    debug!("Project Data Location {}", &string);
     let option = storage.get_file(repository, &string)?;
     Ok(if let Some(vec) = option {
         let mut data: ProjectData = serde_json::from_str(&String::from_utf8(vec)?)?;

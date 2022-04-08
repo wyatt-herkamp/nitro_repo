@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::fs::{create_dir_all, read_dir, remove_file, File};
-use std::io::{BufReader, Write};
+use std::fs::{read_dir, remove_file, File};
+use std::io::{Write};
 use std::string::String;
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
@@ -9,24 +9,22 @@ use diesel::MysqlConnection;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use regex::Regex;
-use serde_json::Error;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::models::RepositorySummary;
 
 use crate::repository::npm::models::{
-    Attachment, GetResponse, LoginRequest, LoginResponse, PublishRequest, Version,
+    Attachment, LoginRequest, LoginResponse, PublishRequest, Version,
 };
-use crate::repository::npm::utils::{is_valid};
+use crate::repository::npm::utils::{generate_get_response, is_valid};
 
-use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, FileResponse, IAmATeapot, NotAuthorized, NotFound, ProjectResponse};
+use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse};
 use crate::repository::types::{
-    Project, RepoResponse, RepoResult, RepositoryFile, RepositoryRequest, RepositoryType,
+    Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryType,
 };
 use crate::repository::utils::{get_project_data, get_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
-use crate::utils::get_storage_location;
 
 mod models;
 mod utils;
@@ -48,8 +46,12 @@ impl RepositoryType for NPMHandler {
         }
         log::trace!("URL: {}", request.value);
         if let Some(npm_command) = http.headers().get("npm-command") {
-            trace!("NPM {} Command {}",&request.value, http.headers().get("npm-command").unwrap().to_str().unwrap());
-            return Ok(RepoResponse::Ok);
+            let get_response = generate_get_response(&request.storage, &request.repository, &request.value).unwrap();
+            if get_response.is_none() {
+                return Ok(NotFound);
+            }
+            let string = serde_json::to_string_pretty(&get_response.unwrap())?;
+            Ok(RepoResponse::OkWithJSON(string))
         } else {
             let result =
                 request
@@ -221,9 +223,8 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        let project_dir = parse_project_to_directory(&request.value);
 
-        let vec = get_versions(&request.storage, &request.repository, project_dir)?;
+        let vec = get_versions(&request.storage, &request.repository, request.value.clone())?;
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 

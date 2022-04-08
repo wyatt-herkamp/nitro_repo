@@ -81,6 +81,7 @@ pub fn update_project(
             licence: None,
             versions: Default::default(),
             created: get_current_time(),
+            updated: get_current_time()
         }
     };
     project_data.description = pom.description.unwrap_or_else(|| "".to_string());
