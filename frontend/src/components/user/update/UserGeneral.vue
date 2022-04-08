@@ -57,7 +57,7 @@
 import { defineComponent } from "vue";
 import { User } from "nitro_repo-api-wrapper";
 import { updateNameAndEmail, updatePermission } from "nitro_repo-api-wrapper";
-import Switch from "@/components/other/Switch.vue";
+import Switch from "@/components/common/forms/Switch.vue";
 export default defineComponent({
   props: {
     user: {

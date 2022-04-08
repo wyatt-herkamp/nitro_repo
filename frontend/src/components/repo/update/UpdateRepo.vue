@@ -4,7 +4,25 @@
     class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
   >
     <div class="flex flex-col w-full">
-      <EditMenu :repository="repository" @changeView="view = $event" />
+      <SubNavBar v-model="view">
+        <SubNavItem index="General"> General </SubNavItem>
+        <SubNavItem index="Frontend"> Frontend </SubNavItem>
+        <SubNavItem index="Security"> Security </SubNavItem>
+        <SubNavItem index="Deploy"> Deploy Settings </SubNavItem>
+        <li :disabled="false">
+          <img
+            class="mx-2 py-1.5 rounded-lg font-bold px-6 m-1"
+            :src="
+              url +
+              '/badge/' +
+              repository.storage +
+              '/' +
+              repository.name +
+              '/nitro_repo_status/badge'
+            "
+          />
+        </li>
+      </SubNavBar>
       <div class="flex flex-col float-right w-auto">
         <GeneralRepo :repository="repository" v-if="view == 'General'" />
         <FrontendRepo :repository="repository" v-if="view == 'Frontend'" />
@@ -36,10 +54,8 @@ input:checked + .toggle-bg {
 }
 </style>
 <script lang="ts">
-
 import { getRepoByNameAndStorage } from "nitro_repo-api-wrapper";
 import { Repository } from "nitro_repo-api-wrapper";
-import EditMenu from "@/components/repo/edit/EditMenu.vue";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
@@ -49,17 +65,19 @@ import GeneralRepo from "@/components/repo/update/GeneralRepo.vue";
 import FrontendRepo from "@/components/repo/update/FrontendRepo.vue";
 import DeployRepo from "@/components/repo/update/DeployRepo.vue";
 import SecurityRepo from "@/components/repo/update/SecurityRepo.vue";
+import { apiURL } from "@/http-common";
 
 export default defineComponent({
   components: {
     ViewRepo,
-    EditMenu,
     GeneralRepo,
     FrontendRepo,
     DeployRepo,
     SecurityRepo,
   },
   setup() {
+    const url = apiURL;
+
     const router = useRouter();
     const route = useRoute();
     let view = ref("General");
@@ -77,7 +95,9 @@ export default defineComponent({
     const getRepo = async () => {
       try {
         const value = (await getRepoByNameAndStorage(
-          cookie.getCookie("token"),storage,repo
+          cookie.getCookie("token"),
+          storage,
+          repo
         )) as Repository;
         console.log(value);
         repository.value = value;
@@ -94,6 +114,7 @@ export default defineComponent({
       repository,
       router,
       view,
+      url,
     };
   },
   methods: {

@@ -4,9 +4,12 @@
     class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
   >
     <div class="flex flex-col w-full">
-      <UserEditMenu :user="user.username" @changeView="view = $event" />
-        <UserGeneral :user="user" v-if="view == 'General'" />
-        <UserPassword :user="user" v-if="view == 'Password'" />
+      <SubNavBar v-model="view">
+        <SubNavItem index="General"> General </SubNavItem>
+        <SubNavItem index="Password"> Password </SubNavItem>
+      </SubNavBar>
+      <UserGeneral :user="user" v-if="view == 'General'" />
+      <UserPassword :user="user" v-if="view == 'Password'" />
     </div>
   </div>
 </template>
@@ -15,11 +18,12 @@
 import { User } from "nitro_repo-api-wrapper";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
-import { getUserByID }from "nitro_repo-api-wrapper";
+import { getUserByID } from "nitro_repo-api-wrapper";
 
-import UserEditMenu from "./user/edit/UserEditMenu.vue";
 import UserGeneral from "./user/update/UserGeneral.vue";
 import UserPassword from "./user/update/UserPassword.vue";
+import SubNavBar from "./common/nav/SubNavBar.vue";
+import SubNavItem from "./common/nav/SubNavItem.vue";
 
 export default defineComponent({
   props: {
@@ -46,6 +50,11 @@ export default defineComponent({
     return { user, view };
   },
 
-  components: { UserEditMenu, UserGeneral, UserPassword },
+  components: {
+    UserGeneral,
+    UserPassword,
+    SubNavBar,
+    SubNavItem,
+  },
 });
 </script>

@@ -1,44 +1,47 @@
 <style scoped></style>
 <template>
   <div v-if="storage != undefined" class="min-h-screen w-full">
-    <StorageNav @changeView="storageTab = $event"/>
-    <Repositories :storage="storage" v-if="storageTab == 'Repositories'"/>
+    <SubNavBar v-model="storageTab">
+      <SubNavItem index="General"> General </SubNavItem>
+      <SubNavItem index="Repositories"> Repositories </SubNavItem>
+    </SubNavBar>
+    <Repositories :storage="storage" v-if="storageTab == 'Repositories'" />
     <div v-else-if="storageTab == 'General'" class="settingContent">
       <div class="settingBox">
         <label for="grid-name"> name </label>
         <input
-            class="disabled"
-            id="grid-name"
-            type="text"
-            v-model="storage.name"
-            disabled
+          class="disabled"
+          id="grid-name"
+          type="text"
+          v-model="storage.name"
+          disabled
         />
       </div>
       <div class="settingBox">
         <label for="grid-public-name"> Public Name </label>
         <input
-            class="disabled"
-            id="grid-public-name"
-            type="text"
-            v-model="storage.public_name"
-            disabled
+          class="disabled"
+          id="grid-public-name"
+          type="text"
+          v-model="storage.public_name"
+          disabled
         />
       </div>
       <div class="settingBox">
         <label for="grid-created"> Date Created </label>
         <input
-            class="disabled"
-            id="grid-created"
-            type="text"
-            v-model="date"
-            disabled
+          class="disabled"
+          id="grid-created"
+          type="text"
+          v-model="date"
+          disabled
         />
       </div>
       <div class="settingBox">
         <!-- Yes! A Model confirming the delete needs to happen. However right now I just need to delete something -->
         <button
-            @click="deleteStorage"
-            class="
+          @click="deleteStorage"
+          class="
             bg-blue-500
             hover:bg-blue-700
             text-white
@@ -123,13 +126,12 @@ input:checked + .toggle-bg {
 }
 </style>
 <script lang="ts">
-import {getStorage} from "nitro_repo-api-wrapper";
-import {defineComponent, ref} from "vue";
-import {useCookie} from "vue-cookie-next";
-import {useMeta} from "vue-meta";
-import {useRoute, useRouter} from "vue-router";
-import {Storage} from "nitro_repo-api-wrapper";
-import StorageNav from "@/components/storages/nav/StorageNav.vue";
+import { getStorage } from "nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
+import { useCookie } from "vue-cookie-next";
+import { useMeta } from "vue-meta";
+import { useRoute, useRouter } from "vue-router";
+import { Storage } from "nitro_repo-api-wrapper";
 import Repositories from "./Repositories.vue";
 
 export default defineComponent({
@@ -143,19 +145,19 @@ export default defineComponent({
     let storage = ref<Storage | undefined>(undefined);
     let date = ref<string | undefined>(undefined);
     const cookie = useCookie();
-    const {meta} = useMeta({
+    const { meta } = useMeta({
       title: "Nitro Repo",
     });
     const storageTab = ref("General");
     const getStorageInternal = async () => {
       try {
         const value = (await getStorage(
-            cookie.getCookie("token"),
-            props.storageId
+          cookie.getCookie("token"),
+          props.storageId
         )) as Storage;
         storage.value = value;
         date.value = new Date(storage.value.created).toLocaleDateString(
-            "en-US"
+          "en-US"
         );
         meta.title = value.name;
       } catch (e) {
@@ -171,9 +173,9 @@ export default defineComponent({
   },
   methods: {
     async deleteStorage() {
-      console.log("TODO")
+      console.log("TODO");
     },
   },
-  components: {StorageNav, Repositories},
+  components: {  Repositories },
 });
 </script>
