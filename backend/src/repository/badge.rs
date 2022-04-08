@@ -7,6 +7,7 @@ use crate::NitroRepoData;
 
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
+use crate::repository::npm::NPMHandler;
 use crate::repository::types::RepositoryType;
 
 
@@ -37,6 +38,7 @@ pub async fn badge(
     } else {
         let version = match request.repository.repo_type.as_str() {
             "maven" => MavenHandler::latest_version(&request, &r, &connection),
+            "npm" => NPMHandler::latest_version(&request, &r, &connection),
             value => return Err(InvalidRepositoryType(value.to_string())),
         }?;
 

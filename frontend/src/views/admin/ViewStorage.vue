@@ -9,7 +9,6 @@
 import { defineComponent } from "vue";
 
 import SideBar from "@/components/SideBar.vue";
-import UpdateRepo from "@/components/repo/UpdateRepo.vue";
 import UpdateStorage from "@/components/UpdateStorage.vue";
 import { useRoute } from "vue-router";
 

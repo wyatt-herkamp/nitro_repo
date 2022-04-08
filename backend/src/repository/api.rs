@@ -9,6 +9,7 @@ use crate::NitroRepoData;
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
+use crate::repository::npm::NPMHandler;
 use crate::repository::types::RepositoryType;
 
 //
@@ -32,6 +33,7 @@ pub async fn get_versions(
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_versions(&request, &r, &connection),
+        "npm" => NPMHandler::handle_versions(&request, &r, &connection),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
@@ -51,6 +53,7 @@ pub async fn get_project(
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_project(&request, &r, &connection),
+        "npm" => NPMHandler::handle_project(&request, &r, &connection),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)
@@ -70,6 +73,7 @@ pub async fn get_version(
 
     let x = match request.repository.repo_type.as_str() {
         "maven" => MavenHandler::handle_version(&request, version, &r, &connection),
+        "npm" => NPMHandler::handle_version(&request, version, &r, &connection),
         value => return Err(InvalidRepositoryType(value.to_string())),
     }?;
     handle_result(x, request.value, r)

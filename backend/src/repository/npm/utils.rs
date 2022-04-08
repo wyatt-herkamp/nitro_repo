@@ -161,3 +161,6 @@ pub fn generate_get_response(storage: &StringStorage,
         dist_tags,
     }));
 }
+pub fn parse_project_to_directory(value: &str) -> String {
+    value.replace('.', "/").replace(':', "/")
+}

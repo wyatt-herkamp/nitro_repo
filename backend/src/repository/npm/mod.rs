@@ -17,7 +17,7 @@ use crate::repository::models::RepositorySummary;
 use crate::repository::npm::models::{
     Attachment, LoginRequest, LoginResponse, PublishRequest, Version,
 };
-use crate::repository::npm::utils::{generate_get_response, is_valid};
+use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
 
 use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse};
 use crate::repository::types::{
@@ -41,10 +41,6 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        for x in http.headers() {
-            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
-        }
-        log::trace!("URL: {}", request.value);
         if let Some(npm_command) = http.headers().get("npm-command") {
             if request.value.contains(".tgz") {
                 let split: Vec<&str> = request.value.split("/-/").collect();
@@ -254,8 +250,9 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let project_dir = parse_project_to_directory(&request.value);
 
-        let result = get_version(&request.storage, &request.repository, request.value.clone(), version)?;
+        let result = get_version(&request.storage, &request.repository, project_dir, version)?;
         if let Some(version) = result {
             return Ok(RepoResponse::NitroVersionResponse(version));
         }
@@ -266,12 +263,16 @@ impl RepositoryType for NPMHandler {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &MysqlConnection,
-    ) -> RepoResult {
+    ) -> RepoResult {        for x in http.headers() {
+            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
+        }
+        log::trace!("URL: {}", request.value);
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
+        let project_dir = parse_project_to_directory(&request.value);
 
-        let project_data = get_project_data(&request.storage, &request.repository, request.value.clone())?;
+        let project_data = get_project_data(&request.storage, &request.repository, project_dir)?;
         if let Some(project_data) = project_data {
             let project = Project {
                 repo_summary: RepositorySummary::new(&request.repository)?,
@@ -291,7 +292,9 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return Ok(None);
         }
-        let project_data = get_project_data(&request.storage, &request.repository, request.value.clone())?;
+        let project_dir = parse_project_to_directory(&request.value);
+
+        let project_data = get_project_data(&request.storage, &request.repository, project_dir)?;
         Ok(if let Some(project_data) = project_data {
             let latest_release = project_data.versions.latest_release;
             if latest_release.is_empty() {

@@ -11,7 +11,6 @@
     <div :class="child ? 'my-3' : 'flex flex-wrap'">
       <ProjectBadge
         :class="child ? '' : 'm-3 flex flex-col'"
-        v-if="project.repo_summary.repo_type == 'maven'"
         :project="project"
         :child="child"
       />
@@ -40,6 +39,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    console.log(props.project == undefined);
     const router = useRouter();
 
     const { meta } = useMeta({
