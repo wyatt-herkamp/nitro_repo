@@ -4,6 +4,7 @@ use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
+use crate::constants::SUPPORTED_REPO_TYPES;
 use crate::database::DbPool;
 use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::NitroRepoData;
@@ -115,6 +116,9 @@ pub async fn add_repo(
     let storage = result.get(&nc.storage);
     if storage.is_none() {
         return not_found();
+    }
+    if !SUPPORTED_REPO_TYPES.contains(&nc.repo_type.as_str()){
+        return bad_request(format!("Unsupported Repository Type {}", &nc.repo_type));
     }
     let storage = storage.unwrap();
     let repository = storage.create_repository(nc.0)?;

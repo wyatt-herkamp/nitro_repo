@@ -5,7 +5,18 @@
       classes="flex justify-center items-center"
     >
       <div
-        class="relative border bg-slate-800 border-black m-w-20 py-5 px-10 rounded-2xl shadow-xl text-center"
+        class="
+          relative
+          border
+          bg-slate-800
+          border-black
+          m-w-20
+          py-5
+          px-10
+          rounded-2xl
+          shadow-xl
+          text-center
+        "
       >
         <p class="font-bold text-xl pb-4">Create Repository</p>
         <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
@@ -20,7 +31,19 @@
               id="name"
               v-model="form.name"
               autocomplete="off"
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              required
+              class="
+                shadow
+                appearance-none
+                border
+                rounded
+                w-full
+                py-2
+                px-3
+                text-gray-700
+                leading-tight
+                focus:outline-none focus:shadow-outline
+              "
               placeholder="Repository Name"
               type="text"
             />
@@ -36,7 +59,19 @@
               <select
                 id="type"
                 v-model="form.type"
-                class="border border-gray-300 rounded text-gray-600 h-10 px-5 w-full bg-white hover:border-gray-400 focus:outline-none appearance-none"
+                required
+                class="
+                  border border-gray-300
+                  rounded
+                  text-gray-600
+                  h-10
+                  px-5
+                  w-full
+                  bg-white
+                  hover:border-gray-400
+                  focus:outline-none
+                  appearance-none
+                "
               >
                 <option disabled selected value="">Repository Type</option>
 
@@ -64,11 +99,11 @@
 </template>
 
 <script lang="ts">
-import {Repository} from "nitro_repo-api-wrapper";
-import {defineComponent, ref} from "vue";
-import {useCookie} from "vue-cookie-next";
-import {getStorages} from "nitro_repo-api-wrapper";
-import {createNewRepository} from "nitro_repo-api-wrapper";
+import { Repository } from "nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
+import { useCookie } from "vue-cookie-next";
+import { getStorages } from "nitro_repo-api-wrapper";
+import { createNewRepository } from "nitro_repo-api-wrapper";
 
 export default defineComponent({
   props: {
@@ -113,6 +148,13 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
+      if (this.form.type === "") {
+        this.$notify({
+          title: "Please Specify a Repository Type",
+          type: "warn",
+        });
+        return;
+      }
       const response = await createNewRepository(
         this.form.name,
         this.$props.storage.name,
@@ -125,7 +167,9 @@ export default defineComponent({
           title: "Repository Created",
           type: "success",
         });
-        this.$router.push("/admin/repository/" + data.storage+"/"+data.name);
+        this.$router.push(
+          "/admin/repository/" + data.storage + "/" + data.name
+        );
       } else {
         this.$notify({
           title: "Unable to Create Repository",
