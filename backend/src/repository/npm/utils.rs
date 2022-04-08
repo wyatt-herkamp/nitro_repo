@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::fs::{remove_file, File};
+
 use log::{trace, warn};
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData};
-use crate::repository::types::{VersionResponse};
+
 use crate::repository::utils::{get_project_data};
 use crate::utils::get_current_time;
 
@@ -130,7 +130,7 @@ pub fn get_version_data(storage: &StringStorage,
         npm_versions.insert(version.version.clone(), version_data);
     }
 
-    return Ok((times, dist_tags, npm_versions));
+     Ok((times, dist_tags, npm_versions))
 }
 
 pub fn generate_get_response(storage: &StringStorage,

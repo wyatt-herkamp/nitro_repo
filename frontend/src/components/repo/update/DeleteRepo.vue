@@ -1,56 +1,43 @@
 <template>
-  <div>
-    <vue-final-modal
-      v-model="showModel"
-      classes="flex justify-center items-center"
-    >
-      <div
-        class="
-          relative
-          border
-          bg-slate-800
-          border-black
-          m-w-20
-          py-5
-          px-10
-          rounded-2xl
-          shadow-xl
-          text-center
-        "
-      >
-        <p class="font-bold text-xl pb-4">
-          Delete {{ repository.storage }}/{{ repository.name }}
-        </p>
-        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-          <div class="mb-4">
-            <Switch id="deleteFiles" v-model="deleteFiles">
-              <div class="ml-3 text-slate-50 font-medium">Delete Files</div>
-            </Switch>
-          </div>
-          <button
-            class="bg-slate-900 py-2 my-3 hover:bg-red-700 rounded-md cursor-pointer text-white"
-          >
-            Delete Repository
-          </button>
-        </form>
-
-        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
-          🗙
+  <NitroModal v-model="showModel">
+    <template v-slot:header>
+      Delete {{ repository.storage }}/{{ repository.name }}
+    </template>
+    <template v-slot:content>
+      <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
+        <div class="mb-4">
+          <Switch id="deleteFiles" v-model="deleteFiles">
+            <div class="ml-3 text-slate-50 font-medium">Delete Files</div>
+          </Switch>
+        </div>
+        <button
+          class="
+            bg-slate-900
+            py-2
+            my-3
+            hover:bg-red-700
+            rounded-md
+            cursor-pointer
+            text-white
+          "
+        >
+          Delete Repository
         </button>
-      </div>
-    </vue-final-modal>
-    <div @click="showModel = true">
-      <slot name="button"></slot>
-    </div>
-  </div>
+      </form>
+    </template>
+    <template v-slot:button>
+      <button class="nitroButton">Delete Repository</button>
+    </template>
+  </NitroModal>
 </template>
+
 
 <script lang="ts">
 import { Repository } from "nitro_repo-api-wrapper";
 import { defineComponent, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
-import { getStorages } from "nitro_repo-api-wrapper";
 import { deleteRepository } from "nitro_repo-api-wrapper";
+import NitroModal from "@/components/common/model/NitroModal.vue";
 
 export default defineComponent({
   props: {
@@ -64,11 +51,8 @@ export default defineComponent({
     const cookie = useCookie();
     const isLoading = ref(false);
     const showModel = ref(false);
-
     const error = ref("");
-
     const close = () => (showModel.value = false);
-
     return {
       deleteFiles,
       isLoading,
@@ -101,6 +85,7 @@ export default defineComponent({
       }
     },
   },
+  components: { NitroModal },
 });
 </script>
 <style scoped></style>

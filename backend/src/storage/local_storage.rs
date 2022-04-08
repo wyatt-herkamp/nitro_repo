@@ -139,7 +139,7 @@ impl LocationHandler<LocalFile> for LocalStorage {
             remove_file(config)?;
 
         }
-        return Ok(());
+        Ok(())
     }
 
     fn get_repositories(storage: &Storage<StringMap>) -> Result<RepositoriesFile, InternalError> {

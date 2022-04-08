@@ -5,12 +5,12 @@ use crate::constants::PROJECT_FILE;
 use chrono::NaiveDateTime;
 use log::trace;
 
-use crate::error::internal_error::{InternalError, NResult};
+use crate::error::internal_error::{InternalError};
 use crate::repository::maven::models::Pom;
 use crate::repository::models::Repository;
-use crate::repository::nitro::{NitroRepoVersions, ProjectData};
-use crate::repository::types::VersionResponse;
-use crate::repository::utils::get_versions;
+use crate::repository::nitro::{ProjectData};
+
+
 use crate::storage::models::StringStorage;
 use crate::utils::get_current_time;
 

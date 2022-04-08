@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::fs::{read_dir, remove_file, File};
-use std::io::{Write};
+
+
 use std::string::String;
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
@@ -15,7 +15,7 @@ use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::models::RepositorySummary;
 
 use crate::repository::npm::models::{
-    Attachment, LoginRequest, LoginResponse, PublishRequest, Version,
+    Attachment, LoginRequest, LoginResponse, PublishRequest,
 };
 use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
 

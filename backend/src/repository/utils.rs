@@ -4,11 +4,11 @@ use crate::repository::models::Repository;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing};
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use log::debug;
 use crate::repository::types::VersionResponse;
 
-use crate::utils::get_storage_location;
+
 pub fn get_version(
     storage: &StringStorage,
     repository: &Repository,

@@ -74,11 +74,8 @@
     <h2 class="settingHeader">Danger Area</h2>
     <div class="settingContent">
       <div class="settingBox">
-        <DeleteRepo :repository="repository">
-          <template v-slot:button>
-            <button class="nitroButton">Delete Repository</button></template
-          >
-        </DeleteRepo>
+        <DeleteRepo :repository="repository"/>
+
       </div>
     </div>
   </div>

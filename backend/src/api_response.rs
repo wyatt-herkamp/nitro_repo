@@ -49,7 +49,7 @@ impl From<RequestErrorResponse> for APIResponse<RequestErrorResponse> {
 }
 impl From<bool> for APIResponse<bool>{
     fn from(status: bool) -> Self {
-        return APIResponse{
+        APIResponse{
             success: status,
             data: Some(status),
             status_code: None
