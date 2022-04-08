@@ -8,7 +8,7 @@ use log::{debug, error, log_enabled, trace};
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{get_version, parse_project_to_directory};
+use crate::repository::maven::utils::{ parse_project_to_directory};
 use crate::repository::models::{Policy, RepositorySummary};
 
 use crate::repository::types::RepoResponse::{
@@ -16,7 +16,7 @@ use crate::repository::types::RepoResponse::{
 };
 use crate::repository::types::RepositoryRequest;
 use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryType};
-use crate::repository::utils::{get_project_data, get_versions};
+use crate::repository::utils::{get_project_data,get_version, get_versions};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 mod models;

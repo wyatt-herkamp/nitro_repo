@@ -8,36 +8,12 @@ use log::trace;
 use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::maven::models::Pom;
 use crate::repository::models::Repository;
-use crate::repository::nitro::{NitroMavenVersions, ProjectData};
+use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 use crate::repository::types::VersionResponse;
 use crate::repository::utils::get_versions;
 use crate::storage::models::StringStorage;
 use crate::utils::get_current_time;
 
-pub fn get_version(
-    storage: &StringStorage,
-    repository: &Repository,
-    project: String,
-    version: String,
-) -> NResult<Option<VersionResponse>> {
-    let versions_value = get_versions(storage, repository, project)?;
-    Ok(get_version_by_data(&versions_value, version))
-}
-
-pub fn get_version_by_data(
-    versions_value: &NitroMavenVersions,
-    version: String,
-) -> Option<VersionResponse> {
-    for x in &versions_value.versions {
-        if x.version.eq(&version) {
-            return Some(VersionResponse {
-                version: x.clone(),
-                other: Default::default(),
-            });
-        }
-    }
-    None
-}
 
 /// Project format {groupID}:{artifactID}
 pub fn parse_project_to_directory(value: &str) -> String {
@@ -105,6 +81,7 @@ pub fn update_project(
             licence: None,
             versions: Default::default(),
             created: get_current_time(),
+            updated: get_current_time()
         }
     };
     project_data.description = pom.description.unwrap_or_else(|| "".to_string());

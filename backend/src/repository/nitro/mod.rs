@@ -28,9 +28,11 @@ pub struct ProjectData {
     pub licence: Option<Licence>,
 
     #[serde(default)]
-    pub versions: NitroMavenVersions,
+    pub versions: NitroRepoVersions,
     #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
+    #[serde(default = "crate::utils::get_current_time")]
+    pub updated: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -43,7 +45,7 @@ pub struct ProjectSource {
 pub struct Licence {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct NitroMavenVersions {
+pub struct NitroRepoVersions {
     #[serde(default)]
     pub latest_version: String,
     #[serde(default)]
@@ -51,9 +53,9 @@ pub struct NitroMavenVersions {
     pub versions: Vec<NitroVersion>,
 }
 
-impl Default for NitroMavenVersions {
+impl Default for NitroRepoVersions {
     fn default() -> Self {
-        NitroMavenVersions {
+        NitroRepoVersions {
             latest_version: "".to_string(),
             latest_release: "".to_string(),
             versions: vec![],
@@ -79,7 +81,7 @@ impl From<String> for NitroVersion {
     }
 }
 
-impl NitroMavenVersions {
+impl NitroRepoVersions {
     pub fn update_version(&mut self, version: String) {
         for v in self.versions.iter_mut() {
             if v.version.eq(&version) {

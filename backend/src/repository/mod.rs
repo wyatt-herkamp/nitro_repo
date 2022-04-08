@@ -12,6 +12,8 @@ pub mod nitro;
 pub mod public;
 pub mod types;
 pub mod utils;
+pub mod npm;
+
 pub static REPOSITORY_CONF: &str = "repository.nitro_repo";
 pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";
 

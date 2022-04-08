@@ -11,7 +11,7 @@ use crate::{SiteResponse, StringMap};
 use actix_files::NamedFile;
 use actix_web::HttpRequest;
 use either::Either;
-use log::{info, trace};
+use log::{debug, info, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -247,6 +247,8 @@ impl LocationHandler<LocalFile> for LocalStorage {
     ) -> Result<Option<Vec<u8>>, InternalError> {
         let file_location =
             LocalStorage::get_repository_folder(storage, &repository.name).join(location);
+
+        debug!("Storage File Request {}" ,file_location.to_str().unwrap());
         if !file_location.exists() {
             return Ok(None);
         }

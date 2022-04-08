@@ -11,7 +11,7 @@ use serde_json::Value;
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::nitro::{NitroMavenVersions, NitroVersion, ProjectData};
+use crate::repository::nitro::{NitroRepoVersions, NitroVersion, ProjectData};
 use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};
@@ -56,7 +56,7 @@ pub enum RepoResponse {
     VersionListingResponse(Vec<VersionResponse>),
     /// Classic Version Response will be removed
     NitroProjectResponse(ProjectData),
-    NitroVersionListingResponse(NitroMavenVersions),
+    NitroVersionListingResponse(NitroRepoVersions),
     NitroVersionResponse(VersionResponse),
 }
 
