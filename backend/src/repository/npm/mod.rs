@@ -41,7 +41,7 @@ impl RepositoryType for NPMHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-        if let Some(npm_command) = http.headers().get("npm-command") {
+        if http.headers().get("npm-command").is_some() {
             if request.value.contains(".tgz") {
                 let split: Vec<&str> = request.value.split("/-/").collect();
                 let package = split.get(0).unwrap().to_string();
@@ -57,7 +57,7 @@ impl RepositoryType for NPMHandler {
                     Ok(RepoResponse::FileResponse(result.left().unwrap()))
                 } else {
                     Ok(BadRequest("Expected File got Folder".to_string()))
-                }
+                };
             }
             let get_response = generate_get_response(&request.storage, &request.repository, &request.value).unwrap();
             if get_response.is_none() {
@@ -263,7 +263,8 @@ impl RepositoryType for NPMHandler {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &MysqlConnection,
-    ) -> RepoResult {        for x in http.headers() {
+    ) -> RepoResult {
+        for x in http.headers() {
             log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
         }
         log::trace!("URL: {}", request.value);

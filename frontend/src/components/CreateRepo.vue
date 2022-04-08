@@ -1,109 +1,50 @@
 <template>
-  <div>
-    <vue-final-modal
-      v-model="showModel"
-      classes="flex justify-center items-center"
-    >
-      <div
-        class="
-          relative
-          border
-          bg-slate-800
-          border-black
-          m-w-20
-          py-5
-          px-10
-          rounded-2xl
-          shadow-xl
-          text-center
-        "
-      >
-        <p class="font-bold text-xl pb-4">Create Repository</p>
-        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-          <div class="mb-4">
-            <label
-              class="block text-slate-50 text-sm font-bold mb-2"
-              for="name"
-            >
-              Repository Name
-            </label>
-            <input
-              id="name"
-              v-model="form.name"
-              autocomplete="off"
+  <NitroModal v-model="showModel">
+    <template v-slot:header> Create Repository </template>
+    <template v-slot:content>
+      <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
+        <div class="mb-4">
+          <label class="nitroLabel" for="name"> Repository Name </label>
+          <input
+            id="name"
+            v-model="form.name"
+            autocomplete="off"
+            required
+            class="nitroTextInput"
+            placeholder="Repository Name"
+            type="text"
+          />
+        </div>
+        <div class="flex flex-row">
+          <div class="grow pr-2">
+            <label class="nitroLabel" for="name"> Repository Type </label>
+            <select
+              id="type"
+              v-model="form.type"
               required
-              class="
-                shadow
-                appearance-none
-                border
-                rounded
-                w-full
-                py-2
-                px-3
-                text-gray-700
-                leading-tight
-                focus:outline-none focus:shadow-outline
-              "
-              placeholder="Repository Name"
-              type="text"
-            />
+              class="nitroSelectBox"
+            >
+              <option disabled selected value="">Repository Type</option>
+              <option value="maven">Maven</option>
+              <option value="npm">NPM</option>
+            </select>
           </div>
-          <div class="flex flex-row">
-            <div class="grow pr-2">
-              <label
-                class="block text-slate-50 text-sm font-bold mb-2"
-                for="name"
-              >
-                Repository Type
-              </label>
-              <select
-                id="type"
-                v-model="form.type"
-                required
-                class="
-                  border border-gray-300
-                  rounded
-                  text-gray-600
-                  h-10
-                  px-5
-                  w-full
-                  bg-white
-                  hover:border-gray-400
-                  focus:outline-none
-                  appearance-none
-                "
-              >
-                <option disabled selected value="">Repository Type</option>
-
-                <option value="maven">Maven</option>
-                <option value="npm">NPM</option>
-              </select>
-            </div>
-          </div>
-          <button
-            class="bg-slate-900 py-2 my-3 rounded-md cursor-pointer text-white"
-          >
-            Create Repository
-          </button>
-        </form>
-
-        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
-          🗙
-        </button>
-      </div>
-    </vue-final-modal>
-    <div @click="showModel = true">
-      <slot name="button"></slot>
-    </div>
-  </div>
+        </div>
+        <button class="nitroButtonLight">Create Repository</button>
+      </form>
+    </template>
+    <template v-slot:button>
+      <button class="openModalButton">Create Repository</button>
+    </template>
+  </NitroModal>
 </template>
-
+<style scoped>
+</style>
 <script lang="ts">
 import { Repository } from "nitro_repo-api-wrapper";
 import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
-import { getStorages } from "nitro_repo-api-wrapper";
 import { createNewRepository } from "nitro_repo-api-wrapper";
+import NitroModal from "./common/model/NitroModal.vue";
 
 export default defineComponent({
   props: {
@@ -118,32 +59,11 @@ export default defineComponent({
       type: "",
       error: "",
     });
-    const cookie = useCookie();
-    const isLoading = ref(false);
     const showModel = ref(false);
 
-    const error = ref("");
-    const getStorage = async () => {
-      isLoading.value = true;
-      try {
-        const value = await getStorages(cookie.getCookie("token"));
-        storages.value = value;
-
-        isLoading.value = false;
-      } catch (e) {
-        error.value = "Error";
-      }
-    };
-    const close = () => (showModel.value = false);
-
-    getStorage();
     return {
       form,
-      isLoading,
-      error,
-      getStorage,
       showModel,
-      close,
     };
   },
   methods: {
@@ -179,6 +99,7 @@ export default defineComponent({
       }
     },
   },
+  components: { NitroModal },
 });
 </script>
 <style scoped></style>

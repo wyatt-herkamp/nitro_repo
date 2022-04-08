@@ -1,97 +1,80 @@
-<template>
-  <div>
-    <vue-final-modal
-        v-model="showModel"
-        classes="flex justify-center items-center"
-    >
-      <div
-          class="
-          relative
-          border
-          bg-slate-900
-          border-black
-          m-w-20
-          py-5
-          px-10
-          rounded-2xl
-          shadow-xl
-          text-center
-        "
-      >
-        <p class="font-bold text-xl pb-4">Create User</p>
-        <form class="flex flex-col w-96 sm:w-65" @submit.prevent="onSubmit()">
-          <div class="flex flex-row">
-            <div class="settingBox">
-              <label for="grid-name"> Name </label>
-              <input
-                  class="text-input"
-                  id="grid-name"
-                  type="text"
-                  v-model="form.name"
-              />
-            </div>
-            <div class="settingBox">
-              <label for="grid-name"> Username </label>
-              <input
-                  class="text-input"
-                  id="grid-name"
-                  type="text"
-                  v-model="form.username"
-              />
-            </div>
-          </div>
-          <div class="flex flex-row flex-grow my-2">
-            <div class="settingBox">
-              <label for="grid-name"> Email </label>
-              <input
-                  class="email"
-                  id="grid-name"
-                  type="email"
-                  v-model="form.email"
-              />
-            </div>
-          </div>
-          <div class="flex flex-row my-2">
-            <div class="settingBox">
-              <label for="grid-name"> Password </label>
-              <input
-                  class="text-input"
-                  id="grid-name"
-                  type="password"
-                  v-model="form.password.password"
-              />
-            </div>
-            <div class="settingBox">
-              <label for="grid-name"> Confirm Password </label>
-              <input
-                  class="text-input"
-                  id="grid-name"
-                  type="password"
-                  v-model="form.password.password_two"
-              />
-            </div>
-          </div>
-          <button
-              class="bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
-          >
-            Create User
-          </button>
-        </form>
 
-        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
-          🗙
-        </button>
-      </div>
-    </vue-final-modal>
-    <div @click="showModel = true">
-      <slot name="button"></slot>
-    </div>
-  </div>
+<template>
+  <NitroModal v-model="showModel">
+    <template v-slot:header> Create User </template>
+    <template v-slot:content>
+      <form class="flex flex-col w-96 sm:w-65" @submit.prevent="onSubmit()">
+        <div class="flex flex-row">
+          <div class="settingBox">
+            <label class="nitroLabel"> Name </label>
+            <input
+              class="nitroTextInput"
+              id="nitroLabel"
+              type="text"
+              placeholder="Example"
+              v-model="form.name"
+              required
+            />
+          </div>
+          <div class="settingBox">
+            <label class="nitroLabel"> Username </label>
+            <input
+              class="nitroTextInput"
+              id="nitroLabel"
+              type="text"
+              placeholder="Username"
+              v-model="form.username"
+              required
+            />
+          </div>
+        </div>
+        <div class="flex flex-row">
+          <div class="px-3 w-96 sm:w-65">
+            <label class="nitroLabel"> Email </label>
+            <input
+              class="nitroTextInput email"
+              id="nitroLabel"
+              type="email"
+              placeholder="example@nitro_repo.kigntux.dev"
+              v-model="form.email"
+              required
+            />
+          </div>
+        </div>
+        <div class="flex flex-row">
+          <div class="settingBox">
+            <label class="nitroLabel"> Password </label>
+            <input
+              class="nitroTextInput"
+              id="nitroLabel"
+              type="password"
+              v-model="form.password.password"
+              required
+            />
+          </div>
+          <div class="settingBox">
+            <label class="nitroLabel"> Confirm Password </label>
+            <input
+              class="nitroTextInput"
+              id="nitroLabel"
+              type="password"
+              v-model="form.password.password_two"
+              required
+            />
+          </div>
+        </div>
+        <button class="nitroButtonLight">Create User</button>
+      </form>
+    </template>
+    <template v-slot:button>
+      <button class="openModalButton">Create User</button>
+    </template>
+  </NitroModal>
 </template>
 <script lang="ts">
-import {User} from "nitro_repo-api-wrapper";
-import {createNewUser} from "nitro_repo-api-wrapper";
-import {defineComponent, ref} from "vue";
+import { User } from "nitro_repo-api-wrapper";
+import { createNewUser } from "nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
 
 export default defineComponent({
   setup() {
@@ -107,9 +90,9 @@ export default defineComponent({
         password: "",
         password_two: "",
       },
-      permissions: {deployer: false, admin: false},
+      permissions: { deployer: false, admin: false },
     });
-    return {form, showModel, close};
+    return { form, showModel, close };
   },
   methods: {
     async onSubmit() {
@@ -120,11 +103,11 @@ export default defineComponent({
         });
       }
       const response = await createNewUser(
-          this.form.name,
-          this.form.username,
-          this.form.password.password,
-          this.form.email,
-          this.$cookie.getCookie("token")
+        this.form.name,
+        this.form.username,
+        this.form.password.password,
+        this.form.email,
+        this.$cookie.getCookie("token")
       );
       if (response.ok) {
         let data = response.val as User;
@@ -145,67 +128,8 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-label {
-  @apply block;
-  @apply uppercase;
-  @apply tracking-wide;
-  @apply text-white;
-  @apply text-xs;
-  @apply font-bold;
-  @apply text-left;
-  @apply my-3;
-}
-
 .settingBox {
   @apply md:w-1/2;
   @apply px-3;
-}
-
-.disabled {
-  @apply appearance-none;
-  @apply block;
-  @apply w-full;
-  @apply bg-gray-300;
-  @apply text-gray-700;
-  @apply border;
-  @apply border-gray-800;
-  @apply rounded;
-  @apply py-3;
-  @apply px-4;
-  @apply leading-tight;
-}
-
-.text-input {
-  @apply appearance-none;
-  @apply block;
-  @apply w-full;
-  @apply bg-gray-200;
-  @apply text-gray-700;
-  @apply border;
-  @apply border-gray-200;
-  @apply rounded;
-  @apply py-3;
-  @apply px-4;
-  @apply leading-tight;
-  @apply focus:outline-none;
-  @apply focus:bg-white;
-  @apply focus:border-gray-500;
-}
-
-.email {
-  @apply appearance-none;
-  @apply block;
-  @apply bg-gray-200;
-  @apply text-gray-700;
-  @apply border;
-  @apply w-80;
-  @apply border-gray-200;
-  @apply rounded;
-  @apply py-3;
-  @apply px-4;
-  @apply leading-tight;
-  @apply focus:outline-none;
-  @apply focus:bg-white;
-  @apply focus:border-gray-500;
 }
 </style>

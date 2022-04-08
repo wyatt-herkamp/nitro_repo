@@ -99,12 +99,12 @@ export async function createNewStorage(
         );
 }
 export async function deleteStorage(
-    id: number,
+    name: string,
     token: string
 ) {
     return apiClient
         .delete(
-            "/api/admin/storages/"+id,
+            "/api/admin/storages/"+name,
             {
                 headers: {
                     Authorization: "Bearer " + token,

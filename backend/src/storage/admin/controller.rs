@@ -54,9 +54,9 @@ pub async fn delete_by_id(
             serde_json::to_string(&storage).unwrap()
         );
         save_storages(guard.deref())?;
-        APIResponse::new(true, Some(true)).respond(&r)
+        APIResponse::from(true).respond(&r)
     } else {
-        APIResponse::new(true, Some(false)).respond(&r)
+        APIResponse::from(false).respond(&r)
     }
 }
 

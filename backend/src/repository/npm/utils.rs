@@ -1,21 +1,17 @@
 use std::collections::HashMap;
-use std::fs::{read_to_string, remove_file, File};
-use std::io::Write;
-use std::path::{Path};
-use actix::fut::ok;
+use std::fs::{remove_file, File};
 use log::{trace, warn};
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData};
-use crate::repository::types::{Project, VersionResponse};
-use crate::repository::utils::{get_project_data, get_versions};
+use crate::repository::types::{VersionResponse};
+use crate::repository::utils::{get_project_data};
 use crate::utils::get_current_time;
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use diesel::MysqlConnection;
-use serde_json::Value;
 use crate::constants::PROJECT_FILE;
 use crate::repository::models::Repository;
 
@@ -116,7 +112,7 @@ pub fn get_version_data(storage: &StringStorage,
         modified: format_time(project.updated),
         times: Default::default(),
     };
-    let mut dist_tags = DistTags {
+    let dist_tags = DistTags {
         latest: project.versions.latest_version.clone()
     };
     let mut npm_versions = HashMap::default();
@@ -154,13 +150,14 @@ pub fn generate_get_response(storage: &StringStorage,
     }
     let version_data = result.unwrap();
     let version_data: Version = serde_json::from_slice(version_data.as_slice())?;
-    return Ok(Some(GetResponse {
+    Ok(Some(GetResponse {
         version_data,
         versions,
         times,
         dist_tags,
-    }));
+    }))
 }
+
 pub fn parse_project_to_directory(value: &str) -> String {
     value.replace('.', "/").replace(':', "/")
 }

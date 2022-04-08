@@ -1,6 +1,5 @@
 use actix_web::web::{Bytes, Path};
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
-use actix_web::http::header::q;
 use log::error;
 use serde::{Deserialize, Serialize};
 
@@ -555,6 +554,6 @@ pub async fn delete_repository(
         return not_found();
     }
     let repository = repository.unwrap();
-    storage.delete_repository(&repository, query.delete_files.unwrap_or(false));
+    storage.delete_repository(&repository, query.delete_files.unwrap_or(false))?;
     APIResponse::from(true).respond(&r)
 }

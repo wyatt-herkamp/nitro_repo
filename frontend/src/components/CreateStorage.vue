@@ -1,24 +1,9 @@
+
 <template>
-  <div>
-    <vue-final-modal
-      v-model="showModel"
-      classes="flex justify-center items-center"
-    >
-      <div
-        class="
-          relative
-          border
-          bg-slate-900
-          border-black
-          m-w-20
-          py-5
-          px-10
-          rounded-2xl
-          shadow-xl
-          text-center
-        "
-      >
-        <p class="font-bold text-xl pb-4">Create Storage</p>
+  <NitroModal v-model="showModel">
+    <template v-slot:header> Create Storage </template>
+    <template v-slot:content>
+      <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
         <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
           <div class="mb-4">
             <label
@@ -31,18 +16,7 @@
               id="name"
               v-model="form.name"
               autocomplete="off"
-              class="
-                shadow
-                appearance-none
-                border
-                rounded
-                w-full
-                py-2
-                px-3
-                text-gray-700
-                leading-tight
-                focus:outline-none focus:shadow-outline
-              "
+              class="nitroTextInput"
               placeholder="Storage ID/Name"
               type="text"
             />
@@ -58,38 +32,19 @@
               id="name"
               v-model="form.public_name"
               autocomplete="off"
-              class="
-                shadow
-                appearance-none
-                border
-                rounded
-                w-full
-                py-2
-                px-3
-                text-gray-700
-                leading-tight
-                focus:outline-none focus:shadow-outline
-              "
+              class="nitroTextInput"
               placeholder="Public Name"
               type="text"
             />
           </div>
-          <button
-            class="bg-slate-800 py-2 my-3 rounded-md cursor-pointer text-white"
-          >
-            Create Storage
-          </button>
+          <button class="nitroButtonLight">Create Storage</button>
         </form>
-
-        <button class="absolute top-0 right-0 mt-5 mr-5" @click="close()">
-          🗙
-        </button>
-      </div>
-    </vue-final-modal>
-    <div @click="showModel = true">
-      <slot name="button"></slot>
-    </div>
-  </div>
+      </form>
+    </template>
+    <template v-slot:button>
+      <button class="openModalButton">Create Storage</button>
+    </template>
+  </NitroModal>
 </template>
 
 <script lang="ts">

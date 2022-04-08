@@ -50,8 +50,6 @@
   @apply px-4;
   @apply leading-tight;
   @apply focus:outline-none;
-  @apply focus:bg-white;
-  @apply focus:border-gray-500;
 }
 
 .disabled {
@@ -76,6 +74,20 @@
 .nitroButton{
   @apply bg-slate-800;
   @apply p-4 my-3;
+  @apply rounded-md;
+  @apply cursor-pointer;
+  @apply text-white;
+}
+.nitroButtonLight{
+  @apply bg-slate-500;
+  @apply p-4 my-3;
+  @apply rounded-md;
+  @apply cursor-pointer;
+  @apply text-white;
+}
+.openModalButton{
+  @apply bg-slate-600;
+  @apply ml-3;
   @apply rounded-md;
   @apply cursor-pointer;
   @apply text-white;

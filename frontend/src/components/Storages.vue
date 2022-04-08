@@ -36,55 +36,7 @@
                 type="text"
               />
             </div>
-            <CreateStorage>
-              <template v-slot:button>
-                <button
-                  class="
-                    relative
-                    inline-flex
-                    items-center
-                    justify-center
-                    px-10
-                    overflow-hidden
-                    font-mono font-medium
-                    tracking-tighter
-                    text-white
-                    bg-gray-800
-                    rounded-lg
-                    group
-                  "
-                >
-                  <span
-                    class="
-                      absolute
-                      w-0
-                      h-max
-                      transition-all
-                      duration-500
-                      ease-out
-                      bg-slate-900
-                      rounded-full
-                      group-hover:w-56 group-hover:h-56
-                    "
-                  ></span>
-                  <span
-                    class="
-                      absolute
-                      inset-0
-                      w-full
-                      -mt-1
-                      rounded-lg
-                      opacity-30
-                      bg-gradient-to-b
-                      from-transparent
-                      via-transparent
-                      to-gray-700
-                    "
-                  ></span>
-                  <span class="relative">Create Storage</span>
-                </button>
-              </template>
-            </CreateStorage>
+            <CreateStorage />
           </div>
           <div>
             <ul v-if="storages != undefined">
@@ -115,15 +67,15 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref} from "vue";
+import { defineComponent, ref } from "vue";
 import CreateStorage from "@/components/CreateStorage.vue";
 import UpdateStorage from "@/components/UpdateStorage.vue";
-import {useCookie} from "vue-cookie-next";
-import {getStorages} from "nitro_repo-api-wrapper";
-import {StorageList} from "nitro_repo-api-wrapper";
+import { useCookie } from "vue-cookie-next";
+import { getStorages } from "nitro_repo-api-wrapper";
+import { StorageList } from "nitro_repo-api-wrapper";
 
 export default defineComponent({
-  components: {CreateStorage, UpdateStorage},
+  components: { CreateStorage, UpdateStorage },
 
   setup() {
     let index = ref(1);

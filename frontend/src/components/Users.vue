@@ -10,19 +10,19 @@
             <div class="flex items-center bg-gray-200 rounded-md w-full h-max">
               <div class="pl-2">
                 <svg
-                    class="fill-current text-gray-500 w-6 h-6"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  class="fill-current text-gray-500 w-6 h-6"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                      class="heroicon-ui"
-                      d="M16.32 14.9l5.39 5.4a1 1 0 0 1-1.42 1.4l-5.38-5.38a8 8 0 1 1 1.41-1.41zM10 16a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
+                    class="heroicon-ui"
+                    d="M16.32 14.9l5.39 5.4a1 1 0 0 1-1.42 1.4l-5.38-5.38a8 8 0 1 1 1.41-1.41zM10 16a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
                   />
                 </svg>
               </div>
               <input
-                  id="search"
-                  class="
+                id="search"
+                class="
                   w-full
                   rounded-md
                   bg-gray-200
@@ -32,66 +32,18 @@
                   py-2
                   px-2
                 "
-                  placeholder="User"
-                  type="text"
+                placeholder="User"
+                type="text"
               />
             </div>
-            <CreateUser>
-              <template v-slot:button>
-                <button
-                    class="
-                    relative
-                    inline-flex
-                    items-center
-                    justify-center
-                    px-10
-                    overflow-hidden
-                    font-mono font-medium
-                    tracking-tighter
-                    text-white
-                    bg-gray-800
-                    rounded-lg
-                    group
-                  "
-                >
-                  <span
-                      class="
-                      absolute
-                      w-0
-                      h-max
-                      transition-all
-                      duration-500
-                      ease-out
-                      bg-slate-900
-                      rounded-full
-                      group-hover:w-56 group-hover:h-56
-                    "
-                  ></span>
-                  <span
-                      class="
-                      absolute
-                      inset-0
-                      w-full
-                      -mt-1
-                      rounded-lg
-                      opacity-30
-                      bg-gradient-to-b
-                      from-transparent
-                      via-transparent
-                      to-gray-700
-                    "
-                  ></span>
-                  <span class="relative">Create User</span>
-                </button>
-              </template>
-            </CreateUser>
+            <CreateUser />
           </div>
           <div>
             <ul v-if="users != undefined">
               <li v-for="user in users.users" :key="user.id">
                 <router-link
-                    :to="'/admin/user/' + user.id"
-                    class="
+                  :to="'/admin/user/' + user.id"
+                  class="
                     cursor-pointer
                     py-2
                     text-slate-50
@@ -115,12 +67,12 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref} from "vue";
+import { defineComponent, ref } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
-import {useCookie} from "vue-cookie-next";
-import {getUsers} from "nitro_repo-api-wrapper";
-import {UserList} from "nitro_repo-api-wrapper/dist";
+import { useCookie } from "vue-cookie-next";
+import { getUsers } from "nitro_repo-api-wrapper";
+import { UserList } from "nitro_repo-api-wrapper/dist";
 
 export default defineComponent({
   components: { CreateUser, UpdateUser },
@@ -130,7 +82,7 @@ export default defineComponent({
     const isLoading = ref(false);
 
     let error = ref("");
-    let users = ref<UserList|undefined>(undefined);
+    let users = ref<UserList | undefined>(undefined);
     const getUser = async () => {
       isLoading.value = true;
       try {
