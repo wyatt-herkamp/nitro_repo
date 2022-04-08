@@ -11,11 +11,11 @@ use crate::{SiteResponse, StringMap};
 use actix_files::NamedFile;
 use actix_web::HttpRequest;
 use either::Either;
-use log::{debug, info, trace};
+use log::{debug, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, File, OpenOptions};
+use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, File, OpenOptions, remove_dir_all};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
@@ -107,6 +107,39 @@ impl LocationHandler<LocalFile> for LocalStorage {
         let mut file = OpenOptions::new().write(true).create(true).open(config)?;
         file.write_all(result.as_bytes())?;
         Ok(repo)
+    }
+
+    fn delete_repository(storage: &Storage<StringMap>, repository: &Repository, delete_files: bool) -> Result<(), InternalError> {
+        let location = storage.location.get("location").unwrap();
+        let storage_location = Path::new(location);
+
+        let storage_config = storage_location.join(STORAGE_CONFIG);
+        let mut repos = if storage_config.exists() {
+            let string = read_to_string(&storage_config)?;
+            remove_file(&storage_config)?;
+            serde_json::from_str(&string)?
+        } else {
+            HashMap::<String, RepositorySummary>::new()
+        };
+        repos.remove(&repository.name);
+        let result = serde_json::to_string_pretty(&repos)?;
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(storage_config)?;
+        file.write_all(result.as_bytes())?;
+        let path = storage_location.join(&repository.name);
+
+        if delete_files{
+            warn!("All Files for {} are being deleted", &path.to_str().unwrap());
+            remove_dir_all(&path)?;
+        }else{
+            let config = storage_location.join(&repository.name).join(REPOSITORY_CONF);
+            remove_file(config)?;
+
+        }
+        return Ok(());
     }
 
     fn get_repositories(storage: &Storage<StringMap>) -> Result<RepositoriesFile, InternalError> {
@@ -220,7 +253,7 @@ impl LocationHandler<LocalFile> for LocalStorage {
             for x in dir {
                 let entry = x?;
                 let string = entry.file_name().into_string().unwrap();
-                if string.ends_with(".nitro_repo") || string.starts_with(".nitro_repo"){
+                if string.ends_with(".nitro_repo") || string.starts_with(".nitro_repo") {
                     //Hide All .nitro_repo files from File Listings
                     continue;
                 }

@@ -54,6 +54,57 @@ export async function createNewRepository(
         );
 }
 
+export async function deleteRepository(
+    name: string,
+    storage: string,
+    deleteFiles: boolean,
+    token: string
+) {
+    return apiClient
+        .delete(
+            "/api/admin/repository/"+storage+"/"+name+"?delete_files="+deleteFiles,
+            {
+                headers: {
+                    Authorization: "Bearer " + token,
+                },
+            }
+        )
+        .then(
+            (result) => {
+                const resultData = result.data;
+                let value = JSON.stringify(resultData);
+
+                let response: BasicResponse<unknown> = JSON.parse(value);
+
+                if (response.success) {
+                    return Ok(response.data as boolean);
+                } else {
+                    return Err(INTERNAL_ERROR);
+                }
+            },
+            (err) => {
+                if (err.response) {
+                    if ((err.response.status == 401)) {
+                        return Err(NOT_AUTHORIZED);
+                    } else if ((err.response.status == 409)) {
+                        return Err(
+                            createAPIError(409, "A Repository by that name already exists")
+                        );
+                    } else if ((err.response.status == 404)) {
+                        return Err(
+                            createAPIError(404, "Unable to find a Storage by that name")
+                        );
+                    }
+                    return Err(INTERNAL_ERROR);
+                } else if (err.request) {
+                    return Err(INTERNAL_ERROR);
+                } else {
+                    return Err(INTERNAL_ERROR);
+                }
+            }
+        );
+}
+
 export async function setActiveStatus(
     storage: String,
     repository: String,

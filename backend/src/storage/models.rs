@@ -71,6 +71,11 @@ impl Storage<StringMap> {
         }
     }
 
+    pub fn delete_repository(&self, repository: &Repository, delete_files: bool) -> Result<(), InternalError> {
+        match self.location_type {
+            LocationType::LocalStorage => LocalStorage::delete_repository(self, repository, delete_files),
+        }
+    }
     pub fn get_repositories(&self) -> Result<RepositoriesFile, InternalError> {
         match self.location_type {
             LocationType::LocalStorage => LocalStorage::get_repositories(self),

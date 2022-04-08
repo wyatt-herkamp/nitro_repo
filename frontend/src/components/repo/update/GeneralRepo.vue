@@ -48,7 +48,11 @@
     <div class="flex flex-wrap mb-6">
       <div class="settingBox">
         <label class="nitroLabel" for="grid-policy"> Repo Policy</label>
-        <select v-model="repository.settings.policy" class="nitroSelectBox" @change="updatePolicy()" >
+        <select
+          v-model="repository.settings.policy"
+          class="nitroSelectBox"
+          @change="updatePolicy()"
+        >
           <option>Mixed</option>
           <option>Release</option>
           <option>Snapshot</option>
@@ -57,10 +61,24 @@
 
       <div class="settingBox">
         <label class="nitroLabel" for="grid-active">Repo Active</label>
-        <select v-model="repository.settings.active" class="nitroSelectBox" @change="updateActiveStatus()" >
+        <select
+          v-model="repository.settings.active"
+          class="nitroSelectBox"
+          @change="updateActiveStatus()"
+        >
           <option>true</option>
           <option>false</option>
         </select>
+      </div>
+    </div>
+    <h2 class="settingHeader">Danger Area</h2>
+    <div class="settingContent">
+      <div class="settingBox">
+        <DeleteRepo :repository="repository">
+          <template v-slot:button>
+            <button class="nitroButton">Delete Repository</button></template
+          >
+        </DeleteRepo>
       </div>
     </div>
   </div>
@@ -69,6 +87,7 @@
 import { defineComponent } from "vue";
 import { Repository } from "nitro_repo-api-wrapper";
 import { setActiveStatus, setPolicy } from "nitro_repo-api-wrapper";
+import DeleteRepo from "./DeleteRepo.vue";
 export default defineComponent({
   props: {
     repository: {
@@ -90,9 +109,9 @@ export default defineComponent({
         });
         return;
       }
-
       const response = await setActiveStatus(
-                this.repository.storage,this.repository.name,
+        this.repository.storage,
+        this.repository.name,
         this.repository.settings.active,
         this.$cookie.getCookie("token")
       );
@@ -119,7 +138,8 @@ export default defineComponent({
         return;
       }
       const response = await setPolicy(
-                this.repository.storage,this.repository.name,
+        this.repository.storage,
+        this.repository.name,
         this.repository.settings.policy,
         this.$cookie.getCookie("token")
       );
@@ -137,5 +157,6 @@ export default defineComponent({
       }
     },
   },
+  components: { DeleteRepo },
 });
 </script>

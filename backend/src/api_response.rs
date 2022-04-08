@@ -47,7 +47,15 @@ impl From<RequestErrorResponse> for APIResponse<RequestErrorResponse> {
         APIResponse::new(false, Some(error))
     }
 }
-
+impl From<bool> for APIResponse<bool>{
+    fn from(status: bool) -> Self {
+        return APIResponse{
+            success: status,
+            data: Some(status),
+            status_code: None
+        }
+    }
+}
 impl<T: Serialize> From<Option<T>> for APIResponse<T> {
     /// If the value is None it will create a 404 response
     /// If the value is Some it will set Success to True and the data is provided

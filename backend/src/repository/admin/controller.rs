@@ -1,5 +1,6 @@
 use actix_web::web::{Bytes, Path};
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
+use actix_web::http::header::q;
 use log::error;
 use serde::{Deserialize, Serialize};
 
@@ -62,7 +63,7 @@ pub async fn list_repos_by_storage(
     if storage.is_none() {
         return not_found();
     }
-    let storage  = storage.unwrap();
+    let storage = storage.unwrap();
     let mut vec = Vec::new();
     for (_, repo) in storage.get_repositories()? {
         vec.push(repo);
@@ -117,7 +118,7 @@ pub async fn add_repo(
     if storage.is_none() {
         return not_found();
     }
-    if !SUPPORTED_REPO_TYPES.contains(&nc.repo_type.as_str()){
+    if !SUPPORTED_REPO_TYPES.contains(&nc.repo_type.as_str()) {
         return bad_request(format!("Unsupported Repository Type {}", &nc.repo_type));
     }
     let storage = storage.unwrap();
@@ -521,4 +522,39 @@ pub async fn remove_webhook(
     repository.deploy_settings.remove_hook(webhook);
     storage.update_repository(&repository)?;
     APIResponse::respond_new(Some(repository), &r)
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteRequest {
+    pub delete_files: Option<bool>,
+}
+
+#[delete("/api/admin/repository/{storage}/{repository}")]
+pub async fn delete_repository(
+    pool: web::Data<DbPool>,
+    site: NitroRepoData,
+    r: HttpRequest,
+    path: web::Path<(String, String)>,
+    query: web::Query<DeleteRequest>,
+) -> SiteResponse {
+    let (storage, repository) = path.into_inner();
+
+    let connection = pool.get()?;
+    let user = get_user_by_header(r.headers(), &connection)?;
+    if user.is_none() || !user.unwrap().permissions.admin {
+        return unauthorized();
+    }
+    let result = site.storages.lock().unwrap();
+    let storage = result.get(&storage);
+    if storage.is_none() {
+        return not_found();
+    }
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repository)?;
+    if repository.is_none() {
+        return not_found();
+    }
+    let repository = repository.unwrap();
+    storage.delete_repository(&repository, query.delete_files.unwrap_or(false));
+    APIResponse::from(true).respond(&r)
 }

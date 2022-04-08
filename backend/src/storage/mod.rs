@@ -37,6 +37,10 @@ pub trait LocationHandler<T: StorageFileResponse, Rhs = Self> {
         storage: &Storage<StringMap>,
         repository: RepositorySummary,
     ) -> Result<Repository, InternalError>;
+    fn delete_repository(
+        storage: &Storage<StringMap>,
+        repository: &Repository, delete_files: bool,
+    ) -> Result<(), InternalError>;
     fn get_repositories(storage: &Storage<StringMap>) -> Result<RepositoriesFile, InternalError>;
     fn get_repository(
         storage: &Storage<StringMap>,

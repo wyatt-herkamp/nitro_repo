@@ -9,6 +9,7 @@ declare module 'vue' {
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
     CreateStorage: typeof import('./src/components/CreateStorage.vue')['default']
     CreateUser: typeof import('./src/components/CreateUser.vue')['default']
+    DeleteRepo: typeof import('./src/components/repo/update/DeleteRepo.vue')['default']
     DeployRepo: typeof import('./src/components/repo/update/DeployRepo.vue')['default']
     EditItem: typeof import('./src/components/repo/edit/EditItem.vue')['default']
     EditMenu: typeof import('./src/components/repo/edit/EditMenu.vue')['default']
