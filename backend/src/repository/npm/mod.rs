@@ -46,6 +46,23 @@ impl RepositoryType for NPMHandler {
         }
         log::trace!("URL: {}", request.value);
         if let Some(npm_command) = http.headers().get("npm-command") {
+            if request.value.contains(".tgz") {
+                let split: Vec<&str> = request.value.split("/-/").collect();
+                let package = split.get(0).unwrap().to_string();
+                let file = split.get(1).unwrap().to_string();
+                let version = file.replace(format!("{}-", &package).as_str(), "").replace(".tgz", "");
+                let nitro_file_location = format!("{package}/{version}/{file}");
+                debug!("Trying to Retrieve Package: {} Version {}. Location {}", &package, &version,&nitro_file_location);
+                let result =
+                    request
+                        .storage
+                        .get_file_as_response(&request.repository, &nitro_file_location, http)?;
+                return if result.is_left() {
+                    Ok(RepoResponse::FileResponse(result.left().unwrap()))
+                } else {
+                    Ok(BadRequest("Expected File got Folder".to_string()))
+                }
+            }
             let get_response = generate_get_response(&request.storage, &request.repository, &request.value).unwrap();
             if get_response.is_none() {
                 return Ok(NotFound);

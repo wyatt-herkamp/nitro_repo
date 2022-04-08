@@ -27,10 +27,19 @@ pub struct PublishRequest {
     pub versions: HashMap<String, Version>,
 }
 
+#[derive(Debug, Serialize, Deserialize,Clone)]
+pub struct Dist {
+    pub integrity: String,
+    pub shasum: String,
+    pub tarball: String,
+
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Version {
     pub version: String,
     pub name: String,
+    pub dist: Dist,
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
@@ -47,13 +56,15 @@ impl From<String> for DistTags {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct NPMTimes{
+pub struct NPMTimes {
     pub created: String,
     pub modified: String,
     #[serde(flatten)]
     pub times: HashMap<String, String>,
 }
-pub type NPMVersions= HashMap<String, Version>;
+
+pub type NPMVersions = HashMap<String, Version>;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetResponse {
     #[serde(flatten)]
