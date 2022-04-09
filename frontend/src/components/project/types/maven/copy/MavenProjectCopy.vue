@@ -50,7 +50,7 @@ export default defineComponent({
   },
   setup(props) {
     const url = apiURL;
-    const value = props.project.project.name.split(":");
+    const value = props.project.version.name.split(":");
     const snippets = createProjectGen(
       value[0],
       value[1],

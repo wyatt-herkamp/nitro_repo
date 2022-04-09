@@ -1,5 +1,5 @@
 <template>
-  <div class="m-3">
+  <div class="flex flex-col m-3">
     <div class="flex flex-wrap">
       <router-link class="py-3 my-1 min-w-max hover:text-red-400" to="/browse">
         <span>Browse</span>
@@ -41,6 +41,19 @@
         </div>
       </div>
     </div>
+    <div class="flex flex-wrap" v-if="activeResponse != undefined">
+      <ViewProject
+        v-if="activeResponse.Project != undefined"
+        :project="activeResponse.Project"
+        :child="true"
+      />
+      <ViewRepo
+        v-if="activeResponse.Repository != undefined"
+        :repository="activeResponse.Repository.name"
+        :storage="activeResponse.Repository.storage"
+        :child="true"
+      />
+    </div>
   </div>
 </template>
 <style scoped>
@@ -70,6 +83,8 @@ import { defineComponent, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useCookie } from "vue-cookie-next";
 import { BrowsePath } from "./Browse";
+import ViewProject from "@/components/project/ViewProject.vue";
+import ViewRepo from "@/components/repo/ViewRepo.vue";
 
 export default defineComponent({
   setup() {
@@ -98,13 +113,12 @@ export default defineComponent({
           });
         }
         activeResponse.value;
-
         if (
           fileResponse.response_type != undefined &&
           typeof fileResponse.response_type != "string"
         ) {
           activeResponse.value = fileResponse.response_type as ResponseType;
-          console.log("HEY");
+          console.log(activeResponse.value);
         }
         tableData.value = value.files;
       } catch (e) {
@@ -118,7 +132,9 @@ export default defineComponent({
       catchAll,
       pathSplit,
       url,
+      activeResponse,
     };
   },
+  components: { ViewProject, ViewRepo },
 });
 </script>

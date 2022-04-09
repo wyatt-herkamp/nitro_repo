@@ -5,14 +5,14 @@ use log::{trace, warn};
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::nitro::{NitroRepoVersions, ProjectData};
+use crate::repository::nitro::{NitroRepoVersions, ProjectData, VersionData};
 
 use crate::repository::utils::{get_project_data};
 use crate::utils::get_current_time;
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use diesel::MysqlConnection;
-use crate::constants::PROJECT_FILE;
+use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::repository::models::Repository;
 
 use crate::repository::npm::models::{DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version};
@@ -69,6 +69,8 @@ pub fn update_project(
     version: Version,
 ) -> Result<(), InternalError> {
     let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
+    let version_folder = format!("{}/{}/{}", &project_folder,&version.version, VERSION_DATA);
+
     trace!("Project File Location {}", project_file);
     let option = storage.get_file(repository, &project_file)?;
     let mut project_data: ProjectData = if let Some(data) = option {
@@ -78,10 +80,6 @@ pub fn update_project(
         value
     } else {
         ProjectData {
-            name: version.name,
-            description: "".to_string(),
-            source: None,
-            licence: None,
             versions: Default::default(),
             created: get_current_time(),
             updated: get_current_time(),
@@ -94,12 +92,24 @@ pub fn update_project(
         "".to_string()
     };
 
-    project_data.description = horrible_line_of_code;
+    let version_data = VersionData {
+        name: version.name,
+        description: horrible_line_of_code,
+        source: None,
+        licence: None,
+        version: version.version.clone(),
+        created: get_current_time(),
+    };
     project_data.versions.update_version(version.version);
     storage.save_file(
         repository,
         serde_json::to_string_pretty(&project_data)?.as_bytes(),
         &project_file,
+    )?;
+    storage.save_file(
+        repository,
+        serde_json::to_string_pretty(&version_data)?.as_bytes(),
+        &version_folder,
     )?;
     Ok(())
 }
@@ -130,7 +140,7 @@ pub fn get_version_data(storage: &StringStorage,
         npm_versions.insert(version.version.clone(), version_data);
     }
 
-     Ok((times, dist_tags, npm_versions))
+    Ok((times, dist_tags, npm_versions))
 }
 
 pub fn generate_get_response(storage: &StringStorage,

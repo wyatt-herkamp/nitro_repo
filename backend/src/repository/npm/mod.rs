@@ -17,7 +17,7 @@ use crate::repository::models::RepositorySummary;
 use crate::repository::npm::models::{
     Attachment, LoginRequest, LoginResponse, PublishRequest,
 };
-use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
+use crate::repository::npm::utils::{generate_get_response, get_version_data, is_valid, parse_project_to_directory};
 
 use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse};
 use crate::repository::types::{
@@ -252,11 +252,19 @@ impl RepositoryType for NPMHandler {
         }
         let project_dir = parse_project_to_directory(&request.value);
 
-        let result = get_version(&request.storage, &request.repository, project_dir, version)?;
-        if let Some(version) = result {
-            return Ok(RepoResponse::NitroVersionResponse(version));
+        let project_data = get_project_data(&request.storage, &request.repository, project_dir.clone())?;
+        if let Some(project_data) = project_data {
+            let version_data = crate::repository::utils::get_version_data(&request.storage, &request.repository, format!("{}/{}", project_dir, &version))?;
+
+            let project = Project {
+                repo_summary: RepositorySummary::new(&request.repository),
+                project: project_data,
+                version: version_data,
+                frontend_response: None,
+            };
+            return Ok(ProjectResponse(project));
         }
-        Ok(RepoResponse::NotFound)
+        RepoResult::Ok(NotFound)
     }
 
     fn handle_project(
@@ -273,11 +281,14 @@ impl RepositoryType for NPMHandler {
         }
         let project_dir = parse_project_to_directory(&request.value);
 
-        let project_data = get_project_data(&request.storage, &request.repository, project_dir)?;
+        let project_data = get_project_data(&request.storage, &request.repository, project_dir.clone())?;
         if let Some(project_data) = project_data {
+            let version_data = crate::repository::utils::get_version_data(&request.storage, &request.repository, format!("{}/{}", project_dir, &project_data.versions.latest_version))?;
+
             let project = Project {
                 repo_summary: RepositorySummary::new(&request.repository),
                 project: project_data,
+                version: version_data,
                 frontend_response: None,
             };
             return Ok(ProjectResponse(project));

@@ -14,7 +14,6 @@ use crate::repository::models::Repository;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::utils::get_accept;
 use crate::NitroRepoData;
-use crate::repository::controller;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
 use crate::repository::nitro::ResponseType::{Storage};
 use crate::repository::npm::NPMHandler;
@@ -222,7 +221,6 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
     };
 }
 
-#[post("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn post_repository(
     pool: web::Data<DbPool>,
     site: NitroRepoData,
@@ -255,7 +253,6 @@ pub async fn post_repository(
     handle_result(x, request.value, r)
 }
 
-#[patch("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn patch_repository(
     pool: web::Data<DbPool>,
     site: NitroRepoData,
@@ -289,7 +286,6 @@ pub async fn patch_repository(
     handle_result(x, request.value, r)
 }
 
-#[put("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn put_repository(
     pool: web::Data<DbPool>,
     site: NitroRepoData,
@@ -322,7 +318,6 @@ pub async fn put_repository(
     handle_result(x, request.value, r)
 }
 
-#[head("/storages/{storage}/{repository}/{file:.*}")]
 pub async fn head_repository(
     pool: web::Data<DbPool>,
     site: NitroRepoData,

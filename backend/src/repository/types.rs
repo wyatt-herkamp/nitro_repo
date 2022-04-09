@@ -11,7 +11,7 @@ use serde_json::Value;
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::nitro::{NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData};
+use crate::repository::nitro::{NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData};
 use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};
@@ -28,6 +28,8 @@ pub struct RepositoryFile {
 pub struct Project {
     pub repo_summary: RepositorySummary,
     pub project: ProjectData,
+    /// Version Data will be latest if not specified
+    pub version: Option<VersionData>,
     pub frontend_response: Option<FrontendResponse>,
 }
 

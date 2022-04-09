@@ -43,7 +43,7 @@ export default defineComponent({
     const router = useRouter();
 
     const { meta } = useMeta({
-      title: props.project.project.name,
+      title: props.project.version.name,
     });
 
     return {

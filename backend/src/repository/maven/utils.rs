@@ -1,14 +1,14 @@
 use std::fs::{read_dir};
 use std::path::Path;
 
-use crate::constants::PROJECT_FILE;
+use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use chrono::NaiveDateTime;
 use log::trace;
 
 use crate::error::internal_error::{InternalError};
 use crate::repository::maven::models::Pom;
 use crate::repository::models::Repository;
-use crate::repository::nitro::{ProjectData};
+use crate::repository::nitro::{ProjectData, VersionData};
 
 
 use crate::storage::models::StringStorage;
@@ -65,7 +65,8 @@ pub fn update_project(
     version: String,
     pom: Pom,
 ) -> Result<(), InternalError> {
-    let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
+    let project_file = format!("{}/{}", &project_folder, PROJECT_FILE);
+    let version_folder = format!("{}/{}/{}", &project_folder,&version, VERSION_DATA);
     trace!("Project File Location {}", project_file);
     let option = storage.get_file(repository, &project_file)?;
     let mut project_data: ProjectData = if let Some(data) = option {
@@ -75,21 +76,29 @@ pub fn update_project(
         value
     } else {
         ProjectData {
-            name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
-            description: "".to_string(),
-            source: None,
-            licence: None,
             versions: Default::default(),
             created: get_current_time(),
             updated: get_current_time()
         }
     };
-    project_data.description = pom.description.unwrap_or_else(|| "".to_string());
+    let version_data = VersionData{
+        name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
+        description: pom.description.unwrap_or_default(),
+        source: None,
+        licence: None,
+        version: version.clone(),
+        created: get_current_time()
+    };
     project_data.versions.update_version(version);
     storage.save_file(
         repository,
         serde_json::to_string_pretty(&project_data)?.as_bytes(),
         &project_file,
+    )?;
+    storage.save_file(
+        repository,
+        serde_json::to_string_pretty(&version_data)?.as_bytes(),
+        &version_folder,
     )?;
     Ok(())
 }

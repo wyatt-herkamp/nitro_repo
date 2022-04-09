@@ -64,7 +64,7 @@ export default defineComponent({
   },
   setup(props) {
     const url = apiURL;
-    const projectPath = props.project.project.name.replace(":","/").replace(".","/");
+    const projectPath = props.project.version.name.replace(":","/").replace(".","/");
     const snippets = createProjectSnippet(
       props.project.repo_summary.storage,
       props.project.repo_summary.name,projectPath

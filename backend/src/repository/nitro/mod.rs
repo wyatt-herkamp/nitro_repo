@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::repository::models::RepositorySummary;
+use crate::repository::types::Project;
 use crate::storage::StorageFile;
 
 
@@ -14,7 +15,7 @@ pub struct NitroFileResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ResponseType {
-    Project(Option<ProjectData>),
+    Project(Option<Project>),
     Version(VersionBrowseResponse),
     Repository(RepositorySummary),
     Storage,
@@ -24,7 +25,7 @@ pub enum ResponseType {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VersionBrowseResponse {
-    pub project: Option<ProjectData>,
+    pub project: Option<Project>,
     pub version: String,
 }
 
@@ -54,13 +55,19 @@ impl RepositoryListing {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ProjectData {
+pub struct VersionData {
     pub name: String,
     #[serde(default)]
     pub description: String,
     pub source: Option<ProjectSource>,
     pub licence: Option<Licence>,
+    pub version: String,
+    #[serde(default = "crate::utils::get_current_time")]
+    pub created: i64,
+}
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ProjectData {
     #[serde(default)]
     pub versions: NitroRepoVersions,
     #[serde(default = "crate::utils::get_current_time")]

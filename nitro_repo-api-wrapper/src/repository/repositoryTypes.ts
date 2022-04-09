@@ -69,14 +69,22 @@ export interface RepoSummary {
 export interface Project {
     repo_summary: RepoSummary;
     project: ProjectData;
+    version: VersionData;
     frontend_response: null;
 }
 
-export interface ProjectData {
+export interface VersionData {
     name: string;
+    version: string;
     description: string;
     source: null;
     licence: null;
+    created: number;
+
+}
+
+export interface ProjectData {
+
     versions: Versions;
     created: number;
 }
