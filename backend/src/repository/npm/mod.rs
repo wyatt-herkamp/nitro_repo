@@ -23,7 +23,7 @@ use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, IAmATe
 use crate::repository::types::{
     Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryType,
 };
-use crate::repository::utils::{get_project_data, get_version, get_versions};
+use crate::repository::utils::{get_project_data, get_version, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 mod models;
@@ -77,7 +77,8 @@ impl RepositoryType for NPMHandler {
                 if vec.is_empty() {
                     return Ok(RepoResponse::NotFound);
                 }
-                Ok(RepoResponse::FileList(vec))
+                let file_response = process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
+                Ok(RepoResponse::NitroFileList(file_response))
             }
         }
     }
