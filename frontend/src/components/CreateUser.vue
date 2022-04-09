@@ -66,20 +66,33 @@
         <button class="nitroButtonLight">Create User</button>
       </form>
     </template>
-    <template v-slot:button>
-      <button class="openModalButton">Create User</button>
-    </template>
   </NitroModal>
 </template>
 <script lang="ts">
 import { User } from "nitro_repo-api-wrapper";
 import { createNewUser } from "nitro_repo-api-wrapper";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
 
 export default defineComponent({
-  setup() {
-    const showModel = ref(false);
-    const close = () => (showModel.value = false);
+  props: {
+    modelValue: Boolean,
+  },
+  setup(props, { emit }) {
+    const showModel = ref(props.modelValue);
+
+    watch(
+      () => props.modelValue,
+      (val) => {
+        showModel.value = val;
+        emit("update:modelValue", val);
+      }
+    );
+    watch(
+      showModel,
+      (val) => {
+        emit("update:modelValue", val);
+      }
+    );
 
     let form = ref({
       error: "",
@@ -92,7 +105,7 @@ export default defineComponent({
       },
       permissions: { deployer: false, admin: false },
     });
-    return { form, showModel, close };
+    return { form ,showModel};
   },
   methods: {
     async onSubmit() {

@@ -91,4 +91,7 @@
   @apply rounded-md;
   @apply cursor-pointer;
   @apply text-white;
+  @apply w-full;
+  @apply flex;
+  @apply flex-row;
 }

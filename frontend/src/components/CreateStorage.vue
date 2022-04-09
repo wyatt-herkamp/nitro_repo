@@ -41,22 +41,31 @@
         </form>
       </form>
     </template>
-    <template v-slot:button>
-      <button class="openModalButton">Create Storage</button>
-    </template>
   </NitroModal>
 </template>
 
 <script lang="ts">
 import { Storage } from "nitro_repo-api-wrapper";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
 import { createNewStorage } from "nitro_repo-api-wrapper";
 
 export default defineComponent({
-  setup() {
-    const showModel = ref(false);
-    const close = () => (showModel.value = false);
+  props: {
+    modelValue: Boolean,
+  },
+  setup(props, {emit}) {
+    const showModel = ref(props.modelValue);
 
+    watch(
+      () => props.modelValue,
+      (val) => {
+        showModel.value = val;
+        emit("update:modelValue", val);
+      }
+    );
+    watch(showModel, (val) => {
+      emit("update:modelValue", val);
+    });
     let form = ref({
       name: "",
       public_name: "",

@@ -28,6 +28,7 @@ declare module 'vue' {
     ProjectBadge: typeof import('./src/components/project/badge/ProjectBadge.vue')['default']
     Repositories: typeof import('./src/components/Repositories.vue')['default']
     RepositoryBadge: typeof import('./src/components/repo/badge/RepositoryBadge.vue')['default']
+    SearchableList: typeof import('./src/components/common/list/SearchableList.vue')['default']
     SecurityRepo: typeof import('./src/components/repo/update/SecurityRepo.vue')['default']
     SideBar: typeof import('./src/components/SideBar.vue')['default']
     StorageNav: typeof import('./src/components/storages/nav/StorageNav.vue')['default']

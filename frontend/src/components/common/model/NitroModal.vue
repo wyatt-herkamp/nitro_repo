@@ -1,21 +1,16 @@
 <template>
-  <div>
-    <vue-final-modal
-      v-model="showModel"
-      classes="flex justify-center items-center"
-      @click-outside="handleChange()"
-    >
-      <div class="modal">
-        <p class="header"><slot name="header"> </slot></p>
-        <button class="xButton" @click="handleChange()">🗙</button>
+  <vue-final-modal
+    v-model="showModel"
+    classes="flex justify-center items-center"
+    @click-outside="handleChange()"
+  >
+    <div class="modal">
+      <p class="header"><slot name="header"> </slot></p>
+      <button class="xButton" @click="handleChange()">🗙</button>
 
-        <slot name="content"></slot>
-      </div>
-    </vue-final-modal>
-    <div @click="handleChange()">
-      <slot name="button"></slot>
+      <slot name="content"></slot>
     </div>
-  </div>
+  </vue-final-modal>
 </template>
 <style scoped>
 .xButton {
@@ -43,26 +38,29 @@
 }
 </style>
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, onMounted, ref, toRef, watch } from "vue";
 
 export default defineComponent({
   props: {
     modelValue: Boolean,
   },
   setup(props, { emit }) {
-    let deleteFiles = ref(false);
-    const showModel = ref(props.modelValue);
-
-    const error = ref("");
-
+    const showModel = ref(false);
+    onMounted(() => {
+      if (props.modelValue) {
+        showModel.value = true;
+      }
+    });
+    watch(
+      () => props.modelValue,
+      (val) => {
+        showModel.value = val;
+      }
+    );
     const handleChange = (): void => {
-      const value = !props.modelValue;
-      showModel.value = value;
-      emit("update:modelValue", value);
+      emit("update:modelValue", !showModel.value);
     };
     return {
-      deleteFiles,
-      error,
       showModel,
       handleChange,
     };

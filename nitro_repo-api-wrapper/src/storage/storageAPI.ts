@@ -2,7 +2,7 @@ import {apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED
 import {Storage, StorageList} from "../storage/storageTypes";
 import {Err, Ok} from "ts-results";
 
-export async function getStorages(token: string): Promise<StorageList | undefined> {
+export async function getStorages(token: string): Promise<Array<Storage> | undefined> {
     const value = await apiClient.get("/api/storages/list", {
         headers: {
             Authorization: "Bearer " + token,
@@ -14,7 +14,7 @@ export async function getStorages(token: string): Promise<StorageList | undefine
     }
     const data = value.data as BasicResponse<unknown>;
     if (data.success) {
-        return data.data as StorageList;
+        return data.data as Array<Storage>;
     }
 
     return undefined;

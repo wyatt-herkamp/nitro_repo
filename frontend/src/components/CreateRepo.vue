@@ -33,18 +33,16 @@
         <button class="nitroButtonLight">Create Repository</button>
       </form>
     </template>
-    <template v-slot:button>
-      <button class="openModalButton">Create Repository</button>
-    </template>
+
   </NitroModal>
 </template>
 <style scoped>
 </style>
 <script lang="ts">
 import { Repository } from "nitro_repo-api-wrapper";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
 import { createNewRepository } from "nitro_repo-api-wrapper";
-import NitroModal from "./common/model/NitroModal.vue";
+import NitroModal from "@/components/common/model/NitroModal.vue";
 
 export default defineComponent({
   props: {
@@ -52,15 +50,25 @@ export default defineComponent({
       type: Object as () => Storage,
       required: true,
     },
+    modelValue: Boolean
   },
-  setup() {
+  setup(props, {emit}) {
     let form = ref({
       name: "",
       type: "",
       error: "",
     });
-    const showModel = ref(false);
-
+    const showModel = ref(props.modelValue);
+    watch(
+      () => props.modelValue,
+      (val) => {
+        showModel.value = val;
+        emit("update:modelValue", val);
+      }
+    );
+    watch(showModel, (val) => {
+      emit("update:modelValue", val);
+    });
     return {
       form,
       showModel,
