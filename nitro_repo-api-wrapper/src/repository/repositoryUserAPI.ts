@@ -52,6 +52,26 @@ export async function getRepositoriesPublicAccess(storage: string): Promise<Brow
     return undefined;
 }
 
+export async function browse(path: string, token: string | undefined): Promise<BrowseResponse | undefined> {
+    const url = "/storages/" + path;
+    const value = (token == undefined) ? await apiClient.get(url) : await apiClient.get(
+        url, {
+        headers: {
+            Authorization: "Bearer " + token,
+        },
+    }
+    );
+    if (value.status != 200) {
+        return undefined;
+    }
+    const data = value.data as BasicResponse<unknown>;
+    if (data.success) {
+        return data.data as BrowseResponse;
+    }
+
+    return undefined;
+}
+
 export async function fileListing(storage: string, repo: string, path: string): Promise<BrowseResponse | undefined> {
     const url = "/storages/" + storage + "/" + repo + "/" + path;
     const value = await apiClient.get(url, {});

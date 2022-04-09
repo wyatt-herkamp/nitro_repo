@@ -86,12 +86,12 @@ impl DeploySettings {
 }
 
 impl RepositorySummary {
-    pub fn new(repo: &Repository) -> Result<RepositorySummary, InternalError> {
-        Ok(RepositorySummary {
+    pub fn new(repo: &Repository) -> RepositorySummary{
+        RepositorySummary {
             name: repo.name.clone(),
             storage: repo.storage.clone(),
             repo_type: repo.repo_type.clone(),
-        })
+        }
     }
 }
 

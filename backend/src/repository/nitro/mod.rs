@@ -9,6 +9,7 @@ use crate::utils::get_current_time;
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,
     pub response_type: ResponseType,
+    pub active_dir: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

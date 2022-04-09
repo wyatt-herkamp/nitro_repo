@@ -1,4 +1,5 @@
 use actix_web::web;
+use crate::repository::controller::get_repository;
 
 pub mod admin;
 mod api;
@@ -18,9 +19,10 @@ pub static REPOSITORY_CONF: &str = "repository.nitro_repo";
 pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";
 
 pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(controller::browse)
+    cfg
         .service(controller::browse_storage)
-        .service(controller::get_repository)
+        .service(web::resource(["/storages/", "/storages"]).to(controller::browse))
+        .service(web::resource(["/storages/{storage}/{repository}", "/storages/{storage}/{repository}/{file:.*}", "/storages/{storage}/{repository}/"]).to(controller::get_repository))
         .service(controller::post_repository)
         .service(controller::patch_repository)
         .service(controller::put_repository)

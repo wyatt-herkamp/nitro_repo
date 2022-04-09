@@ -111,6 +111,7 @@ export interface ResponseType {
 export interface BrowseResponse {
     response_type: ResponseType | string;
     files: Array<FileResponse>
+    active_dir: string
 }
 export interface FileResponse {
     name: string;

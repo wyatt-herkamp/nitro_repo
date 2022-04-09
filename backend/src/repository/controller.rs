@@ -1,4 +1,3 @@
-
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
@@ -15,8 +14,9 @@ use crate::repository::models::Repository;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::utils::get_accept;
 use crate::NitroRepoData;
+use crate::repository::controller;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
-use crate::repository::nitro::ResponseType::{ Storage};
+use crate::repository::nitro::ResponseType::{Storage};
 use crate::repository::npm::NPMHandler;
 use crate::storage::StorageFile;
 
@@ -55,29 +55,39 @@ pub fn to_request(
     Ok(request)
 }
 
-#[get("/storages.json")]
-pub async fn browse(site: NitroRepoData, r: HttpRequest) -> SiteResponse {
-    let mut storages = NitroFileResponse{ files: vec![], response_type: ResponseType::Other };
+pub fn generate_storage_list(site: NitroRepoData) -> NitroFileResponse {
+    let mut storages = NitroFileResponse { files: vec![], response_type: ResponseType::Other, active_dir: "".to_string() };
 
     for (name, storage) in site.storages.lock().unwrap().iter() {
-        storages.files.push(NitroFile{ response_type:Storage, file: StorageFile {
-            name: name.clone(),
-            full_path: name.clone(),
-            directory: true,
-            file_size: 0,
-            created: storage.created as u128
-        } });
+        storages.files.push(NitroFile {
+            response_type: Storage,
+            file: StorageFile {
+                name: name.clone(),
+                full_path: name.clone(),
+                directory: true,
+                file_size: 0,
+                created: storage.created as u128,
+            },
+        });
     }
-    APIResponse::respond_new(Some(storages), &r)
+    storages
 }
 
-#[get("/storages/{storage}.json")]
+pub async fn browse(site: NitroRepoData, r: HttpRequest) -> SiteResponse {
+    APIResponse::respond_new(Some(generate_storage_list(site)), &r)
+}
+
+#[get("/storages/{storage}")]
 pub async fn browse_storage(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<String>,
 ) -> SiteResponse {
     let string = path.into_inner();
+    println!("HEY");
+    if string.is_empty() {
+        return APIResponse::respond_new(Some(generate_storage_list(site)), &r);
+    }
     let storages = site.storages.lock().unwrap();
 
     let storage = storages.get(&string);
@@ -87,29 +97,37 @@ pub async fn browse_storage(
     }
     let storage = storage.unwrap();
     let map = storage.get_repositories()?;
-    let mut repos = NitroFileResponse{ files: vec![], response_type: ResponseType::Storage };
+    let mut repos = NitroFileResponse { files: vec![], response_type: ResponseType::Storage, active_dir: string.clone() };
     for (name, sum) in map {
-        repos.files.push(NitroFile{ response_type:ResponseType::Repository(sum), file: StorageFile {
-            name: name.clone(),
-            full_path: format!("{}/{}", &storage.name, &name),
-            directory: true,
-            file_size: 0,
-            created: 0
-        } });
+        repos.files.push(NitroFile {
+            response_type: ResponseType::Repository(sum),
+            file: StorageFile {
+                name: name.clone(),
+                full_path: format!("{}/{}", &storage.name, &name),
+                directory: true,
+                file_size: 0,
+                created: 0,
+            },
+        });
     }
     APIResponse::respond_new(Some(repos), &r)
 }
-
-#[get("/storages/{storage}/{repository}/{file:.*}")]
+#[derive(Serialize, Deserialize, Clone)]
+pub struct GetPath{
+    pub storage: String,
+    pub repository: String,
+    pub file: Option<String>,
+}
 pub async fn get_repository(
     pool: web::Data<DbPool>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,
+    path: web::Path<GetPath>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site);
+    let path = path.into_inner();
+    let file = path.file.unwrap_or("".to_string());
+    let result = to_request(path.storage, path.repository, file, site);
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -184,9 +202,7 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::OkWithJSON(json) => {
             let result = HttpResponse::Ok()
                 .status(StatusCode::OK)
-                .cern
-> E
- = ontent_type("application/json")
+                .content_type("application/json")
                 .body(json);
             return Ok(result);
         }
@@ -202,7 +218,6 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
 
         RepoResponse::NitroFileList(value) => {
             APIResponse::new(true, Some(value)).respond(&r)
-
         }
     };
 }

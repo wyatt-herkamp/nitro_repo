@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::{InternalError, NResult};
-use crate::repository::models::Repository;
+use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType, VersionBrowseResponse};
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
@@ -30,6 +30,7 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
             file,
         });
     }
+    let active_dir = format!("{}/{}/{}",&storage.name, &repo.name, requested_dir);
     let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
     let option = storage.get_file(repo, &string)?;
     return if let Some(data) = option {
@@ -40,6 +41,7 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
         Ok(NitroFileResponse {
             files: nitro_files,
             response_type: ResponseType::Project(Some(data)),
+            active_dir
         })
     } else {
         let string = format!("{}/{}", &requested_dir, VERSION_DATA);
@@ -64,15 +66,19 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
 
             Ok(NitroFileResponse {
                 files: nitro_files,
+                active_dir,
+
                 response_type: ResponseType::Version(VersionBrowseResponse {
                     project: Some(project_data),
                     version,
+
                 }),
             })
         } else {
             Ok(NitroFileResponse {
+                active_dir,
                 files: nitro_files,
-                response_type: ResponseType::Other,
+                response_type: ResponseType::Repository(RepositorySummary::new(repo)),
             })
         }
     };

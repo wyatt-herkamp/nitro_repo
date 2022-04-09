@@ -229,7 +229,7 @@ impl RepositoryType for MavenHandler {
         let project_data = get_project_data(&request.storage, &request.repository, string)?;
         if let Some(project_data) = project_data {
             let project = Project {
-                repo_summary: RepositorySummary::new(&request.repository)?,
+                repo_summary: RepositorySummary::new(&request.repository),
                 project: project_data,
                 frontend_response: None,
             };
