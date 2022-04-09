@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::repository::models::RepositorySummary;
 use crate::storage::StorageFile;
 
 
@@ -6,18 +7,32 @@ use crate::utils::get_current_time;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NitroFileResponse {
-    pub files: Vec<StorageFile>,
+    pub files: Vec<NitroFile>,
     pub response_type: ResponseType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ResponseType {
-    Project(Option<ProjectData>,),
-    Version(Option<ProjectData>, String),
-    Other
+    Project(Option<ProjectData>),
+    Version(VersionBrowseResponse),
+    Repository(RepositorySummary),
+    Storage,
+    Other,
 }
 
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct VersionBrowseResponse {
+    pub project: Option<ProjectData>,
+    pub version: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NitroFile {
+    pub response_type: ResponseType,
+    #[serde(flatten)]
+    pub file: StorageFile,
+}
 
 
 #[derive(Debug, Serialize, Deserialize)]

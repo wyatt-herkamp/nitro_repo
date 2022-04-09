@@ -1,5 +1,5 @@
-import {apiClient, BasicResponse} from "../NitroRepoAPI";
-import {FileResponse, Project} from "./repositoryTypes";
+import { apiClient, BasicResponse } from "../NitroRepoAPI";
+import { BrowseResponse, FileResponse, Project } from "./repositoryTypes";
 
 export interface PublicRepositoryInfo {
     id: number;
@@ -21,10 +21,10 @@ export async function getRepoPublic(
     const url = "/api/repositories/get/" + storage + "/" + repo;
     const value = token == undefined ? await apiClient.get(url) : await apiClient.get(
         url, {
-            headers: {
-                Authorization: "Bearer " + token,
-            },
-        }
+        headers: {
+            Authorization: "Bearer " + token,
+        },
+    }
     );
 
     if (value.status != 200) {
@@ -37,34 +37,34 @@ export async function getRepoPublic(
 
     return undefined;
 }
-export async function getRepositoriesPublicAccess(storage: string) {
+export async function getRepositoriesPublicAccess(storage: string): Promise<BrowseResponse | undefined> {
     const url = "/storages/" + storage + ".json";
     const value = await apiClient.get(url, {});
 
     if (value.status != 200) {
-        return [];
+        return undefined;
     }
     const data = value.data as BasicResponse<unknown>;
     if (data.success) {
-        return data.data as Array<string>;
+        return data.data as BrowseResponse;
     }
 
-    return [];
+    return undefined;
 }
 
-export async function fileListing(storage: string, repo: string, path: string) {
+export async function fileListing(storage: string, repo: string, path: string): Promise<BrowseResponse | undefined> {
     const url = "/storages/" + storage + "/" + repo + "/" + path;
     const value = await apiClient.get(url, {});
 
     if (value.status != 200) {
-        return [];
+        return undefined;
     }
     const data = value.data as BasicResponse<unknown>;
     if (data.success) {
-        return data.data as Array<FileResponse>;
+        return data.data as BrowseResponse;
     }
 
-    return [];
+    return undefined;
 }
 
 export async function getProject(
@@ -81,10 +81,10 @@ export async function getProject(
     }
     const value = (token == undefined) ? await apiClient.get(url) : await apiClient.get(
         url, {
-            headers: {
-                Authorization: "Bearer " + token,
-            },
-        }
+        headers: {
+            Authorization: "Bearer " + token,
+        },
+    }
     );
 
     if (value.status != 200) {

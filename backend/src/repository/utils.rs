@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::models::Repository;
-use crate::repository::nitro::{NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType};
+use crate::repository::nitro::{NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType, VersionBrowseResponse};
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
@@ -22,6 +22,14 @@ pub fn get_version(
 }
 
 pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage_files: Vec<StorageFile>, requested_dir: &str) -> Result<NitroFileResponse, InternalError> {
+    let mut nitro_files = Vec::new();
+    for file in storage_files {
+        nitro_files.push(NitroFile {
+            //TODO Implement This
+            response_type: ResponseType::Other,
+            file,
+        });
+    }
     let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
     let option = storage.get_file(repo, &string)?;
     return if let Some(data) = option {
@@ -30,7 +38,7 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
             data.versions.latest_release = data.versions.latest_version.clone();
         }
         Ok(NitroFileResponse {
-            files: storage_files,
+            files: nitro_files,
             response_type: ResponseType::Project(Some(data)),
         })
     } else {
@@ -44,9 +52,9 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
             let string = format!("{}/{}", x.to_str().unwrap(), PROJECT_FILE);
             let option = storage.get_file(repo, &string)?;
 
-            let mut data: ProjectData = serde_json::from_slice(option.unwrap().as_slice())?;
-            if data.versions.latest_release.is_empty() {
-                data.versions.latest_release = data.versions.latest_version.clone();
+            let mut project_data: ProjectData = serde_json::from_slice(option.unwrap().as_slice())?;
+            if project_data.versions.latest_release.is_empty() {
+                project_data.versions.latest_release = project_data.versions.latest_version.clone();
             }
             let version = if let Some(version) = version.get("Version") {
                 version.to_string()
@@ -55,12 +63,15 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
             };
 
             Ok(NitroFileResponse {
-                files: storage_files,
-                response_type: ResponseType::Version(Some(data), version),
+                files: nitro_files,
+                response_type: ResponseType::Version(VersionBrowseResponse {
+                    project: Some(project_data),
+                    version,
+                }),
             })
         } else {
             Ok(NitroFileResponse {
-                files: storage_files,
+                files: nitro_files,
                 response_type: ResponseType::Other,
             })
         }

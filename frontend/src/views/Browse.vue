@@ -63,7 +63,7 @@ import {
   fileListing,
   getRepositoriesPublicAccess,
 } from "nitro_repo-api-wrapper";
-import { getStoragesPublicAccess } from "nitro_repo-api-wrapper"
+import { getStoragesPublicAccess } from "nitro_repo-api-wrapper";
 import { FileResponse } from "nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import router from "@/router";
@@ -106,12 +106,12 @@ export default defineComponent({
         }
         const getFiles = async () => {
           try {
-            const value = (await fileListing(
-              storage,
-              repository,
-              catchAll
-            )) as FileResponse[];
-            for (const storage of value) {
+            const value = await fileListing(storage, repository, catchAll);
+            if (value == undefined) {
+              console.warn("No Response from Backend");
+              return;
+            }
+            for (const storage of value.files) {
               console.log(storage);
               tableData.value.push(storage);
             }
@@ -124,11 +124,13 @@ export default defineComponent({
       } else {
         const getLocalRepos = async () => {
           try {
-            const value = (await getRepositoriesPublicAccess(
-              storage
-            )) as string[];
-            for (const storage of value) {
-              tableData.value.push({ name: storage,directory: true });
+            const value = await getRepositoriesPublicAccess(storage);
+            if (value == undefined) {
+              console.warn("No Response from Backend");
+              return;
+            }
+            for (const storage of value.files) {
+              tableData.value.push({ name: storage.name, directory: true });
             }
             loading.value = false;
           } catch (e) {
@@ -140,9 +142,13 @@ export default defineComponent({
     } else {
       const getLocalStorage = async () => {
         try {
-          const value = (await getStoragesPublicAccess()) as string[];
-          for (const storage of value) {
-            tableData.value.push({ name: storage, directory: true });
+          const value = await getStoragesPublicAccess();
+          if (value == undefined) {
+            console.warn("No Response from Backend");
+            return;
+          }
+          for (const storage of value.files) {
+            tableData.value.push({ name: storage.name, directory: true });
           }
           loading.value = false;
         } catch (e) {

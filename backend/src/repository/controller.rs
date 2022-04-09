@@ -15,7 +15,10 @@ use crate::repository::models::Repository;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
 use crate::utils::get_accept;
 use crate::NitroRepoData;
+use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
+use crate::repository::nitro::ResponseType::{ Storage};
 use crate::repository::npm::NPMHandler;
+use crate::storage::StorageFile;
 
 //
 
@@ -54,9 +57,16 @@ pub fn to_request(
 
 #[get("/storages.json")]
 pub async fn browse(site: NitroRepoData, r: HttpRequest) -> SiteResponse {
-    let mut storages = Vec::new();
-    for (name, _) in site.storages.lock().unwrap().iter() {
-        storages.push(name.clone());
+    let mut storages = NitroFileResponse{ files: vec![], response_type: ResponseType::Other };
+
+    for (name, storage) in site.storages.lock().unwrap().iter() {
+        storages.files.push(NitroFile{ response_type:Storage, file: StorageFile {
+            name: name.clone(),
+            full_path: name.clone(),
+            directory: true,
+            file_size: 0,
+            created: storage.created as u128
+        } });
     }
     APIResponse::respond_new(Some(storages), &r)
 }
@@ -76,7 +86,17 @@ pub async fn browse_storage(
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let repos: Vec<String> = storage.get_repositories()?.keys().cloned().collect();
+    let map = storage.get_repositories()?;
+    let mut repos = NitroFileResponse{ files: vec![], response_type: ResponseType::Storage };
+    for (name, sum) in map {
+        repos.files.push(NitroFile{ response_type:ResponseType::Repository(sum), file: StorageFile {
+            name: name.clone(),
+            full_path: format!("{}/{}", &storage.name, &name),
+            directory: true,
+            file_size: 0,
+            created: 0
+        } });
+    }
     APIResponse::respond_new(Some(repos), &r)
 }
 
@@ -164,7 +184,9 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::OkWithJSON(json) => {
             let result = HttpResponse::Ok()
                 .status(StatusCode::OK)
-                .content_type("application/json")
+                .cern
+> E
+ = ontent_type("application/json")
                 .body(json);
             return Ok(result);
         }
