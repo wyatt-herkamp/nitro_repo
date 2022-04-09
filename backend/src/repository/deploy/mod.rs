@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
-use crate::constants::REPORT_DATA;
+use crate::constants::VERSION_DATA;
 use log::error;
 use serde::de::value::MapDeserializer;
 use serde::{Deserialize, Serialize};
@@ -38,29 +38,6 @@ pub async fn handle_post_deploy(
                 DiscordConfig::deserialize(MapDeserializer::new(x.settings.clone().into_iter()))?;
             DiscordHandler::handle(&result, deploy).await?;
         }
-    }
-    if repository.deploy_settings.report_generation.active {
-        let mut report = HashMap::<String, String>::new();
-
-        for x in &repository.deploy_settings.report_generation.values {
-            let x1 = match x.as_str() {
-                "DeployerUsername" => deploy.user.name.clone(),
-                "Time" => get_current_time().to_string(),
-                "Version" => deploy.version.clone(),
-                x => {
-                    error!("Unable to find Report Value {}", x);
-                    continue;
-                }
-            };
-            report.insert(x.clone(), x1);
-        }
-
-        let string = serde_json::to_string(&report).unwrap();
-        storage.save_file(
-            repository,
-            string.as_bytes(),
-            &format!("{}/{}", deploy.version_folder, REPORT_DATA),
-        )?
     }
     Ok(())
 }

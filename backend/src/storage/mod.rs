@@ -23,6 +23,8 @@ pub struct StorageFile {
     pub name: String,
     pub full_path: String,
     pub directory: bool,
+    pub file_size: u64,
+    pub created: u128,
 }
 
 /// StorageFileResponse is a trait that can be turned into a SiteResponse for example if its  LocalFile it will return into Actix's NamedFile response

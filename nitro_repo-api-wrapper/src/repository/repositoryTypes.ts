@@ -69,14 +69,22 @@ export interface RepoSummary {
 export interface Project {
     repo_summary: RepoSummary;
     project: ProjectData;
+    version: VersionData;
     frontend_response: null;
 }
 
-export interface ProjectData {
+export interface VersionData {
     name: string;
+    version: string;
     description: string;
     source: null;
     licence: null;
+    created: number;
+
+}
+
+export interface ProjectData {
+
     versions: Versions;
     created: number;
 }
@@ -98,9 +106,26 @@ export enum Policy {
     Snapshot,
     Mixed,
 }
+
+export interface VersionBrowseResponse {
+    Project?: ProjectData
+    Version: string
+}
+export interface ResponseType {
+    Project?: ProjectData
+    Repository?: Repository
+    Version?: VersionBrowseResponse
+}
+export interface BrowseResponse {
+    response_type: ResponseType | string;
+    files: Array<FileResponse>
+    active_dir: string
+}
 export interface FileResponse {
     name: string;
     full_path: string;
     directory: boolean;
-    data: Map<string, any>;
+    file_size: number;
+    response_type: ResponseType | string;
+    created: number;
 }

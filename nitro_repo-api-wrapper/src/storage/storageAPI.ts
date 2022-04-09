@@ -1,6 +1,7 @@
 import {apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED} from "../NitroRepoAPI";
 import {Storage, StorageList} from "../storage/storageTypes";
 import {Err, Ok} from "ts-results";
+import { BrowseResponse } from "src/repository/repositoryTypes";
 
 export async function getStorages(token: string): Promise<Array<Storage> | undefined> {
     const value = await apiClient.get("/api/storages/list", {
@@ -20,18 +21,18 @@ export async function getStorages(token: string): Promise<Array<Storage> | undef
     return undefined;
 }
 
-export async function getStoragesPublicAccess() {
+export async function getStoragesPublicAccess():  Promise<BrowseResponse | undefined> {
     const value = await apiClient.get("/storages.json", {});
 
     if (value.status != 200) {
-        return [];
+        return undefined;
     }
     const data = value.data as BasicResponse<unknown>;
     if (data.success) {
-        return data.data as Array<string>;
+        return data.data as BrowseResponse;
     }
 
-    return [];
+    return undefined;
 }
 
 export async function getStorage(token: string, id: string): Promise<Storage | undefined> {

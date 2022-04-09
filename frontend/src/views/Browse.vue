@@ -1,206 +1,151 @@
 <template>
-  <div class="m-3">
-    <div class="flex flex-wrap">
-      <router-link class="py-3 my-1 min-w-max hover:text-red-400" to="/browse">
-        <span>Browse</span>
-      </router-link>
-      <router-link
-        class="py-3 my-1 min-w-max hover:text-red-400"
-        v-for="value in values"
-        :key="value.name"
-        :to="'/browse' + '/' + value.path"
-      >
-        <span>/</span>
-        <span> {{ value.name }} </span>
-      </router-link>
-    </div>
-    <div class="flex">
-      <div class="min-w-full grid auto-cols-auto grid-rows-1 text-left">
-        <div class="link-box" v-for="value in tableData" :key="value.name">
-          <router-link
-            class="link"
-            :to="path + '/' + value.name"
-            v-if="value.directory"
-          >
-            <span class="linkText">
-              {{ value.name }}
-            </span>
+  <div class="min-h-screen w-full flex flex-wrap lg:flex-nowrap">
+    <div class="w-full m-2 rounded-md bg-gray-900">
+      <div class="flex flex-wrap w-full ml-2">
+        <div class="flex-row m-5">
+          <router-link class="backLink" to="/browse">
+            <span>Browse</span>
           </router-link>
-          <a
-            class="link"
-            :href="url + '/storages/' + value.full_path"
-            v-if="!value.directory"
+          <router-link
+            class="backLink"
+            v-for="value in pathSplit"
+            :key="value.name"
+            :to="'/browse' + value.path"
           >
-            <span class="linkText">
-              {{ value.name }}
-            </span>
-          </a>
+            <span>/</span>
+            <span> {{ value.name }} </span>
+          </router-link>
+        </div>
+        <div class="flex-row my-5">
+          <router-link class="align-middle inline-block" :to="up">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              class="my-auto"
+              style="fill: rgba(255, 255, 255, 1); transform: ; msfilter: "
+            >
+              <path
+                d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"
+              ></path>
+            </svg>
+          </router-link>
         </div>
       </div>
+      <div>
+        <div
+          v-if="tableData != undefined"
+          class="min-w-full grid auto-cols-auto grid-rows-1 text-left p-3"
+        >
+          <BrowseBox
+            v-for="value in tableData"
+            :key="value.name"
+            :file="value"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="float-right lg:w-1/4 m-2 rounded-md bg-slate-800"
+      v-if="activeResponse != undefined"
+    >
+      <ViewProject
+        v-if="activeResponse.Project != undefined"
+        :project="activeResponse.Project"
+        :child="true"
+      />
+      <ViewRepo
+        v-if="activeResponse.Repository != undefined"
+        :repository="activeResponse.Repository.name"
+        :storage="activeResponse.Repository.storage"
+        :child="true"
+      />
     </div>
   </div>
 </template>
 <style scoped>
-.link {
-  @apply block;
-  @apply min-w-max;
-
-  @apply hover:text-red-400;
-  @apply p-3;
-}
-.linkText {
-  @apply pl-2;
-}
-.link-box {
-  @apply min-w-max;
+.backLink {
+  @apply py-3;
   @apply my-1;
-  @apply py-1;
-  @apply border-2;
+  @apply min-w-max;
+  @apply hover:text-slate-300;
+  @apply transition;
+  @apply ease-in-out;
+  @apply duration-100;
 }
 </style>
 <script lang="ts">
-import {
-  fileListing,
-  getRepositoriesPublicAccess,
-} from "nitro_repo-api-wrapper";
-import { getStoragesPublicAccess } from "nitro_repo-api-wrapper"
-import { FileResponse } from "nitro_repo-api-wrapper";
+import { browse, BrowseResponse, FileResponse } from "nitro_repo-api-wrapper";
+
 import { apiURL } from "@/http-common";
 import router from "@/router";
 import { defineComponent, ref } from "vue";
 import { useRoute } from "vue-router";
+import { useCookie } from "vue-cookie-next";
+import { BrowsePath } from "./Browse";
+import ViewProject from "@/components/project/ViewProject.vue";
+import ViewRepo from "@/components/repo/ViewRepo.vue";
+import BrowseBox from "@/components/browse/BrowseBox.vue";
 
 export default defineComponent({
   setup() {
     let url = apiURL;
     const route = useRoute();
-    let values = ref([]);
-    const tableData = ref([]);
-    const storage = route.params.storage as string;
-    const repository = route.params.repo as string;
+    let pathSplit = ref<BrowsePath[]>([]);
+    const tableData = ref<FileResponse[] | undefined>();
+    const activeResponse = ref<ResponseType | undefined>();
     let catchAll = route.params.catchAll as string;
-    const loading = ref(true);
+    const cookie = useCookie();
     const path = route.fullPath;
-    if (storage != undefined && storage != "") {
-      let value = { name: storage, path: storage };
-      values.value.push(value);
-      if (repository != undefined && repository != "") {
-        let value = {
-          name: repository,
-          path: values.value[values.value.length - 1].path + "/" + repository,
-        };
 
-        values.value.push(value);
-        if (route.params.catchAll != undefined) {
-          for (var s of catchAll.split("/")) {
-            let value = {
-              name: s,
-              path: values.value[values.value.length - 1].path + "/" + s,
-            };
+    var upperPath = path.split("/");
 
-            values.value.push(value);
-          }
-          loading.value = false;
-        } else {
-          catchAll = "";
-        }
-        const getFiles = async () => {
-          try {
-            const value = (await fileListing(
-              storage,
-              repository,
-              catchAll
-            )) as FileResponse[];
-            for (const storage of value) {
-              console.log(storage);
-              tableData.value.push(storage);
-            }
-            loading.value = false;
-          } catch (e) {
-            console.error(e);
-          }
-        };
-        getFiles();
-      } else {
-        const getLocalRepos = async () => {
-          try {
-            const value = (await getRepositoriesPublicAccess(
-              storage
-            )) as string[];
-            for (const storage of value) {
-              tableData.value.push({ name: storage,directory: true });
-            }
-            loading.value = false;
-          } catch (e) {
-            console.error(e);
-          }
-        };
-        getLocalRepos();
-      }
-    } else {
-      const getLocalStorage = async () => {
-        try {
-          const value = (await getStoragesPublicAccess()) as string[];
-          for (const storage of value) {
-            tableData.value.push({ name: storage, directory: true });
-          }
-          loading.value = false;
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      getLocalStorage();
+    if (upperPath.length > 0) {
+      upperPath.splice(upperPath.length - 1);
     }
-    console.log(values.value);
+    const up = upperPath.join("/");
+    console.log(up);
+    const getFiles = async () => {
+      try {
+        const value = await browse(catchAll, cookie.getCookie("token"));
+        if (value == undefined) {
+          console.warn("No Response from Backend");
+          return;
+        }
+        const fileResponse: BrowseResponse = value as BrowseResponse;
+        {
+          // Generates the needed information for the path
+          let url = "";
+          fileResponse.active_dir.split("/").forEach((element) => {
+            url = url + "/" + element;
+            pathSplit.value.push({ name: element, path: url });
+          });
+        }
+        activeResponse.value;
+        if (
+          fileResponse.response_type != undefined &&
+          typeof fileResponse.response_type != "string"
+        ) {
+          activeResponse.value = fileResponse.response_type as ResponseType;
+          console.log(activeResponse.value);
+        }
+        tableData.value = value.files;
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    getFiles();
     return {
-      loading,
-      values,
-      tableData,
-      storage,
-      repository,
-      catchAll,
       path,
+      tableData,
+      catchAll,
+      pathSplit,
       url,
+      up,
+      activeResponse,
     };
   },
-  methods: {
-    onRowClick(row: any) {
-      if (this.repository != undefined && this.repository != "") {
-        let value = row.name as string;
-        for (const i of this.tableData) {
-          let data = i as FileResponse;
-          if (data.name == value) {
-            if (!data.directory) {
-              return;
-            }
-          }
-        }
-        let url = this.catchAll;
-        if (url == "") {
-          url = value;
-        } else {
-          url = url + "/" + value;
-        }
-        router.push({
-          name: "Browse",
-          params: {
-            storage: this.storage,
-            repo: this.repository,
-            catchAll: url,
-          },
-        });
-      } else if (this.storage != undefined && this.storage != "") {
-        let value = row.name as string;
-
-        router.push({
-          name: "Browse",
-          params: { storage: this.storage, repo: value },
-        });
-      } else {
-        let value = row.name as string;
-        router.push({ name: "Browse", params: { storage: value } });
-      }
-    },
-  },
+  components: { ViewProject, ViewRepo, BrowseBox },
 });
 </script>

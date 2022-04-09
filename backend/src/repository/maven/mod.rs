@@ -8,7 +8,7 @@ use log::{debug, error, log_enabled, trace};
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
-use crate::repository::maven::utils::{ parse_project_to_directory};
+use crate::repository::maven::utils::{parse_project_to_directory};
 use crate::repository::models::{Policy, RepositorySummary};
 
 use crate::repository::types::RepoResponse::{
@@ -16,7 +16,7 @@ use crate::repository::types::RepoResponse::{
 };
 use crate::repository::types::RepositoryRequest;
 use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryType};
-use crate::repository::utils::{get_project_data,get_version, get_versions};
+use crate::repository::utils::{get_project_data, get_version, get_version_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 mod models;
@@ -33,7 +33,6 @@ impl RepositoryType for MavenHandler {
         if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
             return RepoResult::Ok(NotAuthorized);
         }
-
         let result =
             request
                 .storage
@@ -45,7 +44,8 @@ impl RepositoryType for MavenHandler {
             if vec.is_empty() {
                 return Ok(RepoResponse::NotFound);
             }
-            Ok(RepoResponse::FileList(vec))
+            let file_response = process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
+            Ok(RepoResponse::NitroFileList(file_response))
         }
     }
 
@@ -68,6 +68,7 @@ impl RepositoryType for MavenHandler {
         if !x.0 {
             return RepoResult::Ok(NotAuthorized);
         }
+
 
         //TODO find a better way to do this
         match request.repository.settings.policy {
@@ -208,11 +209,19 @@ impl RepositoryType for MavenHandler {
         }
         let project_dir = parse_project_to_directory(&request.value);
 
-        let result = get_version(&request.storage, &request.repository, project_dir, version)?;
-        if let Some(version) = result {
-            return Ok(RepoResponse::NitroVersionResponse(version));
+        let project_data = get_project_data(&request.storage, &request.repository, project_dir.clone())?;
+        if let Some(project_data) = project_data {
+            let version_data = crate::repository::utils::get_version_data(&request.storage, &request.repository, format!("{}/{}", project_dir, &version))?;
+
+            let project = Project {
+                repo_summary: RepositorySummary::new(&request.repository),
+                project: project_data,
+                version: version_data,
+                frontend_response: None,
+            };
+            return Ok(ProjectResponse(project));
         }
-        Ok(RepoResponse::NotFound)
+        RepoResult::Ok(NotFound)
     }
 
     fn handle_project(
@@ -225,11 +234,14 @@ impl RepositoryType for MavenHandler {
         }
         let string = parse_project_to_directory(&request.value);
 
-        let project_data = get_project_data(&request.storage, &request.repository, string)?;
+        let project_data = get_project_data(&request.storage, &request.repository, string.clone())?;
         if let Some(project_data) = project_data {
+            let version_data = get_version_data(&request.storage, &request.repository, format!("{}/{}", string, &project_data.versions.latest_version))?;
+
             let project = Project {
-                repo_summary: RepositorySummary::new(&request.repository)?,
+                repo_summary: RepositorySummary::new(&request.repository),
                 project: project_data,
+                version: version_data,
                 frontend_response: None,
             };
             return Ok(ProjectResponse(project));

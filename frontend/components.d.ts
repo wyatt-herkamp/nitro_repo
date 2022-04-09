@@ -4,6 +4,7 @@
 
 declare module 'vue' {
   export interface GlobalComponents {
+    BrowseBox: typeof import('./src/components/browse/BrowseBox.vue')['default']
     CodeViewComp: typeof import('./src/components/CodeViewComp.vue')['default']
     CopyMenu: typeof import('./src/components/repo/types/maven/copy/CopyMenu.vue')['default']
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']

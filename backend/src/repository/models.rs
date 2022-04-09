@@ -6,7 +6,6 @@ use badge_maker::Style;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::error::internal_error::InternalError;
 use crate::repository::models::Policy::Mixed;
 use crate::repository::models::Visibility::Public;
 
@@ -86,12 +85,12 @@ impl DeploySettings {
 }
 
 impl RepositorySummary {
-    pub fn new(repo: &Repository) -> Result<RepositorySummary, InternalError> {
-        Ok(RepositorySummary {
+    pub fn new(repo: &Repository) -> RepositorySummary {
+        RepositorySummary {
             name: repo.name.clone(),
             storage: repo.storage.clone(),
             repo_type: repo.repo_type.clone(),
-        })
+        }
     }
 }
 
