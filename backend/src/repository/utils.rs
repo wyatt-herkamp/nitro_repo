@@ -1,12 +1,14 @@
-use crate::constants::{PROJECTS_FILE, PROJECT_FILE};
+use std::collections::HashMap;
+use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::models::Repository;
-use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing};
+use crate::repository::nitro::{NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType};
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
-use std::path::{Path};
+use std::path::{Path, PathBuf};
 use log::debug;
 use crate::repository::types::VersionResponse;
+use crate::storage::StorageFile;
 
 
 pub fn get_version(
@@ -17,6 +19,52 @@ pub fn get_version(
 ) -> NResult<Option<VersionResponse>> {
     let versions_value = get_versions(storage, repository, project)?;
     Ok(get_version_by_data(&versions_value, version))
+}
+
+pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage_files: Vec<StorageFile>, requested_dir: &str) -> Result<NitroFileResponse, InternalError> {
+    let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
+    let option = storage.get_file(repo, &string)?;
+    return if let Some(data) = option {
+        let mut data: ProjectData = serde_json::from_slice(data.as_slice())?;
+        if data.versions.latest_release.is_empty() {
+            data.versions.latest_release = data.versions.latest_version.clone();
+        }
+        Ok(NitroFileResponse {
+            files: storage_files,
+            response_type: ResponseType::Project(Some(data)),
+        })
+    } else {
+        let string = format!("{}/{}", &requested_dir, VERSION_DATA);
+        let option = storage.get_file(repo, &string)?;
+
+        if let Some(version) = option {
+            let version: HashMap<&str, String> = serde_json::from_slice(version.as_slice())?;
+
+            let x = Path::new(&requested_dir).parent().unwrap();
+            let string = format!("{}/{}", x.to_str().unwrap(), PROJECT_FILE);
+            let option = storage.get_file(repo, &string)?;
+
+            let mut data: ProjectData = serde_json::from_slice(option.unwrap().as_slice())?;
+            if data.versions.latest_release.is_empty() {
+                data.versions.latest_release = data.versions.latest_version.clone();
+            }
+            let version = if let Some(version) = version.get("Version") {
+                version.to_string()
+            } else {
+                "Version Report Not Found".to_string()
+            };
+
+            Ok(NitroFileResponse {
+                files: storage_files,
+                response_type: ResponseType::Version(Some(data), version),
+            })
+        } else {
+            Ok(NitroFileResponse {
+                files: storage_files,
+                response_type: ResponseType::Other,
+            })
+        }
+    };
 }
 
 pub fn get_version_by_data(

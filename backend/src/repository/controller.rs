@@ -177,6 +177,11 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
         RepoResponse::NitroProjectResponse(value) => {
             APIResponse::new(true, Some(value)).respond(&r)
         }
+
+        RepoResponse::NitroFileList(value) => {
+            APIResponse::new(true, Some(value)).respond(&r)
+
+        }
     };
 }
 

@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
+use std::time::SystemTimeError;
 
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
@@ -117,6 +118,11 @@ impl From<serde_json::Error> for InternalError {
 impl From<actix_web::Error> for InternalError {
     fn from(err: actix_web::Error) -> InternalError {
         InternalError::ActixWebError(err)
+    }
+}
+impl From<SystemTimeError> for InternalError {
+    fn from(err: SystemTimeError) -> InternalError {
+        InternalError::Error(err.to_string())
     }
 }
 

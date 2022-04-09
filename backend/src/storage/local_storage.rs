@@ -18,6 +18,7 @@ use std::fs;
 use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, File, OpenOptions, remove_dir_all};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::time::UNIX_EPOCH;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalStorage {
@@ -258,10 +259,14 @@ impl LocationHandler<LocalFile> for LocalStorage {
                     continue;
                 }
                 let full = format!("{}/{}", path, &string);
+                let metadata = entry.metadata().unwrap();
+                let time = metadata.created().unwrap().duration_since(UNIX_EPOCH)?.as_millis();
                 let file = StorageFile {
                     name: string,
                     full_path: full,
                     directory: entry.file_type()?.is_dir(),
+                    file_size: metadata.len(),
+                    created: time
                 };
                 files.push(file);
             }
