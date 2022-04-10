@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex">
+  <div class="hidden md:flex min-h-screen">
     <div class="flex flex-col w-56 bg-slate-800">
       <ul class="flex flex-col py-4">
         
