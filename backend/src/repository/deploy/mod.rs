@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+
 use std::fmt::{Display, Formatter};
 
-use crate::constants::VERSION_DATA;
-use log::error;
+
+
 use serde::de::value::MapDeserializer;
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +10,7 @@ use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::storage::models::StringStorage;
 use crate::system::models::User;
-use crate::utils::get_current_time;
+
 use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -28,7 +28,7 @@ impl Display for DeployInfo {
 }
 
 pub async fn handle_post_deploy(
-    storage: &StringStorage,
+    _storage: &StringStorage,
     repository: &Repository,
     deploy: &DeployInfo,
 ) -> Result<(), InternalError> {

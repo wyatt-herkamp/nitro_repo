@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::nitro::{NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType, VersionBrowseResponse, VersionData};
+use crate::repository::nitro::{NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType, VersionData};
 use crate::storage::models::StringStorage;
 use std::fs::read_to_string;
 use std::path::{Path};
@@ -38,7 +38,7 @@ pub fn process_storage_files(storage: &StringStorage, repo: &Repository, storage
         if data.versions.latest_release.is_empty() {
             data.versions.latest_release = data.versions.latest_version.clone();
         }
-        let version_data = get_version_data(&storage, repo, format!("{}/{}", requested_dir, data.versions.latest_release))?;
+        let version_data = get_version_data(storage, repo, format!("{}/{}", requested_dir, data.versions.latest_release))?;
         let project = Project {
             repo_summary: RepositorySummary::new(repo),
             project: data,
@@ -189,7 +189,7 @@ pub fn get_version_data(
     debug!("Version Data Location {}", &string);
     let option = storage.get_file(repository, &string)?;
     Ok(if let Some(vec) = option {
-        let mut data: VersionData = serde_json::from_str(&String::from_utf8(vec)?)?;
+        let data: VersionData = serde_json::from_str(&String::from_utf8(vec)?)?;
 
         Some(data)
     } else {

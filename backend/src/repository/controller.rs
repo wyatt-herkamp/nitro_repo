@@ -1,6 +1,6 @@
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use actix_web::{get, head, patch, post, put, web, HttpRequest, HttpResponse};
+use actix_web::{get, web, HttpRequest, HttpResponse};
 use log::{debug, trace};
 use serde::{Deserialize, Serialize};
 
@@ -125,7 +125,7 @@ pub async fn get_repository(
 ) -> SiteResponse {
     let connection = pool.get()?;
     let path = path.into_inner();
-    let file = path.file.unwrap_or("".to_string());
+    let file = path.file.unwrap_or_else(|| "".to_string());
     let result = to_request(path.storage, path.repository, file, site);
     if let Err(error) = result {
         return match error {

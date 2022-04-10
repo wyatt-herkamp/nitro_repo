@@ -16,7 +16,7 @@ use crate::repository::types::RepoResponse::{
 };
 use crate::repository::types::RepositoryRequest;
 use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryType};
-use crate::repository::utils::{get_project_data, get_version, get_version_data, get_versions, process_storage_files};
+use crate::repository::utils::{get_project_data, get_version_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 mod models;

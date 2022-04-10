@@ -17,13 +17,13 @@ use crate::repository::models::RepositorySummary;
 use crate::repository::npm::models::{
     Attachment, LoginRequest, LoginResponse, PublishRequest,
 };
-use crate::repository::npm::utils::{generate_get_response, get_version_data, is_valid, parse_project_to_directory};
+use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
 
 use crate::repository::types::RepoResponse::{BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse};
 use crate::repository::types::{
     Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryType,
 };
-use crate::repository::utils::{get_project_data, get_version, get_versions, process_storage_files};
+use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
 mod models;
