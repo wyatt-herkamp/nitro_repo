@@ -69,7 +69,7 @@ export default defineComponent({
 <style scoped>
 .link {
   @apply block;
-  @apply min-w-max;
+  @apply md:min-w-max;
   @apply p-3;
 }
 .linkText {
@@ -88,6 +88,7 @@ export default defineComponent({
   @apply ease-in-out;
   @apply duration-300;
   @apply hover:bg-slate-700;
+  @apply md:relative;
 }
 .icon {
   @apply mt-2;

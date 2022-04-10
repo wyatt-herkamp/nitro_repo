@@ -1,13 +1,13 @@
 <template>
   <div class="min-h-screen w-full flex flex-wrap lg:flex-nowrap">
-    <div class="w-full m-2 rounded-md bg-gray-900">
-      <div class="flex flex-wrap w-full ml-2">
-        <div class="flex-row m-5">
+    <div class="w-full max-w-full m-2 rounded-md bg-gray-900">
+      <div class="md:flex md:flex-wrap  md:ml-2">
+        <div class="m-5">
           <router-link class="backLink" to="/browse">
             <span>Browse</span>
           </router-link>
           <router-link
-            class="backLink"
+            class="backLink mx-1 sm:m-0 inline-block sm:inline"
             v-for="value in pathSplit"
             :key="value.name"
             :to="'/browse' + value.path"
@@ -16,7 +16,7 @@
             <span> {{ value.name }} </span>
           </router-link>
         </div>
-        <div class="flex-row my-5">
+        <div class="hidden md:flex flex-row my-5">
           <router-link class="align-middle inline-block" :to="up">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -32,10 +32,10 @@
           </router-link>
         </div>
       </div>
-      <div>
+      <div class="md:flex md:flex-wrap  md:ml-2">
         <div
           v-if="tableData != undefined"
-          class="min-w-full grid auto-cols-auto grid-rows-1 text-left p-3"
+          class="w-full grid auto-cols-auto grid-rows-1 text-left p-3"
         >
           <BrowseBox
             v-for="value in tableData"
@@ -47,7 +47,7 @@
     </div>
 
     <div
-      class="float-right lg:w-1/4 m-2 rounded-md bg-slate-800"
+      class="hidden md:block float-right lg:w-1/4 m-2 rounded-md bg-slate-800"
       v-if="activeResponse != undefined"
     >
       <ViewProject
@@ -66,9 +66,10 @@
 </template>
 <style scoped>
 .backLink {
-  @apply py-3;
-  @apply my-1;
+  @apply md:py-3;
+  @apply md:my-1;
   @apply min-w-max;
+
   @apply hover:text-slate-300;
   @apply transition;
   @apply ease-in-out;

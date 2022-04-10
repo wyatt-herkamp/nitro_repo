@@ -34,7 +34,9 @@
             </template>
           </Login>
           <li v-if="user != undefined">
-            <router-link to="/admin" class="fullScreenItem login">Admin</router-link>
+            <router-link to="/admin" class="fullScreenItem login"
+              >Admin</router-link
+            >
           </li>
         </div>
         <!-- Mobile menu button -->
@@ -68,6 +70,11 @@
             >Browse</router-link
           >
         </li>
+        <Login v-if="user == undefined">
+          <template v-slot:button>
+            <button class="smItem login">Login</button>
+          </template>
+        </Login>
         <AdminDropBox @clicked="openNav()" v-if="user != undefined" />
       </ul>
     </div>
