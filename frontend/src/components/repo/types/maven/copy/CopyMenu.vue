@@ -1,28 +1,15 @@
 <template>
-    <div class="repositoryDetails" :class="child ? 'min-w-full' : 'w-full xl:w-1/2 2xl:w-1/3'">
-      <div class="flex-row h-1/3">
-        <h1 class="text-left text-white mt-5 ml-5 font-bold">
-          Repository details
-        </h1>
-        <nav class="flex flex-wrap p-6 m-1">
-          <div
-            v-for="repo in snippets"
-            :key="repo.name"
-            :class="page == repo.name ? 'active item' : 'item'"
-            @click="page = repo.name"
-          >
-            {{ repo.name }}
-          </div>
-        </nav>
-      </div>
-      <template v-for="entry in snippets" :key="entry.name">
-        <div v-if="entry.name === page">
-          <div class="codeCube">
-            <CodeViewComp :snippetInfo="entry" />
-          </div>
+  <CodeMenu :codes="snippets">
+    <template v-slot:header>
+      <div class="grid grid-cols-2">
+        <div>
+          <h1 class="text-left text-white mt-5 ml-5 font-bold">
+            Repository Details
+          </h1>
         </div>
-      </template>
-    </div>
+      </div>
+    </template>
+  </CodeMenu>
 </template>
 
 <script lang="ts">
@@ -64,7 +51,7 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
+<style>
 .active {
   @apply text-yellow-50 !important;
   @apply cursor-default !important;
@@ -81,15 +68,25 @@ export default defineComponent({
   @apply cursor-pointer;
   @apply border-transparent;
 }
-.codeCube {
-  min-height: 100px;
-    @apply m-0;
-
+.card-editor .card-editor.prism-editor__textarea {
+  display: none;
 }
-.card-editor{
-  @apply w-full;
-    @apply m-0;
-
+.card-editor .prism-editor__line-numbers {
+  user-select: none;
+}
+.card-editor .prism-editor-wrapper .prism-editor__editor {
+  pointer-events: auto !important;
+}
+.card-editor .prism-editor-wrapper .prism-editor__container {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-track-color: transparent;
+  margin-right: 27px;
+}
+.card-editor .prism-editor-wrapper .prism-editor__editor,
+.card-editor .prism-editor-wrapper .prism-editor__textarea {
+  white-space: pre !important;
+  min-height: 100px;
 }
 .repositoryDetails {
   @apply flex;
@@ -98,5 +95,4 @@ export default defineComponent({
   @apply bg-slate-800;
   @apply h-4/5;
 }
-
 </style>

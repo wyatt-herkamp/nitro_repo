@@ -1,11 +1,11 @@
 <template>
-  <prism-editor
-      class="card-editor font-mono text-ssm absolute"
-
-    v-model="highlighterComputed.snippet"
-    :highlight="highlighterComputed.highlighter"
-    line-numbers
-  ></prism-editor>
+    <prism-editor
+      class="nitroEditor"
+      v-model="highlighterComputed.snippet"
+      :highlight="highlighterComputed.highlighter"
+      :line-numbers="false"
+      readonly
+    ></prism-editor>
 </template>
 
 
@@ -13,10 +13,11 @@
 import { computed, defineComponent } from "vue";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css";
+
 import prism from "prismjs";
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
-import "@/styles/prism-atom-dark.css";
+import "prismjs/themes/prism-coy.css";
 
 export default defineComponent({
   components: { PrismEditor },

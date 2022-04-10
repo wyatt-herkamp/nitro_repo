@@ -6,6 +6,8 @@ declare module 'vue' {
   export interface GlobalComponents {
     AdminDropBox: typeof import('./src/components/nav/AdminDropBox.vue')['default']
     BrowseBox: typeof import('./src/components/browse/BrowseBox.vue')['default']
+    CodeCard: typeof import('./src/components/common/code/CodeCard.vue')['default']
+    CodeMenu: typeof import('./src/components/common/code/CodeMenu.vue')['default']
     CodeViewComp: typeof import('./src/components/CodeViewComp.vue')['default']
     CopyMenu: typeof import('./src/components/repo/types/maven/copy/CopyMenu.vue')['default']
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
@@ -18,7 +20,9 @@ declare module 'vue' {
     FrontendRepo: typeof import('./src/components/repo/update/FrontendRepo.vue')['default']
     GeneralRepo: typeof import('./src/components/repo/update/GeneralRepo.vue')['default']
     Item: typeof import('./src/components/admin/Item.vue')['default']
+    LinkNavItem: typeof import('./src/components/common/nav/LinkNavItem.vue')['default']
     Login: typeof import('./src/components/nav/Login.vue')['default']
+    LoginComp: typeof import('./src/components/user/LoginComp.vue')['default']
     MavenProjectCopy: typeof import('./src/components/project/types/maven/copy/MavenProjectCopy.vue')['default']
     MavenProjectInfo: typeof import('./src/components/project/types/maven/MavenProjectInfo.vue')['default']
     MavenRepoInfo: typeof import('./src/components/repo/types/maven/MavenRepoInfo.vue')['default']

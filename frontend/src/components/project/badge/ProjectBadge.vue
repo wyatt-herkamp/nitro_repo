@@ -1,13 +1,13 @@
 <template>
-  <div class="repositoryBadges" :class="child ? 'min-w-full' : ''">
-    <div class="flex-row h-1/3">
+  <CodeMenu :codes="snippets">
+    <template v-slot:header>
       <div class="grid grid-cols-2">
         <div>
           <h1 class="text-left text-white mt-5 ml-5 font-bold">
             Project Badge
           </h1>
         </div>
-        <div >
+        <div>
           <img
             class="object-none my-5"
             :src="
@@ -16,30 +16,16 @@
               project.repo_summary.storage +
               '/' +
               project.repo_summary.name +
-              '/'+projectPath+'/badge'
+              '/' +
+              projectPath +
+              '/badge'
             "
           />
         </div>
       </div>
-      <nav class="flex flex-wrap p-6 m-1">
-        <div
-          v-for="repo in snippets"
-          :key="repo.name"
-          :class="page == repo.name ? 'active item' : 'item'"
-          @click="page = repo.name"
-        >
-          {{ repo.name }}
-        </div>
-      </nav>
-    </div>
-    <template v-for="entry in snippets" :key="entry.name">
-      <div v-if="entry.name === page" class="flex-row h-2/3 mb-1">
-        <div class="codeCube">
-          <CodeViewComp :snippetInfo="entry" />
-        </div>
-      </div>
     </template>
-  </div>
+  </CodeMenu>
+  
 </template>
 
 <script lang="ts">
@@ -48,7 +34,7 @@ import { useRouter } from "vue-router";
 import { Project, Repository } from "nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import CodeViewComp from "@/components/CodeViewComp.vue";
-import {createProjectSnippet} from "@/api/repository/BadgeGen";
+import { createProjectSnippet } from "@/api/repository/BadgeGen";
 
 export default defineComponent({
   components: { CodeViewComp },
@@ -59,20 +45,22 @@ export default defineComponent({
     },
     project: {
       required: true,
-      type: Object as () =>Project,
+      type: Object as () => Project,
     },
   },
   setup(props) {
     const url = apiURL;
-    const projectPath = props.project.version.name.replace(":","/").replace(".","/");
+    const projectPath = props.project.version.name
+      .replace(":", "/")
+      .replace(".", "/");
     const snippets = createProjectSnippet(
       props.project.repo_summary.storage,
-      props.project.repo_summary.name,projectPath
-      
+      props.project.repo_summary.name,
+      projectPath
     );
     let page = ref(snippets[0].name);
     console.log(props.child);
-    return { url, page, snippets,projectPath };
+    return { url, page, snippets, projectPath };
   },
 
   methods: {

@@ -1,6 +1,6 @@
 <template>
   <!-- Navbar goes here -->
-  <nav class="bg-slate-900  lg:w-full shadow-lg ">
+  <nav class="bg-slate-900 shadow-lg">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between">
         <div class="flex space-x-7">
@@ -28,11 +28,13 @@
 
         <!-- Secondary Navbar items -->
         <ul class="hidden md:flex items-center space-x-3">
-          <Login v-if="user == undefined">
-            <template v-slot:button>
-              <button class="fullScreenItem login">Login</button>
-            </template>
-          </Login>
+          <button
+            v-if="user == undefined"
+            @click="openLogin = true"
+            class="fullScreenItem login"
+          >
+            Login
+          </button>
           <li v-if="user != undefined">
             <router-link to="/admin" class="fullScreenItem login"
               >Admin</router-link
@@ -70,15 +72,21 @@
             >Browse</router-link
           >
         </li>
-        <Login v-if="user == undefined">
-          <template v-slot:button>
-            <button class="fullScreenItem login">Login</button>
-          </template>
-        </Login>
+        <li>
+          <router-link
+            v-if="user == undefined"
+            to="/login"
+            @click="openNav"
+            class="smItem login"
+            >Login</router-link
+          >
+        </li>
+
         <AdminDropBox @clicked="openNav()" v-if="user != undefined" />
       </ul>
     </div>
   </div>
+  <Login v-model="openLogin" />
 </template>
 
 <script lang="ts">
@@ -103,6 +111,7 @@ export default defineComponent({
     const activeIndex = ref(router.currentRoute.value.name);
     const mobileNav = ref<HTMLDivElement>();
     const navOpen = ref(false);
+    const openLogin = ref(false);
     const openNav = (): void => {
       navOpen.value = !navOpen.value;
 
@@ -120,6 +129,7 @@ export default defineComponent({
       router,
       openNav,
       mobileNav,
+      openLogin,
     };
   },
 });

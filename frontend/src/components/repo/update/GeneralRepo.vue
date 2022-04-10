@@ -74,17 +74,44 @@
     <h2 class="settingHeader">Danger Area</h2>
     <div class="settingContent">
       <div class="settingBox">
-        <DeleteRepo :repository="repository"/>
-
+        <button @click="deleteOpen = true" class="nitroButton">
+          Delete Repository
+        </button>
       </div>
     </div>
   </div>
+  <NitroModal v-model="deleteOpen">
+    <template v-slot:header>
+      Delete {{ repository.storage }}/{{ repository.name }}
+    </template>
+    <template v-slot:content>
+      <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="deleteRepo()">
+        <div class="mb-4">
+          <Switch id="deleteFiles" v-model="deleteFiles">
+            <div class="ml-3 text-slate-50 font-medium">Delete Files</div>
+          </Switch>
+        </div>
+        <button
+          class="
+            bg-slate-900
+            py-2
+            my-3
+            hover:bg-red-700
+            rounded-md
+            cursor-pointer
+            text-white
+          "
+        >
+          Delete Repository
+        </button>
+      </form>
+    </template>
+  </NitroModal>
 </template>
 <script lang="ts">
-import { defineComponent } from "vue";
-import { Repository } from "nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
+import { deleteRepository, Repository } from "nitro_repo-api-wrapper";
 import { setActiveStatus, setPolicy } from "nitro_repo-api-wrapper";
-import DeleteRepo from "./DeleteRepo.vue";
 export default defineComponent({
   props: {
     repository: {
@@ -93,8 +120,11 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const deleteOpen = ref(false);
+    let deleteFiles = ref(false);
+
     const date = new Date(props.repository.created).toLocaleDateString("en-US");
-    return { date };
+    return { date, deleteOpen, deleteFiles };
   },
   methods: {
     async updateActiveStatus() {
@@ -120,6 +150,28 @@ export default defineComponent({
       } else {
         this.$notify({
           title: "Unable Update Repository",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
+      }
+    },
+
+    async deleteRepo() {
+      const response = await deleteRepository(
+        this.$props.repository.name,
+        this.$props.repository.storage,
+        this.deleteFiles,
+        this.$cookie.getCookie("token")
+      );
+      if (response.ok) {
+        this.$notify({
+          title: "Repository Deleted",
+          type: "success",
+        });
+        this.$router.push("/admin/storage/" + this.$props.repository.storage);
+      } else {
+        this.$notify({
+          title: "Unable to Delete Repository",
           text: JSON.stringify(response.val.user_friendly_message),
           type: "error",
         });
@@ -154,6 +206,6 @@ export default defineComponent({
       }
     },
   },
-  components: { DeleteRepo },
+  components: {},
 });
 </script>

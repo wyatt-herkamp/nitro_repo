@@ -1,31 +1,15 @@
 <template>
-  <div
-    class="repositoryDetails"
-    :class="child ? 'min-w-full' : 'w-full xl:w-1/2 2xl:w-1/3'"
-  >
-    <div class="flex-row h-1/3">
-      <h1 class="text-left text-white mt-5 ml-5 font-bold">
-        Project Details
-      </h1>
-      <nav class="flex flex-wrap p-6 m-1">
-        <div
-          v-for="repo in snippets"
-          :key="repo.name"
-          :class="page == repo.name ? 'active item' : 'item'"
-          @click="page = repo.name"
-        >
-          {{ repo.name }}
-        </div>
-      </nav>
-    </div>
-    <template v-for="entry in snippets" :key="entry.name">
-      <div v-if="entry.name === page">
-        <div class="codeCube">
-          <CodeViewComp :snippetInfo="entry" />
+  <CodeMenu :codes="snippets">
+    <template v-slot:header>
+      <div class="grid grid-cols-2">
+        <div>
+          <h1 class="text-left text-white mt-5 ml-5 font-bold">
+            Project Details
+          </h1>
         </div>
       </div>
     </template>
-  </div>
+  </CodeMenu>
 </template>
 
 <script lang="ts">

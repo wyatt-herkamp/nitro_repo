@@ -28,7 +28,7 @@
 .modal {
   @apply relative;
   @apply border;
-  @apply bg-slate-800;
+  @apply bg-slate-700;
   @apply border-black;
   @apply py-5;
   @apply px-10;

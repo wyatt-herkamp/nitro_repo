@@ -1,21 +1,25 @@
 <template>
-  <div class="w-full md:flex md:flex-row">
-
-    <Storages class="mt-2 md:mt-0"  v-if="page == 'storages'"/>
-    <Users class="mt-2 md:mt-0" v-if="page == 'users'"/>
+  <div class="w-full">
+    <SubNavBar v-model="page">
+      <LinkNavItem href="/admin/users" icon="user" name="Users" />
+      <LinkNavItem href="/admin/storages" icon="box" name="Storages" />
+    </SubNavBar>
+    <Storages class="mt-2 md:mt-0" v-if="page == 'storages'" />
+    <Users class="mt-2 md:mt-0" v-if="page == 'users'" />
   </div>
 </template>
 
 <script lang="ts">
-import {defineComponent, onBeforeMount} from "vue";
+import { defineComponent, onBeforeMount, ref } from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import Me from "@/components/Me.vue";
 import Repositories from "@/components/Repositories.vue";
-import SideBar from "@/components/SideBar.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
 import userStore from "@/store/user";
-import {useRoute} from "vue-router";
+import { useRoute } from "vue-router";
+import SubNavBar from "@/components/common/nav/SubNavBar.vue";
+import LinkNavItem from "../../components/common/nav/LinkNavItem.vue";
 
 export default defineComponent({
   components: {
@@ -24,17 +28,18 @@ export default defineComponent({
     Users,
     UpdateUser,
     Me,
-    SideBar,
+    SubNavBar,
+    LinkNavItem,
   },
 
   setup() {
     const route = useRoute();
-    let page = route.params.page as string;
+    let page = ref(route.params.page as string);
 
     onBeforeMount(userStore.getUser);
     return {
       userStore,
-      page
+      page,
     };
   },
 });
