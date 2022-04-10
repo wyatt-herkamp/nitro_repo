@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-slate-800  md:m-1 rounded-lg">
+  <div class="bg-slate-800 md:m-1 rounded-lg">
     <ul class="flex flex-wrap justify-start" ref="menu">
       <slot></slot>
     </ul>
@@ -16,7 +16,7 @@ export default defineComponent({
   props: {
     modelValue: {
       type: String,
-      default: ""
+      default: "",
     },
   },
   setup(props, { emit }) {

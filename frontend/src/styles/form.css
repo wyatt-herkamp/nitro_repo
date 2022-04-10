@@ -49,36 +49,35 @@
   @apply bg-gray-300 !important;
   @apply text-gray-700 !important;
   @apply border-gray-800 !important;
-
 }
-.settingHeader{
+.settingHeader {
   @apply text-slate-100;
-  @apply  mx-auto;
-  @apply  my-4;
+  @apply mx-auto;
+  @apply my-4;
   @apply py-2;
-  @apply  text-left;
+  @apply text-left;
   @apply font-bold;
 }
-.settingSection{
+.settingSection {
   @apply flex;
   @apply flex-wrap;
-  @apply  mb-6
+  @apply mb-6;
 }
-.nitroButton{
+.nitroButton {
   @apply bg-slate-800;
   @apply p-4 my-3;
   @apply rounded-md;
   @apply cursor-pointer;
   @apply text-white;
 }
-.nitroButtonLight{
+.nitroButtonLight {
   @apply bg-slate-500;
   @apply p-4 my-3;
   @apply rounded-md;
   @apply cursor-pointer;
   @apply text-white;
 }
-.openModalButton{
+.openModalButton {
   @apply text-white;
   @apply bg-slate-600;
   @apply ml-3;
@@ -86,13 +85,13 @@
   @apply text-white;
   @apply w-3/4;
 }
-.nitroForm{
+.nitroForm {
   @apply appearance-none;
   @apply flex-col;
 }
-.settingRow{
+.settingRow {
   @apply flex-row;
 }
-.settingBox{
+.settingBox {
   @apply px-3;
 }

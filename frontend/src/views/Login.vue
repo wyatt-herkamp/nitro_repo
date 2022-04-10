@@ -3,7 +3,7 @@
     <div class="py-2 text-left font-bold text-lg">
       <h1>Login</h1>
     </div>
-    <LoginComp  />
+    <LoginComp />
   </div>
 </template>
 

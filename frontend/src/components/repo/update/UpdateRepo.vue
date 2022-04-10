@@ -27,11 +27,12 @@
         <DeployRepo :repository="repository" v-if="view == 'Deploy'" />
       </div>
     </div>
-    <div class="hidden lg:block flex-col h-5/6 lg:w-1/2 rounded-md bg-slate-800">
+    <div
+      class="hidden lg:block flex-col h-5/6 lg:w-1/2 rounded-md bg-slate-800"
+    >
       <ViewRepo :child="true" :repositoryType="repository" />
     </div>
   </div>
-
 </template>
 <style scoped>
 .repositoryDetails {
@@ -85,7 +86,7 @@ export default defineComponent({
     let repository = ref<Repository | undefined>(undefined);
     const cookie = useCookie();
 
-const exampleBadgeURL = ref("");
+    const exampleBadgeURL = ref("");
     const route = useRoute();
 
     const storage = route.params.storage as string;
@@ -117,7 +118,6 @@ const exampleBadgeURL = ref("");
       router,
       view,
       url,
-
     };
   },
   methods: {

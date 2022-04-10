@@ -1,6 +1,8 @@
 <template>
   <div class="settingContent">
-    <h2 class="text-white m-3 text-left">Update {{ user.username }}'s Password</h2>
+    <h2 class="text-white m-3 text-left">
+      Update {{ user.username }}'s Password
+    </h2>
 
     <div class="flex flex-wrap mb-6 justify-center">
       <div class="settingBox">
@@ -22,7 +24,9 @@
         />
       </div>
       <div class="settingBox">
-        <button class="nitroButton" @click="updatePassword()">Update Password</button>
+        <button class="nitroButton" @click="updatePassword()">
+          Update Password
+        </button>
       </div>
     </div>
   </div>
@@ -60,8 +64,8 @@ export default defineComponent({
         this.password.password,
         this.$cookie.getCookie("token")
       );
-      this.password.password ="";
-      this.password.confirm ="";
+      this.password.password = "";
+      this.password.confirm = "";
       if (response.ok) {
         let data = response.val as User;
         this.$notify({

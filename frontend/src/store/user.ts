@@ -3,7 +3,6 @@ import { User } from "nitro_repo-api-wrapper";
 import { getUser } from "nitro_repo-api-wrapper";
 import { useCookie } from "vue-cookie-next";
 
-
 const state = reactive({
   user: <User | undefined>undefined,
 });

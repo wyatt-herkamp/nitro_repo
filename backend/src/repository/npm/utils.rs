@@ -7,15 +7,17 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use crate::error::internal_error::InternalError;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, VersionData};
 
-use crate::repository::utils::{get_project_data};
+use crate::repository::utils::get_project_data;
 use crate::utils::get_current_time;
 
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use diesel::MysqlConnection;
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::repository::models::Repository;
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use diesel::MysqlConnection;
 
-use crate::repository::npm::models::{DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version};
+use crate::repository::npm::models::{
+    DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
+};
 use crate::storage::models::StringStorage;
 use crate::system::action::get_user_by_username;
 
@@ -61,7 +63,6 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     }
 }
 
-
 pub fn update_project(
     storage: &StringStorage,
     repository: &Repository,
@@ -69,7 +70,7 @@ pub fn update_project(
     version: Version,
 ) -> Result<(), InternalError> {
     let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
-    let version_folder = format!("{}/{}/{}", &project_folder,&version.version, VERSION_DATA);
+    let version_folder = format!("{}/{}/{}", &project_folder, &version.version, VERSION_DATA);
 
     trace!("Project File Location {}", project_file);
     let option = storage.get_file(repository, &project_file)?;
@@ -114,25 +115,30 @@ pub fn update_project(
     Ok(())
 }
 
-pub fn get_version_data(storage: &StringStorage,
-                        repository: &Repository,
-                        project_folder: &str, project: &ProjectData) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
+pub fn get_version_data(
+    storage: &StringStorage,
+    repository: &Repository,
+    project_folder: &str,
+    project: &ProjectData,
+) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
     let mut times = NPMTimes {
         created: format_time(project.created),
         modified: format_time(project.updated),
         times: Default::default(),
     };
     let dist_tags = DistTags {
-        latest: project.versions.latest_version.clone()
+        latest: project.versions.latest_version.clone(),
     };
     let mut npm_versions = HashMap::default();
 
     for version in &project.versions.versions {
-        times.times.insert(version.version.clone(), format_time(version.time));
+        times
+            .times
+            .insert(version.version.clone(), format_time(version.time));
         let version_path = format!("{}/{}/package.json", project_folder, &version.version);
         let result = storage.get_file(repository, &version_path)?;
         if result.is_none() {
-            warn!("{} not found",version_path);
+            warn!("{} not found", version_path);
             continue;
         }
         let version_data = result.unwrap();
@@ -143,19 +149,22 @@ pub fn get_version_data(storage: &StringStorage,
     Ok((times, dist_tags, npm_versions))
 }
 
-pub fn generate_get_response(storage: &StringStorage,
-                             repository: &Repository,
-                             project_folder: &str) -> Result<Option<GetResponse>, InternalError> {
+pub fn generate_get_response(
+    storage: &StringStorage,
+    repository: &Repository,
+    project_folder: &str,
+) -> Result<Option<GetResponse>, InternalError> {
     let option = get_project_data(storage, repository, project_folder.to_string())?;
     if option.is_none() {
         return Ok(None);
     }
     let project_data = option.unwrap();
-    let (times, dist_tags, versions) = get_version_data(storage, repository, project_folder, &project_data)?;
+    let (times, dist_tags, versions) =
+        get_version_data(storage, repository, project_folder, &project_data)?;
     let version_path = format!("{}/{}/package.json", project_folder, &dist_tags.latest);
     let result = storage.get_file(repository, &version_path)?;
     if result.is_none() {
-        warn!("{} not found",version_path);
+        warn!("{} not found", version_path);
         return Ok(None);
     }
     let version_data = result.unwrap();

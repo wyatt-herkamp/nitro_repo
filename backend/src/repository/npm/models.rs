@@ -19,7 +19,6 @@ pub struct Attachment {
     pub data: String,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PublishRequest {
     pub name: String,
@@ -27,12 +26,11 @@ pub struct PublishRequest {
     pub versions: HashMap<String, Version>,
 }
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dist {
     pub integrity: String,
     pub shasum: String,
     pub tarball: String,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -74,4 +72,3 @@ pub struct GetResponse {
     #[serde(rename = "dist-tags")]
     pub dist_tags: DistTags,
 }
-

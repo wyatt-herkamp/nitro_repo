@@ -1,11 +1,11 @@
 <template></template>
 
 <script lang="ts">
-import {User} from "nitro_repo-api-wrapper";
-import {defineComponent, ref} from "vue";
-import {useCookie} from "vue-cookie-next";
-import {getUser} from "nitro_repo-api-wrapper";
-import {updateMyPassword} from "nitro_repo-api-wrapper";
+import { User } from "nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
+import { useCookie } from "vue-cookie-next";
+import { getUser } from "nitro_repo-api-wrapper";
+import { updateMyPassword } from "nitro_repo-api-wrapper";
 
 export default defineComponent({
   setup() {
@@ -18,7 +18,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const cookie = useCookie();
     const tab = ref(0);
-    const user = ref<User|undefined>(undefined);
+    const user = ref<User | undefined>(undefined);
     const loadUser = async () => {
       isLoading.value = true;
       try {
@@ -27,12 +27,11 @@ export default defineComponent({
         user.value = value.val as User;
 
         isLoading.value = false;
-      } catch (e) {
-      }
+      } catch (e) {}
     };
     loadUser();
 
-    return {user, password, tab, isLoading};
+    return { user, password, tab, isLoading };
   },
   methods: {
     async updatePassword() {
@@ -43,8 +42,8 @@ export default defineComponent({
         });
       }
       const response = await updateMyPassword(
-          this.password.password,
-          this.$cookie.getCookie("token")
+        this.password.password,
+        this.$cookie.getCookie("token")
       );
       if (response.ok) {
         let data = response.val as User;

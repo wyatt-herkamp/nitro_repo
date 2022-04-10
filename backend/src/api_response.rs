@@ -47,12 +47,12 @@ impl From<RequestErrorResponse> for APIResponse<RequestErrorResponse> {
         APIResponse::new(false, Some(error))
     }
 }
-impl From<bool> for APIResponse<bool>{
+impl From<bool> for APIResponse<bool> {
     fn from(status: bool) -> Self {
-        APIResponse{
+        APIResponse {
             success: status,
             data: Some(status),
-            status_code: None
+            status_code: None,
         }
     }
 }

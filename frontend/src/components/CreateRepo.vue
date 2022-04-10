@@ -44,8 +44,7 @@
     </form>
   </div>
 </template>
-<style scoped>
-</style>
+<style scoped></style>
 <script lang="ts">
 import { Repository } from "nitro_repo-api-wrapper";
 import { defineComponent, ref, watch } from "vue";

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
 use diesel::MysqlConnection;
@@ -11,7 +10,9 @@ use serde_json::Value;
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::nitro::{NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData};
+use crate::repository::nitro::{
+    NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData,
+};
 use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};

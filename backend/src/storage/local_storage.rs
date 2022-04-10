@@ -15,7 +15,9 @@ use log::{debug, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::fs::{create_dir_all, read_dir, read_to_string, remove_file, File, OpenOptions, remove_dir_all};
+use std::fs::{
+    create_dir_all, read_dir, read_to_string, remove_dir_all, remove_file, File, OpenOptions,
+};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
@@ -110,7 +112,11 @@ impl LocationHandler<LocalFile> for LocalStorage {
         Ok(repo)
     }
 
-    fn delete_repository(storage: &Storage<StringMap>, repository: &Repository, delete_files: bool) -> Result<(), InternalError> {
+    fn delete_repository(
+        storage: &Storage<StringMap>,
+        repository: &Repository,
+        delete_files: bool,
+    ) -> Result<(), InternalError> {
         let location = storage.location.get("location").unwrap();
         let storage_location = Path::new(location);
 
@@ -132,13 +138,17 @@ impl LocationHandler<LocalFile> for LocalStorage {
         file.write_all(result.as_bytes())?;
         let path = storage_location.join(&repository.name);
 
-        if delete_files{
-            warn!("All Files for {} are being deleted", &path.to_str().unwrap());
+        if delete_files {
+            warn!(
+                "All Files for {} are being deleted",
+                &path.to_str().unwrap()
+            );
             remove_dir_all(&path)?;
-        }else{
-            let config = storage_location.join(&repository.name).join(REPOSITORY_CONF);
+        } else {
+            let config = storage_location
+                .join(&repository.name)
+                .join(REPOSITORY_CONF);
             remove_file(config)?;
-
         }
         Ok(())
     }
@@ -260,13 +270,17 @@ impl LocationHandler<LocalFile> for LocalStorage {
                 }
                 let full = format!("{}/{}", path, &string);
                 let metadata = entry.metadata().unwrap();
-                let time = metadata.created().unwrap().duration_since(UNIX_EPOCH)?.as_millis();
+                let time = metadata
+                    .created()
+                    .unwrap()
+                    .duration_since(UNIX_EPOCH)?
+                    .as_millis();
                 let file = StorageFile {
                     name: string,
                     full_path: full,
                     directory: entry.file_type()?.is_dir(),
                     file_size: metadata.len(),
-                    created: time
+                    created: time,
                 };
                 files.push(file);
             }
@@ -286,7 +300,7 @@ impl LocationHandler<LocalFile> for LocalStorage {
         let file_location =
             LocalStorage::get_repository_folder(storage, &repository.name).join(location);
 
-        debug!("Storage File Request {}" ,file_location.to_str().unwrap());
+        debug!("Storage File Request {}", file_location.to_str().unwrap());
         if !file_location.exists() {
             return Ok(None);
         }

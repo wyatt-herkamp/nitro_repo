@@ -1,15 +1,14 @@
-use actix_web::{get, web, HttpRequest, HttpResponse};
-use badge_maker::{BadgeBuilder};
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::NitroRepoData;
+use actix_web::{get, web, HttpRequest, HttpResponse};
+use badge_maker::BadgeBuilder;
 
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
 use crate::repository::types::RepositoryType;
-
 
 #[get("/badge/{storage}/{repository}/{file:.*}/badge")]
 pub async fn badge(
@@ -55,6 +54,8 @@ pub async fn badge(
         .style(b_s.style.to_badge_maker_style())
         .color_parse(b_s.color.as_str())
         .label_color_parse(b_s.label_color.as_str())
-        .build().unwrap().svg();
+        .build()
+        .unwrap()
+        .svg();
     return Ok(HttpResponse::Ok().content_type("image/svg+xml").body(svg));
 }

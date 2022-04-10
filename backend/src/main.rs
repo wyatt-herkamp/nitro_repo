@@ -160,7 +160,7 @@ async fn main() -> std::io::Result<()> {
 
     let max_upload = application.max_upload;
 
-    let address =application.address.clone();
+    let address = application.address.clone();
     let data = web::Data::new(nitro_repo);
 
     let server = HttpServer::new(move || {
@@ -193,16 +193,16 @@ async fn main() -> std::io::Result<()> {
     #[cfg(feature = "ssl")]
     {
         if let Some(private) = application.ssl_private_key {
-            let cert = application.ssl_cert_key.expect("If Private Key is set. CERT Should be set");
+            let cert = application
+                .ssl_cert_key
+                .expect("If Private Key is set. CERT Should be set");
             use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
             let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
             builder
                 .set_private_key_file(private, SslFiletype::PEM)
                 .unwrap();
-            builder
-                .set_certificate_chain_file(cert)
-                .unwrap();
+            builder.set_certificate_chain_file(cert).unwrap();
             return server.bind_openssl(address, builder)?.run().await;
         }
     }

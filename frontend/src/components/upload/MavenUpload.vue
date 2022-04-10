@@ -7,12 +7,12 @@
 </style>
 
 <script lang="ts">
-import {defineComponent, ref} from "vue";
+import { defineComponent, ref } from "vue";
 
-import {useCookie} from "vue-cookie-next";
-import {Repository} from "nitro_repo-api-wrapper";
+import { useCookie } from "vue-cookie-next";
+import { Repository } from "nitro_repo-api-wrapper";
 import FileUpload from "../../../src/FileUpload.vue";
-import {VueUploadItem} from "vue-upload-component";
+import { VueUploadItem } from "vue-upload-component";
 import http from "@/http-common";
 
 /**

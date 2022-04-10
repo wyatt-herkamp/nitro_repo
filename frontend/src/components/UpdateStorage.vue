@@ -41,16 +41,7 @@
         <!-- Yes! A Model confirming the delete needs to happen. However right now I just need to delete something -->
         <button
           @click="deleteStorage"
-          class="
-            bg-blue-500
-            hover:bg-blue-700
-            text-white
-            font-bold
-            py-2
-            px-4
-            rounded
-            m-5
-          "
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-5"
         >
           Delete Storage
         </button>
@@ -176,6 +167,6 @@ export default defineComponent({
       console.log("TODO");
     },
   },
-  components: {  Repositories },
+  components: { Repositories },
 });
 </script>

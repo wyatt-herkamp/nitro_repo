@@ -1,13 +1,11 @@
 <template>
   <prism-editor
-      class="card-editor font-mono text-ssm absolute"
-
+    class="card-editor font-mono text-ssm absolute"
     v-model="highlighterComputed.snippet"
     :highlight="highlighterComputed.highlighter"
     line-numbers
   ></prism-editor>
 </template>
-
 
 <script lang="ts">
 import { computed, defineComponent } from "vue";

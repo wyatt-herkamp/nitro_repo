@@ -25,7 +25,6 @@
       </div>
     </template>
   </CodeMenu>
-  
 </template>
 
 <script lang="ts">

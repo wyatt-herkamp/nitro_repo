@@ -2,10 +2,25 @@
   <div class="hidden md:flex min-h-screen">
     <div class="flex flex-col w-56 bg-slate-800">
       <ul class="flex flex-col py-4">
-        
-        <Item v-if="back != undefined" :href="'/admin/'+back" icon="arrow-back" name="Back" :active="back != undefined" />
-        <Item href="/admin/users" icon="user" name="Users" :active="currentPage=='users'" />
-        <Item href="/admin/storages" icon="box" name="Storages" :active="currentPage=='storages'" />
+        <Item
+          v-if="back != undefined"
+          :href="'/admin/' + back"
+          icon="arrow-back"
+          name="Back"
+          :active="back != undefined"
+        />
+        <Item
+          href="/admin/users"
+          icon="user"
+          name="Users"
+          :active="currentPage == 'users'"
+        />
+        <Item
+          href="/admin/storages"
+          icon="box"
+          name="Storages"
+          :active="currentPage == 'storages'"
+        />
       </ul>
     </div>
   </div>
@@ -26,7 +41,7 @@ export default defineComponent({
     back: {
       required: false,
       type: String,
-    },    
+    },
     currentPage: {
       required: false,
       type: String,
@@ -34,4 +49,3 @@ export default defineComponent({
   },
 });
 </script>
-

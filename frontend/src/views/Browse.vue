@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen w-full flex flex-wrap lg:flex-nowrap">
     <div class="w-full max-w-full m-2 rounded-md bg-gray-900">
-      <div class="md:flex md:flex-wrap  md:ml-2">
+      <div class="md:flex md:flex-wrap md:ml-2">
         <div class="m-5">
           <router-link class="backLink" to="/browse">
             <span>Browse</span>
@@ -32,7 +32,7 @@
           </router-link>
         </div>
       </div>
-      <div class="md:flex md:flex-wrap  md:ml-2">
+      <div class="md:flex md:flex-wrap md:ml-2">
         <div
           v-if="tableData != undefined"
           class="w-full grid auto-cols-auto grid-rows-1 text-left p-3"

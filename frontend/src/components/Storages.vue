@@ -13,10 +13,7 @@
         </template>
       </SearchableList>
     </div>
-    <div
-      v-if="openModel "
-      class=" mx-auto  lg:w-1/4 lg:flex-row"
-    >
+    <div v-if="openModel" class="mx-auto lg:w-1/4 lg:flex-row">
       <CreateStorage v-model="openModel" />
     </div>
   </div>
@@ -63,4 +60,3 @@ export default defineComponent({
   },
 });
 </script>
-

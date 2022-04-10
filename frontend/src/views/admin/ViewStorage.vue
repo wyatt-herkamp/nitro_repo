@@ -1,11 +1,7 @@
 <template>
-   <div>
+  <div>
     <SubNavBar>
-      <LinkNavItem
-        :href="'/admin/storages/'"
-        icon="arrow-back"
-        name="Back"
-      />
+      <LinkNavItem :href="'/admin/storages/'" icon="arrow-back" name="Back" />
 
       <LinkNavItem href="/admin/users" icon="user" name="Users" />
       <LinkNavItem href="/admin/storages" icon="box" name="Storages" />
@@ -21,11 +17,11 @@ import UpdateStorage from "@/components/UpdateStorage.vue";
 import { useRoute } from "vue-router";
 
 export default defineComponent({
-  components: {UpdateStorage },
+  components: { UpdateStorage },
   setup() {
     const route = useRoute();
     const storage = route.params.storage as string;
-    return {storage};
+    return { storage };
   },
 });
 </script>

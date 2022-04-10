@@ -78,7 +78,7 @@ export default defineComponent({
 
     return {
       exampleBadgeURL,
-      repository,      
+      repository,
 
       router,
       options,

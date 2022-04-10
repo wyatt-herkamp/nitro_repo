@@ -1,9 +1,10 @@
 <template>
   <li
     class="rounded-lg mx-2 bg-slate-700 p-2 m-3 text-white"
-    :class='
-      [[active ? "active" : "cursor-pointer"], 
-      [disabled ? "cursor-default" : ""]]'
+    :class="[
+      [active ? 'active' : 'cursor-pointer'],
+      [disabled ? 'cursor-default' : ''],
+    ]"
     @click="handleClick()"
   >
     <slot></slot>
@@ -35,12 +36,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const rootMenu = inject<MenuProvider>("rootMenu") as MenuProvider;
     const active = computed(() => {
-      console.log(props.index ===
-        rootMenu.activeIndex)
-      return (
-        props.index ===
-        rootMenu.activeIndex
-      );
+      console.log(props.index === rootMenu.activeIndex);
+      return props.index === rootMenu.activeIndex;
     });
 
     const item: MenuItemType = reactive({

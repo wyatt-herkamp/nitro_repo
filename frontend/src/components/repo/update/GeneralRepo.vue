@@ -92,15 +92,7 @@
           </Switch>
         </div>
         <button
-          class="
-            bg-slate-900
-            py-2
-            my-3
-            hover:bg-red-700
-            rounded-md
-            cursor-pointer
-            text-white
-          "
+          class="bg-slate-900 py-2 my-3 hover:bg-red-700 rounded-md cursor-pointer text-white"
         >
           Delete Repository
         </button>

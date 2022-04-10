@@ -1,6 +1,8 @@
 <template>
   <div class="w-full">
-    <div class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4 max-w-screen-xl">
+    <div
+      class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4 max-w-screen-xl"
+    >
       <div id="header">
         <slot name="title"></slot>
       </div>
@@ -97,4 +99,4 @@ export default defineComponent({
   },
 });
 </script>
-      error,
+error,

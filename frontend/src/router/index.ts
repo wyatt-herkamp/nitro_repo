@@ -21,7 +21,8 @@ const routes: Array<RouteRecordRaw> = [
     path: "/me",
     name: "Me",
     component: Me,
-  }, {
+  },
+  {
     path: "/login",
     name: "Login",
     component: Login,
@@ -69,8 +70,6 @@ const routes: Array<RouteRecordRaw> = [
     name: "Project",
     component: Project,
   },
-
-
 ];
 
 const router = createRouter({

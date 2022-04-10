@@ -1,13 +1,13 @@
 <template></template>
 
 <script lang="ts">
-import {defineComponent, onBeforeMount, ref} from "vue";
+import { defineComponent, onBeforeMount, ref } from "vue";
 
 import userStore from "@/store/user";
-import {useCookie} from "vue-cookie-next";
+import { useCookie } from "vue-cookie-next";
 import MavenUpload from "@/components/upload/MavenUpload.vue";
-import {useRoute} from "vue-router";
-import {getRepoByNameAndStorage, Repository} from "nitro_repo-api-wrapper";
+import { useRoute } from "vue-router";
+import { getRepoByNameAndStorage, Repository } from "nitro_repo-api-wrapper";
 
 export default defineComponent({
   components: { MavenUpload },

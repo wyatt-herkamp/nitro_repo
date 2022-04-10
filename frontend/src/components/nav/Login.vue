@@ -5,8 +5,8 @@
   </NitroModal>
 </template>
 <style scoped>
-:global(.loginButton){
-  @apply bg-slate-900  ;
+:global(.loginButton) {
+  @apply bg-slate-900;
 }
 </style>
 <script lang="ts">

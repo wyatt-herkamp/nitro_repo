@@ -3,25 +3,26 @@ use std::io::Cursor;
 use std::path::Path;
 
 use actix_files::Files;
-use actix_web::{web, HttpResponse};
 use actix_web::web::Data;
+use actix_web::{web, HttpResponse};
 use handlebars::Handlebars;
 use log::debug;
-use zip::ZipArchive;
 use serde_json::json;
+use zip::ZipArchive;
 
 use crate::api_response::SiteResponse;
-use crate::{NitroRepoData};
+use crate::NitroRepoData;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
     web_data();
     let mut reg = Handlebars::new();
-    let content = read_to_string(Path::new("frontend").join("index.html")).expect("Unable to read index.html");
-    reg.register_template_string("index", content).expect("Unable to Parse Template");
+    let content = read_to_string(Path::new("frontend").join("index.html"))
+        .expect("Unable to read index.html");
+    reg.register_template_string("index", content)
+        .expect("Unable to Parse Template");
     let reg = Data::new(reg);
-    cfg
-        .app_data(reg.clone())
+    cfg.app_data(reg.clone())
         .route("/me", web::get().to(frontend_handler))
         .route("/browse/{file:.*}", web::get().to(frontend_handler))
         .route("/browse", web::get().to(frontend_handler))
@@ -49,7 +50,6 @@ fn web_data() {
         archive.extract(&path).unwrap();
     }
 }
-
 
 pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
     let guard = site.settings.lock().unwrap();

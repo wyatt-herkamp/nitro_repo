@@ -1,11 +1,7 @@
 <template>
-   <div>
-         <SubNavBar>
-      <LinkNavItem
-        :href="'/admin/users/'"
-        icon="arrow-back"
-        name="Back"
-      />
+  <div>
+    <SubNavBar>
+      <LinkNavItem :href="'/admin/users/'" icon="arrow-back" name="Back" />
 
       <LinkNavItem href="/admin/users" icon="user" name="Users" />
       <LinkNavItem href="/admin/storages" icon="box" name="Storages" />
@@ -21,11 +17,11 @@ import UpdateUser from "@/components/UpdateUser.vue";
 import { useRoute } from "vue-router";
 
 export default defineComponent({
-  components: {  UpdateUser },
+  components: { UpdateUser },
   setup() {
     const route = useRoute();
     const user = Number.parseInt(route.params.user as string);
-    return {user};
+    return { user };
   },
 });
 </script>

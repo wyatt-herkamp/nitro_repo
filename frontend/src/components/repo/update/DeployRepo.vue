@@ -4,7 +4,6 @@
     <div class="settingSection">
       <div class="settingBox">
         <label for="grid-policy">Report Values</label>
-
       </div>
     </div>
     <h2 class="settingHeader">Update</h2>
@@ -39,10 +38,10 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data () {
+  data() {
     return {
-      options: ['DeployerUsername', 'Time']
-    }
+      options: ["DeployerUsername", "Time"],
+    };
   },
   methods: {
     async updateReport() {
@@ -56,7 +55,8 @@ export default defineComponent({
       }
 
       const response = await updateDeployReport(
-        this.repository.storage,this.repository.name,
+        this.repository.storage,
+        this.repository.name,
         this.repository.deploy_settings.report_generation.active,
         this.repository.deploy_settings.report_generation.values,
         this.$cookie.getCookie("token")

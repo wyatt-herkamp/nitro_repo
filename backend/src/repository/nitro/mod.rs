@@ -1,8 +1,7 @@
-use serde::{Deserialize, Serialize};
 use crate::repository::models::RepositorySummary;
 use crate::repository::types::Project;
 use crate::storage::StorageFile;
-
+use serde::{Deserialize, Serialize};
 
 use crate::utils::get_current_time;
 
@@ -22,7 +21,6 @@ pub enum ResponseType {
     Other,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VersionBrowseResponse {
     pub project: Option<Project>,
@@ -35,7 +33,6 @@ pub struct NitroFile {
     #[serde(flatten)]
     pub file: StorageFile,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RepositoryListing {

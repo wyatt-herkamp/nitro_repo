@@ -1,5 +1,5 @@
 <template>
-  <CodeMenu  :codes="snippets">
+  <CodeMenu :codes="snippets">
     <template v-slot:header>
       <div class="grid grid-cols-2">
         <div>

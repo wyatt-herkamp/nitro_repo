@@ -1,8 +1,7 @@
-
 <template>
   <div class="flex w-full">
     <form class="appearance-none flex-col" @submit.prevent="onSubmit()">
-      <div class="flex flex-row ">
+      <div class="flex flex-row">
         <div class="grow">
           <p class="header">Create User</p>
         </div>

@@ -102,7 +102,6 @@ pub struct Application {
     pub mode: Mode,
     pub ssl_private_key: Option<String>,
     pub ssl_cert_key: Option<String>,
-
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

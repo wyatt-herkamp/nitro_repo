@@ -11,13 +11,13 @@ use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
+use crate::repository::nitro::ResponseType::Storage;
+use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
+use crate::repository::npm::NPMHandler;
 use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
+use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
-use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
-use crate::repository::nitro::ResponseType::{Storage};
-use crate::repository::npm::NPMHandler;
-use crate::storage::StorageFile;
 
 //
 
@@ -55,7 +55,11 @@ pub fn to_request(
 }
 
 pub fn generate_storage_list(site: NitroRepoData) -> NitroFileResponse {
-    let mut storages = NitroFileResponse { files: vec![], response_type: ResponseType::Other, active_dir: "".to_string() };
+    let mut storages = NitroFileResponse {
+        files: vec![],
+        response_type: ResponseType::Other,
+        active_dir: "".to_string(),
+    };
 
     for (name, storage) in site.storages.lock().unwrap().iter() {
         storages.files.push(NitroFile {
@@ -96,7 +100,11 @@ pub async fn browse_storage(
     }
     let storage = storage.unwrap();
     let map = storage.get_repositories()?;
-    let mut repos = NitroFileResponse { files: vec![], response_type: ResponseType::Storage, active_dir: string.clone() };
+    let mut repos = NitroFileResponse {
+        files: vec![],
+        response_type: ResponseType::Storage,
+        active_dir: string.clone(),
+    };
     for (name, sum) in map {
         repos.files.push(NitroFile {
             response_type: ResponseType::Repository(sum),
@@ -112,7 +120,7 @@ pub async fn browse_storage(
     APIResponse::respond_new(Some(repos), &r)
 }
 #[derive(Serialize, Deserialize, Clone)]
-pub struct GetPath{
+pub struct GetPath {
     pub storage: String,
     pub repository: String,
     pub file: Option<String>,
@@ -215,9 +223,7 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
             APIResponse::new(true, Some(value)).respond(&r)
         }
 
-        RepoResponse::NitroFileList(value) => {
-            APIResponse::new(true, Some(value)).respond(&r)
-        }
+        RepoResponse::NitroFileList(value) => APIResponse::new(true, Some(value)).respond(&r),
     };
 }
 

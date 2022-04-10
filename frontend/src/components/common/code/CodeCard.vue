@@ -1,13 +1,12 @@
 <template>
-    <prism-editor
-      class="nitroEditor"
-      v-model="highlighterComputed.snippet"
-      :highlight="highlighterComputed.highlighter"
-      :line-numbers="false"
-      readonly
-    ></prism-editor>
+  <prism-editor
+    class="nitroEditor"
+    v-model="highlighterComputed.snippet"
+    :highlight="highlighterComputed.highlighter"
+    :line-numbers="false"
+    readonly
+  ></prism-editor>
 </template>
-
 
 <script lang="ts">
 import { computed, defineComponent } from "vue";

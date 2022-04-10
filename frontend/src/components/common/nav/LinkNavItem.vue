@@ -9,7 +9,7 @@
       </span>
       <span
         :class="[active ? 'active' : '']"
-        class=" text-sm font-medium mr-2"
+        class="text-sm font-medium mr-2"
         >{{ name }}</span
       >
     </router-link>

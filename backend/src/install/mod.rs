@@ -137,7 +137,7 @@ impl From<OtherStage> for Application {
             max_upload: other.max_upload.unwrap().parse().unwrap(),
             mode: Mode::Release,
             ssl_private_key: None,
-            ssl_cert_key: None
+            ssl_cert_key: None,
         }
     }
 }
@@ -265,7 +265,7 @@ fn run_app(
                                 app.other_stage.address = value;
                             } else if app.other_stage.app_url.is_none() {
                                 app.other_stage.app_url = value;
-                            }  else if app.other_stage.log_location.is_none() {
+                            } else if app.other_stage.log_location.is_none() {
                                 app.other_stage.log_location = value;
                             } else if app.other_stage.max_upload.is_none() {
                                 app.other_stage.max_upload = value;
