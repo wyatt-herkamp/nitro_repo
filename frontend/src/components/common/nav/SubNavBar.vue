@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-slate-800 md:w-8/12 lg:w-full lg:mx-2 my-2  mx-auto lg:p-6 ">
-    <ul class="flex flex-wrap" ref="menu">
+  <div class="bg-slate-800  md:m-1 rounded-lg">
+    <ul class="flex flex-wrap justify-start" ref="menu">
       <slot></slot>
     </ul>
   </div>
@@ -14,7 +14,10 @@ import { MenuProvider } from "./SubNavType";
 
 export default defineComponent({
   props: {
-    modelValue: String,
+    modelValue: {
+      type: String,
+      default: ""
+    },
   },
   setup(props, { emit }) {
     const menu = ref<HTMLUListElement>();

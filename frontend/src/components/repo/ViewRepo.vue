@@ -1,18 +1,6 @@
 <template>
   <div v-if="repository != undefined">
-    <div :class="child ? 'my-3' : 'flex flex-wrap'">
-      <MavenRepoInfo
-        :class="child ? '' : 'm-3 flex flex-col'"
-        v-if="repository.repo_type == 'maven'"
-        :repository="repository"
-        :child="child"
-      />
-      <RepositoryBadge
-        :class="child ? 'my-3' : 'm-3 flex flex-col'"
-        :repository="repository"
-        :child="child"
-      />
-    </div>
+    <RepositoryBadge :repository="repository" :child="child" />
   </div>
 </template>
 <style scoped></style>

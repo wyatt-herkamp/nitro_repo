@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="repository != undefined"
-    class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
+    class="flex"
   >
-    <div class="flex flex-col w-full">
+    <div class="flex-col ">
       <SubNavBar v-model="view">
         <SubNavItem index="General"> General </SubNavItem>
         <SubNavItem index="Frontend"> Frontend </SubNavItem>
@@ -23,15 +23,17 @@
           />
         </li>
       </SubNavBar>
-      <div class="flex flex-col float-right w-auto">
-        <GeneralRepo :repository="repository" v-if="view == 'General'" />
-        <FrontendRepo :repository="repository" v-if="view == 'Frontend'" />
-        <SecurityRepo :repository="repository" v-if="view == 'Security'" />
-        <DeployRepo :repository="repository" v-if="view == 'Deploy'" />
+      <div class="flex flex-wrap">
+        <div class="lg:w-3/4 w-auto">
+          <GeneralRepo :repository="repository" v-if="view == 'General'" />
+          <FrontendRepo :repository="repository" v-if="view == 'Frontend'" />
+          <SecurityRepo :repository="repository" v-if="view == 'Security'" />
+          <DeployRepo :repository="repository" v-if="view == 'Deploy'" />
+        </div>
+        <div class=" lg:w-1/4 bg-slate-800">
+          <ViewRepo :child="true" :repositoryType="repository" />
+        </div>
       </div>
-    </div>
-    <div class="float-right lg:w-1/4 bg-slate-800">
-      <ViewRepo :child="true" :repositoryType="repository" />
     </div>
   </div>
 </template>
@@ -79,13 +81,14 @@ export default defineComponent({
     const url = apiURL;
 
     const router = useRouter();
-    const route = useRoute();
     let view = ref("General");
 
     let repository = ref<Repository | undefined>(undefined);
     const cookie = useCookie();
     const isLoading = ref(false);
     const exampleBadgeURL = ref("");
+    const route = useRoute();
+
     const storage = route.params.storage as string;
     const repo = route.params.repo as string;
     const { meta } = useMeta({

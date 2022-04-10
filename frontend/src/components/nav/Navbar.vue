@@ -1,6 +1,6 @@
 <template>
   <!-- Navbar goes here -->
-  <nav class="bg-slate-900  lg:w-full shadow-lg ">
+  <nav class="bg-slate-900   shadow-lg ">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between">
         <div class="flex space-x-7">
