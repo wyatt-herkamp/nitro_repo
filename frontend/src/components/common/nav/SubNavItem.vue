@@ -1,6 +1,6 @@
 <template>
   <li
-    class="mx-2 py-1.5 rounded-lg bg-slate-700 font-bold px-6 m-1 text-white"
+    class=" py-1.5 rounded-lg mx-auto sm:mx-2 bg-slate-700 font-bold px-6 m-1 text-white"
     :class="active ? '' : 'cursor-pointer'"
     @click="handleClick()"
   >

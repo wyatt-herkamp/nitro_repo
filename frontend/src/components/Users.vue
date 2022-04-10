@@ -1,5 +1,5 @@
 <template>
-  <div :class="createUser ? 'flex w-full' : 'w-full lg:w-3/4  lg:mx-auto'">
+  <div :class="createUser ? 'flex w-full' : 'w-full lg:w-3/4  xl:mx-auto'">
     <div class="md:p-4" :class="createUser ? 'hidden lg:block lg:grow ' : 'w-full'">
       <SearchableList v-model="list">
         <template v-slot:title> Users </template>

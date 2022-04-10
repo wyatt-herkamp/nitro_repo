@@ -1,5 +1,5 @@
 <template>
-  <div :class="openModel ? 'flex w-full' : 'w-full lg:w-3/4  lg:mx-auto'">
+  <div :class="openModel ? 'flex w-full' : 'w-full lg:w-3/4  xl:mx-auto'">
     <div
       class="md:p-4"
       :class="openModel ? 'hidden lg:block lg:grow ' : 'w-full'"

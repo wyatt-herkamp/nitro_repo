@@ -1,5 +1,6 @@
 <template>
-  <div class="flex flex-row">
+   <div class="w-full md:flex md:flex-row">
+
     <SideBar back="storages" />
     <UpdateStorage :storageId="storage" />
   </div>

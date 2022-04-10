@@ -1,17 +1,20 @@
 <template>
   <div class="w-full">
-    <div class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4">
+    <div class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4 max-w-screen-xl">
       <div id="header">
         <slot name="title"></slot>
       </div>
       <div class="flex flex-row">
-        <div class="searchSection">
-          <div class="pl-2 pt-2">
-            <box-icon name="search-alt-2"></box-icon>
+        <div class="md:w-3/4 inline-block">
+          <div class="searchSection">
+            <div class="pl-2 pt-2">
+              <box-icon name="search-alt-2"></box-icon>
+            </div>
+            <input id="search" placeholder="Search Here" type="text" />
           </div>
-          <input id="search" placeholder="Search Here" type="text" />
         </div>
-        <div class="createSection">
+
+        <div class="createSection inline-block">
           <slot name="createButton"></slot>
         </div>
       </div>
@@ -54,11 +57,10 @@
 }
 .searchSection {
   @apply flex;
-  
+
   @apply items-center;
   @apply bg-gray-200;
   @apply rounded-md;
-  @apply w-3/4;
   @apply h-max;
   @apply my-2;
 }
@@ -75,7 +77,6 @@
   @apply text-gray-700;
   @apply leading-tight;
   @apply focus:outline-none;
-
 }
 </style>
 <script lang="ts">

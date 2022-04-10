@@ -1,6 +1,5 @@
 <template>
   <div class="w-full md:flex md:flex-row">
-    <SideBar :currentPage="page"/>
 
     <Storages class="mt-2 md:mt-0"  v-if="page == 'storages'"/>
     <Users class="mt-2 md:mt-0" v-if="page == 'users'"/>
