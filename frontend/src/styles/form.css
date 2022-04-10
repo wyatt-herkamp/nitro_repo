@@ -4,13 +4,6 @@
   @apply my-0;
 }
 
-.settingBox {
-  @apply md:w-1/2;
-  @apply px-3;
-  @apply my-0;
-
-}
-
 .nitroLabel {
   @apply block;
   @apply uppercase;
@@ -86,12 +79,26 @@
   @apply text-white;
 }
 .openModalButton{
+  @apply inline-block;
+  @apply p-4 my-3;
+  @apply text-white;
   @apply bg-slate-600;
   @apply ml-3;
   @apply rounded-md;
   @apply cursor-pointer;
   @apply text-white;
-  @apply w-full;
+  @apply w-3/4;
   @apply flex;
+  @apply text-center;
   @apply flex-row;
+}
+.nitroForm{
+  @apply appearance-none;
+  @apply flex-col;
+}
+.settingRow{
+  @apply flex-row;
+}
+.settingBox{
+  @apply px-3;
 }

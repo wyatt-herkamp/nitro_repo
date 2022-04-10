@@ -27,7 +27,7 @@
         </div>
 
         <!-- Secondary Navbar items -->
-        <div class="hidden md:flex items-center space-x-3">
+        <ul class="hidden md:flex items-center space-x-3">
           <Login v-if="user == undefined">
             <template v-slot:button>
               <button class="fullScreenItem login">Login</button>
@@ -38,7 +38,7 @@
               >Admin</router-link
             >
           </li>
-        </div>
+        </ul>
         <!-- Mobile menu button -->
         <div class="md:hidden flex items-center">
           <button @click="openNav" class="outline-none mobile-menu-button">
@@ -72,7 +72,7 @@
         </li>
         <Login v-if="user == undefined">
           <template v-slot:button>
-            <button class="smItem login">Login</button>
+            <button class="fullScreenItem login">Login</button>
           </template>
         </Login>
         <AdminDropBox @clicked="openNav()" v-if="user != undefined" />

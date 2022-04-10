@@ -1,8 +1,9 @@
 <template>
-  <CreateRepo v-model="openModel" :storage="storage" />
-
-  <div class="w-full">
-    <div class="flex p-4">
+  <div :class="openModel ? 'flex w-full' : 'w-full lg:w-3/4  lg:mx-auto'">
+    <div
+      class="md:p-4"
+      :class="openModel ? 'hidden lg:block lg:grow ' : 'w-full'"
+    >
       <SearchableList v-model="list">
         <template v-slot:title> Repositories </template>
         <template v-slot:createButton>
@@ -11,6 +12,9 @@
           </button>
         </template>
       </SearchableList>
+    </div>
+    <div v-if="openModel" class="mx-auto lg:w-1/4 lg:flex-row">
+      <CreateRepo v-model="openModel" :storage="storage" />
     </div>
   </div>
 </template>

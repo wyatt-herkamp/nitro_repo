@@ -1,72 +1,86 @@
 
 <template>
-  <NitroModal v-model="showModel">
-    <template v-slot:header> Create User </template>
-    <template v-slot:content>
-      <form class="flex flex-col w-96 sm:w-65" @submit.prevent="onSubmit()">
-        <div class="flex flex-row">
-          <div class="settingBox">
-            <label class="nitroLabel"> Name </label>
-            <input
-              class="nitroTextInput"
-              id="nitroLabel"
-              type="text"
-              placeholder="Example"
-              v-model="form.name"
-              required
-            />
-          </div>
-          <div class="settingBox">
-            <label class="nitroLabel"> Username </label>
-            <input
-              class="nitroTextInput"
-              id="nitroLabel"
-              type="text"
-              placeholder="Username"
-              v-model="form.username"
-              required
-            />
-          </div>
+  <div class="flex w-full">
+    <form class="appearance-none flex-col" @submit.prevent="onSubmit()">
+      <div class="flex flex-row ">
+        <div class="grow">
+          <p class="header">Create User</p>
         </div>
-        <div class="flex flex-row">
-          <div class="px-3 w-96 sm:w-65">
-            <label class="nitroLabel"> Email </label>
-            <input
-              class="nitroTextInput email"
-              id="nitroLabel"
-              type="email"
-              placeholder="example@nitro_repo.kigntux.dev"
-              v-model="form.email"
-              required
-            />
-          </div>
+        <div class="m-auto pt-5 pr-3">
+          <button
+            type="button"
+            class="xButton block"
+            @click="showModel = false"
+          >
+            🗙
+          </button>
         </div>
-        <div class="flex flex-row">
-          <div class="settingBox">
-            <label class="nitroLabel"> Password </label>
-            <input
-              class="nitroTextInput"
-              id="nitroLabel"
-              type="password"
-              v-model="form.password.password"
-              required
-            />
-          </div>
-          <div class="settingBox">
-            <label class="nitroLabel"> Confirm Password </label>
-            <input
-              class="nitroTextInput"
-              id="nitroLabel"
-              type="password"
-              v-model="form.password.password_two"
-              required
-            />
-          </div>
+      </div>
+
+      <div class="flex-row">
+        <div class="px-3">
+          <label class="nitroLabel"> Name </label>
+          <input
+            class="nitroTextInput"
+            id="nitroLabel"
+            type="text"
+            placeholder="Example"
+            v-model="form.name"
+            required
+          />
         </div>
-        <button class="nitroButtonLight">Create User</button>
-      </form>
-    </template>
-  </NitroModal>
+      </div>
+      <div class="flex-row">
+        <div class="px-3">
+          <label class="nitroLabel"> Username </label>
+          <input
+            class="nitroTextInput"
+            id="nitroLabel"
+            type="text"
+            placeholder="Username"
+            v-model="form.username"
+            required
+          />
+        </div>
+      </div>
+      <div class="flex-row">
+        <div class="px-3">
+          <label class="nitroLabel"> Email </label>
+          <input
+            class="nitroTextInput email"
+            id="nitroLabel"
+            type="email"
+            placeholder="example@nitro_repo.kigntux.dev"
+            v-model="form.email"
+            required
+          />
+        </div>
+      </div>
+      <div class="flex flex-row flex-wrap md:flex-nowrap">
+        <div class="px-3 md:w-1/2">
+          <label class="nitroLabel"> Password </label>
+          <input
+            class="nitroTextInput"
+            id="nitroLabel"
+            type="password"
+            v-model="form.password.password"
+            required
+          />
+        </div>
+        <div class="px-3 md:w-1/2">
+          <label class="nitroLabel"> Confirm Password </label>
+          <input
+            class="nitroTextInput"
+            id="nitroLabel"
+            type="password"
+            v-model="form.password.password_two"
+            required
+          />
+        </div>
+      </div>
+      <button class="nitroButtonLight">Create User</button>
+    </form>
+  </div>
 </template>
 <script lang="ts">
 import { User } from "nitro_repo-api-wrapper";
@@ -87,12 +101,10 @@ export default defineComponent({
         emit("update:modelValue", val);
       }
     );
-    watch(
-      showModel,
-      (val) => {
-        emit("update:modelValue", val);
-      }
-    );
+    watch(showModel, (val) => {
+      console.log(val);
+      emit("update:modelValue", val);
+    });
 
     let form = ref({
       error: "",
@@ -105,7 +117,7 @@ export default defineComponent({
       },
       permissions: { deployer: false, admin: false },
     });
-    return { form ,showModel};
+    return { form, showModel };
   },
   methods: {
     async onSubmit() {
@@ -141,8 +153,15 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-.settingBox {
-  @apply md:w-1/2;
-  @apply px-3;
+.xButton {
+  @apply float-right;
+}
+.header {
+  @apply font-bold;
+  @apply text-xl;
+  @apply pb-2;
+  @apply pt-2;
+  @apply text-left;
+  @apply w-3/4;
 }
 </style>

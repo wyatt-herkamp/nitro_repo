@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full float-left">
+  <div class="w-full">
     <div class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4">
       <div id="header">
         <slot name="title"></slot>
@@ -36,6 +36,7 @@
   @apply block;
   @apply text-slate-50;
   @apply text-lg;
+  @apply text-left;
   @apply font-semibold;
   @apply py-2;
   @apply px-2;
