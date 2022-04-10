@@ -1,24 +1,15 @@
 <template>
-  <div class="repositoryDetails" :class="child ? '' : ' xl:w-1/2 2xl:w-1/3'">
-    <div class="flex-row h-1/3">
-      <h1 class="text-left text-white mt-5 ml-5 font-bold">
-        Repository details
-      </h1>
-      <nav class="flex flex-wrap p-6 m-1">
-        <div
-          v-for="repo in snippets"
-          :key="repo.name"
-          :class="page == repo.name ? 'active item' : 'item'"
-          @click="page = repo.name"
-        >
-          {{ repo.name }}
+  <CodeMenu :codes="snippets">
+    <template v-slot:header>
+      <div class="grid grid-cols-2">
+        <div>
+          <h1 class="text-left text-white mt-5 ml-5 font-bold">
+            Repository Details
+          </h1>
         </div>
-      </nav>
-    </div>
-    <div class="overflow-hidden">
-
-    </div>
-  </div>
+      </div>
+    </template>
+  </CodeMenu>
 </template>
 
 <script lang="ts">
@@ -92,7 +83,7 @@ export default defineComponent({
   scrollbar-track-color: transparent;
   margin-right: 27px;
 }
-.card-editor .prism-editor-wrapper .prism-editor__editor, 
+.card-editor .prism-editor-wrapper .prism-editor__editor,
 .card-editor .prism-editor-wrapper .prism-editor__textarea {
   white-space: pre !important;
   min-height: 100px;

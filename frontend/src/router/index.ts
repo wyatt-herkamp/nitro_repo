@@ -9,6 +9,7 @@ import Upload from "../views/Upload.vue";
 import Project from "../views/Project.vue";
 import Repository from "../views/Repository.vue";
 import Me from "../views/Me.vue";
+import Login from "../views/Login.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -20,6 +21,10 @@ const routes: Array<RouteRecordRaw> = [
     path: "/me",
     name: "Me",
     component: Me,
+  }, {
+    path: "/login",
+    name: "Login",
+    component: Login,
   },
 
   {

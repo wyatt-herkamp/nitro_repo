@@ -1,17 +1,14 @@
 <template>
-  <div
-    v-if="repository != undefined"
-    class="flex"
-  >
-    <div class="flex-col ">
+  <div v-if="repository != undefined" class="flex">
+    <div class="mx-auto">
       <SubNavBar v-model="view">
         <SubNavItem index="General"> General </SubNavItem>
         <SubNavItem index="Frontend"> Frontend </SubNavItem>
         <SubNavItem index="Security"> Security </SubNavItem>
         <SubNavItem index="Deploy"> Deploy Settings </SubNavItem>
-        <li :disabled="false">
+        <SubNavItem index="Badge" :disabled="true">
           <img
-            class="mx-2 py-1.5 rounded-lg font-bold px-6 m-1"
+            class="mx-auto font-bold px-6 m-1"
             :src="
               url +
               '/badge/' +
@@ -21,21 +18,20 @@
               '/nitro_repo_status/badge'
             "
           />
-        </li>
+        </SubNavItem>
       </SubNavBar>
-      <div class="flex flex-wrap">
-        <div class="lg:w-3/4 w-auto">
-          <GeneralRepo :repository="repository" v-if="view == 'General'" />
-          <FrontendRepo :repository="repository" v-if="view == 'Frontend'" />
-          <SecurityRepo :repository="repository" v-if="view == 'Security'" />
-          <DeployRepo :repository="repository" v-if="view == 'Deploy'" />
-        </div>
-        <div class=" lg:w-1/4 bg-slate-800">
-          <ViewRepo :child="true" :repositoryType="repository" />
-        </div>
+      <div class="w-auto m-auto">
+        <GeneralRepo :repository="repository" v-if="view == 'General'" />
+        <FrontendRepo :repository="repository" v-if="view == 'Frontend'" />
+        <SecurityRepo :repository="repository" v-if="view == 'Security'" />
+        <DeployRepo :repository="repository" v-if="view == 'Deploy'" />
       </div>
     </div>
+    <div class="hidden lg:block flex-col h-5/6 lg:w-1/2 rounded-md bg-slate-800">
+      <ViewRepo :child="true" :repositoryType="repository" />
+    </div>
   </div>
+
 </template>
 <style scoped>
 .repositoryDetails {
@@ -56,7 +52,10 @@ input:checked + .toggle-bg {
 }
 </style>
 <script lang="ts">
-import { getRepoByNameAndStorage } from "nitro_repo-api-wrapper";
+import {
+  deleteRepository,
+  getRepoByNameAndStorage,
+} from "nitro_repo-api-wrapper";
 import { Repository } from "nitro_repo-api-wrapper";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
 import { defineComponent, ref } from "vue";
@@ -85,8 +84,8 @@ export default defineComponent({
 
     let repository = ref<Repository | undefined>(undefined);
     const cookie = useCookie();
-    const isLoading = ref(false);
-    const exampleBadgeURL = ref("");
+
+const exampleBadgeURL = ref("");
     const route = useRoute();
 
     const storage = route.params.storage as string;
@@ -118,6 +117,7 @@ export default defineComponent({
       router,
       view,
       url,
+
     };
   },
   methods: {

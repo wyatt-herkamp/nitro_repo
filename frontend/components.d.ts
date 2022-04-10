@@ -22,6 +22,7 @@ declare module 'vue' {
     Item: typeof import('./src/components/admin/Item.vue')['default']
     LinkNavItem: typeof import('./src/components/common/nav/LinkNavItem.vue')['default']
     Login: typeof import('./src/components/nav/Login.vue')['default']
+    LoginComp: typeof import('./src/components/user/LoginComp.vue')['default']
     MavenProjectCopy: typeof import('./src/components/project/types/maven/copy/MavenProjectCopy.vue')['default']
     MavenProjectInfo: typeof import('./src/components/project/types/maven/MavenProjectInfo.vue')['default']
     MavenRepoInfo: typeof import('./src/components/repo/types/maven/MavenRepoInfo.vue')['default']

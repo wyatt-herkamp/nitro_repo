@@ -1,6 +1,11 @@
 <template>
   <div v-if="repository != undefined">
     <RepositoryBadge :repository="repository" :child="child" />
+    <MavenRepoInfo
+      v-if="repository.repo_type == 'maven'"
+      :repository="repository"
+      :child="child"
+    />
   </div>
 </template>
 <style scoped></style>
@@ -73,7 +78,8 @@ export default defineComponent({
 
     return {
       exampleBadgeURL,
-      repository,
+      repository,      
+
       router,
       options,
       isLoading,
