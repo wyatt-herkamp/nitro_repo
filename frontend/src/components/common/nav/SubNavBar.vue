@@ -1,7 +1,9 @@
 <template>
-    <ul class="flex flex-wrap bg-slate-800 p-6 m-1" ref="menu">
+  <div class="bg-slate-800 md:w-8/12 lg:w-full lg:mx-2 my-2  mx-auto lg:p-6 ">
+    <ul class="flex flex-wrap" ref="menu">
       <slot></slot>
     </ul>
+  </div>
 </template>
 
 <script lang="ts">

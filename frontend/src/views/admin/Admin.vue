@@ -1,9 +1,8 @@
 <template>
-  <div class="flex flex-row">
-    <SideBar :currentPage="page"/>
+  <div class="w-full md:flex md:flex-row">
 
-    <Storages v-if="page == 'storages'"/>
-    <Users v-if="page == 'users'"/>
+    <Storages class="mt-2 md:mt-0"  v-if="page == 'storages'"/>
+    <Users class="mt-2 md:mt-0" v-if="page == 'users'"/>
   </div>
 </template>
 

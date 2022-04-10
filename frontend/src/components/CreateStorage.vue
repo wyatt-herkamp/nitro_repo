@@ -1,47 +1,51 @@
 
 <template>
-  <NitroModal v-model="showModel">
-    <template v-slot:header> Create Storage </template>
-    <template v-slot:content>
-      <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-        <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-          <div class="mb-4">
-            <label
-              class="block text-slate-50 text-sm font-bold mb-2"
-              for="name"
-            >
-              Storage ID/Name
-            </label>
-            <input
-              id="name"
-              v-model="form.name"
-              autocomplete="off"
-              class="nitroTextInput"
-              placeholder="Storage ID/Name"
-              type="text"
-            />
-          </div>
-          <div class="mb-4">
-            <label
-              class="block text-slate-50 text-sm font-bold mb-2"
-              for="name"
-            >
-              Storage Public Name
-            </label>
-            <input
-              id="name"
-              v-model="form.public_name"
-              autocomplete="off"
-              class="nitroTextInput"
-              placeholder="Public Name"
-              type="text"
-            />
-          </div>
-          <button class="nitroButtonLight">Create Storage</button>
-        </form>
-      </form>
-    </template>
-  </NitroModal>
+  <div class="flex w-full">
+    <form class="appearance-none flex-col" @submit.prevent="onSubmit()">
+      <div class="flex flex-row">
+        <div class="grow">
+          <p class="header">Create Storage</p>
+        </div>
+        <div class="m-auto pt-5 pr-3">
+          <button
+            type="button"
+            class="xButton block"
+            @click="showModel = false"
+          >
+            🗙
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-row">
+        <div class="px-3">
+          <label class="nitroLabel" for="name"> Storage ID/Name </label>
+          <input
+            id="name"
+            v-model="form.name"
+            autocomplete="off"
+            class="nitroTextInput"
+            placeholder="Storage ID/Name"
+            type="text"
+          />
+        </div>
+      </div>
+      <div class="flex-row">
+        <div class="px-3">
+          <label class="nitroLabel" for="name"> Storage Public Name </label>
+          <input
+            id="name"
+            v-model="form.public_name"
+            autocomplete="off"
+            class="nitroTextInput"
+            placeholder="Public Name"
+            type="text"
+          />
+        </div>
+      </div>
+      <button class="nitroButtonLight">Create Storage</button>
+    </form>
+  </div>
 </template>
 
 <script lang="ts">
@@ -53,7 +57,7 @@ export default defineComponent({
   props: {
     modelValue: Boolean,
   },
-  setup(props, {emit}) {
+  setup(props, { emit }) {
     const showModel = ref(props.modelValue);
 
     watch(

@@ -1,6 +1,6 @@
 <template>
   <!-- Navbar goes here -->
-  <nav class="bg-slate-900 shadow-lg">
+  <nav class="bg-slate-900  lg:w-full shadow-lg ">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between">
         <div class="flex space-x-7">
@@ -27,16 +27,18 @@
         </div>
 
         <!-- Secondary Navbar items -->
-        <div class="hidden md:flex items-center space-x-3">
+        <ul class="hidden md:flex items-center space-x-3">
           <Login v-if="user == undefined">
             <template v-slot:button>
               <button class="fullScreenItem login">Login</button>
             </template>
           </Login>
           <li v-if="user != undefined">
-            <router-link to="/admin" class="fullScreenItem login">Admin</router-link>
+            <router-link to="/admin" class="fullScreenItem login"
+              >Admin</router-link
+            >
           </li>
-        </div>
+        </ul>
         <!-- Mobile menu button -->
         <div class="md:hidden flex items-center">
           <button @click="openNav" class="outline-none mobile-menu-button">
@@ -68,6 +70,11 @@
             >Browse</router-link
           >
         </li>
+        <Login v-if="user == undefined">
+          <template v-slot:button>
+            <button class="fullScreenItem login">Login</button>
+          </template>
+        </Login>
         <AdminDropBox @clicked="openNav()" v-if="user != undefined" />
       </ul>
     </div>

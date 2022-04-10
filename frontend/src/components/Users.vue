@@ -1,20 +1,24 @@
 <template>
-  <CreateUser v-model="openModel" />
-  <div class="w-full">
-    <div class="flex p-4">
+  <div :class="createUser ? 'flex w-full' : 'w-full lg:w-3/4  xl:mx-auto'">
+    <div class="md:p-4" :class="createUser ? 'hidden lg:block lg:grow ' : 'w-full'">
       <SearchableList v-model="list">
         <template v-slot:title> Users </template>
         <template v-slot:createButton>
-          <button class="openModalButton" @click="openModel = true">
+          <button class="openModalButton" @click="createUser = true">
             Create User
           </button>
         </template>
       </SearchableList>
     </div>
+    <div v-if="createUser" :class="createUser ? 'flex   mx-auto' : 'lg:w-1/4 flex-row '">
+
+      <CreateUser v-model="createUser" />
+    </div>
   </div>
 </template>
 
-
+<style scoped>
+</style>
 <script lang="ts">
 import { defineComponent, ref, watch } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
@@ -28,7 +32,7 @@ export default defineComponent({
 
   setup() {
     const cookie = useCookie();
-    let openModel = ref(false);
+    let createUser = ref(false);
 
     let list = ref<ListItem[]>([]);
     const getUser = async () => {
@@ -50,7 +54,7 @@ export default defineComponent({
       list,
       getUser,
       cookie,
-      openModel,
+      createUser,
     };
   },
 });

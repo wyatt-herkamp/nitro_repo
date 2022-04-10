@@ -1,9 +1,23 @@
 <template>
-  <NitroModal v-model="showModel">
-    <template v-slot:header> Create Repository </template>
-    <template v-slot:content>
-      <form class="flex flex-col w-96 <sm:w-65" @submit.prevent="onSubmit()">
-        <div class="mb-4">
+  <div class="flex w-full">
+    <form class="nitroForm" @submit.prevent="onSubmit()">
+      <div class="flex flex-row">
+        <div class="grow">
+          <p class="header">Create Repository</p>
+        </div>
+        <div class="m-auto pt-5 pr-3">
+          <button
+            type="button"
+            class="xButton block"
+            @click="showModel = false"
+          >
+            🗙
+          </button>
+        </div>
+      </div>
+
+      <div class="settingRow">
+        <div class="settingBox">
           <label class="nitroLabel" for="name"> Repository Name </label>
           <input
             id="name"
@@ -15,26 +29,20 @@
             type="text"
           />
         </div>
-        <div class="flex flex-row">
-          <div class="grow pr-2">
-            <label class="nitroLabel" for="name"> Repository Type </label>
-            <select
-              id="type"
-              v-model="form.type"
-              required
-              class="nitroSelectBox"
-            >
-              <option disabled selected value="">Repository Type</option>
-              <option value="maven">Maven</option>
-              <option value="npm">NPM</option>
-            </select>
-          </div>
+      </div>
+      <div class="settingRow">
+        <div class="settingBox">
+          <label class="nitroLabel" for="name"> Repository Type </label>
+          <select id="type" v-model="form.type" required class="nitroSelectBox">
+            <option disabled selected value="">Repository Type</option>
+            <option value="maven">Maven</option>
+            <option value="npm">NPM</option>
+          </select>
         </div>
-        <button class="nitroButtonLight">Create Repository</button>
-      </form>
-    </template>
-
-  </NitroModal>
+      </div>
+      <button class="nitroButtonLight">Create Repository</button>
+    </form>
+  </div>
 </template>
 <style scoped>
 </style>
@@ -50,9 +58,9 @@ export default defineComponent({
       type: Object as () => Storage,
       required: true,
     },
-    modelValue: Boolean
+    modelValue: Boolean,
   },
-  setup(props, {emit}) {
+  setup(props, { emit }) {
     let form = ref({
       name: "",
       type: "",

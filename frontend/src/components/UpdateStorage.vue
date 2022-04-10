@@ -1,6 +1,6 @@
 <style scoped></style>
 <template>
-  <div v-if="storage != undefined" class="min-h-screen w-full">
+  <div v-if="storage != undefined" class="min-w-full md:min-w-0 md:w-3/4">
     <SubNavBar v-model="storageTab">
       <SubNavItem index="General"> General </SubNavItem>
       <SubNavItem index="Repositories"> Repositories </SubNavItem>
