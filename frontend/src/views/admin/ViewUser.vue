@@ -1,5 +1,15 @@
 <template>
-   <div class="w-full md:flex md:flex-row">
+   <div>
+         <SubNavBar>
+      <LinkNavItem
+        :href="'/admin/users/'"
+        icon="arrow-back"
+        name="Back"
+      />
+
+      <LinkNavItem href="/admin/users" icon="user" name="Users" />
+      <LinkNavItem href="/admin/storages" icon="box" name="Storages" />
+    </SubNavBar>
     <UpdateUser :userID="user" />
   </div>
 </template>

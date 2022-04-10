@@ -1,19 +1,14 @@
 <template>
   <div v-if="project != undefined">
-    <div :class="child ? 'my-3' : 'flex flex-wrap'">
+    <div>
       <MavenProjectInfo
-        :class="child ? '' : 'm-3 flex flex-col'"
         v-if="project.repo_summary.repo_type == 'maven'"
         :project="project"
         :child="child"
       />
     </div>
-    <div :class="child ? 'my-3' : 'flex flex-wrap'">
-      <ProjectBadge
-        :class="child ? '' : 'm-3 flex flex-col'"
-        :project="project"
-        :child="child"
-      />
+    <div class="py-2">
+      <ProjectBadge :project="project" :child="child" />
     </div>
   </div>
 </template>

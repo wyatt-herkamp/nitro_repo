@@ -73,7 +73,11 @@
           >
         </li>
         <li>
-          <router-link to="/login" @click="openNav" class="smItem login"
+          <router-link
+            v-if="user == undefined"
+            to="/login"
+            @click="openNav"
+            class="smItem login"
             >Login</router-link
           >
         </li>
