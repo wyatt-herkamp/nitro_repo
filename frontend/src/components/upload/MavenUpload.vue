@@ -1,9 +1,47 @@
 <template>
-  <div>
-    <div class="flex-row"><PomCreator v-model="pom" /></div>
+  <div class="flex flex-col p-2">
+    <div class="bg-slate-600 m-1"><PomCreator v-model="pom" /></div>
+    <div class="flex flex-row bg-slate-800 m-1">
+      <div>
+        <drag-drop class="uploader" :uppy="uppy"></drag-drop>
+      </div>
+      <div class="m-3">
+        <ul :key="files">
+          <li v-for="file in uppy.getFiles()" v-bind:key="file.id">
+            <input
+              class="file"
+              id="grid-Storage"
+              type="text"
+              :value="file.name"
+              disabled
+            />
+            <input
+              class="file"
+              id="grid-Storage"
+              type="text"
+              :value="file.extension"
+              disabled
+            />
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 <style>
+.uploader {
+}
+.file {
+  @apply appearance-none;
+  @apply inline-block;
+  @apply bg-gray-200;
+  @apply text-gray-700;
+  @apply border;
+  @apply border-gray-200;
+  @apply rounded;
+  @apply mx-1;
+  @apply w-fit
+}
 </style>
 
 <script lang="ts">
@@ -11,13 +49,11 @@ import { defineComponent, ref, watch } from "vue";
 import { DragDrop } from "@uppy/vue";
 
 import "@uppy/core/dist/style.css";
-import "@uppy/dashboard/dist/style.css";
+import "@uppy/drag-drop/dist/style.css";
 
 import Uppy from "@uppy/core";
 import { useCookie } from "vue-cookie-next";
 import { Repository } from "nitro_repo-api-wrapper";
-import FileUpload from "./../../src/FileUpload.vue";
-import http from "@/http-common";
 import PomCreator from "./PomCreator.vue";
 
 /**
@@ -31,20 +67,25 @@ export default defineComponent({
       required: true,
       type: Object as () => Repository,
     },
-
   },
   computed: {
-    uppy: () => new Uppy().use(DragDrop),
+    uppy: function () {
+      return new Uppy().on("file-added", (file) => {
+        this.files = this.files + 1;
+      });
+    },
   },
   setup() {
     const pom = ref<Object | undefined>(undefined);
+    //This exists to trigger a rerender on Vue.
+    const files = ref<number>(0);
     const cookie = useCookie();
     watch(pom, () => {
       console.log("New Data");
     });
-    return { cookie, pom };
+    return { cookie, pom, files };
   },
   methods: {},
-  components: { PomCreator },
+  components: { PomCreator, DragDrop },
 });
 </script>

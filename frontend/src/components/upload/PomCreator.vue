@@ -5,13 +5,13 @@
       <SubNavItem index="CreatePom"> Create Pom </SubNavItem>
     </SubNavBar>
     <div class="mx-auto" v-if="activePage == 'UploadPom'">
-      <dashboard :uppy="uppy" :props="{ theme: 'dark' }" />
+      <drag-drop :uppy="uppy"></drag-drop>
     </div>
     <div v-if="activePage == 'CreatePom'">
       <h1>Coming Soon</h1>
     </div>
   </div>
-  <div v-else>
+  <div v-else class="h-1/4">
     <div class="flex flex-wrap mb-6 justify-center">
       <div class="settingBox">
         <label class="nitroLabel" for="grid-name"> groupId </label>
@@ -51,8 +51,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import DragDrop from "@uppy/drag-drop";
-import { Dashboard } from "@uppy/vue";
+import { DragDrop } from "@uppy/vue";
 
 import "@uppy/core/dist/style.css";
 import "@uppy/dashboard/dist/style.css";
@@ -62,11 +61,6 @@ import SubNavBar from "../common/nav/SubNavBar.vue";
 import SubNavItem from "../common/nav/SubNavItem.vue";
 import { XMLParser } from "fast-xml-parser";
 
-/**
- * How does the manual upload work?
- * Basically I let the backend do it's thing with one addition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
- * Then I accept files in the frontend and do put request simulating a query.
- */
 export default defineComponent({
   props: {
     modelValue: Object,
@@ -80,11 +74,9 @@ export default defineComponent({
           maxNumberOfFiles: 1,
           minNumberOfFiles: 1,
         },
-      })
-        .use(DragDrop)
-        .on("file-added", (file) => {
-          this.handleAdd(file);
-        });
+      }).on("file-added", (file) => {
+        this.handleAdd(file);
+      });
     },
   },
   setup(props, { emit }) {
@@ -103,8 +95,9 @@ export default defineComponent({
       let text = await file.data.text();
       let data = parser.parse(text);
       this.handleChange(data);
+      this.uppy.close();
     },
   },
-  components: { SubNavBar, SubNavItem, Dashboard },
+  components: { SubNavBar, SubNavItem, DragDrop },
 });
 </script>
