@@ -1,17 +1,17 @@
 <template>
-  <div class="bg-slate-800" v-if="pom == undefined">
-    <SubNavBar class="bg-slate-900" v-model="activePage">
+  <div class="md:h-1/4" v-if="pom == undefined">
+    <SubNavBar v-model="activePage">
       <SubNavItem index="UploadPom"> Upload Pom </SubNavItem>
       <SubNavItem index="CreatePom"> Create Pom </SubNavItem>
     </SubNavBar>
-    <div class="mx-auto" v-if="activePage == 'UploadPom'">
+    <div class="mx-2 mb-3" v-if="activePage == 'UploadPom'">
       <drag-drop :uppy="uppy"></drag-drop>
     </div>
     <div v-if="activePage == 'CreatePom'">
       <h1>Coming Soon</h1>
     </div>
   </div>
-  <div v-else class="h-1/4">
+  <div v-else class="md:h-1/4">
     <div class="flex flex-wrap mb-6 justify-center">
       <div class="settingBox">
         <label class="nitroLabel" for="grid-name"> groupId </label>
@@ -50,7 +50,7 @@
 </style>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, onBeforeUnmount, ref } from "vue";
 import { DragDrop } from "@uppy/vue";
 
 import "@uppy/core/dist/style.css";
@@ -60,6 +60,7 @@ import Uppy from "@uppy/core";
 import SubNavBar from "../common/nav/SubNavBar.vue";
 import SubNavItem from "../common/nav/SubNavItem.vue";
 import { XMLParser } from "fast-xml-parser";
+import { xmlOptions } from "./PomCreator";
 
 export default defineComponent({
   props: {
@@ -79,6 +80,9 @@ export default defineComponent({
       });
     },
   },
+  beforeUnmount() {
+    this.uppy.close();
+  },
   setup(props, { emit }) {
     const pom = ref<Object | undefined>(undefined);
     const activePage = ref<string>("UploadPom");
@@ -87,11 +91,12 @@ export default defineComponent({
       pom.value = data;
       emit("update:modelValue", data);
     };
+
     return { pom, activePage, handleChange };
   },
   methods: {
     handleAdd: async function (file: any) {
-      const parser = new XMLParser();
+      const parser = new XMLParser(xmlOptions);
       let text = await file.data.text();
       let data = parser.parse(text);
       this.handleChange(data);

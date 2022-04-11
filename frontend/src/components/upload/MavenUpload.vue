@@ -1,23 +1,45 @@
 <template>
-  <div class="flex flex-col p-2">
-    <div class="bg-slate-600 m-1"><PomCreator v-model="pom" /></div>
-    <div class="flex flex-row bg-slate-800 m-1">
-      <div>
+  <div class="flex flex-row flex-wrap p-2">
+    <div class="w-full max-w-6xl mx-auto rounded-md bg-slate-600 m-1">
+      <PomCreator v-model="pom" />
+    </div>
+    <div
+      class="
+        flex flex-row flex-wrap
+        w-full
+        max-w-6xl
+        mx-auto
+        mt-2
+        rounded-md
+        bg-slate-800
+      "
+    >
+      <div class="flex flex-col basis-full md:basis-1/2 lg:border-r-2 pb-5">
+        <h1 class="text-left mx-5 mt-6 font-bold mb-0">Upload Files</h1>
         <drag-drop class="uploader" :uppy="uppy"></drag-drop>
       </div>
-      <div class="m-3">
+      <div class="flex flex-col basis-full md:basis-1/2">
+        <div class="flex flex-row">
+          <h1 class="text-left basis-1/2 mx-5 mt-6 font-bold mb-0">
+            Files Ready for Upload
+          </h1>
+          <button
+            class="basis-1/2 nitroButtonLight mr-2 hover:bg-slate-600"
+            @click="upload()"
+          >
+            Upload
+          </button>
+        </div>
+
         <ul :key="files">
-          <li v-for="file in uppy.getFiles()" v-bind:key="file.id">
+          <li
+            class="flex flex-row p-2 m-1"
+            v-for="file in uppy.getFiles()"
+            v-bind:key="file.id"
+          >
+            <input class="file grow" type="text" :value="file.name" disabled />
             <input
-              class="file"
-              id="grid-Storage"
-              type="text"
-              :value="file.name"
-              disabled
-            />
-            <input
-              class="file"
-              id="grid-Storage"
+              class="file w-1/6 text-center"
               type="text"
               :value="file.extension"
               disabled
@@ -30,6 +52,9 @@
 </template>
 <style>
 .uploader {
+  @apply mx-4;
+  @apply mb-0;
+  @apply mt-7;
 }
 .file {
   @apply appearance-none;
@@ -40,7 +65,6 @@
   @apply border-gray-200;
   @apply rounded;
   @apply mx-1;
-  @apply w-fit
 }
 </style>
 
@@ -55,6 +79,9 @@ import Uppy from "@uppy/core";
 import { useCookie } from "vue-cookie-next";
 import { Repository } from "nitro_repo-api-wrapper";
 import PomCreator from "./PomCreator.vue";
+import apiClient, { apiURL } from "@/http-common";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { xmlOptions } from "./PomCreator";
 
 /**
  * How does the manual upload work?
@@ -70,10 +97,17 @@ export default defineComponent({
   },
   computed: {
     uppy: function () {
-      return new Uppy().on("file-added", (file) => {
-        this.files = this.files + 1;
-      });
+      return new Uppy()
+        .on("file-added", (file) => {
+          this.files = this.files + 1;
+        })
+        .on("file-removed", (file) => {
+          this.files = this.files - 1;
+        });
     },
+  },
+  beforeUnmount() {
+    this.uppy.close();
   },
   setup() {
     const pom = ref<Object | undefined>(undefined);
@@ -85,7 +119,69 @@ export default defineComponent({
     });
     return { cookie, pom, files };
   },
-  methods: {},
+  methods: {
+    async upload() {
+      if (this.pom == undefined) {
+        this.$notify({
+          title: "POM.XML is missing!",
+          type: "warn",
+        });
+        return;
+      }
+      const repo = this.$props.repo;
+      const url = apiURL;
+      const groupIdFormatted = this.pom.project.groupId.replace(".", "/");
+      const path = `${groupIdFormatted}/${this.pom.project.artifactId}/${this.pom.project.version}`;
+      const baseURL = `${url}/storages/${repo.storage}/${repo.name}/${path}`;
+      console.log(groupIdFormatted);
+      console.log(path);
+      console.log(baseURL);
+      this.uppy.getFiles().forEach(async (file) => {
+        this.uploadFile(`${baseURL}/${file.name}`, file.data);
+        this.uppy.removeFile(file.id, undefined);
+      });
+      const ser = new XMLBuilder(xmlOptions);
+      const pom = ser.build(this.pom);
+      const textEncoder = new TextEncoder();
+      const encoding = textEncoder.encode(pom);
+      await this.uploadFile(`${baseURL}/${this.pom.project.artifactId}-${this.pom.project.version}.pom`, encoding);
+    },
+
+    async uploadFile(url: string, file: any) {
+      await apiClient
+        .put(url, file, {
+          headers: {
+            Authorization: "Bearer " + this.cookie.getCookie("token"),
+          },
+        })
+        .then(
+          (result) => {
+            this.$notify({
+              title: `${url} was uploaded`,
+              type: "info",
+            });
+          },
+          (err) => {
+            if (err.response) {
+              this.$notify({
+                title: `${url} failed to upload error ${err.response.status}`,
+                type: "error",
+              });
+            } else if (err.request) {
+              this.$notify({
+                title: `${url} failed to upload error ${err.request}`,
+                type: "error",
+              });
+            } else {
+              this.$notify({
+                title: `${url} failed to unknown error`,
+                type: "error",
+              });
+            }
+          }
+        );
+    },
+  },
   components: { PomCreator, DragDrop },
 });
 </script>
