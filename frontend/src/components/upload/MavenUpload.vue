@@ -1,23 +1,91 @@
-<template></template>
+<template>
+  <div class="flex flex-row flex-wrap p-2">
+    <div class="w-full max-w-6xl mx-auto rounded-md bg-slate-600 m-1">
+      <PomCreator v-model="pom" />
+    </div>
+    <div
+      class="
+        flex flex-row flex-wrap
+        w-full
+        max-w-6xl
+        mx-auto
+        mt-2
+        rounded-md
+        bg-slate-800
+      "
+    >
+      <div class="flex flex-col basis-full md:basis-1/2 lg:border-r-2 pb-5">
+        <h1 class="text-left mx-5 mt-6 font-bold mb-0">Upload Files</h1>
+        <drag-drop class="uploader" :uppy="uppy"></drag-drop>
+      </div>
+      <div class="flex flex-col basis-full md:basis-1/2">
+        <div class="flex flex-row">
+          <h1 class="text-left basis-1/2 mx-5 mt-6 font-bold mb-0">
+            Files Ready for Upload
+          </h1>
+          <button
+            class="basis-1/2 nitroButtonLight mr-2 hover:bg-slate-600"
+            @click="upload()"
+          >
+            Upload
+          </button>
+        </div>
+
+        <ul :key="files">
+          <li
+            class="flex flex-row p-2 m-1"
+            v-for="file in uppy.getFiles()"
+            v-bind:key="file.id"
+          >
+            <input class="file grow" type="text" :value="file.name" disabled />
+            <input
+              class="file w-1/6 text-center"
+              type="text"
+              :value="file.extension"
+              disabled
+            />
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</template>
 <style>
-.example-typescript label.btn {
-  margin-bottom: 0;
-  margin-right: 1rem;
+.uploader {
+  @apply mx-4;
+  @apply mb-0;
+  @apply mt-7;
+}
+.file {
+  @apply appearance-none;
+  @apply inline-block;
+  @apply bg-gray-200;
+  @apply text-gray-700;
+  @apply border;
+  @apply border-gray-200;
+  @apply rounded;
+  @apply mx-1;
 }
 </style>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
+import { DragDrop } from "@uppy/vue";
 
+import "@uppy/core/dist/style.css";
+import "@uppy/drag-drop/dist/style.css";
+
+import Uppy from "@uppy/core";
 import { useCookie } from "vue-cookie-next";
 import { Repository } from "nitro_repo-api-wrapper";
-import FileUpload from "../../../src/FileUpload.vue";
-import { VueUploadItem } from "vue-upload-component";
-import http from "@/http-common";
+import PomCreator from "./PomCreator.vue";
+import apiClient, { apiURL } from "@/http-common";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { xmlOptions } from "./PomCreator";
 
 /**
  * How does the manual upload work?
- * Basically I let the backend do it's thing with one adition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
+ * Basically I let the backend do it's thing with one addition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
  * Then I accept files in the frontend and do put request simulating a query.
  */
 export default defineComponent({
@@ -26,88 +94,94 @@ export default defineComponent({
       required: true,
       type: Object as () => Repository,
     },
-    storage: {
-      required: true,
-      type: Object as () => string,
+  },
+  computed: {
+    uppy: function () {
+      return new Uppy()
+        .on("file-added", (file) => {
+          this.files = this.files + 1;
+        })
+        .on("file-removed", (file) => {
+          this.files = this.files - 1;
+        });
     },
   },
+  beforeUnmount() {
+    this.uppy.close();
+  },
   setup() {
-    interface FileTableValue {
-      name: string;
-      newName: string;
-      extension: string;
-    }
-    const files = ref<VueUploadItem[]>([]);
-    const upload = ref<InstanceType<typeof FileUpload> | null>(null);
-    // File Name, FinalName, Extension
-    const fileTable = ref<FileTableValue[]>([]);
-    fileTable.value.pop();
+    const pom = ref<Object | undefined>(undefined);
+    //This exists to trigger a rerender on Vue.
+    const files = ref<number>(0);
     const cookie = useCookie();
-    const coordinates = ref({
-      groupID: "org.kakara",
-      artifactID: "engine",
-      version: "1.0-SNAPSHOT",
-      generatePom: false,
+    watch(pom, () => {
+      console.log("New Data");
     });
-    function inputFile(
-      newFile: VueUploadItem | undefined,
-      oldFile: VueUploadItem | undefined
-    ) {
-      if (newFile && !oldFile) {
-        // add
-
-        console.log("add", newFile);
-        fileTable.value.push({
-          name: newFile.name as string,
-          newName: newFile.name as string,
-          extension: "",
-        });
-      }
-      if (newFile && oldFile) {
-        // update
-        console.log("update", newFile);
-      }
-      if (!newFile && oldFile) {
-        // TODO add removal from File Table
-        // remove
-        console.log("remove", oldFile);
-      }
-    }
-    return { files, inputFile, upload, fileTable, coordinates, cookie };
+    return { cookie, pom, files };
   },
   methods: {
-    async submitUpload() {
-      for (const value of this.fileTable) {
-        let file = this.files.filter(
-          (file) => file.name === value.name
-        )[0] as VueUploadItem;
+    async upload() {
+      if (this.pom == undefined) {
+        this.$notify({
+          title: "POM.XML is missing!",
+          type: "warn",
+        });
+        return;
+      }
+      const repo = this.$props.repo;
+      const url = apiURL;
+      const groupIdFormatted = this.pom.project.groupId.replace(".", "/");
+      const path = `${groupIdFormatted}/${this.pom.project.artifactId}/${this.pom.project.version}`;
+      const baseURL = `${url}/storages/${repo.storage}/${repo.name}/${path}`;
+      console.log(groupIdFormatted);
+      console.log(path);
+      console.log(baseURL);
+      this.uppy.getFiles().forEach(async (file) => {
+        this.uploadFile(`${baseURL}/${file.name}`, file.data);
+        this.uppy.removeFile(file.id, undefined);
+      });
+      const ser = new XMLBuilder(xmlOptions);
+      const pom = ser.build(this.pom);
+      const textEncoder = new TextEncoder();
+      const encoding = textEncoder.encode(pom);
+      await this.uploadFile(`${baseURL}/${this.pom.project.artifactId}-${this.pom.project.version}.pom`, encoding);
+    },
 
-        let path =
-          "storages/" +
-          this.storage +
-          "/" +
-          this.repo.name +
-          "/" +
-          this.coordinates.groupID.replaceAll(".", "/") +
-          "/" +
-          this.coordinates.artifactID +
-          "/" +
-          this.coordinates.version +
-          "/" +
-          value.newName;
-        console.log(path);
-        console.log(file.file?.size);
-        let response = await http.put(path, file.file, {
+    async uploadFile(url: string, file: any) {
+      await apiClient
+        .put(url, file, {
           headers: {
             Authorization: "Bearer " + this.cookie.getCookie("token"),
           },
-        });
-        console.log(response);
-      }
-    },
-    addFile(file: any, fileList: any) {
-      this.files.push();
+        })
+        .then(
+          (result) => {
+            this.$notify({
+              title: `${url} was uploaded`,
+              type: "info",
+            });
+          },
+          (err) => {
+            if (err.response) {
+              this.$notify({
+                title: `${url} failed to upload error ${err.response.status}`,
+                type: "error",
+              });
+            } else if (err.request) {
+              this.$notify({
+                title: `${url} failed to upload error ${err.request}`,
+                type: "error",
+              });
+            } else {
+              this.$notify({
+                title: `${url} failed to unknown error`,
+                type: "error",
+              });
+            }
+          }
+        );
     },
   },
+  components: { PomCreator, DragDrop },
 });
 </script>

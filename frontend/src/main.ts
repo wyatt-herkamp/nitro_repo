@@ -9,7 +9,6 @@ import "@/styles/app.css";
 import "@/styles/form.css";
 import "boxicons/css/boxicons.min.css";
 import "boxicons/dist/boxicons.js";
-import VueUploadComponent from "vue-upload-component";
 import vfmPlugin from "vue-final-modal";
 import { init } from "nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
@@ -22,7 +21,6 @@ app.use(router);
 app.use(vfmPlugin);
 app.use(createMetaManager());
 
-app.component("file-upload", VueUploadComponent);
 
 app.mount("#app");
 

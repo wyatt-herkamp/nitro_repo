@@ -1,4 +1,8 @@
-<template></template>
+<template>
+  <div v-if="repository != undefined">
+    <MavenUpload :repo="repository"/>
+  </div>
+</template>
 
 <script lang="ts">
 import { defineComponent, onBeforeMount, ref } from "vue";
