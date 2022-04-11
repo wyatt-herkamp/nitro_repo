@@ -27,6 +27,7 @@ declare module 'vue' {
     MenuButton: typeof import('./src/components/nav/MenuButton.vue')['default']
     Navbar: typeof import('./src/components/nav/Navbar.vue')['default']
     NitroModal: typeof import('./src/components/common/model/NitroModal.vue')['default']
+    PomCreator: typeof import('./src/components/upload/PomCreator.vue')['default']
     ProjectBadge: typeof import('./src/components/project/badge/ProjectBadge.vue')['default']
     Repositories: typeof import('./src/components/Repositories.vue')['default']
     RepositoryBadge: typeof import('./src/components/repo/badge/RepositoryBadge.vue')['default']

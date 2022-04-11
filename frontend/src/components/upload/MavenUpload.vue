@@ -1,23 +1,28 @@
-<template></template>
+<template>
+  <div>
+    <div class="flex-row"><PomCreator v-model="pom" /></div>
+  </div>
+</template>
 <style>
-.example-typescript label.btn {
-  margin-bottom: 0;
-  margin-right: 1rem;
-}
 </style>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
+import { DragDrop } from "@uppy/vue";
 
+import "@uppy/core/dist/style.css";
+import "@uppy/dashboard/dist/style.css";
+
+import Uppy from "@uppy/core";
 import { useCookie } from "vue-cookie-next";
 import { Repository } from "nitro_repo-api-wrapper";
-import FileUpload from "../../../src/FileUpload.vue";
-import { VueUploadItem } from "vue-upload-component";
+import FileUpload from "./../../src/FileUpload.vue";
 import http from "@/http-common";
+import PomCreator from "./PomCreator.vue";
 
 /**
  * How does the manual upload work?
- * Basically I let the backend do it's thing with one adition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
+ * Basically I let the backend do it's thing with one addition of accepting a bearer token instead of basic when doing put requests. This keeps the backend basically the same with not aditional changes
  * Then I accept files in the frontend and do put request simulating a query.
  */
 export default defineComponent({
@@ -26,88 +31,20 @@ export default defineComponent({
       required: true,
       type: Object as () => Repository,
     },
-    storage: {
-      required: true,
-      type: Object as () => string,
-    },
+
+  },
+  computed: {
+    uppy: () => new Uppy().use(DragDrop),
   },
   setup() {
-    interface FileTableValue {
-      name: string;
-      newName: string;
-      extension: string;
-    }
-    const files = ref<VueUploadItem[]>([]);
-    const upload = ref<InstanceType<typeof FileUpload> | null>(null);
-    // File Name, FinalName, Extension
-    const fileTable = ref<FileTableValue[]>([]);
-    fileTable.value.pop();
+    const pom = ref<Object | undefined>(undefined);
     const cookie = useCookie();
-    const coordinates = ref({
-      groupID: "org.kakara",
-      artifactID: "engine",
-      version: "1.0-SNAPSHOT",
-      generatePom: false,
+    watch(pom, () => {
+      console.log("New Data");
     });
-    function inputFile(
-      newFile: VueUploadItem | undefined,
-      oldFile: VueUploadItem | undefined
-    ) {
-      if (newFile && !oldFile) {
-        // add
-
-        console.log("add", newFile);
-        fileTable.value.push({
-          name: newFile.name as string,
-          newName: newFile.name as string,
-          extension: "",
-        });
-      }
-      if (newFile && oldFile) {
-        // update
-        console.log("update", newFile);
-      }
-      if (!newFile && oldFile) {
-        // TODO add removal from File Table
-        // remove
-        console.log("remove", oldFile);
-      }
-    }
-    return { files, inputFile, upload, fileTable, coordinates, cookie };
+    return { cookie, pom };
   },
-  methods: {
-    async submitUpload() {
-      for (const value of this.fileTable) {
-        let file = this.files.filter(
-          (file) => file.name === value.name
-        )[0] as VueUploadItem;
-
-        let path =
-          "storages/" +
-          this.storage +
-          "/" +
-          this.repo.name +
-          "/" +
-          this.coordinates.groupID.replaceAll(".", "/") +
-          "/" +
-          this.coordinates.artifactID +
-          "/" +
-          this.coordinates.version +
-          "/" +
-          value.newName;
-        console.log(path);
-        console.log(file.file?.size);
-        let response = await http.put(path, file.file, {
-          headers: {
-            Authorization: "Bearer " + this.cookie.getCookie("token"),
-          },
-        });
-        console.log(response);
-      }
-    },
-    addFile(file: any, fileList: any) {
-      this.files.push();
-    },
-  },
+  methods: {},
+  components: { PomCreator },
 });
 </script>

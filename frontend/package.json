@@ -11,10 +11,14 @@
   },
   "dependencies": {
     "@kyvg/vue3-notification": "^2.3.4",
+    "@uppy/drag-drop": "^2.0.6",
+    "@uppy/vue": "^0.4.6",
     "axios": "^0.26.1",
     "boxicons": "^2.1.2",
     "core-js": "^3.21.1",
     "equal-vue": "^0.79.3",
+    "fast-xml-parser": "^4.0.7",
+    "nitro_repo-api-wrapper": "1.0.0",
     "prismjs": "^1.27.0",
     "ts-results": "^3.3.0",
     "vite-plugin-ejs": "^1.4.4",
@@ -27,9 +31,7 @@
     "vue-meta": "3.0.0-alpha.10",
     "vue-prism-editor": "^2.0.0-alpha.2",
     "vue-router": "^4.0.14",
-    "vue-upload-component": "^3.0.50",
-    "vuex": "^4.0.2",
-    "nitro_repo-api-wrapper": "1.0.0"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.18.0",
