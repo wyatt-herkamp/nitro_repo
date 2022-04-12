@@ -33,9 +33,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import { User } from "nitro_repo-api-wrapper";
 import { updateOtherPassword } from "nitro_repo-api-wrapper";
+import { useRouter } from "vue-router";
 export default defineComponent({
   props: {
     user: {
@@ -45,11 +46,15 @@ export default defineComponent({
   },
 
   setup(props) {
+        const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     let password = ref({
       password: "",
       confirm: "",
     });
-    return { password };
+    return { password,token: token as string};
   },
   methods: {
     async updatePassword() {
@@ -62,7 +67,7 @@ export default defineComponent({
       const response = await updateOtherPassword(
         this.user.username,
         this.password.password,
-        this.$cookie.getCookie("token")
+        this.token
       );
       this.password.password = "";
       this.password.confirm = "";

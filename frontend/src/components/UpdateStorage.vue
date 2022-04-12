@@ -41,7 +41,16 @@
         <!-- Yes! A Model confirming the delete needs to happen. However right now I just need to delete something -->
         <button
           @click="deleteStorage"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-5"
+          class="
+            bg-blue-500
+            hover:bg-blue-700
+            text-white
+            font-bold
+            py-2
+            px-4
+            rounded
+            m-5
+          "
         >
           Delete Storage
         </button>
@@ -118,8 +127,7 @@ input:checked + .toggle-bg {
 </style>
 <script lang="ts">
 import { getStorage } from "nitro_repo-api-wrapper";
-import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
+import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRoute, useRouter } from "vue-router";
 import { Storage } from "nitro_repo-api-wrapper";
@@ -135,7 +143,10 @@ export default defineComponent({
   setup(props) {
     let storage = ref<Storage | undefined>(undefined);
     let date = ref<string | undefined>(undefined);
-    const cookie = useCookie();
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
@@ -143,7 +154,7 @@ export default defineComponent({
     const getStorageInternal = async () => {
       try {
         const value = (await getStorage(
-          cookie.getCookie("token"),
+          token as string,
           props.storageId
         )) as Storage;
         storage.value = value;

@@ -13,7 +13,7 @@
 import { getRepoPublic, PublicRepositoryInfo } from "nitro_repo-api-wrapper";
 import { Repository } from "nitro_repo-api-wrapper";
 import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
-import { defineComponent, ref } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import { useCookie } from "vue-cookie-next";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
@@ -49,7 +49,7 @@ export default defineComponent({
     let repository = ref<Repository | PublicRepositoryInfo | undefined>(
       props.repositoryType
     );
-    const cookie = useCookie();
+    const token: string | undefined = inject("token");
     const isLoading = ref(props.repositoryType == undefined);
     const exampleBadgeURL = ref("");
     const { meta } = useMeta({
@@ -60,7 +60,7 @@ export default defineComponent({
         const getRepo = async () => {
           try {
             const value = (await getRepoPublic(
-              cookie.getCookie("token"),
+              token,
               props.storage,
               props.repository
             )) as PublicRepositoryInfo;
@@ -79,7 +79,6 @@ export default defineComponent({
     return {
       exampleBadgeURL,
       repository,
-
       router,
       options,
       isLoading,

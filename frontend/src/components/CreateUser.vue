@@ -84,13 +84,18 @@
 <script lang="ts">
 import { User } from "nitro_repo-api-wrapper";
 import { createNewUser } from "nitro_repo-api-wrapper";
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, inject, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   props: {
     modelValue: Boolean,
   },
   setup(props, { emit }) {
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     const showModel = ref(props.modelValue);
 
     watch(
@@ -116,7 +121,7 @@ export default defineComponent({
       },
       permissions: { deployer: false, admin: false },
     });
-    return { form, showModel };
+    return { form, showModel, token };
   },
   methods: {
     async onSubmit() {
@@ -131,7 +136,7 @@ export default defineComponent({
         this.form.username,
         this.form.password.password,
         this.form.email,
-        this.$cookie.getCookie("token")
+        this.token as string
       );
       if (response.ok) {
         let data = response.val as User;

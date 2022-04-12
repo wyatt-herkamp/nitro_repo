@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, ref } from "vue";
+import { defineComponent, inject, onBeforeMount, ref } from "vue";
 
 import userStore from "@/store/user";
 import { useCookie } from "vue-cookie-next";
@@ -18,7 +18,7 @@ export default defineComponent({
 
   setup() {
     const route = useRoute();
-    const cookie = useCookie();
+    const token: string | undefined = inject('token')
 
     const storage = route.params.storage as string;
     const repositoryName = route.params.repo as string;
@@ -26,7 +26,7 @@ export default defineComponent({
     const getRepo = async () => {
       try {
         const value = await getRepoByNameAndStorage(
-          cookie.getCookie("token"),
+          token,
           storage,
           repositoryName
         );

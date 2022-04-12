@@ -69,7 +69,7 @@
 </style>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, inject, ref, watch } from "vue";
 import { DragDrop } from "@uppy/vue";
 
 import "@uppy/core/dist/style.css";
@@ -82,6 +82,7 @@ import PomCreator from "./PomCreator.vue";
 import apiClient, { apiURL } from "@/http-common";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { xmlOptions } from "./PomCreator";
+import { useRouter } from "vue-router";
 
 /**
  * How does the manual upload work?
@@ -110,6 +111,10 @@ export default defineComponent({
     this.uppy.close();
   },
   setup() {
+        const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     const pom = ref<Object | undefined>(undefined);
     //This exists to trigger a rerender on Vue.
     const files = ref<number>(0);
@@ -117,7 +122,7 @@ export default defineComponent({
     watch(pom, () => {
       console.log("New Data");
     });
-    return { cookie, pom, files };
+    return { cookie, pom, files, token: token as string };
   },
   methods: {
     async upload() {
@@ -151,7 +156,7 @@ export default defineComponent({
       await apiClient
         .put(url, file, {
           headers: {
-            Authorization: "Bearer " + this.cookie.getCookie("token"),
+            Authorization: "Bearer " + this.token,
           },
         })
         .then(

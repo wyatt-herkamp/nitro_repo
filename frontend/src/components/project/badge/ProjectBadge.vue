@@ -32,11 +32,10 @@ import { computed, defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 import { Project, Repository } from "nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
-import CodeViewComp from "@/components/CodeViewComp.vue";
 import { createProjectSnippet } from "@/api/repository/BadgeGen";
 
 export default defineComponent({
-  components: { CodeViewComp },
+  components: {  },
   props: {
     child: {
       default: false,

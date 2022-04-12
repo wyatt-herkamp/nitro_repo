@@ -80,10 +80,8 @@
 import { browse, BrowseResponse, FileResponse } from "nitro_repo-api-wrapper";
 
 import { apiURL } from "@/http-common";
-import router from "@/router";
-import { defineComponent, ref } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import { useRoute } from "vue-router";
-import { useCookie } from "vue-cookie-next";
 import { BrowsePath } from "./Browse";
 import ViewProject from "@/components/project/ViewProject.vue";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
@@ -91,13 +89,14 @@ import BrowseBox from "@/components/browse/BrowseBox.vue";
 
 export default defineComponent({
   setup() {
+    const token: string | undefined = inject('token')
+
     let url = apiURL;
     const route = useRoute();
     let pathSplit = ref<BrowsePath[]>([]);
     const tableData = ref<FileResponse[] | undefined>();
     const activeResponse = ref<ResponseType | undefined>();
     let catchAll = route.params.catchAll as string;
-    const cookie = useCookie();
     const path = route.fullPath;
 
     var upperPath = path.split("/");
@@ -109,7 +108,7 @@ export default defineComponent({
     console.log(up);
     const getFiles = async () => {
       try {
-        const value = await browse(catchAll, cookie.getCookie("token"));
+        const value = await browse(catchAll, token);
         if (value == undefined) {
           console.warn("No Response from Backend");
           return;

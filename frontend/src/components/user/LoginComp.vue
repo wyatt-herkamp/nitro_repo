@@ -16,7 +16,7 @@
         />
       </div>
       <div class="py-2">
-        <label class="nitroLabel" for="username">Password</label>
+        <label class="nitroLabel" for="password">Password</label>
         <input
           id="password"
           v-model="form.password"
@@ -35,17 +35,19 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { useRouter } from "vue-router";
 import { login } from "nitro_repo-api-wrapper";
 import { AuthToken } from "nitro_repo-api-wrapper";
+import { useCookies } from "vue3-cookies";
 
 export default defineComponent({
   setup() {
+    const { cookies } = useCookies();
+
     let form = ref({
       username: "",
       password: "",
     });
-    return { form };
+    return { form, cookies };
   },
   methods: {
     async onSubmit(username: string, password: string) {
@@ -53,10 +55,15 @@ export default defineComponent({
       if (value.ok) {
         let loginRequest = value.val as AuthToken;
         let date = new Date(loginRequest.expiration * 1000);
-        this.$cookie.setCookie("token", loginRequest.token, {
-          expire: date,
-          sameSite: "lax",
-        });
+        this.cookies.set(
+          "token",
+          loginRequest.token,
+          date,
+          undefined,
+          undefined,
+          undefined,
+          "Lax"
+        );
         location.reload();
       } else {
         this.form.password = "";

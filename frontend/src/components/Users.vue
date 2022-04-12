@@ -24,24 +24,27 @@
 
 <style scoped></style>
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, inject, ref, watch } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
-import { useCookie } from "vue-cookie-next";
 import { getUsers } from "nitro_repo-api-wrapper";
 import { ListItem } from "./common/list/ListTypes";
+import { useRoute, useRouter } from "vue-router";
 
 export default defineComponent({
   components: { CreateUser, UpdateUser },
 
   setup() {
-    const cookie = useCookie();
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     let createUser = ref(false);
 
     let list = ref<ListItem[]>([]);
     const getUser = async () => {
       try {
-        const value = await getUsers(cookie.getCookie("token"));
+        const value = await getUsers(token as string);
         if (value == undefined) {
           return;
         }
@@ -57,7 +60,6 @@ export default defineComponent({
     return {
       list,
       getUser,
-      cookie,
       createUser,
     };
   },

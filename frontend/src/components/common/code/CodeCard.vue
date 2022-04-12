@@ -1,6 +1,6 @@
 <template>
   <prism-editor
-    class="nitroEditor"
+    class="nitroEditor  absolute"
     v-model="highlighterComputed.snippet"
     :highlight="highlighterComputed.highlighter"
     :line-numbers="false"
