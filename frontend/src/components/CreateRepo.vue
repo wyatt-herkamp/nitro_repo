@@ -60,6 +60,10 @@ export default defineComponent({
     modelValue: Boolean,
   },
   setup(props, { emit }) {
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     let form = ref({
       name: "",
       type: "",
@@ -79,6 +83,7 @@ export default defineComponent({
     return {
       form,
       showModel,
+      token: token as string,
     };
   },
   methods: {
@@ -94,7 +99,7 @@ export default defineComponent({
         this.form.name,
         this.$props.storage.name,
         this.form.type,
-        this.$cookie.getCookie("token")
+        this.token
       );
       if (response.ok) {
         let data = response.val as Repository;
@@ -116,5 +121,13 @@ export default defineComponent({
   },
   components: { NitroModal },
 });
+
+function inject(arg0: string): string | undefined {
+  throw new Error("Function not implemented.");
+}
+
+function useRouter() {
+  throw new Error("Function not implemented.");
+}
 </script>
 <style scoped></style>

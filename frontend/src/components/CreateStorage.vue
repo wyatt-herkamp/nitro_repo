@@ -49,8 +49,9 @@
 
 <script lang="ts">
 import { Storage } from "nitro_repo-api-wrapper";
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, inject, ref, watch } from "vue";
 import { createNewStorage } from "nitro_repo-api-wrapper";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   props: {
@@ -58,7 +59,10 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const showModel = ref(props.modelValue);
-
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     watch(
       () => props.modelValue,
       (val) => {
@@ -74,14 +78,14 @@ export default defineComponent({
       public_name: "",
       error: "",
     });
-    return { form, showModel, close };
+    return { form, showModel, close, token: token as string };
   },
   methods: {
     async onSubmit() {
       const response = await createNewStorage(
         this.form.name,
         this.form.public_name,
-        this.$cookie.getCookie("token")
+        this.token
       );
       if (response.ok) {
         let data = response.val as Storage;

@@ -54,10 +54,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, inject } from "vue";
 import { User } from "nitro_repo-api-wrapper";
 import { updateNameAndEmail, updatePermission } from "nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
+import { useRouter } from "vue-router";
 export default defineComponent({
   props: {
     user: {
@@ -66,8 +67,12 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date };
+    return { date, token: token as string };
   },
   methods: {
     async onSettingSubmit() {
@@ -83,7 +88,7 @@ export default defineComponent({
         this.user.username,
         this.user.name,
         this.user.email,
-        this.$cookie.getCookie("token")
+        this.token
       );
       if (response.ok) {
         let data = response.val as User;
@@ -105,7 +110,7 @@ export default defineComponent({
         this.user.username,
         permission,
         value,
-        this.$cookie.getCookie("token")
+        this.token
       );
       if (response.ok) {
         this.$notify({

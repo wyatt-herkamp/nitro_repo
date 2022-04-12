@@ -18,11 +18,10 @@ import { useRouter } from "vue-router";
 import { Repository } from "nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import { PublicRepositoryInfo } from "nitro_repo-api-wrapper";
-import CodeViewComp from "@/components/CodeViewComp.vue";
 import createRepositoryInfo from "@/api/maven/CodeGen";
 
 export default defineComponent({
-  components: { CodeViewComp },
+  components: {  },
   props: {
     child: {
       default: false,

@@ -20,12 +20,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
-import { useCookie } from "vue-cookie-next";
 import { getRepositoriesByStorage } from "nitro_repo-api-wrapper";
 
 import { ListItem } from "./common/list/ListTypes";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   components: { CreateRepo },
@@ -36,14 +36,17 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const cookie = useCookie();
-    const list = ref<ListItem[]>([]);
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
+        const list = ref<ListItem[]>([]);
     let openModel = ref(false);
 
     const getRepos = async () => {
       try {
         const value = await getRepositoriesByStorage(
-          cookie.getCookie("token"),
+          token as string,
           props.storage.name
         );
         if (value == undefined) {
@@ -60,7 +63,6 @@ export default defineComponent({
     };
     getRepos();
     return {
-      cookie,
       list,
       getRepos,
       openModel,

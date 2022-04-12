@@ -2,13 +2,12 @@
 // We suggest you to commit this file into source control
 // Read more: https://github.com/vuejs/vue-next/pull/3399
 
-declare module 'vue' {
+declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AdminDropBox: typeof import('./src/components/nav/AdminDropBox.vue')['default']
     BrowseBox: typeof import('./src/components/browse/BrowseBox.vue')['default']
     CodeCard: typeof import('./src/components/common/code/CodeCard.vue')['default']
     CodeMenu: typeof import('./src/components/common/code/CodeMenu.vue')['default']
-    CodeViewComp: typeof import('./src/components/CodeViewComp.vue')['default']
     CopyMenu: typeof import('./src/components/repo/types/maven/copy/CopyMenu.vue')['default']
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
     CreateStorage: typeof import('./src/components/CreateStorage.vue')['default']
@@ -31,9 +30,10 @@ declare module 'vue' {
     ProjectBadge: typeof import('./src/components/project/badge/ProjectBadge.vue')['default']
     Repositories: typeof import('./src/components/Repositories.vue')['default']
     RepositoryBadge: typeof import('./src/components/repo/badge/RepositoryBadge.vue')['default']
+    RouterLink: typeof import('vue-router')['RouterLink']
+    RouterView: typeof import('vue-router')['RouterView']
     SearchableList: typeof import('./src/components/common/list/SearchableList.vue')['default']
     SecurityRepo: typeof import('./src/components/repo/update/SecurityRepo.vue')['default']
-    SideBar: typeof import('./src/components/SideBar.vue')['default']
     Storages: typeof import('./src/components/Storages.vue')['default']
     SubNavBar: typeof import('./src/components/common/nav/SubNavBar.vue')['default']
     SubNavItem: typeof import('./src/components/common/nav/SubNavItem.vue')['default']

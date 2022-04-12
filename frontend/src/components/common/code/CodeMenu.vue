@@ -15,7 +15,7 @@
     </div>
     <div class="codeBox">
       <div v-for="entry in codes" :key="entry.name">
-        <CodeViewComp v-if="entry.name === currentTab" :snippetInfo="entry" />
+        <CodeCard v-if="entry.name === currentTab" :snippetInfo="entry" />
       </div>
     </div>
   </div>

@@ -59,8 +59,7 @@ import {
 } from "nitro_repo-api-wrapper";
 import { Repository } from "nitro_repo-api-wrapper";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
-import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
+import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRoute, useRouter } from "vue-router";
 import GeneralRepo from "@/components/repo/update/GeneralRepo.vue";
@@ -84,8 +83,10 @@ export default defineComponent({
     let view = ref("General");
 
     let repository = ref<Repository | undefined>(undefined);
-    const cookie = useCookie();
-
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
     const exampleBadgeURL = ref("");
     const route = useRoute();
 
@@ -98,7 +99,7 @@ export default defineComponent({
     const getRepo = async () => {
       try {
         const value = (await getRepoByNameAndStorage(
-          cookie.getCookie("token"),
+          token as string,
           storage,
           repo
         )) as Repository;

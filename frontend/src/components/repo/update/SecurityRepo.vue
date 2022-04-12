@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, inject } from "vue";
 import { Repository } from "nitro_repo-api-wrapper";
 import { setVisibility, updateDeployReport } from "nitro_repo-api-wrapper";
 export default defineComponent({
@@ -32,14 +32,18 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
+  data() {
+    const token = inject("token") as string;
 
+    return { token };
+  },
   methods: {
     async updateVisibility() {
       const response = await setVisibility(
         this.repository.storage,
         this.repository.name,
         this.repository.security.visibility,
-        this.$cookie.getCookie("token")
+        this.token
       );
       if (response.ok) {
         console.log(response.val.security.visibility);

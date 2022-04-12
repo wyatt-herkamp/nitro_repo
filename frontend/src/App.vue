@@ -1,22 +1,26 @@
 <template>
-  <Navbar :user="userStore.state.user" />
+  <Navbar :user="user" />
   <metainfo> </metainfo>
   <router-view :key="$route.fullPath" />
   <notifications position="bottom right" />
 </template>
 
 <script lang="ts">
-import userStore from "@/store/user";
+import { useUserStore } from "@/store/user";
 import Navbar from "@/components/nav/Navbar.vue";
-import { defineComponent, onBeforeMount } from "vue";
+import { computed, defineComponent, onMounted } from "vue";
 import { useMeta } from "vue-meta";
 
 export default defineComponent({
   name: "App",
   components: { Navbar },
   setup() {
-    onBeforeMount(userStore.getUser);
-    return { userStore };
+    const userStore = useUserStore();
+    onMounted(userStore.loadUser);
+    const user = computed(() => {
+      return userStore.$state.user;
+    });
+    return { user: user };
   },
 });
 </script>

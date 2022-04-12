@@ -2,10 +2,10 @@
 
 <script lang="ts">
 import { User } from "nitro_repo-api-wrapper";
-import { defineComponent, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
+import { defineComponent, inject, ref } from "vue";
 import { getUser } from "nitro_repo-api-wrapper";
 import { updateMyPassword } from "nitro_repo-api-wrapper";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   setup() {
@@ -16,13 +16,16 @@ export default defineComponent({
     });
 
     const isLoading = ref(false);
-    const cookie = useCookie();
-    const tab = ref(0);
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
+        const tab = ref(0);
     const user = ref<User | undefined>(undefined);
     const loadUser = async () => {
       isLoading.value = true;
       try {
-        let value = await getUser(cookie.getCookie("token"));
+        let value = await getUser(token as string);
 
         user.value = value.val as User;
 
@@ -31,7 +34,7 @@ export default defineComponent({
     };
     loadUser();
 
-    return { user, password, tab, isLoading };
+    return { user, password, tab, isLoading, token };
   },
   methods: {
     async updatePassword() {
@@ -43,7 +46,7 @@ export default defineComponent({
       }
       const response = await updateMyPassword(
         this.password.password,
-        this.$cookie.getCookie("token")
+        this.token as string
       );
       if (response.ok) {
         let data = response.val as User;

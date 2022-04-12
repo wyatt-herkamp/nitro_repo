@@ -27,9 +27,10 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import { Repository } from "nitro_repo-api-wrapper";
 import { updateDeployReport } from "nitro_repo-api-wrapper";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   props: {
@@ -39,8 +40,11 @@ export default defineComponent({
     },
   },
   data() {
+    const token = inject("token") as string;
+
     return {
       options: ["DeployerUsername", "Time"],
+      token: token,
     };
   },
   methods: {
@@ -59,7 +63,7 @@ export default defineComponent({
         this.repository.name,
         this.repository.deploy_settings.report_generation.active,
         this.repository.deploy_settings.report_generation.values,
-        this.$cookie.getCookie("token")
+        this.token
       );
       if (response.ok) {
         console.log(response.val.security.visibility);
