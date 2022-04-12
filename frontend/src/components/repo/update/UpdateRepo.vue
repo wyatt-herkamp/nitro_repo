@@ -60,7 +60,6 @@ import {
 import { Repository } from "nitro_repo-api-wrapper";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
 import { defineComponent, inject, ref } from "vue";
-import { useCookie } from "vue-cookie-next";
 import { useMeta } from "vue-meta";
 import { useRoute, useRouter } from "vue-router";
 import GeneralRepo from "@/components/repo/update/GeneralRepo.vue";

@@ -22,7 +22,6 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
-import { useCookie } from "vue-cookie-next";
 import { getRepositoriesByStorage } from "nitro_repo-api-wrapper";
 
 import { ListItem } from "./common/list/ListTypes";

@@ -1,7 +1,6 @@
 import { computed, inject, reactive } from "vue";
 import { User } from "nitro_repo-api-wrapper";
 import { getUser } from "nitro_repo-api-wrapper";
-import { useCookie } from "vue-cookie-next";
 
 const state = reactive({
   user: <User | undefined>undefined,
@@ -15,7 +14,6 @@ const actions = {
     if (state.user != undefined) {
       return;
     }
-    const cookie = useCookie();
     const token: string | undefined = inject('token')
     if (token == undefined) {
       return;

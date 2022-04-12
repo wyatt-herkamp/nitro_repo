@@ -8,7 +8,6 @@
 import { defineComponent, inject, onBeforeMount, ref } from "vue";
 
 import userStore from "@/store/user";
-import { useCookie } from "vue-cookie-next";
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import { useRoute } from "vue-router";
 import { getRepoByNameAndStorage, Repository } from "nitro_repo-api-wrapper";

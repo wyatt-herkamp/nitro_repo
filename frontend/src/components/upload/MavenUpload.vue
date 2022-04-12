@@ -76,7 +76,6 @@ import "@uppy/core/dist/style.css";
 import "@uppy/drag-drop/dist/style.css";
 
 import Uppy from "@uppy/core";
-import { useCookie } from "vue-cookie-next";
 import { Repository } from "nitro_repo-api-wrapper";
 import PomCreator from "./PomCreator.vue";
 import apiClient, { apiURL } from "@/http-common";
@@ -118,7 +117,6 @@ export default defineComponent({
     const pom = ref<Object | undefined>(undefined);
     //This exists to trigger a rerender on Vue.
     const files = ref<number>(0);
-    const cookie = useCookie();
     watch(pom, () => {
       console.log("New Data");
     });
