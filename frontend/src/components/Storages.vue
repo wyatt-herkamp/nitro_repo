@@ -56,7 +56,6 @@ export default defineComponent({
     getStorage();
     return {
       getStorage,
-      cookie,
       list,
       openModel,
     };
