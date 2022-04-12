@@ -12,6 +12,7 @@ import vfmPlugin from "vue-final-modal";
 import { init } from "nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import { useCookies } from "vue3-cookies";
+import { createPinia } from 'pinia'
 
 init(apiURL);
 
@@ -22,8 +23,8 @@ app.use(Notifications);
 app.use(router);
 app.use(vfmPlugin);
 app.use(createMetaManager());
-app.provide("token", cookies.get("token")
-)
+app.use(createPinia())
 
+app.provide("token", cookies.get("token"))
 
 app.mount("#app");

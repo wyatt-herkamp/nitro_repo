@@ -16,7 +16,6 @@ import Users from "@/components/Users.vue";
 import Me from "@/components/Me.vue";
 import Repositories from "@/components/Repositories.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
-import userStore from "@/store/user";
 import { useRoute } from "vue-router";
 import SubNavBar from "@/components/common/nav/SubNavBar.vue";
 import LinkNavItem from "../../components/common/nav/LinkNavItem.vue";
@@ -36,9 +35,7 @@ export default defineComponent({
     const route = useRoute();
     let page = ref(route.params.page as string);
 
-    onBeforeMount(userStore.getUser);
     return {
-      userStore,
       page,
     };
   },

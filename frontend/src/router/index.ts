@@ -88,6 +88,7 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  
 });
 function requireAuth(to: any, from: any) {
   let { cookies } = useCookies();

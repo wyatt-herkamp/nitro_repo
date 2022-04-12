@@ -7,7 +7,6 @@
 <script lang="ts">
 import { defineComponent, inject, onBeforeMount, ref } from "vue";
 
-import userStore from "@/store/user";
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import { useRoute } from "vue-router";
 import { getRepoByNameAndStorage, Repository } from "nitro_repo-api-wrapper";
@@ -35,7 +34,6 @@ export default defineComponent({
       }
     };
     getRepo();
-    onBeforeMount(userStore.getUser);
     return { repository, storage };
   },
 });
