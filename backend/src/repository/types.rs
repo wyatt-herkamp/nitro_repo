@@ -16,6 +16,15 @@ use crate::repository::nitro::{
 use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};
+use strum_macros::{Display, EnumString};
+use crate::repository::maven::models::MavenSettings;
+use crate::repository::npm::models::NPMSettings;
+
+#[derive(Serialize, Deserialize, Clone, Debug, Display, EnumString)]
+pub enum RepositoryType {
+    Maven(Option<MavenSettings>),
+    NPM(Option<NPMSettings>),
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -84,7 +93,7 @@ pub struct VersionResponse {
     pub other: HashMap<String, Value>,
 }
 
-pub trait RepositoryType {
+pub trait RepositoryHandler {
     /// Handles a get request to a Repo
     fn handle_get(
         request: &RepositoryRequest,

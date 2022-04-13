@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub  struct MavenSettings{
+
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeployMetadata {
     #[serde(rename = "groupId")]
     pub group_id: String,

@@ -9,24 +9,25 @@ use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
 use crate::repository::maven::utils::parse_project_to_directory;
-use crate::repository::models::{Policy, RepositorySummary};
+use crate::repository::models::{RepositorySummary};
+use crate::repository::settings::Policy;
 
 use crate::repository::types::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::RepositoryRequest;
-use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryType};
+use crate::repository::types::{RepositoryHandler, RepositoryRequest};
+use crate::repository::types::{Project, RepoResponse, RepoResult};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
 };
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
-mod models;
+pub mod models;
 mod utils;
 
 pub struct MavenHandler;
 
-impl RepositoryType for MavenHandler {
+impl RepositoryHandler for MavenHandler {
     fn handle_get(
         request: &RepositoryRequest,
         http: &HttpRequest,

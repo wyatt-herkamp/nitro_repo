@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
-use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::NitroRepoData;
 
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::npm::NPMHandler;
-use crate::repository::types::RepositoryType;
+use crate::repository::types::RepositoryHandler;
+use crate::repository::types::RepositoryType::{Maven, NPM};
 
 //
 
@@ -31,10 +31,9 @@ pub async fn get_versions(
 
     let request = to_request(storage, repository, file, site)?;
 
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_versions(&request, &r, &connection),
-        "npm" => NPMHandler::handle_versions(&request, &r, &connection),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_versions(&request, &r, &connection) }
+        NPM(_) => { NPMHandler::handle_versions(&request, &r, &connection) }
     }?;
     handle_result(x, request.value, r)
 }
@@ -51,10 +50,9 @@ pub async fn get_project(
 
     let request = to_request(storage, repository, file, site)?;
 
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_project(&request, &r, &connection),
-        "npm" => NPMHandler::handle_project(&request, &r, &connection),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_project(&request, &r, &connection) }
+        NPM(_) => { NPMHandler::handle_project(&request, &r, &connection) }
     }?;
     handle_result(x, request.value, r)
 }
@@ -71,10 +69,10 @@ pub async fn get_version(
 
     let request = to_request(storage, repository, project, site)?;
 
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_version(&request, version, &r, &connection),
-        "npm" => NPMHandler::handle_version(&request, version, &r, &connection),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_version(&request, version, &r, &connection) }
+        NPM(_) => { NPMHandler::handle_version(&request, version, &r, &connection) }
     }?;
     handle_result(x, request.value, r)
 }

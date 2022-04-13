@@ -7,17 +7,17 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
-use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::nitro::ResponseType::Storage;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
 use crate::repository::npm::NPMHandler;
-use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryType};
+use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryHandler};
 use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
+use crate::repository::types::RepositoryType::{Maven, NPM};
 
 //
 
@@ -119,12 +119,14 @@ pub async fn browse_storage(
     }
     APIResponse::respond_new(Some(repos), &r)
 }
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GetPath {
     pub storage: String,
     pub repository: String,
     pub file: Option<String>,
 }
+
 pub async fn get_repository(
     pool: web::Data<DbPool>,
     site: NitroRepoData,
@@ -142,11 +144,11 @@ pub async fn get_repository(
         };
     }
     let request = result.unwrap();
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_get(&request, &r, &connection),
-        "npm" => NPMHandler::handle_get(&request, &r, &connection),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_get(&request, &r, &connection) }
+        NPM(_) => { NPMHandler::handle_get(&request, &r, &connection) }
     }?;
+
     handle_result(x, request.value, r)
 }
 
@@ -246,16 +248,16 @@ pub async fn post_repository(
     let request = result.unwrap();
     debug!(
         "POST {} in {}/{}: Route: {}",
-        &request.repository.repo_type,
+        &request.repository.repo_type.to_string(),
         &request.storage.name,
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_post(&request, &r, &connection, bytes),
-        "npm" => NPMHandler::handle_post(&request, &r, &connection, bytes),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_post(&request, &r, &connection, bytes) }
+        NPM(_) => { NPMHandler::handle_post(&request, &r, &connection, bytes) }
     }?;
+
     handle_result(x, request.value, r)
 }
 
@@ -279,16 +281,16 @@ pub async fn patch_repository(
     let request = result.unwrap();
     debug!(
         "PATCH {} in {}/{}: Route: {}",
-        &request.repository.repo_type,
+        &request.repository.repo_type.to_string(),
         &request.storage.name,
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_patch(&request, &r, &connection, bytes),
-        "npm" => NPMHandler::handle_patch(&request, &r, &connection, bytes),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_patch(&request, &r, &connection, bytes) }
+        NPM(_) => { NPMHandler::handle_patch(&request, &r, &connection, bytes) }
     }?;
+
     handle_result(x, request.value, r)
 }
 
@@ -311,16 +313,16 @@ pub async fn put_repository(
     let request = result.unwrap();
     debug!(
         "PUT {} in {}/{}: Route: {}",
-        &request.repository.repo_type,
+        &request.repository.repo_type.to_string(),
         &request.storage.name,
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_put(&request, &r, &connection, bytes),
-        "npm" => NPMHandler::handle_put(&request, &r, &connection, bytes),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_put(&request, &r, &connection, bytes) }
+        NPM(_) => { NPMHandler::handle_put(&request, &r, &connection, bytes) }
     }?;
+
     handle_result(x, request.value, r)
 }
 
@@ -343,15 +345,15 @@ pub async fn head_repository(
     let request = result.unwrap();
     debug!(
         "HEAD {} in {}/{}: Route: {}",
-        &request.repository.repo_type,
+        &request.repository.repo_type.to_string(),
         &request.storage.name,
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type.as_str() {
-        "maven" => MavenHandler::handle_head(&request, &r, &connection),
-        "npm" => NPMHandler::handle_head(&request, &r, &connection),
-        value => return Err(InvalidRepositoryType(value.to_string())),
+    let x = match request.repository.repo_type {
+        Maven(_) => { MavenHandler::handle_head(&request, &r, &connection) }
+        NPM(_) => { NPMHandler::handle_head(&request, &r, &connection) }
     }?;
+
     handle_result(x, request.value, r)
 }

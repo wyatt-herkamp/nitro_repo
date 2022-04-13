@@ -21,6 +21,8 @@ use std::fs::{
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
+use crate::repository::types::RepositoryType;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalStorage {
@@ -93,11 +95,13 @@ impl LocationHandler<LocalFile> for LocalStorage {
             file.write_all(result.as_bytes())?;
         }
         info!("Creating Directory {}", location.to_str().unwrap());
-
+        let typ: RepositoryType = RepositoryType::from_str(&repository.repo_type).map_err(|typ| {
+            InternalError::InvalidRepositoryType(typ.to_string())
+        })?;
         create_dir_all(&location)?;
         let repo = Repository {
             name: repository.name,
-            repo_type: repository.repo_type,
+            repo_type: typ,
             storage: repository.storage,
             settings: Default::default(),
             security: Default::default(),

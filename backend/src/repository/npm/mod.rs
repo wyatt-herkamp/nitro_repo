@@ -20,18 +20,18 @@ use crate::repository::types::RepoResponse::{
     BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
 use crate::repository::types::{
-    Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryType,
+    Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryHandler,
 };
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
-mod models;
+pub mod models;
 mod utils;
 
 pub struct NPMHandler;
 
 // name/version
-impl RepositoryType for NPMHandler {
+impl RepositoryHandler for NPMHandler {
     fn handle_get(
         request: &RepositoryRequest,
         http: &HttpRequest,
@@ -202,11 +202,11 @@ impl RepositoryType for NPMHandler {
                             }
 
                             if let Err(error) =
-                                crate::repository::utils::update_project_in_repositories(
-                                    &storage,
-                                    &repository,
-                                    version_for_saving.name.clone(),
-                                )
+                            crate::repository::utils::update_project_in_repositories(
+                                &storage,
+                                &repository,
+                                version_for_saving.name.clone(),
+                            )
                             {
                                 error!("Unable to update repository.json, {}", error);
                                 if log_enabled!(Trace) {

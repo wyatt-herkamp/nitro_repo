@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
-use crate::repository::models::{Repository, Visibility};
+use crate::repository::models::{Repository};
 use thiserror::Error;
-use strum_macros::{EnumString, Display};
+use crate::repository::settings::security::Visibility;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 
 
@@ -33,7 +33,7 @@ pub struct RepositoryPermission {
 
 impl Default for RepositoryPermission {
     fn default() -> Self {
-        return RepositoryPermission { permissions: vec![] };
+        RepositoryPermission { permissions: vec![] }
     }
 }
 
@@ -75,7 +75,7 @@ pub fn can_read(
                     return Ok(true);
                 }
             }
-            return can_deploy(user_perms, repo);
+            can_deploy(user_perms, repo)
         }
         Visibility::Hidden => Ok(true),
     }

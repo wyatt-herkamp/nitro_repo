@@ -8,7 +8,8 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::models::{Repository, Visibility};
+use crate::repository::models::{Repository};
+use crate::repository::settings::security::Visibility;
 use crate::system;
 use crate::system::action::{get_session_token, get_user_by_username};
 use crate::system::models::User;
@@ -73,8 +74,7 @@ pub fn can_deploy_basic_auth(
         if result.is_none() {
             return Ok((false, None));
         }
-        let user = result.unwrap();
-        return Ok((user_has_deploy_access(&user, repo), Some(user)));
+        return Ok((true, result));
     }
     Ok((false, None))
 }
@@ -123,7 +123,7 @@ pub fn can_read_basic_auth(
 
 pub fn is_authed_deploy(
     user: String,
-    repo: &Repository,
+    _repo: &Repository,
     conn: &MysqlConnection,
 ) -> Result<(bool, Option<User>), InternalError> {
     let result = base64::decode(user)?;
@@ -146,8 +146,7 @@ pub fn is_authed_deploy(
     {
         return Ok((false, None));
     }
-    let result2 = user_has_deploy_access(&user, repo);
-    Ok((result2, Some(user)))
+    Ok((true, Some(user)))
 }
 
 pub fn is_authed_read(
@@ -178,25 +177,6 @@ pub fn is_authed_read(
     Ok(true)
 }
 
-pub fn user_has_deploy_access(user: &User, repo: &Repository) -> bool {
-    if !user.permissions.admin {
-        if !repo.security.deployers.is_empty() {
-            return user.permissions.deployer;
-        } else {
-            return repo.security.deployers.contains(&user.id);
-        }
-    }
-    true
-}
-
-/// TODO call this method for reading
-pub fn user_has_read_access(user: &User, repo: &Repository) -> Result<bool, InternalError> {
-    if !repo.security.readers.is_empty() {
-        Ok(true)
-    } else {
-        Ok(repo.security.readers.contains(&user.id))
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {

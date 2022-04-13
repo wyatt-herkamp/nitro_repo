@@ -8,10 +8,12 @@ use crate::constants::SUPPORTED_REPO_TYPES;
 use crate::database::DbPool;
 use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::NitroRepoData;
+use crate::repository::models::RepositorySummary;
+use crate::repository::settings::frontend::{BadgeSettings, Frontend};
+use crate::repository::settings::Policy;
+use crate::repository::settings::security::Visibility;
+use crate::repository::settings::webhook::{ReportGeneration, Webhook};
 
-use crate::repository::models::{BadgeSettings, Frontend, Policy, RepositorySummary, Visibility};
-use crate::repository::models::{ReportGeneration, Webhook};
-use crate::system::action::get_user_by_username;
 use crate::system::utils::get_user_by_header;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -322,111 +324,6 @@ pub async fn modify_security(
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-#[patch("/api/admin/repository/{storage}/{repository}/clear/security/{what}")]
-pub async fn clear_all(
-    pool: web::Data<DbPool>,
-    site: NitroRepoData,
-    r: HttpRequest,
-    path: web::Path<(String, String, String)>,
-) -> SiteResponse {
-    let (storage, repository, what) = path.into_inner();
-
-    let connection = pool.get()?;
-
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
-        return unauthorized();
-    }
-    let result = site.storages.lock().unwrap();
-    let storage = result.get(&storage);
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository = storage.get_repository(&repository)?;
-    if repository.is_none() {
-        return not_found();
-    }
-    let mut repository = repository.unwrap();
-
-    match what.as_str() {
-        "deployers" => repository.security.deployers.clear(),
-        "readers" => repository.security.readers.clear(),
-        _ => return bad_request("Must be Deployers or Readers"),
-    }
-    storage.update_repository(&repository)?;
-    APIResponse::new(true, Some(repository)).respond(&r)
-}
-
-#[patch("/api/admin/repository/{storage}/{repository}/modify/security/{what}/{action}/{user}")]
-pub async fn update_deployers_readers(
-    pool: web::Data<DbPool>,
-    site: NitroRepoData,
-    r: HttpRequest,
-    path: web::Path<(String, String, String, String, String)>,
-) -> SiteResponse {
-    let (storage, repository, what, action, user) = path.into_inner();
-
-    let connection = pool.get()?;
-
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
-        return unauthorized();
-    }
-    let result = site.storages.lock().unwrap();
-    let storage = result.get(&storage);
-    if storage.is_none() {
-        return not_found();
-    }
-    let storage = storage.unwrap();
-    let repository = storage.get_repository(&repository)?;
-    if repository.is_none() {
-        return not_found();
-    }
-    let mut repository = repository.unwrap();
-    let user = get_user_by_username(&user, &connection)?;
-    if user.is_none() {
-        return not_found();
-    }
-    let user = user.unwrap();
-    match action.as_str() {
-        "deployers" => match what.as_str() {
-            "add" => {
-                repository.security.deployers.push(user.id);
-            }
-            "remove" => {
-                let filter = repository
-                    .security
-                    .deployers
-                    .iter()
-                    .position(|x| x == &user.id);
-                if filter.is_some() {
-                    repository.security.deployers.remove(filter.unwrap());
-                }
-            }
-            _ => return bad_request("Must be Add or Remove"),
-        },
-        "readers" => match what.as_str() {
-            "add" => {
-                repository.security.readers.push(user.id);
-            }
-            "remove" => {
-                let filter = repository
-                    .security
-                    .readers
-                    .iter()
-                    .position(|x| x == &user.id);
-                if filter.is_some() {
-                    repository.security.readers.remove(filter.unwrap());
-                }
-            }
-            _ => return bad_request("Must be Add or Remove"),
-        },
-        _ => return bad_request("Must be Deployers or Readers"),
-    }
-    storage.update_repository(&repository)?;
-    APIResponse::new(true, Some(repository)).respond(&r)
-}
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
