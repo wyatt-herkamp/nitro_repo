@@ -9,7 +9,7 @@ fn default() -> bool {
     true
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Policy {
     Release,
     Snapshot,

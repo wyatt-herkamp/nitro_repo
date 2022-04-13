@@ -22,8 +22,8 @@ use crate::repository::npm::models::NPMSettings;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Display, EnumString)]
 pub enum RepositoryType {
-    Maven(Option<MavenSettings>),
-    NPM(Option<NPMSettings>),
+    Maven(MavenSettings),
+    NPM(NPMSettings),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

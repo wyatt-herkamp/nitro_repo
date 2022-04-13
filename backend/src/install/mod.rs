@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::system::action::add_new_user;
 
-use crate::system::models::{User, UserPermissions};
+use crate::system::models::{User};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -35,6 +35,7 @@ use crate::system::utils::hash;
 use crate::utils::get_current_time;
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 use unicode_width::UnicodeWidthStr;
+use crate::system::permissions::UserPermissions;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -111,8 +112,12 @@ impl From<UserStage> for User {
             email: value.email.unwrap_or_default(),
             password: hash(value.password.unwrap_or_default()).unwrap(),
             permissions: UserPermissions {
+                disabled: false,
                 admin: true,
-                deployer: true,
+                user_manager: true,
+                repository_manager: true,
+                deployer: None,
+                viewer: None
             },
             created: get_current_time(),
         }

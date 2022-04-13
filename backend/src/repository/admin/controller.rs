@@ -88,7 +88,7 @@ pub async fn get_repo(
         return unauthorized();
     }
     let user = user.unwrap();
-    if !user.permissions.deployer && !user.permissions.admin {
+    if !user.permissions.can_access_repository() {
         return unauthorized();
     }
     let result = site.storages.lock().unwrap();

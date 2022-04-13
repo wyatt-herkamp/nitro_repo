@@ -8,7 +8,8 @@ use crate::system::action::{
     add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username,
     get_users, update_user, update_user_password, update_user_permissions,
 };
-use crate::system::models::{User, UserListResponse, UserPermissions};
+use crate::system::models::{User, UserListResponse};
+use crate::system::permissions::UserPermissions;
 use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser};
 use crate::utils::get_current_time;
 
@@ -87,7 +88,7 @@ pub async fn modify_user(
     nc: web::Json<ModifyUser>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
+    let name = name.into_inner();
     let admin = get_user_by_header(r.headers(), &connection)?;
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
@@ -100,14 +101,15 @@ pub async fn modify_user(
     APIResponse::from(get_user_by_username(&name, &connection)?).respond(&r)
 }
 
-#[patch("/api/admin/user/{user}/modify/permission/{permission}/{value}")]
+#[patch("/api/admin/user/{user}/modify/permissions")]
 pub async fn update_permission(
     pool: web::Data<DbPool>,
     r: HttpRequest,
-    path: web::Path<(String, String, bool)>,
+    permissions: web::Json<UserPermissions>,
+    path: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    let (user, permission, value) = path.into_inner();
+    let user = path.into_inner();
     let admin = get_user_by_header(r.headers(), &connection)?;
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
@@ -116,20 +118,9 @@ pub async fn update_permission(
     if user.is_none() {
         return not_found();
     }
-    let mut user = user.unwrap();
-    match permission.as_str() {
-        "admin" => {
-            user.permissions.admin = value;
-        }
-        "deployer" => {
-            user.permissions.deployer = value;
-        }
-        x => {
-            return bad_request(format!("Invalid Argument {}", x));
-        }
-    }
-    update_user_permissions(&user.id, &user.permissions, &connection)?;
-    APIResponse::from(Some(user)).respond(&r)
+    let user = user.unwrap();
+    update_user_permissions(&user.id, &permissions.into_inner(), &connection)?;
+    APIResponse::from(true).respond(&r)
 }
 
 #[post("/api/admin/user/{user}/password")]
@@ -140,11 +131,12 @@ pub async fn change_password(
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
     let admin = get_user_by_header(r.headers(), &connection)?;
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
+    let user = user.into_inner();
+
     let user = get_user_by_username(&user, &connection)?;
     if user.is_none() {
         return not_found();
@@ -168,6 +160,8 @@ pub async fn delete_user(
     if admin.is_none() || !admin.unwrap().permissions.admin {
         return unauthorized();
     }
+    let user = user.into_inner();
+
     let option = get_user_by_username(&user, &connection)?;
     if option.is_none() {
         return not_found();
