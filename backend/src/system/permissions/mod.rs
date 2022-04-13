@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::repository::models::{Repository, Visibility};
 use thiserror::Error;
-use crate::system::permissions::Permission::Admin;
 use strum_macros::{EnumString, Display};
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 
@@ -19,27 +18,13 @@ pub enum PermissionError {
 
 pub struct UserPermissions {
     pub disabled: bool,
-    pub permissions: Vec<Permission>,
+    pub admin: bool,
+    pub user_manager: bool,
+    pub repository_manager: bool,
+    pub deployer: Option<RepositoryPermission>,
+    pub viewer: Option<RepositoryPermission>,
 }
 
-#[derive(Serialize, Deserialize, Debug, EnumString, Display)]
-pub enum Permission {
-    Admin,
-    UserManager,
-    RepositoryManager,
-
-    Deployer(RepositoryPermission),
-    Viewer(RepositoryPermission),
-}
-
-impl PartialEq for Permission {
-    fn eq(&self, other: &Self) -> bool {
-        if self.to_string().eq(&other.to_string()) {
-            return true;
-        }
-        return false;
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RepositoryPermission {
@@ -52,16 +37,6 @@ impl Default for RepositoryPermission {
     }
 }
 
-impl UserPermissions {
-    pub fn find_by_name(&self, name: &str) -> Option<&Permission> {
-        for perm in self.permissions.iter() {
-            if perm.to_string().eq(name) {
-                return Some(perm);
-            }
-        }
-        return None;
-    }
-}
 
 pub fn can_deploy(
     user_perms: &UserPermissions,
@@ -70,20 +45,12 @@ pub fn can_deploy(
     if user_perms.disabled {
         return Ok(false);
     }
-    if user_perms.permissions.contains(&Admin) {
+    if user_perms.admin {
         return Ok(true);
     }
 
-    if let Some(view_perms) = user_perms.find_by_name("Deployer") {
-        return match view_perms {
-            Permission::Viewer(perms) => {
-                can(repo, perms)
-            }
-            _ => {
-                //This is literally impossible
-                Ok(false)
-            }
-        };
+    if let Some(perms) = &user_perms.deployer {
+        return can(repo, perms);
     }
     Ok(false)
 }
@@ -96,25 +63,19 @@ pub fn can_read(
     if user_perms.disabled {
         return Ok(false);
     }
-    if user_perms.permissions.contains(&Admin) {
+    if user_perms.admin {
         return Ok(true);
     }
+
     match repo.security.visibility {
         Visibility::Public => Ok(true),
         Visibility::Private => {
-            return if let Some(view_perms) = user_perms.find_by_name("Viewer") {
-                match view_perms {
-                    Permission::Viewer(perms) => {
-                        can(repo, perms)
-                    }
-                    _ => {
-                        //This is literally impossible
-                        Ok(false)
-                    }
+            if let Some(perms) = &user_perms.viewer {
+                if can(repo, perms)? {
+                    return Ok(true);
                 }
-            } else {
-                can_deploy(user_perms, repo)
-            };
+            }
+            return can_deploy(user_perms, repo);
         }
         Visibility::Hidden => Ok(true),
     }
