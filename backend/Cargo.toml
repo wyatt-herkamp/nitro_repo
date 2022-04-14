@@ -4,7 +4,6 @@ version = "0.1.0-BETA"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
-license = "MIT"
 license-file = "../LICENSE"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
