@@ -2,7 +2,7 @@
   <div v-if="project != undefined">
     <div>
       <MavenProjectInfo
-        v-if="project.repo_summary.repo_type == 'maven'"
+        v-if="project.repo_summary.repo_type == 'Maven'"
         :project="project"
         :child="child"
       />

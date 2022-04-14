@@ -1,4 +1,5 @@
-import axios, {AxiosInstance} from "axios";
+import axios, {AxiosInstance, AxiosResponse} from "axios";
+import { Result } from "ts-results";
 
 export let apiURL: string;
 
@@ -19,7 +20,6 @@ export function init(myURL: string) {
         },
     });
 }
-
 
 export interface APIError {
     user_friendly_message: string;

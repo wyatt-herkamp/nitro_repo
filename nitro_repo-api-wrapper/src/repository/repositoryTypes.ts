@@ -2,7 +2,7 @@
 export interface Repository {
     id: number;
     name: string;
-    repo_type: string;
+    repo_type: any;
     settings: RepoSettings;
     deploy_settings: DeploySettings;
     security: SecurityRules;
@@ -129,3 +129,4 @@ export interface FileResponse {
     response_type: ResponseType | string;
     created: number;
 }
+

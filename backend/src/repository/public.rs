@@ -4,9 +4,11 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
 use crate::error::response::{not_found, unauthorized};
-use crate::repository::models::{Policy, Repository, Visibility};
+use crate::repository::models::{Repository};
 use crate::system::utils::can_read_basic_auth;
 use crate::NitroRepoData;
+use crate::repository::settings::Policy;
+use crate::repository::settings::security::Visibility;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -24,7 +26,7 @@ impl From<Repository> for PublicRepositoryResponse {
     fn from(repo: Repository) -> Self {
         PublicRepositoryResponse {
             name: repo.name,
-            repo_type: repo.repo_type,
+            repo_type: repo.repo_type.to_string(),
             storage: repo.storage,
             description: repo.settings.description,
             active: repo.settings.active,
@@ -49,7 +51,7 @@ pub async fn get_repo(
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
                 let connection = pool.get()?;
-                if !can_read_basic_auth(r.headers(), &repository, &connection)? {
+                if !can_read_basic_auth(r.headers(), &repository, &connection)?.0 {
                     return unauthorized();
                 }
             }

@@ -1,6 +1,5 @@
 use crate::api_response::SiteResponse;
 use crate::database::DbPool;
-use crate::error::internal_error::InternalError::InvalidRepositoryType;
 use crate::NitroRepoData;
 use actix_web::{get, web, HttpRequest, HttpResponse};
 use badge_maker::BadgeBuilder;
@@ -8,7 +7,8 @@ use badge_maker::BadgeBuilder;
 use crate::repository::controller::to_request;
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
-use crate::repository::types::RepositoryType;
+use crate::repository::types::RepositoryHandler;
+use crate::repository::types::RepositoryType::{Maven, NPM};
 
 #[get("/badge/{storage}/{repository}/{file:.*}/badge")]
 pub async fn badge(
@@ -31,14 +31,13 @@ pub async fn badge(
         )
     } else if request.value.eq("nitro_repo_info") {
         (
-            format!("{} Repository", &request.repository.repo_type),
+            format!("{} Repository", &request.repository.repo_type.to_string()),
             request.repository.name.clone(),
         )
     } else {
-        let version = match request.repository.repo_type.as_str() {
-            "maven" => MavenHandler::latest_version(&request, &r, &connection),
-            "npm" => NPMHandler::latest_version(&request, &r, &connection),
-            value => return Err(InvalidRepositoryType(value.to_string())),
+        let version = match request.repository.repo_type {
+            Maven(_) => { MavenHandler::latest_version(&request, &r, &connection) }
+            NPM(_) => { NPMHandler::latest_version(&request, &r, &connection) }
         }?;
 
         (

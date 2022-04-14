@@ -7,9 +7,11 @@
       <SubNavBar v-model="view">
         <SubNavItem index="General"> General </SubNavItem>
         <SubNavItem index="Password"> Password </SubNavItem>
+        <SubNavItem index="Permissions"> Permissions </SubNavItem>
       </SubNavBar>
       <UserGeneral :user="user" v-if="view == 'General'" />
       <UserPassword :user="user" v-if="view == 'Password'" />
+      <Permissions :user="user" v-if="view == 'Permissions'" />
     </div>
   </div>
 </template>
@@ -24,6 +26,7 @@ import UserPassword from "./user/update/UserPassword.vue";
 import SubNavBar from "./common/nav/SubNavBar.vue";
 import SubNavItem from "./common/nav/SubNavItem.vue";
 import { useRouter } from "vue-router";
+import Permissions from "./user/update/Permissions.vue";
 
 export default defineComponent({
   props: {
@@ -55,6 +58,7 @@ export default defineComponent({
     UserPassword,
     SubNavBar,
     SubNavItem,
-  },
+    Permissions
+},
 });
 </script>

@@ -2,9 +2,10 @@ use diesel::prelude::*;
 use diesel::MysqlConnection;
 
 use crate::system::models::{
-    AuthToken, SessionToken, User, UserListResponse, UserPermissions, UserResponse,
+    AuthToken, SessionToken, User, UserListResponse, UserResponse,
 };
 use crate::{system, utils};
+use crate::system::permissions::UserPermissions;
 
 pub fn get_users(conn: &MysqlConnection) -> Result<Vec<UserListResponse>, diesel::result::Error> {
     use crate::schema::users::dsl::*;
