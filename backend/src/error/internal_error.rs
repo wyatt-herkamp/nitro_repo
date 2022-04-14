@@ -7,6 +7,7 @@ use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use base64::DecodeError;
 use thiserror::Error;
+use crate::system::permissions::PermissionError;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -38,6 +39,8 @@ pub enum InternalError {
     ConfigError(String),
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
+    #[error("Permission Error: {0}")]
+    PermissionError(crate::system::permissions::PermissionError),
     #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
     DeadSite,
 }
@@ -61,6 +64,12 @@ impl actix_web::error::ResponseError for InternalError {
 }
 
 //from<Error>
+impl From<PermissionError> for InternalError {
+    fn from(err: PermissionError) -> InternalError {
+        InternalError::PermissionError(err)
+    }
+}
+
 impl From<DecodeError> for InternalError {
     fn from(err: DecodeError) -> InternalError {
         InternalError::DecodeError(err)
@@ -120,6 +129,7 @@ impl From<actix_web::Error> for InternalError {
         InternalError::ActixWebError(err)
     }
 }
+
 impl From<SystemTimeError> for InternalError {
     fn from(err: SystemTimeError) -> InternalError {
         InternalError::Error(err.to_string())

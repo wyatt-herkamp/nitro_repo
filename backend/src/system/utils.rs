@@ -13,6 +13,7 @@ use crate::repository::settings::security::Visibility;
 use crate::system;
 use crate::system::action::{get_session_token, get_user_by_username};
 use crate::system::models::User;
+use crate::system::permissions::{can_deploy, can_read};
 
 pub fn get_user_by_header(
     header_map: &HeaderMap,
@@ -27,6 +28,7 @@ pub fn get_user_by_header(
     let header = x.unwrap().to_string();
 
     let split = header.split(' ').collect::<Vec<&str>>();
+
     let option = split.get(0);
     if option.is_none() {
         return Ok(None);
@@ -40,6 +42,28 @@ pub fn get_user_by_header(
     if key.eq("Bearer") {
         let result = system::action::get_user_from_session_token(&value, conn)?;
         return Ok(result);
+    } else if key.eq("Basic") {
+        let result = base64::decode(value)?;
+        let string = String::from_utf8(result)?;
+        let split = string.split(':').collect::<Vec<&str>>();
+
+        if !split.len().eq(&2) {
+            return Ok(None);
+        }
+        let result1 = get_user_by_username(split.get(0).unwrap(), conn)?;
+        if result1.is_none() {
+            return Ok(None);
+        }
+        let argon2 = Argon2::default();
+        let user = result1.unwrap();
+        let parsed_hash = PasswordHash::new(user.password.as_str())?;
+        if argon2
+            .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
+            .is_err()
+        {
+            return Ok(None);
+        }
+        return Ok(Some(user));
     }
     Ok(None)
 }
@@ -49,132 +73,31 @@ pub fn can_deploy_basic_auth(
     repo: &Repository,
     conn: &MysqlConnection,
 ) -> Result<(bool, Option<User>), InternalError> {
-    let option = header_map.get("Authorization");
+    let option = get_user_by_header(header_map, conn)?;
     if option.is_none() {
         return Ok((false, None));
     }
-    let x = option.unwrap().to_str();
-    if x.is_err() {}
-    let header = x.unwrap().to_string();
-    let split = header.split(' ').collect::<Vec<&str>>();
-    let option = split.get(0);
-    if option.is_none() {
-        return Ok((false, None));
-    }
-    let value = split.get(1);
-    if value.is_none() {
-        return Ok((false, None));
-    }
-    let value = value.unwrap().to_string();
-    let key = option.unwrap().to_string();
-    if key.eq("Basic") {
-        return is_authed_deploy(value, repo, conn);
-    } else if key.eq("Bearer") {
-        let result = system::action::get_user_from_session_token(&value, conn)?;
-        if result.is_none() {
-            return Ok((false, None));
-        }
-        return Ok((true, result));
-    }
-    Ok((false, None))
+    let user = option.unwrap();
+    Ok((can_deploy(&user.permissions, repo)?, Some(user)))
 }
 
 pub fn can_read_basic_auth(
     header_map: &HeaderMap,
     repo: &Repository,
     conn: &MysqlConnection,
-) -> Result<bool, InternalError> {
-    match repo.security.visibility {
-        Visibility::Public => Ok(true),
-        Visibility::Private => {
-            let option = header_map.get("Authorization");
-            if option.is_none() {
-                return Ok(false);
-            }
-            let x = option.unwrap().to_str();
-            if x.is_err() {}
-            let header = x.unwrap().to_string();
-
-            let split = header.split(' ').collect::<Vec<&str>>();
-            let option = split.get(0);
-            if option.is_none() {
-                return Ok(false);
-            }
-            let value = split.get(1);
-            if value.is_none() {
-                return Ok(false);
-            }
-            let value = value.unwrap().to_string();
-            let key = option.unwrap().to_string();
-            if key.eq("Basic") {
-                return is_authed_read(value, repo, conn);
-            } else if key.eq("Bearer") {
-                let result = system::action::get_user_from_session_token(&value, conn)?;
-                if result.is_none() {
-                    return Ok(false);
-                }
-                return Ok(true);
-            }
-            Ok(false)
-        }
-        Visibility::Hidden => Ok(true),
-    }
-}
-
-pub fn is_authed_deploy(
-    user: String,
-    _repo: &Repository,
-    conn: &MysqlConnection,
 ) -> Result<(bool, Option<User>), InternalError> {
-    let result = base64::decode(user)?;
-    let string = String::from_utf8(result)?;
-    let split = string.split(':').collect::<Vec<&str>>();
-
-    if !split.len().eq(&2) {
-        return Ok((false, None));
+    match repo.security.visibility {
+        Visibility::Public => Ok((true, None)),
+        Visibility::Private => {
+            let option = get_user_by_header(header_map, conn)?;
+            if option.is_none() {
+                return Ok((false, None));
+            }
+            let user = option.unwrap();
+            Ok((can_read(&user.permissions, repo)?, Some(user)))
+        }
+        Visibility::Hidden => Ok((true, None)),
     }
-    let result1 = get_user_by_username(split.get(0).unwrap(), conn)?;
-    if result1.is_none() {
-        return Ok((false, None));
-    }
-    let argon2 = Argon2::default();
-    let user = result1.unwrap();
-    let parsed_hash = PasswordHash::new(user.password.as_str())?;
-    if argon2
-        .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Ok((false, None));
-    }
-    Ok((true, Some(user)))
-}
-
-pub fn is_authed_read(
-    user: String,
-    _repo: &Repository,
-    conn: &MysqlConnection,
-) -> Result<bool, InternalError> {
-    let result = base64::decode(user)?;
-    let string = String::from_utf8(result)?;
-    let split = string.split(':').collect::<Vec<&str>>();
-
-    if !split.len().eq(&2) {
-        return Ok(false);
-    }
-    let result1 = get_user_by_username(split.get(0).unwrap(), conn)?;
-    if result1.is_none() {
-        return Ok(false);
-    }
-    let argon2 = Argon2::default();
-    let user = result1.unwrap();
-    let parsed_hash = PasswordHash::new(user.password.as_str())?;
-    if argon2
-        .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Ok(false);
-    }
-    Ok(true)
 }
 
 

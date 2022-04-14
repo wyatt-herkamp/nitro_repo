@@ -51,7 +51,7 @@ pub async fn get_repo(
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
                 let connection = pool.get()?;
-                if !can_read_basic_auth(r.headers(), &repository, &connection)? {
+                if !can_read_basic_auth(r.headers(), &repository, &connection)?.0 {
                     return unauthorized();
                 }
             }

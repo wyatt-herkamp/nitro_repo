@@ -33,7 +33,7 @@ impl RepositoryHandler for MavenHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let result =
@@ -192,7 +192,7 @@ impl RepositoryHandler for MavenHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -207,7 +207,7 @@ impl RepositoryHandler for MavenHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -237,7 +237,7 @@ impl RepositoryHandler for MavenHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let string = parse_project_to_directory(&request.value);
@@ -266,7 +266,7 @@ impl RepositoryHandler for MavenHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> Result<Option<String>, InternalError> {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return Ok(None);
         }
         let string = parse_project_to_directory(&request.value);

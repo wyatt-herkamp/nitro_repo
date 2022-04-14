@@ -37,7 +37,7 @@ impl RepositoryHandler for NPMHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         if http.headers().get("npm-command").is_some() {
@@ -271,7 +271,7 @@ impl RepositoryHandler for NPMHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
 
@@ -285,7 +285,7 @@ impl RepositoryHandler for NPMHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -319,7 +319,7 @@ impl RepositoryHandler for NPMHandler {
             log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
         }
         log::trace!("URL: {}", request.value);
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -349,7 +349,7 @@ impl RepositoryHandler for NPMHandler {
         http: &HttpRequest,
         conn: &MysqlConnection,
     ) -> Result<Option<String>, InternalError> {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)? {
+        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
             return Ok(None);
         }
         let project_dir = parse_project_to_directory(&request.value);
