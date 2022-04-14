@@ -39,7 +39,7 @@
           class="disabled nitroTextInput"
           id="grid-type"
           type="text"
-          v-model="repository.repo_type"
+          v-model="repositoryType"
           disabled
         />
       </div>
@@ -119,17 +119,17 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data() {
+  data(props) {
     const token = inject("token") as string;
-
+    console.log(props.repository.repo_type);
     return { token };
   },
   setup(props) {
     const deleteOpen = ref(false);
     let deleteFiles = ref(false);
-
+    const repositoryType = Object.keys(props.repository.repo_type)[0];
     const date = new Date(props.repository.created).toLocaleDateString("en-US");
-    return { date, deleteOpen, deleteFiles };
+    return { repositoryType, date, deleteOpen, deleteFiles };
   },
   methods: {
     async updateActiveStatus() {

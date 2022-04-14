@@ -130,6 +130,10 @@ pub fn can_read(
 }
 
 pub fn can(repo: &Repository, perms: &RepositoryPermission) -> Result<bool, PermissionError> {
+    if perms.permissions.is_empty() {
+        // If nothing is set. It is a all view type of scenario
+        return Ok(true);
+    }
     let repository = repo.name.clone();
     let storage = repo.storage.clone();
     for perm_string in perms.permissions.iter() {

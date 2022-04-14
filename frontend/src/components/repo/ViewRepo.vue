@@ -2,7 +2,7 @@
   <div v-if="repository != undefined">
     <RepositoryBadge :repository="repository" :child="child" />
     <MavenRepoInfo
-      v-if="repository.repo_type == 'maven'"
+      v-if="repository.repo_type.Maven != undefined"
       :repository="repository"
       :child="child"
     />

@@ -15,10 +15,17 @@ export interface UserListResponse {
 }
 
 export interface UserPermissions {
+    disabled: boolean;
     admin: boolean;
-    deployer: boolean;
+    user_manager: boolean;
+    repository_manager: boolean;
+    deployer?: RepositoryPermissions;
+    viewer?: RepositoryPermissions;
 }
 
+export interface RepositoryPermissions {
+    permissions: Array<string>
+}
 
 export interface UserList {
     users: Array<User>;

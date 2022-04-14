@@ -11,7 +11,8 @@ pub mod admin;
 pub mod local_storage;
 pub mod models;
 
-pub static STORAGE_CONFIG: &str = "storages.nitro_repo";
+pub static STORAGES_CONFIG: &str = "storages.nitro_repo";
+pub static STORAGE_CONFIG: &str = "storage.nitro_repo";
 
 pub type RepositoriesFile = HashMap<String, RepositorySummary>;
 pub type FileResponse<T> = Either<T, Vec<StorageFile>>;

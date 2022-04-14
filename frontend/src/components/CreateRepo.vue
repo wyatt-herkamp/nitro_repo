@@ -35,8 +35,8 @@
           <label class="nitroLabel" for="name"> Repository Type </label>
           <select id="type" v-model="form.type" required class="nitroSelectBox">
             <option disabled selected value="">Repository Type</option>
-            <option value="maven">Maven</option>
-            <option value="npm">NPM</option>
+            <option value="Maven">Maven</option>
+            <option value="NPM">NPM</option>
           </select>
         </div>
       </div>
@@ -47,9 +47,10 @@
 <style scoped></style>
 <script lang="ts">
 import { Repository } from "nitro_repo-api-wrapper";
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, inject, ref, watch } from "vue";
 import { createNewRepository } from "nitro_repo-api-wrapper";
 import NitroModal from "@/components/common/model/NitroModal.vue";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   props: {
@@ -122,12 +123,5 @@ export default defineComponent({
   components: { NitroModal },
 });
 
-function inject(arg0: string): string | undefined {
-  throw new Error("Function not implemented.");
-}
-
-function useRouter() {
-  throw new Error("Function not implemented.");
-}
 </script>
 <style scoped></style>

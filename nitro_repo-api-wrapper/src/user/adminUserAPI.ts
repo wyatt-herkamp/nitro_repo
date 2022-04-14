@@ -1,6 +1,6 @@
-import { User, UserList} from "./userTypes";
-import {apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED} from "../NitroRepoAPI";
-import {Err, Ok} from "ts-results";
+import { User, UserList, UserPermissions } from "./userTypes";
+import { apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED } from "../NitroRepoAPI";
+import { Err, Ok } from "ts-results";
 
 
 
@@ -90,7 +90,7 @@ export async function updateOtherPassword(
             },
             (err) => {
                 if (err.response) {
-                    if ((err.response.status = 401)) {
+                    if ((err.response.status == 401)) {
                         return Err(NOT_AUTHORIZED);
                     }
                     return Err(INTERNAL_ERROR);
@@ -133,7 +133,7 @@ export async function updateNameAndEmail(
             },
             (err) => {
                 if (err.response) {
-                    if ((err.response.status = 401)) {
+                    if ((err.response.status == 401)) {
                         return Err(NOT_AUTHORIZED);
                     }
                     return Err(INTERNAL_ERROR);
@@ -147,14 +147,13 @@ export async function updateNameAndEmail(
 }
 export async function updatePermission(
     user: string,
-    perm: string,
-    value: boolean,
+    permissions: UserPermissions,
     token: string
 ) {
     return apiClient
         .patch(
-            "/api/admin/user/" + user + "/modify/permission/" + perm + "/" + value,
-            {},
+            `/api/admin/user/${user}/modify/permissions`,
+            JSON.stringify(permissions),
             {
                 headers: {
                     Authorization: "Bearer " + token,
@@ -176,7 +175,7 @@ export async function updatePermission(
             },
             (err) => {
                 if (err.response) {
-                    if ((err.response.status = 401)) {
+                    if ((err.response.status == 401)) {
                         return Err(NOT_AUTHORIZED);
                     }
                     return Err(INTERNAL_ERROR);
@@ -190,7 +189,7 @@ export async function updatePermission(
 }
 
 
-export async function getUsers(token: string) :Promise<UserList|undefined> {
+export async function getUsers(token: string): Promise<UserList | undefined> {
     //${API_URL}
     const value = await apiClient.get("/api/admin/user/list", {
         headers: {

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::database::DbPool;
-use crate::error::response::{already_exists_what, bad_request, not_found, unauthorized};
+use crate::error::response::{already_exists_what, not_found, unauthorized};
 use crate::system::action::{
     add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username,
     get_users, update_user, update_user_password, update_user_permissions,
