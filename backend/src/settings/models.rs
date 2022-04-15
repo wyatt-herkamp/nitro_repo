@@ -94,7 +94,6 @@ pub struct MysqlSettings {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Application {
-    pub frontend: String,
     pub log: String,
     pub address: String,
     pub app_url: String,

@@ -135,7 +135,6 @@ pub struct OtherStage {
 impl From<OtherStage> for Application {
     fn from(other: OtherStage) -> Self {
         Self {
-            frontend: "../site/dist".to_string(),
             log: other.log_location.unwrap(),
             address: other.address.unwrap(),
             app_url: other.app_url.unwrap(),
