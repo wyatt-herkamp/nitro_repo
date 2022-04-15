@@ -8,6 +8,8 @@
 2. Setup [Rust](https://rustup.rs/#)
 ## Compiling
 1. Pull latest code from https://github.com/wherkamp/nitro_repo.git `git clone https://github.com/wherkamp/nitro_repo.git`
+### Compiling for Use
+1. On Linux run the the `build.sh` file. `nitro_repo.tar.gz` file will be produced.
 ### Frontend Setup
 1. Inside the site directory
 2. Run `npm install`
@@ -15,6 +17,7 @@
 ### Compiling Application
 1. Inside the nitro_repo directory
 2. run `cargo build --features ssl --release` for full version. Removing `--release` is recommended if you are doing development. `--features ssl` adds ssl support. You can remove this if you do not want the web server to use ssl
+
 ### After
 1. After that you should have a nitro_repo executable either in your target/debug/ or target/release depending if you had a release tag set
 ## Common Issues
