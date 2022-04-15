@@ -70,6 +70,14 @@
   @apply cursor-pointer;
   @apply text-white;
 }
+.nitroButton:disabled {
+  @apply bg-slate-800;
+  opacity: .5;
+  @apply p-4 my-3;
+  @apply rounded-md;
+  @apply cursor-default;
+  @apply text-white;
+}
 .nitroButtonLight {
   @apply bg-slate-500;
   @apply p-4 my-3;

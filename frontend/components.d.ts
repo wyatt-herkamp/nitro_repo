@@ -45,7 +45,6 @@ declare module '@vue/runtime-core' {
     UpdateStorage: typeof import('./src/components/UpdateStorage.vue')['default']
     UpdateUser: typeof import('./src/components/UpdateUser.vue')['default']
     UserGeneral: typeof import('./src/components/user/update/UserGeneral.vue')['default']
-    UserPassword: typeof import('./src/components/user/update/UserPassword.vue')['default']
     Users: typeof import('./src/components/Users.vue')['default']
     ViewProject: typeof import('./src/components/project/ViewProject.vue')['default']
     ViewRepo: typeof import('./src/components/repo/ViewRepo.vue')['default']

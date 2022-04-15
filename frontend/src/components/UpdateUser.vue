@@ -6,11 +6,9 @@
     <div class="flex flex-col w-full">
       <SubNavBar v-model="view">
         <SubNavItem index="General"> General </SubNavItem>
-        <SubNavItem index="Password"> Password </SubNavItem>
         <SubNavItem index="Permissions"> Permissions </SubNavItem>
       </SubNavBar>
       <UserGeneral :user="user" v-if="view == 'General'" />
-      <UserPassword :user="user" v-if="view == 'Password'" />
       <Permissions :user="user" v-if="view == 'Permissions'" />
     </div>
   </div>
@@ -22,7 +20,6 @@ import { defineComponent, inject, ref } from "vue";
 import { getUserByID } from "nitro_repo-api-wrapper";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
-import UserPassword from "./user/update/UserPassword.vue";
 import SubNavBar from "./common/nav/SubNavBar.vue";
 import SubNavItem from "./common/nav/SubNavItem.vue";
 import { useRouter } from "vue-router";
@@ -55,7 +52,7 @@ export default defineComponent({
 
   components: {
     UserGeneral,
-    UserPassword,
+    
     SubNavBar,
     SubNavItem,
     Permissions
