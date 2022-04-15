@@ -8,7 +8,7 @@ export default defineConfig({
 
   themeConfig: {
     repo: 'wherkamp/nitro_repo',
-    docsDir: 'docs',
+    docsDir: 'docs/docs',
     docsBranch: 'master',
     editLinks: true,
     editLinkText: 'Edit this page on GitHub',
