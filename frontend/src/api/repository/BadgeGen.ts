@@ -27,11 +27,12 @@ export function createBadgeSnippets(
 export function createProjectSnippet(
   storage: string,
   repository: string,
-  project: string
+  project: string,
+  projectName: string
 ): SnippetInfo[] {
   const url = apiURL;
   const badgeURL = `${url}/badge/${storage}/${repository}/${project}/badge`;
-  const appURL = `${url}/project/${storage}/${repository}/${project}`;
+  const appURL = `${url}/project/${storage}/${repository}/${projectName}`;
   const text = `${repository} Repository`;
   return [
     {
