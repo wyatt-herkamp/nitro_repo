@@ -15,7 +15,7 @@
     "@uppy/vue": "^0.4.6",
     "axios": "^0.26.1",
     "boxicons": "^2.1.2",
-    "core-js": "^3.21.1",
+    "core-js": "^3.22.0",
     "equal-vue": "^0.79.3",
     "fast-xml-parser": "^4.0.7",
     "nitro_repo-api-wrapper": "1.0.0",
