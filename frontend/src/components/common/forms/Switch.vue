@@ -1,5 +1,5 @@
 <template>
-  <label :for="id" class="flex items-center cursor-pointer h-min m-1">
+  <label :for="id" class="flex items-center cursor-pointer h-min m-1 w-fit">
     <div class="relative">
       <input
         ref="input"

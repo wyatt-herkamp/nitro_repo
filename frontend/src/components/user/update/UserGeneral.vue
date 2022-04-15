@@ -4,7 +4,7 @@
       <form class="settingContent" @submit.prevent="updatePassword()">
         <h2 class="settingHeader">User General</h2>
         <div class="settingBox">
-          <label class="nitroLabel"  for="grid-name"> Name </label>
+          <label class="nitroLabel" for="grid-name"> Name </label>
           <input
             class="nitroTextInput"
             id="grid-name"
@@ -32,14 +32,14 @@
 
         <div class="settingContent">
           <div class="settingBox">
-            <label  class="nitroLabel"  for="grid-name"> Password </label>
+            <label class="nitroLabel" for="grid-name"> Password </label>
             <input
               class="nitroTextInput"
               id="grid-name"
               type="password"
               v-model="password.password"
             />
-            <label class="nitroLabel"  for="grid-name"> Confirm Password </label>
+            <label class="nitroLabel" for="grid-name"> Confirm Password </label>
             <input
               class="nitroTextInput"
               id="grid-name"
@@ -59,6 +59,10 @@
         </div>
       </form>
     </div>
+    <div class="flex-grow lg:m-5 border-slate-500 border-2 rounded-lg">
+      <h1 class="text-left ml-2 md:text-4xl text-3xl border-b-2 border-slate-500 p-2">Permissions</h1>
+      <Permissions :user="user" />
+    </div>
   </div>
 </template>
 
@@ -68,6 +72,7 @@ import { updateOtherPassword, User } from "nitro_repo-api-wrapper";
 import { updateNameAndEmail, updatePermission } from "nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
+import Permissions from "./Permissions.vue";
 export default defineComponent({
   props: {
     user: {
@@ -155,6 +160,6 @@ export default defineComponent({
       }
     },
   },
-  components: { Switch },
+  components: { Switch, Permissions },
 });
 </script>

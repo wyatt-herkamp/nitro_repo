@@ -4,12 +4,7 @@
     class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
   >
     <div class="flex flex-col w-full">
-      <SubNavBar v-model="view">
-        <SubNavItem index="General"> General </SubNavItem>
-        <SubNavItem index="Permissions"> Permissions </SubNavItem>
-      </SubNavBar>
-      <UserGeneral :user="user" v-if="view == 'General'" />
-      <Permissions :user="user" v-if="view == 'Permissions'" />
+      <UserGeneral :user="user" />
     </div>
   </div>
 </template>
@@ -20,10 +15,7 @@ import { defineComponent, inject, ref } from "vue";
 import { getUserByID } from "nitro_repo-api-wrapper";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
-import SubNavBar from "./common/nav/SubNavBar.vue";
-import SubNavItem from "./common/nav/SubNavItem.vue";
 import { useRouter } from "vue-router";
-import Permissions from "./user/update/Permissions.vue";
 
 export default defineComponent({
   props: {
@@ -33,8 +25,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    let view = ref("General");
-
     const token: string | undefined = inject("token");
     if (token == undefined) {
       useRouter().push("login");
@@ -47,15 +37,11 @@ export default defineComponent({
       } catch (e) {}
     };
     loadUser();
-    return { user, view };
+    return { user };
   },
 
   components: {
     UserGeneral,
-    
-    SubNavBar,
-    SubNavItem,
-    Permissions
-},
+  },
 });
 </script>

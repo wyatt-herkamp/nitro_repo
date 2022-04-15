@@ -10,7 +10,7 @@
         </div>
         <div class="basis-1/2 my-auto">
           <button @click="updatePermissions()" class="nitroButton">
-            Save Settings
+            Save Permissions
           </button>
         </div>
       </div>
