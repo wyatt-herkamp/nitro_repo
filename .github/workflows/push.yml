@@ -3,6 +3,8 @@ name: Push and Build
 on:
   push:
     branches: [ master ]
+  pull_request:
+    branches: [ master ]
 env:
   CARGO_TERM_COLOR: always
 jobs:
@@ -32,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: nitro_repo stable Linux
-          path: backend/target/release/nitro_repo
+          path: nitro_repo.tar.gz
   clippy_check:
     runs-on: ubuntu-latest
     steps:

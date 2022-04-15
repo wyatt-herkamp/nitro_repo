@@ -9,10 +9,10 @@ extern crate strum_macros;
 use actix_cors::Cors;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{middleware, web, App, HttpServer};
-use std::fs::read_to_string;
+use std::fs::{read_to_string};
 use std::path::Path;
 
-use log::{error, info};
+use log::{error, info, trace};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
 use std::sync::Mutex;
@@ -115,7 +115,10 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("LOG_LOCATION", &init_settings.application.log);
 
     load_logger(&init_settings.application.mode);
-
+    for (key, value) in init_settings.env.iter() {
+        trace!("Adding Environment Var {key} set to {value}");
+        std::env::set_var(key, value);
+    }
     info!("Initializing Database");
     let pool = match init_settings.database.db_type.as_str() {
         "mysql" => {
@@ -186,7 +189,7 @@ async fn main() -> std::io::Result<()> {
             .configure(misc::init)
             .configure(frontend::init)
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

@@ -1,23 +1,28 @@
-use std::fs::{read_to_string, remove_dir_all};
-use std::io::Cursor;
+use std::fs::{read_to_string};
 use std::path::Path;
 
 use actix_files::Files;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
 use handlebars::Handlebars;
-use log::debug;
+use log::{debug, trace, warn};
 use serde_json::json;
-use zip::ZipArchive;
 
 use crate::api_response::SiteResponse;
 use crate::NitroRepoData;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
-    web_data();
+    let frontend_string = std::env::var("FRONTEND").unwrap_or_else(|_| "frontend".to_string());
+    let frontend_path = Path::new(&frontend_string);
+    let index = frontend_path.join("index.html");
+    trace!("Frontend Path {}", frontend_path.display());
+    if !frontend_path.exists() {
+        warn!("Frontend Not Found");
+        return;
+    }
     let mut reg = Handlebars::new();
-    let content = read_to_string(Path::new("frontend").join("index.html"))
+    let content = read_to_string(index)
         .expect("Unable to read index.html");
     reg.register_template_string("index", content)
         .expect("Unable to Parse Template");
@@ -32,24 +37,9 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .route("/repository/{file:.*}", web::get().to(frontend_handler))
         .route("/project/{file:.*}", web::get().to(frontend_handler))
         .route("/", web::get().to(frontend_handler))
-        .service(Files::new("/", "frontend").show_files_listing());
+        .service(Files::new("/", frontend_path).show_files_listing());
 }
 
-fn web_data() {
-    debug!("Loading Zip!");
-    #[cfg(feature = "frontend")]
-    {
-        let data = include_bytes!(concat!(env!("OUT_DIR"), "/frontend.zip")).as_ref();
-        let mut archive = ZipArchive::new(Cursor::new(data)).unwrap();
-        let path = Path::new("frontend");
-        if path.exists() {
-            debug!("Deleting Old Frontend");
-            remove_dir_all(&path).unwrap();
-        }
-        debug!("Extracting Zip!");
-        archive.extract(&path).unwrap();
-    }
-}
 
 pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
     let guard = site.settings.lock().unwrap();

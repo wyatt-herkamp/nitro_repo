@@ -109,6 +109,8 @@ pub struct GeneralSettings {
     pub database: Database<StringMap>,
     pub application: Application,
     pub internal: Internal,
+    #[serde(default)]
+    pub env: HashMap<String, String>
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

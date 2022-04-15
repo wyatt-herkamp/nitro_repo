@@ -5,18 +5,6 @@ authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
 license-file = "../LICENSE"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[package.metadata.deb]
-depends = "$auto, systemd"
-extended-description = "An open source artifact manager. Written in Rust back end and an React front end to create a fast and modern experience "
-section = "admin"
-priority = "optional"
-assets = [
-    ["target/release/nitro_repo", "usr/bin/nitro_repo", "755"],
-    ["other/nitro_repo.service", "/lib/systemd/system/nitro_repo.service", "644"],
-]
-
 [dependencies]
 # Web
 actix = "0.13.0"
@@ -71,7 +59,6 @@ either = "1.6.1"
 badge-maker = "0.2.0"
 # Webhook
 webhook = "2.0.0"
-zip = "0.6.0"
 # Installer
 tui = "0.17"
 crossterm = "0.23"
@@ -79,11 +66,7 @@ clap = { version = "3.1.6", features = ["derive"] }
 unicode-width = "0.1.9"
 
 [build-dependencies]
-zip = "0.6.0"
-walkdir = "2.3.2"
+vergen = "7.0.0"
 [features]
-default = ["frontend"]
-# Defines a feature named `webp` that does not enable any other features.
 ssl = ["openssl", "actix-web/openssl"]
-dev-frontend = []
-frontend = []
+

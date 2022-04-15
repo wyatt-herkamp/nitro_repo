@@ -6,6 +6,7 @@ log
 frontend/node_modules
 frontend/out
 frontend/dist
+frontend/frontend
 nitro_repo-api-wrapper/dist
 nitro_repo-api-wrapper/node_modules
 .next
@@ -17,3 +18,4 @@ docs/node_modules
 docs/docs/.vitepress/dist
 *.log
 *.env*
+*.tar.gz
