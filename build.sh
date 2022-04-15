@@ -14,6 +14,8 @@ fi
 mkdir -p build/frontend
 cp -R frontend/dist/* build/frontend
 cp backend/target/release/nitro_repo build
+cp -R other build
+cp -R LICENSE build
 (
   cd build
   tar -czvf nitro_repo.tar.gz  *
