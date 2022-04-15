@@ -22,10 +22,6 @@ import createProjectGen from "@/api/maven/ProjectGen";
 export default defineComponent({
   components: {  },
   props: {
-    child: {
-      default: false,
-      type: Boolean,
-    },
     project: {
       required: true,
       type: Object as () => Project,
@@ -40,7 +36,6 @@ export default defineComponent({
       props.project.project.versions.latest_release
     );
     let page = ref(snippets[0].name);
-    console.log(props.child);
     return { url, page, snippets };
   },
 

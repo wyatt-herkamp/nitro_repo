@@ -1,13 +1,13 @@
 <template>
   <CodeMenu :codes="snippets">
     <template v-slot:header>
-      <div class="grid grid-cols-2">
-        <div>
+      <div class="flex flex-row flex-warp">
+        <div class="flex-grow">
           <h1 class="text-left text-white mt-5 ml-5 font-bold">
             Repository Badge
           </h1>
         </div>
-        <div>
+        <div class="mr-5">
           <img
             class="object-none my-5"
             :src="
@@ -36,10 +36,6 @@ import CodeMenu from "@/components/common/code/CodeMenu.vue";
 export default defineComponent({
   components: { CodeMenu },
   props: {
-    child: {
-      default: false,
-      type: Boolean,
-    },
     repository: {
       required: true,
       type: Object as () => Repository | PublicRepositoryInfo,

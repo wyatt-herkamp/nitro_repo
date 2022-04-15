@@ -47,20 +47,40 @@
     </div>
 
     <div
-      class="hidden md:block float-right lg:w-1/4 m-2 rounded-md bg-slate-800"
+      class="hidden md:block float-right lg:w-1/4 m-2 rounded-md bg-slate-900"
       v-if="activeResponse != undefined"
     >
-      <ViewProject
-        v-if="activeResponse.Project != undefined"
-        :project="activeResponse.Project"
-        :child="true"
-      />
-      <ViewRepo
-        v-if="activeResponse.Repository != undefined"
-        :repository="activeResponse.Repository.name"
-        :storage="activeResponse.Repository.storage"
-        :child="true"
-      />
+      <div v-if="activeResponse.Project != undefined">
+        <router-link
+          :to='{
+            name: "Project",
+            params: {
+              storage: activeResponse.Project.repo_summary.storage,
+              repo: activeResponse.Project.repo_summary.name,
+              id: activeResponse.Project.version.name,
+            },
+          }'
+          >Project Page</router-link
+        >
+        <ViewProject :project="activeResponse.Project" />
+      </div>
+
+      <div v-if="activeResponse.Repository != undefined">
+        <router-link
+          :to='{
+            name: "ViewRepository",
+            params: {
+              storage: activeResponse.Repository.storage,
+              repo: activeResponse.Repository.name,
+            },
+          }'
+          >Repository Page</router-link
+        >
+        <ViewRepo
+          :repositoryName="activeResponse.Repository.name"
+          :storage="activeResponse.Repository.storage"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -80,7 +100,7 @@
 import { browse, BrowseResponse, FileResponse } from "nitro_repo-api-wrapper";
 
 import { apiURL } from "@/http-common";
-import { defineComponent, inject, ref } from "vue";
+import { defineComponent, inject, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { BrowsePath } from "./Browse";
 import ViewProject from "@/components/project/ViewProject.vue";
@@ -89,26 +109,29 @@ import BrowseBox from "@/components/browse/BrowseBox.vue";
 
 export default defineComponent({
   setup() {
-    const token: string | undefined = inject('token')
+    const token: string | undefined = inject("token");
 
     let url = apiURL;
     const route = useRoute();
     let pathSplit = ref<BrowsePath[]>([]);
     const tableData = ref<FileResponse[] | undefined>();
     const activeResponse = ref<ResponseType | undefined>();
-    let catchAll = route.params.catchAll as string;
-    const path = route.fullPath;
+    const catchAll = ref(route.params.catchAll as string);
+    const path = ref("");
 
-    var upperPath = path.split("/");
-
-    if (upperPath.length > 0) {
-      upperPath.splice(upperPath.length - 1);
-    }
-    const up = upperPath.join("/");
-    console.log(up);
+    const up = ref("");
     const getFiles = async () => {
+      path.value = route.fullPath;
+      catchAll.value = route.params.catchAll as string;
+
+      var upperPath = path.value.split("/");
+
+      if (upperPath.length > 0) {
+        upperPath.splice(upperPath.length - 1);
+      }
+      up.value = upperPath.join("/");
       try {
-        const value = await browse(catchAll, token);
+        const value = await browse(route.params.catchAll as string, token);
         if (value == undefined) {
           console.warn("No Response from Backend");
           return;
@@ -122,19 +145,18 @@ export default defineComponent({
             pathSplit.value.push({ name: element, path: url });
           });
         }
-        activeResponse.value;
         if (
           fileResponse.response_type != undefined &&
           typeof fileResponse.response_type != "string"
         ) {
           activeResponse.value = fileResponse.response_type as ResponseType;
-          console.log(activeResponse.value);
         }
         tableData.value = value.files;
       } catch (e) {
         console.error(e);
       }
     };
+
     getFiles();
     return {
       path,

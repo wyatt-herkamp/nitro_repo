@@ -1,15 +1,13 @@
 <template>
   <div v-if="project != undefined">
-    <div>
-      <MavenProjectInfo
-        v-if="project.repo_summary.repo_type == 'Maven'"
-        :project="project"
-        :child="child"
-      />
-    </div>
-    <div class="py-2">
-      <ProjectBadge :project="project" :child="child" />
-    </div>
+    <ProjectBadge class="m-2" :project="project" :child="child" />
+
+    <MavenProjectInfo
+      class="m-2"
+      v-if="project.repo_summary.repo_type == 'Maven'"
+      :project="project"
+      :child="child"
+    />
   </div>
 </template>
 <style scoped></style>
@@ -28,15 +26,11 @@ export default defineComponent({
       required: true,
       type: Object as () => Project,
     },
-    child: {
-      default: false,
-      type: Boolean,
-    },
+
   },
   setup(props) {
     console.log(props.project == undefined);
     const router = useRouter();
-
     const { meta } = useMeta({
       title: props.project.version.name,
     });

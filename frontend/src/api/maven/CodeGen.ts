@@ -11,7 +11,7 @@ export default function createRepositoryInfo(
       snippet: `<repository>
     <id>${name}</id>
     <url>${url}</url>
-  </repository>`,
+</repository>`,
     },
     {
       name: "Gradle",

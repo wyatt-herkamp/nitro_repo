@@ -19,8 +19,8 @@ export function createBadgeSnippets(
       name: "html",
       lang: "html",
       snippet: `<a href=${appURL}>
-            <img alt="${text}" src="${badgeURL}"/>
-            </a>`,
+      <img alt="${text}" src="${badgeURL}"/>
+</a>`,
     },
   ];
 }
@@ -42,9 +42,7 @@ export function createProjectSnippet(
     {
       name: "html",
       lang: "html",
-      snippet: `<a href=${appURL}>
-            <img alt="${text}" src="${badgeURL}"/>
-            </a>`,
+      snippet: `<a href=${appURL}><img alt="${text}" src="${badgeURL}"/></a>`,
     },
   ];
 }

@@ -16,8 +16,6 @@
         </select>
       </div>
     </div>
-    <h2 class="text-white m-3 text-left">Authorized Users (Coming Soon)</h2>
-    <div class="flex flex-wrap mb-6"></div>
   </div>
 </template>
 

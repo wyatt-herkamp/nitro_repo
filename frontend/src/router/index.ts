@@ -73,7 +73,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Browse,
   },
   {
-    path: "/repository/:storage/:repo/",
+    path: "/repository/:storage/:repo",
     name: "ViewRepository",
     component: Repository,
   },

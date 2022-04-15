@@ -1,6 +1,6 @@
 <template>
   <div v-if="repository != undefined">
-    <ViewRepo :storage="storage" :repository="repository" />
+    <ViewRepo :storage="storage" :repositoryName="repository" />
   </div>
 </template>
 

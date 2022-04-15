@@ -1,13 +1,13 @@
 <template>
   <CodeMenu :codes="snippets">
     <template v-slot:header>
-      <div class="grid grid-cols-2">
-        <div>
+      <div class="flex flex-row flex-warp">
+        <div class="flex-grow">
           <h1 class="text-left text-white mt-5 ml-5 font-bold">
             Project Badge
           </h1>
         </div>
-        <div>
+        <div class="mr-5">
           <img
             class="object-none my-5"
             :src="
@@ -37,10 +37,7 @@ import { createProjectSnippet } from "@/api/repository/BadgeGen";
 export default defineComponent({
   components: {  },
   props: {
-    child: {
-      default: false,
-      type: Boolean,
-    },
+
     project: {
       required: true,
       type: Object as () => Project,
@@ -57,7 +54,6 @@ export default defineComponent({
       projectPath
     );
     let page = ref(snippets[0].name);
-    console.log(props.child);
     return { url, page, snippets, projectPath };
   },
 

@@ -1,10 +1,9 @@
 <template>
   <div v-if="repository != undefined">
-    <RepositoryBadge :repository="repository" :child="child" />
-    <MavenRepoInfo
-      v-if="repository.repo_type.Maven != undefined"
+    <RepositoryBadge class="m-2" :repository="repository" />
+    <MavenRepoInfo class="m-2"
+      v-if="repositoryType === 'Maven'"
       :repository="repository"
-      :child="child"
     />
   </div>
 </template>
@@ -25,7 +24,7 @@ export default defineComponent({
       required: false,
       type: String,
     },
-    repository: {
+    repositoryName: {
       required: false,
       type: String,
     },
@@ -33,37 +32,29 @@ export default defineComponent({
       required: false,
       type: Object as () => Repository,
     },
-    child: {
-      default: false,
-      type: Boolean,
-    },
   },
   setup(props) {
     const router = useRouter();
 
-    const options = ref([
-      { value: "DeployerUsername", label: "Deploy Username" },
-      { value: "Time", label: "Time" },
-    ]);
     let repository = ref<Repository | PublicRepositoryInfo | undefined>(
       props.repositoryType
     );
     const token: string | undefined = inject("token");
-    const isLoading = ref(props.repositoryType == undefined);
-    const exampleBadgeURL = ref("");
+    const repositoryType = ref("");
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
     if (repository.value == undefined) {
-      if (props.repository != undefined && props.storage != undefined) {
+      if (props.repositoryName != undefined && props.storage != undefined) {
         const getRepo = async () => {
           try {
             const value = (await getRepoPublic(
               token,
-              props.storage,
-              props.repository
+              props.storage as string,
+              props.repositoryName as string
             )) as PublicRepositoryInfo;
             repository.value = value;
+            repositoryType.value = value.repo_type;
             meta.title = value.name;
           } catch (e) {
             console.log(e);
@@ -73,14 +64,13 @@ export default defineComponent({
       }
     } else {
       meta.title = repository.value.name;
+      repositoryType.value = Object.keys(repository.value.repo_type)[0];
     }
 
     return {
-      exampleBadgeURL,
       repository,
       router,
-      options,
-      isLoading,
+      repositoryType,
     };
   },
 });

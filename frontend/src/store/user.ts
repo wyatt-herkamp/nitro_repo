@@ -21,7 +21,6 @@ export const useUserStore = defineStore({
     
       const user = await getUser(token);
       if (user.err) return;
-      console.log(user.val);
       this.$patch({
         user: user.val,
       })

@@ -1,6 +1,6 @@
 <template>
   <prism-editor
-    class="nitroEditor  absolute"
+    class="nitroEditor"
     v-model="highlighterComputed.snippet"
     :highlight="highlighterComputed.highlighter"
     :line-numbers="false"
@@ -16,7 +16,7 @@ import "vue-prism-editor/dist/prismeditor.min.css";
 import prism from "prismjs";
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
-import "prismjs/themes/prism-coy.css";
+import "@/styles/prism-atom-dark.css";
 
 export default defineComponent({
   components: { PrismEditor },

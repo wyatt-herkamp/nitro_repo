@@ -90,7 +90,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 import { User } from "nitro_repo-api-wrapper";
 import MenuButton from "@/components/nav/MenuButton.vue";

@@ -2,7 +2,7 @@
   <div class="codeMenu">
     <div class="selector">
       <slot name="header"></slot>
-      <nav class="flex flex-wrap p-6 m-1">
+      <nav class="flex flex-wrap mb-1">
         <div
           v-for="code in codes"
           :key="code.name"
@@ -14,7 +14,7 @@
       </nav>
     </div>
     <div class="codeBox">
-      <div v-for="entry in codes" :key="entry.name">
+      <div class="codeBlock" v-for="entry in codes" :key="entry.name">
         <CodeCard v-if="entry.name === currentTab" :snippetInfo="entry" />
       </div>
     </div>
@@ -37,7 +37,6 @@ export default defineComponent({
   },
   setup(props) {
     const url = apiURL;
-    console.log(props.codes.length);
     const currentTab = ref(props.codes[0].name);
 
     return { url, currentTab };
@@ -46,8 +45,6 @@ export default defineComponent({
 </script>
 
 <style>
-.selector {
-}
 .active {
   @apply text-yellow-50 !important;
   @apply border-slate-900 !important;
@@ -68,8 +65,12 @@ export default defineComponent({
 }
 .codeBox {
   @apply relative;
-  @apply h-24;
+  min-height: 8rem;
   @apply overflow-hidden;
+}
+.codeBlock {
+  @apply pl-2;
+  @apply my-auto;
 }
 .nitroEditor {
 }
