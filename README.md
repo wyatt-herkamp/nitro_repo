@@ -1,4 +1,4 @@
-# nitro_repo [![Powered By Actix](https://img.shields.io/badge/Powered%20By-Actix-red?style=for-the-badge&logo=rust)](https://github.com/actix/actix-web)
+# nitro_repo [![Documentation](https://img.shields.io/static/v1?label=nitro-repo.kingtux.dev&message=Here&style=for-the-badge&color=green)](https://nitro-repo.kingtux.dev/) [![Powered By Actix](https://img.shields.io/badge/Powered%20By-Actix-red?style=for-the-badge&logo=rust)](https://github.com/actix/actix-web)
 [![Discord](https://img.shields.io/discord/701531356609511555)](https://discord.gg/CyK4admCSY)
 [![Push](https://github.com/wherkamp/nitro_repo/actions/workflows/push.yml/badge.svg)](https://github.com/wherkamp/nitro_repo/actions/workflows/push.yml)
 [![issues](https://img.shields.io/github/issues/wherkamp/nitro_repo/help%20wanted)](https://github.com/wherkamp/nitro_repo/issues)
@@ -7,16 +7,7 @@
 Nitro Repo is an open source free artifact manager. Written with a Rust back end and a Vue front end to create a fast
 and modern experience.
 
-## Features
 
-| feature | nitro_repo | StrongBox | Sonatype Nexus |
-|--|--|--|--| 
-| Maven | true | true | true |
-| NPM | Yes but Unstable | true | true |
-| NuGet | Coming Soon | true | true |
-| Project Pages | Coming Soon | false | false |
-| Token Based Security | Coming Soon | false | unsure |
-| Badge Generation | true | false | false |
 
 ### History
 
