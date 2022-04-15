@@ -22,6 +22,11 @@ export default defineConfig({
         activeMatch: '^/sysAdmin/'
       },
       {
+        text: 'Knowledge Base',
+        link: '/knowledge/',
+        activeMatch: '^/knowledge/'
+      },
+      {
         text: 'Release Notes',
         link: 'https://github.com/wherkamp/wherkamp/releases'
       }
@@ -29,6 +34,7 @@ export default defineConfig({
 
     sidebar: {
       '/sysAdmin/': sysAdminBar(),
+      '/knowledge/': knowledgeBaseBar(),
       '/': generalInfo()
 
     }
@@ -45,6 +51,27 @@ function generalInfo() {
         { text: 'Contributing', link: '/contributing' },
       ]
     }
+  ]
+}
+function knowledgeBaseBar() {
+  return [
+    {
+      text: 'User Management',
+      children: [
+        { text: 'User Permissions', link: '/knowledge/userpermissions' },
+      ]
+    }, {
+      text: 'Repositories',
+      children: [
+        { text: 'Artifact Types', link: '/knowledge/ArtifactTypes' }
+      ]
+    }, {
+      text: 'Other',
+      children: [
+        { text: 'Internal Workings', link: '/knowledge/InternalWorkings' }
+      ]
+    },
+
   ]
 }
 
