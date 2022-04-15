@@ -524,6 +524,7 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
         database: app.database_stage.into(),
         application: Application::from(app.other_stage),
         internal: Default::default(),
+        env: Default::default()
     };
     create_dir_all(config)?;
 

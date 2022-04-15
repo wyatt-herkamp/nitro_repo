@@ -71,7 +71,6 @@ either = "1.6.1"
 badge-maker = "0.2.0"
 # Webhook
 webhook = "2.0.0"
-zip = "0.6.0"
 # Installer
 tui = "0.17"
 crossterm = "0.23"
@@ -79,11 +78,7 @@ clap = { version = "3.1.6", features = ["derive"] }
 unicode-width = "0.1.9"
 
 [build-dependencies]
-zip = "0.6.0"
-walkdir = "2.3.2"
+vergen = "7.0.0"
 [features]
-default = ["frontend"]
-# Defines a feature named `webp` that does not enable any other features.
 ssl = ["openssl", "actix-web/openssl"]
-dev-frontend = []
-frontend = []
+

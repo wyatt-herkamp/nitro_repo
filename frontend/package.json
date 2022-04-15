@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "full-build": "npm install && npm run linklib && vite build",
     "serve": "vite preview",
     "linklib": "npm run --prefix ../nitro_repo-api-wrapper build && npm link ../nitro_repo-api-wrapper",
     "ci-linklib": "npm run --prefix ../nitro_repo-api-wrapper ci-build && npm link ../nitro_repo-api-wrapper"
