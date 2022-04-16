@@ -1,6 +1,6 @@
 [package]
 name = "nitro_repo"
-version = "0.1.0-BETA"
+version = "1.0.0-RC0"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
