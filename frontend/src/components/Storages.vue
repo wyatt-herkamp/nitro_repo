@@ -23,7 +23,7 @@
 import { defineComponent, inject, ref } from "vue";
 import CreateStorage from "@/components/CreateStorage.vue";
 import UpdateStorage from "@/components/UpdateStorage.vue";
-import { getStorages } from "nitro_repo-api-wrapper";
+import { getStorages } from "@nitro_repo/nitro_repo-api-wrapper";
 import SearchableList from "./common/list/SearchableList.vue";
 import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";

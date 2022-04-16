@@ -27,9 +27,9 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
-import { Repository } from "nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
-import { PublicRepositoryInfo } from "nitro_repo-api-wrapper";
+import { PublicRepositoryInfo } from "@nitro_repo/nitro_repo-api-wrapper";
 import { createBadgeSnippets } from "@/api/repository/BadgeGen";
 import CodeMenu from "@/components/common/code/CodeMenu.vue";
 

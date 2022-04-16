@@ -57,7 +57,7 @@
 
 <script lang="ts">
 import { useUserStore } from "@/store/user";
-import { updateMyPassword, User } from "nitro_repo-api-wrapper";
+import { updateMyPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { computed, defineComponent, inject, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 

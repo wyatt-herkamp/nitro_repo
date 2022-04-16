@@ -73,8 +73,8 @@
 
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from "vue";
-import { updateOtherPassword, User } from "nitro_repo-api-wrapper";
-import { updateNameAndEmail, updatePermission } from "nitro_repo-api-wrapper";
+import { updateOtherPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
+import { updateNameAndEmail, updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";

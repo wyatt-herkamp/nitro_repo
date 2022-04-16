@@ -40,11 +40,11 @@
   </div>
 </template>
 <script lang="ts">
-import { getStorage } from "nitro_repo-api-wrapper";
+import { getStorage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRoute, useRouter } from "vue-router";
-import { Storage } from "nitro_repo-api-wrapper";
+import { Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import Repositories from "./Repositories.vue";
 
 export default defineComponent({

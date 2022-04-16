@@ -28,7 +28,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { RepositoryPermissions } from "nitro_repo-api-wrapper";
+import { RepositoryPermissions } from "@nitro_repo/nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 export default defineComponent({
   props: {

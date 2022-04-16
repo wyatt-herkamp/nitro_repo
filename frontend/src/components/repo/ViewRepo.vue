@@ -13,8 +13,8 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { getRepoPublic, PublicRepositoryInfo } from "nitro_repo-api-wrapper";
-import { Repository } from "nitro_repo-api-wrapper";
+import { getRepoPublic, PublicRepositoryInfo } from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";

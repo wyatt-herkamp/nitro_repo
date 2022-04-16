@@ -27,7 +27,7 @@
 import { defineComponent, inject, ref, watch } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
-import { getUsers } from "nitro_repo-api-wrapper";
+import { getUsers } from "@nitro_repo/nitro_repo-api-wrapper";
 import { ListItem } from "./common/list/ListTypes";
 import { useRoute, useRouter } from "vue-router";
 

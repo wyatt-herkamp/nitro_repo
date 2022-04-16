@@ -28,8 +28,8 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import { Repository } from "nitro_repo-api-wrapper";
-import { updateDeployReport } from "nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import { updateDeployReport } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 
 export default defineComponent({

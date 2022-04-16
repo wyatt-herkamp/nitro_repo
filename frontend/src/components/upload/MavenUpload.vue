@@ -76,7 +76,7 @@ import "@uppy/core/dist/style.css";
 import "@uppy/drag-drop/dist/style.css";
 
 import Uppy from "@uppy/core";
-import { Repository } from "nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import PomCreator from "./PomCreator.vue";
 import apiClient, { apiURL } from "@/http-common";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";

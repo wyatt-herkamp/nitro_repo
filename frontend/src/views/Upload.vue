@@ -9,7 +9,7 @@ import { defineComponent, inject, onBeforeMount, ref } from "vue";
 
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import { useRoute } from "vue-router";
-import { getRepoByNameAndStorage, Repository } from "nitro_repo-api-wrapper";
+import { getRepoByNameAndStorage, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 
 export default defineComponent({
   components: { MavenUpload },

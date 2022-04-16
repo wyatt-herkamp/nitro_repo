@@ -9,7 +9,6 @@ declare module '@vue/runtime-core' {
     BrowseBox: typeof import('./src/components/browse/BrowseBox.vue')['default']
     CodeCard: typeof import('./src/components/common/code/CodeCard.vue')['default']
     CodeMenu: typeof import('./src/components/common/code/CodeMenu.vue')['default']
-    CopyMenu: typeof import('./src/components/repo/types/maven/copy/CopyMenu.vue')['default']
     CreateRepo: typeof import('./src/components/CreateRepo.vue')['default']
     CreateStorage: typeof import('./src/components/CreateStorage.vue')['default']
     CreateUser: typeof import('./src/components/CreateUser.vue')['default']

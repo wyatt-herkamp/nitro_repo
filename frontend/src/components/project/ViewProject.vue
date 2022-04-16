@@ -12,7 +12,7 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { Project } from "nitro_repo-api-wrapper";
+import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenProjectInfo from "@/components/project/types/maven/MavenProjectInfo.vue";
 import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";

@@ -10,9 +10,9 @@
 </template>
 
 <script lang="ts">
-import { User } from "nitro_repo-api-wrapper";
+import { User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
-import { getUserByID } from "nitro_repo-api-wrapper";
+import { getUserByID } from "@nitro_repo/nitro_repo-api-wrapper";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
 import { useRouter } from "vue-router";

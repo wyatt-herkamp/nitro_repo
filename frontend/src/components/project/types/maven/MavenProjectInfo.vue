@@ -3,7 +3,7 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { Project } from "nitro_repo-api-wrapper";
+import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import { defineComponent, ref } from "vue";
 import MavenProjectCopy from "./copy/MavenProjectCopy.vue";

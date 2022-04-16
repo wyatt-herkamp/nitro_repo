@@ -46,9 +46,9 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { Repository } from "nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
-import { createNewRepository } from "nitro_repo-api-wrapper";
+import { createNewRepository } from "@nitro_repo/nitro_repo-api-wrapper";
 import NitroModal from "@/components/common/model/NitroModal.vue";
 import { useRouter } from "vue-router";
 

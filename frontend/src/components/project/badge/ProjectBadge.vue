@@ -30,7 +30,7 @@
 <script lang="ts">
 import {computed, defineComponent, ref} from "vue";
 import {useRouter} from "vue-router";
-import {Project, Repository} from "nitro_repo-api-wrapper";
+import {Project, Repository} from "@nitro_repo/nitro_repo-api-wrapper";
 import {apiURL} from "@/http-common";
 import {createProjectSnippet} from "@/api/repository/BadgeGen";
 

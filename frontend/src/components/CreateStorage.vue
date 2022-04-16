@@ -48,9 +48,9 @@
 </template>
 
 <script lang="ts">
-import { Storage } from "nitro_repo-api-wrapper";
+import { Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
-import { createNewStorage } from "nitro_repo-api-wrapper";
+import { createNewStorage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 
 export default defineComponent({

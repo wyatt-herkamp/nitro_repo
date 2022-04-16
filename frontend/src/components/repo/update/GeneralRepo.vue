@@ -110,8 +110,8 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import { deleteRepository, Repository } from "nitro_repo-api-wrapper";
-import { setActiveStatus, setPolicy } from "nitro_repo-api-wrapper";
+import { deleteRepository, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import { setActiveStatus, setPolicy } from "@nitro_repo/nitro_repo-api-wrapper";
 export default defineComponent({
   props: {
     repository: {

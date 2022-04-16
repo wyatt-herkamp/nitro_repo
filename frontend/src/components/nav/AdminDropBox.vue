@@ -39,7 +39,7 @@
 <script lang="ts">
 import { defineComponent, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { User } from "nitro_repo-api-wrapper";
+import { User } from "@nitro_repo/nitro_repo-api-wrapper";
 import MenuButton from "@/components/nav/MenuButton.vue";
 import Login from "@/components/nav/Login.vue";
 import { react } from "@babel/types";

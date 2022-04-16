@@ -22,7 +22,7 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
-import { getRepositoriesByStorage } from "nitro_repo-api-wrapper";
+import { getRepositoriesByStorage } from "@nitro_repo/nitro_repo-api-wrapper";
 
 import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";

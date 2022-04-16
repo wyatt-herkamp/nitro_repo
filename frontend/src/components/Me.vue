@@ -1,10 +1,10 @@
 <template></template>
 
 <script lang="ts">
-import { User } from "nitro_repo-api-wrapper";
+import { User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
-import { getUser } from "nitro_repo-api-wrapper";
-import { updateMyPassword } from "nitro_repo-api-wrapper";
+import { getUser } from "@nitro_repo/nitro_repo-api-wrapper";
+import { updateMyPassword } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 
 export default defineComponent({

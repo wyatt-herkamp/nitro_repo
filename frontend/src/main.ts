@@ -9,7 +9,7 @@ import "@/styles/form.css";
 import "boxicons/css/boxicons.min.css";
 import "boxicons/dist/boxicons.js";
 import vfmPlugin from "vue-final-modal";
-import { init } from "nitro_repo-api-wrapper";
+import { init } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import { useCookies } from "vue3-cookies";
 import { createPinia } from 'pinia'

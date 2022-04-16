@@ -3,8 +3,8 @@
 </template>
 
 <script lang="ts">
-import { getProject } from "nitro_repo-api-wrapper";
-import { Project } from "nitro_repo-api-wrapper";
+import { getProject } from "@nitro_repo/nitro_repo-api-wrapper";
+import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 import { useRoute } from "vue-router";
 import ViewProject from "@/components/project/ViewProject.vue";

@@ -14,9 +14,9 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import { Repository } from "nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
-import { PublicRepositoryInfo } from "nitro_repo-api-wrapper";
+import { PublicRepositoryInfo } from "@nitro_repo/nitro_repo-api-wrapper";
 import createRepositoryInfo from "@/api/maven/CodeGen";
 
 export default defineComponent({

@@ -5,13 +5,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "full-build": "npm install && npm run linklib && vite build",
-    "serve": "vite preview",
-    "linklib": "npm run --prefix ../nitro_repo-api-wrapper build && npm link ../nitro_repo-api-wrapper",
-    "ci-linklib": "npm run --prefix ../nitro_repo-api-wrapper ci-build && npm link ../nitro_repo-api-wrapper"
+    "full-build": "npm install && vite build",
+    "serve": "vite preview"
   },
   "dependencies": {
     "@kyvg/vue3-notification": "^2.3.4",
+    "@nitro_repo/nitro_repo-api-wrapper": "file:../nitro_repo-api-wrapper",
     "@uppy/drag-drop": "^2.0.6",
     "@uppy/vue": "^0.4.6",
     "axios": "^0.26.1",
@@ -19,7 +18,6 @@
     "core-js": "^3.22.0",
     "equal-vue": "^0.79.3",
     "fast-xml-parser": "^4.0.7",
-    "nitro_repo-api-wrapper": "1.0.0-RC0",
     "pinia": "^2.0.13",
     "prismjs": "^1.27.0",
     "ts-results": "^3.3.0",

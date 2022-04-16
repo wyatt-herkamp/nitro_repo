@@ -50,7 +50,7 @@
 </template>
 <script lang="ts">
 import { apiURL } from "@/http-common";
-import { FileResponse } from "nitro_repo-api-wrapper";
+import { FileResponse } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent } from "vue";
 
 export default defineComponent({

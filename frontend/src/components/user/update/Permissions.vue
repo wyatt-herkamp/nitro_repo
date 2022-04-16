@@ -92,8 +92,8 @@
 </style>
 <script lang="ts">
 import { computed, defineComponent, inject, ref, watch } from "vue";
-import { User } from "nitro_repo-api-wrapper";
-import { updatePermission } from "nitro_repo-api-wrapper";
+import { User } from "@nitro_repo/nitro_repo-api-wrapper";
+import { updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
 import PermissionList from "./PermissionList.vue";

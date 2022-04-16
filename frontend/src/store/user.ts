@@ -1,4 +1,4 @@
-import { getUser, User } from 'nitro_repo-api-wrapper';
+import { getUser, User } from '@nitro_repo/nitro_repo-api-wrapper';
 import { defineStore, acceptHMRUpdate } from 'pinia'
 import { inject } from 'vue';
 

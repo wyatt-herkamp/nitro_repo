@@ -82,8 +82,8 @@
   </div>
 </template>
 <script lang="ts">
-import { User } from "nitro_repo-api-wrapper";
-import { createNewUser } from "nitro_repo-api-wrapper";
+import { User } from "@nitro_repo/nitro_repo-api-wrapper";
+import { createNewUser } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 

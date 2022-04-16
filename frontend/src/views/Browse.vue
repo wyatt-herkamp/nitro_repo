@@ -98,7 +98,7 @@
 }
 </style>
 <script lang="ts">
-import { browse, BrowseResponse, FileResponse } from "nitro_repo-api-wrapper";
+import { browse, BrowseResponse, FileResponse } from "@nitro_repo/nitro_repo-api-wrapper";
 
 import { apiURL } from "@/http-common";
 import { defineComponent, inject, ref, watch } from "vue";

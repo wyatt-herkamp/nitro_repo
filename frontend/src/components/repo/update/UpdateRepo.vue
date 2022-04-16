@@ -30,8 +30,8 @@
   </div>
 </template>
 <script lang="ts">
-import { getRepoByNameAndStorage } from "nitro_repo-api-wrapper";
-import { Repository } from "nitro_repo-api-wrapper";
+import { getRepoByNameAndStorage } from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import ViewRepo from "@/components/repo/ViewRepo.vue";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
