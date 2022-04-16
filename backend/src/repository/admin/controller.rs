@@ -13,6 +13,7 @@ use crate::repository::settings::frontend::{BadgeSettings, Frontend};
 use crate::repository::settings::Policy;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::webhook::{ReportGeneration, Webhook};
+use crate::system::permissions::options::CanIDo;
 
 use crate::system::utils::get_user_by_header;
 
@@ -21,6 +22,12 @@ pub struct ListRepositories {
     pub repositories: Vec<RepositorySummary>,
 }
 
+///    let user = match user.can_i_edit_repos() {
+//         Ok(user) => {
+//             user
+//         }
+//         Err(_) => return unauthorized()
+//     };
 #[get("/api/admin/repositories/list")]
 pub async fn list_repos(
     pool: web::Data<DbPool>,
@@ -30,7 +37,7 @@ pub async fn list_repos(
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if user.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     //TODO Change the frontend to only show repos based on the current storage being looked at.
@@ -55,7 +62,7 @@ pub async fn list_repos_by_storage(
     let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if user.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let result = site.storages.lock().unwrap();
@@ -83,12 +90,7 @@ pub async fn get_repo(
     let (storage, repo) = path.into_inner();
     let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() {
-        return unauthorized();
-    }
-    let user = user.unwrap();
-    if !user.permissions.can_access_repository() {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let result = site.storages.lock().unwrap();
@@ -110,8 +112,7 @@ pub async fn add_repo(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let result = site.storages.lock().unwrap();
@@ -135,14 +136,12 @@ pub async fn update_active_status(
     r: HttpRequest,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
-    let (storage, repo, active) = path.into_inner();
-
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+
+    let (storage, repo, active) = path.into_inner();
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -166,14 +165,12 @@ pub async fn update_policy(
     r: HttpRequest,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
-    let (storage, repository, policy) = path.into_inner();
-
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+
+    let (storage, repository, policy) = path.into_inner();
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -198,15 +195,12 @@ pub async fn update_description(
     b: Bytes,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
-    let (storage, repository) = path.into_inner();
-
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
 
+    let (storage, repository) = path.into_inner();
     let vec = b.to_vec();
     let string = String::from_utf8(vec);
     if let Err(error) = string {
@@ -238,13 +232,12 @@ pub async fn modify_frontend_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
 ) -> SiteResponse {
-    let (storage, repository) = path.into_inner();
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+    let (storage, repository) = path.into_inner();
+
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -269,14 +262,11 @@ pub async fn modify_badge_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
 ) -> SiteResponse {
-    let (storage, repository) = path.into_inner();
-
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+    let (storage, repository) = path.into_inner();
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -300,14 +290,13 @@ pub async fn modify_security(
     r: HttpRequest,
     path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
-    let (storage, repository, visibility) = path.into_inner();
-    println!("{:?}", &visibility);
     let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+    let (storage, repository, visibility) = path.into_inner();
+
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -333,14 +322,12 @@ pub async fn modify_deploy(
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-    let (storage, repository) = path.into_inner();
-
     let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+    let (storage, repository) = path.into_inner();
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -366,9 +353,13 @@ pub async fn add_webhook(
     path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
+    let connection = pool.get()?;
+
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+        return unauthorized();
+    }
     let (storage, repository) = path.into_inner();
 
-    let connection = pool.get()?;
 
     let user = get_user_by_header(r.headers(), &connection)?;
     if user.is_none() || !user.unwrap().permissions.admin {
@@ -397,13 +388,13 @@ pub async fn remove_webhook(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let (storage, repository, webhook) = path.into_inner();
-
     let connection = pool.get()?;
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+    let (storage, repository, webhook) = path.into_inner();
+
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -433,13 +424,14 @@ pub async fn delete_repository(
     path: web::Path<(String, String)>,
     query: web::Query<DeleteRequest>,
 ) -> SiteResponse {
-    let (storage, repository) = path.into_inner();
-
     let connection = pool.get()?;
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
+    let (storage, repository) = path.into_inner();
+
+
     let result = site.storages.lock().unwrap();
     let storage = result.get(&storage);
     if storage.is_none() {

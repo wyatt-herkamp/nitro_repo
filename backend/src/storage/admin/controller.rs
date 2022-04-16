@@ -15,6 +15,7 @@ use log::warn;
 use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::Path;
+use crate::system::permissions::options::CanIDo;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
@@ -23,9 +24,7 @@ pub async fn list_storages(
     r: HttpRequest,
 ) -> Result<HttpResponse, InternalError> {
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let guard = site.storages.lock().unwrap();
@@ -41,9 +40,7 @@ pub async fn delete_by_id(
     id: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let mut guard = site.storages.lock().unwrap();
@@ -68,9 +65,7 @@ pub async fn get_by_id(
     id: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let guard = site.storages.lock().unwrap();
@@ -92,9 +87,7 @@ pub async fn add_storage(
     site: NitroRepoData,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let mut guard = site.storages.lock().unwrap();

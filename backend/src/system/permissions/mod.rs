@@ -1,3 +1,5 @@
+pub mod options;
+
 use serde::{Serialize, Deserialize};
 use crate::repository::models::{Repository};
 use thiserror::Error;

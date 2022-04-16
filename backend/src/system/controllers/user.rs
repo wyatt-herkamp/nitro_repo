@@ -9,6 +9,7 @@ use crate::system::action::{
     get_users, update_user, update_user_password, update_user_permissions,
 };
 use crate::system::models::{User, UserListResponse};
+use crate::system::permissions::options::CanIDo;
 use crate::system::permissions::UserPermissions;
 use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser};
 use crate::utils::get_current_time;
@@ -22,8 +23,7 @@ pub struct ListUsers {
 pub async fn list_users(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
     let connection = pool.get()?;
 
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
     let vec = get_users(&connection)?;
@@ -40,8 +40,7 @@ pub async fn get_user(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
     let repo = get_user_by_id_response(&path.into_inner(), &connection)?;
@@ -56,9 +55,7 @@ pub async fn add_user(
     nc: web::Json<NewUser>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
     if get_user_by_username(&nc.username, &connection)?.is_some() {
@@ -88,11 +85,12 @@ pub async fn modify_user(
     nc: web::Json<ModifyUser>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    let name = name.into_inner();
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
+
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
+    let name = name.into_inner();
+
     let user = get_user_by_username(&name, &connection)?;
     if user.is_none() {
         return not_found();
@@ -109,11 +107,12 @@ pub async fn update_permission(
     path: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    let user = path.into_inner();
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
+
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
+    let user = path.into_inner();
+
     let user = get_user_by_username(&user, &connection)?;
     if user.is_none() {
         return not_found();
@@ -131,10 +130,11 @@ pub async fn change_password(
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
+
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
+    let connection = pool.get()?;
     let user = user.into_inner();
 
     let user = get_user_by_username(&user, &connection)?;
@@ -156,10 +156,11 @@ pub async fn delete_user(
 ) -> SiteResponse {
     let connection = pool.get()?;
 
-    let admin = get_user_by_header(r.headers(), &connection)?;
-    if admin.is_none() || !admin.unwrap().permissions.admin {
+    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
         return unauthorized();
     }
+    let connection = pool.get()?;
+
     let user = user.into_inner();
 
     let option = get_user_by_username(&user, &connection)?;
