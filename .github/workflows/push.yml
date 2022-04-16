@@ -27,7 +27,7 @@ jobs:
           node-version-file: 'frontend/.nvmrc'
       - name: Install Frontend
         working-directory: frontend
-        run: npm run ci-linklib && npm install
+        run: npm install
       - name: Build
         run: sh build.sh ssl
       - name: Upload Artifact Linux
