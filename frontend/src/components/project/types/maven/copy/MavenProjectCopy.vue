@@ -1,13 +1,7 @@
 <template>
   <CodeMenu :codes="snippets">
     <template v-slot:header>
-      <div class="grid grid-cols-2">
-        <div>
-          <h1 class="text-left text-white mt-5 ml-5 font-bold">
-            Project Details
-          </h1>
-        </div>
-      </div>
+      <h1 class="text-left text-white mt-5 ml-5 font-bold">Project Details</h1>
     </template>
   </CodeMenu>
 </template>
@@ -20,7 +14,7 @@ import { apiURL } from "@/http-common";
 import createProjectGen from "@/api/maven/ProjectGen";
 
 export default defineComponent({
-  components: {  },
+  components: {},
   props: {
     project: {
       required: true,

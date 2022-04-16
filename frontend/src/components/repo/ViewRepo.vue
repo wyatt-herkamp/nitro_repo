@@ -1,10 +1,14 @@
 <template>
-  <div v-if="repository != undefined">
-    <RepositoryBadge class="m-2" :repository="repository" />
-    <MavenRepoInfo class="m-2"
-      v-if="repositoryType === 'Maven'"
-      :repository="repository"
-    />
+  <div class="grid grid-row-2 gap-4" v-if="repository != undefined">
+    <div class=" m-2 ">
+      <RepositoryBadge :repository="repository" />
+    </div>
+    <div class=" m-2">
+      <MavenRepoInfo
+        v-if="repositoryType === 'Maven'"
+        :repository="repository"
+      />
+    </div>
   </div>
 </template>
 <style scoped></style>
@@ -30,7 +34,7 @@ export default defineComponent({
     },
     repositoryType: {
       required: false,
-      type: Object as () => Repository,
+      type: Object as () => Repository | PublicRepositoryInfo,
     },
   },
   setup(props) {

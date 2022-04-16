@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-wrap flex-row">
     <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
-      <form class="settingContent" @submit.prevent="updatePassword()">
+      <form class="settingContent" @submit.prevent="onSettingSubmit()">
         <h2 class="settingHeader">User General</h2>
         <div class="settingBox">
           <label class="nitroLabel" for="grid-name"> Name </label>
@@ -20,9 +20,7 @@
           />
         </div>
         <div class="settingBox">
-          <button class="nitroButton" @click="onSettingSubmit()">
-            Update User
-          </button>
+          <button class="nitroButton">Update User</button>
         </div>
       </form>
     </div>
@@ -49,18 +47,25 @@
           </div>
         </div>
         <div class="settingBox">
-          <button
-            :disabled="!canSubmitPassword"
-            class="nitroButton"
-            @click="updatePassword()"
-          >
+          <button :disabled="!canSubmitPassword" class="nitroButton">
             Update Password
           </button>
         </div>
       </form>
     </div>
     <div class="flex-grow lg:m-5 border-slate-500 border-2 rounded-lg">
-      <h1 class="text-left ml-2 md:text-4xl text-3xl border-b-2 border-slate-500 p-2">Permissions</h1>
+      <h1
+        class="
+          text-left
+          ml-2
+          md:text-4xl
+          text-3xl
+          border-b-2 border-slate-500
+          p-2
+        "
+      >
+        Permissions
+      </h1>
       <Permissions :user="user" />
     </div>
   </div>

@@ -110,7 +110,7 @@ export default defineComponent({
     this.uppy.close();
   },
   setup() {
-        const token: string | undefined = inject("token");
+    const token: string | undefined = inject("token");
     if (token == undefined) {
       useRouter().push("login");
     }
@@ -120,7 +120,7 @@ export default defineComponent({
     watch(pom, () => {
       console.log("New Data");
     });
-    return { cookie, pom, files, token: token as string };
+    return { pom, files, token: token as string };
   },
   methods: {
     async upload() {
@@ -147,7 +147,10 @@ export default defineComponent({
       const pom = ser.build(this.pom);
       const textEncoder = new TextEncoder();
       const encoding = textEncoder.encode(pom);
-      await this.uploadFile(`${baseURL}/${this.pom.project.artifactId}-${this.pom.project.version}.pom`, encoding);
+      await this.uploadFile(
+        `${baseURL}/${this.pom.project.artifactId}-${this.pom.project.version}.pom`,
+        encoding
+      );
     },
 
     async uploadFile(url: string, file: any) {

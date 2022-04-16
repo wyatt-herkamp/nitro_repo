@@ -1,5 +1,5 @@
 <template>
-  <div class="md:h-1/4" v-if="pom == undefined">
+  <div class="" v-if="pom == undefined">
     <SubNavBar v-model="activePage">
       <SubNavItem index="UploadPom"> Upload Pom </SubNavItem>
       <SubNavItem index="CreatePom"> Create Pom </SubNavItem>
@@ -7,8 +7,38 @@
     <div class="mx-2 mb-3" v-if="activePage == 'UploadPom'">
       <drag-drop :uppy="uppy"></drag-drop>
     </div>
-    <div v-if="activePage == 'CreatePom'">
-      <h1>Coming Soon</h1>
+    <div class="mx-2 mb-3" v-if="activePage == 'CreatePom'">
+      <form
+        autocomplete="off"
+        class="settingContent flex flex-row"
+        @submit.prevent="handleChange(creatingPom)"
+      >
+        <div class="settingBox">
+          <label class="nitroLabel"> groupId </label>
+          <input
+            class="nitroTextInput"
+            type="text"
+            v-model="creatingPom.project.groupId"
+          />
+          <label class="nitroLabel"> artifactId </label>
+          <input
+            class="nitroTextInput"
+            type="text"
+            v-model="creatingPom.project.artifactId"
+          />
+        </div>
+        <div class="settingBox flex flex-col">
+          <div class="">
+            <label class="nitroLabel"> version </label>
+            <input
+              class="nitroTextInput"
+              type="text"
+              v-model="creatingPom.project.version"
+            />
+          </div>
+          <button class="md:!mt-10 nitroButton">Create Pom</button>
+        </div>
+      </form>
     </div>
   </div>
   <div v-else class="md:h-1/4">
@@ -17,7 +47,7 @@
         <label class="nitroLabel" for="grid-name"> groupId </label>
         <input
           class="disabled nitroTextInput"
-          id="grid-name"
+          id="grid-Storage"
           type="text"
           v-model="pom.project.groupId"
           disabled
@@ -60,7 +90,7 @@ import Uppy from "@uppy/core";
 import SubNavBar from "../common/nav/SubNavBar.vue";
 import SubNavItem from "../common/nav/SubNavItem.vue";
 import { XMLParser } from "fast-xml-parser";
-import { xmlOptions } from "./PomCreator";
+import { Pom, xmlOptions } from "./PomCreator";
 
 export default defineComponent({
   props: {
@@ -85,6 +115,14 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const pom = ref<Object | undefined>(undefined);
+    const creatingPom = ref<Pom>({
+      project: {
+        modelVersion: "",
+        groupId: "",
+        artifactId: "",
+        version: "",
+      },
+    });
     const activePage = ref<string>("UploadPom");
 
     const handleChange = (data: Object): void => {
@@ -92,7 +130,7 @@ export default defineComponent({
       emit("update:modelValue", data);
     };
 
-    return { pom, activePage, handleChange };
+    return { pom, activePage, handleChange, creatingPom };
   },
   methods: {
     handleAdd: async function (file: any) {

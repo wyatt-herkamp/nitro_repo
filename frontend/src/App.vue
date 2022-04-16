@@ -1,7 +1,10 @@
 <template>
-  <Navbar :user="user" />
   <metainfo> </metainfo>
-  <router-view :key="$route.fullPath" />
+  <div class="flex flex-col min-h-screen">
+    <Navbar :user="user" />
+    <router-view :key="$route.fullPath" />
+  </div>
+
   <notifications position="bottom right" />
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="link-box">
+  <li class="link-box">
     <router-link
       class="link"
       :to="'/browse/' + file.full_path"
@@ -46,7 +46,7 @@
         </span>
       </div>
     </a>
-  </div>
+  </li>
 </template>
 <script lang="ts">
 import { apiURL } from "@/http-common";

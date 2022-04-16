@@ -1,65 +1,59 @@
 <template>
-  <div class="min-h-screen w-full flex flex-wrap lg:flex-nowrap">
-    <div class="w-full max-w-full m-2 rounded-md bg-gray-900">
-      <div class="md:flex md:flex-wrap md:ml-2">
-        <div class="m-5">
-          <router-link class="backLink" to="/browse">
-            <span>Browse</span>
-          </router-link>
-          <router-link
-            class="backLink mx-1 sm:m-0 inline-block sm:inline"
-            v-for="value in pathSplit"
-            :key="value.name"
-            :to="'/browse' + value.path"
-          >
-            <span>/</span>
-            <span> {{ value.name }} </span>
-          </router-link>
-        </div>
-        <div class="hidden md:flex flex-row my-5">
-          <router-link class="align-middle inline-block" :to="up">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              class="my-auto"
-              style="fill: rgba(255, 255, 255, 1); transform: ; msfilter: "
+  <div class="flex-1 flex flex-row">
+    <div
+      :class="[activeResponse != undefined ? 'lg:basis-1/2' : 'flex-grow']"
+      class="m-2 rounded-md bg-gray-900"
+    >
+      <div class="flex flex-col">
+        <div>
+          <div class="m-5">
+            <router-link class="backLink" to="/browse">
+              <span>Browse</span>
+            </router-link>
+            <router-link
+              class="backLink mx-1 sm:m-0 inline-block sm:inline"
+              v-for="value in pathSplit"
+              :key="value.name"
+              :to="'/browse' + value.path"
             >
-              <path
-                d="M21 11H6.414l5.293-5.293-1.414-1.414L2.586 12l7.707 7.707 1.414-1.414L6.414 13H21z"
-              ></path>
-            </svg>
-          </router-link>
+              <span>/</span>
+              <span> {{ value.name }} </span>
+            </router-link>
+          </div>
         </div>
-      </div>
-      <div class="md:flex md:flex-wrap md:ml-2">
-        <div
-          v-if="tableData != undefined"
-          class="w-full grid auto-cols-auto grid-rows-1 text-left p-3"
-        >
+        <ul v-if="tableData != undefined" class="w-full text-left p-3">
           <BrowseBox
             v-for="value in tableData"
             :key="value.name"
             :file="value"
           />
-        </div>
+        </ul>
       </div>
     </div>
-
+    <!-- Optional Extra Info -->
     <div
-      class="hidden md:block float-right lg:w-1/4 m-2 rounded-md bg-slate-900"
+      class="
+        hidden
+        basis-1/2
+        md:flex
+        m-2
+        rounded-md
+        bg-slate-900
+        grow-0
+        shrink-0
+      "
       v-if="activeResponse != undefined"
     >
       <div v-if="activeResponse.Project != undefined">
         <router-link
-          :to='{
-            name: "Project",
+          :to="{
+            name: 'Project',
             params: {
               storage: activeResponse.Project.repo_summary.storage,
               repo: activeResponse.Project.repo_summary.name,
               id: activeResponse.Project.version.name,
             },
-          }'
+          }"
           >Project Page</router-link
         >
         <ViewProject :project="activeResponse.Project" />
@@ -67,19 +61,26 @@
 
       <div v-if="activeResponse.Repository != undefined">
         <router-link
-          :to='{
-            name: "ViewRepository",
+          :to="{
+            name: 'ViewRepository',
             params: {
               storage: activeResponse.Repository.storage,
               repo: activeResponse.Repository.name,
             },
-          }'
+          }"
           >Repository Page</router-link
         >
-        <ViewRepo
-          :repositoryName="activeResponse.Repository.name"
-          :storage="activeResponse.Repository.storage"
-        />
+        <div>
+          <div class="m-2">
+            <RepositoryBadge :repository="activeResponse.Repository" />
+          </div>
+          <div class="m-2">
+            <MavenRepoInfo
+              v-if="activeResponse.Repository.repo_type === 'Maven'"
+              :repository="activeResponse.Repository"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -40,6 +40,9 @@
               >Admin</router-link
             >
           </li>
+          <li v-if="user != undefined">
+            <router-link to="/me" class="fullScreenItem login">Me</router-link>
+          </li>
         </ul>
         <!-- Mobile menu button -->
         <div class="md:hidden flex items-center">
@@ -71,6 +74,9 @@
           <router-link to="/browse" @click="openNav" class="smItem"
             >Browse</router-link
           >
+        </li>
+        <li v-if="user != undefined">
+          <router-link to="/me" @click="openNav" class="smItem">Me</router-link>
         </li>
         <li>
           <router-link
