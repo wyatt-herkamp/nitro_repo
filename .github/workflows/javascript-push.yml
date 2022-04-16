@@ -7,7 +7,7 @@ env:
   CARGO_TERM_COLOR: always
 jobs:
   build:
-    if: contains(github.event.pull_request.labels.*.name, 'javascript')    
+    if: contains(github.event.pull_request.labels.*.name, 'javascript')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,4 +18,4 @@ jobs:
           node-version-file: 'frontend/.nvmrc'
       - name: Install Site
         working-directory: frontend
-        run: npm run ci-linklib && npm install
+        run: npm install && npm run build
