@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
 extern crate core;
 extern crate strum;
 extern crate strum_macros;
@@ -20,7 +16,6 @@ use std::sync::Mutex;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
 
-pub mod database;
 
 pub mod api_response;
 pub mod constants;
@@ -29,14 +24,12 @@ pub mod frontend;
 pub mod install;
 mod misc;
 pub mod repository;
-pub mod schema;
 pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
 pub mod webhook;
 
-use crate::database::Database;
 use crate::install::load_installer;
 use crate::settings::models::{
     EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,
@@ -45,6 +38,7 @@ use crate::settings::models::{
 use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
 use crossterm::style::Stylize;
+use sea_orm::{Database, DatabaseConnection};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -120,14 +114,14 @@ async fn main() -> std::io::Result<()> {
         std::env::set_var(key, value);
     }
     info!("Initializing Database");
-    let pool = match init_settings.database.db_type.as_str() {
+    let pool: DatabaseConnection = match init_settings.database.db_type.as_str() {
         "mysql" => {
             let result = MysqlSettings::try_from(init_settings.database.settings.clone());
             if let Err(error) = result {
                 error!("Unable to load database Settings {error}");
                 std::process::exit(1);
             }
-            database::init(&result.unwrap().to_string())
+            Database::connect(&result.unwrap().to_string()).await?
         }
         _ => {
             error!("Invalid Database Type");

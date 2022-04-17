@@ -8,12 +8,6 @@ use crate::repository::settings::security::Visibility;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 use std::io::Write;
 
-use diesel::backend::Backend;
-use diesel::deserialize::FromSql;
-use diesel::mysql::Mysql;
-use diesel::serialize::{Output, ToSql};
-use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
 
 #[derive(Error, Debug)]
 pub enum PermissionError {
@@ -34,8 +28,7 @@ impl From<serde_json::Error> for PermissionError {
     }
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Default)]
-#[sql_type = "Text"]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct UserPermissions {
     pub disabled: bool,
     pub admin: bool,
@@ -45,26 +38,16 @@ pub struct UserPermissions {
     pub viewer: Option<RepositoryPermission>,
 }
 
+impl From<UserPermissions> for sea_orm::Value {
+    fn from(permissions: UserPermissions) -> Self {
+        let value = serde_json::to_value(permissions).unwrap();
+        sea_orm::Value::Json(Some(Box::new(value)))
+    }
+}
+
 impl UserPermissions {
     pub fn can_access_repository(&self) -> bool {
         return self.admin || self.repository_manager;
-    }
-}
-
-impl FromSql<Text, Mysql> for UserPermissions {
-    fn from_sql(
-        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<UserPermissions> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
-        let result: UserPermissions = serde_json::from_str(t.as_str())?;
-        Ok(result)
-    }
-}
-
-impl ToSql<Text, Mysql> for UserPermissions {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = serde_json::to_string(&self)?;
-        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
     }
 }
 

@@ -1,24 +1,22 @@
 use std::io;
 
-use crate::database::init_single_connection;
 
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::system::action::add_new_user;
 
-use crate::system::models::{User};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use diesel::MysqlConnection;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
 use std::path::Path;
+use sea_orm::DatabaseConnection;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -103,10 +101,9 @@ pub struct UserStage {
     pub password_two: Option<String>,
 }
 
-impl From<UserStage> for User {
+impl From<UserStage> for User::ActiveModel {
     fn from(value: UserStage) -> Self {
-        User {
-            id: 0,
+        User::ActiveModel {
             name: value.name.unwrap_or_default(),
             username: value.username.unwrap_or_default(),
             email: value.email.unwrap_or_default(),
@@ -117,7 +114,7 @@ impl From<UserStage> for User {
                 user_manager: true,
                 repository_manager: true,
                 deployer: None,
-                viewer: None
+                viewer: None,
             },
             created: get_current_time(),
         }
@@ -156,7 +153,7 @@ struct App {
     database_stage: DatabaseStage,
     user_stage: UserStage,
     other_stage: OtherStage,
-    connection: Option<MysqlConnection>,
+    connection: Option<DatabaseConnection>,
 }
 
 impl Default for App {
@@ -388,7 +385,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-            .as_ref(),
+                .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -523,7 +520,7 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
         database: app.database_stage.into(),
         application: Application::from(app.other_stage),
         internal: Default::default(),
-        env: Default::default()
+        env: Default::default(),
     };
     create_dir_all(config)?;
 
@@ -568,6 +565,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-    .unwrap();
+        .unwrap();
     terminal.show_cursor().unwrap();
 }
