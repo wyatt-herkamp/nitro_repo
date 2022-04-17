@@ -1,7 +1,7 @@
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
-use diesel::MysqlConnection;
+use async_trait::async_trait;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 
@@ -15,7 +15,7 @@ use crate::repository::settings::Policy;
 use crate::repository::types::RepoResponse::{
     BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{RepositoryHandler, RepositoryRequest};
+use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::types::{Project, RepoResponse, RepoResult};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
@@ -27,19 +27,20 @@ mod utils;
 
 pub struct MavenHandler;
 
-impl RepositoryHandler for MavenHandler {
-    fn handle_get(
+impl MavenHandler {
+    pub async fn handle_get(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
             return RepoResult::Ok(NotAuthorized);
         }
         let result =
             request
                 .storage
-                .get_file_as_response(&request.repository, &request.value, http)?;
+                .get_file_as_response(&request.repository, &request.value, &http)?;
         if result.is_left() {
             Ok(RepoResponse::FileResponse(result.left().unwrap()))
         } else {
@@ -50,23 +51,15 @@ impl RepositoryHandler for MavenHandler {
         }
     }
 
-    fn handle_post(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-        _bytes: Bytes,
-    ) -> RepoResult {
-        Ok(IAmATeapot("Post is not handled in Maven".to_string()))
-    }
 
-    fn handle_put(
+    pub async fn handle_put(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
         bytes: Bytes,
     ) -> RepoResult {
-        let x = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
-        if !x.0 {
+        let (valid, user) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
             return RepoResult::Ok(NotAuthorized);
         }
 
@@ -137,7 +130,7 @@ impl RepositoryHandler for MavenHandler {
                     }
                     let string = format!("{}/{}", project_folder, &pom.version);
                     let info = DeployInfo {
-                        user: x.1.unwrap(),
+                        user: user.unwrap(),
                         version: pom.version,
                         name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
                         version_folder: string,
@@ -159,37 +152,14 @@ impl RepositoryHandler for MavenHandler {
         Ok(RepoResponse::Ok)
     }
 
-    fn handle_patch(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-        _bytes: Bytes,
-    ) -> RepoResult {
-        Ok(IAmATeapot("Patch is not handled in Maven".to_string()))
-    }
 
-    fn handle_head(
+    pub async fn handle_versions(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        _conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let result =
-            request
-                .storage
-                .get_file_as_response(&request.repository, &request.value, http)?;
-        if result.is_left() {
-            Ok(RepoResponse::FileResponse(result.left().unwrap()))
-        } else {
-            Ok(RepoResponse::FileList(result.right().unwrap()))
-        }
-    }
-
-    fn handle_versions(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -198,13 +168,14 @@ impl RepositoryHandler for MavenHandler {
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
-    fn handle_version(
+    pub async fn handle_version(
         request: &RepositoryRequest,
         version: String,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -229,12 +200,13 @@ impl RepositoryHandler for MavenHandler {
         RepoResult::Ok(NotFound)
     }
 
-    fn handle_project(
+    pub async fn handle_project(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
             return RepoResult::Ok(NotAuthorized);
         }
         let string = parse_project_to_directory(&request.value);
@@ -258,13 +230,14 @@ impl RepositoryHandler for MavenHandler {
         RepoResult::Ok(NotFound)
     }
 
-    fn latest_version(
+    pub async fn latest_version(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
     ) -> Result<Option<String>, InternalError> {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return Ok(None);
+        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
+            return Result::Ok(None);
         }
         let string = parse_project_to_directory(&request.value);
         let project_data = get_project_data(&request.storage, &request.repository, string)?;

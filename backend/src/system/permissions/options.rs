@@ -1,5 +1,6 @@
 use std::fmt;
-use crate::system::models::User;
+use crate::system::permissions::UserPermissions;
+use crate::system::UserModel;
 
 #[derive(Debug)]
 pub struct MissingPermission(String);
@@ -19,40 +20,45 @@ impl fmt::Display for MissingPermission {
 impl std::error::Error for MissingPermission {}
 
 pub trait CanIDo {
-    fn can_i_edit_repos(self) -> Result<User, MissingPermission>;
-    fn can_i_edit_users(self) -> Result<User, MissingPermission>;
-    fn can_i_admin(self) -> Result<User, MissingPermission>;
+    fn can_i_edit_repos(self) -> Result<UserModel, MissingPermission>;
+    fn can_i_edit_users(self) -> Result<UserModel, MissingPermission>;
+    fn can_i_admin(self) -> Result<UserModel, MissingPermission>;
 }
 
-impl CanIDo for Option<User> {
-    fn can_i_edit_repos(self) -> Result<User, MissingPermission> {
+impl CanIDo for Option<UserModel> {
+    fn can_i_edit_repos(self) -> Result<UserModel, MissingPermission> {
         if self.is_none() {
             return Err("Not Logged In".into());
         }
         let user = self.unwrap();
-        if !user.permissions.admin && !user.permissions.repository_manager {
+        let permissions: UserPermissions = user.permissions.try_into().unwrap();
+
+        if !permissions.admin && !permissions.repository_manager {
             return Err("repository_manager".into());
         }
         Ok(user)
     }
 
-    fn can_i_edit_users(self) -> Result<User, MissingPermission> {
+    fn can_i_edit_users(self) -> Result<UserModel, MissingPermission> {
         if self.is_none() {
             return Err("Not Logged In".into());
         }
         let user = self.unwrap();
-        if !user.permissions.admin && !user.permissions.user_manager {
+        let permissions: UserPermissions = user.permissions.try_into().unwrap();
+        if !permissions.admin && !permissions.user_manager {
             return Err("user_manager".into());
         }
         Ok(user)
     }
 
-    fn can_i_admin(self) -> Result<User, MissingPermission> {
+    fn can_i_admin(self) -> Result<UserModel, MissingPermission> {
         if self.is_none() {
             return Err("Not Logged In".into());
         }
         let user = self.unwrap();
-        if !user.permissions.admin {
+        let permissions: UserPermissions = user.permissions.try_into().unwrap();
+
+        if !permissions.admin {
             return Err("admin".into());
         }
         Ok(user)

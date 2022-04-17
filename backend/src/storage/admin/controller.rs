@@ -24,7 +24,7 @@ pub async fn list_storages(
     r: HttpRequest,
 ) -> Result<HttpResponse, InternalError> {
     let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let guard = site.storages.lock().unwrap();
@@ -40,7 +40,7 @@ pub async fn delete_by_id(
     id: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let mut guard = site.storages.lock().unwrap();
@@ -65,7 +65,7 @@ pub async fn get_by_id(
     id: web::Path<String>,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let guard = site.storages.lock().unwrap();
@@ -87,7 +87,7 @@ pub async fn add_storage(
     site: NitroRepoData,
 ) -> SiteResponse {
     let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let mut guard = site.storages.lock().unwrap();

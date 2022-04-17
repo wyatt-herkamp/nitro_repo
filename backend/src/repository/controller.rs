@@ -1,23 +1,21 @@
+use std::rc::Rc;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, web, HttpRequest, HttpResponse};
 use log::{debug, trace};
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
-use crate::repository::maven::MavenHandler;
 use crate::repository::models::Repository;
 use crate::repository::nitro::ResponseType::Storage;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
-use crate::repository::npm::NPMHandler;
-use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryHandler};
+use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryRequestInner};
 use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
-use crate::repository::types::RepositoryType::{Maven, NPM};
 
 //
 
@@ -31,7 +29,7 @@ pub fn to_request(
     repo_name: String,
     file: String,
     site: NitroRepoData,
-) -> Result<RepositoryRequest, InternalError> {
+) -> Result<RepositoryRequestInner, InternalError> {
     let storages = site.storages.lock().unwrap();
     let storage = storages.get(&storage_name);
     if storage.is_none() {
@@ -46,7 +44,7 @@ pub fn to_request(
     }
     let repository = repository.unwrap();
 
-    let request = RepositoryRequest {
+    let request = RepositoryRequestInner {
         storage,
         repository,
         value: file,
@@ -128,12 +126,11 @@ pub struct GetPath {
 }
 
 pub async fn get_repository(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<GetPath>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
     let path = path.into_inner();
     let file = path.file.unwrap_or_else(|| "".to_string());
     let result = to_request(path.storage, path.repository, file, site);
@@ -143,13 +140,10 @@ pub async fn get_repository(
             _ => Err(error),
         };
     }
-    let request = result.unwrap();
-    let x = match request.repository.repo_type {
-        Maven(_) => { MavenHandler::handle_get(&request, &r, &connection) }
-        NPM(_) => { NPMHandler::handle_get(&request, &r, &connection) }
-    }?;
+    let request =result.unwrap();
+    let x = request.repository.repo_type.handle_get(&request, r.clone(), connection.as_ref()).await?;
 
-    handle_result(x, request.value, r)
+    handle_result(x, request.value.clone(), r)
 }
 
 /// TODO look into this method
@@ -230,13 +224,12 @@ pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> Si
 }
 
 pub async fn post_repository(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
 ) -> SiteResponse {
-    let connection = pool.get()?;
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
@@ -253,23 +246,19 @@ pub async fn post_repository(
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type {
-        Maven(_) => { MavenHandler::handle_post(&request, &r, &connection, bytes) }
-        NPM(_) => { NPMHandler::handle_post(&request, &r, &connection, bytes) }
-    }?;
+    let x = request.repository.repo_type.handle_post(*request, r.clone(), connection.get_ref(), bytes).await?;
+
 
     handle_result(x, request.value, r)
 }
 
 pub async fn patch_repository(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
@@ -286,22 +275,19 @@ pub async fn patch_repository(
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type {
-        Maven(_) => { MavenHandler::handle_patch(&request, &r, &connection, bytes) }
-        NPM(_) => { NPMHandler::handle_patch(&request, &r, &connection, bytes) }
-    }?;
+    let x = request.repository.repo_type.handle_patch(&request, r.clone(), connection.get_ref(), bytes).await?;
+
 
     handle_result(x, request.value, r)
 }
 
 pub async fn put_repository(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
 ) -> SiteResponse {
-    let connection = pool.get()?;
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
@@ -318,22 +304,17 @@ pub async fn put_repository(
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type {
-        Maven(_) => { MavenHandler::handle_put(&request, &r, &connection, bytes) }
-        NPM(_) => { NPMHandler::handle_put(&request, &r, &connection, bytes) }
-    }?;
+    let x = request.repository.repo_type.handle_put(&request, r.clone(), connection.get_ref(), bytes).await?;
 
     handle_result(x, request.value, r)
 }
 
 pub async fn head_repository(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site);
     if let Err(error) = result {
@@ -350,10 +331,8 @@ pub async fn head_repository(
         &request.repository.name,
         &request.value
     );
-    let x = match request.repository.repo_type {
-        Maven(_) => { MavenHandler::handle_head(&request, &r, &connection) }
-        NPM(_) => { NPMHandler::handle_head(&request, &r, &connection) }
-    }?;
+    let x = request.repository.repo_type.handle_head(&request, r.clone(), connection.get_ref()).await?;
+
 
     handle_result(x, request.value, r)
 }

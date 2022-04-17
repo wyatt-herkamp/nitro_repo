@@ -13,20 +13,21 @@ use crate::utils::get_current_time;
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::repository::models::Repository;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use diesel::MysqlConnection;
+use sea_orm::DatabaseConnection;
 
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
 };
 use crate::storage::models::StringStorage;
-use crate::system::action::get_user_by_username;
+use crate::system::auth_token::Relation::User;
 
 pub fn is_valid(
     username: &str,
     request: &LoginRequest,
-    conn: &MysqlConnection,
+    conn: &DatabaseConnection,
 ) -> Result<bool, InternalError> {
-    let result1 = get_user_by_username(username, conn)?;
+    //TODO
+    let result1 = None;
     if result1.is_none() {
         return Ok(false);
     }

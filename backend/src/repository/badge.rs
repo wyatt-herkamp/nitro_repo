@@ -1,26 +1,23 @@
 use crate::api_response::SiteResponse;
-use crate::database::DbPool;
 use crate::NitroRepoData;
 use actix_web::{get, web, HttpRequest, HttpResponse};
 use badge_maker::BadgeBuilder;
+use sea_orm::DatabaseConnection;
 
 use crate::repository::controller::to_request;
-use crate::repository::maven::MavenHandler;
-use crate::repository::npm::NPMHandler;
-use crate::repository::types::RepositoryHandler;
-use crate::repository::types::RepositoryType::{Maven, NPM};
+use crate::repository::types::RepositoryRequest;
+
 
 #[get("/badge/{storage}/{repository}/{file:.*}/badge")]
 pub async fn badge(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, site)?;
+    let request:RepositoryRequest = to_request(storage, repository, file, site)?;
 
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())
@@ -35,11 +32,7 @@ pub async fn badge(
             request.repository.name.clone(),
         )
     } else {
-        let version = match request.repository.repo_type {
-            Maven(_) => { MavenHandler::latest_version(&request, &r, &connection) }
-            NPM(_) => { NPMHandler::latest_version(&request, &r, &connection) }
-        }?;
-
+        let version = request.repository.repo_type.latest_version(&request, &r, &connection).await?;
         (
             request.repository.name.clone(),
             version.unwrap_or_else(|| "404".to_string()),

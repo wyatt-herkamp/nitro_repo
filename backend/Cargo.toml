@@ -1,6 +1,6 @@
 [package]
 name = "nitro_repo"
-version = "1.0.0-RC0"
+version = "1.1.0-BETA"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
@@ -18,7 +18,8 @@ actix-files = "0.6.0"
 lettre = "0.10.0-rc.4"
 handlebars = "4.2.2"
 # Database
-sea-orm = { version = "^0", features = [ "sqlx-mysql","sqlx-sqlite", "runtime-actix-native-tls", "macros" ] }
+sea-orm = { version = "0.7.1", features = [ "sqlx-mysql","sqlx-sqlite", "runtime-actix-native-tls", "macros" ] }
+sqlx ="0.5.13"
 # Serde
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.71"

@@ -16,11 +16,10 @@ pub enum InternalError {
     #[error("IO error {0}")]
     IOError(std::io::Error),
     #[error("DB error {0}")]
-    DBError(diesel::result::Error),
+    DBError(sea_orm::error::DbErr),
     #[error("Actix Error")]
     ActixWebError(actix_web::Error),
-    #[error("R2d2 Parse Error")]
-    R2D2Error(r2d2::Error),
+
     #[error("Boolean Parse Error")]
     BooleanParseError(ParseBoolError),
     #[error("Decode Error")]
@@ -82,6 +81,12 @@ impl From<chrono::ParseError> for InternalError {
     }
 }
 
+impl From<std::io::Error> for InternalError {
+    fn from(err: std::io::Error) -> InternalError {
+        InternalError::IOError(err)
+    }
+}
+
 impl From<FromUtf8Error> for InternalError {
     fn from(err: FromUtf8Error) -> InternalError {
         InternalError::UTF8Error(err)
@@ -94,17 +99,12 @@ impl From<Box<dyn Error>> for InternalError {
     }
 }
 
-impl From<diesel::result::Error> for InternalError {
-    fn from(err: diesel::result::Error) -> InternalError {
+impl From<sea_orm::DbErr> for InternalError {
+    fn from(err: sea_orm::DbErr) -> InternalError {
         InternalError::DBError(err)
     }
 }
 
-impl From<r2d2::Error> for InternalError {
-    fn from(err: r2d2::Error) -> InternalError {
-        InternalError::R2D2Error(err)
-    }
-}
 
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {
@@ -136,11 +136,6 @@ impl From<SystemTimeError> for InternalError {
     }
 }
 
-impl From<std::io::Error> for InternalError {
-    fn from(err: std::io::Error) -> InternalError {
-        InternalError::IOError(err)
-    }
-}
 
 impl From<lettre::transport::smtp::Error> for InternalError {
     fn from(err: lettre::transport::smtp::Error) -> InternalError {

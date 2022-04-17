@@ -38,7 +38,7 @@ use crate::settings::models::{
 use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
 use crossterm::style::Stylize;
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::{Database};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -88,7 +88,7 @@ async fn main() -> std::io::Result<()> {
         let parse: Cli = Cli::parse();
         if parse.install {
             load_logger(Mode::Install);
-            if let Err(error) = load_installer(path) {
+            if let Err(error) = load_installer(path).await {
                 error!("Unable to complete Install {error}");
                 println!("{}", "Unable to Complete Installation".red());
                 std::process::exit(1);
@@ -114,14 +114,14 @@ async fn main() -> std::io::Result<()> {
         std::env::set_var(key, value);
     }
     info!("Initializing Database");
-    let pool: DatabaseConnection = match init_settings.database.db_type.as_str() {
+    let pool = match init_settings.database.db_type.as_str() {
         "mysql" => {
             let result = MysqlSettings::try_from(init_settings.database.settings.clone());
             if let Err(error) = result {
                 error!("Unable to load database Settings {error}");
                 std::process::exit(1);
             }
-            Database::connect(&result.unwrap().to_string()).await?
+            Database::connect(&result.unwrap().to_string()).await
         }
         _ => {
             error!("Invalid Database Type");

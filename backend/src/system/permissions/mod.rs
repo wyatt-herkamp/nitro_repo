@@ -6,7 +6,6 @@ use thiserror::Error;
 use crate::repository::settings::Policy;
 use crate::repository::settings::security::Visibility;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
-use std::io::Write;
 
 
 #[derive(Error, Debug)]
@@ -28,7 +27,7 @@ impl From<serde_json::Error> for PermissionError {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct UserPermissions {
     pub disabled: bool,
     pub admin: bool,
@@ -38,21 +37,16 @@ pub struct UserPermissions {
     pub viewer: Option<RepositoryPermission>,
 }
 
-impl From<UserPermissions> for sea_orm::Value {
-    fn from(permissions: UserPermissions) -> Self {
-        let value = serde_json::to_value(permissions).unwrap();
-        sea_orm::Value::Json(Some(Box::new(value)))
-    }
-}
+impl TryFrom<serde_json::Value> for UserPermissions {
+    type Error = serde_json::Error;
 
-impl UserPermissions {
-    pub fn can_access_repository(&self) -> bool {
-        return self.admin || self.repository_manager;
+    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+        return serde_json::from_value(value);
     }
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RepositoryPermission {
     pub permissions: Vec<String>,
 }

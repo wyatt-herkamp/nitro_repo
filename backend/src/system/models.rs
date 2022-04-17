@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
-use sea_orm::entity::prelude::*;
 use crate::system::permissions::UserPermissions;
 
 

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
-use diesel::MysqlConnection;
+use async_trait::async_trait;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use regex::Regex;
@@ -19,9 +19,7 @@ use crate::repository::npm::utils::{generate_get_response, is_valid, parse_proje
 use crate::repository::types::RepoResponse::{
     BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{
-    Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryHandler,
-};
+use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryHandler, RDatabaseConnection};
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
@@ -31,13 +29,14 @@ mod utils;
 pub struct NPMHandler;
 
 // name/version
-impl RepositoryHandler for NPMHandler {
-    fn handle_get(
-        request: &RepositoryRequest,
+impl  NPMHandler {
+    pub async fn handle_get(
+        request:&RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn:&RDatabaseConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !valid {
             return RepoResult::Ok(NotAuthorized);
         }
         if http.headers().get("npm-command").is_some() {
@@ -56,7 +55,7 @@ impl RepositoryHandler for NPMHandler {
                 let result = request.storage.get_file_as_response(
                     &request.repository,
                     &nitro_file_location,
-                    http,
+                    &http,
                 )?;
                 return if result.is_left() {
                     Ok(RepoResponse::FileResponse(result.left().unwrap()))
@@ -93,19 +92,11 @@ impl RepositoryHandler for NPMHandler {
         }
     }
 
-    fn handle_post(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-        _bytes: Bytes,
-    ) -> RepoResult {
-        Ok(IAmATeapot("POST is not handled in NPM".to_string()))
-    }
 
-    fn handle_put(
-        request: &RepositoryRequest,
+    pub async fn handle_put(
+        request:&RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn:&RDatabaseConnection,
         bytes: Bytes,
     ) -> RepoResult {
         for x in http.headers() {
@@ -130,7 +121,7 @@ impl RepositoryHandler for NPMHandler {
             };
         }
         //Handle Normal Request
-        let (allowed, user) = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
+        let (allowed, user) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
         if !allowed {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -247,29 +238,14 @@ impl RepositoryHandler for NPMHandler {
         }
     }
 
-    fn handle_patch(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-        _bytes: Bytes,
-    ) -> RepoResult {
-        Ok(IAmATeapot("Patch is not handled in NPM".to_string()))
-    }
 
-    fn handle_head(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-    ) -> RepoResult {
-        Ok(IAmATeapot("HEAD is not handled in NPM".to_string()))
-    }
-
-    fn handle_versions(
-        request: &RepositoryRequest,
+    pub async fn handle_versions(
+        request:&RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn:&RDatabaseConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !allowed {
             return RepoResult::Ok(NotAuthorized);
         }
 
@@ -277,13 +253,16 @@ impl RepositoryHandler for NPMHandler {
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
-    fn handle_version(
+
+
+    pub async fn handle_version(
         request: &RepositoryRequest,
         version: String,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !allowed {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -308,16 +287,13 @@ impl RepositoryHandler for NPMHandler {
         RepoResult::Ok(NotFound)
     }
 
-    fn handle_project(
+    pub async fn handle_project(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn:&RDatabaseConnection,
     ) -> RepoResult {
-        for x in http.headers() {
-            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
-        }
-        log::trace!("URL: {}", request.value);
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
+        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !allowed {
             return RepoResult::Ok(NotAuthorized);
         }
         let project_dir = parse_project_to_directory(&request.value);
@@ -342,13 +318,14 @@ impl RepositoryHandler for NPMHandler {
         RepoResult::Ok(NotFound)
     }
 
-    fn latest_version(
+    pub async fn latest_version(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &MysqlConnection,
+        conn:&RDatabaseConnection,
     ) -> Result<Option<String>, InternalError> {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return Ok(None);
+        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
+        if !allowed {
+            return Result::Ok(None);
         }
         let project_dir = parse_project_to_directory(&request.value);
 

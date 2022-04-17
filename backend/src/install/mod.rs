@@ -4,8 +4,6 @@ use std::io;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 
-use crate::system::action::add_new_user;
-
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -16,7 +14,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
 use std::path::Path;
-use sea_orm::DatabaseConnection;
+use sea_orm::{DatabaseConnection};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -34,6 +32,8 @@ use crate::utils::get_current_time;
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 use unicode_width::UnicodeWidthStr;
 use crate::system::permissions::UserPermissions;
+use crate::system::{UserEntity, UserModel};
+use crate::system::user::{ActiveModel, NewUser};
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -101,9 +101,9 @@ pub struct UserStage {
     pub password_two: Option<String>,
 }
 
-impl From<UserStage> for User::ActiveModel {
+impl From<UserStage> for NewUser {
     fn from(value: UserStage) -> Self {
-        User::ActiveModel {
+        NewUser {
             name: value.name.unwrap_or_default(),
             username: value.username.unwrap_or_default(),
             email: value.email.unwrap_or_default(),
@@ -185,7 +185,7 @@ impl Default for App {
     }
 }
 
-fn run_app(
+async fn run_app(
     mut terminal: Terminal<CrosstermBackend<Stdout>>,
     mut app: App,
 ) -> Result<App, InstallError> {
@@ -218,25 +218,7 @@ fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                let result = init_single_connection(&string);
-                                match result {
-                                    Ok(db) => {
-                                        app.connection = Some(db);
-                                        app.stage = 1;
-                                    }
-                                    Err(error) => {
-                                        error!(
-                                            "Unable to Connect to Database {} :{}",
-                                            string, error
-                                        );
-                                        app.database_stage = DatabaseStage {
-                                            user: None,
-                                            password: None,
-                                            host: None,
-                                            database: None,
-                                        }
-                                    }
-                                }
+                                todo!("Database Connector is gone");
                             }
                         }
                         1 => {
@@ -253,11 +235,8 @@ fn run_app(
                                 let stage = app.user_stage.clone();
 
                                 //TODO dont kill program on failure to create user
-                                if let Err(error) = add_new_user(&stage.into(), connection) {
-                                    error!("Unable to Create user, {}", error);
-                                    std::process::exit(1);
-                                }
-
+                                let user: NewUser = stage.into();
+                                let new_user: UserModel = user.insert(connection).await?;
                                 app.stage = 2;
                             }
                         }
@@ -507,14 +486,14 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     )
 }
 
-pub fn load_installer(config: &Path) -> anyhow::Result<()> {
+pub async fn load_installer(config: &Path) -> anyhow::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
 
-    let app = run_app(terminal, App::default())?;
+    let app = run_app(terminal, App::default()).await?;
 
     let general = GeneralSettings {
         database: app.database_stage.into(),

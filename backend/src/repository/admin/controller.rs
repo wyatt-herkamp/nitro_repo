@@ -1,11 +1,11 @@
 use actix_web::web::{Bytes, Path};
 use actix_web::{delete, get, patch, post, put, web, HttpRequest};
 use log::error;
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::constants::SUPPORTED_REPO_TYPES;
-use crate::database::DbPool;
 use crate::error::response::{bad_request, not_found, unauthorized};
 use crate::NitroRepoData;
 use crate::repository::models::RepositorySummary;
@@ -30,7 +30,7 @@ pub struct ListRepositories {
 //     };
 #[get("/api/admin/repositories/list")]
 pub async fn list_repos(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
 ) -> SiteResponse {

@@ -1,8 +1,10 @@
+use std::cell::Ref;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use actix_web::web::Bytes;
-use actix_web::HttpRequest;
-use diesel::MysqlConnection;
+use actix_web::{HttpRequest, web};
+use sea_orm::DatabaseConnection;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -19,11 +21,109 @@ use crate::{SiteResponse, StringMap};
 use strum_macros::{Display, EnumString};
 use crate::repository::maven::models::MavenSettings;
 use crate::repository::npm::models::NPMSettings;
+use crate::repository::maven::MavenHandler;
+use crate::repository::npm::NPMHandler;
+
+//Requestable Data
+pub type RDatabaseConnection = DatabaseConnection;
+pub type RBytes = Bytes;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Display, EnumString)]
 pub enum RepositoryType {
     Maven(MavenSettings),
     NPM(NPMSettings),
+}
+
+impl RepositoryType {
+    pub async fn handle_get(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => {
+                MavenHandler::handle_get(request, http, conn).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::handle_get(request, http, conn).await
+            }
+        }
+    }
+
+    pub async fn handle_post(&self, request: RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
+        match self {
+            t => {
+                return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
+            }
+        }
+    }
+
+    pub async fn handle_put(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => {
+                MavenHandler::handle_put(request, http, conn, bytes).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::handle_put(request, http, conn, bytes).await
+            }
+        }
+    }
+
+    pub async fn handle_patch(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
+        match self {
+            t => {
+                return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
+            }
+        }
+    }
+
+    pub async fn handle_head(&self, request: &RepositoryRequest, http: HttpRequest, conn: RDatabaseConnection) -> RepoResult {
+        match self {
+            t => {
+                return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
+            }
+        }
+    }
+
+    pub async fn handle_versions(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => {
+                MavenHandler::handle_versions(request, http, conn).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::handle_versions(request, http, conn).await
+            }
+        }
+    }
+
+    pub async fn handle_version(&self, request: &RepositoryRequest, version: String, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => {
+                MavenHandler::handle_version(request, version, http, conn).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::handle_version(request, version, http, conn).await
+            }
+        }
+    }
+
+    pub async fn handle_project(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => {
+                MavenHandler::handle_project(request, http, conn).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::handle_project(request, http, conn).await
+            }
+        }
+    }
+
+    pub async fn latest_version(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> Result<Option<String>, InternalError> {
+        match self {
+            RepositoryType::Maven(_) => {
+                MavenHandler::latest_version(request, http, conn).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::latest_version(request, http, conn).await
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -76,6 +176,7 @@ pub enum RepoResponse {
 /// RepoResult
 pub type RepoResult = Result<RepoResponse, InternalError>;
 
+
 /// This is a Request to a Repository Handler
 pub struct RepositoryRequest {
     /// The Storage that the Repo needs to be in
@@ -93,61 +194,4 @@ pub struct VersionResponse {
     pub other: HashMap<String, Value>,
 }
 
-pub trait RepositoryHandler {
-    /// Handles a get request to a Repo
-    fn handle_get(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult;
-    /// Handles a Post Request to a Repo
-    fn handle_post(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-        bytes: Bytes,
-    ) -> RepoResult;
-    /// Handles a PUT Request to a Repo
-    fn handle_put(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-        bytes: Bytes,
-    ) -> RepoResult;
-    /// Handles a PATCH Request to a Repo
-    fn handle_patch(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-        bytes: Bytes,
-    ) -> RepoResult;
-    /// Handles a HEAD Request to a Repo
-    fn handle_head(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult;
-    /// Handles a List of versions request
-    fn handle_versions(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult;
-    fn handle_version(
-        request: &RepositoryRequest,
-        version: String,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult;
-    fn handle_project(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult;
-    /// Returns the latest version published.
-    fn latest_version(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> Result<Option<String>, InternalError>;
-}
+
