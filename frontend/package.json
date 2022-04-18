@@ -19,7 +19,7 @@
     "equal-vue": "^0.79.3",
     "fast-xml-parser": "^4.0.7",
     "pinia": "^2.0.13",
-    "prismjs": "^1.27.0",
+    "prismjs": "^1.28.0",
     "ts-results": "^3.3.0",
     "vite-plugin-ejs": "^1.4.4",
     "vue": "^3.2.33",
