@@ -60,7 +60,7 @@ badge-maker = "0.2.0"
 # Webhook
 webhook = "2.0.0"
 # Installer
-tui = "0.17"
+tui = "0.18"
 crossterm = "0.23"
 clap = { version = "3.1.6", features = ["derive"] }
 unicode-width = "0.1.9"
