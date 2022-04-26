@@ -15,7 +15,7 @@
 
   },
   "dependencies": {
-    "axios": "^0.26.1",
+    "axios": "^0.27.1",
     "ts-results": "^3.3.0"
   },
   "devDependencies": {
