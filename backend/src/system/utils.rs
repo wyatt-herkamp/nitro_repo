@@ -2,18 +2,35 @@ use actix_web::http::header::HeaderMap;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
+
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::{Repository};
 use crate::repository::settings::security::Visibility;
-use crate::system;
-use crate::system::action::{get_session_token, get_user_by_username};
-use crate::system::permissions::{can_deploy, can_read};
-use crate::system::{User, UserModel, user};
+use crate::settings::models::Database;
+use crate::system::permissions::{can_deploy, can_read, UserPermissions};
+use crate::system::user;
+use crate::system::user::Entity as UserEntity;
+use crate::system::user::Model as UserModel;
+
+pub async fn verify_login(username: String, password: String, database: &DatabaseConnection) -> Result<Option<UserModel>, InternalError> {
+    let user_found: Option<UserModel> = UserEntity::find().filter(user::Column::Username.eq(username)).one(database).await?;
+    if user_found.is_none() {
+        return Ok(None);
+    }
+    let argon2 = Argon2::default();
+    let user = user_found.unwrap();
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    if argon2
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_err()
+    {
+        return Ok(None);
+    }
+    return Ok(Some(user));
+}
 
 pub async fn get_user_by_header(
     header_map: &HeaderMap,
@@ -51,21 +68,9 @@ pub async fn get_user_by_header(
         if !split.len().eq(&2) {
             return Ok(None);
         }
-        let username = split.get(0).unwrap();
-        let user_found: Option<user::Model> = User::find().filter(system::user::Column::Username.eq(&username)).one(conn).await?();
-        if user_found.is_none() {
-            return Ok(None);
-        }
-        let argon2 = Argon2::default();
-        let user = user_found.unwrap();
-        let parsed_hash = PasswordHash::new(user.password.as_str())?;
-        if argon2
-            .verify_password(split.get(1).unwrap().as_bytes(), &parsed_hash)
-            .is_err()
-        {
-            return Ok(None);
-        }
-        return Ok(Some(user));
+        let username = split.get(0).unwrap().to_string();
+        let password = split.get(1).unwrap().to_string();
+        verify_login(username, password, conn).await
     }
     Ok(None)
 }
@@ -75,12 +80,13 @@ pub async fn can_deploy_basic_auth(
     repo: &Repository,
     conn: &DatabaseConnection,
 ) -> Result<(bool, Option<UserModel>), InternalError> {
-    let option = get_user_by_header(header_map, conn)?.await;
+    let option = get_user_by_header(header_map, conn).await?;
     if option.is_none() {
         return Ok((false, None));
     }
     let user = option.unwrap();
-    Ok((can_deploy(&user.permissions, repo)?, Some(user)))
+    let value = UserPermissions::try_from(user.permissions.clone())?;
+    Ok((can_deploy(&value, repo)?, Some(user)))
 }
 
 pub async fn can_read_basic_auth(
@@ -91,12 +97,14 @@ pub async fn can_read_basic_auth(
     match repo.security.visibility {
         Visibility::Public => Ok((true, None)),
         Visibility::Private => {
-            let option = get_user_by_header(header_map, conn)?.await;
+            let option = get_user_by_header(header_map, conn).await?;
             if option.is_none() {
                 return Ok((false, None));
             }
             let user = option.unwrap();
-            Ok((can_read(&user.permissions, repo)?, Some(user)))
+            let value = UserPermissions::try_from(user.permissions.clone())?;
+
+            Ok((can_read(&value, repo)?, Some(user)))
         }
         Visibility::Hidden => Ok((true, None)),
     }

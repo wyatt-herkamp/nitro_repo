@@ -6,7 +6,7 @@ use sea_orm::DatabaseConnection;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::unauthorized;
 use crate::system::utils::get_user_by_header;
-use crate::{Database, NitroRepo};
+use crate::{ NitroRepo};
 use crate::system::permissions::options::CanIDo;
 
 #[get("/api/settings/report")]

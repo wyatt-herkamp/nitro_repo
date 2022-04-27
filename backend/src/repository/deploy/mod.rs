@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::storage::models::StringStorage;
-use crate::system::models::User;
+use crate::system::user::Model as UserModel;
 
 use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct DeployInfo {
-    pub user: User,
+    pub user: UserModel,
     pub version: String,
     pub name: String,
     pub version_folder: String,

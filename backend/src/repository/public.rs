@@ -1,8 +1,8 @@
 use actix_web::{get, web, HttpRequest};
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::database::DbPool;
 use crate::error::response::{not_found, unauthorized};
 use crate::repository::models::{Repository};
 use crate::system::utils::can_read_basic_auth;
@@ -39,7 +39,7 @@ impl From<Repository> for PublicRepositoryResponse {
 
 #[get("/api/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
@@ -51,7 +51,7 @@ pub async fn get_repo(
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
                 let connection = pool.get()?;
-                if !can_read_basic_auth(r.headers(), &repository, &connection)?.0 {
+                if !can_read_basic_auth(r.headers(), &repository, &connection).await?.0 {
                     return unauthorized();
                 }
             }

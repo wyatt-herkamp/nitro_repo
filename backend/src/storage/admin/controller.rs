@@ -4,7 +4,6 @@ use std::collections::HashMap;
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::database::DbPool;
 use crate::error::internal_error::InternalError;
 use crate::error::response::{already_exists, unauthorized};
 use crate::storage::models::{save_storages, LocationType, Storage};
@@ -15,11 +14,12 @@ use log::warn;
 use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::Path;
+use sea_orm::DatabaseConnection;
 use crate::system::permissions::options::CanIDo;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
 ) -> Result<HttpResponse, InternalError> {
@@ -34,7 +34,7 @@ pub async fn list_storages(
 
 #[delete("/api/admin/storages/{id}")]
 pub async fn delete_by_id(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DatabaseConnection>,
     r: HttpRequest,
     site: NitroRepoData,
     id: web::Path<String>,
@@ -59,7 +59,7 @@ pub async fn delete_by_id(
 
 #[get("/api/storages/id/{id}")]
 pub async fn get_by_id(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DatabaseConnection>,
     r: HttpRequest,
     site: NitroRepoData,
     id: web::Path<String>,
@@ -81,7 +81,7 @@ pub struct NewStorage {
 
 #[post("/api/admin/storages/add")]
 pub async fn add_storage(
-    pool: web::Data<DbPool>,
+    pool: web::Data<DatabaseConnection>,
     r: HttpRequest,
     nc: web::Json<NewStorage>,
     site: NitroRepoData,

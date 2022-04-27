@@ -1,7 +1,6 @@
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
-use async_trait::async_trait;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 
@@ -13,14 +12,14 @@ use crate::repository::models::{RepositorySummary};
 use crate::repository::settings::Policy;
 
 use crate::repository::types::RepoResponse::{
-    BadRequest, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
+    BadRequest, NotAuthorized, NotFound, ProjectResponse,
 };
 use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::types::{Project, RepoResponse, RepoResult};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
 };
-use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
+use crate::system::utils::{can_read_basic_auth};
 
 pub mod models;
 mod utils;

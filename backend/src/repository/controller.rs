@@ -12,7 +12,7 @@ use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::models::Repository;
 use crate::repository::nitro::ResponseType::Storage;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
-use crate::repository::types::{RepoResponse, RepositoryRequest, RepositoryRequestInner};
+use crate::repository::types::{RepoResponse, RepositoryRequest};
 use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
@@ -29,7 +29,7 @@ pub fn to_request(
     repo_name: String,
     file: String,
     site: NitroRepoData,
-) -> Result<RepositoryRequestInner, InternalError> {
+) -> Result<RepositoryRequest, InternalError> {
     let storages = site.storages.lock().unwrap();
     let storage = storages.get(&storage_name);
     if storage.is_none() {

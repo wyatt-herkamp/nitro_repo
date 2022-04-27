@@ -1,16 +1,15 @@
 use actix_web::{get, post, web, HttpRequest};
+use sea_orm::{DatabaseConnection, IntoActiveModel};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::database::DbPool;
 use crate::error::response::unauthorized;
-use crate::system::action::update_user_password;
+use crate::system::user;
 use crate::system::utils::{get_user_by_header, hash, NewPassword};
+pub use sea_orm::{entity::*, query::*, DbErr, FromQueryResult};
 
 #[get("/api/me")]
-pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
-    let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
+pub async fn me(database: web::Data<DatabaseConnection>, r: HttpRequest) -> SiteResponse {
+    let user = get_user_by_header(r.headers(), &database).await?;
     if user.is_none() {
         return unauthorized();
     }
@@ -20,18 +19,21 @@ pub async fn me(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
 
 #[post("/api/me/user/password")]
 pub async fn change_my_password(
-    pool: web::Data<DbPool>,
+    database: web::Data<DatabaseConnection>,
     r: HttpRequest,
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
+    let user = get_user_by_header(r.headers(), &database).await?;
     if user.is_none() {
         return unauthorized();
     }
-    let user = user.unwrap();
-    let string = hash(nc.0.password)?;
-    update_user_password(&user.id, string, &connection)?;
+
+    let user: user::Model = user.unwrap();
+    let hashed_password: String = hash(nc.0.password)?;
+    let mut user_active: user::ActiveModel = user.into_active_model();
+
+    user_active.password = Set(hashed_password);
+
+    let user = user_active.update(database.as_ref()).await?;
     APIResponse::from(Some(user)).respond(&r)
 }

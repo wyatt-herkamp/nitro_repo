@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 use actix_web::HttpRequest;
-use async_trait::async_trait;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use regex::Regex;
@@ -17,9 +16,9 @@ use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, Pu
 use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
 
 use crate::repository::types::RepoResponse::{
-    BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
+    BadRequest, CreatedWithJSON, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryHandler, RDatabaseConnection};
+use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryRequest, RDatabaseConnection};
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
@@ -109,7 +108,7 @@ impl  NPMHandler {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = request.value.replace("-/user/org.couchdb.user:", "");
-            return if is_valid(&username, &json, conn)? {
+            return if is_valid(&username, &json, conn).await? {
                 trace!("User Request for {} was authorized", &username);
                 let message = format!("user '{}' created", username);
                 Ok(CreatedWithJSON(serde_json::to_string(&LoginResponse {

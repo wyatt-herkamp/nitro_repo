@@ -12,35 +12,20 @@ use crate::utils::get_current_time;
 
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::repository::models::Repository;
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use sea_orm::DatabaseConnection;
 
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
 };
 use crate::storage::models::StringStorage;
-use crate::system::auth_token::Relation::User;
+use crate::system::utils::verify_login;
 
-pub fn is_valid(
+pub async fn is_valid(
     username: &str,
     request: &LoginRequest,
     conn: &DatabaseConnection,
 ) -> Result<bool, InternalError> {
-    //TODO
-    let result1 = None;
-    if result1.is_none() {
-        return Ok(false);
-    }
-    let argon2 = Argon2::default();
-    let user = result1.unwrap();
-    let parsed_hash = PasswordHash::new(user.password.as_str())?;
-    if argon2
-        .verify_password(request.password.as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Ok(false);
-    }
-    Ok(true)
+    Ok(verify_login(username.to_string(), request.password.clone(), conn).await?.is_some())
 }
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
