@@ -39,7 +39,7 @@ impl From<Repository> for PublicRepositoryResponse {
 
 #[get("/api/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
-    pool: web::Data<DatabaseConnection>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
@@ -50,7 +50,6 @@ pub async fn get_repo(
         let option = storage.get_repository(&repo)?;
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
-                let connection = pool.get()?;
                 if !can_read_basic_auth(r.headers(), &repository, &connection).await?.0 {
                     return unauthorized();
                 }

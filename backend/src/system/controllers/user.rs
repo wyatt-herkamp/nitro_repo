@@ -1,32 +1,32 @@
 use actix_web::{get, patch, post, web, HttpRequest};
+use sea_orm::{DatabaseConnection, QueryFilter};
+use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::database::DbPool;
 use crate::error::response::{already_exists_what, not_found, unauthorized};
-use crate::system::action::{
-    add_new_user, delete_user_db, get_user_by_email, get_user_by_id_response, get_user_by_username,
-    get_users, update_user, update_user_password, update_user_permissions,
-};
-use crate::system::models::{User, UserListResponse};
+
+use crate::system::models::{UserListResponse};
 use crate::system::permissions::options::CanIDo;
 use crate::system::permissions::UserPermissions;
-use crate::system::utils::{get_user_by_header, hash, ModifyUser, NewPassword, NewUser};
+use crate::system::user;
+use crate::system::utils::{get_user_by_header, hash, NewPassword, NewUser};
 use crate::utils::get_current_time;
-
+use sea_orm::ColumnTrait;
+use sea_orm::IntoActiveModel;
+use sea_orm::ActiveModelTrait;
+use sea_orm::EntityTrait;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
     pub users: Vec<UserListResponse>,
 }
 
 #[get("/api/admin/user/list")]
-pub async fn list_users(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse {
-    let connection = pool.get()?;
-
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+pub async fn list_users(connection: web::Data<DatabaseConnection>, r: HttpRequest) -> SiteResponse {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    let vec = get_users(&connection)?;
+    let vec = user::Entity::find().into_model::<UserListResponse>().all(connection.as_ref()).await?;
 
     let response = ListUsers { users: vec };
     APIResponse::respond_new(Some(response), &r)
@@ -34,139 +34,128 @@ pub async fn list_users(pool: web::Data<DbPool>, r: HttpRequest) -> SiteResponse
 
 #[get("/api/admin/user/get/{user}")]
 pub async fn get_user(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
     path: web::Path<i64>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    let repo = get_user_by_id_response(&path.into_inner(), &connection)?;
+    let user = user::Entity::find_by_id(path.into_inner()).one(connection.as_ref()).await?;
 
-    APIResponse::respond_new(repo, &r)
+    APIResponse::respond_new(user, &r)
 }
 
 #[post("/api/admin/user/add")]
 pub async fn add_user(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
     nc: web::Json<NewUser>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    if get_user_by_username(&nc.username, &connection)?.is_some() {
+    if user::get_by_username(&nc.0.username,&connection).await?.is_some() {
         return already_exists_what("username");
     }
-    if get_user_by_email(&nc.email, &connection)?.is_some() {
+    if user::Entity::find().filter(user::Column::Email.eq(nc.email.clone())).one(connection.as_ref()).await?.is_some() {
         return already_exists_what("email");
     }
-    let user = User {
-        id: 0,
-        name: nc.0.name,
-        username: nc.0.username,
-        email: nc.0.email,
-        password: hash(nc.0.password)?,
-        permissions: UserPermissions::default(),
-        created: get_current_time(),
+    let user = user::ActiveModel {
+        id: Default::default(),
+        name: Set(nc.0.name),
+        username: Set(nc.0.username.clone()),
+        email: Set(nc.0.email),
+        password: Set(hash(nc.0.password)?),
+        permissions: Set(UserPermissions::default().try_into()?),
+        created: Set(get_current_time()),
     };
-    add_new_user(&user, &connection)?;
-    APIResponse::from(get_user_by_username(&user.username, &connection)?).respond(&r)
+    user::Entity::insert(user).exec(connection.as_ref()).await?;
+    APIResponse::from(user::get_by_username(&nc.0.username,&connection).await?).respond(&r)
 }
 
 #[patch("/api/admin/user/{user}/modify")]
 pub async fn modify_user(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
-    name: web::Path<String>,
-    nc: web::Json<ModifyUser>,
+    path: web::Path<i64>,
+    nc: web::Json<user::ModifyUser>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    let name = name.into_inner();
 
-    let user = get_user_by_username(&name, &connection)?;
+    let user = user::Entity::find_by_id(path.into_inner()).one(connection.as_ref()).await?;
     if user.is_none() {
         return not_found();
     }
-    update_user(user.unwrap().id, &nc.email, &nc.name, &connection)?;
-    APIResponse::from(get_user_by_username(&name, &connection)?).respond(&r)
+    let model = nc.0.into_active_model();
+    let user = model.update(connection.as_ref()).await?;
+    //update_user(user.unwrap().id, &nc.email, &nc.name, &connection)?;
+    APIResponse::from(Some(user)).respond(&r)
 }
 
 #[patch("/api/admin/user/{user}/modify/permissions")]
 pub async fn update_permission(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
     permissions: web::Json<UserPermissions>,
-    path: web::Path<String>,
+    path: web::Path<i64>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    let user = path.into_inner();
 
-    let user = get_user_by_username(&user, &connection)?;
+    let user = user::Entity::find_by_id(path.into_inner()).one(connection.as_ref()).await?;
     if user.is_none() {
         return not_found();
     }
-    let user = user.unwrap();
-    update_user_permissions(&user.id, &permissions.into_inner(), &connection)?;
-    APIResponse::from(true).respond(&r)
+    let user: user::Model = user.unwrap();
+    let mut user_active: user::ActiveModel = user.into_active_model();
+
+    user_active.permissions = Set(permissions.0.try_into()?);
+
+    let user = user_active.update(connection.as_ref()).await?;
+    APIResponse::from(Some(user)).respond(&r)
 }
 
 #[post("/api/admin/user/{user}/password")]
 pub async fn change_password(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
-    user: web::Path<String>,
+    path: web::Path<i64>,
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    let connection = pool.get()?;
-    let user = user.into_inner();
 
-    let user = get_user_by_username(&user, &connection)?;
+    let user = user::Entity::find_by_id(path.into_inner()).one(connection.as_ref()).await?;
     if user.is_none() {
         return not_found();
     }
-    let user = user.unwrap();
-    let string = hash(nc.0.password)?;
+    let user: user::Model = user.unwrap();
+    let hashed_password: String = hash(nc.0.password)?;
+    let mut user_active: user::ActiveModel = user.into_active_model();
 
-    update_user_password(&user.id, string, &connection)?;
+    user_active.password = Set(hashed_password);
+
+    let user = user_active.update(connection.as_ref()).await?;
     APIResponse::from(Some(user)).respond(&r)
+
 }
 
 #[get("/api/admin/user/{user}/delete")]
 pub async fn delete_user(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
-    user: web::Path<String>,
+    user: web::Path<i64>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_users().is_err() {
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_users().is_err() {
         return unauthorized();
     }
-    let connection = pool.get()?;
-
     let user = user.into_inner();
 
-    let option = get_user_by_username(&user, &connection)?;
-    if option.is_none() {
-        return not_found();
-    }
-    delete_user_db(&option.unwrap().id, &connection)?;
+    user::Entity::delete_by_id(user).exec(connection.as_ref()).await?;
     APIResponse::new(true, Some(true)).respond(&r)
 }

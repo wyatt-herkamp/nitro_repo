@@ -30,13 +30,11 @@ pub struct ListRepositories {
 //     };
 #[get("/api/admin/repositories/list")]
 pub async fn list_repos(
-    pool: web::Data<DatabaseConnection>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-
-    let user = get_user_by_header(r.headers(), &connection)?;
+    let user = get_user_by_header(r.headers(), &connection).await?;
     if user.can_i_edit_repos().is_err() {
         return unauthorized();
     }
@@ -54,14 +52,14 @@ pub async fn list_repos(
 
 #[get("/api/admin/repositories/{storage}/list")]
 pub async fn list_repos_by_storage(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     storage: Path<String>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    let user = get_user_by_header(r.headers(), &connection)?;
+
+    let user = get_user_by_header(r.headers(), &connection).await?;
     if user.can_i_edit_repos().is_err() {
         return unauthorized();
     }
@@ -82,15 +80,15 @@ pub async fn list_repos_by_storage(
 
 #[get("/api/admin/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let result = site.storages.read().await;
@@ -105,14 +103,14 @@ pub async fn get_repo(
 
 #[post("/api/admin/repository/add")]
 pub async fn add_repo(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let result = site.storages.read().await;
@@ -131,13 +129,13 @@ pub async fn add_repo(
 
 #[patch("/api/admin/repository/{storage}/{repository}/active/{active}")]
 pub async fn update_active_status(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
 
@@ -160,13 +158,13 @@ pub async fn update_active_status(
 
 #[patch("/api/admin/repository/{storage}/{repository}/policy/{policy}")]
 pub async fn update_policy(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
 
@@ -189,14 +187,14 @@ pub async fn update_policy(
 
 #[patch("/api/admin/repository/{storage}/{repository}/description")]
 pub async fn update_description(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     b: Bytes,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
 
@@ -226,14 +224,14 @@ pub async fn update_description(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/settings/frontend")]
 pub async fn modify_frontend_settings(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
@@ -256,14 +254,14 @@ pub async fn modify_frontend_settings(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/settings/badge")]
 pub async fn modify_badge_settings(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
@@ -285,14 +283,14 @@ pub async fn modify_badge_settings(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/security/visibility/{visibility}")]
 pub async fn modify_security(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository, visibility) = path.into_inner();
@@ -316,15 +314,15 @@ pub async fn modify_security(
 
 #[patch("/api/admin/repository/{storage}/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
@@ -347,24 +345,20 @@ pub async fn modify_deploy(
 
 #[put("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/add")]
 pub async fn add_webhook(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
 
 
-    let user = get_user_by_header(r.headers(), &connection)?;
-    if user.is_none() || !user.unwrap().permissions.admin {
-        return unauthorized();
-    }
     let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -383,14 +377,14 @@ pub async fn add_webhook(
 
 #[delete("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/{webhook}")]
 pub async fn remove_webhook(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository, webhook) = path.into_inner();
@@ -418,15 +412,15 @@ pub struct DeleteRequest {
 
 #[delete("/api/admin/repository/{storage}/{repository}")]
 pub async fn delete_repository(
-    pool: web::Data<DbPool>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String)>,
     query: web::Query<DeleteRequest>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
 
-    if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
+
+    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();

@@ -1,6 +1,7 @@
 pub mod options;
 
 use serde::{Serialize, Deserialize};
+use serde_json::Value;
 use crate::repository::models::{Repository};
 use thiserror::Error;
 use crate::repository::settings::Policy;
@@ -42,6 +43,14 @@ impl TryFrom<serde_json::Value> for UserPermissions {
 
     fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
         return serde_json::from_value(value);
+    }
+}
+
+impl TryInto<serde_json::Value> for UserPermissions {
+    type Error = serde_json::Error;
+
+    fn try_into(self) -> Result<Value, Self::Error> {
+        return serde_json::to_value(self)
     }
 }
 

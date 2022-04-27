@@ -1,7 +1,4 @@
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
+
 extern crate core;
 extern crate strum;
 extern crate strum_macros;
@@ -15,12 +12,10 @@ use std::path::Path;
 use log::{error, info, trace};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
-use std::sync::Mutex;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
 
-pub mod database;
 
 pub mod api_response;
 pub mod constants;
@@ -35,7 +30,6 @@ pub mod system;
 pub mod utils;
 pub mod webhook;
 
-use crate::database::Database;
 use crate::install::load_installer;
 use crate::settings::models::{
     EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,

@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, web, HttpRequest, HttpResponse};
@@ -44,7 +43,7 @@ pub async fn to_request(
     }
     let repository = repository.unwrap();
 
-    let request = RepositoryRequestInner {
+    let request = RepositoryRequest {
         storage,
         repository,
         value: file,
@@ -141,7 +140,7 @@ pub async fn get_repository(
         };
     }
     let request =result.unwrap();
-    let x = request.repository.repo_type.handle_get(&request, r.clone(), connection.as_ref()).await?;
+    let x = request.repository.repo_type.handle_get(&request, &r, connection.as_ref()).await?;
 
     handle_result(x, request.value.clone(), r)
 }
@@ -246,7 +245,7 @@ pub async fn post_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_post(*request, r.clone(), connection.get_ref(), bytes).await?;
+    let x = request.repository.repo_type.handle_post(&request, &r, connection.get_ref(), bytes).await?;
 
 
     handle_result(x, request.value, r)
@@ -275,7 +274,7 @@ pub async fn patch_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_patch(&request, r.clone(), connection.get_ref(), bytes).await?;
+    let x = request.repository.repo_type.handle_patch(&request, &r, connection.get_ref(), bytes).await?;
 
 
     handle_result(x, request.value, r)
@@ -304,7 +303,7 @@ pub async fn put_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_put(&request, r.clone(), connection.get_ref(), bytes).await?;
+    let x = request.repository.repo_type.handle_put(&request, &r, connection.get_ref(), bytes).await?;
 
     handle_result(x, request.value, r)
 }
@@ -331,7 +330,7 @@ pub async fn head_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_head(&request, r.clone(), connection.get_ref()).await?;
+    let x = request.repository.repo_type.handle_head(&request, &r, &connection).await?;
 
 
     handle_result(x, request.value, r)

@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::{Repository};
 use crate::repository::settings::security::Visibility;
-use crate::settings::models::Database;
 use crate::system::permissions::{can_deploy, can_read, UserPermissions};
 use crate::system::user;
 use crate::system::user::Entity as UserEntity;
@@ -70,7 +69,7 @@ pub async fn get_user_by_header(
         }
         let username = split.get(0).unwrap().to_string();
         let password = split.get(1).unwrap().to_string();
-        verify_login(username, password, conn).await
+        return verify_login(username, password, conn).await;
     }
     Ok(None)
 }

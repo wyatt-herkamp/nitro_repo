@@ -31,7 +31,7 @@ impl CanIDo for Option<UserModel> {
             return Err("Not Logged In".into());
         }
         let user = self.unwrap();
-        let permissions: UserPermissions = user.permissions.try_into().unwrap();
+        let permissions: UserPermissions = user.permissions.clone().try_into().unwrap();
 
         if !permissions.admin && !permissions.repository_manager {
             return Err("repository_manager".into());
@@ -44,7 +44,7 @@ impl CanIDo for Option<UserModel> {
             return Err("Not Logged In".into());
         }
         let user = self.unwrap();
-        let permissions: UserPermissions = user.permissions.try_into().unwrap();
+        let permissions: UserPermissions = user.permissions.clone().try_into().unwrap();
         if !permissions.admin && !permissions.user_manager {
             return Err("user_manager".into());
         }
@@ -56,7 +56,7 @@ impl CanIDo for Option<UserModel> {
             return Err("Not Logged In".into());
         }
         let user = self.unwrap();
-        let permissions: UserPermissions = user.permissions.try_into().unwrap();
+        let permissions: UserPermissions = user.permissions.clone().try_into().unwrap();
 
         if !permissions.admin {
             return Err("admin".into());

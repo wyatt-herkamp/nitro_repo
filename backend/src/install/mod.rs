@@ -14,7 +14,8 @@ use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
 use std::path::Path;
-use sea_orm::{DatabaseConnection};
+use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::ActiveValue::Set;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -32,8 +33,7 @@ use crate::utils::get_current_time;
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 use unicode_width::UnicodeWidthStr;
 use crate::system::permissions::UserPermissions;
-use crate::system::{UserEntity, UserModel};
-use crate::system::user::{ActiveModel, NewUser};
+use crate::system::{user};
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -52,6 +52,11 @@ impl From<&str> for InstallError {
 impl From<std::io::Error> for InstallError {
     fn from(error: std::io::Error) -> Self {
         InstallError::IOError(error)
+    }
+}
+impl std::convert::From<sea_orm::DbErr> for InstallError {
+    fn from(error:sea_orm::DbErr) -> Self {
+        InstallError::InstallError(error.to_string())
     }
 }
 
@@ -101,22 +106,23 @@ pub struct UserStage {
     pub password_two: Option<String>,
 }
 
-impl From<UserStage> for NewUser {
+impl From<UserStage> for user::ActiveModel {
     fn from(value: UserStage) -> Self {
-        NewUser {
-            name: value.name.unwrap_or_default(),
-            username: value.username.unwrap_or_default(),
-            email: value.email.unwrap_or_default(),
-            password: hash(value.password.unwrap_or_default()).unwrap(),
-            permissions: UserPermissions {
+        user::ActiveModel {
+            id: Default::default(),
+            name: Set(value.name.unwrap_or_default()),
+            username:  Set(value.username.unwrap_or_default()),
+            email:  Set(value.email.unwrap_or_default()),
+            password:  Set(hash(value.password.unwrap_or_default()).unwrap()),
+            permissions:  Set(UserPermissions {
                 disabled: false,
                 admin: true,
                 user_manager: true,
                 repository_manager: true,
                 deployer: None,
                 viewer: None,
-            },
-            created: get_current_time(),
+            }.try_into().unwrap()),
+            created:  Set(get_current_time()),
         }
     }
 }
@@ -235,8 +241,8 @@ async fn run_app(
                                 let stage = app.user_stage.clone();
 
                                 //TODO dont kill program on failure to create user
-                                let user: NewUser = stage.into();
-                                let new_user: UserModel = user.insert(connection).await?;
+                                let user: user::ActiveModel = stage.into();
+                                user::Entity::insert(user).exec(connection).await?;
                                 app.stage = 2;
                             }
                         }

@@ -1,9 +1,7 @@
-use std::cell::Ref;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use actix_web::web::Bytes;
-use actix_web::{HttpRequest, web};
+use actix_web::{HttpRequest};
 use sea_orm::DatabaseConnection;
 
 use serde::{Deserialize, Serialize};
@@ -46,7 +44,7 @@ impl RepositoryType {
         }
     }
 
-    pub async fn handle_post(&self, request: RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
+    pub async fn handle_post(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
         match self {
             t => {
                 return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
@@ -73,7 +71,7 @@ impl RepositoryType {
         }
     }
 
-    pub async fn handle_head(&self, request: &RepositoryRequest, http: HttpRequest, conn: RDatabaseConnection) -> RepoResult {
+    pub async fn handle_head(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
         match self {
             t => {
                 return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));

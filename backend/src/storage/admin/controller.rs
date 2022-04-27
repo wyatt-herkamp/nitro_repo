@@ -19,11 +19,10 @@ use crate::system::permissions::options::CanIDo;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
-    pool: web::Data<DatabaseConnection>,
+    connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
 ) -> Result<HttpResponse, InternalError> {
-    let connection = pool.get()?;
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
@@ -34,12 +33,11 @@ pub async fn list_storages(
 
 #[delete("/api/admin/storages/{id}")]
 pub async fn delete_by_id(
-    pool: web::Data<DatabaseConnection>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
     site: NitroRepoData,
     id: web::Path<String>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
@@ -59,12 +57,11 @@ pub async fn delete_by_id(
 
 #[get("/api/storages/id/{id}")]
 pub async fn get_by_id(
-    pool: web::Data<DatabaseConnection>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
     site: NitroRepoData,
     id: web::Path<String>,
 ) -> SiteResponse {
-    let connection = pool.get()?;
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
@@ -81,12 +78,11 @@ pub struct NewStorage {
 
 #[post("/api/admin/storages/add")]
 pub async fn add_storage(
-    pool: web::Data<DatabaseConnection>,
+    connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
     nc: web::Json<NewStorage>,
     site: NitroRepoData,
 ) -> SiteResponse {
-    let connection = pool.get()?;
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
