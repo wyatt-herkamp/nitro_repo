@@ -20,7 +20,7 @@ pub async fn badge(
     let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, site)?;
+    let request = to_request(storage, repository, file, site).await?;
 
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())

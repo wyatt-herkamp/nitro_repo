@@ -42,7 +42,7 @@ pub async fn list_repos(
     }
     //TODO Change the frontend to only show repos based on the current storage being looked at.
     let mut vec = Vec::new();
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     for (_, storage) in result.iter() {
         for (_, repo) in storage.get_repositories()? {
             vec.push(repo);
@@ -65,7 +65,7 @@ pub async fn list_repos_by_storage(
     if user.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = storage.into_inner();
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -93,7 +93,7 @@ pub async fn get_repo(
     if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -115,7 +115,7 @@ pub async fn add_repo(
     if get_user_by_header(r.headers(), &connection)?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&nc.storage);
     if storage.is_none() {
         return not_found();
@@ -142,7 +142,7 @@ pub async fn update_active_status(
     }
 
     let (storage, repo, active) = path.into_inner();
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -171,7 +171,7 @@ pub async fn update_policy(
     }
 
     let (storage, repository, policy) = path.into_inner();
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -208,7 +208,7 @@ pub async fn update_description(
         return bad_request("Bad Description");
     }
 
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -238,7 +238,7 @@ pub async fn modify_frontend_settings(
     }
     let (storage, repository) = path.into_inner();
 
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -267,7 +267,7 @@ pub async fn modify_badge_settings(
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -297,7 +297,7 @@ pub async fn modify_security(
     }
     let (storage, repository, visibility) = path.into_inner();
 
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -328,7 +328,7 @@ pub async fn modify_deploy(
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -365,7 +365,7 @@ pub async fn add_webhook(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -395,7 +395,7 @@ pub async fn remove_webhook(
     }
     let (storage, repository, webhook) = path.into_inner();
 
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();
@@ -432,7 +432,7 @@ pub async fn delete_repository(
     let (storage, repository) = path.into_inner();
 
 
-    let result = site.storages.lock().unwrap();
+    let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
         return not_found();

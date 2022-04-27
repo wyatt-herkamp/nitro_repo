@@ -10,7 +10,7 @@ pub struct SiteInfo {
 
 #[get("/api/info/site")]
 pub async fn site_info(site: NitroRepoData, request: HttpRequest) -> SiteResponse {
-    let mutex = site.settings.lock().unwrap();
+    let mutex = site.settings.read().await;
 
     let info = SiteInfo {
         name: mutex.site.name.clone(),

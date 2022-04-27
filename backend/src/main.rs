@@ -15,7 +15,6 @@ use std::path::Path;
 use log::{error, info, trace};
 use nitro_log::config::Config;
 use nitro_log::NitroLogger;
-use std::sync::Mutex;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
@@ -45,6 +44,7 @@ use crate::settings::models::{
 use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
 use crossterm::style::Stylize;
+use tokio::sync::RwLock;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -55,8 +55,8 @@ struct Cli {
 
 #[derive(Debug)]
 pub struct NitroRepo {
-    storages: Mutex<Storages>,
-    settings: Mutex<Settings>,
+    storages: RwLock<Storages>,
+    settings: RwLock<Settings>,
     core: GeneralSettings,
 }
 
@@ -155,8 +155,8 @@ async fn main() -> std::io::Result<()> {
     let storages = storages.unwrap();
     info!("Initializing Web Server");
     let nitro_repo = NitroRepo {
-        storages: Mutex::new(storages),
-        settings: Mutex::new(settings),
+        storages: RwLock::new(storages),
+        settings: RwLock::new(settings),
         core: init_settings,
     };
     let application = nitro_repo.core.application.clone();

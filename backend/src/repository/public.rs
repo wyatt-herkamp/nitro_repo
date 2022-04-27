@@ -45,7 +45,7 @@ pub async fn get_repo(
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
-    let guard = site.storages.lock().unwrap();
+    let guard = site.storages.read().await;
     if let Some(storage) = guard.get(&storage) {
         let option = storage.get_repository(&repo)?;
         if let Some(repository) = option {

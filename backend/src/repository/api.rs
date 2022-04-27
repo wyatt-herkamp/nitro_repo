@@ -29,7 +29,7 @@ pub async fn get_versions(
     let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, site)?;
+    let request = to_request(storage, repository, file, site).await?;
 
     let x = match request.repository.repo_type {
         Maven(_) => { MavenHandler::handle_versions(&request, &r, &connection) }
@@ -48,7 +48,7 @@ pub async fn get_project(
     let (storage, repository, file) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, file, site)?;
+    let request = to_request(storage, repository, file, site).await?;
 
     let x = match request.repository.repo_type {
         Maven(_) => { MavenHandler::handle_project(&request, &r, &connection) }
@@ -67,7 +67,7 @@ pub async fn get_version(
     let (storage, repository, project, version) = path.into_inner();
     let connection = pool.get()?;
 
-    let request = to_request(storage, repository, project, site)?;
+    let request = to_request(storage, repository, project, site).await?;
 
 
     let x = match request.repository.repo_type {

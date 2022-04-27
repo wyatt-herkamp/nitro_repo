@@ -19,6 +19,6 @@ pub async fn setting_report(
     if user.is_none() || !user.unwrap().permissions.admin {
         return unauthorized();
     }
-    let settings = site.settings.lock().unwrap();
+    let settings = site.settings.read().await;
     APIResponse::from(Some(settings.deref())).respond(&r)
 }
