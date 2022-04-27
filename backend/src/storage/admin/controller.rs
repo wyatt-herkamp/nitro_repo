@@ -27,7 +27,7 @@ pub async fn list_storages(
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let guard = site.storages.lock().unwrap();
+    let guard = site.storages.read().await;
     let values: Vec<Storage<StringMap>> = guard.values().cloned().collect();
     APIResponse::new(true, Some(values)).respond(&r)
 }
@@ -43,7 +43,7 @@ pub async fn delete_by_id(
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let mut guard = site.storages.lock().unwrap();
+    let mut guard = site.storages.write().await;
     if let Some(storage) = guard.remove(&id.into_inner()) {
         //Yes I am exporting everything being deleted
         warn!(
@@ -68,7 +68,7 @@ pub async fn get_by_id(
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let guard = site.storages.lock().unwrap();
+    let guard = site.storages.read().await;
 
     return APIResponse::new(true, guard.get(&id.into_inner())).respond(&r);
 }
@@ -90,7 +90,7 @@ pub async fn add_storage(
     if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
         return unauthorized();
     }
-    let mut guard = site.storages.lock().unwrap();
+    let mut guard = site.storages.write().await;
     for (_, storage) in guard.iter() {
         if storage.name.eq(&nc.name) || storage.public_name.eq(&nc.public_name) {
             return already_exists();

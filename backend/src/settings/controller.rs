@@ -18,6 +18,6 @@ pub async fn setting_report(
     if get_user_by_header(r.headers(), &database).await?.can_i_admin().is_err() {
         return unauthorized();
     }
-    let settings = site.settings.lock().unwrap();
+    let settings = site.settings.read().await;
     APIResponse::from(Some(settings.deref())).respond(&r)
 }

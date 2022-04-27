@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
 extern crate core;
 extern crate strum;
 extern crate strum_macros;
@@ -16,6 +20,7 @@ use std::sync::Mutex;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
 
+pub mod database;
 
 pub mod api_response;
 pub mod constants;
@@ -30,6 +35,7 @@ pub mod system;
 pub mod utils;
 pub mod webhook;
 
+use crate::database::Database;
 use crate::install::load_installer;
 use crate::settings::models::{
     EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,
@@ -38,6 +44,7 @@ use crate::settings::models::{
 use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
 use crossterm::style::Stylize;
+use tokio::sync::RwLock;
 use sea_orm::{Database};
 
 #[derive(Parser, Debug)]
@@ -49,8 +56,8 @@ struct Cli {
 
 #[derive(Debug)]
 pub struct NitroRepo {
-    storages: Mutex<Storages>,
-    settings: Mutex<Settings>,
+    storages: RwLock<Storages>,
+    settings: RwLock<Settings>,
     core: GeneralSettings,
 }
 
@@ -149,8 +156,8 @@ async fn main() -> std::io::Result<()> {
     let storages = storages.unwrap();
     info!("Initializing Web Server");
     let nitro_repo = NitroRepo {
-        storages: Mutex::new(storages),
-        settings: Mutex::new(settings),
+        storages: RwLock::new(storages),
+        settings: RwLock::new(settings),
         core: init_settings,
     };
     let application = nitro_repo.core.application.clone();

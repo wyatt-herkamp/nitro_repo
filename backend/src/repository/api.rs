@@ -24,7 +24,7 @@ pub async fn get_versions(
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
-    let request = to_request(storage, repository, file, site)?;
+    let request = to_request(storage, repository, file, site).await?;
 
     let x = request.repository.repo_type.handle_versions(&request, r.clone(), &connection).await?;
     handle_result(x, request.value, r)
@@ -39,7 +39,7 @@ pub async fn get_project(
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
-    let request = to_request(storage, repository, file, site)?;
+    let request = to_request(storage, repository, file, site).await?;
 
     let x = request.repository.repo_type.handle_project(&request, r.clone(), &connection).await?;
 
@@ -55,7 +55,7 @@ pub async fn get_version(
 ) -> SiteResponse {
     let (storage, repository, project, version) = path.into_inner();
 
-    let request = to_request(storage, repository, project, site)?;
+    let request = to_request(storage, repository, project, site).await?;
 
 
     let x = request.repository.repo_type.handle_version(&request, version, r.clone(), &connection).await?;

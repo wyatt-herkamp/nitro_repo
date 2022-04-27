@@ -42,7 +42,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 
 
 pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
-    let guard = site.settings.lock().unwrap();
+    let guard = site.settings.read().await;
 
     let value = json!({"base_url":     site.core.application.app_url, "title": guard.site.name,"description": guard.site.description});
     let content = hb.render("index", &value)?;

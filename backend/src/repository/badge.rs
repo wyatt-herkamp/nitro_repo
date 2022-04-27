@@ -1,23 +1,26 @@
 use crate::api_response::SiteResponse;
+use crate::database::DbPool;
 use crate::NitroRepoData;
 use actix_web::{get, web, HttpRequest, HttpResponse};
 use badge_maker::BadgeBuilder;
-use sea_orm::DatabaseConnection;
 
 use crate::repository::controller::to_request;
-use crate::repository::types::RepositoryRequest;
-
+use crate::repository::maven::MavenHandler;
+use crate::repository::npm::NPMHandler;
+use crate::repository::types::RepositoryHandler;
+use crate::repository::types::RepositoryType::{Maven, NPM};
 
 #[get("/badge/{storage}/{repository}/{file:.*}/badge")]
 pub async fn badge(
-    connection: web::Data<DatabaseConnection>,
+    pool: web::Data<DbPool>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
+    let connection = pool.get()?;
 
-    let request:RepositoryRequest = to_request(storage, repository, file, site)?;
+    let request = to_request(storage, repository, file, site).await?;
 
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())
