@@ -4,7 +4,7 @@ use crate::session::{Session, SessionManagerType};
 use async_trait::async_trait;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use time::Duration;
+use time::{Duration, OffsetDateTime};
 use tokio::sync::RwLock;
 use crate::system::auth_token::Model as AuthToken;
 
@@ -75,11 +75,6 @@ fn generate_token() -> String {
     format!("nrs_{}", token)
 }
 
-pub fn token_expiration() -> u128 {
-    let value: std::time::Duration = Duration::days(1).try_into().unwrap();
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .add(value)
-        .as_millis()
+pub fn token_expiration() -> OffsetDateTime {
+    OffsetDateTime::now_utc().add(Duration::days(1))
 }

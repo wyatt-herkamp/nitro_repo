@@ -1,5 +1,7 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::error::internal_error::InternalError;
+use crate::system::auth_token;
 
 #[derive(Clone, Debug, PartialEq,DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "auth_tokens")]
@@ -32,3 +34,7 @@ impl Related<super::user::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+pub async fn get_by_token(token: &str, connection: &DatabaseConnection) ->Result<Option<Model>, InternalError>{
+    auth_token::Entity::find().filter(auth_token::Column::Token.eq(token)).one(connection).await.map_err(|e|InternalError::DBError(e))
+
+}

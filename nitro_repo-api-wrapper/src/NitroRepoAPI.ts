@@ -14,6 +14,7 @@ export function init(myURL: string) {
     apiURL = myURL
     apiClient = axios.create({
         baseURL: myURL,
+        withCredentials: true,
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json",

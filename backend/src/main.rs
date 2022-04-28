@@ -171,6 +171,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_method()
                     .allow_any_origin(),
             )
+            .wrap(session::middleware::HandleSession)
             .wrap(middleware::Logger::default())
             .app_data(Data::new(pool.clone()))
             .app_data(site_core.clone())

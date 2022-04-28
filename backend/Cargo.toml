@@ -8,7 +8,7 @@ license-file = "../LICENSE"
 [dependencies]
 # Web
 actix = "0.13.0"
-actix-web = { version = "4.0.0", features = ["openssl"] }
+actix-web = { version = "4.0.0", features = ["openssl", "cookies"] }
 actix-cors = "0.6.0"
 actix-service = "2.0.1"
 actix-multipart = "0.4.0"

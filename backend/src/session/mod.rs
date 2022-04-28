@@ -1,7 +1,9 @@
 pub mod basic;
+pub mod middleware;
 
 use async_trait::async_trait;
 use sea_orm::sea_query::ColumnSpec::Default;
+use time::OffsetDateTime;
 use crate::session::basic::BasicSessionManager;
 
 use crate::system;
@@ -16,7 +18,7 @@ pub enum SessionManager {
 pub struct Session {
     pub token: String,
     pub auth_token: Option<AuthToken>,
-    pub expiration: u128,
+    pub expiration: OffsetDateTime,
 }
 
 #[async_trait]
@@ -26,6 +28,27 @@ pub trait SessionManagerType {
     async fn create_session(&self) -> Result<Session, Self::Error>;
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error>;
     async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error>;
+}
+
+#[async_trait]
+impl SessionManagerType for SessionManager {
+    type Error = ();
+
+    async fn delete_session(&self, token: &str) -> Result<(), Self::Error> {
+        return match self { SessionManager::BasicSessionManager(basic) => { basic.delete_session(token).await } };
+    }
+
+    async fn create_session(&self) -> Result<Session, Self::Error> {
+        return  match self { SessionManager::BasicSessionManager(basic) => { basic.create_session().await } };
+    }
+
+    async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
+        return match self { SessionManager::BasicSessionManager(basic) => { basic.retrieve_session(token).await } };
+    }
+
+    async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
+        return match self { SessionManager::BasicSessionManager(basic) => { basic.set_auth_token(token, auth_token).await } };
+    }
 }
 
 impl TryFrom<SessionSettings> for SessionManager {
@@ -39,6 +62,6 @@ impl TryFrom<SessionSettings> for SessionManager {
             _ => {
                 Err("Invalid Session Manager".to_string())
             }
-        }
+        };
     }
 }
