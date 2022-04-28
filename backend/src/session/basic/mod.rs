@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::{Add, Deref};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::session::{Session, SessionManagerType};
@@ -9,13 +10,13 @@ use tokio::sync::RwLock;
 use crate::system::auth_token::Model as AuthToken;
 
 pub struct BasicSessionManager {
-    pub sessions: RwLock<Vec<Session>>,
+    pub sessions: RwLock<HashMap<String, Session>>,
 }
 
 impl Default for BasicSessionManager {
     fn default() -> Self {
         return BasicSessionManager {
-            sessions: RwLock::new(Vec::new())
+            sessions: RwLock::new(HashMap::new())
         };
     }
 }
@@ -26,9 +27,7 @@ impl SessionManagerType for BasicSessionManager {
 
     async fn delete_session(&self, token: &str) -> Result<(), Self::Error> {
         let mut guard = self.sessions.write().await;
-        guard.retain(|session| {
-            return !session.token.eq(token);
-        });
+        guard.remove(token);
         return Ok(());
     }
 
@@ -39,28 +38,36 @@ impl SessionManagerType for BasicSessionManager {
             auth_token: None,
             expiration: token_expiration(),
         };
-        guard.push(session.clone());
+        guard.insert(session.token.clone(), session.clone());
         return Ok(session);
     }
 
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
         let guard = self.sessions.read().await;
-        for x in guard.iter() {
-            if x.token.eq(token) {
-                return Ok(Some(x.clone()));
-            }
-        }
-        return Ok(None);
+        return Ok(guard.get(token).cloned());
+    }
+
+    async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error> {
+        let mut guard = self.sessions.write().await;
+        guard.remove(token);
+
+        let session = Session {
+            token: generate_token(),
+            auth_token: None,
+            expiration: token_expiration(),
+        };
+        guard.insert(session.token.clone(), session.clone());
+        return Ok(session);
     }
 
     async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
         let mut guard = self.sessions.write().await;
-        for x in guard.iter_mut() {
-            if x.token.eq(token) {
-                x.auth_token = Some(auth_token);
-                return Ok(());
-            }
+        let option = guard.get_mut(token);
+        if let Some(x) = option {
+            x.auth_token = Some(auth_token);
+            return Ok(());
         }
+
         log::warn!("An AuthToken was set to a session that did not exist!");
         return Ok(());
     }

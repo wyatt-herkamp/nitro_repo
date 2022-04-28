@@ -7,7 +7,7 @@ use actix_web::cookie::{Cookie, Expiration, SameSite};
 use actix_web::http::header::{HeaderValue, SET_COOKIE};
 use futures_util::future::LocalBoxFuture;
 use log::trace;
-use sea_orm::DatabaseConnection;
+use sea_orm::{DatabaseConnection, EntityTrait};
 use crate::{SessionManager, system};
 use crate::session::{Session, SessionManagerType};
 use crate::system::auth_token;
@@ -68,14 +68,10 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
         let service: Rc<S> = Rc::clone(&self.service);
 
         Box::pin(async move {
-            let (authentication, session): (Option<system::auth_token::Model>, Option<Session>) = if let Some(token) = req.headers().get("Authorization") {
+            let (authentication, session): (Option<auth_token::Model>, Option<Session>) = if let Some(token) = req.headers().get("Authorization") {
                 let database: &web::Data<DatabaseConnection> = req.app_data().unwrap();
                 let token = token.to_str().unwrap();
                 let option = auth_token::get_by_token(token, &database).await.unwrap();
-                if option.is_none() {
-                    //TODO return early. Un authenticated
-                }
-
                 (option, None)
             } else if let Some(session) = req.cookie("session") {
                 let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
@@ -86,7 +82,18 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                     let session = session_manager.create_session().await.unwrap();
                     (None, Some(session))
                 } else {
-                    let session = session.unwrap();
+                    let mut session = session.unwrap();
+                    if session.expiration >= SystemTime::UNIX_EPOCH {
+                        if let Some(auth_token) = session.auth_token {
+                            let database: &web::Data<DatabaseConnection> = req.app_data().unwrap();
+                            let connection = database.clone();
+                            actix_web::rt::spawn(async move {
+                                // Move this database call into the thread pool.
+                                auth_token::Entity::delete_by_id(auth_token.id).exec(connection.as_ref()).await.unwrap();
+                            });
+                        }
+                        session = session_manager.re_create_session(&session.token).await.unwrap();
+                    }
                     (session.auth_token, None)
                 }
             } else {

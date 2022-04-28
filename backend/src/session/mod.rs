@@ -27,6 +27,7 @@ pub trait SessionManagerType {
     async fn delete_session(&self, token: &str) -> Result<(), Self::Error>;
     async fn create_session(&self) -> Result<Session, Self::Error>;
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error>;
+    async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error>;
     async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error>;
 }
 
@@ -44,6 +45,10 @@ impl SessionManagerType for SessionManager {
 
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
         return match self { SessionManager::BasicSessionManager(basic) => { basic.retrieve_session(token).await } };
+    }
+
+    async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error> {
+        return match self { SessionManager::BasicSessionManager(basic) => { basic.re_create_session(token).await } };
     }
 
     async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
