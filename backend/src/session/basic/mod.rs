@@ -1,0 +1,85 @@
+use std::ops::{Add, Deref};
+use std::time::{SystemTime, UNIX_EPOCH};
+use crate::session::{Session, SessionManagerType};
+use async_trait::async_trait;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use time::Duration;
+use tokio::sync::RwLock;
+use crate::system::auth_token::Model as AuthToken;
+
+pub struct BasicSessionManager {
+    pub sessions: RwLock<Vec<Session>>,
+}
+
+impl Default for BasicSessionManager {
+    fn default() -> Self {
+        return BasicSessionManager {
+            sessions: RwLock::new(Vec::new())
+        };
+    }
+}
+
+#[async_trait]
+impl SessionManagerType for BasicSessionManager {
+    type Error = ();
+
+    async fn delete_session(&self, token: &str) -> Result<(), Self::Error> {
+        let mut guard = self.sessions.write().await;
+        guard.retain(|session| {
+            return !session.token.eq(token);
+        });
+        return Ok(());
+    }
+
+    async fn create_session(&self) -> Result<Session, Self::Error> {
+        let mut guard = self.sessions.write().await;
+        let session = Session {
+            token: generate_token(),
+            auth_token: None,
+            expiration: token_expiration(),
+        };
+        guard.push(session.clone());
+        return Ok(session);
+    }
+
+    async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
+        let guard = self.sessions.read().await;
+        for x in guard.iter() {
+            if x.token.eq(token) {
+                return Ok(Some(x.clone()));
+            }
+        }
+        return Ok(None);
+    }
+
+    async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
+        let mut guard = self.sessions.write().await;
+        for x in guard.iter_mut() {
+            if x.token.eq(token) {
+                x.auth_token = Some(auth_token);
+                return Ok(());
+            }
+        }
+        log::warn!("An AuthToken was set to a session that did not exist!");
+        return Ok(());
+    }
+}
+
+fn generate_token() -> String {
+    let token: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(12)
+        .map(char::from)
+        .collect();
+    format!("nrs_{}", token)
+}
+
+pub fn token_expiration() -> u128 {
+    let value: std::time::Duration = Duration::days(1).try_into().unwrap();
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .add(value)
+        .as_millis()
+}

@@ -1,4 +1,3 @@
-
 extern crate core;
 extern crate strum;
 extern crate strum_macros;
@@ -29,6 +28,7 @@ pub mod storage;
 pub mod system;
 pub mod utils;
 pub mod webhook;
+pub mod session;
 
 use crate::install::load_installer;
 use crate::settings::models::{
@@ -40,6 +40,7 @@ use clap::Parser;
 use crossterm::style::Stylize;
 use tokio::sync::RwLock;
 use sea_orm::{Database};
+use crate::session::SessionManager;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -159,8 +160,9 @@ async fn main() -> std::io::Result<()> {
     let max_upload = application.max_upload;
 
     let address = application.address.clone();
-    let data = web::Data::new(nitro_repo);
-
+    let session_manager = SessionManager::try_from(nitro_repo.core.session.clone()).unwrap();
+    let session_manager = Data::new(session_manager);
+    let site_core = Data::new(nitro_repo);
     let server = HttpServer::new(move || {
         App::new()
             .wrap(
@@ -170,9 +172,10 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin(),
             )
             .wrap(middleware::Logger::default())
-            .app_data(web::Data::new(pool.clone()))
-            .app_data(data.clone())
-            .app_data(web::Data::new(PayloadConfig::new(
+            .app_data(Data::new(pool.clone()))
+            .app_data(site_core.clone())
+            .app_data(session_manager.clone())
+            .app_data(Data::new(PayloadConfig::new(
                 (max_upload * 1024 * 1024) as usize,
             )))
             .configure(error::handlers::init)

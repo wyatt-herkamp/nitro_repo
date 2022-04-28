@@ -2,6 +2,7 @@ use crate::error::internal_error::InternalError;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use crossterm::terminal::SetSize;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -109,13 +110,20 @@ pub struct GeneralSettings {
     pub application: Application,
     pub internal: Internal,
     #[serde(default)]
-    pub env: HashMap<String, String>
+    pub session: SessionSettings,
+    #[serde(default)]
+    pub env: HashMap<String, String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SiteSetting {
     pub name: String,
     pub description: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SessionSettings {
+    pub manager: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -130,6 +138,7 @@ pub struct EmailSetting {
     pub from: String,
     pub port: u16,
 }
+
 #[allow(clippy::derivable_impls)]
 impl Default for SecuritySettings {
     fn default() -> Self {
@@ -155,6 +164,13 @@ impl Default for EmailSetting {
             encryption: "TLS".to_string(),
             from: "no-reply@example.com".to_string(),
             port: 587,
+        }
+    }
+}
+impl Default for SessionSettings{
+    fn default() -> Self {
+        return SessionSettings{
+            manager: "BasicSessionManager".to_string()
         }
     }
 }

@@ -27,7 +27,7 @@ use tui::{
 
 use thiserror::Error;
 
-use crate::settings::models::{Application, Database};
+use crate::settings::models::{Application, Database, SessionSettings};
 use crate::system::utils::hash;
 use crate::utils::get_current_time;
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
@@ -505,6 +505,7 @@ pub async fn load_installer(config: &Path) -> anyhow::Result<()> {
         database: app.database_stage.into(),
         application: Application::from(app.other_stage),
         internal: Default::default(),
+        session: Default::default(),
         env: Default::default(),
     };
     create_dir_all(config)?;
