@@ -25,6 +25,9 @@ jobs:
         with:
           working-directory: frontend
           node-version-file: 'frontend/.nvmrc'
+      - name: Build API
+        working-directory: nitro_repo-api-wrapper
+        run: npm install && npm run build
       - name: Install Frontend
         working-directory: frontend
         run: npm install
