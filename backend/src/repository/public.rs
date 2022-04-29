@@ -9,6 +9,7 @@ use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 use crate::NitroRepoData;
 use crate::authentication::Authentication;
+use crate::storage::{StorageHandlerType, StorageManager};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
@@ -42,14 +43,13 @@ impl From<Repository> for PublicRepositoryResponse {
 #[get("/api/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
     connection: web::Data<DatabaseConnection>,
-    site: NitroRepoData,
+    site: NitroRepoData, storages: web::Data<StorageManager>,
     r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
-    let guard = site.storages.read().await;
-    if let Some(storage) = guard.get(&storage) {
-        let option = storage.get_repository(&repo)?;
+    if let Some(storage) = storages.get_storage_by_name(&storage).await? {
+        let option = storage.get_repository(&repo).await?;
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
                 let caller: UserModel = auth.get_user(&connection).await??;

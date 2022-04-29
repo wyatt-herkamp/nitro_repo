@@ -9,147 +9,219 @@ use std::path::Path;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::{Repository, RepositorySummary};
-use crate::storage::local_storage::LocalStorage;
-use crate::storage::{LocationHandler, RepositoriesFile, StorageFile, StorageFileResponse};
-use crate::{SiteResponse, StringMap};
+use crate::storage::local_storage::{LocalStorage, LocalStorageError};
 use serde::{Deserialize, Serialize};
+use crate::api_response::SiteResponse;
+use crate::settings::models::StringMap;
+use async_trait::async_trait;
+use sqlx::encode::IsNull::No;
+use thiserror::Error;
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
 
-pub fn load_storages() -> anyhow::Result<Storages> {
-    let path = Path::new(STORAGE_FILE);
-    if !path.exists() {
-        return Ok(HashMap::new());
-    }
-    let string = read_to_string(&path)?;
-    let result: Storages = serde_json::from_str(&string)?;
-    Ok(result)
-}
-
-pub fn save_storages(storages: &Storages) -> Result<(), InternalError> {
-    let result = serde_json::to_string(&storages)?;
-    let path = Path::new(STORAGE_FILE);
-    let bak = Path::new(STORAGE_FILE_BAK);
-    if bak.exists() {
-        fs::remove_file(bak)?;
-    }
-    if path.exists() {
-        fs::rename(path, bak)?;
-    }
-    let mut file = OpenOptions::new().write(true).create(true).open(path)?;
-    file.write_all(result.as_bytes())?;
-    Ok(())
+#[derive(Error, Debug)]
+pub enum StorageError {
+    #[error("{0}")]
+    LocalStorageError(LocalStorageError),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum LocationType {
-    LocalStorage,
+pub enum StorageHandler {
+    LocalStorage(LocalStorage),
 }
 
-pub type Storages = HashMap<String, Storage<StringMap>>;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Storage<T> {
+pub struct StorageConfig {
     pub public_name: String,
     pub name: String,
     pub created: i64,
-    pub location_type: LocationType,
-    #[serde(flatten)]
-    pub location: T,
 }
 
-pub type StringStorage = Storage<StringMap>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Storage {
+    pub storage_handler: StorageHandler,
 
-impl Storage<StringMap> {
-    pub fn create_repository(
+    #[serde(flatten)]
+    pub config: StorageConfig,
+}
+
+impl Storage {
+    pub async fn init(&self) -> Result<(), StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.init(&self.config).await.map_err(StorageError::LocalStorageError)
+            }
+        };
+    }
+    // Repository Handlers
+    pub async fn create_repository(
         &self,
         repository: RepositorySummary,
-    ) -> Result<Repository, InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::create_repository(self, repository),
-        }
+    ) -> Result<Repository, StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.create_repository(&self.config, repository).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
-
-    pub fn delete_repository(
+    pub async fn delete_repository(
         &self,
         repository: &Repository,
         delete_files: bool,
-    ) -> Result<(), InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => {
-                LocalStorage::delete_repository(self, repository, delete_files)
+    ) -> Result<(), StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.delete_repository(&self.config, repository, delete_files).await.map_err(StorageError::LocalStorageError)
             }
-        }
+        };
     }
-    pub fn get_repositories(&self) -> Result<RepositoriesFile, InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::get_repositories(self),
-        }
+    pub async fn get_repositories(&self) -> Result<RepositoriesFile, StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.get_repositories(&self.config).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
-
-    pub fn get_repository(&self, name: &str) -> Result<Option<Repository>, InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::get_repository(self, name),
-        }
+    pub async fn get_repository(
+        &self,
+        name: &str,
+    ) -> Result<Option<Repository>, StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.get_repository(&self.config, name).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
-
-    pub fn update_repository(&self, repository: &Repository) -> Result<(), InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::update_repository(self, repository),
-        }
+    pub async fn update_repository(
+        &self,
+        repository: &Repository,
+    ) -> Result<(), StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.update_repository(&self.config, repository).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
-
-    pub fn save_file(
+    //File Handlers
+    pub async fn save_file(
         &self,
         repository: &Repository,
         file: &[u8],
         location: &str,
-    ) -> Result<(), InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::save_file(self, repository, file, location),
-        }
+    ) -> Result<(), StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.save_file(&self.config, repository, file, location).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
-
-    pub fn delete_file(
+    pub async fn delete_file(
         &self,
         repository: &Repository,
         location: &str,
-    ) -> Result<(), InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::delete_file(self, repository, location),
-        }
+    ) -> Result<(), StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.delete_file(&self.config, repository, location).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
-
-    pub fn get_file_as_response(
+    pub async fn get_file_as_response(
         &self,
         repository: &Repository,
-        location: &str,
-        request: &HttpRequest,
-    ) -> Result<Option<Either<SiteResponse, Vec<StorageFile>>>, InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => {
-                let response = LocalStorage::get_file_as_response(self, repository, location)?;
-                if let Some(response) = response {
-                    if response.is_left() {
-                        Ok(Some(Left(response.left().unwrap().to_request(request))))
-                    } else {
-                        Ok(Some(Right(response.right().unwrap())))
-                    }
+        location: &str, request: &HttpRequest,
+    ) -> Result<Option<FileResponse<SiteResponse>>, StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                let option = local.get_file_as_response(&self.config, repository, location).await.map_err(StorageError::LocalStorageError)?;
+                if option.is_none() { return Ok(None); }
+                let value = option.unwrap();
+                if value.is_left() {
+                    Ok(Some(Left(value.left().unwrap().to_request(request))))
                 } else {
-                    return Ok(None);
+                    Ok(Some(Right(value.right().unwrap())))
                 }
             }
-        }
+        };
     }
-
-    pub fn get_file(
+    pub async fn get_file(
         &self,
         repository: &Repository,
         location: &str,
-    ) -> Result<Option<Vec<u8>>, InternalError> {
-        match self.location_type {
-            LocationType::LocalStorage => LocalStorage::get_file(self, repository, location),
-        }
+    ) -> Result<Option<Vec<u8>>, StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => {
+                local.get_file(&self.config, repository, location).await.map_err(StorageError::LocalStorageError)
+            }
+        };
     }
+}
+
+
+///Storage Files are just a data container holding the file name, directory relative to the root of nitro_repo and if its a directory
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct StorageFile {
+    pub name: String,
+    pub full_path: String,
+    pub directory: bool,
+    pub file_size: u64,
+    pub created: u128,
+}
+
+/// StorageFileResponse is a trait that can be turned into a SiteResponse for example if its  LocalFile it will return into Actix's NamedFile response
+pub trait StorageFileResponse {
+    fn to_request(self, request: &HttpRequest) -> SiteResponse;
+}
+
+
+pub type RepositoriesFile = HashMap<String, RepositorySummary>;
+pub type FileResponse<T> = Either<T, Vec<StorageFile>>;
+
+#[async_trait]
+pub trait StorageType<T: StorageFileResponse> {
+    type Error;
+    async fn init(&self, config: &StorageConfig) -> Result<(), Self::Error>;
+    // Repository Handlers
+    async fn create_repository(
+        &self, config: &StorageConfig,
+        repository: RepositorySummary,
+    ) -> Result<Repository, Self::Error>;
+    async fn delete_repository(
+        &self, config: &StorageConfig,
+        repository: &Repository,
+        delete_files: bool,
+    ) -> Result<(), Self::Error>;
+    async fn get_repositories(&self, config: &StorageConfig,
+    ) -> Result<RepositoriesFile, Self::Error>;
+    async fn get_repository(
+        &self, config: &StorageConfig,
+        uuid: &str,
+    ) -> Result<Option<Repository>, Self::Error>;
+    async fn update_repository(
+        &self, config: &StorageConfig,
+        repository: &Repository,
+    ) -> Result<(), Self::Error>;
+    //File Handlers
+    async fn save_file(
+        &self, config: &StorageConfig,
+        repository: &Repository,
+        file: &[u8],
+        location: &str,
+    ) -> Result<(), Self::Error>;
+    async fn delete_file(
+        &self, config: &StorageConfig,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<(), Self::Error>;
+    async fn get_file_as_response(
+        &self, config: &StorageConfig,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<Option<FileResponse<T>>, Self::Error>;
+    async fn get_file(
+        &self, config: &StorageConfig,
+        repository: &Repository,
+        location: &str,
+    ) -> Result<Option<Vec<u8>>, Self::Error>;
 }

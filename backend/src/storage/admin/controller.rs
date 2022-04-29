@@ -6,47 +6,43 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
 use crate::error::response::{already_exists};
-use crate::storage::models::{save_storages, LocationType, Storage};
+use crate::storage::models::{Storage, StorageConfig, StorageHandler};
 use crate::system::permissions::options::CanIDo;
 use crate::utils::get_current_time;
-use crate::{NitroRepoData, StringMap};
 use log::warn;
 use sea_orm::DatabaseConnection;
 use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::Path;
 use crate::authentication::Authentication;
+use crate::settings::models::StringMap;
 use crate::system::user::UserModel;
+use crate::NitroRepoData;
+use crate::storage::local_storage::LocalStorage;
+use crate::storage::{StorageHandlerType, StorageManager};
+
 #[get("/api/storages/list")]
 pub async fn list_storages(
     connection: web::Data<DatabaseConnection>,
-    site: NitroRepoData,
+    site: NitroRepoData,storages: web::Data<StorageManager>,
     r: HttpRequest, auth: Authentication,
 ) -> Result<HttpResponse, InternalError> {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
-    let guard = site.storages.read().await;
-    let values: Vec<Storage<StringMap>> = guard.values().cloned().collect();
-    APIResponse::new(true, Some(values)).respond(&r)
+
+    APIResponse::new(true, Some(serde_json::to_value(&storages).unwrap())).respond(&r)
 }
 
 #[delete("/api/admin/storages/{id}")]
 pub async fn delete_by_id(
     connection: web::Data<DatabaseConnection>,
     r: HttpRequest, auth: Authentication,
-    site: NitroRepoData,
+    site: NitroRepoData, storages: web::Data<StorageManager>,
     id: web::Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
-    let mut guard = site.storages.write().await;
-    if let Some(storage) = guard.remove(&id.into_inner()) {
-        //Yes I am exporting everything being deleted
-        warn!(
-            " Deleted Storage {}",
-            serde_json::to_string(&storage).unwrap()
-        );
-        save_storages(guard.deref())?;
+    if storages.delete_storage(id.as_str()).await? {
         APIResponse::from(true).respond(&r)
     } else {
         APIResponse::from(false).respond(&r)
@@ -57,14 +53,13 @@ pub async fn delete_by_id(
 pub async fn get_by_id(
     connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
-    site: NitroRepoData, auth: Authentication,
+    site: NitroRepoData, auth: Authentication,storages: web::Data<StorageManager>,
     id: web::Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
-    let guard = site.storages.read().await;
 
-    return APIResponse::new(true, guard.get(&id.into_inner())).respond(&r);
+    return APIResponse::new(true, storages.get_storage_by_name(id.as_ref()).await?).respond(&r);
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -78,16 +73,11 @@ pub async fn add_storage(
     connection: web::Data<DatabaseConnection>,
     r: HttpRequest, auth: Authentication,
     nc: web::Json<NewStorage>,
+    storages: web::Data<StorageManager>,
     site: NitroRepoData,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
-    let mut guard = site.storages.write().await;
-    for (_, storage) in guard.iter() {
-        if storage.name.eq(&nc.name) || storage.public_name.eq(&nc.public_name) {
-            return already_exists();
-        }
-    }
     let path = Path::new("storages").join(&nc.0.name);
     if !path.exists() {
         create_dir_all(&path)?;
@@ -95,14 +85,16 @@ pub async fn add_storage(
     let path = canonicalize(path)?;
     let string = nc.0.name;
     let storage = Storage {
-        public_name: nc.0.public_name,
-        name: string.clone(),
-        created: get_current_time(),
-        location_type: LocationType::LocalStorage,
-        location: HashMap::from([("location".to_string(), path.to_str().unwrap().to_string())]),
+        config: StorageConfig {
+            public_name: nc.0.public_name,
+            name: string.clone(),
+            created: get_current_time(),
+        },
+        storage_handler: StorageHandler::LocalStorage(LocalStorage {
+            location: path.to_str().unwrap().to_string()
+        }),
     };
-    guard.insert(string.clone(), storage);
-    save_storages(guard.deref())?;
 
-    APIResponse::new(true, guard.get(&string)).respond(&r)
+    storages.create_storage(storage.clone()).await?;
+    APIResponse::new(true, Some(storage)).respond(&r)
 }

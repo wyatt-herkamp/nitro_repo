@@ -17,7 +17,7 @@ use sea_orm::DatabaseConnection;
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
 };
-use crate::storage::models::StringStorage;
+use crate::storage::models::Storage;
 use crate::system::utils::verify_login;
 
 pub async fn is_valid(
@@ -53,8 +53,8 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     }
 }
 
-pub fn update_project(
-    storage: &StringStorage,
+pub async fn update_project(
+    storage: &Storage,
     repository: &Repository,
     project_folder: &str,
     version: Version,
@@ -63,11 +63,11 @@ pub fn update_project(
     let version_folder = format!("{}/{}/{}", &project_folder, &version.version, VERSION_DATA);
 
     trace!("Project File Location {}", project_file);
-    let option = storage.get_file(repository, &project_file)?;
+    let option = storage.get_file(repository, &project_file).await?;
     let mut project_data: ProjectData = if let Some(data) = option {
         let string = String::from_utf8(data)?;
         let value = serde_json::from_str(&string)?;
-        storage.delete_file(repository, &project_file)?;
+        storage.delete_file(repository, &project_file).await?;
         value
     } else {
         ProjectData {
@@ -96,17 +96,17 @@ pub fn update_project(
         repository,
         serde_json::to_string_pretty(&project_data)?.as_bytes(),
         &project_file,
-    )?;
+    ).await?;
     storage.save_file(
         repository,
         serde_json::to_string_pretty(&version_data)?.as_bytes(),
         &version_folder,
-    )?;
+    ).await?;
     Ok(())
 }
 
-pub fn get_version_data(
-    storage: &StringStorage,
+pub  async fn get_version_data(
+    storage: &Storage,
     repository: &Repository,
     project_folder: &str,
     project: &ProjectData,
@@ -126,7 +126,7 @@ pub fn get_version_data(
             .times
             .insert(version.version.clone(), format_time(version.time));
         let version_path = format!("{}/{}/package.json", project_folder, &version.version);
-        let result = storage.get_file(repository, &version_path)?;
+        let result = storage.get_file(repository, &version_path).await?;
         if result.is_none() {
             warn!("{} not found", version_path);
             continue;
@@ -139,20 +139,20 @@ pub fn get_version_data(
     Ok((times, dist_tags, npm_versions))
 }
 
-pub fn generate_get_response(
-    storage: &StringStorage,
+pub async fn generate_get_response(
+    storage: &Storage,
     repository: &Repository,
     project_folder: &str,
 ) -> Result<Option<GetResponse>, InternalError> {
-    let option = get_project_data(storage, repository, project_folder.to_string())?;
+    let option = get_project_data(storage, repository, project_folder.to_string()).await?;
     if option.is_none() {
         return Ok(None);
     }
     let project_data = option.unwrap();
     let (times, dist_tags, versions) =
-        get_version_data(storage, repository, project_folder, &project_data)?;
+        get_version_data(storage, repository, project_folder, &project_data).await?;
     let version_path = format!("{}/{}/package.json", project_folder, &dist_tags.latest);
-    let result = storage.get_file(repository, &version_path)?;
+    let result = storage.get_file(repository, &version_path).await?;
     if result.is_none() {
         warn!("{} not found", version_path);
         return Ok(None);

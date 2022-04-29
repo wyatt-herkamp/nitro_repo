@@ -6,24 +6,23 @@ use crate::repository::nitro::{
     VersionData,
 };
 use crate::repository::types::{Project, VersionResponse};
-use crate::storage::models::StringStorage;
-use crate::storage::StorageFile;
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
+use crate::storage::models::{Storage, StorageFile};
 
-pub fn get_version(
-    storage: &StringStorage,
+pub async fn get_version(
+    storage: &Storage,
     repository: &Repository,
     project: String,
     version: String,
 ) -> NResult<Option<VersionResponse>> {
-    let versions_value = get_versions(storage, repository, project)?;
+    let versions_value = get_versions(storage, repository, project).await?;
     Ok(get_version_by_data(&versions_value, version))
 }
 
-pub fn process_storage_files(
-    storage: &StringStorage,
+pub async fn process_storage_files(
+    storage: &Storage,
     repo: &Repository,
     storage_files: Vec<StorageFile>,
     requested_dir: &str,
@@ -36,9 +35,9 @@ pub fn process_storage_files(
             file,
         });
     }
-    let active_dir = format!("{}/{}/{}", &storage.name, &repo.name, requested_dir);
+    let active_dir = format!("{}/{}/{}", &storage.config.name, &repo.name, requested_dir);
     let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
-    let option = storage.get_file(repo, &string)?;
+    let option = storage.get_file(repo, &string).await?;
     return if let Some(data) = option {
         let mut data: ProjectData = serde_json::from_slice(data.as_slice())?;
         if data.versions.latest_release.is_empty() {
@@ -48,7 +47,7 @@ pub fn process_storage_files(
             storage,
             repo,
             format!("{}/{}", requested_dir, data.versions.latest_release),
-        )?;
+        ).await?;
         let project = Project {
             repo_summary: RepositorySummary::new(repo),
             project: data,
@@ -62,14 +61,14 @@ pub fn process_storage_files(
         })
     } else {
         let string = format!("{}/{}", &requested_dir, VERSION_DATA);
-        let option = storage.get_file(repo, &string)?;
+        let option = storage.get_file(repo, &string).await?;
 
         if let Some(version) = option {
             let version: VersionData = serde_json::from_slice(version.as_slice())?;
 
             let x = Path::new(&requested_dir).parent().unwrap();
             let string = format!("{}/{}", x.to_str().unwrap(), PROJECT_FILE);
-            let option = storage.get_file(repo, &string)?;
+            let option = storage.get_file(repo, &string).await?;
 
             let mut project_data: ProjectData = serde_json::from_slice(option.unwrap().as_slice())?;
             if project_data.versions.latest_release.is_empty() {
@@ -113,15 +112,15 @@ pub fn get_version_by_data(
     None
 }
 
-pub fn update_project_in_repositories(
-    storage: &StringStorage,
+pub async fn update_project_in_repositories(
+    storage: &Storage,
     repository: &Repository,
     project: String,
 ) -> Result<(), InternalError> {
-    let option = storage.get_file(repository, PROJECTS_FILE)?;
+    let option = storage.get_file(repository, PROJECTS_FILE).await?;
     let mut repo_listing: RepositoryListing = if let Some(data) = option {
         let data = String::from_utf8(data)?;
-        storage.delete_file(repository, PROJECTS_FILE)?;
+        storage.delete_file(repository, PROJECTS_FILE).await?;
         serde_json::from_str(&data)?
     } else {
         RepositoryListing { values: vec![] }
@@ -129,17 +128,17 @@ pub fn update_project_in_repositories(
 
     repo_listing.add_value(project);
     let string = serde_json::to_string_pretty(&repo_listing)?;
-    storage.save_file(repository, string.as_bytes(), PROJECTS_FILE)?;
+    storage.save_file(repository, string.as_bytes(), PROJECTS_FILE).await?;
     Ok(())
 }
 
-pub fn get_versions(
-    storage: &StringStorage,
+pub async fn get_versions(
+    storage: &Storage,
     repository: &Repository,
     path: String,
 ) -> Result<NitroRepoVersions, InternalError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
-    let option = storage.get_file(repository, &string)?;
+    let option = storage.get_file(repository, &string).await?;
     Ok(if let Some(vec) = option {
         let data: ProjectData = serde_json::from_str(&String::from_utf8(vec)?)?;
         data.versions
@@ -170,14 +169,14 @@ pub fn get_latest_version_data(
     }
 }
 
-pub fn get_project_data(
-    storage: &StringStorage,
+pub async fn get_project_data(
+    storage: &Storage,
     repository: &Repository,
     project: String,
 ) -> Result<Option<ProjectData>, InternalError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
     debug!("Project Data Location {}", &string);
-    let option = storage.get_file(repository, &string)?;
+    let option = storage.get_file(repository, &string).await?;
     Ok(if let Some(vec) = option {
         let mut data: ProjectData = serde_json::from_str(&String::from_utf8(vec)?)?;
         if data.versions.latest_release.is_empty() {
@@ -188,14 +187,14 @@ pub fn get_project_data(
         None
     })
 }
-pub fn get_version_data(
-    storage: &StringStorage,
+pub  async fn get_version_data(
+    storage: &Storage,
     repository: &Repository,
     folder: String,
 ) -> Result<Option<VersionData>, InternalError> {
     let string = format!("{}/{}", folder, VERSION_DATA);
     debug!("Version Data Location {}", &string);
-    let option = storage.get_file(repository, &string)?;
+    let option = storage.get_file(repository, &string).await?;
     Ok(if let Some(vec) = option {
         let data: VersionData = serde_json::from_str(&String::from_utf8(vec)?)?;
 

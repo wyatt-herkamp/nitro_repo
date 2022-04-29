@@ -17,11 +17,11 @@ use crate::repository::nitro::{
 };
 use crate::repository::npm::models::NPMSettings;
 use crate::repository::npm::NPMHandler;
-use crate::storage::models::Storage;
-use crate::storage::StorageFile;
-use crate::{SiteResponse, StringMap};
+use crate::storage::models::{Storage, StorageFile};
 use strum_macros::{Display, EnumString};
+use crate::api_response::SiteResponse;
 use crate::authentication::Authentication;
+use crate::settings::models::StringMap;
 
 //Requestable Data
 pub type RDatabaseConnection = DatabaseConnection;
@@ -217,7 +217,7 @@ pub type RepoResult = Result<RepoResponse, InternalError>;
 /// This is a Request to a Repository Handler
 pub struct RepositoryRequest {
     /// The Storage that the Repo needs to be in
-    pub storage: Storage<StringMap>,
+    pub storage: Storage,
     /// The Repository it needs to be in
     pub repository: Repository,
     /// Everything in the URL path after /storages/{STORAGE}/{REPOSITORY}

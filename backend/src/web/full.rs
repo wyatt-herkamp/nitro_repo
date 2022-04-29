@@ -1,111 +1,39 @@
-extern crate core;
-extern crate strum;
-extern crate strum_macros;
-
-use actix_cors::Cors;
-use actix_web::web::{Data, PayloadConfig};
-use actix_web::{middleware, App, HttpServer};
-use std::fs::read_to_string;
 use std::path::Path;
-
-use log::{error, info, trace};
-use nitro_log::config::Config;
-use nitro_log::NitroLogger;
-
-use crate::api_response::{APIResponse, SiteResponse};
-use crate::utils::Resources;
-
-pub mod api_response;
-pub mod constants;
-pub mod error;
-pub mod frontend;
-pub mod install;
-mod misc;
-pub mod repository;
-pub mod authentication;
-pub mod settings;
-pub mod storage;
-pub mod system;
-pub mod utils;
-pub mod webhook;
-
-use crate::install::load_installer;
-use crate::settings::models::{
-    EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,
-    StringMap,
-};
-use crate::storage::models::{load_storages, Storages};
-use clap::Parser;
-use crossterm::style::Stylize;
+use actix_cors::Cors;
+use actix_web::{App, HttpServer, middleware};
+use log::{trace, info, error};
 use sea_orm::Database;
+use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
-use crate::authentication::session::SessionManager;
+use api::cli::handle_cli;
+use actix_web::web::{Data, PayloadConfig};
+use api::{cli, utils, authentication, repository, misc, error, system, storage, settings, frontend, NitroRepo};
+use api::authentication::session::SessionManager;
+use api::settings::load_configs;
+use api::settings::models::{GeneralSettings, Settings, MysqlSettings};
+use api::utils::load_logger;
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct Cli {
-    #[clap(short, long)]
-    install: bool,
-}
-
-#[derive(Debug)]
-pub struct NitroRepo {
-    storages: RwLock<Storages>,
-    settings: RwLock<Settings>,
-    core: GeneralSettings,
-}
-
-pub type NitroRepoData = Data<NitroRepo>;
-
-fn load_configs() -> anyhow::Result<Settings> {
-    let cfgs = Path::new("cfg");
-
-    let security: SecuritySettings = toml::from_str(&read_to_string(cfgs.join("security.toml"))?)?;
-    let site: SiteSetting = toml::from_str(&read_to_string(cfgs.join("site.toml"))?)?;
-    let email: EmailSetting = toml::from_str(&read_to_string(cfgs.join("email.toml"))?)?;
-
-    Ok(Settings {
-        email,
-        site,
-        security,
-    })
-}
-
-fn load_logger<T: AsRef<Mode>>(logger: T) {
-    let file = match logger.as_ref() {
-        Mode::Debug => "log-debug.json",
-        Mode::Release => "log-release.json",
-        Mode::Install => "log-install.json",
-    };
-    let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
-    NitroLogger::load(config, None).unwrap();
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    if handle_cli().await? {
+        // Close Program
+        std::process::exit(1);
+    }
     let path = Path::new("cfg");
     let main_config = path.join("nitro_repo.toml");
     if !main_config.exists() {
-        let parse: Cli = Cli::parse();
-        if parse.install {
-            load_logger(Mode::Install);
-            if let Err(error) = load_installer(path).await {
-                error!("Unable to complete Install {error}");
-                println!("{}", "Unable to Complete Installation".red());
-                std::process::exit(1);
-            }
-            println!("{}", "Installation Complete".green());
-            return Ok(());
-        } else {
-            println!(
-                "Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag"
-            );
-            std::process::exit(1);
-        }
+        println!(
+            "Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag"
+        );
+        std::process::exit(1);
     }
     info!("Loading Main Config");
-    let string = read_to_string(&main_config)?;
+    let installed_version = semver::Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
+
+    let string = read_to_string(&main_config).await?;
     let init_settings: GeneralSettings = toml::from_str(&string)?;
+
     // Sets the Log Location
     std::env::set_var("LOG_LOCATION", &init_settings.application.log);
 
@@ -135,14 +63,14 @@ async fn main() -> std::io::Result<()> {
     }
     let pool = pool.unwrap();
     info!("Loading Other Configs");
-    let settings = load_configs();
+    let settings = load_configs().await;
     if let Err(error) = settings {
         error!("Unable to load Settings {error}");
         std::process::exit(1);
     }
     let settings = settings.unwrap();
     info!("Loading Storages");
-    let storages = load_storages();
+    let storages = storage::StorageManager::init().await;
     if let Err(error) = storages {
         error!("Unable to load Settings {error}");
         std::process::exit(1);
@@ -150,9 +78,9 @@ async fn main() -> std::io::Result<()> {
     let storages = storages.unwrap();
     info!("Initializing Web Server");
     let nitro_repo = NitroRepo {
-        storages: RwLock::new(storages),
         settings: RwLock::new(settings),
         core: init_settings,
+        current_version: installed_version,
     };
     let application = nitro_repo.core.application.clone();
 
@@ -162,6 +90,7 @@ async fn main() -> std::io::Result<()> {
     let session_manager = SessionManager::try_from(nitro_repo.core.session.clone()).unwrap();
     let session_manager = Data::new(session_manager);
     let site_core = Data::new(nitro_repo);
+    let storages = Data::new(storages);
     let server = HttpServer::new(move || {
         App::new()
             .wrap(
@@ -171,10 +100,11 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin()
                     .supports_credentials(),
             )
-            .wrap(authentication::middleware::HandleSession)
+            .wrap(crate::authentication::middleware::HandleSession)
             .wrap(middleware::Logger::default())
             .app_data(Data::new(pool.clone()))
             .app_data(site_core.clone())
+            .app_data(storages.clone())
             .app_data(session_manager.clone())
             .app_data(Data::new(PayloadConfig::new(
                 (max_upload * 1024 * 1024) as usize,

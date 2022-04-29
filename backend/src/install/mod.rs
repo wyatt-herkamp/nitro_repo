@@ -25,14 +25,14 @@ use tui::{
 
 use thiserror::Error;
 
-use crate::settings::models::{Application, Database};
+use crate::settings::models::{Application, Database, EmailSetting, Mode, SecuritySettings, SiteSetting, StringMap};
 use crate::system::permissions::UserPermissions;
 use crate::system::utils::hash;
 use crate::system::{user};
 use crate::utils::get_current_time;
-use crate::{authentication, EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 use sea_orm::ConnectionTrait;
 use unicode_width::UnicodeWidthStr;
+use crate::{authentication, GeneralSettings};
 use crate::system::user::UserEntity;
 
 #[derive(Error, Debug)]

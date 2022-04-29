@@ -17,8 +17,8 @@ use time::OffsetDateTime;
 
 use crate::error::internal_error::InternalError;
 use crate::settings::models::SessionSettings;
-use crate::{APIResponse, system};
-use crate::api_response::RequestErrorResponse;
+use crate::{ system};
+use crate::api_response::{APIResponse, RequestErrorResponse};
 use crate::authentication::auth_token::AuthTokenModel;
 use crate::authentication::session::Session;
 use crate::system::user;

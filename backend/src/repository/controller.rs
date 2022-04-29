@@ -1,6 +1,7 @@
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, web, HttpRequest, HttpResponse};
+use futures_util::SinkExt;
 use log::{debug, trace};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
@@ -12,10 +13,11 @@ use crate::repository::models::Repository;
 use crate::repository::nitro::ResponseType::Storage;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
 use crate::repository::types::{RepoResponse, RepositoryRequest};
-use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
 use crate::authentication::Authentication;
+use crate::storage::models::StorageFile;
+use crate::storage::{StorageHandlerType, StorageManager};
 
 //
 
@@ -29,15 +31,15 @@ pub async fn to_request(
     repo_name: String,
     file: String,
     site: NitroRepoData,
+    storages: web::Data<StorageManager>,
 ) -> Result<RepositoryRequest, InternalError> {
-    let storages = site.storages.read().await;
-    let storage = storages.get(&storage_name);
+    let storage = storages.get_storage_by_name(&storage_name).await?;
     if storage.is_none() {
         trace!("Storage {} not found", &storage_name);
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap().clone();
-    let repository = storage.get_repository(&repo_name)?;
+    let repository = storage.get_repository(&repo_name).await?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
         return Err(InternalError::NotFound);
@@ -52,52 +54,43 @@ pub async fn to_request(
     Ok(request)
 }
 
-pub async fn generate_storage_list(site: NitroRepoData) -> NitroFileResponse {
-    let mut storages = NitroFileResponse {
-        files: vec![],
+pub async fn generate_storage_list(site: NitroRepoData, storages: &StorageManager) -> Result<NitroFileResponse, InternalError> {
+    let files = storages.storages_as_file_list().await?.iter().map(|value| {
+        NitroFile {
+            response_type: ResponseType::Storage,
+            file: value.to_owned(),
+        }
+    }).collect();
+    Ok(NitroFileResponse {
+        files,
         response_type: ResponseType::Other,
         active_dir: "".to_string(),
-    };
-
-    for (name, storage) in site.storages.read().await.iter() {
-        storages.files.push(NitroFile {
-            response_type: Storage,
-            file: StorageFile {
-                name: name.clone(),
-                full_path: name.clone(),
-                directory: true,
-                file_size: 0,
-                created: storage.created as u128,
-            },
-        });
-    }
-    storages
+    })
 }
 
-pub async fn browse(site: NitroRepoData, r: HttpRequest) -> SiteResponse {
-    APIResponse::respond_new(Some(generate_storage_list(site).await), &r)
+pub async fn browse(site: NitroRepoData, storages: web::Data<StorageManager>, r: HttpRequest) -> SiteResponse {
+    APIResponse::respond_new(Some(generate_storage_list(site, &storages).await?), &r)
 }
 
 #[get("/storages/{storage}")]
 pub async fn browse_storage(
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<String>,
+    path: web::Path<String>, storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let string = path.into_inner();
     println!("HEY");
     if string.is_empty() {
-        return APIResponse::respond_new(Some(generate_storage_list(site).await), &r);
+        return APIResponse::respond_new(Some(generate_storage_list(site, &storages).await?), &r);
     }
-    let storages = site.storages.read().await;
 
-    let storage = storages.get(&string);
+    let storage = storages.get_storage_by_name(&string).await?;
     if storage.is_none() {
         trace!("Storage {} not found", &string);
         return Err(InternalError::NotFound);
     }
     let storage = storage.unwrap();
-    let map = storage.get_repositories()?;
+    let map = storage.get_repositories().await?;
     let mut repos = NitroFileResponse {
         files: vec![],
         response_type: ResponseType::Storage,
@@ -108,7 +101,7 @@ pub async fn browse_storage(
             response_type: ResponseType::Repository(sum),
             file: StorageFile {
                 name: name.clone(),
-                full_path: format!("{}/{}", &storage.name, &name),
+                full_path: format!("{}/{}", &storage.config.name, &name),
                 directory: true,
                 file_size: 0,
                 created: 0,
@@ -129,11 +122,11 @@ pub async fn get_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<GetPath>, auth: Authentication,
+    path: web::Path<GetPath>, auth: Authentication, storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let path = path.into_inner();
     let file = path.file.unwrap_or_else(|| "".to_string());
-    let result = to_request(path.storage, path.repository, file, site).await;
+    let result = to_request(path.storage, path.repository, file, site, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -231,11 +224,11 @@ pub async fn post_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,
+    path: web::Path<(String, String, String)>, storages: web::Data<StorageManager>,
     bytes: Bytes,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site).await;
+    let result = to_request(storage, repository, file, site, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -246,7 +239,7 @@ pub async fn post_repository(
     debug!(
         "POST {} in {}/{}: Route: {}",
         &request.repository.repo_type.to_string(),
-        &request.storage.name,
+        &request.storage.config.name,
         &request.repository.name,
         &request.value
     );
@@ -264,10 +257,10 @@ pub async fn patch_repository(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes,
+    bytes: Bytes, storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site).await;
+    let result = to_request(storage, repository, file, site, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -278,7 +271,7 @@ pub async fn patch_repository(
     debug!(
         "PATCH {} in {}/{}: Route: {}",
         &request.repository.repo_type.to_string(),
-        &request.storage.name,
+        &request.storage.config.name,
         &request.repository.name,
         &request.value
     );
@@ -296,10 +289,10 @@ pub async fn put_repository(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes, auth: Authentication,
+    bytes: Bytes, auth: Authentication, storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site).await;
+    let result = to_request(storage, repository, file, site, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -310,7 +303,7 @@ pub async fn put_repository(
     debug!(
         "PUT {} in {}/{}: Route: {}",
         &request.repository.repo_type.to_string(),
-        &request.storage.name,
+        &request.storage.config.name,
         &request.repository.name,
         &request.value
     );
@@ -327,10 +320,10 @@ pub async fn head_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>,
+    path: web::Path<(String, String, String)>, storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site).await;
+    let result = to_request(storage, repository, file, site, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -341,7 +334,7 @@ pub async fn head_repository(
     debug!(
         "HEAD {} in {}/{}: Route: {}",
         &request.repository.repo_type.to_string(),
-        &request.storage.name,
+        &request.storage.config.name,
         &request.repository.name,
         &request.value
     );

@@ -5,12 +5,13 @@ use std::ops::Deref;
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::system::permissions::options::CanIDo;
-use crate::NitroRepo;
 use crate::authentication::Authentication;
 use crate::system::user::UserModel;
+use crate::NitroRepoData;
+
 #[get("/api/settings/report")]
 pub async fn setting_report(
-    site: Data<NitroRepo>,
+    site: NitroRepoData,
     database: web::Data<DatabaseConnection>,
     r: HttpRequest, auth: Authentication,
 ) -> SiteResponse {

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
-use crate::storage::models::StringStorage;
+use crate::storage::models::Storage;
 use crate::system::user::UserModel;
 
 use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
@@ -25,7 +25,7 @@ impl Display for DeployInfo {
 }
 
 pub async fn handle_post_deploy(
-    _storage: &StringStorage,
+    _storage: &Storage,
     repository: &Repository,
     deploy: &DeployInfo,
 ) -> Result<(), InternalError> {

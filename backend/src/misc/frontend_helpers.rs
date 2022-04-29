@@ -1,7 +1,8 @@
 use actix_web::{get, HttpRequest};
 use serde::{Deserialize, Serialize};
+use crate::api_response::{APIResponse, SiteResponse};
+use crate::NitroRepoData;
 
-use crate::{APIResponse, NitroRepoData, SiteResponse};
 #[derive(Serialize, Deserialize)]
 pub struct SiteInfo {
     pub name: String,

@@ -6,6 +6,7 @@ use sea_orm::DatabaseConnection;
 
 use crate::repository::controller::to_request;
 use crate::authentication::Authentication;
+use crate::storage::StorageManager;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
@@ -13,13 +14,13 @@ use crate::system::user::UserModel;
 pub async fn badge(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest, auth: Authentication, storages: web::Data<StorageManager>,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
 
-    let request = to_request(storage, repository, file, site).await?;
+    let request = to_request(storage, repository, file, site, storages).await?;
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_read_from(&request.repository)?;
     let (label, message) = if request.value.eq("nitro_repo_example") {

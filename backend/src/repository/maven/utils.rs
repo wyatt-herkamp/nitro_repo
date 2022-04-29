@@ -9,8 +9,8 @@ use crate::error::internal_error::InternalError;
 use crate::repository::maven::models::Pom;
 use crate::repository::models::Repository;
 use crate::repository::nitro::{ProjectData, VersionData};
+use crate::storage::models::Storage;
 
-use crate::storage::models::StringStorage;
 use crate::utils::get_current_time;
 
 /// Project format {groupID}:{artifactID}
@@ -56,8 +56,8 @@ mod tests {
     }
 }
 
-pub fn update_project(
-    storage: &StringStorage,
+pub async fn update_project(
+    storage: &Storage,
     repository: &Repository,
     project_folder: &str,
     version: String,
@@ -66,11 +66,11 @@ pub fn update_project(
     let project_file = format!("{}/{}", &project_folder, PROJECT_FILE);
     let version_folder = format!("{}/{}/{}", &project_folder, &version, VERSION_DATA);
     trace!("Project File Location {}", project_file);
-    let option = storage.get_file(repository, &project_file)?;
+    let option = storage.get_file(repository, &project_file).await?;
     let mut project_data: ProjectData = if let Some(data) = option {
         let string = String::from_utf8(data)?;
         let value = serde_json::from_str(&string)?;
-        storage.delete_file(repository, &project_file)?;
+        storage.delete_file(repository, &project_file).await?;
         value
     } else {
         ProjectData {
@@ -92,11 +92,11 @@ pub fn update_project(
         repository,
         serde_json::to_string_pretty(&project_data)?.as_bytes(),
         &project_file,
-    )?;
+    ).await?;
     storage.save_file(
         repository,
         serde_json::to_string_pretty(&version_data)?.as_bytes(),
         &version_folder,
-    )?;
+    ).await?;
     Ok(())
 }

@@ -9,6 +9,8 @@ use actix_web::{HttpResponse, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
 use crate::authentication::UnAuthorized;
+use crate::storage::models::StorageError;
+use crate::storage::StorageHandlerError;
 use crate::system::permissions::options::MissingPermission;
 
 #[derive(Error, Debug)]
@@ -114,6 +116,23 @@ impl From<std::io::Error> for InternalError {
     }
 }
 
+impl From<serde_json::Error> for InternalError {
+    fn from(err: serde_json::Error) -> InternalError {
+        InternalError::JSONError(err)
+    }
+}
+
+impl std::convert::From<StorageHandlerError> for InternalError {
+    fn from(err: StorageHandlerError) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}
+impl std::convert::From<StorageError> for InternalError {
+    fn from(err: StorageError) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}
+
 impl From<FromUtf8Error> for InternalError {
     fn from(err: FromUtf8Error) -> InternalError {
         InternalError::UTF8Error(err)
@@ -144,11 +163,6 @@ impl From<handlebars::RenderError> for InternalError {
     }
 }
 
-impl From<serde_json::Error> for InternalError {
-    fn from(err: serde_json::Error) -> InternalError {
-        InternalError::JSONError(err)
-    }
-}
 
 impl From<actix_web::Error> for InternalError {
     fn from(err: actix_web::Error) -> InternalError {
