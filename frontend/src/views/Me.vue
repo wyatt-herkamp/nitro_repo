@@ -64,9 +64,7 @@ import { useRouter } from "vue-router";
 export default defineComponent({
   setup() {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const userStore = useUserStore();
     const user = computed(() => {
       return userStore.$state.user;

@@ -26,9 +26,7 @@ export default defineComponent({
   },
   setup(props) {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const user = ref<User | undefined>();
     const loadUser = async () => {
       try {

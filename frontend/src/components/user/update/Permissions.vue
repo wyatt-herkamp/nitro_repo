@@ -112,9 +112,7 @@ export default defineComponent({
     });
     const deployer = ref(permissions.value.deployer != undefined);
     const viewer = ref(permissions.value.viewer != undefined);
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     watch(deployer, () => {
       if (deployer.value == true) {
         if (permissions.value.deployer == undefined) {

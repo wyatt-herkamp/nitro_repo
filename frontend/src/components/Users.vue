@@ -36,9 +36,7 @@ export default defineComponent({
 
   setup() {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     let createUser = ref(false);
 
     let list = ref<ListItem[]>([]);

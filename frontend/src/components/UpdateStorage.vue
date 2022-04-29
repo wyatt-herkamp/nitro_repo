@@ -58,9 +58,7 @@ export default defineComponent({
     let storage = ref<Storage | undefined>(undefined);
     let date = ref<string | undefined>(undefined);
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const { meta } = useMeta({
       title: "Nitro Repo",
     });

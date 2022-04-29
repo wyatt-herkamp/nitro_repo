@@ -169,7 +169,7 @@ async fn main() -> std::io::Result<()> {
                 Cors::default()
                     .allow_any_header()
                     .allow_any_method()
-                    .allow_any_origin(),
+                    .allow_any_origin().supports_credentials(),
             )
             .wrap(session::middleware::HandleSession)
             .wrap(middleware::Logger::default())

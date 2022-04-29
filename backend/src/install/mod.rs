@@ -14,7 +14,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
 use std::path::Path;
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{DatabaseConnection, EntityTrait, Schema};
 use sea_orm::ActiveValue::Set;
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -33,7 +33,8 @@ use crate::utils::get_current_time;
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 use unicode_width::UnicodeWidthStr;
 use crate::system::permissions::UserPermissions;
-use crate::system::{user};
+use crate::system::{auth_token, user};
+use sea_orm::ConnectionTrait;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -54,8 +55,9 @@ impl From<std::io::Error> for InstallError {
         InstallError::IOError(error)
     }
 }
+
 impl std::convert::From<sea_orm::DbErr> for InstallError {
-    fn from(error:sea_orm::DbErr) -> Self {
+    fn from(error: sea_orm::DbErr) -> Self {
         InstallError::InstallError(error.to_string())
     }
 }
@@ -111,10 +113,10 @@ impl From<UserStage> for user::ActiveModel {
         user::ActiveModel {
             id: Default::default(),
             name: Set(value.name.unwrap_or_default()),
-            username:  Set(value.username.unwrap_or_default()),
-            email:  Set(value.email.unwrap_or_default()),
-            password:  Set(hash(value.password.unwrap_or_default()).unwrap()),
-            permissions:  Set(UserPermissions {
+            username: Set(value.username.unwrap_or_default()),
+            email: Set(value.email.unwrap_or_default()),
+            password: Set(hash(value.password.unwrap_or_default()).unwrap()),
+            permissions: Set(UserPermissions {
                 disabled: false,
                 admin: true,
                 user_manager: true,
@@ -122,7 +124,7 @@ impl From<UserStage> for user::ActiveModel {
                 deployer: None,
                 viewer: None,
             }.try_into().unwrap()),
-            created:  Set(get_current_time()),
+            created: Set(get_current_time()),
         }
     }
 }
@@ -224,7 +226,15 @@ async fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                todo!("Database Connector is gone");
+                                let mut database_conn = sea_orm::Database::connect(string).await?;
+                                let schema = Schema::new(database_conn.get_database_backend());
+                                let users = schema.create_table_from_entity(user::Entity);
+                                database_conn.execute(database_conn.get_database_backend().build(&users)).await?;
+                                let tokens = schema.create_table_from_entity(auth_token::Entity);
+                                database_conn.execute(database_conn.get_database_backend().build(&tokens)).await?;
+
+                                app.connection = Some(database_conn);
+                                app.stage = 1;
                             }
                         }
                         1 => {

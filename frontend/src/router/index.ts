@@ -91,10 +91,11 @@ const router = createRouter({
   
 });
 function requireAuth(to: any, from: any) {
-  let { cookies } = useCookies();
-  if (cookies.get("token") == undefined) {
-    return `login?return=${to.fullPath}`;
-  }
+  //let { cookies } = useCookies();
+  //if (cookies.get("token") == undefined) {
+  //  return `login?return=${to.fullPath}`;
+  //}
+  // TODO re add route guards
   return true;
 }
 export default router;

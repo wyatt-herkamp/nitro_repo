@@ -62,13 +62,17 @@ impl SessionManagerType for BasicSessionManager {
 
     async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
         let mut guard = self.sessions.write().await;
+
+        for x in guard.iter() {
+            println!("{:?}", x.0);
+        }
         let option = guard.get_mut(token);
         if let Some(x) = option {
             x.auth_token = Some(auth_token);
             return Ok(());
         }
 
-        log::warn!("An AuthToken was set to a session that did not exist!");
+        log::warn!("An AuthToken was set to a session that did not exist! {}", token);
         return Ok(());
     }
 }

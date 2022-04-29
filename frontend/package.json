@@ -1,6 +1,6 @@
 {
   "name": "site",
-  "version": "1.0.0-RC0",
+  "version": "1.0.0-beta",
   "private": true,
   "scripts": {
     "dev": "vite",

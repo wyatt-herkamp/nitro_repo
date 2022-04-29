@@ -93,9 +93,7 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const showModel = ref(props.modelValue);
 
     watch(

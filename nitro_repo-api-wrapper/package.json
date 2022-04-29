@@ -1,6 +1,6 @@
 {
   "name": "@nitro_repo/nitro_repo-api-wrapper",
-  "version": "1.0.0-RC0",
+  "version": "1.1.0-beta",
   "description": "The Implementation of the Nitro_Repo API in Typescript",
   "author": "Wyatt Jacob Herkamp",
   "license": "MIT",

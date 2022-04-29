@@ -17,9 +17,7 @@ export default defineComponent({
 
     const isLoading = ref(false);
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
         const tab = ref(0);
     const user = ref<User | undefined>(undefined);
     const loadUser = async () => {

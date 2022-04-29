@@ -37,9 +37,7 @@ export default defineComponent({
   },
   setup(props) {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
         const list = ref<ListItem[]>([]);
     let openModel = ref(false);
 

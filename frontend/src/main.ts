@@ -25,6 +25,5 @@ app.use(vfmPlugin);
 app.use(createMetaManager());
 app.use(createPinia())
 
-app.provide("token", cookies.get("token"))
 
 app.mount("#app");

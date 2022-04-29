@@ -1,5 +1,5 @@
 import { User, UserList, UserPermissions } from "./userTypes";
-import { apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED } from "../NitroRepoAPI";
+import { apiClient, BasicResponse, createAPIError, headers, INTERNAL_ERROR, NOT_AUTHORIZED } from "../NitroRepoAPI";
 import { Err, Ok } from "ts-results";
 
 
@@ -10,7 +10,7 @@ export async function createNewUser(
     username: string,
     password: string,
     email: string,
-    token: string
+    token: string | undefined
 ) {
     let newUser = {
         name: name,
@@ -20,11 +20,8 @@ export async function createNewUser(
         permissions: { deployer: false, admin: false },
     };
     return apiClient
-        .post("/api/admin/user/add", newUser, {
-            headers: {
-                Authorization: "Bearer " + token,
-            },
-        })
+        .post("/api/admin/user/add", newUser, headers(token)
+        )
         .then(
             (result) => {
                 const resultData = result.data;
@@ -63,17 +60,13 @@ export async function createNewUser(
 export async function updateOtherPassword(
     user: string,
     password: string,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .post(
             "/api/admin/user/" + user + "/password",
             { password: password },
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -106,17 +99,13 @@ export async function updateNameAndEmail(
     user: string,
     name: string,
     email: string,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
             "/api/admin/user/" + user + "/modify",
             { name: name, email: email },
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -148,17 +137,13 @@ export async function updateNameAndEmail(
 export async function updatePermission(
     user: string,
     permissions: UserPermissions,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
             `/api/admin/user/${user}/modify/permissions`,
             JSON.stringify(permissions),
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {

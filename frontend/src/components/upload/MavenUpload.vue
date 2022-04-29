@@ -111,9 +111,7 @@ export default defineComponent({
   },
   setup() {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const pom = ref<Object | undefined>(undefined);
     //This exists to trigger a rerender on Vue.
     const files = ref<number>(0);

@@ -32,16 +32,13 @@ export default defineComponent({
   components: { CreateStorage, UpdateStorage, SearchableList },
 
   setup() {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const list = ref<ListItem[]>([]);
     let openModel = ref(false);
 
     const getStorage = async () => {
       try {
-        const value = await getStorages(token as string);
+        const value = await getStorages(undefined);
         if (value == undefined) {
           return;
         }

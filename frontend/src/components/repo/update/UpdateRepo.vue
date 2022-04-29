@@ -58,9 +58,7 @@ export default defineComponent({
 
     let repository = ref<Repository | undefined>(undefined);
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     const exampleBadgeURL = ref("");
     const route = useRoute();
 

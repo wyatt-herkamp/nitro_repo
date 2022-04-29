@@ -1,14 +1,10 @@
-import {apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED} from "../NitroRepoAPI";
+import {apiClient, BasicResponse, createAPIError, headers, INTERNAL_ERROR, NOT_AUTHORIZED} from "../NitroRepoAPI";
 import {Storage, StorageList} from "../storage/storageTypes";
 import {Err, Ok} from "ts-results";
 import { BrowseResponse } from "src/repository/repositoryTypes";
 
-export async function getStorages(token: string): Promise<Array<Storage> | undefined> {
-    const value = await apiClient.get("/api/storages/list", {
-        headers: {
-            Authorization: "Bearer " + token,
-        },
-    });
+export async function getStorages(token: string|undefined): Promise<Array<Storage> | undefined> {
+    const value = await apiClient.get("/api/storages/list", headers(token));
 
     if (value.status != 200) {
         return undefined;
@@ -35,12 +31,8 @@ export async function getStoragesPublicAccess():  Promise<BrowseResponse | undef
     return undefined;
 }
 
-export async function getStorage(token: string, id: string): Promise<Storage | undefined> {
-    const value = await apiClient.get("/api/storages/id/" + id, {
-        headers: {
-            Authorization: "Bearer " + token,
-        },
-    });
+export async function getStorage(token: string|undefined, id: string): Promise<Storage | undefined> {
+    const value = await apiClient.get("/api/storages/id/" + id, headers(token));
 
     if (value.status != 200) {
         return undefined;
@@ -56,17 +48,13 @@ export async function getStorage(token: string, id: string): Promise<Storage | u
 export async function createNewStorage(
     name: string,
     public_name: string,
-    token: string
+    token: string|undefined
 ) {
     return apiClient
         .post(
             "/api/admin/storages/add",
             { name: name, public_name: public_name },
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -101,16 +89,12 @@ export async function createNewStorage(
 }
 export async function deleteStorage(
     name: string,
-    token: string
+    token: string|undefined
 ) {
     return apiClient
         .delete(
             "/api/admin/storages/"+name,
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {

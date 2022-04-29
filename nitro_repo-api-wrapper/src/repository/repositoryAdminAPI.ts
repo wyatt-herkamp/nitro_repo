@@ -1,22 +1,18 @@
-import {Err, Ok} from "ts-results";
-import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED, apiClient, BasicResponse} from "../NitroRepoAPI";
-import {Repository, RepositoryList} from "./repositoryTypes";
+import { Err, Ok } from "ts-results";
+import { createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED, apiClient, BasicResponse, headers } from "../NitroRepoAPI";
+import { Repository, RepositoryList } from "./repositoryTypes";
 
 export async function createNewRepository(
     name: string,
     storage: string,
     type: string,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .post(
             "/api/admin/repository/add",
-            {name: name, storage: storage, repo_type: type},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            { name: name, storage: storage, repo_type: type },
+            headers(token)
         )
         .then(
             (result) => {
@@ -58,16 +54,12 @@ export async function deleteRepository(
     name: string,
     storage: string,
     deleteFiles: boolean,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .delete(
-            "/api/admin/repository/"+storage+"/"+name+"?delete_files="+deleteFiles,
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            "/api/admin/repository/" + storage + "/" + name + "?delete_files=" + deleteFiles,
+            headers(token)
         )
         .then(
             (result) => {
@@ -109,17 +101,13 @@ export async function setActiveStatus(
     storage: String,
     repository: String,
     active: boolean,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
             "/api/admin/repository/" + storage + "/" + repository + "/active/" + active,
             {},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -150,16 +138,12 @@ export async function setActiveStatus(
 }
 
 export async function setPolicy(storage: String,
-                                repository: String, policy: string, token: string) {
+    repository: String, policy: string, token: string | undefined) {
     return apiClient
         .patch(
             "/api/admin/repository/" + storage + "/" + repository + "/policy/" + policy,
             {},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -195,17 +179,13 @@ export async function updateBadge(
     badgeStyle: string,
     labelColor: string,
     color: string,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
             "/api/admin/repository/" + storage + "/" + repository + "/modify/settings/badge",
-            {style: badgeStyle, label_color: labelColor, color: color},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            { style: badgeStyle, label_color: labelColor, color: color },
+            headers(token)
         )
         .then(
             (result) => {
@@ -240,18 +220,14 @@ export async function updateFrontend(
     repository: String,
     enabled: boolean,
     pageProvider: string,
-    token: string
+    token: string | undefined
 ) {
     // Manually converting data to JSON because JSON.stringify is convering booleans to strings?
     return apiClient
         .patch(
             "/api/admin/repository/" + storage + "/" + repository + "/modify/settings/frontend",
             `{"page_provider":"${pageProvider}","enabled":${enabled}}`,
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -285,7 +261,7 @@ export async function setVisibility(
     storage: String,
     repository: String,
     visibility: string,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
@@ -294,11 +270,7 @@ export async function setVisibility(
             "/modify/security/visibility/" +
             visibility,
             {},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -329,16 +301,12 @@ export async function setVisibility(
 }
 
 export async function clearAll(storage: String,
-                               repository: String, what: string, token: string) {
+    repository: String, what: string, token: string | undefined) {
     return apiClient
         .patch(
             "/api/admin/repository/" + storage + "/" + repository + "/clear/security/" + what,
             {},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -374,7 +342,7 @@ export async function addOrRemoveReadersOrDeployers(
     what: string,
     action: string,
     user: number,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
@@ -387,11 +355,7 @@ export async function addOrRemoveReadersOrDeployers(
             "/" +
             user,
             {},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            headers(token)
         )
         .then(
             (result) => {
@@ -426,17 +390,13 @@ export async function updateDeployReport(
     repository: String,
     active: boolean,
     values: Array<string>,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .patch(
             "/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/report",
-            {active: active, values: values},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            { active: active, values: values },
+            headers(token)
         )
         .then(
             (result) => {
@@ -472,17 +432,13 @@ export async function updateOrAddWebhppl(
     name: string,
     handler: string,
     settings: Map<string, any>,
-    token: string
+    token: string | undefined
 ) {
     return apiClient
         .put(
             "/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/webhook/add",
-            {id: name, handler: handler, settings: settings},
-            {
-                headers: {
-                    Authorization: "Bearer " + token,
-                },
-            }
+            { id: name, handler: handler, settings: settings },
+            headers(token)
         )
         .then(
             (result) => {
@@ -513,13 +469,9 @@ export async function updateOrAddWebhppl(
 }
 
 export async function deleteWebhook(storage: String,
-                                    repository: String, name: string, token: string) {
+    repository: String, name: string, token: string | undefined) {
     return apiClient
-        .delete("/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/webhook/" + name, {
-            headers: {
-                Authorization: "Bearer " + token,
-            },
-        })
+        .delete("/api/admin/repository/" + storage + "/" + repository + "/modify/deploy/webhook/" + name, headers(token))
         .then(
             (result) => {
                 const resultData = result.data;
@@ -548,12 +500,8 @@ export async function deleteWebhook(storage: String,
         );
 }
 
-export async function getRepositories(token: string): Promise<RepositoryList | undefined> {
-    const value = await apiClient.get("/api/admin/repositories/list", {
-        headers: {
-            Authorization: "Bearer " + token,
-        },
-    });
+export async function getRepositories(token: string | undefined): Promise<RepositoryList | undefined> {
+    const value = await apiClient.get("/api/admin/repositories/list", headers(token));
     if (value.status != 200) {
         return undefined;
     }
@@ -565,12 +513,8 @@ export async function getRepositories(token: string): Promise<RepositoryList | u
     return undefined;
 }
 
-export async function getRepositoriesByStorage(token: string, storage: string): Promise<RepositoryList | undefined> {
-    const value = await apiClient.get("/api/admin/repositories/" + storage + "/list", {
-        headers: {
-            Authorization: "Bearer " + token,
-        },
-    });
+export async function getRepositoriesByStorage(token: string | undefined, storage: string): Promise<RepositoryList | undefined> {
+    const value = await apiClient.get("/api/admin/repositories/" + storage + "/list", headers(token));
 
     if (value.status != 200) {
         return undefined;
@@ -590,12 +534,8 @@ export async function getRepoByNameAndStorage(
     repo: string
 ): Promise<Repository | undefined> {
     const url = "/api/admin/repositories/get/" + storage + "/" + repo;
-    const value = token == undefined ? await apiClient.get(url) : await apiClient.get(
-        url, {
-            headers: {
-                Authorization: "Bearer " + token,
-            },
-        }
+    const value = await apiClient.get(
+        url, headers(token)
     );
 
     if (value.status != 200) {

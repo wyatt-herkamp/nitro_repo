@@ -1,4 +1,4 @@
-import axios, {AxiosInstance, AxiosResponse} from "axios";
+import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { Result } from "ts-results";
 
 export let apiURL: string;
@@ -16,12 +16,23 @@ export function init(myURL: string) {
         baseURL: myURL,
         withCredentials: true,
         headers: {
+            "Access-Control-Allow-Credentials": true,
             "Content-Type": "application/json",
             Accept: "application/json",
         },
     });
 }
-
+export function headers(token: string | undefined) {
+    if (token == undefined) {
+        return {}
+    } else {
+        return {
+            headers: {
+                Authorization: "Bearer " + token,
+            },
+        }
+    }
+}
 export interface APIError {
     user_friendly_message: string;
     code: number;

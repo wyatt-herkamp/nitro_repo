@@ -53,17 +53,6 @@ export default defineComponent({
     async onSubmit(username: string, password: string) {
       const value = await login(username, password);
       if (value.ok) {
-        let loginRequest = value.val as AuthToken;
-        let date = new Date(loginRequest.expiration * 1000);
-        this.cookies.set(
-          "token",
-          loginRequest.token,
-          date,
-          undefined,
-          undefined,
-          undefined,
-          "Lax"
-        );
         location.reload();
       } else {
         this.form.password = "";

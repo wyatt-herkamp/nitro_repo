@@ -15,12 +15,8 @@ export const useUserStore = defineStore({
     },
 
     async loadUser() {
-      const token: string | undefined = inject('token')
-      if (token == undefined) {
-        return;
-      }
-
-      const user = await getUser(token);
+      const user = await getUser(undefined);
+      console.log(user);
       if (user.err) return;
       this.$patch({
         user: user.val,

@@ -62,9 +62,7 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+
     let form = ref({
       name: "",
       type: "",
