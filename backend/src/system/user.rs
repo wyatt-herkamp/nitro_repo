@@ -2,6 +2,7 @@ use crate::error::internal_error::InternalError;
 use crate::system::user;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::system::permissions::UserPermissions;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "users")]
@@ -14,7 +15,7 @@ pub struct Model {
     #[serde(skip_serializing)]
     pub password: String,
     #[sea_orm(column_type = "Json")]
-    pub permissions: Json,
+    pub permissions: UserPermissions,
     pub created: i64,
 }
 
@@ -23,17 +24,10 @@ pub struct ModifyUser {
     pub name: String,
     pub email: String,
 }
-impl ActiveModelBehavior for ActiveModel {}
-#[derive(Clone, Debug, Deserialize, Serialize, DeriveIntoActiveModel)]
-pub struct NewUser {
-    pub name: String,
-    pub username: String,
-    pub email: String,
-    pub password: String,
-    pub permissions: Json,
 
-    pub created: i64,
-}
+impl ActiveModelBehavior for ActiveModel {}
+
+
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
@@ -55,5 +49,5 @@ pub async fn get_by_username(
         .filter(user::Column::Username.eq(username))
         .one(connection)
         .await
-        .map_err(|e| InternalError::DBError(e))
+        .map_err(InternalError::DBError)
 }

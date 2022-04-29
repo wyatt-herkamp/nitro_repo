@@ -22,7 +22,8 @@ use crate::repository::types::{
     Project, RDatabaseConnection, RepoResponse, RepoResult, RepositoryRequest,
 };
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
-use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
+use crate::session::Authentication;
+use crate::system::permissions::options::CanIDo;
 
 pub mod models;
 mod utils;
@@ -34,12 +35,10 @@ impl NPMHandler {
     pub async fn handle_get(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        conn: &RDatabaseConnection, auth: Authentication,
     ) -> RepoResult {
-        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return RepoResult::Ok(NotAuthorized);
-        }
+        let caller: crate::system::user::Model = auth.get_user(conn).await??;
+        caller.can_read_from(&request.repository)?;
         if http.headers().get("npm-command").is_some() {
             if request.value.contains(".tgz") {
                 let split: Vec<&str> = request.value.split("/-/").collect();
@@ -53,16 +52,21 @@ impl NPMHandler {
                     "Trying to Retrieve Package: {} Version {}. Location {}",
                     &package, &version, &nitro_file_location
                 );
+
                 let result = request.storage.get_file_as_response(
                     &request.repository,
                     &nitro_file_location,
-                    &http,
+                    http,
                 )?;
-                return if result.is_left() {
-                    Ok(RepoResponse::FileResponse(result.left().unwrap()))
-                } else {
-                    Ok(BadRequest("Expected File got Folder".to_string()))
-                };
+                if let Some(result) = result {
+                    return if result.is_left() {
+                        Ok(RepoResponse::FileResponse(result.left().unwrap()))
+                    } else {
+                        Ok(BadRequest("Expected File got Folder".to_string()))
+                    };
+                }else{
+                    return Ok(NotFound);
+                }
             }
             let get_response =
                 generate_get_response(&request.storage, &request.repository, &request.value)
@@ -77,18 +81,18 @@ impl NPMHandler {
                 request
                     .storage
                     .get_file_as_response(&request.repository, &request.value, http)?;
-            if result.is_left() {
-                Ok(RepoResponse::FileResponse(result.left().unwrap()))
-            } else {
-                let vec = result.right().unwrap();
+            if let Some(result) = result {
+                if result.is_left() {
+                    Ok(RepoResponse::FileResponse(result.left().unwrap()))
+                } else {
+                    let vec = result.right().unwrap();
+                    let file_response =
+                        process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
+                    Ok(RepoResponse::NitroFileList(file_response))
+                }
+            }else{
+                return Ok(NotFound);
 
-                let file_response = process_storage_files(
-                    &request.storage,
-                    &request.repository,
-                    vec,
-                    &request.value,
-                )?;
-                Ok(RepoResponse::NitroFileList(file_response))
             }
         }
     }
@@ -97,7 +101,7 @@ impl NPMHandler {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &RDatabaseConnection,
-        bytes: Bytes,
+        bytes: Bytes, auth: Authentication,
     ) -> RepoResult {
         for x in http.headers() {
             log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
@@ -121,12 +125,8 @@ impl NPMHandler {
             };
         }
         //Handle Normal Request
-        let (allowed, user) =
-            can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !allowed {
-            return RepoResult::Ok(NotAuthorized);
-        }
-        let user = user.unwrap();
+        let caller: crate::system::user::Model = auth.get_user(conn).await??;
+        caller.can_deploy_to(&request.repository)?;
         if let Some(npm_command) = http.headers().get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
             trace!("NPM {} Command {}", &request.value, &npm_command);
@@ -173,7 +173,7 @@ impl NPMHandler {
                         let repository = request.repository.clone();
                         let storage = request.storage.clone();
                         let version_for_saving = version_data.clone();
-                        let user = user.clone();
+                        let user = caller.clone();
                         actix_web::rt::spawn(async move {
                             if let Err(error) = crate::repository::npm::utils::update_project(
                                 &storage,
@@ -192,11 +192,11 @@ impl NPMHandler {
                             }
 
                             if let Err(error) =
-                                crate::repository::utils::update_project_in_repositories(
-                                    &storage,
-                                    &repository,
-                                    version_for_saving.name.clone(),
-                                )
+                            crate::repository::utils::update_project_in_repositories(
+                                &storage,
+                                &repository,
+                                version_for_saving.name.clone(),
+                            )
                             {
                                 error!("Unable to update repository.json, {}", error);
                                 if log_enabled!(Trace) {
@@ -241,14 +241,9 @@ impl NPMHandler {
 
     pub async fn handle_versions(
         request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !allowed {
-            return RepoResult::Ok(NotAuthorized);
-        }
-
         let vec = get_versions(&request.storage, &request.repository, request.value.clone())?;
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
@@ -256,13 +251,9 @@ impl NPMHandler {
     pub async fn handle_version(
         request: &RepositoryRequest,
         version: String,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !allowed {
-            return RepoResult::Ok(NotAuthorized);
-        }
         let project_dir = parse_project_to_directory(&request.value);
 
         let project_data =
@@ -287,13 +278,9 @@ impl NPMHandler {
 
     pub async fn handle_project(
         request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !allowed {
-            return RepoResult::Ok(NotAuthorized);
-        }
         let project_dir = parse_project_to_directory(&request.value);
 
         let project_data =
@@ -318,13 +305,9 @@ impl NPMHandler {
 
     pub async fn latest_version(
         request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> Result<Option<String>, InternalError> {
-        let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !allowed {
-            return Result::Ok(None);
-        }
         let project_dir = parse_project_to_directory(&request.value);
 
         let project_data = get_project_data(&request.storage, &request.repository, project_dir)?;

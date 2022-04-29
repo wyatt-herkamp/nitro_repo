@@ -43,8 +43,8 @@ impl sea_orm::TryGetable for AuthProperties {
         col: &str,
     ) -> Result<Self, sea_orm::TryGetError> {
         let val: JsonValue = res.try_get(pre, col).map_err(sea_orm::TryGetError::DbErr)?;
-        return serde_json::from_value(val)
-            .map_err(|e| sea_orm::TryGetError::DbErr(DbErr::Json(e.to_string())));
+        serde_json::from_value(val)
+            .map_err(|e| sea_orm::TryGetError::DbErr(DbErr::Json(e.to_string())))
     }
 }
 
@@ -54,7 +54,7 @@ impl sea_orm::sea_query::ValueType for AuthProperties {
             sea_orm::Value::Json(Some(x)) => {
                 let auth_properties: AuthProperties =
                     serde_json::from_value(*x).map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
-                return Ok(auth_properties);
+                Ok(auth_properties)
             }
             _ => Err(sea_orm::sea_query::ValueTypeErr),
         }
@@ -133,7 +133,7 @@ pub async fn get_by_token(
         .filter(auth_token::Column::Token.eq(token))
         .one(connection)
         .await
-        .map_err(|e| InternalError::DBError(e))
+        .map_err(InternalError::DBError)
 }
 
 pub async fn delete_by_token(

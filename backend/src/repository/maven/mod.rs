@@ -10,16 +10,18 @@ use crate::repository::maven::models::Pom;
 use crate::repository::maven::utils::parse_project_to_directory;
 use crate::repository::models::RepositorySummary;
 use crate::repository::settings::Policy;
+use crate::repository::settings::security::Visibility;
 
 use crate::repository::types::RepoResponse::{
-    BadRequest, NotAuthorized, NotFound, ProjectResponse,
+    BadRequest, NotFound, ProjectResponse,
 };
 use crate::repository::types::{Project, RepoResponse, RepoResult};
 use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
 };
-use crate::system::utils::can_read_basic_auth;
+use crate::session::Authentication;
+use crate::system::permissions::options::CanIDo;
 
 pub mod models;
 mod utils;
@@ -31,36 +33,40 @@ impl MavenHandler {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &RDatabaseConnection,
+        auth: Authentication,
     ) -> RepoResult {
-        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return RepoResult::Ok(NotAuthorized);
+        if request.repository.security.visibility == Visibility::Private {
+            let caller: crate::system::user::Model = auth.get_user(conn).await??;
+            caller.can_read_from(&request.repository)?;
         }
+
         let result =
             request
                 .storage
-                .get_file_as_response(&request.repository, &request.value, &http)?;
-        if result.is_left() {
-            Ok(RepoResponse::FileResponse(result.left().unwrap()))
-        } else {
-            let vec = result.right().unwrap();
-            let file_response =
-                process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
-            Ok(RepoResponse::NitroFileList(file_response))
+                .get_file_as_response(&request.repository, &request.value, http)?;
+        if let Some(result) = result {
+            if result.is_left() {
+                Ok(RepoResponse::FileResponse(result.left().unwrap()))
+            } else {
+                let vec = result.right().unwrap();
+                let file_response =
+                    process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
+                Ok(RepoResponse::NitroFileList(file_response))
+            }
+        }else{
+            return Ok(NotFound);
+
         }
     }
 
     pub async fn handle_put(
         request: &RepositoryRequest,
-        http: &HttpRequest,
+        _http: &HttpRequest,
         conn: &RDatabaseConnection,
-        bytes: Bytes,
+        bytes: Bytes, auth: Authentication,
     ) -> RepoResult {
-        let (valid, user) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return RepoResult::Ok(NotAuthorized);
-        }
-
+        let caller: crate::system::user::Model = auth.get_user(conn).await??;
+        caller.can_deploy_to(&request.repository)?;
         //TODO find a better way to do this
         match request.repository.settings.policy {
             Policy::Release => {
@@ -95,7 +101,7 @@ impl MavenHandler {
                 let repository = request.repository.clone();
                 let storage = request.storage.clone();
                 actix_web::rt::spawn(async move {
-                    if let Err(error) = crate::repository::maven::utils::update_project(
+                    if let Err(error) = utils::update_project(
                         &storage,
                         &repository,
                         &project_folder,
@@ -103,13 +109,11 @@ impl MavenHandler {
                         pom.clone(),
                     ) {
                         error!("Unable to update {}, {}", PROJECT_FILE, error);
-                        if log_enabled!(Trace) {
-                            trace!(
+                        trace!(
                                 "Version {} Name: {}",
                                 &pom.version,
                                 format!("{}:{}", &pom.group_id, &pom.artifact_id)
                             );
-                        }
                     }
 
                     if let Err(error) = crate::repository::utils::update_project_in_repositories(
@@ -118,17 +122,15 @@ impl MavenHandler {
                         format!("{}:{}", &pom.group_id, &pom.artifact_id),
                     ) {
                         error!("Unable to update repository.json, {}", error);
-                        if log_enabled!(Trace) {
-                            trace!(
+                        trace!(
                                 "Version {} Name: {}",
                                 &pom.version,
                                 format!("{}:{}", &pom.group_id, &pom.artifact_id)
                             );
-                        }
                     }
                     let string = format!("{}/{}", project_folder, &pom.version);
                     let info = DeployInfo {
-                        user: user.unwrap(),
+                        user: caller.clone(),
                         version: pom.version,
                         name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
                         version_folder: string,
@@ -152,13 +154,9 @@ impl MavenHandler {
 
     pub async fn handle_versions(
         request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return RepoResult::Ok(NotAuthorized);
-        }
         let project_dir = parse_project_to_directory(&request.value);
 
         let vec = get_versions(&request.storage, &request.repository, project_dir)?;
@@ -168,13 +166,9 @@ impl MavenHandler {
     pub async fn handle_version(
         request: &RepositoryRequest,
         version: String,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return RepoResult::Ok(NotAuthorized);
-        }
         let project_dir = parse_project_to_directory(&request.value);
 
         let project_data =
@@ -199,13 +193,9 @@ impl MavenHandler {
 
     pub async fn handle_project(
         request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return RepoResult::Ok(NotAuthorized);
-        }
         let string = parse_project_to_directory(&request.value);
 
         let project_data = get_project_data(&request.storage, &request.repository, string.clone())?;
@@ -229,13 +219,9 @@ impl MavenHandler {
 
     pub async fn latest_version(
         request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
+        _http: &HttpRequest,
+        _conn: &RDatabaseConnection,
     ) -> Result<Option<String>, InternalError> {
-        let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
-        if !valid {
-            return Result::Ok(None);
-        }
         let string = parse_project_to_directory(&request.value);
         let project_data = get_project_data(&request.storage, &request.repository, string)?;
         Ok(if let Some(project_data) = project_data {

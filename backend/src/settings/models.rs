@@ -169,8 +169,8 @@ impl Default for EmailSetting {
 }
 impl Default for SessionSettings {
     fn default() -> Self {
-        return SessionSettings {
+        SessionSettings {
             manager: "BasicSessionManager".to_string(),
-        };
+        }
     }
 }

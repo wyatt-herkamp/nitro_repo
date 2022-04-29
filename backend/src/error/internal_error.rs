@@ -5,9 +5,11 @@ use std::time::SystemTimeError;
 
 use crate::system::permissions::PermissionError;
 use actix_web::http::StatusCode;
-use actix_web::HttpResponse;
+use actix_web::{HttpResponse, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
+use crate::session::UnAuthorized;
+use crate::system::permissions::options::MissingPermission;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -30,8 +32,7 @@ pub enum InternalError {
     SMTPTransportError(lettre::transport::smtp::Error),
     #[error("Missing Argument {0}")]
     MissingArgument(String),
-    #[error("Not Found")]
-    NotFound,
+
     #[error("Internal Error {0}")]
     Error(String),
     #[error("Missing Config Value {0}")]
@@ -42,17 +43,31 @@ pub enum InternalError {
     PermissionError(crate::system::permissions::PermissionError),
     #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
     DeadSite,
+    // Request Errors
+    #[error("{0}")]
+    UnAuthorized(UnAuthorized),
+    #[error("{0}")]
+    MissingPermission(MissingPermission),
+    #[error("Not Found")]
+    NotFound,
 }
 
 pub type NResult<T> = Result<T, InternalError>;
 
 impl InternalError {
     pub fn json_error(&self) -> HttpResponse {
-        let result = HttpResponse::Ok()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .content_type("text/plain")
-            .body(self.to_string());
-        result
+        match self {
+            InternalError::UnAuthorized(not_authed) => {
+                not_authed.error_response()
+            }
+            error => {
+                let result = HttpResponse::Ok()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .content_type("text/plain")
+                    .body(error.to_string());
+                result
+            }
+        }
     }
 }
 
@@ -66,6 +81,18 @@ impl actix_web::error::ResponseError for InternalError {
 impl From<PermissionError> for InternalError {
     fn from(err: PermissionError) -> InternalError {
         InternalError::PermissionError(err)
+    }
+}
+
+impl From<MissingPermission> for InternalError {
+    fn from(err: MissingPermission) -> InternalError {
+        InternalError::MissingPermission(err)
+    }
+}
+
+impl From<UnAuthorized> for InternalError {
+    fn from(err: UnAuthorized) -> InternalError {
+        InternalError::UnAuthorized(err)
     }
 }
 

@@ -29,7 +29,7 @@ export default defineComponent({
     const user = ref<User | undefined>();
     const loadUser = async () => {
       try {
-        let value = (await getUserByID(undefined)) as User;
+        let value = (await getUserByID(undefined, props.userID)) as User;
         user.value = value as User;
       } catch (e) {}
     };

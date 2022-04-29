@@ -126,14 +126,18 @@ impl Storage<StringMap> {
         repository: &Repository,
         location: &str,
         request: &HttpRequest,
-    ) -> Result<Either<SiteResponse, Vec<StorageFile>>, InternalError> {
+    ) -> Result<Option<Either<SiteResponse, Vec<StorageFile>>>, InternalError> {
         match self.location_type {
             LocationType::LocalStorage => {
                 let response = LocalStorage::get_file_as_response(self, repository, location)?;
-                if response.is_left() {
-                    Ok(Left(response.left().unwrap().to_request(request)))
+                if let Some(response) = response {
+                    if response.is_left() {
+                        Ok(Some(Left(response.left().unwrap().to_request(request))))
+                    } else {
+                        Ok(Some(Right(response.right().unwrap())))
+                    }
                 } else {
-                    Ok(Right(response.right().unwrap()))
+                    return Ok(None);
                 }
             }
         }

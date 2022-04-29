@@ -4,24 +4,18 @@ use sea_orm::DatabaseConnection;
 use std::ops::Deref;
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::error::response::unauthorized;
 use crate::system::permissions::options::CanIDo;
-use crate::system::utils::get_user_by_header;
 use crate::NitroRepo;
+use crate::session::Authentication;
 
 #[get("/api/settings/report")]
 pub async fn setting_report(
     site: Data<NitroRepo>,
     database: web::Data<DatabaseConnection>,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &database)
-        .await?
-        .can_i_admin()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&database).await??;
+    caller.can_i_admin()?;
     let settings = site.settings.read().await;
     APIResponse::from(Some(settings.deref())).respond(&r)
 }

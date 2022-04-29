@@ -7,7 +7,8 @@ use crate::NitroRepoData;
 
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::models::Repository;
-
+use crate::session::Authentication;
+use crate::system::permissions::options::CanIDo;
 //
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,13 +20,14 @@ pub struct ListRepositories {
 pub async fn get_versions(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest,auth: Authentication,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
     let request = to_request(storage, repository, file, site).await?;
-
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_read_from(&request.repository)?;
     let x = request
         .repository
         .repo_type
@@ -38,13 +40,14 @@ pub async fn get_versions(
 pub async fn get_project(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest,auth: Authentication,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
     let request = to_request(storage, repository, file, site).await?;
-
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_read_from(&request.repository)?;
     let x = request
         .repository
         .repo_type
@@ -58,13 +61,14 @@ pub async fn get_project(
 pub async fn get_version(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest,auth: Authentication,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, project, version) = path.into_inner();
 
     let request = to_request(storage, repository, project, site).await?;
-
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_read_from(&request.repository)?;
     let x = request
         .repository
         .repo_type

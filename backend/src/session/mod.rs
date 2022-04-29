@@ -1,11 +1,15 @@
 pub mod basic;
 pub mod middleware;
 
+use std::fmt::{Debug, Display, Formatter};
 use crate::session::basic::BasicSessionManager;
 use actix_web::dev::Payload;
-use actix_web::{FromRequest, HttpMessage, HttpRequest};
+use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse, ResponseError};
+use actix_web::body::BoxBody;
+use actix_web::http::StatusCode;
 use async_trait::async_trait;
 use futures_util::future::{ready, Ready};
+use log::trace;
 
 
 use sea_orm::DatabaseConnection;
@@ -13,9 +17,42 @@ use time::OffsetDateTime;
 
 use crate::error::internal_error::InternalError;
 use crate::settings::models::SessionSettings;
-use crate::system;
+use crate::{APIResponse, system};
 use crate::system::user::Model as User;
 use system::auth_token::Model as AuthToken;
+use crate::api_response::RequestErrorResponse;
+
+pub struct UnAuthorized;
+
+impl Debug for UnAuthorized {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Request was unauthorized")
+    }
+}
+
+impl Display for UnAuthorized {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Request was unauthorized")
+    }
+}
+
+impl std::error::Error for UnAuthorized {}
+
+impl ResponseError for UnAuthorized {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::UNAUTHORIZED
+    }
+    fn error_response(&self) -> HttpResponse<BoxBody> {
+        HttpResponse::Ok()
+            .status(StatusCode::UNAUTHORIZED)
+            .content_type("application/json")
+            .body(serde_json::to_string(&APIResponse {
+                success: false,
+                data: Some(RequestErrorResponse::new("Not Logged In", "UNAUTHORIZED")),
+                status_code: Some(401),
+            }).unwrap())
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Authentication {
@@ -26,6 +63,8 @@ pub enum Authentication {
     AuthToken(AuthToken),
     /// Session Value from Cookie
     Session(Session),
+    /// If the Authorization Header could not be parsed. Give them the value
+    AuthorizationHeaderUnkown(String, String),
     /// Authorization Basic Header
     Basic(User),
 }
@@ -38,37 +77,53 @@ impl Authentication {
         if let Authentication::Session(session) = &self {
             return session.auth_token.is_some();
         }
-        return true;
+        true
     }
-    pub fn get_auth_token(self) -> Option<AuthToken> {
+    pub fn get_auth_token(self) -> Result<AuthToken, UnAuthorized> {
         match self {
-            Authentication::AuthToken(auth) => Some(auth),
-            Authentication::Session(session) => session.auth_token,
+            Authentication::AuthToken(auth) => Ok(auth),
+            Authentication::Session(session) => {
+                if let Some(auth) = session.auth_token {
+                    Ok(auth)
+                } else {
+                    Err(UnAuthorized)
+                }
+            }
 
-            _ => None,
+            _ => Err(UnAuthorized),
         }
     }
     pub async fn get_user(
         self,
         database: &DatabaseConnection,
-    ) -> Result<Option<User>, InternalError> {
+    ) -> Result<Result<User, UnAuthorized>, InternalError> {
         match self {
-            Authentication::AuthToken(auth) => auth
-                .get_user(database)
-                .await
-                .map_err(InternalError::DBError),
-            Authentication::Session(session) => {
-                if let Some(auth_token) = session.auth_token {
-                    auth_token
-                        .get_user(database)
-                        .await
-                        .map_err(InternalError::DBError)
+            Authentication::AuthToken(auth) => {
+                let option = auth
+                    .get_user(database)
+                    .await?;
+                if let Some(user) = option {
+                    Ok(Ok(user))
                 } else {
-                    Ok(None)
+                    Ok(Err(UnAuthorized))
                 }
             }
-            Authentication::Basic(user) => Ok(Some(user)),
-            _ => Ok(None),
+            Authentication::Session(session) => {
+                if let Some(auth_token) = session.auth_token {
+                    let option = auth_token
+                        .get_user(database)
+                        .await?;
+                    if let Some(user) = option {
+                        Ok(Ok(user))
+                    } else {
+                        Ok(Err(UnAuthorized))
+                    }
+                } else {
+                    Ok(Err(UnAuthorized))
+                }
+            }
+            Authentication::Basic(user) => Ok(Ok(user)),
+            _ => Ok(Err(UnAuthorized)),
         }
     }
 }
@@ -81,6 +136,7 @@ impl FromRequest for Authentication {
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let model = req.extensions_mut().get::<Authentication>().cloned();
         if model.is_none() {
+            trace!("Missing Extension");
             return ready(Ok(Authentication::NoIdentification));
         }
 

@@ -1,5 +1,6 @@
 use actix_web::cookie::Cookie;
 use actix_web::{post, web, HttpRequest};
+use log::error;
 
 use crate::api_response::SiteResponse;
 
@@ -54,10 +55,12 @@ pub async fn login(
                 .await
                 .unwrap()
                 .unwrap();
-            session_manager.set_auth_token(cookie.value(), token).await;
+            if let Err(_) = session_manager.set_auth_token(cookie.value(), token).await {
+                error!("Unable to save Auth Token");
+            }
         });
         APIResponse::respond_new(Some(true), &r)
     } else {
-        return unauthorized();
+        unauthorized()
     }
 }

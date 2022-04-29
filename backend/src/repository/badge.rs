@@ -5,18 +5,22 @@ use badge_maker::BadgeBuilder;
 use sea_orm::DatabaseConnection;
 
 use crate::repository::controller::to_request;
+use crate::session::Authentication;
+use crate::system::permissions::options::CanIDo;
 
 #[get("/badge/{storage}/{repository}/{file:.*}/badge")]
 pub async fn badge(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
-    let request = to_request(storage, repository, file, site).await?;
 
+    let request = to_request(storage, repository, file, site).await?;
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_read_from(&request.repository)?;
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())
     } else if request.value.eq("nitro_repo_status") {

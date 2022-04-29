@@ -1,11 +1,11 @@
 pub mod options;
+pub mod orm;
 
 use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -37,21 +37,7 @@ pub struct UserPermissions {
     pub viewer: Option<RepositoryPermission>,
 }
 
-impl TryFrom<serde_json::Value> for UserPermissions {
-    type Error = serde_json::Error;
 
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        return serde_json::from_value(value);
-    }
-}
-
-impl TryInto<serde_json::Value> for UserPermissions {
-    type Error = serde_json::Error;
-
-    fn try_into(self) -> Result<Value, Self::Error> {
-        return serde_json::to_value(self);
-    }
-}
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RepositoryPermission {

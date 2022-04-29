@@ -15,9 +15,9 @@ pub struct BasicSessionManager {
 
 impl Default for BasicSessionManager {
     fn default() -> Self {
-        return BasicSessionManager {
+        BasicSessionManager {
             sessions: RwLock::new(HashMap::new()),
-        };
+        }
     }
 }
 

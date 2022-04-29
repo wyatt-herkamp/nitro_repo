@@ -21,6 +21,7 @@ use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};
 use strum_macros::{Display, EnumString};
+use crate::session::Authentication;
 
 //Requestable Data
 pub type RDatabaseConnection = DatabaseConnection;
@@ -38,10 +39,11 @@ impl RepositoryType {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &DatabaseConnection,
+        auth: Authentication,
     ) -> RepoResult {
         match self {
-            RepositoryType::Maven(_) => MavenHandler::handle_get(request, http, conn).await,
-            RepositoryType::NPM(_) => NPMHandler::handle_get(request, http, conn).await,
+            RepositoryType::Maven(_) => MavenHandler::handle_get(request, http, conn, auth).await,
+            RepositoryType::NPM(_) => NPMHandler::handle_get(request, http, conn, auth).await,
         }
     }
 
@@ -56,7 +58,7 @@ impl RepositoryType {
             t => {
                 return Ok(RepoResponse::IAmATeapot(format!(
                     "{} doesn't support this type of request",
-                    t.to_string()
+                    t
                 )));
             }
         }
@@ -67,11 +69,11 @@ impl RepositoryType {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &DatabaseConnection,
-        bytes: Bytes,
+        bytes: Bytes, auth: Authentication,
     ) -> RepoResult {
         match self {
-            RepositoryType::Maven(_) => MavenHandler::handle_put(request, http, conn, bytes).await,
-            RepositoryType::NPM(_) => NPMHandler::handle_put(request, http, conn, bytes).await,
+            RepositoryType::Maven(_) => MavenHandler::handle_put(request, http, conn, bytes, auth).await,
+            RepositoryType::NPM(_) => NPMHandler::handle_put(request, http, conn, bytes, auth).await,
         }
     }
 
@@ -86,7 +88,7 @@ impl RepositoryType {
             t => {
                 return Ok(RepoResponse::IAmATeapot(format!(
                     "{} doesn't support this type of request",
-                    t.to_string()
+                    t
                 )));
             }
         }
@@ -102,7 +104,7 @@ impl RepositoryType {
             t => {
                 return Ok(RepoResponse::IAmATeapot(format!(
                     "{} doesn't support this type of request",
-                    t.to_string()
+                    t
                 )));
             }
         }
@@ -220,6 +222,7 @@ pub struct RepositoryRequest {
     pub repository: Repository,
     /// Everything in the URL path after /storages/{STORAGE}/{REPOSITORY}
     pub value: String,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

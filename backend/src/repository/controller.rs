@@ -15,6 +15,7 @@ use crate::repository::types::{RepoResponse, RepositoryRequest};
 use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
+use crate::session::Authentication;
 
 //
 
@@ -128,7 +129,7 @@ pub async fn get_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<GetPath>,
+    path: web::Path<GetPath>, auth: Authentication,
 ) -> SiteResponse {
     let path = path.into_inner();
     let file = path.file.unwrap_or_else(|| "".to_string());
@@ -143,7 +144,7 @@ pub async fn get_repository(
     let x = request
         .repository
         .repo_type
-        .handle_get(&request, &r, connection.as_ref())
+        .handle_get(&request, &r, connection.as_ref(), auth)
         .await?;
 
     handle_result(x, request.value.clone(), r)
@@ -295,7 +296,7 @@ pub async fn put_repository(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes,
+    bytes: Bytes, auth: Authentication,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site).await;
@@ -316,7 +317,7 @@ pub async fn put_repository(
     let x = request
         .repository
         .repo_type
-        .handle_put(&request, &r, connection.get_ref(), bytes)
+        .handle_put(&request, &r, connection.get_ref(), bytes, auth)
         .await?;
 
     handle_result(x, request.value, r)

@@ -70,7 +70,7 @@ pub trait LocationHandler<T: StorageFileResponse, Rhs = Self> {
         storage: &Storage<StringMap>,
         repository: &Repository,
         location: &str,
-    ) -> Result<FileResponse<T>, InternalError>;
+    ) -> Result<Option<FileResponse<T>>, InternalError>;
     fn get_file(
         storage: &Storage<StringMap>,
         repository: &Repository,

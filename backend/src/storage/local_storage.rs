@@ -246,11 +246,11 @@ impl LocationHandler<LocalFile> for LocalStorage {
         storage: &Storage<StringMap>,
         repository: &Repository,
         location: &str,
-    ) -> Result<FileResponse<LocalFile>, InternalError> {
+    ) -> Result<Option<FileResponse<LocalFile>>, InternalError> {
         let file_location =
             LocalStorage::get_repository_folder(storage, &repository.name).join(location);
         if !file_location.exists() {
-            return Ok(Either::Right(vec![]));
+            return Ok(None);
         }
         if file_location.is_dir() {
             let mut path = format!("{}/{}", storage.name, repository.name);
@@ -288,12 +288,12 @@ impl LocationHandler<LocalFile> for LocalStorage {
                 files.push(file);
             }
 
-            return Ok(Either::Right(files));
+            return Ok(Some(Either::Right(files)));
         }
         trace!("Returning File {:?}", &file_location);
-        Ok(Either::Left(LocalFile {
+        Ok(Some(Either::Left(LocalFile {
             path: file_location,
-        }))
+        })))
     }
     fn get_file(
         storage: &Storage<StringMap>,

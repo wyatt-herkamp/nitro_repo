@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::constants::SUPPORTED_REPO_TYPES;
-use crate::error::response::{bad_request, not_found, unauthorized};
+use crate::error::response::{bad_request, not_found};
 use crate::repository::models::RepositorySummary;
 use crate::repository::settings::frontend::{BadgeSettings, Frontend};
 use crate::repository::settings::security::Visibility;
@@ -14,8 +14,8 @@ use crate::repository::settings::webhook::{ReportGeneration, Webhook};
 use crate::repository::settings::Policy;
 use crate::system::permissions::options::CanIDo;
 use crate::NitroRepoData;
+use crate::session::Authentication;
 
-use crate::system::utils::get_user_by_header;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -32,12 +32,10 @@ pub struct ListRepositories {
 pub async fn list_repos(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
 ) -> SiteResponse {
-    let user = get_user_by_header(r.headers(), &connection).await?;
-    if user.can_i_edit_repos().is_err() {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     //TODO Change the frontend to only show repos based on the current storage being looked at.
     let mut vec = Vec::new();
     let result = site.storages.read().await;
@@ -54,13 +52,11 @@ pub async fn list_repos(
 pub async fn list_repos_by_storage(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     storage: Path<String>,
 ) -> SiteResponse {
-    let user = get_user_by_header(r.headers(), &connection).await?;
-    if user.can_i_edit_repos().is_err() {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let result = site.storages.read().await;
     let storage = storage.into_inner();
     let storage = result.get(&storage);
@@ -80,18 +76,13 @@ pub async fn list_repos_by_storage(
 pub async fn get_repo(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
 
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let result = site.storages.read().await;
     let storage = result.get(&storage);
     if storage.is_none() {
@@ -105,17 +96,12 @@ pub async fn get_repo(
 #[post("/api/admin/repository/add")]
 pub async fn add_repo(
     connection: web::Data<DatabaseConnection>,
-    site: NitroRepoData,
+    site: NitroRepoData, auth: Authentication,
     r: HttpRequest,
     nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let result = site.storages.read().await;
     let storage = result.get(&nc.storage);
     if storage.is_none() {
@@ -134,16 +120,11 @@ pub async fn add_repo(
 pub async fn update_active_status(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
 
     let (storage, repo, active) = path.into_inner();
     let result = site.storages.read().await;
@@ -166,16 +147,11 @@ pub async fn update_active_status(
 pub async fn update_policy(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
 
     let (storage, repository, policy) = path.into_inner();
     let result = site.storages.read().await;
@@ -198,17 +174,12 @@ pub async fn update_policy(
 pub async fn update_description(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     b: Bytes,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
 
     let (storage, repository) = path.into_inner();
     let vec = b.to_vec();
@@ -238,17 +209,12 @@ pub async fn update_description(
 pub async fn modify_frontend_settings(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
 
     let result = site.storages.read().await;
@@ -271,17 +237,12 @@ pub async fn modify_frontend_settings(
 pub async fn modify_badge_settings(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
     let result = site.storages.read().await;
     let storage = result.get(&storage);
@@ -303,16 +264,11 @@ pub async fn modify_badge_settings(
 pub async fn modify_security(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository, visibility) = path.into_inner();
 
     let result = site.storages.read().await;
@@ -335,17 +291,12 @@ pub async fn modify_security(
 pub async fn modify_deploy(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
     let result = site.storages.read().await;
     let storage = result.get(&storage);
@@ -368,17 +319,12 @@ pub async fn modify_deploy(
 pub async fn add_webhook(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
 
     let result = site.storages.read().await;
@@ -401,16 +347,11 @@ pub async fn add_webhook(
 pub async fn remove_webhook(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository, webhook) = path.into_inner();
 
     let result = site.storages.read().await;
@@ -438,17 +379,12 @@ pub struct DeleteRequest {
 pub async fn delete_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest,
+    r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String)>,
     query: web::Query<DeleteRequest>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection)
-        .await?
-        .can_i_edit_repos()
-        .is_err()
-    {
-        return unauthorized();
-    }
+    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
 
     let result = site.storages.read().await;
