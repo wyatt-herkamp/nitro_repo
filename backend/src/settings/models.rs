@@ -1,9 +1,9 @@
 use crate::error::internal_error::InternalError;
 
+use semver::{Error, Version};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use semver::{Error, Version, VersionReq};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -30,7 +30,7 @@ pub struct Internal {
     pub installed: bool,
     pub version: String,
 }
-impl Internal{
+impl Internal {
     pub fn parse_version(&self) -> Result<Version, Error> {
         semver::Version::parse(&self.version)
     }

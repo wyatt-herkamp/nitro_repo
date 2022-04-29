@@ -7,6 +7,8 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::api_response::SiteResponse;
+use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
 use crate::repository::maven::models::MavenSettings;
@@ -19,9 +21,6 @@ use crate::repository::npm::models::NPMSettings;
 use crate::repository::npm::NPMHandler;
 use crate::storage::models::{Storage, StorageFile};
 use strum_macros::{Display, EnumString};
-use crate::api_response::SiteResponse;
-use crate::authentication::Authentication;
-use crate::settings::models::StringMap;
 
 //Requestable Data
 pub type RDatabaseConnection = DatabaseConnection;
@@ -69,11 +68,16 @@ impl RepositoryType {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &DatabaseConnection,
-        bytes: Bytes, auth: Authentication,
+        bytes: Bytes,
+        auth: Authentication,
     ) -> RepoResult {
         match self {
-            RepositoryType::Maven(_) => MavenHandler::handle_put(request, http, conn, bytes, auth).await,
-            RepositoryType::NPM(_) => NPMHandler::handle_put(request, http, conn, bytes, auth).await,
+            RepositoryType::Maven(_) => {
+                MavenHandler::handle_put(request, http, conn, bytes, auth).await
+            }
+            RepositoryType::NPM(_) => {
+                NPMHandler::handle_put(request, http, conn, bytes, auth).await
+            }
         }
     }
 
@@ -222,7 +226,6 @@ pub struct RepositoryRequest {
     pub repository: Repository,
     /// Everything in the URL path after /storages/{STORAGE}/{REPOSITORY}
     pub value: String,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

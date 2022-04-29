@@ -1,12 +1,11 @@
-use std::path::Path;
-use clap::Parser;
-use colored::Colorize;
-use log::error;
 use crate::install::load_installer;
 use crate::settings::models::Mode;
 use crate::updater;
 use crate::utils::load_logger;
-
+use clap::Parser;
+use colored::Colorize;
+use log::error;
+use std::path::Path;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -35,5 +34,5 @@ pub async fn handle_cli() -> std::io::Result<bool> {
         }
         return Ok(true);
     }
-    return Ok(false);
+    Ok(false)
 }

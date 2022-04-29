@@ -1,31 +1,32 @@
 use actix_web::{delete, get, post, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
-use crate::error::response::{already_exists};
+
 use crate::storage::models::{Storage, StorageConfig, StorageHandler};
 use crate::system::permissions::options::CanIDo;
 use crate::utils::get_current_time;
-use log::warn;
+
 use sea_orm::DatabaseConnection;
 use std::fs::{canonicalize, create_dir_all};
-use std::ops::Deref;
-use std::path::Path;
+
 use crate::authentication::Authentication;
-use crate::settings::models::StringMap;
-use crate::system::user::UserModel;
-use crate::NitroRepoData;
+use std::path::Path;
+
 use crate::storage::local_storage::LocalStorage;
 use crate::storage::{StorageHandlerType, StorageManager};
+use crate::system::user::UserModel;
+use crate::NitroRepoData;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
     connection: web::Data<DatabaseConnection>,
-    site: NitroRepoData,storages: web::Data<StorageManager>,
-    r: HttpRequest, auth: Authentication,
+    _site: NitroRepoData,
+    storages: web::Data<StorageManager>,
+    r: HttpRequest,
+    auth: Authentication,
 ) -> Result<HttpResponse, InternalError> {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
@@ -36,8 +37,10 @@ pub async fn list_storages(
 #[delete("/api/admin/storages/{id}")]
 pub async fn delete_by_id(
     connection: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
-    site: NitroRepoData, storages: web::Data<StorageManager>,
+    r: HttpRequest,
+    auth: Authentication,
+    _site: NitroRepoData,
+    storages: web::Data<StorageManager>,
     id: web::Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -53,7 +56,9 @@ pub async fn delete_by_id(
 pub async fn get_by_id(
     connection: web::Data<DatabaseConnection>,
     r: HttpRequest,
-    site: NitroRepoData, auth: Authentication,storages: web::Data<StorageManager>,
+    _site: NitroRepoData,
+    auth: Authentication,
+    storages: web::Data<StorageManager>,
     id: web::Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -71,10 +76,11 @@ pub struct NewStorage {
 #[post("/api/admin/storages/add")]
 pub async fn add_storage(
     connection: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest,
+    auth: Authentication,
     nc: web::Json<NewStorage>,
     storages: web::Data<StorageManager>,
-    site: NitroRepoData,
+    _site: NitroRepoData,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
@@ -91,7 +97,7 @@ pub async fn add_storage(
             created: get_current_time(),
         },
         storage_handler: StorageHandler::LocalStorage(LocalStorage {
-            location: path.to_str().unwrap().to_string()
+            location: path.to_str().unwrap().to_string(),
         }),
     };
 

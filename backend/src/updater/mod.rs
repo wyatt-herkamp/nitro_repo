@@ -6,6 +6,6 @@ use thiserror::Error;
 #[derive(Error, Clone, Debug)]
 pub enum UpdateError {}
 
-pub async fn update(version: String) -> Result<(), UpdateError> {
-    return Ok(());
+pub async fn update(_version: String) -> Result<(), UpdateError> {
+    Ok(())
 }

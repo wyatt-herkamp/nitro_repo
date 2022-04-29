@@ -1,10 +1,10 @@
 use crate::system::permissions::{can_deploy, can_read, UserPermissions};
-use crate::system::{user};
-use std::fmt;
+
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct MissingPermission(String);
@@ -63,7 +63,9 @@ impl CanIDo for UserModel {
         if can_read {
             Ok(())
         } else {
-            Err(InternalError::MissingPermission(MissingPermission("Read Repository".to_string())))
+            Err(InternalError::MissingPermission(MissingPermission(
+                "Read Repository".to_string(),
+            )))
         }
     }
 
@@ -75,12 +77,12 @@ impl CanIDo for UserModel {
                 if can_read {
                     Ok(())
                 } else {
-                    Err(InternalError::MissingPermission(MissingPermission("Read Repository".to_string())))
+                    Err(InternalError::MissingPermission(MissingPermission(
+                        "Read Repository".to_string(),
+                    )))
                 }
             }
             Visibility::Hidden => Ok(()),
         }
     }
 }
-
-

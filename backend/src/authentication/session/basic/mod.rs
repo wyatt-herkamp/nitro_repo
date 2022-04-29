@@ -2,11 +2,11 @@ use async_trait::async_trait;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::collections::HashMap;
-use std::ops::{Add};
+use std::ops::Add;
 
+use crate::authentication::session::{Session, SessionManagerType};
 use time::{Duration, OffsetDateTime};
 use tokio::sync::RwLock;
-use crate::authentication::session::{Session, SessionManagerType};
 
 pub struct BasicSessionManager {
     pub sessions: RwLock<HashMap<String, Session>>,

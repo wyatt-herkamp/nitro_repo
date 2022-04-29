@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::SiteResponse;
 use crate::NitroRepoData;
 
+use crate::authentication::Authentication;
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::models::Repository;
-use crate::authentication::Authentication;
 use crate::storage::StorageManager;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
@@ -22,8 +22,10 @@ pub struct ListRepositories {
 pub async fn get_versions(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest, auth: Authentication,
-    path: web::Path<(String, String, String)>, storages: web::Data<StorageManager>,
+    r: HttpRequest,
+    auth: Authentication,
+    path: web::Path<(String, String, String)>,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
@@ -42,8 +44,10 @@ pub async fn get_versions(
 pub async fn get_project(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest, auth: Authentication,
-    path: web::Path<(String, String, String)>, storages: web::Data<StorageManager>,
+    r: HttpRequest,
+    auth: Authentication,
+    path: web::Path<(String, String, String)>,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
 
@@ -63,7 +67,9 @@ pub async fn get_project(
 pub async fn get_version(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
-    r: HttpRequest, auth: Authentication, storages: web::Data<StorageManager>,
+    r: HttpRequest,
+    auth: Authentication,
+    storages: web::Data<StorageManager>,
     path: web::Path<(String, String, String, String)>,
 ) -> SiteResponse {
     let (storage, repository, project, version) = path.into_inner();

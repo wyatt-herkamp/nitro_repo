@@ -1,7 +1,7 @@
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{get, web, HttpRequest, HttpResponse};
-use futures_util::SinkExt;
+
 use log::{debug, trace};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
@@ -10,14 +10,14 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError;
 use crate::error::response::{bad_request, i_am_a_teapot, not_found};
 use crate::repository::models::Repository;
-use crate::repository::nitro::ResponseType::Storage;
+
+use crate::authentication::Authentication;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
 use crate::repository::types::{RepoResponse, RepositoryRequest};
-use crate::utils::get_accept;
-use crate::NitroRepoData;
-use crate::authentication::Authentication;
 use crate::storage::models::StorageFile;
 use crate::storage::{StorageHandlerType, StorageManager};
+use crate::utils::get_accept;
+use crate::NitroRepoData;
 
 //
 
@@ -30,7 +30,7 @@ pub async fn to_request(
     storage_name: String,
     repo_name: String,
     file: String,
-    site: NitroRepoData,
+    _site: NitroRepoData,
     storages: web::Data<StorageManager>,
 ) -> Result<RepositoryRequest, InternalError> {
     let storage = storages.get_storage_by_name(&storage_name).await?;
@@ -54,13 +54,19 @@ pub async fn to_request(
     Ok(request)
 }
 
-pub async fn generate_storage_list(site: NitroRepoData, storages: &StorageManager) -> Result<NitroFileResponse, InternalError> {
-    let files = storages.storages_as_file_list().await?.iter().map(|value| {
-        NitroFile {
+pub async fn generate_storage_list(
+    _site: NitroRepoData,
+    storages: &StorageManager,
+) -> Result<NitroFileResponse, InternalError> {
+    let files = storages
+        .storages_as_file_list()
+        .await?
+        .iter()
+        .map(|value| NitroFile {
             response_type: ResponseType::Storage,
             file: value.to_owned(),
-        }
-    }).collect();
+        })
+        .collect();
     Ok(NitroFileResponse {
         files,
         response_type: ResponseType::Other,
@@ -68,7 +74,11 @@ pub async fn generate_storage_list(site: NitroRepoData, storages: &StorageManage
     })
 }
 
-pub async fn browse(site: NitroRepoData, storages: web::Data<StorageManager>, r: HttpRequest) -> SiteResponse {
+pub async fn browse(
+    site: NitroRepoData,
+    storages: web::Data<StorageManager>,
+    r: HttpRequest,
+) -> SiteResponse {
     APIResponse::respond_new(Some(generate_storage_list(site, &storages).await?), &r)
 }
 
@@ -76,7 +86,8 @@ pub async fn browse(site: NitroRepoData, storages: web::Data<StorageManager>, r:
 pub async fn browse_storage(
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<String>, storages: web::Data<StorageManager>,
+    path: web::Path<String>,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let string = path.into_inner();
     println!("HEY");
@@ -122,7 +133,9 @@ pub async fn get_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<GetPath>, auth: Authentication, storages: web::Data<StorageManager>,
+    path: web::Path<GetPath>,
+    auth: Authentication,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let path = path.into_inner();
     let file = path.file.unwrap_or_else(|| "".to_string());
@@ -224,7 +237,8 @@ pub async fn post_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, storages: web::Data<StorageManager>,
+    path: web::Path<(String, String, String)>,
+    storages: web::Data<StorageManager>,
     bytes: Bytes,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
@@ -257,7 +271,8 @@ pub async fn patch_repository(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes, storages: web::Data<StorageManager>,
+    bytes: Bytes,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site, storages).await;
@@ -289,7 +304,9 @@ pub async fn put_repository(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    bytes: Bytes, auth: Authentication, storages: web::Data<StorageManager>,
+    bytes: Bytes,
+    auth: Authentication,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site, storages).await;
@@ -320,7 +337,8 @@ pub async fn head_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
-    path: web::Path<(String, String, String)>, storages: web::Data<StorageManager>,
+    path: web::Path<(String, String, String)>,
+    storages: web::Data<StorageManager>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
     let result = to_request(storage, repository, file, site, storages).await;

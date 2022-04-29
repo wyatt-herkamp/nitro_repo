@@ -1,10 +1,9 @@
 pub mod database;
 
-
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use crate::error::internal_error::InternalError;
 pub use database::Entity as UserEntity;
 pub use database::Model as UserModel;
-use crate::error::internal_error::InternalError;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 pub async fn get_by_username(
     username: &str,

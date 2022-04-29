@@ -1,18 +1,18 @@
-pub mod database;
 pub mod controllers;
+pub mod database;
 
+use crate::authentication::auth_token::database::TokenProperties;
+use crate::error::internal_error::InternalError;
+use crate::utils::get_current_time;
+pub use database::Entity as AuthTokenEntity;
+pub use database::Model as AuthTokenModel;
 use log::error;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use sea_orm::FromQueryResult;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use time::OffsetDateTime;
-pub use database::Entity as AuthTokenEntity;
-pub use database::Model as AuthTokenModel;
-use crate::error::internal_error::InternalError;
-use sea_orm::{FromQueryResult, JsonValue};
 use serde::{Deserialize, Serialize};
-use crate::authentication::auth_token::database::TokenProperties;
-use crate::utils::get_current_time;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromQueryResult)]
 pub struct TokenResponse {
@@ -21,14 +21,18 @@ pub struct TokenResponse {
     pub properties: TokenProperties,
     pub created: i64,
     pub user_id: i64,
-
 }
 
-pub async fn get_tokens_by_user(user: i64, database: &DatabaseConnection) -> Result<Vec<TokenResponse>, InternalError> {
-    AuthTokenEntity::find().filter(database::Column::UserId.eq(user))
+pub async fn get_tokens_by_user(
+    user: i64,
+    database: &DatabaseConnection,
+) -> Result<Vec<TokenResponse>, InternalError> {
+    AuthTokenEntity::find()
+        .filter(database::Column::UserId.eq(user))
         .into_model::<TokenResponse>()
         .all(database)
-        .await.map_err(InternalError::DBError)
+        .await
+        .map_err(InternalError::DBError)
 }
 
 pub async fn get_by_token(
@@ -45,14 +49,17 @@ pub async fn get_by_token(
             let database = connection.clone();
             actix_web::rt::spawn(async move {
                 let database = database;
-                if let Err(error) = AuthTokenEntity::delete_by_id(token.id).exec(&database).await {
+                if let Err(error) = AuthTokenEntity::delete_by_id(token.id)
+                    .exec(&database)
+                    .await
+                {
                     error!("Unable to delete Auth Token Error: {}", error);
                 }
             });
         }
         return Ok(Some(token));
     }
-    return Ok(None);
+    Ok(None)
 }
 
 pub async fn delete_by_token(

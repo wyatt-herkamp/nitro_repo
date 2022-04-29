@@ -3,15 +3,15 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
-use crate::error::response::{not_found};
+use crate::authentication::Authentication;
+use crate::error::response::not_found;
 use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
-use crate::NitroRepoData;
-use crate::authentication::Authentication;
 use crate::storage::{StorageHandlerType, StorageManager};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
+use crate::NitroRepoData;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -43,8 +43,10 @@ impl From<Repository> for PublicRepositoryResponse {
 #[get("/api/repositories/get/{storage}/{repo}")]
 pub async fn get_repo(
     connection: web::Data<DatabaseConnection>,
-    site: NitroRepoData, storages: web::Data<StorageManager>,
-    r: HttpRequest, auth: Authentication,
+    _site: NitroRepoData,
+    storages: web::Data<StorageManager>,
+    r: HttpRequest,
+    auth: Authentication,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();

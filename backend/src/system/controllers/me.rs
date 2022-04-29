@@ -4,10 +4,10 @@ use sea_orm::{DatabaseConnection, IntoActiveModel};
 use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::authentication::Authentication;
-use crate::system::utils::{hash, NewPassword};
-use crate::system::{user};
-pub use sea_orm::{entity::*, query::*, DbErr, FromQueryResult};
+use crate::system::user;
 use crate::system::user::UserModel;
+use crate::system::utils::{hash, NewPassword};
+pub use sea_orm::{entity::*, query::*, DbErr, FromQueryResult};
 #[get("/api/me")]
 pub async fn me(
     database: web::Data<DatabaseConnection>,

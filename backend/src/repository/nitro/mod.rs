@@ -1,7 +1,7 @@
 use crate::repository::models::RepositorySummary;
 use crate::repository::types::Project;
-use serde::{Deserialize, Serialize};
 use crate::storage::models::StorageFile;
+use serde::{Deserialize, Serialize};
 
 use crate::utils::get_current_time;
 

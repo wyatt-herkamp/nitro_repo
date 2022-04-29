@@ -1,9 +1,9 @@
 pub mod basic;
 
-use time::OffsetDateTime;
 use crate::authentication::session::basic::BasicSessionManager;
-use async_trait::async_trait;
 use crate::settings::models::SessionSettings;
+use async_trait::async_trait;
+use time::OffsetDateTime;
 
 pub enum SessionManager {
     BasicSessionManager(BasicSessionManager),
@@ -56,9 +56,7 @@ impl SessionManagerType for SessionManager {
 
     async fn set_user(&self, token: &str, user: i64) -> Result<(), Self::Error> {
         return match self {
-            SessionManager::BasicSessionManager(basic) => {
-                basic.set_user(token, user).await
-            }
+            SessionManager::BasicSessionManager(basic) => basic.set_user(token, user).await,
         };
     }
 }

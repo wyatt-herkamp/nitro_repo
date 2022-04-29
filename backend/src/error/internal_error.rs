@@ -3,15 +3,15 @@ use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 use std::time::SystemTimeError;
 
+use crate::authentication::UnAuthorized;
+use crate::storage::models::StorageError;
+use crate::storage::StorageHandlerError;
+use crate::system::permissions::options::MissingPermission;
 use crate::system::permissions::PermissionError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
-use crate::authentication::UnAuthorized;
-use crate::storage::models::StorageError;
-use crate::storage::StorageHandlerError;
-use crate::system::permissions::options::MissingPermission;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -59,9 +59,7 @@ pub type NResult<T> = Result<T, InternalError>;
 impl InternalError {
     pub fn json_error(&self) -> HttpResponse {
         match self {
-            InternalError::UnAuthorized(not_authed) => {
-                not_authed.error_response()
-            }
+            InternalError::UnAuthorized(not_authed) => not_authed.error_response(),
             error => {
                 let result = HttpResponse::Ok()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
@@ -162,7 +160,6 @@ impl From<handlebars::RenderError> for InternalError {
         InternalError::Error(err.to_string())
     }
 }
-
 
 impl From<actix_web::Error> for InternalError {
     fn from(err: actix_web::Error) -> InternalError {

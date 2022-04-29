@@ -1,15 +1,14 @@
 use std::collections::HashMap;
 use std::path::Path;
-use std::ptr::NonNull;
-use std::rc::Rc;
+
 use tokio::fs;
-use tokio::fs::{OpenOptions, read_to_string};
-use crate::error::internal_error::InternalError;
-use crate::storage::models::{Storage, STORAGE_FILE, STORAGE_FILE_BAK, StorageFile};
-use crate::storage::{StorageHandlerType, ValueRef};
-use thiserror::Error;
+use tokio::fs::{read_to_string, OpenOptions};
+
+use crate::storage::models::{Storage, StorageFile, STORAGE_FILE, STORAGE_FILE_BAK};
+use crate::storage::StorageHandlerType;
 use async_trait::async_trait;
 use serde::{Serialize, Serializer};
+use thiserror::Error;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
 
@@ -53,7 +52,11 @@ pub async fn save_storages(storages: &HashMap<String, Storage>) -> Result<(), Mu
     if path.exists() {
         fs::rename(path, bak).await?;
     }
-    let mut file = OpenOptions::new().write(true).create(true).open(path).await?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(path)
+        .await?;
     file.write_all(result.as_bytes()).await?;
     Ok(())
 }
@@ -65,16 +68,16 @@ pub struct MultiStorageController {
 impl MultiStorageController {
     pub async fn init() -> Result<MultiStorageController, MultiStorageError> {
         let result = load_storages().await?;
-        return Ok(MultiStorageController {
-            storages: RwLock::new(result)
-        });
+        Ok(MultiStorageController {
+            storages: RwLock::new(result),
+        })
     }
 }
 
 impl Serialize for MultiStorageController {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_some(self)
     }
@@ -118,7 +121,6 @@ impl StorageHandlerType for MultiStorageController {
                 directory: true,
                 file_size: 0,
                 created: storage.config.created as u128,
-
             });
         }
         return Ok(files);

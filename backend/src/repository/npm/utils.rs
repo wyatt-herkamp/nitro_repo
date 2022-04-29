@@ -92,20 +92,24 @@ pub async fn update_project(
         created: get_current_time(),
     };
     project_data.versions.update_version(version.version);
-    storage.save_file(
-        repository,
-        serde_json::to_string_pretty(&project_data)?.as_bytes(),
-        &project_file,
-    ).await?;
-    storage.save_file(
-        repository,
-        serde_json::to_string_pretty(&version_data)?.as_bytes(),
-        &version_folder,
-    ).await?;
+    storage
+        .save_file(
+            repository,
+            serde_json::to_string_pretty(&project_data)?.as_bytes(),
+            &project_file,
+        )
+        .await?;
+    storage
+        .save_file(
+            repository,
+            serde_json::to_string_pretty(&version_data)?.as_bytes(),
+            &version_folder,
+        )
+        .await?;
     Ok(())
 }
 
-pub  async fn get_version_data(
+pub async fn get_version_data(
     storage: &Storage,
     repository: &Repository,
     project_folder: &str,

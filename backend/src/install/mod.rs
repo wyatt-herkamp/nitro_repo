@@ -25,15 +25,17 @@ use tui::{
 
 use thiserror::Error;
 
-use crate::settings::models::{Application, Database, EmailSetting, Mode, SecuritySettings, SiteSetting, StringMap};
+use crate::settings::models::{
+    Application, Database, EmailSetting, Mode, SecuritySettings, SiteSetting, StringMap,
+};
 use crate::system::permissions::UserPermissions;
+use crate::system::user;
+use crate::system::user::UserEntity;
 use crate::system::utils::hash;
-use crate::system::{user};
 use crate::utils::get_current_time;
+use crate::{authentication, GeneralSettings};
 use sea_orm::ConnectionTrait;
 use unicode_width::UnicodeWidthStr;
-use crate::{authentication, GeneralSettings};
-use crate::system::user::UserEntity;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -123,8 +125,8 @@ impl From<UserStage> for user::database::ActiveModel {
                 deployer: None,
                 viewer: None,
             }
-                .try_into()
-                .unwrap()),
+            .try_into()
+            .unwrap()),
             created: Set(get_current_time()),
         }
     }
@@ -227,13 +229,15 @@ async fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                let mut database_conn = sea_orm::Database::connect(string).await?;
+                                let database_conn = sea_orm::Database::connect(string).await?;
                                 let schema = Schema::new(database_conn.get_database_backend());
                                 let users = schema.create_table_from_entity(UserEntity);
                                 database_conn
                                     .execute(database_conn.get_database_backend().build(&users))
                                     .await?;
-                                let tokens = schema.create_table_from_entity(authentication::auth_token::AuthTokenEntity);
+                                let tokens = schema.create_table_from_entity(
+                                    authentication::auth_token::AuthTokenEntity,
+                                );
                                 database_conn
                                     .execute(database_conn.get_database_backend().build(&tokens))
                                     .await?;
@@ -385,7 +389,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-                .as_ref(),
+            .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -566,6 +570,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-        .unwrap();
+    .unwrap();
     terminal.show_cursor().unwrap();
 }

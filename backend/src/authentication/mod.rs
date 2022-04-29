@@ -1,27 +1,24 @@
+pub mod auth_token;
 pub mod middleware;
 pub mod session;
-pub mod auth_token;
 
-use std::fmt::{Debug, Display, Formatter};
-use actix_web::dev::Payload;
-use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse, ResponseError};
 use actix_web::body::BoxBody;
+use actix_web::dev::Payload;
 use actix_web::http::StatusCode;
-use async_trait::async_trait;
+use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse, ResponseError};
+use std::fmt::{Debug, Display, Formatter};
+
 use futures_util::future::{ready, Ready};
 use log::trace;
 
-
 use sea_orm::{DatabaseConnection, EntityTrait};
-use time::OffsetDateTime;
 
 use crate::error::internal_error::InternalError;
-use crate::settings::models::SessionSettings;
-use crate::{ system};
+
 use crate::api_response::{APIResponse, RequestErrorResponse};
 use crate::authentication::auth_token::AuthTokenModel;
 use crate::authentication::session::Session;
-use crate::system::user;
+
 use crate::system::user::{UserEntity, UserModel};
 
 pub struct UnAuthorized;
@@ -48,11 +45,14 @@ impl ResponseError for UnAuthorized {
         HttpResponse::Ok()
             .status(StatusCode::UNAUTHORIZED)
             .content_type("application/json")
-            .body(serde_json::to_string(&APIResponse {
-                success: false,
-                data: Some(RequestErrorResponse::new("Not Logged In", "UNAUTHORIZED")),
-                status_code: Some(401),
-            }).unwrap())
+            .body(
+                serde_json::to_string(&APIResponse {
+                    success: false,
+                    data: Some(RequestErrorResponse::new("Not Logged In", "UNAUTHORIZED")),
+                    status_code: Some(401),
+                })
+                .unwrap(),
+            )
     }
 }
 
@@ -87,9 +87,7 @@ impl Authentication {
     ) -> Result<Result<UserModel, UnAuthorized>, InternalError> {
         match self {
             Authentication::AuthToken(auth) => {
-                let option = auth
-                    .get_user(database)
-                    .await?;
+                let option = auth.get_user(database).await?;
                 if let Some(user) = option {
                     Ok(Ok(user))
                 } else {

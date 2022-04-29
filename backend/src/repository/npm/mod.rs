@@ -15,6 +15,7 @@ use crate::repository::models::RepositorySummary;
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
 use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
 
+use crate::authentication::Authentication;
 use crate::repository::types::RepoResponse::{
     BadRequest, CreatedWithJSON, NotAuthorized, NotFound, ProjectResponse,
 };
@@ -22,7 +23,6 @@ use crate::repository::types::{
     Project, RDatabaseConnection, RepoResponse, RepoResult, RepositoryRequest,
 };
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
-use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
@@ -36,7 +36,8 @@ impl NPMHandler {
     pub async fn handle_get(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn: &RDatabaseConnection, auth: Authentication,
+        conn: &RDatabaseConnection,
+        auth: Authentication,
     ) -> RepoResult {
         let caller: UserModel = auth.get_user(conn).await??;
         caller.can_read_from(&request.repository)?;
@@ -54,23 +55,23 @@ impl NPMHandler {
                     &package, &version, &nitro_file_location
                 );
 
-                let result = request.storage.get_file_as_response(
-                    &request.repository,
-                    &nitro_file_location,
-                    http,
-                ).await?;
+                let result = request
+                    .storage
+                    .get_file_as_response(&request.repository, &nitro_file_location, http)
+                    .await?;
                 if let Some(result) = result {
                     return if result.is_left() {
                         Ok(RepoResponse::FileResponse(result.left().unwrap()))
                     } else {
                         Ok(BadRequest("Expected File got Folder".to_string()))
                     };
-                }else{
+                } else {
                     return Ok(NotFound);
                 }
             }
             let get_response =
-                generate_get_response(&request.storage, &request.repository, &request.value).await
+                generate_get_response(&request.storage, &request.repository, &request.value)
+                    .await
                     .unwrap();
             if get_response.is_none() {
                 return Ok(NotFound);
@@ -78,22 +79,26 @@ impl NPMHandler {
             let string = serde_json::to_string_pretty(&get_response.unwrap())?;
             Ok(RepoResponse::OkWithJSON(string))
         } else {
-            let result =
-                request
-                    .storage
-                    .get_file_as_response(&request.repository, &request.value, http).await?;
+            let result = request
+                .storage
+                .get_file_as_response(&request.repository, &request.value, http)
+                .await?;
             if let Some(result) = result {
                 if result.is_left() {
                     Ok(RepoResponse::FileResponse(result.left().unwrap()))
                 } else {
                     let vec = result.right().unwrap();
-                    let file_response =
-                        process_storage_files(&request.storage, &request.repository, vec, &request.value).await?;
+                    let file_response = process_storage_files(
+                        &request.storage,
+                        &request.repository,
+                        vec,
+                        &request.value,
+                    )
+                    .await?;
                     Ok(RepoResponse::NitroFileList(file_response))
                 }
-            }else{
-                return Ok(NotFound);
-
+            } else {
+                Ok(NotFound)
             }
         }
     }
@@ -102,7 +107,8 @@ impl NPMHandler {
         request: &RepositoryRequest,
         http: &HttpRequest,
         conn: &RDatabaseConnection,
-        bytes: Bytes, auth: Authentication,
+        bytes: Bytes,
+        auth: Authentication,
     ) -> RepoResult {
         for x in http.headers() {
             log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
@@ -158,16 +164,22 @@ impl NPMHandler {
                             format!("{}/{}/{}", &publish_request.name, version, &attachment_key);
                         let npm_version_data =
                             format!("{}/{}/package.json", &publish_request.name, version);
-                        request.storage.save_file(
-                            &request.repository,
-                            attachment_data.as_ref(),
-                            &attachment_file_loc,
-                        ).await?;
-                        request.storage.save_file(
-                            &request.repository,
-                            version_data_string.as_bytes(),
-                            &npm_version_data,
-                        ).await?;
+                        request
+                            .storage
+                            .save_file(
+                                &request.repository,
+                                attachment_data.as_ref(),
+                                &attachment_file_loc,
+                            )
+                            .await?;
+                        request
+                            .storage
+                            .save_file(
+                                &request.repository,
+                                version_data_string.as_bytes(),
+                                &npm_version_data,
+                            )
+                            .await?;
 
                         let project_folder = publish_request.name.clone();
                         trace!("Project Folder Location {}", project_folder);
@@ -181,7 +193,9 @@ impl NPMHandler {
                                 &repository,
                                 &project_folder,
                                 version_for_saving.clone(),
-                            ).await {
+                            )
+                            .await
+                            {
                                 error!("Unable to update {}, {}", PROJECT_FILE, error);
                                 if log_enabled!(Trace) {
                                     trace!(
@@ -193,11 +207,12 @@ impl NPMHandler {
                             }
 
                             if let Err(error) =
-                            crate::repository::utils::update_project_in_repositories(
-                                &storage,
-                                &repository,
-                                version_for_saving.name.clone(),
-                            ).await
+                                crate::repository::utils::update_project_in_repositories(
+                                    &storage,
+                                    &repository,
+                                    version_for_saving.name.clone(),
+                                )
+                                .await
                             {
                                 error!("Unable to update repository.json, {}", error);
                                 if log_enabled!(Trace) {
@@ -245,7 +260,8 @@ impl NPMHandler {
         _http: &HttpRequest,
         _conn: &RDatabaseConnection,
     ) -> RepoResult {
-        let vec = get_versions(&request.storage, &request.repository, request.value.clone()).await?;
+        let vec =
+            get_versions(&request.storage, &request.repository, request.value.clone()).await?;
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
 
@@ -264,7 +280,8 @@ impl NPMHandler {
                 &request.storage,
                 &request.repository,
                 format!("{}/{}", project_dir, &version),
-            ).await?;
+            )
+            .await?;
 
             let project = Project {
                 repo_summary: RepositorySummary::new(&request.repository),
@@ -291,7 +308,8 @@ impl NPMHandler {
                 &request.storage,
                 &request.repository,
                 format!("{}/{}", project_dir, &project_data.versions.latest_version),
-            ).await?;
+            )
+            .await?;
 
             let project = Project {
                 repo_summary: RepositorySummary::new(&request.repository),
@@ -311,7 +329,8 @@ impl NPMHandler {
     ) -> Result<Option<String>, InternalError> {
         let project_dir = parse_project_to_directory(&request.value);
 
-        let project_data = get_project_data(&request.storage, &request.repository, project_dir).await?;
+        let project_data =
+            get_project_data(&request.storage, &request.repository, project_dir).await?;
         Ok(if let Some(project_data) = project_data {
             let latest_release = project_data.versions.latest_release;
             if latest_release.is_empty() {

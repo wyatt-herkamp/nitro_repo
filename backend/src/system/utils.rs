@@ -2,19 +2,19 @@ use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::system::user;
-use crate::system::user::{UserEntity, UserModel};
+use crate::system::user::UserModel;
 
 pub async fn verify_login(
     username: String,
     password: String,
     database: &DatabaseConnection,
 ) -> Result<Option<UserModel>, InternalError> {
-    let user_found: Option<UserModel> = user::get_by_username(&username,database).await?;
+    let user_found: Option<UserModel> = user::get_by_username(&username, database).await?;
     if user_found.is_none() {
         return Ok(None);
     }
@@ -29,10 +29,6 @@ pub async fn verify_login(
     }
     Ok(Some(user))
 }
-
-
-
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {

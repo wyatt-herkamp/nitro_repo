@@ -1,5 +1,5 @@
-use sea_orm::{DbErr, JsonValue};
 use crate::system::permissions::UserPermissions;
+use sea_orm::{DbErr, JsonValue};
 
 impl From<UserPermissions> for JsonValue {
     fn from(auth: UserPermissions) -> Self {
@@ -29,8 +29,8 @@ impl sea_orm::sea_query::ValueType for UserPermissions {
     fn try_from(v: sea_orm::Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
         match v {
             sea_orm::Value::Json(Some(x)) => {
-                let auth_properties: UserPermissions =
-                    serde_json::from_value(*x).map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
+                let auth_properties: UserPermissions = serde_json::from_value(*x)
+                    .map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
                 Ok(auth_properties)
             }
             _ => Err(sea_orm::sea_query::ValueTypeErr),

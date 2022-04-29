@@ -6,18 +6,18 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::{already_exists_what, not_found};
 
+use crate::authentication::Authentication;
 use crate::system::models::UserListResponse;
 use crate::system::permissions::options::CanIDo;
 use crate::system::permissions::UserPermissions;
 use crate::system::user;
+use crate::system::user::{UserEntity, UserModel};
 use crate::system::utils::{hash, NewPassword, NewUser};
 use crate::utils::get_current_time;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ColumnTrait;
 use sea_orm::EntityTrait;
 use sea_orm::IntoActiveModel;
-use crate::authentication::Authentication;
-use crate::system::user::{UserEntity, UserModel};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
@@ -25,7 +25,11 @@ pub struct ListUsers {
 }
 
 #[get("/api/admin/user/list")]
-pub async fn list_users(database: web::Data<DatabaseConnection>, auth: Authentication, r: HttpRequest) -> SiteResponse {
+pub async fn list_users(
+    database: web::Data<DatabaseConnection>,
+    auth: Authentication,
+    r: HttpRequest,
+) -> SiteResponse {
     let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
     let vec = UserEntity::find()
@@ -40,7 +44,8 @@ pub async fn list_users(database: web::Data<DatabaseConnection>, auth: Authentic
 #[get("/api/admin/user/get/{user}")]
 pub async fn get_user(
     database: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest,
+    auth: Authentication,
     path: web::Path<i64>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&database).await??;
@@ -55,7 +60,8 @@ pub async fn get_user(
 #[post("/api/admin/user/add")]
 pub async fn add_user(
     database: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest,
+    auth: Authentication,
     nc: web::Json<NewUser>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&database).await??;
@@ -90,7 +96,8 @@ pub async fn add_user(
 #[patch("/api/admin/user/{user}/modify")]
 pub async fn modify_user(
     database: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest,
+    auth: Authentication,
     path: web::Path<i64>,
     nc: web::Json<user::database::ModifyUser>,
 ) -> SiteResponse {
@@ -111,7 +118,8 @@ pub async fn modify_user(
 #[patch("/api/admin/user/{user}/modify/permissions")]
 pub async fn update_permission(
     database: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest,
+    auth: Authentication,
     permissions: web::Json<UserPermissions>,
     path: web::Path<i64>,
 ) -> SiteResponse {
@@ -136,7 +144,8 @@ pub async fn update_permission(
 #[post("/api/admin/user/{user}/password")]
 pub async fn change_password(
     database: web::Data<DatabaseConnection>,
-    r: HttpRequest, auth: Authentication,
+    r: HttpRequest,
+    auth: Authentication,
     path: web::Path<i64>,
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
@@ -162,7 +171,8 @@ pub async fn change_password(
 pub async fn delete_user(
     database: web::Data<DatabaseConnection>,
     r: HttpRequest,
-    user: web::Path<i64>, auth: Authentication,
+    user: web::Path<i64>,
+    auth: Authentication,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;

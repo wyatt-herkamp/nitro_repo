@@ -4,32 +4,32 @@ use std::rc::Rc;
 
 use std::time::SystemTime;
 
-
-use crate::authentication::{auth_token, Authentication, session::Session, session::SessionManager};
-use crate::{system};
+use crate::authentication::{
+    auth_token, session::Session, session::SessionManager, Authentication,
+};
+use crate::system;
 
 use actix_web::cookie::{Cookie, SameSite};
-use actix_web::http::header::{AUTHORIZATION, HeaderValue, ORIGIN, SET_COOKIE};
+use actix_web::http::header::{HeaderValue, AUTHORIZATION, ORIGIN, SET_COOKIE};
+use actix_web::http::Method;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     web, Error, HttpMessage,
 };
-use actix_web::http::Method;
 
 use futures_util::future::LocalBoxFuture;
-use log::{debug, error, trace, warn};
+use log::{debug, trace, warn};
 use sea_orm::{DatabaseConnection, EntityTrait};
-use crate::authentication::auth_token::AuthTokenEntity;
+
 use crate::authentication::session::SessionManagerType;
-use crate::utils::get_current_time;
 
 pub struct HandleSession;
 
 impl<S, B> Transform<S, ServiceRequest> for HandleSession
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error> + 'static,
-        S::Future: 'static,
-        B: 'static,
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<B>;
     type Error = Error;
@@ -49,10 +49,10 @@ pub struct SessionMiddleware<S> {
 }
 
 impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error> + 'static,
-        S::Future: 'static,
-        B: 'static,
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<B>;
     type Error = Error;
@@ -73,7 +73,9 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
         // Move all into an Async Box.
         Box::pin(async move {
             //Step One Find the Authorization
-            let (authentication, session): (Authentication, Option<Session>) = if let Some(cookie) = req.cookie("session") {
+            let (authentication, session): (Authentication, Option<Session>) = if let Some(cookie) =
+                req.cookie("session")
+            {
                 //Check for the Session Cookie
                 let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
                 trace!("Cookie sent {}", cookie.encoded().to_string());
@@ -85,7 +87,11 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                     //Create a new session and go with it!
                     let _session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
                     if let Some(origin) = req.headers().get(ORIGIN) {
-                        trace!("Cookie {} not found. Creating a new Session for {}",cookie.value(),origin.to_str().unwrap_or("Bad Origin"));
+                        trace!(
+                            "Cookie {} not found. Creating a new Session for {}",
+                            cookie.value(),
+                            origin.to_str().unwrap_or("Bad Origin")
+                        );
                         let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
                         let session = session_manager.create_session().await.unwrap();
                         (Authentication::Session(session.clone()), Some(session))
@@ -102,14 +108,12 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                     }
                     (Authentication::Session(session.clone()), Option::None)
                 }
-            } else if let Some(header) =
-            req.headers().get(AUTHORIZATION)
-            {
+            } else if let Some(header) = req.headers().get(AUTHORIZATION) {
                 //If it is an Authorization Header pull Database from App Data
                 let database: &web::Data<DatabaseConnection> = req.app_data().unwrap();
                 // Convert Header to String
                 let header_value = header.to_str().unwrap();
-                trace!("Authorization Header {}" ,&header_value);
+                trace!("Authorization Header {}", &header_value);
 
                 let split = header_value.split(' ').collect::<Vec<&str>>();
                 if split.len() != 2 {
@@ -174,14 +178,23 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                             }
                         }
                     } else {
-                        (Authentication::AuthorizationHeaderUnknown(auth_type.to_string(), value.to_string()), None)
+                        (
+                            Authentication::AuthorizationHeaderUnknown(
+                                auth_type.to_string(),
+                                value.to_string(),
+                            ),
+                            None,
+                        )
                     }
                 }
             } else {
                 // Try to create a new Session for the user. Could be a first request
                 // Require a Origin Header for request
                 if let Some(origin) = req.headers().get(ORIGIN) {
-                    trace!("Creating a new Session for {}. ",origin.to_str().unwrap_or("Bad Origin"));
+                    trace!(
+                        "Creating a new Session for {}. ",
+                        origin.to_str().unwrap_or("Bad Origin")
+                    );
                     let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
                     let session = session_manager.create_session().await.unwrap();
                     (Authentication::Session(session.clone()), Some(session))
@@ -204,7 +217,7 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                 cookie.set_path("/");
                 cookie.set_expires(session.expiration);
                 let cookie_encoded = cookie.encoded().to_string();
-                trace!("Sending Cookie Response {}",&cookie_encoded);
+                trace!("Sending Cookie Response {}", &cookie_encoded);
                 let val = HeaderValue::from_str(&cookie_encoded).unwrap();
 
                 res.headers_mut().append(SET_COOKIE, val);
@@ -219,7 +232,7 @@ fn internal_server_error<E: fmt::Debug + fmt::Display + 'static>(err: E) -> Erro
         err,
         actix_web::HttpResponse::InternalServerError().finish(),
     )
-        .into()
+    .into()
 }
 
 fn request_error<E: fmt::Debug + fmt::Display + 'static>(err: E) -> Error {
@@ -227,5 +240,5 @@ fn request_error<E: fmt::Debug + fmt::Display + 'static>(err: E) -> Error {
         err,
         actix_web::HttpResponse::BadRequest().finish(),
     )
-        .into()
+    .into()
 }

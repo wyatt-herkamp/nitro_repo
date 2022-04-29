@@ -37,8 +37,6 @@ pub struct UserPermissions {
     pub viewer: Option<RepositoryPermission>,
 }
 
-
-
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RepositoryPermission {
     pub permissions: Vec<String>,

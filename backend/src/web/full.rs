@@ -1,18 +1,19 @@
-use std::path::Path;
 use actix_cors::Cors;
-use actix_web::{App, HttpServer, middleware};
-use log::{trace, info, error};
+use actix_web::web::{Data, PayloadConfig};
+use actix_web::{middleware, App, HttpServer};
+use api::authentication::session::SessionManager;
+use api::cli::handle_cli;
+use api::settings::load_configs;
+use api::settings::models::{GeneralSettings, MysqlSettings};
+use api::utils::load_logger;
+use api::{
+    authentication, error, frontend, misc, repository, settings, storage, system, NitroRepo,
+};
+use log::{error, info, trace};
 use sea_orm::Database;
+use std::path::Path;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
-use api::cli::handle_cli;
-use actix_web::web::{Data, PayloadConfig};
-use api::{cli, utils, authentication, repository, misc, error, system, storage, settings, frontend, NitroRepo};
-use api::authentication::session::SessionManager;
-use api::settings::load_configs;
-use api::settings::models::{GeneralSettings, Settings, MysqlSettings};
-use api::utils::load_logger;
-
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -23,9 +24,7 @@ async fn main() -> std::io::Result<()> {
     let path = Path::new("cfg");
     let main_config = path.join("nitro_repo.toml");
     if !main_config.exists() {
-        println!(
-            "Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag"
-        );
+        println!("Nitro Repo Not Installed. Please ReRun nitro launcher with the --install flag");
         std::process::exit(1);
     }
     info!("Loading Main Config");
@@ -120,7 +119,7 @@ async fn main() -> std::io::Result<()> {
             // DONT REGISTER ANYTHING BELOW FRONTEND!
             .configure(frontend::init)
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

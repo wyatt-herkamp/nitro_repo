@@ -1,8 +1,6 @@
-use crate::error::internal_error::InternalError;
-use crate::system::user;
+use crate::system::permissions::UserPermissions;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::system::permissions::UserPermissions;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "users")]
@@ -27,7 +25,6 @@ pub struct ModifyUser {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(has_many = "crate::authentication::auth_token::database::Entity")]
@@ -39,4 +36,3 @@ impl Related<crate::authentication::auth_token::database::Entity> for Entity {
         Relation::AuthToken.def()
     }
 }
-

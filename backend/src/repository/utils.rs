@@ -6,10 +6,10 @@ use crate::repository::nitro::{
     VersionData,
 };
 use crate::repository::types::{Project, VersionResponse};
+use crate::storage::models::{Storage, StorageFile};
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
-use crate::storage::models::{Storage, StorageFile};
 
 pub async fn get_version(
     storage: &Storage,
@@ -47,7 +47,8 @@ pub async fn process_storage_files(
             storage,
             repo,
             format!("{}/{}", requested_dir, data.versions.latest_release),
-        ).await?;
+        )
+        .await?;
         let project = Project {
             repo_summary: RepositorySummary::new(repo),
             project: data,
@@ -128,7 +129,9 @@ pub async fn update_project_in_repositories(
 
     repo_listing.add_value(project);
     let string = serde_json::to_string_pretty(&repo_listing)?;
-    storage.save_file(repository, string.as_bytes(), PROJECTS_FILE).await?;
+    storage
+        .save_file(repository, string.as_bytes(), PROJECTS_FILE)
+        .await?;
     Ok(())
 }
 
@@ -187,7 +190,7 @@ pub async fn get_project_data(
         None
     })
 }
-pub  async fn get_version_data(
+pub async fn get_version_data(
     storage: &Storage,
     repository: &Repository,
     folder: String,

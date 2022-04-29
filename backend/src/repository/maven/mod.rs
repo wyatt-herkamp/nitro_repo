@@ -9,18 +9,16 @@ use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
 use crate::repository::maven::utils::parse_project_to_directory;
 use crate::repository::models::RepositorySummary;
-use crate::repository::settings::Policy;
 use crate::repository::settings::security::Visibility;
+use crate::repository::settings::Policy;
 
-use crate::repository::types::RepoResponse::{
-    BadRequest, NotFound, ProjectResponse,
-};
+use crate::authentication::Authentication;
+use crate::repository::types::RepoResponse::{BadRequest, NotFound, ProjectResponse};
 use crate::repository::types::{Project, RepoResponse, RepoResult};
 use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
 };
-use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
@@ -41,22 +39,26 @@ impl MavenHandler {
             caller.can_read_from(&request.repository)?;
         }
 
-        let result =
-            request
-                .storage
-                .get_file_as_response(&request.repository, &request.value, http).await?;
+        let result = request
+            .storage
+            .get_file_as_response(&request.repository, &request.value, http)
+            .await?;
         if let Some(result) = result {
             if result.is_left() {
                 Ok(RepoResponse::FileResponse(result.left().unwrap()))
             } else {
                 let vec = result.right().unwrap();
-                let file_response =
-                    process_storage_files(&request.storage, &request.repository, vec, &request.value).await?;
+                let file_response = process_storage_files(
+                    &request.storage,
+                    &request.repository,
+                    vec,
+                    &request.value,
+                )
+                .await?;
                 Ok(RepoResponse::NitroFileList(file_response))
             }
-        }else{
-            return Ok(NotFound);
-
+        } else {
+            Ok(NotFound)
         }
     }
 
@@ -64,7 +66,8 @@ impl MavenHandler {
         request: &RepositoryRequest,
         _http: &HttpRequest,
         conn: &RDatabaseConnection,
-        bytes: Bytes, auth: Authentication,
+        bytes: Bytes,
+        auth: Authentication,
     ) -> RepoResult {
         let caller: UserModel = auth.get_user(conn).await??;
         caller.can_deploy_to(&request.repository)?;
@@ -84,7 +87,8 @@ impl MavenHandler {
         }
         request
             .storage
-            .save_file(&request.repository, bytes.as_ref(), &request.value).await?;
+            .save_file(&request.repository, bytes.as_ref(), &request.value)
+            .await?;
         if request.value.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec)?;
@@ -108,26 +112,30 @@ impl MavenHandler {
                         &project_folder,
                         pom.version.clone(),
                         pom.clone(),
-                    ).await {
+                    )
+                    .await
+                    {
                         error!("Unable to update {}, {}", PROJECT_FILE, error);
                         trace!(
-                                "Version {} Name: {}",
-                                &pom.version,
-                                format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                            );
+                            "Version {} Name: {}",
+                            &pom.version,
+                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                        );
                     }
 
                     if let Err(error) = crate::repository::utils::update_project_in_repositories(
                         &storage,
                         &repository,
                         format!("{}:{}", &pom.group_id, &pom.artifact_id),
-                    ).await {
+                    )
+                    .await
+                    {
                         error!("Unable to update repository.json, {}", error);
                         trace!(
-                                "Version {} Name: {}",
-                                &pom.version,
-                                format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                            );
+                            "Version {} Name: {}",
+                            &pom.version,
+                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                        );
                     }
                     let string = format!("{}/{}", project_folder, &pom.version);
                     let info = DeployInfo {
@@ -179,7 +187,8 @@ impl MavenHandler {
                 &request.storage,
                 &request.repository,
                 format!("{}/{}", project_dir, &version),
-            ).await?;
+            )
+            .await?;
 
             let project = Project {
                 repo_summary: RepositorySummary::new(&request.repository),
@@ -199,13 +208,15 @@ impl MavenHandler {
     ) -> RepoResult {
         let string = parse_project_to_directory(&request.value);
 
-        let project_data = get_project_data(&request.storage, &request.repository, string.clone()).await?;
+        let project_data =
+            get_project_data(&request.storage, &request.repository, string.clone()).await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
                 &request.storage,
                 &request.repository,
                 format!("{}/{}", string, &project_data.versions.latest_version),
-            ).await?;
+            )
+            .await?;
 
             let project = Project {
                 repo_summary: RepositorySummary::new(&request.repository),

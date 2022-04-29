@@ -1,18 +1,14 @@
 use crate::error::internal_error::InternalError;
-use crate::system::{ user};
 
 use actix_web::dev::Payload;
 use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::{ready, Ready};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
+
 use sea_orm::entity::prelude::*;
 use sea_orm::JsonValue;
 use serde::{Deserialize, Serialize};
-use std::ops::Add;
-use time::{Duration, OffsetDateTime};
-use crate::system::user::{UserEntity, UserModel};
 
+use crate::system::user::{UserEntity, UserModel};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TokenProperties {
@@ -47,8 +43,8 @@ impl sea_orm::sea_query::ValueType for TokenProperties {
     fn try_from(v: sea_orm::Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
         match v {
             sea_orm::Value::Json(Some(x)) => {
-                let auth_properties: TokenProperties =
-                    serde_json::from_value(*x).map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
+                let auth_properties: TokenProperties = serde_json::from_value(*x)
+                    .map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
                 Ok(auth_properties)
             }
             _ => Err(sea_orm::sea_query::ValueTypeErr),
@@ -81,7 +77,7 @@ impl Model {
         &self,
         database: &DatabaseConnection,
     ) -> Result<Option<UserModel>, DbErr> {
-       UserEntity::find_by_id(self.user_id).one(database).await
+        UserEntity::find_by_id(self.user_id).one(database).await
     }
 }
 
@@ -119,5 +115,3 @@ impl Related<crate::system::user::database::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
-

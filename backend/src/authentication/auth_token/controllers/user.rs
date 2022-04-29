@@ -1,19 +1,21 @@
-use actix_web::{get, delete, post, HttpRequest};
-use actix_web::web::{Data, Json, Path};
-use log::error;
-use sea_orm::{DatabaseConnection, IntoActiveModel, QueryFilter};
-use crate::authentication::{auth_token, Authentication};
-use crate::authentication::auth_token::{AuthTokenEntity, AuthTokenModel, generate_token, TokenResponse};
-use crate::error::internal_error::InternalError::NotFound;
-use crate::system::user::UserModel;
-use sea_orm::EntityTrait;
-use crate::system::permissions::options::CanIDo;
-use serde::{Serialize, Deserialize};
-use time::Duration;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::authentication::auth_token::database::TokenProperties;
-use crate::utils::get_current_time;
+use crate::authentication::auth_token::{
+    generate_token, AuthTokenEntity, AuthTokenModel, TokenResponse,
+};
+use crate::authentication::{auth_token, Authentication};
+use crate::error::internal_error::InternalError::NotFound;
 use crate::system::controllers::me::ActiveValue::{NotSet, Set};
+use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
+use crate::utils::get_current_time;
+use actix_web::web::{Data, Json, Path};
+use actix_web::{delete, get, post, HttpRequest};
+use log::error;
+use sea_orm::EntityTrait;
+use sea_orm::{DatabaseConnection, IntoActiveModel};
+use serde::{Deserialize, Serialize};
+use time::Duration;
 
 #[delete("/api/auth/token/delete/{token}")]
 pub async fn delete_token(
@@ -25,13 +27,18 @@ pub async fn delete_token(
     let caller: UserModel = auth.get_user(&database).await??;
 
     let auth_token = path.into_inner();
-    let token: AuthTokenModel = AuthTokenEntity::find_by_id(auth_token).one(database.as_ref()).await?.ok_or(NotFound)?;
+    let token: AuthTokenModel = AuthTokenEntity::find_by_id(auth_token)
+        .one(database.as_ref())
+        .await?
+        .ok_or(NotFound)?;
     if token.user_id != caller.id {
         //They can delete other tokens if they are not the user
         caller.can_i_edit_users()?;
     }
     let token = token.into_active_model();
-    AuthTokenEntity::delete(token).exec(database.as_ref()).await?;
+    AuthTokenEntity::delete(token)
+        .exec(database.as_ref())
+        .await?;
     APIResponse::new(true, Some(true)).respond(&r)
 }
 
@@ -51,7 +58,7 @@ pub fn default_expiration() -> i64 {
 
 pub fn default_properties() -> TokenProperties {
     TokenProperties {
-        description: Some("Authorization Token".to_string())
+        description: Some("Authorization Token".to_string()),
     }
 }
 
@@ -78,7 +85,10 @@ pub async fn create_token(
             user_id: Set(caller.id),
             properties: Set(token_settings.properties),
         };
-        if let Err(error) = AuthTokenEntity::insert(new_token).exec(database.as_ref()).await {
+        if let Err(error) = AuthTokenEntity::insert(new_token)
+            .exec(database.as_ref())
+            .await
+        {
             error!("Unable to add Auth Token Error: {}", error);
         }
     });
