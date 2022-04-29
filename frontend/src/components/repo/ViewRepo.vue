@@ -43,7 +43,6 @@ export default defineComponent({
     let repository = ref<Repository | PublicRepositoryInfo | undefined>(
       props.repositoryType
     );
-    const token: string | undefined = inject("token");
     const repositoryType = ref("");
     const { meta } = useMeta({
       title: "Nitro Repo",
@@ -53,7 +52,7 @@ export default defineComponent({
         const getRepo = async () => {
           try {
             const value = (await getRepoPublic(
-              token,
+              undefined,
               props.storage as string,
               props.repositoryName as string
             )) as PublicRepositoryInfo;

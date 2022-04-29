@@ -110,15 +110,13 @@ export default defineComponent({
     this.uppy.close();
   },
   setup() {
-    const token: string | undefined = inject("token");
-
     const pom = ref<Object | undefined>(undefined);
     //This exists to trigger a rerender on Vue.
     const files = ref<number>(0);
     watch(pom, () => {
       console.log("New Data");
     });
-    return { pom, files, token: token as string };
+    return { pom, files };
   },
   methods: {
     async upload() {
@@ -152,38 +150,32 @@ export default defineComponent({
     },
 
     async uploadFile(url: string, file: any) {
-      await apiClient
-        .put(url, file, {
-          headers: {
-            Authorization: "Bearer " + this.token,
-          },
-        })
-        .then(
-          (result) => {
+      await apiClient.put(url, file).then(
+        (result) => {
+          this.$notify({
+            title: `${url} was uploaded`,
+            type: "info",
+          });
+        },
+        (err) => {
+          if (err.response) {
             this.$notify({
-              title: `${url} was uploaded`,
-              type: "info",
+              title: `${url} failed to upload error ${err.response.status}`,
+              type: "error",
             });
-          },
-          (err) => {
-            if (err.response) {
-              this.$notify({
-                title: `${url} failed to upload error ${err.response.status}`,
-                type: "error",
-              });
-            } else if (err.request) {
-              this.$notify({
-                title: `${url} failed to upload error ${err.request}`,
-                type: "error",
-              });
-            } else {
-              this.$notify({
-                title: `${url} failed to unknown error`,
-                type: "error",
-              });
-            }
+          } else if (err.request) {
+            this.$notify({
+              title: `${url} failed to upload error ${err.request}`,
+              type: "error",
+            });
+          } else {
+            this.$notify({
+              title: `${url} failed to unknown error`,
+              type: "error",
+            });
           }
-        );
+        }
+      );
     },
   },
   components: { PomCreator, DragDrop },

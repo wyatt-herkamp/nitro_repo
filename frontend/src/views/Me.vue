@@ -63,8 +63,6 @@ import { useRouter } from "vue-router";
 
 export default defineComponent({
   setup() {
-    const token: string | undefined = inject("token");
-
     const userStore = useUserStore();
     const user = computed(() => {
       return userStore.$state.user;
@@ -85,7 +83,7 @@ export default defineComponent({
       return false;
     });
 
-    return { user, date, canSubmitPassword, password, token };
+    return { user, date, canSubmitPassword, password };
   },
   methods: {
     async updatePassword() {
@@ -98,7 +96,7 @@ export default defineComponent({
       }
       const response = await updateMyPassword(
         this.password.password,
-        this.token as string
+        undefined
       );
       this.password.password = "";
       this.password.confirm = "";

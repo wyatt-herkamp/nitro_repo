@@ -25,12 +25,11 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const token: string | undefined = inject("token");
 
     const user = ref<User | undefined>();
     const loadUser = async () => {
       try {
-        let value = (await getUserByID(token as string, props.userID)) as User;
+        let value = (await getUserByID(undefined)) as User;
         user.value = value as User;
       } catch (e) {}
     };

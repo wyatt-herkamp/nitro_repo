@@ -36,7 +36,6 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { login } from "@nitro_repo/nitro_repo-api-wrapper";
-import { AuthToken } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useCookies } from "vue3-cookies";
 
 export default defineComponent({

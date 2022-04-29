@@ -85,7 +85,10 @@
 <script lang="ts">
 import { defineComponent, inject } from "vue";
 import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updateBadge, updateFrontend } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  updateBadge,
+  updateFrontend,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { ColorPicker } from "vue-color-kit";
 import "vue-color-kit/dist/vue-color-kit.css";
 export default defineComponent({
@@ -99,10 +102,7 @@ export default defineComponent({
     },
   },
   data() {
-    const token = inject("token") as string;
-
     return {
-      token: token,
       //Honestly I really dont know. I am just going to let it do its thing
       labelSuckerCanvas: null,
       labelSuckerArea: [],
@@ -126,7 +126,7 @@ export default defineComponent({
         this.repository.settings.badge.style,
         this.repository.settings.badge.label_color,
         this.repository.settings.badge.color,
-        this.token
+        undefined
       );
       if (response.ok) {
         console.log(response.val.security.visibility);
@@ -148,10 +148,9 @@ export default defineComponent({
         this.repository.name,
         this.repository.settings.frontend.enabled,
         this.repository.settings.frontend.page_provider,
-        this.token
+        undefined
       );
-      if (response.ok) {        this.$cookie.getCookie("token")
-
+      if (response.ok) {
         console.log(response.val.security.visibility);
         this.$notify({
           title: "Updated Frontend",

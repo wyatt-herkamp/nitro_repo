@@ -110,7 +110,6 @@ import BrowseBox from "@/components/browse/BrowseBox.vue";
 
 export default defineComponent({
   setup() {
-    const token: string | undefined = inject("token");
 
     let url = apiURL;
     const route = useRoute();
@@ -132,7 +131,7 @@ export default defineComponent({
       }
       up.value = upperPath.join("/");
       try {
-        const value = await browse(route.params.catchAll as string, token);
+        const value = await browse(route.params.catchAll as string,undefined);
         if (value == undefined) {
           console.warn("No Response from Backend");
           return;

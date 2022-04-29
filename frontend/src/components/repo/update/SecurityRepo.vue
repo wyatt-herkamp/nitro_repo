@@ -30,18 +30,14 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data() {
-    const token = inject("token") as string;
 
-    return { token };
-  },
   methods: {
     async updateVisibility() {
       const response = await setVisibility(
         this.repository.storage,
         this.repository.name,
         this.repository.security.visibility,
-        this.token
+        undefined
       );
       if (response.ok) {
         console.log(response.val.security.visibility);

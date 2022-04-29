@@ -57,7 +57,6 @@ export default defineComponent({
   setup(props) {
     let storage = ref<Storage | undefined>(undefined);
     let date = ref<string | undefined>(undefined);
-    const token: string | undefined = inject("token");
 
     const { meta } = useMeta({
       title: "Nitro Repo",
@@ -66,7 +65,7 @@ export default defineComponent({
     const getStorageInternal = async () => {
       try {
         const value = (await getStorage(
-          token as string,
+          undefined,
           props.storageId
         )) as Storage;
         storage.value = value;

@@ -61,8 +61,6 @@ export default defineComponent({
     modelValue: Boolean,
   },
   setup(props, { emit }) {
-    const token: string | undefined = inject("token");
-
     let form = ref({
       name: "",
       type: "",
@@ -82,7 +80,6 @@ export default defineComponent({
     return {
       form,
       showModel,
-      token: token as string,
     };
   },
   methods: {
@@ -98,7 +95,7 @@ export default defineComponent({
         this.form.name,
         this.$props.storage.name,
         this.form.type,
-        this.token
+        undefined
       );
       if (response.ok) {
         let data = response.val as Repository;
@@ -120,6 +117,5 @@ export default defineComponent({
   },
   components: { NitroModal },
 });
-
 </script>
 <style scoped></style>

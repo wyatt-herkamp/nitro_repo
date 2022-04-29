@@ -16,7 +16,6 @@ export default defineComponent({
 
   setup() {
     const route = useRoute();
-    const token: string | undefined = inject('token')
 
     const storage = route.params.storage as string;
     const repositoryName = route.params.repo as string;
@@ -24,7 +23,7 @@ export default defineComponent({
     const getRepo = async () => {
       try {
         const value = await getRepoByNameAndStorage(
-          token,
+          undefined,
           storage,
           repositoryName
         );

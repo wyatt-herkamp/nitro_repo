@@ -92,8 +92,6 @@ export default defineComponent({
     modelValue: Boolean,
   },
   setup(props, { emit }) {
-    const token: string | undefined = inject("token");
-
     const showModel = ref(props.modelValue);
 
     watch(
@@ -119,7 +117,7 @@ export default defineComponent({
       },
       permissions: { deployer: false, admin: false },
     });
-    return { form, showModel, token };
+    return { form, showModel };
   },
   methods: {
     async onSubmit() {
@@ -134,7 +132,7 @@ export default defineComponent({
         this.form.username,
         this.form.password.password,
         this.form.email,
-        this.token as string
+        undefined
       );
       if (response.ok) {
         let data = response.val as User;

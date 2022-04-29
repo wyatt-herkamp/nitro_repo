@@ -110,7 +110,10 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import { deleteRepository, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  deleteRepository,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { setActiveStatus, setPolicy } from "@nitro_repo/nitro_repo-api-wrapper";
 export default defineComponent({
   props: {
@@ -118,11 +121,6 @@ export default defineComponent({
       required: true,
       type: Object as () => Repository,
     },
-  },
-  data(props) {
-    const token = inject("token") as string;
-    console.log(props.repository.repo_type);
-    return { token };
   },
   setup(props) {
     const deleteOpen = ref(false);
@@ -145,7 +143,7 @@ export default defineComponent({
         this.repository.storage,
         this.repository.name,
         this.repository.settings.active,
-        this.token
+        undefined
       );
       if (response.ok) {
         this.$notify({
@@ -166,7 +164,7 @@ export default defineComponent({
         this.$props.repository.name,
         this.$props.repository.storage,
         this.deleteFiles,
-        this.token
+        undefined
       );
       if (response.ok) {
         this.$notify({
@@ -195,7 +193,7 @@ export default defineComponent({
         this.repository.storage,
         this.repository.name,
         this.repository.settings.policy,
-        this.token
+        undefined
       );
       if (response.ok) {
         this.$notify({

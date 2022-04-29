@@ -59,7 +59,6 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const showModel = ref(props.modelValue);
-    const token: string | undefined = inject("token");
 
     watch(
       () => props.modelValue,
@@ -76,14 +75,14 @@ export default defineComponent({
       public_name: "",
       error: "",
     });
-    return { form, showModel, close, token: token as string };
+    return { form, showModel, close };
   },
   methods: {
     async onSubmit() {
       const response = await createNewStorage(
         this.form.name,
         this.form.public_name,
-        this.token
+        undefined
       );
       if (response.ok) {
         let data = response.val as Storage;

@@ -16,14 +16,13 @@ export default defineComponent({
     });
 
     const isLoading = ref(false);
-    const token: string | undefined = inject("token");
 
-        const tab = ref(0);
+    const tab = ref(0);
     const user = ref<User | undefined>(undefined);
     const loadUser = async () => {
       isLoading.value = true;
       try {
-        let value = await getUser(token as string);
+        let value = await getUser(undefined);
 
         user.value = value.val as User;
 
@@ -32,7 +31,7 @@ export default defineComponent({
     };
     loadUser();
 
-    return { user, password, tab, isLoading, token };
+    return { user, password, tab, isLoading };
   },
   methods: {
     async updatePassword() {
@@ -44,7 +43,7 @@ export default defineComponent({
       }
       const response = await updateMyPassword(
         this.password.password,
-        this.token as string
+        undefined
       );
       if (response.ok) {
         let data = response.val as User;

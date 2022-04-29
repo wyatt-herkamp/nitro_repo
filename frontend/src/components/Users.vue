@@ -35,14 +35,13 @@ export default defineComponent({
   components: { CreateUser, UpdateUser },
 
   setup() {
-    const token: string | undefined = inject("token");
 
     let createUser = ref(false);
 
     let list = ref<ListItem[]>([]);
     const getUser = async () => {
       try {
-        const value = await getUsers(token as string);
+        const value = await getUsers(undefined);
         if (value == undefined) {
           return;
         }

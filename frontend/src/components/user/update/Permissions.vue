@@ -106,7 +106,6 @@ export default defineComponent({
   },
   setup(props) {
     const permissions = ref(props.user.permissions);
-    const token: string | undefined = inject("token");
     const admin = computed(() => {
       return permissions.value.admin;
     });
@@ -138,7 +137,6 @@ export default defineComponent({
     });
 
     return {
-      token: token as string,
       permissions,
       admin,
       deployer,
@@ -150,7 +148,7 @@ export default defineComponent({
       const response = await updatePermission(
         this.user.username,
         this.permissions,
-        this.token
+        undefined
       );
       if (response.ok) {
         this.$notify({

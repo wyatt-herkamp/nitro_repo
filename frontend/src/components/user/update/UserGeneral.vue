@@ -74,7 +74,10 @@
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from "vue";
 import { updateOtherPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updateNameAndEmail, updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  updateNameAndEmail,
+  updatePermission,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";
@@ -86,8 +89,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const token: string | undefined = inject("token");
-
     let password = ref({
       password: "",
       confirm: "",
@@ -101,7 +102,7 @@ export default defineComponent({
       return false;
     });
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date, token: token as string, password, canSubmitPassword };
+    return { date, password, canSubmitPassword };
   },
   methods: {
     async onSettingSubmit() {
@@ -117,7 +118,7 @@ export default defineComponent({
         this.user.username,
         this.user.name,
         this.user.email,
-        this.token
+        undefined
       );
       if (response.ok) {
         let data = response.val as User;
@@ -144,7 +145,7 @@ export default defineComponent({
       const response = await updateOtherPassword(
         this.user.username,
         this.password.password,
-        this.token
+        undefined
       );
       this.password.password = "";
       this.password.confirm = "";

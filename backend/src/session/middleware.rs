@@ -72,7 +72,49 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
         // Move all into an Async Box.
         Box::pin(async move {
             //Step One Find the Authorization
-            let (authentication, session): (Authentication, Option<Session>) = if let Some(header) =
+            let (authentication, session): (Authentication, Option<Session>) = if let Some(cookie) = req.cookie("session") {
+                //Check for the Session Cookie
+                let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
+                trace!("Cookie sent {}", cookie.encoded().to_string());
+                let session = session_manager
+                    .retrieve_session(cookie.value())
+                    .await
+                    .unwrap();
+                if session.is_none() {
+                    //Create a new session and go with it!
+                    let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
+                    if let Some(origin) = req.headers().get(ORIGIN) {
+                        trace!("Cookie {} not found. Creating a new Session for {}",cookie.value(),origin.to_str().unwrap_or("Bad Origin"));
+                        let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
+                        let session = session_manager.create_session().await.unwrap();
+                        (Authentication::Session(session.clone()), Some(session))
+                    } else {
+                        (Authentication::NoIdentification, Option::None)
+                    }
+                } else {
+                    let mut session = session.unwrap();
+                    if session.expiration <= SystemTime::UNIX_EPOCH {
+                        if let Some(auth_token) = session.auth_token {
+                            let database: &web::Data<DatabaseConnection> = req.app_data().unwrap();
+                            let connection = database.clone();
+                            actix_web::rt::spawn(async move {
+                                // Move this database call into the thread pool.
+                                if let Err(error) = auth_token::Entity::delete_by_id(auth_token.id)
+                                    .exec(connection.as_ref())
+                                    .await
+                                {
+                                    log::error!("Unable to delete Auth Token {}", error);
+                                }
+                            });
+                        }
+                        session = session_manager
+                            .re_create_session(&session.token)
+                            .await
+                            .unwrap();
+                    }
+                    (Authentication::Session(session.clone()), Option::None)
+                }
+            } else if let Some(header) =
             req.headers().get("Authorization")
             {
                 //If it is an Authorization Header pull Database from App Data
@@ -137,48 +179,6 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                         warn!("Unsupported Authorization Type: {}", auth_type);
                         (Authentication::NoIdentification, None)
                     }
-                }
-            } else if let Some(cookie) = req.cookie("session") {
-                //Check for the Session Cookie
-                let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
-                trace!("Cookie sent {}", cookie.encoded().to_string());
-                let session = session_manager
-                    .retrieve_session(cookie.value())
-                    .await
-                    .unwrap();
-                if session.is_none() {
-                    //Create a new session and go with it!
-                    let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
-                    if let Some(origin) = req.headers().get(ORIGIN) {
-                        trace!("Cookie {} not found. Creating a new Session for {}",cookie.value(),origin.to_str().unwrap_or("Bad Origin"));
-                        let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
-                        let session = session_manager.create_session().await.unwrap();
-                        (Authentication::Session(session.clone()), Some(session))
-                    } else {
-                        (Authentication::NoIdentification, Option::None)
-                    }
-                } else {
-                    let mut session = session.unwrap();
-                    if session.expiration <= SystemTime::UNIX_EPOCH {
-                        if let Some(auth_token) = session.auth_token {
-                            let database: &web::Data<DatabaseConnection> = req.app_data().unwrap();
-                            let connection = database.clone();
-                            actix_web::rt::spawn(async move {
-                                // Move this database call into the thread pool.
-                                if let Err(error) = auth_token::Entity::delete_by_id(auth_token.id)
-                                    .exec(connection.as_ref())
-                                    .await
-                                {
-                                    log::error!("Unable to delete Auth Token {}", error);
-                                }
-                            });
-                        }
-                        session = session_manager
-                            .re_create_session(&session.token)
-                            .await
-                            .unwrap();
-                    }
-                    (Authentication::Session(session.clone()), Option::None)
                 }
             } else {
                 // Try to create a new Session for the user. Could be a first request

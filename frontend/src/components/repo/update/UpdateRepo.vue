@@ -57,7 +57,6 @@ export default defineComponent({
     let view = ref("General");
 
     let repository = ref<Repository | undefined>(undefined);
-    const token: string | undefined = inject("token");
 
     const exampleBadgeURL = ref("");
     const route = useRoute();
@@ -71,8 +70,7 @@ export default defineComponent({
     const getRepo = async () => {
       try {
         const value = (await getRepoByNameAndStorage(
-          token as string,
-          storage,
+undefined,          storage,
           repo
         )) as Repository;
         console.log(value);

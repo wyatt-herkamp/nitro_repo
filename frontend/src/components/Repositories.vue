@@ -36,7 +36,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const token: string | undefined = inject("token");
 
         const list = ref<ListItem[]>([]);
     let openModel = ref(false);
@@ -44,8 +43,7 @@ export default defineComponent({
     const getRepos = async () => {
       try {
         const value = await getRepositoriesByStorage(
-          token as string,
-          props.storage.name
+undefined,          props.storage.name
         );
         if (value == undefined) {
           return;
