@@ -28,11 +28,12 @@ use thiserror::Error;
 use crate::settings::models::{Application, Database};
 use crate::system::permissions::UserPermissions;
 use crate::system::utils::hash;
-use crate::system::{auth_token, user};
+use crate::system::{user};
 use crate::utils::get_current_time;
-use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
+use crate::{authentication, EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
 use sea_orm::ConnectionTrait;
 use unicode_width::UnicodeWidthStr;
+use crate::system::user::UserEntity;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -106,9 +107,9 @@ pub struct UserStage {
     pub password_two: Option<String>,
 }
 
-impl From<UserStage> for user::ActiveModel {
+impl From<UserStage> for user::database::ActiveModel {
     fn from(value: UserStage) -> Self {
-        user::ActiveModel {
+        user::database::ActiveModel {
             id: Default::default(),
             name: Set(value.name.unwrap_or_default()),
             username: Set(value.username.unwrap_or_default()),
@@ -122,8 +123,8 @@ impl From<UserStage> for user::ActiveModel {
                 deployer: None,
                 viewer: None,
             }
-            .try_into()
-            .unwrap()),
+                .try_into()
+                .unwrap()),
             created: Set(get_current_time()),
         }
     }
@@ -226,13 +227,13 @@ async fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                let database_conn = sea_orm::Database::connect(string).await?;
+                                let mut database_conn = sea_orm::Database::connect(string).await?;
                                 let schema = Schema::new(database_conn.get_database_backend());
-                                let users = schema.create_table_from_entity(user::Entity);
+                                let users = schema.create_table_from_entity(UserEntity);
                                 database_conn
                                     .execute(database_conn.get_database_backend().build(&users))
                                     .await?;
-                                let tokens = schema.create_table_from_entity(auth_token::Entity);
+                                let tokens = schema.create_table_from_entity(authentication::auth_token::AuthTokenEntity);
                                 database_conn
                                     .execute(database_conn.get_database_backend().build(&tokens))
                                     .await?;
@@ -255,8 +256,8 @@ async fn run_app(
                                 let stage = app.user_stage.clone();
 
                                 //TODO dont kill program on failure to create user
-                                let user: user::ActiveModel = stage.into();
-                                user::Entity::insert(user).exec(connection).await?;
+                                let user: user::database::ActiveModel = stage.into();
+                                UserEntity::insert(user).exec(connection).await?;
                                 app.stage = 2;
                             }
                         }
@@ -384,7 +385,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-            .as_ref(),
+                .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -565,6 +566,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-    .unwrap();
+        .unwrap();
     terminal.show_cursor().unwrap();
 }

@@ -6,17 +6,15 @@ use crate::api_response::SiteResponse;
 
 use crate::error::response::unauthorized;
 
-use crate::session::{SessionManagerType};
-use crate::system::auth_token;
-use crate::system::auth_token::TokenType;
 use crate::system::utils::verify_login;
 use crate::utils::get_current_time;
-use crate::{APIResponse, SessionManager};
+use crate::{APIResponse};
 use sea_orm::ActiveValue::Set;
 use sea_orm::EntityTrait;
 use sea_orm::{DatabaseConnection, NotSet};
 use serde::{Deserialize, Serialize};
-
+use crate::authentication::session::SessionManager;
+use crate::authentication::session::SessionManagerType;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
     pub username: String,
@@ -32,31 +30,10 @@ pub async fn login(
 ) -> SiteResponse {
     let _username = nc.username.clone();
     if let Some(user) = verify_login(nc.username.clone(), nc.password.clone(), &connection).await? {
-        let properties = auth_token::AuthProperties {
-            description: None,
-            token_type: TokenType::SessionToken,
-        };
-        let token_value = auth_token::generate_token();
-        let token = auth_token::ActiveModel {
-            id: NotSet,
-            token: Set(token_value.clone()),
-            expiration: Set(auth_token::token_expiration()),
-            user_id: Set(user.id),
-            created: Set(get_current_time()),
-            properties: Set(properties),
-        };
-        auth_token::Entity::insert(token)
-            .exec(connection.as_ref())
-            .await?;
         let cookie: Cookie = r.cookie("session").unwrap();
         actix_web::rt::spawn(async move {
-            let token = token_value.clone();
-            let token = auth_token::get_by_token(&token, &connection)
-                .await
-                .unwrap()
-                .unwrap();
-            if let Err(_) = session_manager.set_auth_token(cookie.value(), token).await {
-                error!("Unable to save Auth Token");
+            if let Err(_) = session_manager.set_user(cookie.value(), user.id).await {
+                error!("Unable to save user {} to cookie {}", user.id, cookie.value());
             }
         });
         APIResponse::respond_new(Some(true), &r)

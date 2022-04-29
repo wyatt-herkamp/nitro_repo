@@ -20,8 +20,9 @@ use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
 };
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
 
 pub mod models;
 mod utils;
@@ -36,7 +37,7 @@ impl MavenHandler {
         auth: Authentication,
     ) -> RepoResult {
         if request.repository.security.visibility == Visibility::Private {
-            let caller: crate::system::user::Model = auth.get_user(conn).await??;
+            let caller: UserModel = auth.get_user(conn).await??;
             caller.can_read_from(&request.repository)?;
         }
 
@@ -65,7 +66,7 @@ impl MavenHandler {
         conn: &RDatabaseConnection,
         bytes: Bytes, auth: Authentication,
     ) -> RepoResult {
-        let caller: crate::system::user::Model = auth.get_user(conn).await??;
+        let caller: UserModel = auth.get_user(conn).await??;
         caller.can_deploy_to(&request.repository)?;
         //TODO find a better way to do this
         match request.repository.settings.policy {

@@ -14,7 +14,8 @@ use crate::repository::settings::webhook::{ReportGeneration, Webhook};
 use crate::repository::settings::Policy;
 use crate::system::permissions::options::CanIDo;
 use crate::NitroRepoData;
-use crate::session::Authentication;
+use crate::authentication::Authentication;
+use crate::system::user::UserModel;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,7 +35,7 @@ pub async fn list_repos(
     site: NitroRepoData,
     r: HttpRequest, auth: Authentication,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     //TODO Change the frontend to only show repos based on the current storage being looked at.
     let mut vec = Vec::new();
@@ -55,7 +56,7 @@ pub async fn list_repos_by_storage(
     r: HttpRequest, auth: Authentication,
     storage: Path<String>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let result = site.storages.read().await;
     let storage = storage.into_inner();
@@ -81,7 +82,7 @@ pub async fn get_repo(
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
 
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let result = site.storages.read().await;
     let storage = result.get(&storage);
@@ -100,7 +101,7 @@ pub async fn add_repo(
     r: HttpRequest,
     nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let result = site.storages.read().await;
     let storage = result.get(&nc.storage);
@@ -123,7 +124,7 @@ pub async fn update_active_status(
     r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
 
     let (storage, repo, active) = path.into_inner();
@@ -150,7 +151,7 @@ pub async fn update_policy(
     r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
 
     let (storage, repository, policy) = path.into_inner();
@@ -178,7 +179,7 @@ pub async fn update_description(
     b: Bytes,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
 
     let (storage, repository) = path.into_inner();
@@ -213,7 +214,7 @@ pub async fn modify_frontend_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
 
@@ -241,7 +242,7 @@ pub async fn modify_badge_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
     let result = site.storages.read().await;
@@ -267,7 +268,7 @@ pub async fn modify_security(
     r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository, visibility) = path.into_inner();
 
@@ -295,7 +296,7 @@ pub async fn modify_deploy(
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
     let result = site.storages.read().await;
@@ -323,7 +324,7 @@ pub async fn add_webhook(
     path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
 
@@ -350,7 +351,7 @@ pub async fn remove_webhook(
     r: HttpRequest, auth: Authentication,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository, webhook) = path.into_inner();
 
@@ -383,7 +384,7 @@ pub async fn delete_repository(
     path: web::Path<(String, String)>,
     query: web::Query<DeleteRequest>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();
 

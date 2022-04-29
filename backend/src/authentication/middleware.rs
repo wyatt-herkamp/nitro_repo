@@ -5,9 +5,8 @@ use std::rc::Rc;
 use std::time::SystemTime;
 
 
-use crate::session::{Authentication, Session, SessionManagerType};
-use crate::system::auth_token;
-use crate::{system, SessionManager};
+use crate::authentication::{auth_token, Authentication, session::Session, session::SessionManager};
+use crate::{system};
 
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::http::header::{AUTHORIZATION, HeaderValue, ORIGIN, SET_COOKIE};
@@ -18,8 +17,11 @@ use actix_web::{
 use actix_web::http::Method;
 
 use futures_util::future::LocalBoxFuture;
-use log::{debug, trace, warn};
+use log::{debug, error, trace, warn};
 use sea_orm::{DatabaseConnection, EntityTrait};
+use crate::authentication::auth_token::AuthTokenEntity;
+use crate::authentication::session::SessionManagerType;
+use crate::utils::get_current_time;
 
 pub struct HandleSession;
 
@@ -93,19 +95,6 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                 } else {
                     let mut session = session.unwrap();
                     if session.expiration <= SystemTime::UNIX_EPOCH {
-                        if let Some(auth_token) = session.auth_token {
-                            let database: &web::Data<DatabaseConnection> = req.app_data().unwrap();
-                            let connection = database.clone();
-                            actix_web::rt::spawn(async move {
-                                // Move this database call into the thread pool.
-                                if let Err(error) = auth_token::Entity::delete_by_id(auth_token.id)
-                                    .exec(connection.as_ref())
-                                    .await
-                                {
-                                    log::error!("Unable to delete Auth Token {}", error);
-                                }
-                            });
-                        }
                         session = session_manager
                             .re_create_session(&session.token)
                             .await
@@ -137,6 +126,7 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                         let auth_token = auth_token::get_by_token(value, database)
                             .await
                             .map_err(internal_server_error)?;
+
                         if let Some(token) = auth_token {
                             (Authentication::AuthToken(token), Option::None)
                         } else {
@@ -184,7 +174,7 @@ impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
                             }
                         }
                     } else {
-                        (Authentication::AuthorizationHeaderUnkown(auth_type.to_string(), value.to_string()), None)
+                        (Authentication::AuthorizationHeaderUnknown(auth_type.to_string(), value.to_string()), None)
                     }
                 }
             } else {

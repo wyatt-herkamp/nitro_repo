@@ -22,7 +22,7 @@ pub mod frontend;
 pub mod install;
 mod misc;
 pub mod repository;
-pub mod session;
+pub mod authentication;
 pub mod settings;
 pub mod storage;
 pub mod system;
@@ -30,7 +30,6 @@ pub mod utils;
 pub mod webhook;
 
 use crate::install::load_installer;
-use crate::session::SessionManager;
 use crate::settings::models::{
     EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,
     StringMap,
@@ -40,6 +39,7 @@ use clap::Parser;
 use crossterm::style::Stylize;
 use sea_orm::Database;
 use tokio::sync::RwLock;
+use crate::authentication::session::SessionManager;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -171,7 +171,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin()
                     .supports_credentials(),
             )
-            .wrap(session::middleware::HandleSession)
+            .wrap(authentication::middleware::HandleSession)
             .wrap(middleware::Logger::default())
             .app_data(Data::new(pool.clone()))
             .app_data(site_core.clone())
@@ -186,9 +186,11 @@ async fn main() -> std::io::Result<()> {
             .configure(repository::admin::init)
             .configure(system::controllers::init)
             .configure(misc::init)
+            .configure(authentication::auth_token::controllers::init)
+            // DONT REGISTER ANYTHING BELOW FRONTEND!
             .configure(frontend::init)
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

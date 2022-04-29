@@ -22,8 +22,9 @@ use crate::repository::types::{
     Project, RDatabaseConnection, RepoResponse, RepoResult, RepositoryRequest,
 };
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
 
 pub mod models;
 mod utils;
@@ -37,7 +38,7 @@ impl NPMHandler {
         http: &HttpRequest,
         conn: &RDatabaseConnection, auth: Authentication,
     ) -> RepoResult {
-        let caller: crate::system::user::Model = auth.get_user(conn).await??;
+        let caller: UserModel = auth.get_user(conn).await??;
         caller.can_read_from(&request.repository)?;
         if http.headers().get("npm-command").is_some() {
             if request.value.contains(".tgz") {
@@ -125,7 +126,7 @@ impl NPMHandler {
             };
         }
         //Handle Normal Request
-        let caller: crate::system::user::Model = auth.get_user(conn).await??;
+        let caller: UserModel = auth.get_user(conn).await??;
         caller.can_deploy_to(&request.repository)?;
         if let Some(npm_command) = http.headers().get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();

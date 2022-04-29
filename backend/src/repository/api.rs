@@ -7,8 +7,9 @@ use crate::NitroRepoData;
 
 use crate::repository::controller::{handle_result, to_request};
 use crate::repository::models::Repository;
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
 //
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,7 +27,7 @@ pub async fn get_versions(
     let (storage, repository, file) = path.into_inner();
 
     let request = to_request(storage, repository, file, site).await?;
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_read_from(&request.repository)?;
     let x = request
         .repository
@@ -46,7 +47,7 @@ pub async fn get_project(
     let (storage, repository, file) = path.into_inner();
 
     let request = to_request(storage, repository, file, site).await?;
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_read_from(&request.repository)?;
     let x = request
         .repository
@@ -67,7 +68,7 @@ pub async fn get_version(
     let (storage, repository, project, version) = path.into_inner();
 
     let request = to_request(storage, repository, project, site).await?;
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_read_from(&request.repository)?;
     let x = request
         .repository

@@ -1,5 +1,3 @@
-use crate::session::{Session, SessionManagerType};
-use crate::system::auth_token::Model as AuthToken;
 use async_trait::async_trait;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -8,6 +6,7 @@ use std::ops::{Add};
 
 use time::{Duration, OffsetDateTime};
 use tokio::sync::RwLock;
+use crate::authentication::session::{Session, SessionManagerType};
 
 pub struct BasicSessionManager {
     pub sessions: RwLock<HashMap<String, Session>>,
@@ -35,7 +34,7 @@ impl SessionManagerType for BasicSessionManager {
         let mut guard = self.sessions.write().await;
         let session = Session {
             token: generate_token(),
-            auth_token: None,
+            user: None,
             expiration: token_expiration(),
         };
         guard.insert(session.token.clone(), session.clone());
@@ -56,14 +55,14 @@ impl SessionManagerType for BasicSessionManager {
 
         let session = Session {
             token: generate_token(),
-            auth_token: None,
+            user: None,
             expiration: token_expiration(),
         };
         guard.insert(session.token.clone(), session.clone());
         return Ok(session);
     }
 
-    async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
+    async fn set_user(&self, token: &str, user: i64) -> Result<(), Self::Error> {
         let mut guard = self.sessions.write().await;
 
         for x in guard.iter() {
@@ -71,12 +70,12 @@ impl SessionManagerType for BasicSessionManager {
         }
         let option = guard.get_mut(token);
         if let Some(x) = option {
-            x.auth_token = Some(auth_token);
+            x.user = Some(user);
             return Ok(());
         }
 
         log::warn!(
-            "An AuthToken was set to a session that did not exist! {}",
+            "A user was set to an Auth Token that does not exist! {}",
             token
         );
         return Ok(());

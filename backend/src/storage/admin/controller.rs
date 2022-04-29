@@ -15,15 +15,15 @@ use sea_orm::DatabaseConnection;
 use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::Path;
-use crate::session::Authentication;
-
+use crate::authentication::Authentication;
+use crate::system::user::UserModel;
 #[get("/api/storages/list")]
 pub async fn list_storages(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest, auth: Authentication,
 ) -> Result<HttpResponse, InternalError> {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let guard = site.storages.read().await;
     let values: Vec<Storage<StringMap>> = guard.values().cloned().collect();
@@ -37,7 +37,7 @@ pub async fn delete_by_id(
     site: NitroRepoData,
     id: web::Path<String>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let mut guard = site.storages.write().await;
     if let Some(storage) = guard.remove(&id.into_inner()) {
@@ -60,7 +60,7 @@ pub async fn get_by_id(
     site: NitroRepoData, auth: Authentication,
     id: web::Path<String>,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let guard = site.storages.read().await;
 
@@ -80,7 +80,7 @@ pub async fn add_storage(
     nc: web::Json<NewStorage>,
     site: NitroRepoData,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let mut guard = site.storages.write().await;
     for (_, storage) in guard.iter() {

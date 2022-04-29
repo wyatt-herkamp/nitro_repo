@@ -28,26 +28,15 @@ pub struct ModifyUser {
 impl ActiveModelBehavior for ActiveModel {}
 
 
-
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::auth_token::Entity")]
+    #[sea_orm(has_many = "crate::authentication::auth_token::database::Entity")]
     AuthToken,
 }
 
-impl Related<super::auth_token::Entity> for Entity {
+impl Related<crate::authentication::auth_token::database::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::AuthToken.def()
     }
 }
 
-pub async fn get_by_username(
-    username: &str,
-    connection: &DatabaseConnection,
-) -> Result<Option<Model>, InternalError> {
-    user::Entity::find()
-        .filter(user::Column::Username.eq(username))
-        .one(connection)
-        .await
-        .map_err(InternalError::DBError)
-}

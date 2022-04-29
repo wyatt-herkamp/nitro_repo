@@ -6,15 +6,15 @@ use std::ops::Deref;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::system::permissions::options::CanIDo;
 use crate::NitroRepo;
-use crate::session::Authentication;
-
+use crate::authentication::Authentication;
+use crate::system::user::UserModel;
 #[get("/api/settings/report")]
 pub async fn setting_report(
     site: Data<NitroRepo>,
     database: web::Data<DatabaseConnection>,
     r: HttpRequest, auth: Authentication,
 ) -> SiteResponse {
-    let caller: crate::system::user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_admin()?;
     let settings = site.settings.read().await;
     APIResponse::from(Some(settings.deref())).respond(&r)

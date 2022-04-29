@@ -21,7 +21,7 @@ use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};
 use strum_macros::{Display, EnumString};
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 
 //Requestable Data
 pub type RDatabaseConnection = DatabaseConnection;

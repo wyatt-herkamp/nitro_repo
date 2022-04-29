@@ -4,6 +4,7 @@ use std::fmt;
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
+use crate::system::user::UserModel;
 
 #[derive(Debug)]
 pub struct MissingPermission(String);
@@ -30,7 +31,7 @@ pub trait CanIDo {
     fn can_read_from(&self, repo: &Repository) -> Result<(), InternalError>;
 }
 
-impl CanIDo for user::Model {
+impl CanIDo for UserModel {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission> {
         let permissions: UserPermissions = self.permissions.clone().try_into().unwrap();
 

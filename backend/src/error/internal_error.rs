@@ -8,7 +8,7 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
-use crate::session::UnAuthorized;
+use crate::authentication::UnAuthorized;
 use crate::system::permissions::options::MissingPermission;
 
 #[derive(Error, Debug)]

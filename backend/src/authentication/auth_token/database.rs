@@ -1,5 +1,5 @@
 use crate::error::internal_error::InternalError;
-use crate::system::{auth_token, user};
+use crate::system::{ user};
 
 use actix_web::dev::Payload;
 use actix_web::{FromRequest, HttpMessage, HttpRequest};
@@ -11,32 +11,27 @@ use sea_orm::JsonValue;
 use serde::{Deserialize, Serialize};
 use std::ops::Add;
 use time::{Duration, OffsetDateTime};
+use crate::system::user::{UserEntity, UserModel};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum TokenType {
-    Authentication,
-    SessionToken,
-}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct AuthProperties {
+pub struct TokenProperties {
     pub description: Option<String>,
-    pub token_type: TokenType,
 }
 
-impl From<AuthProperties> for JsonValue {
-    fn from(auth: AuthProperties) -> Self {
+impl From<TokenProperties> for JsonValue {
+    fn from(auth: TokenProperties) -> Self {
         serde_json::to_value(auth).unwrap()
     }
 }
 
-impl From<AuthProperties> for sea_orm::Value {
-    fn from(source: AuthProperties) -> Self {
+impl From<TokenProperties> for sea_orm::Value {
+    fn from(source: TokenProperties) -> Self {
         sea_orm::Value::Json(Some(Box::new(source.into())))
     }
 }
 
-impl sea_orm::TryGetable for AuthProperties {
+impl sea_orm::TryGetable for TokenProperties {
     fn try_get(
         res: &sea_orm::QueryResult,
         pre: &str,
@@ -48,11 +43,11 @@ impl sea_orm::TryGetable for AuthProperties {
     }
 }
 
-impl sea_orm::sea_query::ValueType for AuthProperties {
+impl sea_orm::sea_query::ValueType for TokenProperties {
     fn try_from(v: sea_orm::Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
         match v {
             sea_orm::Value::Json(Some(x)) => {
-                let auth_properties: AuthProperties =
+                let auth_properties: TokenProperties =
                     serde_json::from_value(*x).map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
                 Ok(auth_properties)
             }
@@ -76,7 +71,7 @@ pub struct Model {
     pub id: i64,
     pub token: String,
     pub expiration: i64,
-    pub properties: AuthProperties,
+    pub properties: TokenProperties,
     pub created: i64,
     pub user_id: i64,
 }
@@ -85,8 +80,8 @@ impl Model {
     pub async fn get_user(
         &self,
         database: &DatabaseConnection,
-    ) -> Result<Option<user::Model>, DbErr> {
-        user::Entity::find_by_id(self.user_id).one(database).await
+    ) -> Result<Option<UserModel>, DbErr> {
+       UserEntity::find_by_id(self.user_id).one(database).await
     }
 }
 
@@ -108,16 +103,16 @@ impl FromRequest for Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
+        belongs_to = "crate::system::user::database::Entity",
         from = "Column::UserId",
-        to = "super::user::Column::Id",
+        to = "crate::system::user::database::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
     User,
 }
 
-impl Related<super::user::Entity> for Entity {
+impl Related<crate::system::user::database::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
     }
@@ -125,39 +120,4 @@ impl Related<super::user::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-pub async fn get_by_token(
-    token: &str,
-    connection: &DatabaseConnection,
-) -> Result<Option<Model>, InternalError> {
-    auth_token::Entity::find()
-        .filter(auth_token::Column::Token.eq(token))
-        .one(connection)
-        .await
-        .map_err(InternalError::DBError)
-}
 
-pub async fn delete_by_token(
-    token: &str,
-    connection: &DatabaseConnection,
-) -> Result<(), InternalError> {
-    auth_token::Entity::delete_many()
-        .filter(auth_token::Column::Token.eq(token))
-        .exec(connection)
-        .await?;
-    Ok(())
-}
-
-pub fn generate_token() -> String {
-    let token: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(24)
-        .map(char::from)
-        .collect();
-    format!("nrp_{}", token)
-}
-
-pub fn token_expiration() -> i64 {
-    OffsetDateTime::now_utc()
-        .add(Duration::days(1))
-        .unix_timestamp()
-}

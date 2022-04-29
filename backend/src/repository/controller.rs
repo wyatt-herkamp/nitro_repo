@@ -15,7 +15,7 @@ use crate::repository::types::{RepoResponse, RepositoryRequest};
 use crate::storage::StorageFile;
 use crate::utils::get_accept;
 use crate::NitroRepoData;
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 
 //
 

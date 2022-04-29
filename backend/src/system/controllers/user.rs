@@ -16,7 +16,8 @@ use sea_orm::ActiveModelTrait;
 use sea_orm::ColumnTrait;
 use sea_orm::EntityTrait;
 use sea_orm::IntoActiveModel;
-use crate::session::Authentication;
+use crate::authentication::Authentication;
+use crate::system::user::{UserEntity, UserModel};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListUsers {
@@ -25,9 +26,9 @@ pub struct ListUsers {
 
 #[get("/api/admin/user/list")]
 pub async fn list_users(database: web::Data<DatabaseConnection>, auth: Authentication, r: HttpRequest) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
-    let vec = user::Entity::find()
+    let vec = UserEntity::find()
         .into_model::<UserListResponse>()
         .all(database.as_ref())
         .await?;
@@ -42,9 +43,9 @@ pub async fn get_user(
     r: HttpRequest, auth: Authentication,
     path: web::Path<i64>,
 ) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
-    let user = user::Entity::find_by_id(path.into_inner())
+    let user = UserEntity::find_by_id(path.into_inner())
         .one(database.as_ref())
         .await?;
 
@@ -57,7 +58,7 @@ pub async fn add_user(
     r: HttpRequest, auth: Authentication,
     nc: web::Json<NewUser>,
 ) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
     if user::get_by_username(&nc.0.username, &database)
         .await?
@@ -65,15 +66,15 @@ pub async fn add_user(
     {
         return already_exists_what("username");
     }
-    if user::Entity::find()
-        .filter(user::Column::Email.eq(nc.email.clone()))
+    if UserEntity::find()
+        .filter(user::database::Column::Email.eq(nc.email.clone()))
         .one(database.as_ref())
         .await?
         .is_some()
     {
         return already_exists_what("email");
     }
-    let user = user::ActiveModel {
+    let user = user::database::ActiveModel {
         id: Default::default(),
         name: Set(nc.0.name),
         username: Set(nc.0.username.clone()),
@@ -82,7 +83,7 @@ pub async fn add_user(
         permissions: Set(UserPermissions::default()),
         created: Set(get_current_time()),
     };
-    user::Entity::insert(user).exec(database.as_ref()).await?;
+    UserEntity::insert(user).exec(database.as_ref()).await?;
     APIResponse::from(user::get_by_username(&nc.0.username, &database).await?).respond(&r)
 }
 
@@ -91,11 +92,11 @@ pub async fn modify_user(
     database: web::Data<DatabaseConnection>,
     r: HttpRequest, auth: Authentication,
     path: web::Path<i64>,
-    nc: web::Json<user::ModifyUser>,
+    nc: web::Json<user::database::ModifyUser>,
 ) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
-    let user = user::Entity::find_by_id(path.into_inner())
+    let user = UserEntity::find_by_id(path.into_inner())
         .one(database.as_ref())
         .await?;
     if user.is_none() {
@@ -114,17 +115,17 @@ pub async fn update_permission(
     permissions: web::Json<UserPermissions>,
     path: web::Path<i64>,
 ) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
 
-    let user = user::Entity::find_by_id(path.into_inner())
+    let user = UserEntity::find_by_id(path.into_inner())
         .one(database.as_ref())
         .await?;
     if user.is_none() {
         return not_found();
     }
-    let user: user::Model = user.unwrap();
-    let mut user_active: user::ActiveModel = user.into_active_model();
+    let user: UserModel = user.unwrap();
+    let mut user_active: user::database::ActiveModel = user.into_active_model();
 
     user_active.permissions = Set(permissions.0);
 
@@ -139,17 +140,17 @@ pub async fn change_password(
     path: web::Path<i64>,
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
-    let user = user::Entity::find_by_id(path.into_inner())
+    let user = UserEntity::find_by_id(path.into_inner())
         .one(database.as_ref())
         .await?;
     if user.is_none() {
         return not_found();
     }
-    let user: user::Model = user.unwrap();
+    let user: UserModel = user.unwrap();
     let hashed_password: String = hash(nc.0.password)?;
-    let mut user_active: user::ActiveModel = user.into_active_model();
+    let mut user_active: user::database::ActiveModel = user.into_active_model();
 
     user_active.password = Set(hashed_password);
 
@@ -163,11 +164,11 @@ pub async fn delete_user(
     r: HttpRequest,
     user: web::Path<i64>, auth: Authentication,
 ) -> SiteResponse {
-    let caller: user::Model = auth.get_user(&database).await??;
+    let caller: UserModel = auth.get_user(&database).await??;
     caller.can_i_edit_users()?;
     let user = user.into_inner();
 
-    user::Entity::delete_by_id(user)
+    UserEntity::delete_by_id(user)
         .exec(database.as_ref())
         .await?;
     APIResponse::new(true, Some(true)).respond(&r)

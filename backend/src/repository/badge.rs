@@ -5,8 +5,9 @@ use badge_maker::BadgeBuilder;
 use sea_orm::DatabaseConnection;
 
 use crate::repository::controller::to_request;
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
 
 #[get("/badge/{storage}/{repository}/{file:.*}/badge")]
 pub async fn badge(
@@ -19,7 +20,7 @@ pub async fn badge(
 
 
     let request = to_request(storage, repository, file, site).await?;
-    let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+    let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_read_from(&request.repository)?;
     let (label, message) = if request.value.eq("nitro_repo_example") {
         (request.repository.name.clone(), "example".to_string())

@@ -3,18 +3,18 @@ use sea_orm::{DatabaseConnection, IntoActiveModel};
 
 use crate::api_response::{APIResponse, SiteResponse};
 
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 use crate::system::utils::{hash, NewPassword};
 use crate::system::{user};
 pub use sea_orm::{entity::*, query::*, DbErr, FromQueryResult};
-
+use crate::system::user::UserModel;
 #[get("/api/me")]
 pub async fn me(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     r: HttpRequest,
 ) -> SiteResponse {
-    let user: user::Model = auth.get_user(&database).await??;
+    let user: UserModel = auth.get_user(&database).await??;
     APIResponse::respond_new(Some(user), &r)
 }
 
@@ -25,10 +25,10 @@ pub async fn change_my_password(
     auth: Authentication,
     nc: web::Json<NewPassword>,
 ) -> SiteResponse {
-    let user: user::Model = auth.get_user(&database).await??;
+    let user: UserModel = auth.get_user(&database).await??;
 
     let hashed_password: String = hash(nc.0.password)?;
-    let mut user_active: user::ActiveModel = user.into_active_model();
+    let mut user_active: user::database::ActiveModel = user.into_active_model();
 
     user_active.password = Set(hashed_password);
 

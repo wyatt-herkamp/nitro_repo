@@ -8,8 +8,9 @@ use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 use crate::NitroRepoData;
-use crate::session::Authentication;
+use crate::authentication::Authentication;
 use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -51,7 +52,7 @@ pub async fn get_repo(
         let option = storage.get_repository(&repo)?;
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
-                let caller: crate::system::user::Model = auth.get_user(&connection).await??;
+                let caller: UserModel = auth.get_user(&connection).await??;
                 caller.can_read_from(&repository)?;
             }
             return APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r);

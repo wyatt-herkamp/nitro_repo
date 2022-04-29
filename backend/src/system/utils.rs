@@ -7,18 +7,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::system::user;
-use crate::system::user::Entity as UserEntity;
-use crate::system::user::Model as UserModel;
+use crate::system::user::{UserEntity, UserModel};
 
 pub async fn verify_login(
     username: String,
     password: String,
     database: &DatabaseConnection,
 ) -> Result<Option<UserModel>, InternalError> {
-    let user_found: Option<UserModel> = UserEntity::find()
-        .filter(user::Column::Username.eq(username))
-        .one(database)
-        .await?;
+    let user_found: Option<UserModel> = user::get_by_username(&username,database).await?;
     if user_found.is_none() {
         return Ok(None);
     }

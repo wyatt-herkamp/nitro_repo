@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::internal_error::InternalError;
 use crate::repository::models::Repository;
 use crate::storage::models::StringStorage;
-use crate::system::user::Model as UserModel;
+use crate::system::user::UserModel;
 
 use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
 
