@@ -2,9 +2,9 @@ use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::repository::settings::{RepositorySettings};
 use crate::repository::settings::security::SecurityRules;
 use crate::repository::settings::webhook::DeploySettings;
+use crate::repository::settings::RepositorySettings;
 use crate::repository::types::RepositoryType;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -23,7 +23,6 @@ impl RepositorySummary {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Repository {

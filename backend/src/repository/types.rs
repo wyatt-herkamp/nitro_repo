@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use actix_web::web::Bytes;
-use actix_web::{HttpRequest};
+use actix_web::HttpRequest;
 use sea_orm::DatabaseConnection;
 
 use serde::{Deserialize, Serialize};
@@ -9,18 +9,18 @@ use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::frontend::FrontendResponse;
+use crate::repository::maven::models::MavenSettings;
+use crate::repository::maven::MavenHandler;
 use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{
     NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData,
 };
+use crate::repository::npm::models::NPMSettings;
+use crate::repository::npm::NPMHandler;
 use crate::storage::models::Storage;
 use crate::storage::StorageFile;
 use crate::{SiteResponse, StringMap};
 use strum_macros::{Display, EnumString};
-use crate::repository::maven::models::MavenSettings;
-use crate::repository::npm::models::NPMSettings;
-use crate::repository::maven::MavenHandler;
-use crate::repository::npm::NPMHandler;
 
 //Requestable Data
 pub type RDatabaseConnection = DatabaseConnection;
@@ -33,64 +33,100 @@ pub enum RepositoryType {
 }
 
 impl RepositoryType {
-    pub async fn handle_get(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+    pub async fn handle_get(
+        &self,
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &DatabaseConnection,
+    ) -> RepoResult {
         match self {
-            RepositoryType::Maven(_) => {
-                MavenHandler::handle_get(request, http, conn).await
-            }
-            RepositoryType::NPM(_) => {
-                NPMHandler::handle_get(request, http, conn).await
-            }
+            RepositoryType::Maven(_) => MavenHandler::handle_get(request, http, conn).await,
+            RepositoryType::NPM(_) => NPMHandler::handle_get(request, http, conn).await,
         }
     }
 
-    pub async fn handle_post(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
-        match self {
-            t => {
-                return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
-            }
-        }
-    }
-
-    pub async fn handle_put(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
-        match self {
-            RepositoryType::Maven(_) => {
-                MavenHandler::handle_put(request, http, conn, bytes).await
-            }
-            RepositoryType::NPM(_) => {
-                NPMHandler::handle_put(request, http, conn, bytes).await
-            }
-        }
-    }
-
-    pub async fn handle_patch(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection, bytes: Bytes) -> RepoResult {
+    pub async fn handle_post(
+        &self,
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &DatabaseConnection,
+        _bytes: Bytes,
+    ) -> RepoResult {
         match self {
             t => {
-                return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
+                return Ok(RepoResponse::IAmATeapot(format!(
+                    "{} doesn't support this type of request",
+                    t.to_string()
+                )));
             }
         }
     }
 
-    pub async fn handle_head(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+    pub async fn handle_put(
+        &self,
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &DatabaseConnection,
+        bytes: Bytes,
+    ) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => MavenHandler::handle_put(request, http, conn, bytes).await,
+            RepositoryType::NPM(_) => NPMHandler::handle_put(request, http, conn, bytes).await,
+        }
+    }
+
+    pub async fn handle_patch(
+        &self,
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &DatabaseConnection,
+        _bytes: Bytes,
+    ) -> RepoResult {
         match self {
             t => {
-                return Ok(RepoResponse::IAmATeapot(format!("{} doesn't support this type of request", t.to_string())));
+                return Ok(RepoResponse::IAmATeapot(format!(
+                    "{} doesn't support this type of request",
+                    t.to_string()
+                )));
             }
         }
     }
 
-    pub async fn handle_versions(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+    pub async fn handle_head(
+        &self,
+        _request: &RepositoryRequest,
+        _http: &HttpRequest,
+        _conn: &DatabaseConnection,
+    ) -> RepoResult {
         match self {
-            RepositoryType::Maven(_) => {
-                MavenHandler::handle_versions(request, http, conn).await
-            }
-            RepositoryType::NPM(_) => {
-                NPMHandler::handle_versions(request, http, conn).await
+            t => {
+                return Ok(RepoResponse::IAmATeapot(format!(
+                    "{} doesn't support this type of request",
+                    t.to_string()
+                )));
             }
         }
     }
 
-    pub async fn handle_version(&self, request: &RepositoryRequest, version: String, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+    pub async fn handle_versions(
+        &self,
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &DatabaseConnection,
+    ) -> RepoResult {
+        match self {
+            RepositoryType::Maven(_) => MavenHandler::handle_versions(request, http, conn).await,
+            RepositoryType::NPM(_) => NPMHandler::handle_versions(request, http, conn).await,
+        }
+    }
+
+    pub async fn handle_version(
+        &self,
+        request: &RepositoryRequest,
+        version: String,
+        http: &HttpRequest,
+        conn: &DatabaseConnection,
+    ) -> RepoResult {
         match self {
             RepositoryType::Maven(_) => {
                 MavenHandler::handle_version(request, version, http, conn).await
@@ -101,25 +137,27 @@ impl RepositoryType {
         }
     }
 
-    pub async fn handle_project(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> RepoResult {
+    pub async fn handle_project(
+        &self,
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &DatabaseConnection,
+    ) -> RepoResult {
         match self {
-            RepositoryType::Maven(_) => {
-                MavenHandler::handle_project(request, http, conn).await
-            }
-            RepositoryType::NPM(_) => {
-                NPMHandler::handle_project(request, http, conn).await
-            }
+            RepositoryType::Maven(_) => MavenHandler::handle_project(request, http, conn).await,
+            RepositoryType::NPM(_) => NPMHandler::handle_project(request, http, conn).await,
         }
     }
 
-    pub async fn latest_version(&self, request: &RepositoryRequest, http: &HttpRequest, conn: &DatabaseConnection) -> Result<Option<String>, InternalError> {
+    pub async fn latest_version(
+        &self,
+        request: &RepositoryRequest,
+        http: &HttpRequest,
+        conn: &DatabaseConnection,
+    ) -> Result<Option<String>, InternalError> {
         match self {
-            RepositoryType::Maven(_) => {
-                MavenHandler::latest_version(request, http, conn).await
-            }
-            RepositoryType::NPM(_) => {
-                NPMHandler::latest_version(request, http, conn).await
-            }
+            RepositoryType::Maven(_) => MavenHandler::latest_version(request, http, conn).await,
+            RepositoryType::NPM(_) => NPMHandler::latest_version(request, http, conn).await,
         }
     }
 }
@@ -174,7 +212,6 @@ pub enum RepoResponse {
 /// RepoResult
 pub type RepoResult = Result<RepoResponse, InternalError>;
 
-
 /// This is a Request to a Repository Handler
 pub struct RepositoryRequest {
     /// The Storage that the Repo needs to be in
@@ -191,5 +228,3 @@ pub struct VersionResponse {
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
-
-

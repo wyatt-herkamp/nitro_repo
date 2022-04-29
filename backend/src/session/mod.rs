@@ -1,27 +1,27 @@
 pub mod basic;
 pub mod middleware;
 
-use actix_web::{FromRequest, HttpMessage, HttpRequest};
-use actix_web::dev::Payload;
-use async_trait::async_trait;
-use futures_util::future::{Ready, ready};
-use lettre::transport::smtp::commands::Auth;
-use sea_orm::DatabaseConnection;
-use sea_orm::sea_query::ColumnSpec::Default;
-use time::OffsetDateTime;
 use crate::session::basic::BasicSessionManager;
+use actix_web::dev::Payload;
+use actix_web::{FromRequest, HttpMessage, HttpRequest};
+use async_trait::async_trait;
+use futures_util::future::{ready, Ready};
 
-use crate::system;
-use system::auth_token::Model as AuthToken;
+
+use sea_orm::DatabaseConnection;
+use time::OffsetDateTime;
+
 use crate::error::internal_error::InternalError;
 use crate::settings::models::SessionSettings;
+use crate::system;
 use crate::system::user::Model as User;
+use system::auth_token::Model as AuthToken;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Authentication {
     /// Neither a Session or Auth Token exist.
     /// Might deny these requests in the future on API routes
-    None,
+    NoIdentification,
     /// An Auth Token was passed under the Authorization Header
     AuthToken(AuthToken),
     /// Session Value from Cookie
@@ -32,7 +32,7 @@ pub enum Authentication {
 
 impl Authentication {
     pub fn authorized(&self) -> bool {
-        if let Authentication::None = &self {
+        if let Authentication::NoIdentification = &self {
             return false;
         }
         if let Authentication::Session(session) = &self {
@@ -42,32 +42,33 @@ impl Authentication {
     }
     pub fn get_auth_token(self) -> Option<AuthToken> {
         match self {
-            Authentication::AuthToken(auth) => {
-                Some(auth)
-            }
-            Authentication::Session(session) => {
-                session.auth_token
-            }
+            Authentication::AuthToken(auth) => Some(auth),
+            Authentication::Session(session) => session.auth_token,
 
-            _ => { None }
+            _ => None,
         }
     }
-    pub async fn get_user(self, database: &DatabaseConnection) -> Result<Option<User>, InternalError> {
+    pub async fn get_user(
+        self,
+        database: &DatabaseConnection,
+    ) -> Result<Option<User>, InternalError> {
         match self {
-            Authentication::AuthToken(auth) => {
-                auth.get_user(database).await.map_err(InternalError::DBError)
-            }
+            Authentication::AuthToken(auth) => auth
+                .get_user(database)
+                .await
+                .map_err(InternalError::DBError),
             Authentication::Session(session) => {
                 if let Some(auth_token) = session.auth_token {
-                    auth_token.get_user(database).await.map_err(InternalError::DBError)
+                    auth_token
+                        .get_user(database)
+                        .await
+                        .map_err(InternalError::DBError)
                 } else {
                     Ok(None)
                 }
             }
-            Authentication::Basic(user) => {
-                Ok(Some(user))
-            }
-            _ => { Ok(None) }
+            Authentication::Basic(user) => Ok(Some(user)),
+            _ => Ok(None),
         }
     }
 }
@@ -80,16 +81,15 @@ impl FromRequest for Authentication {
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let model = req.extensions_mut().get::<Authentication>().cloned();
         if model.is_none() {
-            return ready(Ok(Authentication::None));
+            return ready(Ok(Authentication::NoIdentification));
         }
 
         ready(Ok(model.unwrap()))
     }
 }
 
-
 pub enum SessionManager {
-    BasicSessionManager(BasicSessionManager)
+    BasicSessionManager(BasicSessionManager),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -114,23 +114,35 @@ impl SessionManagerType for SessionManager {
     type Error = ();
 
     async fn delete_session(&self, token: &str) -> Result<(), Self::Error> {
-        return match self { SessionManager::BasicSessionManager(basic) => { basic.delete_session(token).await } };
+        return match self {
+            SessionManager::BasicSessionManager(basic) => basic.delete_session(token).await,
+        };
     }
 
     async fn create_session(&self) -> Result<Session, Self::Error> {
-        return match self { SessionManager::BasicSessionManager(basic) => { basic.create_session().await } };
+        return match self {
+            SessionManager::BasicSessionManager(basic) => basic.create_session().await,
+        };
     }
 
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
-        return match self { SessionManager::BasicSessionManager(basic) => { basic.retrieve_session(token).await } };
+        return match self {
+            SessionManager::BasicSessionManager(basic) => basic.retrieve_session(token).await,
+        };
     }
 
     async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error> {
-        return match self { SessionManager::BasicSessionManager(basic) => { basic.re_create_session(token).await } };
+        return match self {
+            SessionManager::BasicSessionManager(basic) => basic.re_create_session(token).await,
+        };
     }
 
     async fn set_auth_token(&self, token: &str, auth_token: AuthToken) -> Result<(), Self::Error> {
-        return match self { SessionManager::BasicSessionManager(basic) => { basic.set_auth_token(token, auth_token).await } };
+        return match self {
+            SessionManager::BasicSessionManager(basic) => {
+                basic.set_auth_token(token, auth_token).await
+            }
+        };
     }
 }
 
@@ -139,12 +151,10 @@ impl TryFrom<SessionSettings> for SessionManager {
 
     fn try_from(value: SessionSettings) -> Result<Self, Self::Error> {
         return match value.manager.as_str() {
-            "BasicSessionManager" => {
-                Ok(SessionManager::BasicSessionManager(BasicSessionManager::default()))
-            }
-            _ => {
-                Err("Invalid Session Manager".to_string())
-            }
+            "BasicSessionManager" => Ok(SessionManager::BasicSessionManager(
+                BasicSessionManager::default(),
+            )),
+            _ => Err("Invalid Session Manager".to_string()),
         };
     }
 }

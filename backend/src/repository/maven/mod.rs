@@ -8,18 +8,18 @@ use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::Pom;
 use crate::repository::maven::utils::parse_project_to_directory;
-use crate::repository::models::{RepositorySummary};
+use crate::repository::models::RepositorySummary;
 use crate::repository::settings::Policy;
 
 use crate::repository::types::RepoResponse::{
     BadRequest, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::types::{Project, RepoResponse, RepoResult};
+use crate::repository::types::{RDatabaseConnection, RepositoryRequest};
 use crate::repository::utils::{
     get_project_data, get_version_data, get_versions, process_storage_files,
 };
-use crate::system::utils::{can_read_basic_auth};
+use crate::system::utils::can_read_basic_auth;
 
 pub mod models;
 mod utils;
@@ -49,7 +49,6 @@ impl MavenHandler {
             Ok(RepoResponse::NitroFileList(file_response))
         }
     }
-
 
     pub async fn handle_put(
         request: &RepositoryRequest,
@@ -150,7 +149,6 @@ impl MavenHandler {
         }
         Ok(RepoResponse::Ok)
     }
-
 
     pub async fn handle_versions(
         request: &RepositoryRequest,

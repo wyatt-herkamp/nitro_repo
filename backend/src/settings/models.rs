@@ -1,8 +1,8 @@
 use crate::error::internal_error::InternalError;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use crossterm::terminal::SetSize;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -167,10 +167,10 @@ impl Default for EmailSetting {
         }
     }
 }
-impl Default for SessionSettings{
+impl Default for SessionSettings {
     fn default() -> Self {
-        return SessionSettings{
-            manager: "BasicSessionManager".to_string()
-        }
+        return SessionSettings {
+            manager: "BasicSessionManager".to_string(),
+        };
     }
 }

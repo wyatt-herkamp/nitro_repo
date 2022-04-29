@@ -3,13 +3,17 @@ use sea_orm::{DatabaseConnection, IntoActiveModel};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::unauthorized;
-use crate::system::{auth_token, user};
-use crate::system::utils::{get_user_by_header, hash, NewPassword};
-pub use sea_orm::{entity::*, query::*, DbErr, FromQueryResult};
 use crate::session::Authentication;
+use crate::system::utils::{get_user_by_header, hash, NewPassword};
+use crate::system::{user};
+pub use sea_orm::{entity::*, query::*, DbErr, FromQueryResult};
 
 #[get("/api/me")]
-pub async fn me(database: web::Data<DatabaseConnection>, auth: Authentication, r: HttpRequest) -> SiteResponse {
+pub async fn me(
+    database: web::Data<DatabaseConnection>,
+    auth: Authentication,
+    r: HttpRequest,
+) -> SiteResponse {
     APIResponse::respond_new(auth.get_user(&database).await?, &r)
 }
 

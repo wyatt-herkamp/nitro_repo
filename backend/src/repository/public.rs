@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::response::{not_found, unauthorized};
-use crate::repository::models::{Repository};
+use crate::repository::models::Repository;
+use crate::repository::settings::security::Visibility;
+use crate::repository::settings::Policy;
 use crate::system::utils::can_read_basic_auth;
 use crate::NitroRepoData;
-use crate::repository::settings::Policy;
-use crate::repository::settings::security::Visibility;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -50,7 +50,10 @@ pub async fn get_repo(
         let option = storage.get_repository(&repo)?;
         if let Some(repository) = option {
             if repository.security.visibility.eq(&Visibility::Private) {
-                if !can_read_basic_auth(r.headers(), &repository, &connection).await?.0 {
+                if !can_read_basic_auth(r.headers(), &repository, &connection)
+                    .await?
+                    .0
+                {
                     return unauthorized();
                 }
             }

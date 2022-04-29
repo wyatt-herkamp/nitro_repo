@@ -139,8 +139,12 @@ pub async fn get_repository(
             _ => Err(error),
         };
     }
-    let request =result.unwrap();
-    let x = request.repository.repo_type.handle_get(&request, &r, connection.as_ref()).await?;
+    let request = result.unwrap();
+    let x = request
+        .repository
+        .repo_type
+        .handle_get(&request, &r, connection.as_ref())
+        .await?;
 
     handle_result(x, request.value.clone(), r)
 }
@@ -245,8 +249,11 @@ pub async fn post_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_post(&request, &r, connection.get_ref(), bytes).await?;
-
+    let x = request
+        .repository
+        .repo_type
+        .handle_post(&request, &r, connection.get_ref(), bytes)
+        .await?;
 
     handle_result(x, request.value, r)
 }
@@ -274,8 +281,11 @@ pub async fn patch_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_patch(&request, &r, connection.get_ref(), bytes).await?;
-
+    let x = request
+        .repository
+        .repo_type
+        .handle_patch(&request, &r, connection.get_ref(), bytes)
+        .await?;
 
     handle_result(x, request.value, r)
 }
@@ -303,7 +313,11 @@ pub async fn put_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_put(&request, &r, connection.get_ref(), bytes).await?;
+    let x = request
+        .repository
+        .repo_type
+        .handle_put(&request, &r, connection.get_ref(), bytes)
+        .await?;
 
     handle_result(x, request.value, r)
 }
@@ -330,8 +344,11 @@ pub async fn head_repository(
         &request.repository.name,
         &request.value
     );
-    let x = request.repository.repo_type.handle_head(&request, &r, &connection).await?;
-
+    let x = request
+        .repository
+        .repo_type
+        .handle_head(&request, &r, &connection)
+        .await?;
 
     handle_result(x, request.value, r)
 }

@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-use std::ops::{Add, Deref};
-use std::time::{SystemTime, UNIX_EPOCH};
 use crate::session::{Session, SessionManagerType};
+use crate::system::auth_token::Model as AuthToken;
 use async_trait::async_trait;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use std::collections::HashMap;
+use std::ops::{Add};
+
 use time::{Duration, OffsetDateTime};
 use tokio::sync::RwLock;
-use crate::system::auth_token::Model as AuthToken;
 
 pub struct BasicSessionManager {
     pub sessions: RwLock<HashMap<String, Session>>,
@@ -16,7 +16,7 @@ pub struct BasicSessionManager {
 impl Default for BasicSessionManager {
     fn default() -> Self {
         return BasicSessionManager {
-            sessions: RwLock::new(HashMap::new())
+            sessions: RwLock::new(HashMap::new()),
         };
     }
 }
@@ -44,6 +44,9 @@ impl SessionManagerType for BasicSessionManager {
 
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
         let guard = self.sessions.read().await;
+        for x in guard.iter() {
+            println!("{:?}", x.0);
+        }
         return Ok(guard.get(token).cloned());
     }
 
@@ -72,7 +75,10 @@ impl SessionManagerType for BasicSessionManager {
             return Ok(());
         }
 
-        log::warn!("An AuthToken was set to a session that did not exist! {}", token);
+        log::warn!(
+            "An AuthToken was set to a session that did not exist! {}",
+            token
+        );
         return Ok(());
     }
 }

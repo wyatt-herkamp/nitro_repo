@@ -1,16 +1,16 @@
-use std::ops::Add;
-use actix_web::{FromRequest, HttpMessage, HttpRequest};
+use crate::error::internal_error::InternalError;
+use crate::system::{auth_token, user};
+
 use actix_web::dev::Payload;
+use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::{ready, Ready};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use sea_orm::entity::prelude::*;
 use sea_orm::JsonValue;
 use serde::{Deserialize, Serialize};
+use std::ops::Add;
 use time::{Duration, OffsetDateTime};
-use crate::error::internal_error::InternalError;
-use crate::Mode;
-use crate::system::{auth_token, AuthToken, User, user};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TokenType {
@@ -22,9 +22,7 @@ pub enum TokenType {
 pub struct AuthProperties {
     pub description: Option<String>,
     pub token_type: TokenType,
-
 }
-
 
 impl From<AuthProperties> for JsonValue {
     fn from(auth: AuthProperties) -> Self {
@@ -45,18 +43,17 @@ impl sea_orm::TryGetable for AuthProperties {
         col: &str,
     ) -> Result<Self, sea_orm::TryGetError> {
         let val: JsonValue = res.try_get(pre, col).map_err(sea_orm::TryGetError::DbErr)?;
-        return serde_json::from_value(val).map_err(|e| { sea_orm::TryGetError::DbErr(DbErr::Json(e.to_string())) });
+        return serde_json::from_value(val)
+            .map_err(|e| sea_orm::TryGetError::DbErr(DbErr::Json(e.to_string())));
     }
 }
-
 
 impl sea_orm::sea_query::ValueType for AuthProperties {
     fn try_from(v: sea_orm::Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
         match v {
             sea_orm::Value::Json(Some(x)) => {
-                let auth_properties: AuthProperties = serde_json::from_value(*x).map_err(|error| {
-                    sea_orm::sea_query::ValueTypeErr
-                })?;
+                let auth_properties: AuthProperties =
+                    serde_json::from_value(*x).map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
                 return Ok(auth_properties);
             }
             _ => Err(sea_orm::sea_query::ValueTypeErr),
@@ -85,7 +82,10 @@ pub struct Model {
 }
 
 impl Model {
-    pub async fn get_user(&self, database: &DatabaseConnection) -> Result<Option<user::Model>, DbErr> {
+    pub async fn get_user(
+        &self,
+        database: &DatabaseConnection,
+    ) -> Result<Option<user::Model>, DbErr> {
         user::Entity::find_by_id(self.user_id).one(database).await
     }
 }
@@ -105,15 +105,14 @@ impl FromRequest for Model {
     }
 }
 
-
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::user::Entity",
-    from = "Column::UserId",
-    to = "super::user::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     User,
 }
@@ -126,12 +125,25 @@ impl Related<super::user::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-pub async fn get_by_token(token: &str, connection: &DatabaseConnection) -> Result<Option<Model>, InternalError> {
-    auth_token::Entity::find().filter(auth_token::Column::Token.eq(token)).one(connection).await.map_err(|e| InternalError::DBError(e))
+pub async fn get_by_token(
+    token: &str,
+    connection: &DatabaseConnection,
+) -> Result<Option<Model>, InternalError> {
+    auth_token::Entity::find()
+        .filter(auth_token::Column::Token.eq(token))
+        .one(connection)
+        .await
+        .map_err(|e| InternalError::DBError(e))
 }
 
-pub async fn delete_by_token(token: &str, connection: &DatabaseConnection) -> Result<(), InternalError> {
-    auth_token::Entity::delete_many().filter(auth_token::Column::Token.eq(token)).exec(connection).await?;
+pub async fn delete_by_token(
+    token: &str,
+    connection: &DatabaseConnection,
+) -> Result<(), InternalError> {
+    auth_token::Entity::delete_many()
+        .filter(auth_token::Column::Token.eq(token))
+        .exec(connection)
+        .await?;
     Ok(())
 }
 
@@ -145,5 +157,7 @@ pub fn generate_token() -> String {
 }
 
 pub fn token_expiration() -> i64 {
-    OffsetDateTime::now_utc().add(Duration::days(1)).unix_timestamp()
+    OffsetDateTime::now_utc()
+        .add(Duration::days(1))
+        .unix_timestamp()
 }

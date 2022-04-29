@@ -1,5 +1,5 @@
 use badge_maker::Style;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 fn default() -> bool {
     true
@@ -12,7 +12,6 @@ pub struct Frontend {
     #[serde(default = "PageProvider::default")]
     pub page_provider: PageProvider,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BadgeStyle {
@@ -78,7 +77,6 @@ impl PageProvider {
         PageProvider::None
     }
 }
-
 
 impl Default for Frontend {
     fn default() -> Self {

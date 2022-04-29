@@ -1,8 +1,8 @@
 use crate::repository::settings::frontend::{BadgeSettings, Frontend};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-pub mod security;
 pub mod frontend;
+pub mod security;
 pub mod webhook;
 
 fn default() -> bool {
@@ -32,7 +32,7 @@ pub struct RepositorySettings {
     pub policy: Policy,
     #[serde(default)]
     pub frontend: Frontend,
-    #[serde(default )]
+    #[serde(default)]
     pub badge: BadgeSettings,
 }
 
@@ -59,7 +59,6 @@ pub struct UpdateFrontend {
     pub frontend: Frontend,
     pub badge: BadgeSettings,
 }
-
 
 impl RepositorySettings {
     pub fn update_general(&mut self, settings: UpdateSettings) {

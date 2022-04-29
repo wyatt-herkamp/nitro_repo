@@ -3,11 +3,11 @@ use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 use std::time::SystemTimeError;
 
+use crate::system::permissions::PermissionError;
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use base64::DecodeError;
 use thiserror::Error;
-use crate::system::permissions::PermissionError;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -105,7 +105,6 @@ impl From<sea_orm::DbErr> for InternalError {
     }
 }
 
-
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {
         InternalError::Error(err.to_string())
@@ -135,7 +134,6 @@ impl From<SystemTimeError> for InternalError {
         InternalError::Error(err.to_string())
     }
 }
-
 
 impl From<lettre::transport::smtp::Error> for InternalError {
     fn from(err: lettre::transport::smtp::Error) -> InternalError {

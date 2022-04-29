@@ -25,7 +25,11 @@ pub async fn is_valid(
     request: &LoginRequest,
     conn: &DatabaseConnection,
 ) -> Result<bool, InternalError> {
-    Ok(verify_login(username.to_string(), request.password.clone(), conn).await?.is_some())
+    Ok(
+        verify_login(username.to_string(), request.password.clone(), conn)
+            .await?
+            .is_some(),
+    )
 }
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";

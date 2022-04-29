@@ -26,7 +26,11 @@ pub async fn get_versions(
 
     let request = to_request(storage, repository, file, site).await?;
 
-    let x = request.repository.repo_type.handle_versions(&request, &r, &connection).await?;
+    let x = request
+        .repository
+        .repo_type
+        .handle_versions(&request, &r, &connection)
+        .await?;
     handle_result(x, request.value, r)
 }
 
@@ -41,7 +45,11 @@ pub async fn get_project(
 
     let request = to_request(storage, repository, file, site).await?;
 
-    let x = request.repository.repo_type.handle_project(&request, &r, &connection).await?;
+    let x = request
+        .repository
+        .repo_type
+        .handle_project(&request, &r, &connection)
+        .await?;
 
     handle_result(x, request.value, r)
 }
@@ -57,7 +65,10 @@ pub async fn get_version(
 
     let request = to_request(storage, repository, project, site).await?;
 
-
-    let x = request.repository.repo_type.handle_version(&request, version,&r, &connection).await?;
+    let x = request
+        .repository
+        .repo_type
+        .handle_version(&request, version, &r, &connection)
+        .await?;
     handle_result(x, request.value, r)
 }

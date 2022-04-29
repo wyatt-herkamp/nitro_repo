@@ -7,13 +7,13 @@ use serde::{Deserialize, Serialize};
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::constants::SUPPORTED_REPO_TYPES;
 use crate::error::response::{bad_request, not_found, unauthorized};
-use crate::NitroRepoData;
 use crate::repository::models::RepositorySummary;
 use crate::repository::settings::frontend::{BadgeSettings, Frontend};
-use crate::repository::settings::Policy;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::webhook::{ReportGeneration, Webhook};
+use crate::repository::settings::Policy;
 use crate::system::permissions::options::CanIDo;
+use crate::NitroRepoData;
 
 use crate::system::utils::get_user_by_header;
 
@@ -57,8 +57,6 @@ pub async fn list_repos_by_storage(
     r: HttpRequest,
     storage: Path<String>,
 ) -> SiteResponse {
-
-
     let user = get_user_by_header(r.headers(), &connection).await?;
     if user.can_i_edit_repos().is_err() {
         return unauthorized();
@@ -87,8 +85,11 @@ pub async fn get_repo(
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
 
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let result = site.storages.read().await;
@@ -108,9 +109,11 @@ pub async fn add_repo(
     r: HttpRequest,
     nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
-
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let result = site.storages.read().await;
@@ -134,8 +137,11 @@ pub async fn update_active_status(
     r: HttpRequest,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
 
@@ -163,8 +169,11 @@ pub async fn update_policy(
     r: HttpRequest,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
 
@@ -193,8 +202,11 @@ pub async fn update_description(
     b: Bytes,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
 
@@ -230,8 +242,11 @@ pub async fn modify_frontend_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<Frontend>,
 ) -> SiteResponse {
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
@@ -260,8 +275,11 @@ pub async fn modify_badge_settings(
     path: web::Path<(String, String)>,
     nc: web::Json<BadgeSettings>,
 ) -> SiteResponse {
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
@@ -288,9 +306,11 @@ pub async fn modify_security(
     r: HttpRequest,
     path: web::Path<(String, String, Visibility)>,
 ) -> SiteResponse {
-
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository, visibility) = path.into_inner();
@@ -311,7 +331,6 @@ pub async fn modify_security(
     APIResponse::new(true, Some(repository)).respond(&r)
 }
 
-
 #[patch("/api/admin/repository/{storage}/{repository}/modify/deploy/report")]
 pub async fn modify_deploy(
     connection: web::Data<DatabaseConnection>,
@@ -320,9 +339,11 @@ pub async fn modify_deploy(
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
-
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
@@ -351,13 +372,14 @@ pub async fn add_webhook(
     path: web::Path<(String, String)>,
     nc: web::Json<Webhook>,
 ) -> SiteResponse {
-
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
-
 
     let result = site.storages.read().await;
     let storage = result.get(&storage);
@@ -382,9 +404,11 @@ pub async fn remove_webhook(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
 ) -> SiteResponse {
-
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository, webhook) = path.into_inner();
@@ -418,13 +442,14 @@ pub async fn delete_repository(
     path: web::Path<(String, String)>,
     query: web::Query<DeleteRequest>,
 ) -> SiteResponse {
-
-
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let (storage, repository) = path.into_inner();
-
 
     let result = site.storages.read().await;
     let storage = result.get(&storage);

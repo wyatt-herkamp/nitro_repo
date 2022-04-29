@@ -18,7 +18,9 @@ use crate::repository::npm::utils::{generate_get_response, is_valid, parse_proje
 use crate::repository::types::RepoResponse::{
     BadRequest, CreatedWithJSON, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{Project, RepoResponse, RepoResult, RepositoryRequest, RDatabaseConnection};
+use crate::repository::types::{
+    Project, RDatabaseConnection, RepoResponse, RepoResult, RepositoryRequest,
+};
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
 use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
 
@@ -28,11 +30,11 @@ mod utils;
 pub struct NPMHandler;
 
 // name/version
-impl  NPMHandler {
+impl NPMHandler {
     pub async fn handle_get(
-        request:&RepositoryRequest,
+        request: &RepositoryRequest,
         http: &HttpRequest,
-        conn:&RDatabaseConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
         let (valid, _) = can_read_basic_auth(http.headers(), &request.repository, conn).await?;
         if !valid {
@@ -91,11 +93,10 @@ impl  NPMHandler {
         }
     }
 
-
     pub async fn handle_put(
-        request:&RepositoryRequest,
+        request: &RepositoryRequest,
         http: &HttpRequest,
-        conn:&RDatabaseConnection,
+        conn: &RDatabaseConnection,
         bytes: Bytes,
     ) -> RepoResult {
         for x in http.headers() {
@@ -120,7 +121,8 @@ impl  NPMHandler {
             };
         }
         //Handle Normal Request
-        let (allowed, user) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
+        let (allowed, user) =
+            can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
         if !allowed {
             return RepoResult::Ok(NotAuthorized);
         }
@@ -190,11 +192,11 @@ impl  NPMHandler {
                             }
 
                             if let Err(error) =
-                            crate::repository::utils::update_project_in_repositories(
-                                &storage,
-                                &repository,
-                                version_for_saving.name.clone(),
-                            )
+                                crate::repository::utils::update_project_in_repositories(
+                                    &storage,
+                                    &repository,
+                                    version_for_saving.name.clone(),
+                                )
                             {
                                 error!("Unable to update repository.json, {}", error);
                                 if log_enabled!(Trace) {
@@ -237,11 +239,10 @@ impl  NPMHandler {
         }
     }
 
-
     pub async fn handle_versions(
-        request:&RepositoryRequest,
+        request: &RepositoryRequest,
         http: &HttpRequest,
-        conn:&RDatabaseConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
         let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
         if !allowed {
@@ -251,8 +252,6 @@ impl  NPMHandler {
         let vec = get_versions(&request.storage, &request.repository, request.value.clone())?;
         Ok(RepoResponse::NitroVersionListingResponse(vec))
     }
-
-
 
     pub async fn handle_version(
         request: &RepositoryRequest,
@@ -289,7 +288,7 @@ impl  NPMHandler {
     pub async fn handle_project(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn:&RDatabaseConnection,
+        conn: &RDatabaseConnection,
     ) -> RepoResult {
         let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
         if !allowed {
@@ -320,7 +319,7 @@ impl  NPMHandler {
     pub async fn latest_version(
         request: &RepositoryRequest,
         http: &HttpRequest,
-        conn:&RDatabaseConnection,
+        conn: &RDatabaseConnection,
     ) -> Result<Option<String>, InternalError> {
         let (allowed, _) = can_deploy_basic_auth(http.headers(), &request.repository, conn).await?;
         if !allowed {

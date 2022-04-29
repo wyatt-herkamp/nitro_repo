@@ -30,7 +30,11 @@ pub async fn badge(
             request.repository.name.clone(),
         )
     } else {
-        let version = request.repository.repo_type.latest_version(&request, &r, &connection).await?;
+        let version = request
+            .repository
+            .repo_type
+            .latest_version(&request, &r, &connection)
+            .await?;
         (
             request.repository.name.clone(),
             version.unwrap_or_else(|| "404".to_string()),

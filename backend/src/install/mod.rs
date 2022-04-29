@@ -1,21 +1,19 @@
 use std::io;
 
-
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
-
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use sea_orm::ActiveValue::Set;
+use sea_orm::{DatabaseConnection, EntityTrait, Schema};
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
 use std::path::Path;
-use sea_orm::{DatabaseConnection, EntityTrait, Schema};
-use sea_orm::ActiveValue::Set;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -27,14 +25,14 @@ use tui::{
 
 use thiserror::Error;
 
-use crate::settings::models::{Application, Database, SessionSettings};
+use crate::settings::models::{Application, Database};
+use crate::system::permissions::UserPermissions;
 use crate::system::utils::hash;
+use crate::system::{auth_token, user};
 use crate::utils::get_current_time;
 use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
-use unicode_width::UnicodeWidthStr;
-use crate::system::permissions::UserPermissions;
-use crate::system::{auth_token, user};
 use sea_orm::ConnectionTrait;
+use unicode_width::UnicodeWidthStr;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -123,7 +121,9 @@ impl From<UserStage> for user::ActiveModel {
                 repository_manager: true,
                 deployer: None,
                 viewer: None,
-            }.try_into().unwrap()),
+            }
+            .try_into()
+            .unwrap()),
             created: Set(get_current_time()),
         }
     }
@@ -226,12 +226,16 @@ async fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                let mut database_conn = sea_orm::Database::connect(string).await?;
+                                let database_conn = sea_orm::Database::connect(string).await?;
                                 let schema = Schema::new(database_conn.get_database_backend());
                                 let users = schema.create_table_from_entity(user::Entity);
-                                database_conn.execute(database_conn.get_database_backend().build(&users)).await?;
+                                database_conn
+                                    .execute(database_conn.get_database_backend().build(&users))
+                                    .await?;
                                 let tokens = schema.create_table_from_entity(auth_token::Entity);
-                                database_conn.execute(database_conn.get_database_backend().build(&tokens)).await?;
+                                database_conn
+                                    .execute(database_conn.get_database_backend().build(&tokens))
+                                    .await?;
 
                                 app.connection = Some(database_conn);
                                 app.stage = 1;
@@ -380,7 +384,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-                .as_ref(),
+            .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -561,6 +565,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-        .unwrap();
+    .unwrap();
     terminal.show_cursor().unwrap();
 }

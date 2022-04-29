@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Visibility {
@@ -13,12 +13,10 @@ impl Default for Visibility {
     }
 }
 
-
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct SecurityRules {
     #[serde(default = "Visibility::default")]
     pub visibility: Visibility,
-
 }
 
 impl SecurityRules {

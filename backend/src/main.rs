@@ -4,8 +4,8 @@ extern crate strum_macros;
 
 use actix_cors::Cors;
 use actix_web::web::{Data, PayloadConfig};
-use actix_web::{middleware, web, App, HttpServer};
-use std::fs::{read_to_string};
+use actix_web::{middleware, App, HttpServer};
+use std::fs::read_to_string;
 use std::path::Path;
 
 use log::{error, info, trace};
@@ -15,7 +15,6 @@ use nitro_log::NitroLogger;
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
 
-
 pub mod api_response;
 pub mod constants;
 pub mod error;
@@ -23,14 +22,15 @@ pub mod frontend;
 pub mod install;
 mod misc;
 pub mod repository;
+pub mod session;
 pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
 pub mod webhook;
-pub mod session;
 
 use crate::install::load_installer;
+use crate::session::SessionManager;
 use crate::settings::models::{
     EmailSetting, GeneralSettings, Mode, MysqlSettings, SecuritySettings, Settings, SiteSetting,
     StringMap,
@@ -38,9 +38,8 @@ use crate::settings::models::{
 use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
 use crossterm::style::Stylize;
+use sea_orm::Database;
 use tokio::sync::RwLock;
-use sea_orm::{Database};
-use crate::session::SessionManager;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -169,7 +168,8 @@ async fn main() -> std::io::Result<()> {
                 Cors::default()
                     .allow_any_header()
                     .allow_any_method()
-                    .allow_any_origin().supports_credentials(),
+                    .allow_any_origin()
+                    .supports_credentials(),
             )
             .wrap(session::middleware::HandleSession)
             .wrap(middleware::Logger::default())
@@ -188,7 +188,7 @@ async fn main() -> std::io::Result<()> {
             .configure(misc::init)
             .configure(frontend::init)
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

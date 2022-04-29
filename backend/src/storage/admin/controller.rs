@@ -7,15 +7,15 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::error::internal_error::InternalError;
 use crate::error::response::{already_exists, unauthorized};
 use crate::storage::models::{save_storages, LocationType, Storage};
+use crate::system::permissions::options::CanIDo;
 use crate::system::utils::get_user_by_header;
 use crate::utils::get_current_time;
 use crate::{NitroRepoData, StringMap};
 use log::warn;
+use sea_orm::DatabaseConnection;
 use std::fs::{canonicalize, create_dir_all};
 use std::ops::Deref;
 use std::path::Path;
-use sea_orm::DatabaseConnection;
-use crate::system::permissions::options::CanIDo;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
@@ -23,7 +23,11 @@ pub async fn list_storages(
     site: NitroRepoData,
     r: HttpRequest,
 ) -> Result<HttpResponse, InternalError> {
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let guard = site.storages.read().await;
@@ -38,7 +42,11 @@ pub async fn delete_by_id(
     site: NitroRepoData,
     id: web::Path<String>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let mut guard = site.storages.write().await;
@@ -62,7 +70,11 @@ pub async fn get_by_id(
     site: NitroRepoData,
     id: web::Path<String>,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let guard = site.storages.read().await;
@@ -83,7 +95,11 @@ pub async fn add_storage(
     nc: web::Json<NewStorage>,
     site: NitroRepoData,
 ) -> SiteResponse {
-    if get_user_by_header(r.headers(), &connection).await?.can_i_edit_repos().is_err() {
+    if get_user_by_header(r.headers(), &connection)
+        .await?
+        .can_i_edit_repos()
+        .is_err()
+    {
         return unauthorized();
     }
     let mut guard = site.storages.write().await;

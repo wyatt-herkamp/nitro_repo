@@ -7,15 +7,22 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::models::{Repository};
+use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::system::permissions::{can_deploy, can_read, UserPermissions};
 use crate::system::user;
 use crate::system::user::Entity as UserEntity;
 use crate::system::user::Model as UserModel;
 
-pub async fn verify_login(username: String, password: String, database: &DatabaseConnection) -> Result<Option<UserModel>, InternalError> {
-    let user_found: Option<UserModel> = UserEntity::find().filter(user::Column::Username.eq(username)).one(database).await?;
+pub async fn verify_login(
+    username: String,
+    password: String,
+    database: &DatabaseConnection,
+) -> Result<Option<UserModel>, InternalError> {
+    let user_found: Option<UserModel> = UserEntity::find()
+        .filter(user::Column::Username.eq(username))
+        .one(database)
+        .await?;
     if user_found.is_none() {
         return Ok(None);
     }
@@ -109,7 +116,6 @@ pub async fn can_read_basic_auth(
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {
     pub name: String,
@@ -148,5 +154,3 @@ pub fn hash(password: String) -> Result<String, InternalError> {
         .to_string();
     Ok(password_hash)
 }
-
-

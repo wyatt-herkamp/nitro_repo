@@ -1,13 +1,12 @@
 pub mod options;
 
-use serde::{Serialize, Deserialize};
-use serde_json::Value;
-use crate::repository::models::{Repository};
-use thiserror::Error;
-use crate::repository::settings::Policy;
+use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
+use crate::repository::settings::Policy;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
-
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PermissionError {
@@ -50,10 +49,9 @@ impl TryInto<serde_json::Value> for UserPermissions {
     type Error = serde_json::Error;
 
     fn try_into(self) -> Result<Value, Self::Error> {
-        return serde_json::to_value(self)
+        return serde_json::to_value(self);
     }
 }
-
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RepositoryPermission {
@@ -69,10 +67,11 @@ pub struct RepositoryPermissionValue {
 
 impl Default for RepositoryPermission {
     fn default() -> Self {
-        RepositoryPermission { permissions: vec![] }
+        RepositoryPermission {
+            permissions: vec![],
+        }
     }
 }
-
 
 pub fn can_deploy(
     user_perms: &UserPermissions,
@@ -91,11 +90,7 @@ pub fn can_deploy(
     Ok(false)
 }
 
-
-pub fn can_read(
-    user_perms: &UserPermissions,
-    repo: &Repository,
-) -> Result<bool, PermissionError> {
+pub fn can_read(user_perms: &UserPermissions, repo: &Repository) -> Result<bool, PermissionError> {
     if user_perms.disabled {
         return Ok(false);
     }

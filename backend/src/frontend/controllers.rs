@@ -1,4 +1,4 @@
-use std::fs::{read_to_string};
+use std::fs::read_to_string;
 use std::path::Path;
 
 use actix_files::Files;
@@ -22,8 +22,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         return;
     }
     let mut reg = Handlebars::new();
-    let content = read_to_string(index)
-        .expect("Unable to read index.html");
+    let content = read_to_string(index).expect("Unable to read index.html");
     reg.register_template_string("index", content)
         .expect("Unable to Parse Template");
     let reg = Data::new(reg);
@@ -39,7 +38,6 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .route("/", web::get().to(frontend_handler))
         .service(Files::new("/", frontend_path).show_files_listing());
 }
-
 
 pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
     let guard = site.settings.read().await;

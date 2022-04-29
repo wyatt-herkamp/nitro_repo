@@ -1,6 +1,6 @@
-use std::fmt;
 use crate::system::permissions::UserPermissions;
 use crate::system::UserModel;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct MissingPermission(String);
