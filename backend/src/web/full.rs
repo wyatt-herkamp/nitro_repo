@@ -69,7 +69,7 @@ async fn main() -> std::io::Result<()> {
     }
     let settings = settings.unwrap();
     info!("Loading Storages");
-    let storages = storage::StorageManager::init().await;
+    let storages = storage::multi::MultiStorageController::init().await;
     if let Err(error) = storages {
         error!("Unable to load Settings {error}");
         std::process::exit(1);
@@ -110,16 +110,16 @@ async fn main() -> std::io::Result<()> {
             )))
             .configure(error::handlers::init)
             .configure(settings::init)
-            .configure(repository::init)
+            .configure(repository::web::full::init)
             .configure(storage::admin::init)
-            .configure(repository::admin::init)
+            .configure(repository::web::full::admin::init)
             .configure(system::controllers::init)
             .configure(misc::init)
             .configure(authentication::auth_token::controllers::init)
             // DONT REGISTER ANYTHING BELOW FRONTEND!
             .configure(frontend::init)
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

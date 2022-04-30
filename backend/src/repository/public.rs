@@ -8,10 +8,10 @@ use crate::error::response::not_found;
 use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
-use crate::storage::{StorageHandlerType, StorageManager};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
+use crate::storage::multi::MultiStorageController;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -40,25 +40,3 @@ impl From<Repository> for PublicRepositoryResponse {
     }
 }
 
-#[get("/api/repositories/get/{storage}/{repo}")]
-pub async fn get_repo(
-    connection: web::Data<DatabaseConnection>,
-    _site: NitroRepoData,
-    storages: web::Data<StorageManager>,
-    r: HttpRequest,
-    auth: Authentication,
-    path: web::Path<(String, String)>,
-) -> SiteResponse {
-    let (storage, repo) = path.into_inner();
-    if let Some(storage) = storages.get_storage_by_name(&storage).await? {
-        let option = storage.get_repository(&repo).await?;
-        if let Some(repository) = option {
-            if repository.security.visibility.eq(&Visibility::Private) {
-                let caller: UserModel = auth.get_user(&connection).await??;
-                caller.can_read_from(&repository)?;
-            }
-            return APIResponse::respond_new(Some(PublicRepositoryResponse::from(repository)), &r);
-        }
-    }
-    not_found()
-}

@@ -5,7 +5,6 @@ use std::time::SystemTimeError;
 
 use crate::authentication::UnAuthorized;
 use crate::storage::models::StorageError;
-use crate::storage::StorageHandlerError;
 use crate::system::permissions::options::MissingPermission;
 use crate::system::permissions::PermissionError;
 use actix_web::http::StatusCode;
@@ -42,9 +41,7 @@ pub enum InternalError {
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
     #[error("Permission Error: {0}")]
-    PermissionError(crate::system::permissions::PermissionError),
-    #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
-    DeadSite,
+    PermissionError(PermissionError),
     // Request Errors
     #[error("{0}")]
     UnAuthorized(UnAuthorized),
@@ -120,11 +117,7 @@ impl From<serde_json::Error> for InternalError {
     }
 }
 
-impl std::convert::From<StorageHandlerError> for InternalError {
-    fn from(err: StorageHandlerError) -> InternalError {
-        InternalError::Error(err.to_string())
-    }
-}
+
 impl std::convert::From<StorageError> for InternalError {
     fn from(err: StorageError) -> InternalError {
         InternalError::Error(err.to_string())

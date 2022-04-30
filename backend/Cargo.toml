@@ -14,6 +14,7 @@ path = "src/lib.rs"
 [[bin]]
 name = "nitro_repo"
 path = "src/web/full.rs"
+required-features = ["multi_storage"]
 [dependencies]
 # Web
 actix = "0.13.0"
@@ -76,7 +77,7 @@ semver = "1.0.7"
 vergen = "7.0.0"
 [features]
 # The latest Updaters will always be under default features
-default = ["updater_one-one","multi_storage"]
+default = ["updater_one-one", "multi_storage"]
 ssl = ["openssl", "actix-web/openssl"]
 
 multi_storage = []

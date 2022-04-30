@@ -5,12 +5,12 @@ use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
 use crate::storage::models::{Storage, StorageFile, STORAGE_FILE, STORAGE_FILE_BAK};
-use crate::storage::StorageHandlerType;
 use async_trait::async_trait;
 use serde::{Serialize, Serializer};
 use thiserror::Error;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
+use crate::error::internal_error::InternalError;
 
 #[derive(Error, Debug)]
 pub enum MultiStorageError {
@@ -31,7 +31,11 @@ impl From<serde_json::Error> for MultiStorageError {
         MultiStorageError::JSONError(err)
     }
 }
-
+impl From<MultiStorageError> for InternalError{
+    fn from(error: MultiStorageError) -> Self {
+        InternalError::Error(error.to_string())
+    }
+}
 pub async fn load_storages() -> Result<HashMap<String, Storage>, MultiStorageError> {
     let path = Path::new(STORAGE_FILE);
     if !path.exists() {
@@ -83,16 +87,14 @@ impl Serialize for MultiStorageController {
     }
 }
 
-#[async_trait]
-impl StorageHandlerType for MultiStorageController {
-    type Error = MultiStorageError;
+impl MultiStorageController {
 
-    async fn get_storage_by_name(&self, name: &str) -> Result<Option<Storage>, Self::Error> {
+   pub async fn get_storage_by_name(&self, name: &str) -> Result<Option<Storage>, MultiStorageError> {
         let storages = self.storages.read().await;
         return Ok(storages.get(name).cloned());
     }
 
-    async fn create_storage(&self, storage: Storage) -> Result<(), Self::Error> {
+    pub    async fn create_storage(&self, storage: Storage) -> Result<(), MultiStorageError> {
         let mut storages = self.storages.write().await;
         //TODO Prepare Setup
         storages.insert(storage.config.name.clone(), storage);
@@ -100,7 +102,7 @@ impl StorageHandlerType for MultiStorageController {
         return Ok(());
     }
 
-    async fn delete_storage(&self, storage: &str) -> Result<bool, Self::Error> {
+    pub    async fn delete_storage(&self, storage: &str) -> Result<bool, MultiStorageError> {
         let mut storages = self.storages.write().await;
         let option = storages.remove(storage);
         if option.is_none() {
@@ -111,7 +113,7 @@ impl StorageHandlerType for MultiStorageController {
         return Ok(true);
     }
 
-    async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, Self::Error> {
+    pub   async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, MultiStorageError> {
         let storages = self.storages.read().await;
         let mut files = Vec::new();
         for (name, storage) in storages.iter() {

@@ -13,10 +13,10 @@ use crate::repository::settings::frontend::{BadgeSettings, Frontend};
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::webhook::{ReportGeneration, Webhook};
 use crate::repository::settings::Policy;
-use crate::storage::{StorageHandlerType, StorageManager};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
+use crate::storage::multi::MultiStorageController;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
@@ -29,7 +29,7 @@ pub async fn list_repos_by_storage(
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     storage: Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -54,7 +54,7 @@ pub async fn get_repo(
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String)>,
 ) -> SiteResponse {
     let (storage, repo) = path.into_inner();
@@ -75,7 +75,7 @@ pub async fn add_repo(
     connection: web::Data<DatabaseConnection>,
     _site: NitroRepoData,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     r: HttpRequest,
     nc: web::Json<RepositorySummary>,
 ) -> SiteResponse {
@@ -100,7 +100,7 @@ pub async fn update_active_status(
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String, bool)>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -128,7 +128,7 @@ pub async fn update_policy(
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String, Policy)>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -153,7 +153,7 @@ pub async fn update_policy(
 #[patch("/api/admin/repository/{storage}/{repository}/description")]
 pub async fn update_description(
     connection: web::Data<DatabaseConnection>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
@@ -189,7 +189,7 @@ pub async fn update_description(
 #[patch("/api/admin/repository/{storage}/{repository}/modify/settings/frontend")]
 pub async fn modify_frontend_settings(
     connection: web::Data<DatabaseConnection>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
@@ -218,7 +218,7 @@ pub async fn modify_frontend_settings(
 #[patch("/api/admin/repository/{storage}/{repository}/modify/settings/badge")]
 pub async fn modify_badge_settings(
     connection: web::Data<DatabaseConnection>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
@@ -247,7 +247,7 @@ pub async fn modify_badge_settings(
 pub async fn modify_security(
     connection: web::Data<DatabaseConnection>,
     _site: NitroRepoData,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     r: HttpRequest,
     auth: Authentication,
     path: web::Path<(String, String, Visibility)>,
@@ -277,7 +277,7 @@ pub async fn modify_deploy(
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String)>,
     nc: web::Json<ReportGeneration>,
 ) -> SiteResponse {
@@ -304,7 +304,7 @@ pub async fn modify_deploy(
 #[put("/api/admin/repository/{storage}/{repository}/modify/deploy/webhook/add")]
 pub async fn add_webhook(
     connection: web::Data<DatabaseConnection>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     _site: NitroRepoData,
     r: HttpRequest,
     auth: Authentication,
@@ -335,7 +335,7 @@ pub async fn add_webhook(
 pub async fn remove_webhook(
     connection: web::Data<DatabaseConnection>,
     _site: NitroRepoData,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     r: HttpRequest,
     auth: Authentication,
     path: web::Path<(String, String, String)>,
@@ -372,7 +372,7 @@ pub async fn delete_repository(
     r: HttpRequest,
     auth: Authentication,
     path: web::Path<(String, String)>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     query: web::Query<DeleteRequest>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;

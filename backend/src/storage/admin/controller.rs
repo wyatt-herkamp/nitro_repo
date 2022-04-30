@@ -16,15 +16,15 @@ use crate::authentication::Authentication;
 use std::path::Path;
 
 use crate::storage::local_storage::LocalStorage;
-use crate::storage::{StorageHandlerType, StorageManager};
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
+use crate::storage::multi::MultiStorageController;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
     connection: web::Data<DatabaseConnection>,
     _site: NitroRepoData,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     r: HttpRequest,
     auth: Authentication,
 ) -> Result<HttpResponse, InternalError> {
@@ -40,7 +40,7 @@ pub async fn delete_by_id(
     r: HttpRequest,
     auth: Authentication,
     _site: NitroRepoData,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     id: web::Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -58,7 +58,7 @@ pub async fn get_by_id(
     r: HttpRequest,
     _site: NitroRepoData,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     id: web::Path<String>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -79,7 +79,7 @@ pub async fn add_storage(
     r: HttpRequest,
     auth: Authentication,
     nc: web::Json<NewStorage>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     _site: NitroRepoData,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;

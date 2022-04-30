@@ -15,48 +15,15 @@ use crate::authentication::Authentication;
 use crate::repository::nitro::{NitroFile, NitroFileResponse, ResponseType};
 use crate::repository::types::{RepoResponse, RepositoryRequest};
 use crate::storage::models::StorageFile;
-use crate::storage::{StorageHandlerType, StorageManager};
 use crate::utils::get_accept;
 use crate::NitroRepoData;
+use crate::repository::web::full::{handle_result, to_request};
+use crate::storage::multi::MultiStorageController;
 
-//
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListRepositories {
-    pub repositories: Vec<Repository>,
-}
-
-pub async fn to_request(
-    storage_name: String,
-    repo_name: String,
-    file: String,
-    _site: NitroRepoData,
-    storages: web::Data<StorageManager>,
-) -> Result<RepositoryRequest, InternalError> {
-    let storage = storages.get_storage_by_name(&storage_name).await?;
-    if storage.is_none() {
-        trace!("Storage {} not found", &storage_name);
-        return Err(InternalError::NotFound);
-    }
-    let storage = storage.unwrap().clone();
-    let repository = storage.get_repository(&repo_name).await?;
-    if repository.is_none() {
-        trace!("Repository {} not found", repo_name);
-        return Err(InternalError::NotFound);
-    }
-    let repository = repository.unwrap();
-
-    let request = RepositoryRequest {
-        storage,
-        repository,
-        value: file,
-    };
-    Ok(request)
-}
 
 pub async fn generate_storage_list(
     _site: NitroRepoData,
-    storages: &StorageManager,
+    storages: &MultiStorageController,
 ) -> Result<NitroFileResponse, InternalError> {
     let files = storages
         .storages_as_file_list()
@@ -76,7 +43,7 @@ pub async fn generate_storage_list(
 
 pub async fn browse(
     site: NitroRepoData,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     r: HttpRequest,
 ) -> SiteResponse {
     APIResponse::respond_new(Some(generate_storage_list(site, &storages).await?), &r)
@@ -87,7 +54,7 @@ pub async fn browse_storage(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<String>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
 ) -> SiteResponse {
     let string = path.into_inner();
     println!("HEY");
@@ -135,11 +102,11 @@ pub async fn get_repository(
     r: HttpRequest,
     path: web::Path<GetPath>,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
 ) -> SiteResponse {
     let path = path.into_inner();
     let file = path.file.unwrap_or_else(|| "".to_string());
-    let result = to_request(path.storage, path.repository, file, site, storages).await;
+    let result = to_request(path.storage, path.repository, file,  storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -153,96 +120,20 @@ pub async fn get_repository(
         .handle_get(&request, &r, connection.as_ref(), auth)
         .await?;
 
-    handle_result(x, request.value.clone(), r)
+    handle_result(x, r)
 }
 
-/// TODO look into this method
-pub fn handle_result(response: RepoResponse, _url: String, r: HttpRequest) -> SiteResponse {
-    let x = get_accept(r.headers())?.unwrap_or_else(|| "text/html".to_string());
-    return match response {
-        RepoResponse::FileList(files) => {
-            if x.contains(&"application/json".to_string()) {
-                APIResponse::new(true, Some(files)).respond(&r)
-            } else {
-                trace!("Access to Simple Dir Listing {}", r.uri());
-                Ok(HttpResponse::Ok()
-                    .content_type("text/html")
-                    .body("Coming Soon(Simple DIR Listing)"))
-            }
-        }
-        RepoResponse::FileResponse(file) => file,
-        RepoResponse::Ok => APIResponse::new(true, Some(false)).respond(&r),
-        RepoResponse::NotFound => {
-            if x.contains(&"application/json".to_string()) {
-                return not_found();
-            } else {
-                Ok(HttpResponse::NotFound()
-                    .content_type("text/html")
-                    .body("NOT FOUND"))
-            }
-        }
-
-        RepoResponse::NotAuthorized => {
-            let r = APIResponse::<bool> {
-                success: false,
-                data: None,
-                status_code: Some(401),
-            };
-            let result = HttpResponse::Ok()
-                .status(StatusCode::UNAUTHORIZED)
-                .content_type("application/json")
-                .append_header(("WWW-Authenticate", "Basic realm=nitro_repo"))
-                .body(serde_json::to_string(&r).unwrap());
-            return Ok(result);
-        }
-        RepoResponse::BadRequest(e) => {
-            return bad_request(e);
-        }
-        RepoResponse::IAmATeapot(e) => {
-            return i_am_a_teapot(e);
-        }
-        RepoResponse::ProjectResponse(project) => APIResponse::new(true, Some(project)).respond(&r),
-        RepoResponse::VersionListingResponse(versions) => {
-            APIResponse::new(true, Some(versions)).respond(&r)
-        }
-        RepoResponse::CreatedWithJSON(json) => {
-            let result = HttpResponse::Ok()
-                .status(StatusCode::CREATED)
-                .content_type("application/json")
-                .body(json);
-            return Ok(result);
-        }
-        RepoResponse::OkWithJSON(json) => {
-            let result = HttpResponse::Ok()
-                .status(StatusCode::OK)
-                .content_type("application/json")
-                .body(json);
-            return Ok(result);
-        }
-        RepoResponse::NitroVersionListingResponse(value) => {
-            APIResponse::new(true, Some(value)).respond(&r)
-        }
-        RepoResponse::NitroVersionResponse(value) => {
-            APIResponse::new(true, Some(value)).respond(&r)
-        }
-        RepoResponse::NitroProjectResponse(value) => {
-            APIResponse::new(true, Some(value)).respond(&r)
-        }
-
-        RepoResponse::NitroFileList(value) => APIResponse::new(true, Some(value)).respond(&r),
-    };
-}
 
 pub async fn post_repository(
     connection: web::Data<DatabaseConnection>,
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
     bytes: Bytes,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site, storages).await;
+    let result = to_request(storage, repository, file, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -263,7 +154,7 @@ pub async fn post_repository(
         .handle_post(&request, &r, connection.get_ref(), bytes)
         .await?;
 
-    handle_result(x, request.value, r)
+    handle_result(x, r)
 }
 
 pub async fn patch_repository(
@@ -272,10 +163,10 @@ pub async fn patch_repository(
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site, storages).await;
+    let result = to_request(storage, repository, file, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -296,7 +187,7 @@ pub async fn patch_repository(
         .handle_patch(&request, &r, connection.get_ref(), bytes)
         .await?;
 
-    handle_result(x, request.value, r)
+    handle_result(x, r)
 }
 
 pub async fn put_repository(
@@ -306,10 +197,10 @@ pub async fn put_repository(
     path: web::Path<(String, String, String)>,
     bytes: Bytes,
     auth: Authentication,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site, storages).await;
+    let result = to_request(storage, repository, file, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -330,7 +221,7 @@ pub async fn put_repository(
         .handle_put(&request, &r, connection.get_ref(), bytes, auth)
         .await?;
 
-    handle_result(x, request.value, r)
+    handle_result(x, r)
 }
 
 pub async fn head_repository(
@@ -338,10 +229,10 @@ pub async fn head_repository(
     site: NitroRepoData,
     r: HttpRequest,
     path: web::Path<(String, String, String)>,
-    storages: web::Data<StorageManager>,
+    storages: web::Data<MultiStorageController>,
 ) -> SiteResponse {
     let (storage, repository, file) = path.into_inner();
-    let result = to_request(storage, repository, file, site, storages).await;
+    let result = to_request(storage, repository, file, storages).await;
     if let Err(error) = result {
         return match error {
             InternalError::NotFound => not_found(),
@@ -362,5 +253,5 @@ pub async fn head_repository(
         .handle_head(&request, &r, &connection)
         .await?;
 
-    handle_result(x, request.value, r)
+    handle_result(x, r)
 }
