@@ -9,26 +9,7 @@ use crate::error::internal_error::InternalError;
 use crate::system::user;
 use crate::system::user::UserModel;
 
-pub async fn verify_login(
-    username: String,
-    password: String,
-    database: &DatabaseConnection,
-) -> Result<Option<UserModel>, InternalError> {
-    let user_found: Option<UserModel> = user::get_by_username(&username, database).await?;
-    if user_found.is_none() {
-        return Ok(None);
-    }
-    let argon2 = Argon2::default();
-    let user = user_found.unwrap();
-    let parsed_hash = PasswordHash::new(user.password.as_str())?;
-    if argon2
-        .verify_password(password.as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Ok(None);
-    }
-    Ok(Some(user))
-}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {

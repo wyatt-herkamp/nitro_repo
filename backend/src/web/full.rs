@@ -110,7 +110,7 @@ async fn main() -> std::io::Result<()> {
             )))
             .configure(error::handlers::init)
             .configure(settings::init)
-            .configure(repository::web::full::init)
+            //.configure(repository::web::full::init)
             .configure(storage::admin::init)
             .configure(repository::web::full::admin::init)
             .configure(system::controllers::init)

@@ -1,5 +1,5 @@
 use crate::repository::{REPOSITORY_CONF, REPOSITORY_CONF_BAK};
-use crate::storage::models::{FileResponse, StorageConfig, StorageFile, StorageFileResponse, StorageType};
+use crate::storage::models::{ StorageConfig, StorageFile, StorageFileResponse, StorageType};
 use crate::storage::{STORAGE_CONFIG};
 use crate::utils::get_current_time;
 use actix_files::NamedFile;
@@ -87,11 +87,6 @@ pub struct LocalFile {
     pub path: PathBuf,
 }
 
-impl StorageFileResponse for LocalFile {
-    fn to_request(self, request: &HttpRequest) -> SiteResponse {
-        Ok(NamedFile::open(self.path)?.into_response(request))
-    }
-}
 
 impl LocalStorage {
     pub fn get_storage_folder(&self) -> PathBuf {
@@ -103,7 +98,7 @@ impl LocalStorage {
 }
 
 #[async_trait]
-impl StorageType<LocalFile> for LocalStorage {
+impl StorageType for LocalStorage {
     type Error = LocalStorageError;
     type StorageConfig = LocalConfig;
 
@@ -146,8 +141,8 @@ impl StorageType<LocalFile> for LocalStorage {
         let string = read_to_string(&path).await?;
         let config: RepositoryMainConfig<Value> = serde_json::from_str(&string)?;
         let repository_type_settings = T::try_from(config.repository_type_settings).map_err(|error| {
-            Self::Error::Error("Error from T::try_from. I was really hoping this would never happen".to_string());
-        });
+            Self::Error::Error("Error from T::try_from. I was really hoping this would never happen".to_string())
+        })?;
         let result = RepositoryMainConfig::<T> {
             repository_type_settings,
             security: config.security,
@@ -209,7 +204,7 @@ impl StorageType<LocalFile> for LocalStorage {
         config: &StorageConfig,
         repository: &R,
         location: &str,
-    ) -> Result<Option<FileResponse<LocalFile>>, Self::Error> {
+    ) -> Result<Option<StorageFileResponse>, Self::Error> {
         let file_location = self.get_repository_folder(repository.get_name()).join(location);
         if !file_location.exists() {
             return Ok(None);
@@ -246,12 +241,10 @@ impl StorageType<LocalFile> for LocalStorage {
                 files.push(file);
             }
 
-            return Ok(Some(Either::Right(files)));
+            return Ok(Some(StorageFileResponse::List(files)));
         }
         trace!("Returning File {:?}", &file_location);
-        Ok(Some(Either::Left(LocalFile {
-            path: file_location,
-        })))
+        Ok(Some(StorageFileResponse::File(file_location)))
     }
 
     async fn get_file<R: RepositoryDataType>(

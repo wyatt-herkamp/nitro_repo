@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
@@ -7,6 +8,8 @@ use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use regex::Regex;
 use std::string::String;
+use actix_web::http::header::HeaderMap;
+use actix_web::http::StatusCode;
 use sea_orm::DatabaseConnection;
 
 use crate::error::internal_error::InternalError;
@@ -16,7 +19,6 @@ use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, NP
 use crate::repository::npm::utils::{generate_get_response, is_valid};
 
 use crate::authentication::Authentication;
-use crate::repository::nitro::NitroRepository;
 use crate::repository::npm::error::NPMError;
 use crate::repository::response::RepoResponse::{
     BadRequest, CreatedWithJSON, NotAuthorized, NotFound, ProjectResponse,
@@ -24,7 +26,6 @@ use crate::repository::response::RepoResponse::{
 use crate::repository::response::{
     Project, RepoResponse,
 };
-use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
@@ -37,6 +38,8 @@ use async_trait::async_trait;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::error::RepositoryError;
+use crate::repository::nitro::nitro_repository::NitroRepository;
+use crate::repository::nitro::utils::update_project_in_repositories;
 
 pub struct NPMHandler;
 
@@ -47,12 +50,14 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         repository: &RepositoryConfig<NPMSettings>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        headers: &HeaderMap,
         conn: &DatabaseConnection, authentication: Authentication,
     ) -> Result<RepoResponse, RepositoryError> {
         let caller: UserModel = authentication.get_user(conn).await??;
-        caller.can_read_from(&repository)?;
-        if http.headers().get("npm-command").is_some() {
+        if let Some(value) = caller.can_read_from(&repository)? {
+            return Err(RepositoryError::RequestError(value.to_string(), StatusCode::UNAUTHORIZED));
+        }
+        if headers.get("npm-command").is_some() {
             if path.contains(".tgz") {
                 let split: Vec<&str> = path.split("/-/").collect();
                 let package = split.get(0).unwrap().to_string();
@@ -68,14 +73,10 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
 
                 let result =
                     storage
-                    .get_file_as_response(&repository, &nitro_file_location, http)
-                    .await?;
+                        .get_file_as_response(&repository, &nitro_file_location)
+                        .await?;
                 if let Some(result) = result {
-                    return if result.is_left() {
-                        Ok(RepoResponse::FileResponse(result.left().unwrap()))
-                    } else {
-                        Ok(BadRequest("Expected File got Folder".to_string()))
-                    };
+                    //TODO Handle StorageFileResponse
                 } else {
                     return Ok(NotFound);
                 }
@@ -92,22 +93,11 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         } else {
             let result =
                 storage
-                .get_file_as_response(&repository, &path, http)
-                .await?;
+                    .get_file_as_response(&repository, &path)
+                    .await?;
             if let Some(result) = result {
-                if result.is_left() {
-                    Ok(RepoResponse::FileResponse(result.left().unwrap()))
-                } else {
-                    let vec = result.right().unwrap();
-                    let file_response = process_storage_files(
-                        &storage,
-                        &repository,
-                        vec,
-                        &path,
-                    )
-                        .await?;
-                    Ok(RepoResponse::NitroFileList(file_response))
-                }
+                //TODO Handle StorageFileResponse
+                todo!("UN Handled Result Type")
             } else {
                 Ok(NotFound)
             }
@@ -118,16 +108,12 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         repository: &RepositoryConfig<NPMSettings>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        headers: &HeaderMap,
         conn: &DatabaseConnection, authentication: Authentication, bytes: Bytes,
     ) -> Result<RepoResponse, RepositoryError> {
-        for x in http.headers() {
-            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
-        }
-        log::trace!("URL: {}", path);
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         // Check if its a user verification request
-        if user.is_match(path.as_str()) {
+        if user.is_match(path) {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = path.replace("-/user/org.couchdb.user:", "");
@@ -144,8 +130,10 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         }
         //Handle Normal Request
         let caller: UserModel = authentication.get_user(conn).await??;
-        caller.can_deploy_to(&repository)?;
-        if let Some(npm_command) = http.headers().get("npm-command") {
+        if let Some(value) = caller.can_deploy_to(&repository)? {
+            return Err(RepositoryError::RequestError(value.to_string(), StatusCode::UNAUTHORIZED));
+        }
+        if let Some(npm_command) = headers.get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
             trace!("NPM {} Command {}", &path, &npm_command);
             if npm_command.eq("publish") {
@@ -162,7 +150,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                     .collect();
                 for (attachment_key, attachment) in attachments {
                     let attachment = attachment?;
-                    let attachment_data = base64::decode(attachment.data)?;
+                    let attachment_data = base64::decode(attachment.data).map_err(|error| RepositoryError::RequestError(error.to_string(), StatusCode::BAD_REQUEST))?;
                     for (version, version_data) in publish_request.versions.iter() {
                         let version_data_string = serde_json::to_string(version_data)?;
                         trace!(
@@ -173,11 +161,11 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                             &version_data_string
                         );
                         let attachment_file_loc =
-                            format!("{}/{}/{}", & publish_request.name, version, &attachment_key);
+                            format!("{}/{}/{}", &publish_request.name, version, &attachment_key);
                         let npm_version_data =
-                            format!("{}/{}/package.json", & publish_request.name, version);
+                            format!("{}/{}/package.json", &publish_request.name, version);
 
-                            storage
+                        storage
                             .save_file(
                                 &repository,
                                 attachment_data.as_ref(),
@@ -185,7 +173,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                             )
                             .await?;
 
-                            storage
+                        storage
                             .save_file(
                                 &repository,
                                 version_data_string.as_bytes(),
@@ -219,7 +207,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                             }
 
                             if let Err(error) =
-                            crate::repository::utils::update_project_in_repositories(
+                            update_project_in_repositories(
                                 &storage,
                                 &repository,
                                 version_for_saving.name.clone(),

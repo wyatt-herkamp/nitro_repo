@@ -3,6 +3,7 @@ use either::{Either, Left, Right};
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Debug};
+use std::path::PathBuf;
 
 
 use crate::api_response::SiteResponse;
@@ -14,6 +15,7 @@ use serde::de::{SeqAccess, Unexpected, Visitor};
 use serde::ser::SerializeStruct;
 
 use thiserror::Error;
+use tokio::fs::File;
 use crate::error::internal_error::InternalError;
 use crate::repository::data::{RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
 use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
@@ -129,8 +131,7 @@ impl Storage {
     pub async fn save_file<R: RepositoryDataType>(
         &self,
         repository: &R,
-        file: &[u8],
-        location: &str,
+        file: &[u8], location: &str,
     ) -> Result<(), StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => local
@@ -155,23 +156,13 @@ impl Storage {
         &self,
         repository: &R,
         location: &str,
-        request: &HttpRequest,
-    ) -> Result<Option<FileResponse<SiteResponse>>, StorageError> {
+    ) -> Result<Option<StorageFileResponse>, StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => {
-                let option = local
+                local
                     .get_file_as_response(&self.config, repository, location)
                     .await
-                    .map_err(StorageError::LocalStorageError)?;
-                if option.is_none() {
-                    return Ok(None);
-                }
-                let value = option.unwrap();
-                if value.is_left() {
-                    Ok(Some(Left(value.left().unwrap().to_request(request))))
-                } else {
-                    Ok(Some(Right(value.right().unwrap())))
-                }
+                    .map_err(StorageError::LocalStorageError)
             }
         };
     }
@@ -200,14 +191,15 @@ pub struct StorageFile {
 }
 
 /// StorageFileResponse is a trait that can be turned into a SiteResponse for example if its  LocalFile it will return into Actix's NamedFile response
-pub trait StorageFileResponse {
-    fn to_request(self, request: &HttpRequest) -> SiteResponse;
+pub enum StorageFileResponse {
+    File(PathBuf),
+    List(Vec<StorageFile>),
+    Bytes,
 }
 
-pub type FileResponse<T> = Either<T, Vec<StorageFile>>;
 
 #[async_trait]
-pub trait StorageType<T: StorageFileResponse> {
+pub trait StorageType {
     type Error;
     type StorageConfig;
     // Initialize the Storage at Storage start.
@@ -260,7 +252,7 @@ pub trait StorageType<T: StorageFileResponse> {
         config: &StorageConfig,
         repository: &R,
         location: &str,
-    ) -> Result<Option<FileResponse<T>>, Self::Error>;
+    ) -> Result<Option<StorageFileResponse>, Self::Error>;
     async fn get_file<R: RepositoryDataType>(
         &self,
         config: &StorageConfig,

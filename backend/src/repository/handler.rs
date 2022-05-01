@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::rc::Rc;
+use actix_web::http::header::HeaderMap;
 use actix_web::HttpRequest;
 use actix_web::web::Bytes;
 use async_trait::async_trait;
@@ -51,7 +53,7 @@ pub trait RepositoryHandler<T: RepositorySetting> {
         repository: &RepositoryConfig<T>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        http: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> { Ok(RepoResponse::IAmATeapot("Get is not implemented for this type".to_string())) }
@@ -60,7 +62,7 @@ pub trait RepositoryHandler<T: RepositorySetting> {
         repository: &RepositoryConfig<T>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        http: &HeaderMap,
         conn: &DatabaseConnection, authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> { Ok(RepoResponse::IAmATeapot("Get is not implemented for this type".to_string())) }
@@ -69,7 +71,7 @@ pub trait RepositoryHandler<T: RepositorySetting> {
         repository: &RepositoryConfig<T>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        http: &HeaderMap,
         conn: &DatabaseConnection, authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> { Ok(RepoResponse::IAmATeapot("Get is not implemented for this type".to_string())) }
@@ -78,7 +80,7 @@ pub trait RepositoryHandler<T: RepositorySetting> {
         repository: &RepositoryConfig<T>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        http: &HeaderMap,
         conn: &DatabaseConnection, authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> { Ok(RepoResponse::IAmATeapot("Get is not implemented for this type".to_string())) }
@@ -87,7 +89,7 @@ pub trait RepositoryHandler<T: RepositorySetting> {
         repository: &RepositoryConfig<T>,
         storage: &Storage,
         path: &str,
-        http: HttpRequest,
+        http: &HeaderMap,
         conn: &DatabaseConnection, authentication: Authentication,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> { Ok(RepoResponse::IAmATeapot("Get is not implemented for this type".to_string())) }
 }

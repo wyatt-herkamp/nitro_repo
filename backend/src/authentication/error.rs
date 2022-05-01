@@ -36,6 +36,10 @@ impl From<DbErr> for AuthenticationError {
     fn from(err: DbErr) -> AuthenticationError {
         AuthenticationError::InternalError(err.to_string())
     }
+}impl From<argon2::password_hash::Error> for AuthenticationError {
+    fn from(err: argon2::password_hash::Error) -> AuthenticationError {
+        AuthenticationError::InternalError(err.to_string())
+    }
 }
 
 impl From<AuthenticationError> for InternalError{

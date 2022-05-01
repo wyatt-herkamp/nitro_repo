@@ -4,9 +4,7 @@ use std::rc::Rc;
 
 use std::time::SystemTime;
 
-use crate::authentication::{
-    auth_token, session::Session, session::SessionManager, Authentication,
-};
+use crate::authentication::{auth_token, session::Session, session::SessionManager, Authentication, verify_login};
 use crate::system;
 
 use actix_web::cookie::{Cookie, SameSite};
@@ -165,7 +163,7 @@ where
                                 // Treat authorization as normal login
                                 trace!("Authorization Basic username:password");
                                 let user =
-                                    system::utils::verify_login(username, password, database)
+                                    verify_login(username, password, database)
                                         .await
                                         .map_err(internal_server_error)?;
                                 if let Some(user) = user {

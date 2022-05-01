@@ -7,7 +7,6 @@ pub mod nitro;
 pub mod npm;
 pub mod settings;
 pub mod response;
-pub mod utils;
 pub mod web;
 pub mod data;
 pub mod handler;

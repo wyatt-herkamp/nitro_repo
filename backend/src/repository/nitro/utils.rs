@@ -1,5 +1,4 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
-use crate::error::internal_error::{InternalError, NResult};
 use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType,
     VersionData,
@@ -10,23 +9,15 @@ use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
 use crate::repository::data::{ RepositoryDataType};
+use crate::repository::nitro::error::NitroError;
 
-pub async fn get_version<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
-    project: String,
-    version: String,
-) -> NResult<Option<VersionResponse>> {
-    let versions_value = get_versions(storage, repository, project).await?;
-    Ok(get_version_by_data(&versions_value, version))
-}
 
 pub async fn process_storage_files<R: RepositoryDataType>(
     storage: &Storage,
     repo: &R,
     storage_files: Vec<StorageFile>,
     requested_dir: &str,
-) -> Result<NitroFileResponse, InternalError> {
+) -> Result<NitroFileResponse, NitroError> {
     let mut nitro_files = Vec::new();
     for file in storage_files {
         nitro_files.push(NitroFile {
@@ -97,6 +88,15 @@ pub async fn process_storage_files<R: RepositoryDataType>(
         }
     };
 }
+pub async fn get_version<R: RepositoryDataType>(
+    storage: &Storage,
+    repository: &R,
+    project: String,
+    version: String,
+) -> Result<Option<VersionResponse>, NitroError> {
+    let versions_value = get_versions(storage, repository, project).await?;
+    Ok(get_version_by_data(&versions_value, version))
+}
 
 pub fn get_version_by_data(
     versions_value: &NitroRepoVersions,
@@ -117,7 +117,7 @@ pub async fn update_project_in_repositories<R: RepositoryDataType>(
     storage: &Storage,
     repository: &R,
     project: String,
-) -> Result<(), InternalError> {
+) -> Result<(), NitroError> {
     let option = storage.get_file(repository, PROJECTS_FILE).await?;
     let mut repo_listing: RepositoryListing = if let Some(data) = option {
         let data = String::from_utf8(data)?;
@@ -139,7 +139,7 @@ pub async fn get_versions<R: RepositoryDataType>(
     storage: &Storage,
     repository: &R,
     path: String,
-) -> Result<NitroRepoVersions, InternalError> {
+) -> Result<NitroRepoVersions, NitroError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
     let option = storage.get_file(repository, &string).await?;
     Ok(if let Some(vec) = option {
@@ -176,7 +176,7 @@ pub async fn get_project_data<R: RepositoryDataType>(
     storage: &Storage,
     repository: &R,
     project: String,
-) -> Result<Option<ProjectData>, InternalError> {
+) -> Result<Option<ProjectData>, NitroError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
     debug!("Project Data Location {}", &string);
     let option = storage.get_file(repository, &string).await?;
@@ -194,7 +194,7 @@ pub async fn get_version_data<R: RepositoryDataType>(
     storage: &Storage,
     repository: &R,
     folder: String,
-) -> Result<Option<VersionData>, InternalError> {
+) -> Result<Option<VersionData>, NitroError> {
     let string = format!("{}/{}", folder, VERSION_DATA);
     debug!("Version Data Location {}", &string);
     let option = storage.get_file(repository, &string).await?;

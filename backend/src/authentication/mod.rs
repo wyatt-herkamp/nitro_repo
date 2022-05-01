@@ -8,6 +8,7 @@ use actix_web::dev::Payload;
 use actix_web::http::StatusCode;
 use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse, ResponseError};
 use std::fmt::{Debug, Display, Formatter};
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 
 use futures_util::future::{ready, Ready};
 use log::trace;
@@ -20,6 +21,7 @@ use crate::authentication::auth_token::AuthTokenModel;
 use crate::authentication::error::AuthenticationError;
 use crate::authentication::session::Session;
 use crate::error::internal_error::InternalError;
+use crate::system::user;
 
 use crate::system::user::{UserEntity, UserModel};
 
@@ -128,4 +130,26 @@ impl FromRequest for Authentication {
 
         ready(Ok(model.unwrap()))
     }
+}
+
+
+pub async fn verify_login(
+    username: String,
+    password: String,
+    database: &DatabaseConnection,
+) -> Result<Option<UserModel>, AuthenticationError> {
+    let user_found: Option<UserModel> = user::get_by_username(&username, database).await?;
+    if user_found.is_none() {
+        return Ok(None);
+    }
+    let argon2 = Argon2::default();
+    let user = user_found.unwrap();
+    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    if argon2
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_err()
+    {
+        return Ok(None);
+    }
+    Ok(Some(user))
 }

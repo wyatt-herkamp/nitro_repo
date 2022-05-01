@@ -4,27 +4,27 @@ use log::{trace, warn};
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::error::internal_error::InternalError;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, VersionData};
 
-use crate::repository::utils::get_project_data;
 use crate::utils::get_current_time;
 
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use sea_orm::DatabaseConnection;
+use crate::authentication::verify_login;
 use crate::repository::data::RepositoryDataType;
+use crate::repository::error::RepositoryError;
+use crate::repository::nitro::utils::get_project_data;
 
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
 };
 use crate::storage::models::Storage;
-use crate::system::utils::verify_login;
 
 pub async fn is_valid(
     username: &str,
     request: &LoginRequest,
     conn: &DatabaseConnection,
-) -> Result<bool, InternalError> {
+) -> Result<bool, RepositoryError> {
     Ok(
         verify_login(username.to_string(), request.password.clone(), conn)
             .await?
@@ -58,7 +58,7 @@ pub async fn update_project<R: RepositoryDataType>(
     repository: &R,
     project_folder: &str,
     version: Version,
-) -> Result<(), InternalError> {
+) -> Result<(), RepositoryError> {
     let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
     let version_folder = format!("{}/{}/{}", &project_folder, &version.version, VERSION_DATA);
 
@@ -114,7 +114,7 @@ pub async fn get_version_data<R: RepositoryDataType>(
     repository: &R,
     project_folder: &str,
     project: &ProjectData,
-) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
+) -> Result<(NPMTimes, DistTags, NPMVersions), RepositoryError> {
     let mut times = NPMTimes {
         created: format_time(project.created),
         modified: format_time(project.updated),
@@ -147,7 +147,7 @@ pub async fn generate_get_response<R: RepositoryDataType>(
     storage: &Storage,
     repository: &R,
     project_folder: &str,
-) -> Result<Option<GetResponse>, InternalError> {
+) -> Result<Option<GetResponse>, RepositoryError> {
     let option = get_project_data(storage, repository, project_folder.to_string()).await?;
     if option.is_none() {
         return Ok(None);

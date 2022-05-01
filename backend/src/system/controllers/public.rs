@@ -6,12 +6,13 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::response::unauthorized;
 
-use crate::system::utils::verify_login;
 
 use crate::authentication::session::SessionManager;
 use crate::authentication::session::SessionManagerType;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
+use crate::authentication::verify_login;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
     pub username: String,

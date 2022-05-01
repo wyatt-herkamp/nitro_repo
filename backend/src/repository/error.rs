@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::string;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use actix_web::body::BoxBody;
@@ -7,6 +8,7 @@ use crate::authentication::UnAuthorized;
 use crate::system::permissions::options::MissingPermission;
 use crate::system::permissions::PermissionError;
 use thiserror::Error;
+use crate::authentication::error::AuthenticationError;
 use crate::repository::maven::error::MavenError;
 use crate::repository::npm::error::NPMError;
 use crate::storage::models::StorageError;
@@ -55,6 +57,12 @@ impl From<String> for RepositoryError {
     }
 }
 
+impl From<string::FromUtf8Error> for RepositoryError {
+    fn from(err: string::FromUtf8Error) -> RepositoryError {
+        RepositoryError::InternalError(err.to_string())
+    }
+}
+
 impl From<serde_json::Error> for RepositoryError {
     fn from(err: serde_json::Error) -> RepositoryError {
         RepositoryError::InternalError(err.to_string())
@@ -66,9 +74,22 @@ impl From<StorageError> for RepositoryError {
         RepositoryError::InternalError(err.to_string())
     }
 }
+
+impl From<AuthenticationError> for RepositoryError {
+    fn from(err: AuthenticationError) -> RepositoryError {
+        RepositoryError::InternalError(err.to_string())
+    }
+}
+
 impl From<UnAuthorized> for RepositoryError {
-    fn from(err: UnAuthorized) -> RepositoryError {
-        RepositoryError::RequestError("Not Authorized".to_string(), StatusCode::NOT_FOUND)
+    fn from(_: UnAuthorized) -> RepositoryError {
+        RepositoryError::RequestError("Not Authorized".to_string(), StatusCode::UNAUTHORIZED)
+    }
+}
+
+impl From<PermissionError> for RepositoryError {
+    fn from(_: PermissionError) -> RepositoryError {
+        RepositoryError::RequestError("Not Authorized".to_string(), StatusCode::UNAUTHORIZED)
     }
 }
 

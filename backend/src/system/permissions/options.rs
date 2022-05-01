@@ -1,9 +1,10 @@
-use crate::system::permissions::{can_deploy, can_read, UserPermissions};
+use crate::system::permissions::{can_deploy, can_read, PermissionError, UserPermissions};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;
 use std::fmt;
+use semver::Op;
 use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting};
 
 #[derive(Debug)]
@@ -27,8 +28,8 @@ pub trait CanIDo {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission>;
     fn can_i_edit_users(&self) -> Result<(), MissingPermission>;
     fn can_i_admin(&self) -> Result<(), MissingPermission>;
-    fn can_deploy_to<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<(), InternalError>;
-    fn can_read_from<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<(), InternalError>;
+    fn can_deploy_to<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<Option<MissingPermission>, PermissionError>;
+    fn can_read_from<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<Option<MissingPermission>, PermissionError>;
 }
 
 impl CanIDo for UserModel {
@@ -58,31 +59,31 @@ impl CanIDo for UserModel {
         Ok(())
     }
 
-    fn can_deploy_to<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>)-> Result<(), InternalError> {
+    fn can_deploy_to<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>)-> Result<Option<MissingPermission>, PermissionError>{
         let can_read = can_deploy(&self.permissions, repo)?;
         if can_read {
-            Ok(())
+            Ok(None)
         } else {
-            Err(InternalError::MissingPermission(MissingPermission(
-                "Read Repository".to_string(),
+            Ok(Some(MissingPermission(
+                "Write Repository".to_string(),
             )))
         }
     }
 
-    fn can_read_from<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<(), InternalError> {
+    fn can_read_from<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) ->Result<Option<MissingPermission>, PermissionError> {
         match repo.main_config.security.visibility {
-            Visibility::Public => Ok(()),
+            Visibility::Public => Ok(None),
             Visibility::Private => {
                 let can_read = can_read(&self.permissions, repo)?;
                 if can_read {
-                    Ok(())
+                    Ok(None)
                 } else {
-                    Err(InternalError::MissingPermission(MissingPermission(
+                    Ok(Some(MissingPermission(
                         "Read Repository".to_string(),
                     )))
                 }
             }
-            Visibility::Hidden => Ok(()),
+            Visibility::Hidden => Ok(None),
         }
     }
 }

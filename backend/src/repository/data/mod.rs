@@ -131,7 +131,7 @@ fn default() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
 pub enum RepositoryType {
     Maven,
     NPM,
