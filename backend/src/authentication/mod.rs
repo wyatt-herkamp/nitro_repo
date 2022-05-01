@@ -1,6 +1,7 @@
 pub mod auth_token;
 pub mod middleware;
 pub mod session;
+pub mod error;
 
 use actix_web::body::BoxBody;
 use actix_web::dev::Payload;
@@ -13,11 +14,12 @@ use log::trace;
 
 use sea_orm::{DatabaseConnection, EntityTrait};
 
-use crate::error::internal_error::InternalError;
 
 use crate::api_response::{APIResponse, RequestErrorResponse};
 use crate::authentication::auth_token::AuthTokenModel;
+use crate::authentication::error::AuthenticationError;
 use crate::authentication::session::Session;
+use crate::error::internal_error::InternalError;
 
 use crate::system::user::{UserEntity, UserModel};
 
@@ -84,7 +86,7 @@ impl Authentication {
     pub async fn get_user(
         self,
         database: &DatabaseConnection,
-    ) -> Result<Result<UserModel, UnAuthorized>, InternalError> {
+    ) -> Result<Result<UserModel, UnAuthorized>, AuthenticationError> {
         match self {
             Authentication::AuthToken(auth) => {
                 let option = auth.get_user(database).await?;

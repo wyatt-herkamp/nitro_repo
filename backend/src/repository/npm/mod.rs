@@ -7,43 +7,54 @@ use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use regex::Regex;
 use std::string::String;
+use sea_orm::DatabaseConnection;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
-use crate::repository::models::RepositorySummary;
 
-use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
-use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
+use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest};
+use crate::repository::npm::utils::{generate_get_response, is_valid};
 
 use crate::authentication::Authentication;
-use crate::repository::types::RepoResponse::{
+use crate::repository::nitro::NitroRepository;
+use crate::repository::npm::error::NPMError;
+use crate::repository::response::RepoResponse::{
     BadRequest, CreatedWithJSON, NotAuthorized, NotFound, ProjectResponse,
 };
-use crate::repository::types::{
-    Project, RDatabaseConnection, RepoResponse, RepoResult, RepositoryRequest,
+use crate::repository::response::{
+    Project, RepoResponse,
 };
 use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
+use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
 pub mod models;
 mod utils;
+pub mod error;
+
+use async_trait::async_trait;
+use crate::repository::data::RepositoryConfig;
+use crate::repository::handler::RepositoryHandler;
+use crate::repository::error::RepositoryError;
 
 pub struct NPMHandler;
 
 // name/version
-impl NPMHandler {
-    pub async fn handle_get(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
-        auth: Authentication,
-    ) -> RepoResult {
-        let caller: UserModel = auth.get_user(conn).await??;
-        caller.can_read_from(&request.repository)?;
+#[async_trait]
+impl RepositoryHandler<NPMSettings> for NPMHandler {
+    async fn handle_get(
+        repository: &RepositoryConfig<NPMSettings>,
+        storage: &Storage,
+        path: &str,
+        http: HttpRequest,
+        conn: &DatabaseConnection, authentication: Authentication,
+    ) -> Result<RepoResponse, RepositoryError> {
+        let caller: UserModel = authentication.get_user(conn).await??;
+        caller.can_read_from(&repository)?;
         if http.headers().get("npm-command").is_some() {
-            if request.value.contains(".tgz") {
-                let split: Vec<&str> = request.value.split("/-/").collect();
+            if path.contains(".tgz") {
+                let split: Vec<&str> = path.split("/-/").collect();
                 let package = split.get(0).unwrap().to_string();
                 let file = split.get(1).unwrap().to_string();
                 let version = file
@@ -55,9 +66,9 @@ impl NPMHandler {
                     &package, &version, &nitro_file_location
                 );
 
-                let result = request
-                    .storage
-                    .get_file_as_response(&request.repository, &nitro_file_location, http)
+                let result =
+                    storage
+                    .get_file_as_response(&repository, &nitro_file_location, http)
                     .await?;
                 if let Some(result) = result {
                     return if result.is_left() {
@@ -70,7 +81,7 @@ impl NPMHandler {
                 }
             }
             let get_response =
-                generate_get_response(&request.storage, &request.repository, &request.value)
+                generate_get_response(&storage, &repository, &path)
                     .await
                     .unwrap();
             if get_response.is_none() {
@@ -79,9 +90,9 @@ impl NPMHandler {
             let string = serde_json::to_string_pretty(&get_response.unwrap())?;
             Ok(RepoResponse::OkWithJSON(string))
         } else {
-            let result = request
-                .storage
-                .get_file_as_response(&request.repository, &request.value, http)
+            let result =
+                storage
+                .get_file_as_response(&repository, &path, http)
                 .await?;
             if let Some(result) = result {
                 if result.is_left() {
@@ -89,12 +100,12 @@ impl NPMHandler {
                 } else {
                     let vec = result.right().unwrap();
                     let file_response = process_storage_files(
-                        &request.storage,
-                        &request.repository,
+                        &storage,
+                        &repository,
                         vec,
-                        &request.value,
+                        &path,
                     )
-                    .await?;
+                        .await?;
                     Ok(RepoResponse::NitroFileList(file_response))
                 }
             } else {
@@ -103,23 +114,23 @@ impl NPMHandler {
         }
     }
 
-    pub async fn handle_put(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &RDatabaseConnection,
-        bytes: Bytes,
-        auth: Authentication,
-    ) -> RepoResult {
+    async fn handle_put(
+        repository: &RepositoryConfig<NPMSettings>,
+        storage: &Storage,
+        path: &str,
+        http: HttpRequest,
+        conn: &DatabaseConnection, authentication: Authentication, bytes: Bytes,
+    ) -> Result<RepoResponse, RepositoryError> {
         for x in http.headers() {
             log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
         }
-        log::trace!("URL: {}", request.value);
+        log::trace!("URL: {}", path);
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         // Check if its a user verification request
-        if user.is_match(request.value.as_str()) {
+        if user.is_match(path.as_str()) {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
-            let username = request.value.replace("-/user/org.couchdb.user:", "");
+            let username = path.replace("-/user/org.couchdb.user:", "");
             return if is_valid(&username, &json, conn).await? {
                 trace!("User Request for {} was authorized", &username);
                 let message = format!("user '{}' created", username);
@@ -132,19 +143,20 @@ impl NPMHandler {
             };
         }
         //Handle Normal Request
-        let caller: UserModel = auth.get_user(conn).await??;
-        caller.can_deploy_to(&request.repository)?;
+        let caller: UserModel = authentication.get_user(conn).await??;
+        caller.can_deploy_to(&repository)?;
         if let Some(npm_command) = http.headers().get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
-            trace!("NPM {} Command {}", &request.value, &npm_command);
+            trace!("NPM {} Command {}", &path, &npm_command);
             if npm_command.eq("publish") {
                 let publish_request: PublishRequest = serde_json::from_slice(bytes.as_ref())?;
+
                 let attachments: HashMap<String, serde_json::Result<Attachment>> = publish_request
                     ._attachments
                     .iter()
-                    .map(|(key, value)| {
+                    .map(|(key, path)| {
                         let attachment: serde_json::Result<Attachment> =
-                            serde_json::from_value(value.clone());
+                            serde_json::from_value(path.clone());
                         (key.clone(), attachment)
                     })
                     .collect();
@@ -161,21 +173,21 @@ impl NPMHandler {
                             &version_data_string
                         );
                         let attachment_file_loc =
-                            format!("{}/{}/{}", &publish_request.name, version, &attachment_key);
+                            format!("{}/{}/{}", & publish_request.name, version, &attachment_key);
                         let npm_version_data =
-                            format!("{}/{}/package.json", &publish_request.name, version);
-                        request
-                            .storage
+                            format!("{}/{}/package.json", & publish_request.name, version);
+
+                            storage
                             .save_file(
-                                &request.repository,
+                                &repository,
                                 attachment_data.as_ref(),
                                 &attachment_file_loc,
                             )
                             .await?;
-                        request
-                            .storage
+
+                            storage
                             .save_file(
-                                &request.repository,
+                                &repository,
                                 version_data_string.as_bytes(),
                                 &npm_version_data,
                             )
@@ -183,8 +195,8 @@ impl NPMHandler {
 
                         let project_folder = publish_request.name.clone();
                         trace!("Project Folder Location {}", project_folder);
-                        let repository = request.repository.clone();
-                        let storage = request.storage.clone();
+                        let repository = repository.clone();
+                        let storage = storage.clone();
                         let version_for_saving = version_data.clone();
                         let user = caller.clone();
                         actix_web::rt::spawn(async move {
@@ -194,7 +206,7 @@ impl NPMHandler {
                                 &project_folder,
                                 version_for_saving.clone(),
                             )
-                            .await
+                                .await
                             {
                                 error!("Unable to update {}, {}", PROJECT_FILE, error);
                                 if log_enabled!(Trace) {
@@ -207,11 +219,11 @@ impl NPMHandler {
                             }
 
                             if let Err(error) =
-                                crate::repository::utils::update_project_in_repositories(
-                                    &storage,
-                                    &repository,
-                                    version_for_saving.name.clone(),
-                                )
+                            crate::repository::utils::update_project_in_repositories(
+                                &storage,
+                                &repository,
+                                version_for_saving.name.clone(),
+                            )
                                 .await
                             {
                                 error!("Unable to update repository.json, {}", error);
@@ -254,92 +266,10 @@ impl NPMHandler {
             Ok(BadRequest("Missing NPM-Command".to_string()))
         }
     }
+}
 
-    pub async fn handle_versions(
-        request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &RDatabaseConnection,
-    ) -> RepoResult {
-        let vec =
-            get_versions(&request.storage, &request.repository, request.value.clone()).await?;
-        Ok(RepoResponse::NitroVersionListingResponse(vec))
-    }
-
-    pub async fn handle_version(
-        request: &RepositoryRequest,
-        version: String,
-        _http: &HttpRequest,
-        _conn: &RDatabaseConnection,
-    ) -> RepoResult {
-        let project_dir = parse_project_to_directory(&request.value);
-
-        let project_data =
-            get_project_data(&request.storage, &request.repository, project_dir.clone()).await?;
-        if let Some(project_data) = project_data {
-            let version_data = crate::repository::utils::get_version_data(
-                &request.storage,
-                &request.repository,
-                format!("{}/{}", project_dir, &version),
-            )
-            .await?;
-
-            let project = Project {
-                repo_summary: RepositorySummary::new(&request.repository),
-                project: project_data,
-                version: version_data,
-                frontend_response: None,
-            };
-            return Ok(ProjectResponse(project));
-        }
-        RepoResult::Ok(NotFound)
-    }
-
-    pub async fn handle_project(
-        request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &RDatabaseConnection,
-    ) -> RepoResult {
-        let project_dir = parse_project_to_directory(&request.value);
-
-        let project_data =
-            get_project_data(&request.storage, &request.repository, project_dir.clone()).await?;
-        if let Some(project_data) = project_data {
-            let version_data = crate::repository::utils::get_version_data(
-                &request.storage,
-                &request.repository,
-                format!("{}/{}", project_dir, &project_data.versions.latest_version),
-            )
-            .await?;
-
-            let project = Project {
-                repo_summary: RepositorySummary::new(&request.repository),
-                project: project_data,
-                version: version_data,
-                frontend_response: None,
-            };
-            return Ok(ProjectResponse(project));
-        }
-        RepoResult::Ok(NotFound)
-    }
-
-    pub async fn latest_version(
-        request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &RDatabaseConnection,
-    ) -> Result<Option<String>, InternalError> {
-        let project_dir = parse_project_to_directory(&request.value);
-
-        let project_data =
-            get_project_data(&request.storage, &request.repository, project_dir).await?;
-        Ok(if let Some(project_data) = project_data {
-            let latest_release = project_data.versions.latest_release;
-            if latest_release.is_empty() {
-                Some(project_data.versions.latest_version)
-            } else {
-                Some(latest_release)
-            }
-        } else {
-            None
-        })
+impl NitroRepository<NPMSettings> for NPMHandler {
+    fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
+        path.into().replace('.', "/").replace(':', "/")
     }
 }

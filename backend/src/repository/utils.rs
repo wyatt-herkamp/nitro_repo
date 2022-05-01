@@ -1,19 +1,19 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::{InternalError, NResult};
-use crate::repository::models::{Repository, RepositorySummary};
 use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType,
     VersionData,
 };
-use crate::repository::types::{Project, VersionResponse};
+use crate::repository::response::{Project, VersionResponse};
 use crate::storage::models::{Storage, StorageFile};
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
+use crate::repository::data::{ RepositoryDataType};
 
-pub async fn get_version(
+pub async fn get_version<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project: String,
     version: String,
 ) -> NResult<Option<VersionResponse>> {
@@ -21,9 +21,9 @@ pub async fn get_version(
     Ok(get_version_by_data(&versions_value, version))
 }
 
-pub async fn process_storage_files(
+pub async fn process_storage_files<R: RepositoryDataType>(
     storage: &Storage,
-    repo: &Repository,
+    repo: &R,
     storage_files: Vec<StorageFile>,
     requested_dir: &str,
 ) -> Result<NitroFileResponse, InternalError> {
@@ -35,7 +35,7 @@ pub async fn process_storage_files(
             file,
         });
     }
-    let active_dir = format!("{}/{}/{}", &storage.config.name, &repo.name, requested_dir);
+    let active_dir = format!("{}/{}/{}", &storage.config.name, &repo.get_name(), requested_dir);
     let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
     let option = storage.get_file(repo, &string).await?;
     return if let Some(data) = option {
@@ -50,7 +50,7 @@ pub async fn process_storage_files(
         )
         .await?;
         let project = Project {
-            repo_summary: RepositorySummary::new(repo),
+            repo_summary: repo.get_repository_value().clone(),
             project: data,
             version: version_data,
             frontend_response: None,
@@ -76,7 +76,7 @@ pub async fn process_storage_files(
                 project_data.versions.latest_release = project_data.versions.latest_version.clone();
             }
             let project = Project {
-                repo_summary: RepositorySummary::new(repo),
+                repo_summary: repo.get_repository_value().clone(),
                 project: project_data,
                 version: Some(version),
                 frontend_response: None,
@@ -92,7 +92,7 @@ pub async fn process_storage_files(
             Ok(NitroFileResponse {
                 active_dir,
                 files: nitro_files,
-                response_type: ResponseType::Repository(RepositorySummary::new(repo)),
+                response_type: ResponseType::Repository(repo.get_repository_value().clone()),
             })
         }
     };
@@ -113,9 +113,9 @@ pub fn get_version_by_data(
     None
 }
 
-pub async fn update_project_in_repositories(
+pub async fn update_project_in_repositories<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project: String,
 ) -> Result<(), InternalError> {
     let option = storage.get_file(repository, PROJECTS_FILE).await?;
@@ -135,9 +135,9 @@ pub async fn update_project_in_repositories(
     Ok(())
 }
 
-pub async fn get_versions(
+pub async fn get_versions<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     path: String,
 ) -> Result<NitroRepoVersions, InternalError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
@@ -172,9 +172,9 @@ pub fn get_latest_version_data(
     }
 }
 
-pub async fn get_project_data(
+pub async fn get_project_data<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project: String,
 ) -> Result<Option<ProjectData>, InternalError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
@@ -190,9 +190,9 @@ pub async fn get_project_data(
         None
     })
 }
-pub async fn get_version_data(
+pub async fn get_version_data<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     folder: String,
 ) -> Result<Option<VersionData>, InternalError> {
     let string = format!("{}/{}", folder, VERSION_DATA);

@@ -15,6 +15,7 @@ path = "src/lib.rs"
 name = "nitro_repo"
 path = "src/web/full.rs"
 required-features = ["multi_storage"]
+
 [dependencies]
 # Web
 actix = "0.13.0"

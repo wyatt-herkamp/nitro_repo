@@ -4,7 +4,7 @@ use serde::de::value::MapDeserializer;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::models::Repository;
+use crate::repository::data::RepositoryDataType;
 use crate::storage::models::Storage;
 use crate::system::user::UserModel;
 
@@ -24,17 +24,11 @@ impl Display for DeployInfo {
     }
 }
 
-pub async fn handle_post_deploy(
+pub async fn handle_post_deploy<R: RepositoryDataType>(
     _storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     deploy: &DeployInfo,
 ) -> Result<(), InternalError> {
-    for x in &repository.deploy_settings.webhooks {
-        if x.handler.as_str() == "discord" {
-            let result =
-                DiscordConfig::deserialize(MapDeserializer::new(x.settings.clone().into_iter()))?;
-            DiscordHandler::handle(&result, deploy).await?;
-        }
-    }
+    todo!("Not Implemented");
     Ok(())
 }

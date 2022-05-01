@@ -5,7 +5,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
 
-use crate::storage::models::{Storage, StorageConfig, StorageHandler};
+use crate::storage::models::{Storage, StorageConfig, UnloadedStorage};
 use crate::system::permissions::options::CanIDo;
 use crate::utils::get_current_time;
 
@@ -15,9 +15,10 @@ use std::fs::{canonicalize, create_dir_all};
 use crate::authentication::Authentication;
 use std::path::Path;
 
-use crate::storage::local_storage::LocalStorage;
+use crate::storage::local_storage::{LocalConfig, LocalStorage};
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
+use crate::storage::handler::StorageHandlerFactory;
 use crate::storage::multi::MultiStorageController;
 
 #[get("/api/storages/list")]
@@ -64,7 +65,12 @@ pub async fn get_by_id(
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
 
-    return APIResponse::new(true, storages.get_storage_by_name(id.as_ref()).await?).respond(&r);
+    let option = storages.get_storage_by_name(id.as_ref()).await?;
+    if option.is_none() {
+        return APIResponse::new(true, Some(false)).respond(&r);
+    }
+    //TODO serialize
+    return APIResponse::new(true, Some(false)).respond(&r);
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -90,15 +96,19 @@ pub async fn add_storage(
     }
     let path = canonicalize(path)?;
     let string = nc.0.name;
-    let storage = Storage {
+    let config = LocalConfig {
+        location: "".to_string()
+    };
+    let storage = UnloadedStorage {
         config: StorageConfig {
             public_name: nc.0.public_name,
             name: string.clone(),
             created: get_current_time(),
         },
-        storage_handler: StorageHandler::LocalStorage(LocalStorage {
-            location: path.to_str().unwrap().to_string(),
-        }),
+        storage_handler: StorageHandlerFactory {
+            storage_type: "local".to_string(),
+            config: serde_json::to_value(config)?,
+        },
     };
 
     storages.create_storage(storage.clone()).await?;

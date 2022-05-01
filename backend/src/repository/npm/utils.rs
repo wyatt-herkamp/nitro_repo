@@ -11,8 +11,8 @@ use crate::repository::utils::get_project_data;
 use crate::utils::get_current_time;
 
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
-use crate::repository::models::Repository;
 use sea_orm::DatabaseConnection;
+use crate::repository::data::RepositoryDataType;
 
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
@@ -53,9 +53,9 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     }
 }
 
-pub async fn update_project(
+pub async fn update_project<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project_folder: &str,
     version: Version,
 ) -> Result<(), InternalError> {
@@ -109,9 +109,9 @@ pub async fn update_project(
     Ok(())
 }
 
-pub async fn get_version_data(
+pub async fn get_version_data<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project_folder: &str,
     project: &ProjectData,
 ) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
@@ -143,9 +143,9 @@ pub async fn get_version_data(
     Ok((times, dist_tags, npm_versions))
 }
 
-pub async fn generate_get_response(
+pub async fn generate_get_response<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project_folder: &str,
 ) -> Result<Option<GetResponse>, InternalError> {
     let option = get_project_data(storage, repository, project_folder.to_string()).await?;
@@ -171,6 +171,3 @@ pub async fn generate_get_response(
     }))
 }
 
-pub fn parse_project_to_directory(value: &str) -> String {
-    value.replace('.', "/").replace(':', "/")
-}

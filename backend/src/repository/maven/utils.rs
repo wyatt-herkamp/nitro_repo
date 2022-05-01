@@ -6,17 +6,14 @@ use chrono::NaiveDateTime;
 use log::trace;
 
 use crate::error::internal_error::InternalError;
+use crate::repository::data::RepositoryDataType;
 use crate::repository::maven::models::Pom;
-use crate::repository::models::Repository;
+
 use crate::repository::nitro::{ProjectData, VersionData};
 use crate::storage::models::Storage;
 
 use crate::utils::get_current_time;
 
-/// Project format {groupID}:{artifactID}
-pub fn parse_project_to_directory(value: &str) -> String {
-    value.replace('.', "/").replace(':', "/")
-}
 
 #[allow(dead_code)]
 fn get_artifacts(path: &Path) -> Vec<String> {
@@ -56,9 +53,9 @@ mod tests {
     }
 }
 
-pub async fn update_project(
+pub async fn update_project<R: RepositoryDataType>(
     storage: &Storage,
-    repository: &Repository,
+    repository: &R,
     project_folder: &str,
     version: String,
     pom: Pom,

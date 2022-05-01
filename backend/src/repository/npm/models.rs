@@ -2,8 +2,20 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::repository::data::RepositorySetting;
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct NPMSettings {}
+impl TryFrom<Value> for NPMSettings {
+    type Error = serde_json::Error;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        serde_json::from_value(value)
+    }
+}
+
+impl RepositorySetting for NPMSettings{}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     pub password: String,

@@ -4,50 +4,42 @@ use std::path::Path;
 use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
-use crate::storage::models::{Storage, StorageFile, STORAGE_FILE, STORAGE_FILE_BAK};
+use crate::storage::models::{Storage, StorageFile, STORAGE_FILE, STORAGE_FILE_BAK, UnloadedStorage, StorageError};
 use async_trait::async_trait;
 use serde::{Serialize, Serializer};
 use thiserror::Error;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
 use crate::error::internal_error::InternalError;
+use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
 
-#[derive(Error, Debug)]
-pub enum MultiStorageError {
-    #[error("IO error {0}")]
-    IOError(std::io::Error),
-    #[error("JSON error {0}")]
-    JSONError(serde_json::Error),
-}
 
-impl From<std::io::Error> for MultiStorageError {
-    fn from(err: std::io::Error) -> MultiStorageError {
-        MultiStorageError::IOError(err)
-    }
-}
-
-impl From<serde_json::Error> for MultiStorageError {
-    fn from(err: serde_json::Error) -> MultiStorageError {
-        MultiStorageError::JSONError(err)
-    }
-}
-impl From<MultiStorageError> for InternalError{
-    fn from(error: MultiStorageError) -> Self {
-        InternalError::Error(error.to_string())
-    }
-}
-pub async fn load_storages() -> Result<HashMap<String, Storage>, MultiStorageError> {
+pub async fn load_storages() -> Result<HashMap<String, Storage>, StorageError> {
     let path = Path::new(STORAGE_FILE);
     if !path.exists() {
         return Ok(HashMap::new());
     }
     let string = read_to_string(&path).await?;
-    let result: HashMap<String, Storage> = serde_json::from_str(&string)?;
-    Ok(result)
+    let result: Vec<UnloadedStorage> = serde_json::from_str(&string)?;
+    let mut values: HashMap<String, Storage> = HashMap::new();
+    for unloaded_storage in result {
+        let key = unloaded_storage.config.name.clone();
+        let storage = Storage {
+            storage_handler: crate::storage::handler::StorageHandler::load(unloaded_storage.storage_handler).await?,
+            config: unloaded_storage.config,
+        };
+
+        values.insert(key, storage);
+    }
+    Ok(values)
 }
 
-pub async fn save_storages(storages: &HashMap<String, Storage>) -> Result<(), MultiStorageError> {
-    let result = serde_json::to_string(&storages)?;
+pub async fn save_storages(storages: &HashMap<String, Storage>) -> Result<(), StorageError> {
+    let mut values: Vec<UnloadedStorage> = Vec::new();
+    for (_, storage) in storages {
+        values.push(UnloadedStorage { storage_handler: storage.storage_handler.save_value()?, config: storage.config.clone() })
+    }
+    let result = serde_json::to_string(&values)?;
     let path = Path::new(STORAGE_FILE);
     let bak = Path::new(STORAGE_FILE_BAK);
     if bak.exists() {
@@ -70,7 +62,7 @@ pub struct MultiStorageController {
 }
 
 impl MultiStorageController {
-    pub async fn init() -> Result<MultiStorageController, MultiStorageError> {
+    pub async fn init() -> Result<MultiStorageController, StorageError> {
         let result = load_storages().await?;
         Ok(MultiStorageController {
             storages: RwLock::new(result),
@@ -80,29 +72,46 @@ impl MultiStorageController {
 
 impl Serialize for MultiStorageController {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_some(self)
     }
 }
 
 impl MultiStorageController {
-
-   pub async fn get_storage_by_name(&self, name: &str) -> Result<Option<Storage>, MultiStorageError> {
+    pub async fn get_storage_by_name(&self, name: &str) -> Result<Option<Storage>, StorageError> {
         let storages = self.storages.read().await;
         return Ok(storages.get(name).cloned());
     }
 
-    pub    async fn create_storage(&self, storage: Storage) -> Result<(), MultiStorageError> {
+    pub async fn create_storage(&self, storage: UnloadedStorage) -> Result<Storage, StorageError> {
+        let mut storages = self.storages.read().await;
+        let name = storage.config.name.clone();
+
+        if storages.contains_key(&name) {
+            return Err(StorageError::StorageAlreadyExist);
+        }
+        /// Return Storage Lock if not needed
+        let mut saving_map = storages.clone();
+        drop(storages);
+        let storage = {
+            //Initialize Storage
+            let storage_handler = StorageHandler::load(storage.storage_handler).await?;
+            let storage = Storage {
+                storage_handler,
+                config: storage.config,
+            };
+            saving_map.insert(name.clone(), storage);
+            save_storages(&saving_map).await?;
+            saving_map.remove(&name).ok_or(StorageError::LoadFailure("Failed to create storage. Unable to find new data".to_string()))
+        }?;
         let mut storages = self.storages.write().await;
-        //TODO Prepare Setup
-        storages.insert(storage.config.name.clone(), storage);
-        save_storages(&storages).await?;
-        return Ok(());
+        storages.insert(name.clone(), storage);
+        return Ok(storages.get(&name).cloned().ok_or(StorageError::LoadFailure("Failed to create storage. Unable to find new data".to_string()))?);
     }
 
-    pub    async fn delete_storage(&self, storage: &str) -> Result<bool, MultiStorageError> {
+    pub async fn delete_storage(&self, storage: &str) -> Result<bool, StorageError> {
         let mut storages = self.storages.write().await;
         let option = storages.remove(storage);
         if option.is_none() {
@@ -113,7 +122,7 @@ impl MultiStorageController {
         return Ok(true);
     }
 
-    pub   async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, MultiStorageError> {
+    pub async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, StorageError> {
         let storages = self.storages.read().await;
         let mut files = Vec::new();
         for (name, storage) in storages.iter() {

@@ -1,10 +1,10 @@
 use crate::system::permissions::{can_deploy, can_read, UserPermissions};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::models::Repository;
 use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;
 use std::fmt;
+use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting};
 
 #[derive(Debug)]
 pub struct MissingPermission(String);
@@ -27,8 +27,8 @@ pub trait CanIDo {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission>;
     fn can_i_edit_users(&self) -> Result<(), MissingPermission>;
     fn can_i_admin(&self) -> Result<(), MissingPermission>;
-    fn can_deploy_to(&self, repo: &Repository) -> Result<(), InternalError>;
-    fn can_read_from(&self, repo: &Repository) -> Result<(), InternalError>;
+    fn can_deploy_to<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<(), InternalError>;
+    fn can_read_from<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<(), InternalError>;
 }
 
 impl CanIDo for UserModel {
@@ -58,7 +58,7 @@ impl CanIDo for UserModel {
         Ok(())
     }
 
-    fn can_deploy_to(&self, repo: &Repository) -> Result<(), InternalError> {
+    fn can_deploy_to<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>)-> Result<(), InternalError> {
         let can_read = can_deploy(&self.permissions, repo)?;
         if can_read {
             Ok(())
@@ -69,8 +69,8 @@ impl CanIDo for UserModel {
         }
     }
 
-    fn can_read_from(&self, repo: &Repository) -> Result<(), InternalError> {
-        match repo.security.visibility {
+    fn can_read_from<T: RepositorySetting>(&self, repo: &RepositoryConfig<T>) -> Result<(), InternalError> {
+        match repo.main_config.security.visibility {
             Visibility::Public => Ok(()),
             Visibility::Private => {
                 let can_read = can_read(&self.permissions, repo)?;

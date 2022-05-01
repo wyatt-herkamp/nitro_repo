@@ -1,10 +1,6 @@
-use crate::repository::models::{Repository, RepositorySummary};
-use crate::repository::types::RepositoryType;
 use crate::repository::{REPOSITORY_CONF, REPOSITORY_CONF_BAK};
-use crate::storage::models::{
-    FileResponse, RepositoriesFile, StorageConfig, StorageFile, StorageType,
-};
-use crate::storage::{StorageFileResponse, STORAGE_CONFIG};
+use crate::storage::models::{FileResponse, StorageConfig, StorageFile, StorageFileResponse, StorageType};
+use crate::storage::{STORAGE_CONFIG};
 use crate::utils::get_current_time;
 use actix_files::NamedFile;
 use actix_web::HttpRequest;
@@ -16,15 +12,19 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use crate::api_response::SiteResponse;
 
 use async_trait::async_trait;
+use serde_json::Value;
 use thiserror::Error;
 use tokio::fs::{
     create_dir_all, read_to_string, remove_dir_all, remove_file, rename, File, OpenOptions,
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::sync::RwLock;
+use crate::repository::data::{RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
 
 #[derive(Error, Debug)]
 pub enum LocalStorageError {
@@ -53,8 +53,34 @@ impl From<serde_json::Error> for LocalStorageError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LocalStorage {
+pub struct LocalConfig {
     pub location: String,
+}
+
+impl LocalStorage {
+    pub async fn load(value: Value) -> Result<LocalStorage, LocalStorageError> {
+        let config: LocalConfig = serde_json::from_value(value)?;
+        Ok(LocalStorage { config, loaded: false, repositories: Arc::new(RwLock::new(Default::default())) })
+    }
+    async fn load_repositories(path: PathBuf) -> Result<HashMap<String, RepositoryValue>, LocalStorageError> {
+        if !path.exists() {
+            return Ok(HashMap::new());
+        }
+        let string = read_to_string(&path).await?;
+        let result: Vec<RepositoryValue> = serde_json::from_str(&string)?;
+        let mut values = HashMap::new();
+        for x in result {
+            values.insert(x.name.clone(), x);
+        }
+        Ok(values)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LocalStorage {
+    pub config: LocalConfig,
+    pub loaded: bool,
+    pub repositories: Arc<RwLock<HashMap<String, RepositoryValue>>>,
 }
 
 pub struct LocalFile {
@@ -69,7 +95,7 @@ impl StorageFileResponse for LocalFile {
 
 impl LocalStorage {
     pub fn get_storage_folder(&self) -> PathBuf {
-        PathBuf::from(&self.location)
+        PathBuf::from(&self.config.location)
     }
     pub fn get_repository_folder(&self, repository: &str) -> PathBuf {
         self.get_storage_folder().join(repository)
@@ -79,184 +105,80 @@ impl LocalStorage {
 #[async_trait]
 impl StorageType<LocalFile> for LocalStorage {
     type Error = LocalStorageError;
+    type StorageConfig = LocalConfig;
 
-    async fn init(&self, _config: &StorageConfig) -> Result<(), Self::Error> {
-        let path = self.get_storage_folder();
-        if !path.exists() {
-            create_dir_all(&path).await?;
-        }
-        let buf = path.join(STORAGE_CONFIG);
-        if buf.exists() {
-            remove_file(&buf).await?
-        }
-
-        Ok(())
-    }
 
     async fn create_repository(
         &self,
-        _config: &StorageConfig,
-        repository: RepositorySummary,
-    ) -> Result<Repository, Self::Error> {
-        let storages = self.get_storage_folder();
-        let location = storages.join(&repository.name);
-
-        {
-            let storage_config = storages.join(STORAGE_CONFIG);
-            info!(
-                "Adding Value to Storage Config {}",
-                storage_config.to_str().unwrap()
-            );
-            let mut repos = if storage_config.exists() {
-                let string = read_to_string(&storage_config).await?;
-                remove_file(&storage_config).await?;
-                serde_json::from_str(&string)?
-            } else {
-                HashMap::<String, RepositorySummary>::new()
-            };
-            repos.insert(repository.name.clone(), repository.clone());
-            let result = serde_json::to_string_pretty(&repos)?;
-
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create(true)
-                .open(storage_config)
-                .await?;
-            file.write_all(result.as_bytes()).await?;
-        }
-        info!("Creating Directory {}", location.to_str().unwrap());
-        let typ: RepositoryType = RepositoryType::from_str(&repository.repo_type)
-            .map_err(|typ| LocalStorageError::InvalidRepositoryType(typ.to_string()))?;
-        create_dir_all(&location).await?;
-        let repo = Repository {
-            name: repository.name,
-            repo_type: typ,
-            storage: repository.storage,
-            settings: Default::default(),
-            security: Default::default(),
-            deploy_settings: Default::default(),
-            created: get_current_time(),
-        };
-        let result = serde_json::to_string_pretty(&repo)?;
-
-        let config = location.join(REPOSITORY_CONF);
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(config)
-            .await?;
-        file.write_all(result.as_bytes()).await?;
-        Ok(repo)
+        config: &StorageConfig,
+        name: String,
+        repository_type: RepositoryType) -> Result<RepositoryValue, Self::Error> {
+        Err(LocalStorageError::Error("Not Implemented".to_string()))
     }
 
-    async fn delete_repository(
+    async fn delete_repository<R: RepositoryDataType>(
         &self,
         _config: &StorageConfig,
-        repository: &Repository,
+        repository: &R,
         delete_files: bool,
     ) -> Result<(), Self::Error> {
-        let storage_location = self.get_storage_folder();
-
-        let storage_config = storage_location.join(STORAGE_CONFIG);
-        let mut repos = if storage_config.exists() {
-            let string = read_to_string(&storage_config).await?;
-            remove_file(&storage_config).await?;
-            serde_json::from_str(&string)?
-        } else {
-            HashMap::<String, RepositorySummary>::new()
-        };
-        repos.remove(&repository.name);
-        let result = serde_json::to_string_pretty(&repos)?;
-
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(storage_config)
-            .await?;
-        file.write_all(result.as_bytes()).await?;
-        let path = storage_location.join(&repository.name);
-
-        if delete_files {
-            warn!(
-                "All Files for {} are being deleted",
-                &path.to_str().unwrap()
-            );
-            remove_dir_all(&path).await?;
-        } else {
-            let config = storage_location
-                .join(&repository.name)
-                .join(REPOSITORY_CONF);
-            remove_file(config).await?;
-        }
-        Ok(())
+        Err(LocalStorageError::Error("Not Implemented".to_string()))
     }
 
     async fn get_repositories(
         &self,
         _config: &StorageConfig,
-    ) -> Result<RepositoriesFile, Self::Error> {
-        let path = self.get_storage_folder().join(STORAGE_CONFIG);
-        if !path.exists() {
-            return Ok(HashMap::new());
-        }
-        let string = read_to_string(&path).await?;
-        let result: RepositoriesFile = serde_json::from_str(&string)?;
-        Ok(result)
+    ) -> Result<Vec<RepositoryValue>, Self::Error> {
+        let x = self.repositories.read().await;
+        Ok(x.values().cloned().collect())
     }
 
-    async fn get_repository(
+    async fn get_repository<T: RepositorySetting>(
         &self,
         _config: &StorageConfig,
         repo_name: &str,
-    ) -> Result<Option<Repository>, Self::Error> {
+    ) -> Result<Option<RepositoryMainConfig<T>>, Self::Error> {
         let path = self.get_repository_folder(repo_name).join(REPOSITORY_CONF);
 
         if !path.exists() {
             return Ok(None);
         }
         let string = read_to_string(&path).await?;
-        let result: Repository = serde_json::from_str(&string)?;
+        let config: RepositoryMainConfig<Value> = serde_json::from_str(&string)?;
+        let repository_type_settings = T::try_from(config.repository_type_settings).map_err(|error| {
+            Self::Error::Error("Error from T::try_from. I was really hoping this would never happen".to_string());
+        });
+        let result = RepositoryMainConfig::<T> {
+            repository_type_settings,
+            security: config.security,
+            active: config.active,
+            description: config.description,
+            policy: config.policy,
+        };
         Ok(Some(result))
     }
 
-    async fn update_repository(
+    async fn update_repository<RS: RepositorySetting>(
         &self,
-        _config: &StorageConfig,
-        repository: &Repository,
+        config: &StorageConfig,
+        repository: RepositoryMainConfig<RS>,
     ) -> Result<(), Self::Error> {
-        let location = self.get_repository_folder(&repository.name);
-        let config = location.join(REPOSITORY_CONF);
-        let bak = location.join(REPOSITORY_CONF_BAK);
-        if !config.exists() {
-            return Err(LocalStorageError::MissingRepository);
-        }
-        if bak.exists() {
-            remove_file(&bak).await?;
-        }
-        rename(&config, bak).await?;
-        let result = serde_json::to_string(repository)?;
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(config)
-            .await?;
-        file.write_all(result.as_bytes()).await?;
         Ok(())
     }
 
-    async fn save_file(
+    async fn save_file<R: RepositoryDataType>(
         &self,
         _config: &StorageConfig,
-        repository: &Repository,
+        repository: &R,
         data: &[u8],
         _location: &str,
     ) -> Result<(), Self::Error> {
-        let file_location = self.get_repository_folder(&repository.name);
+        let file_location = self.get_repository_folder(repository.get_name());
         trace!("Saving File {:?}", &file_location);
         create_dir_all(file_location.parent().ok_or_else(|| {
             LocalStorageError::Error("Unable to Find Parent Location".to_string())
         })?)
-        .await?;
+            .await?;
 
         if file_location.exists() {
             remove_file(&file_location).await?;
@@ -271,29 +193,29 @@ impl StorageType<LocalFile> for LocalStorage {
         Ok(())
     }
 
-    async fn delete_file(
+    async fn delete_file<R: RepositoryDataType>(
         &self,
         _config: &StorageConfig,
-        repository: &Repository,
+        repository: &R,
         location: &str,
     ) -> Result<(), Self::Error> {
-        let file_location = self.get_repository_folder(&repository.name).join(location);
+        let file_location = self.get_repository_folder(repository.get_name()).join(location);
         remove_file(file_location).await?;
         Ok(())
     }
 
-    async fn get_file_as_response(
+    async fn get_file_as_response<R: RepositoryDataType>(
         &self,
         config: &StorageConfig,
-        repository: &Repository,
+        repository: &R,
         location: &str,
     ) -> Result<Option<FileResponse<LocalFile>>, Self::Error> {
-        let file_location = self.get_repository_folder(&repository.name).join(location);
+        let file_location = self.get_repository_folder(repository.get_name()).join(location);
         if !file_location.exists() {
             return Ok(None);
         }
         if file_location.is_dir() {
-            let mut path = format!("{}/{}", config.name, repository.name);
+            let mut path = format!("{}/{}", config.name, repository.get_name());
 
             for x in location.split('/') {
                 if !x.is_empty() {
@@ -332,13 +254,13 @@ impl StorageType<LocalFile> for LocalStorage {
         })))
     }
 
-    async fn get_file(
+    async fn get_file<R: RepositoryDataType>(
         &self,
         _config: &StorageConfig,
-        repository: &Repository,
+        repository: &R,
         location: &str,
     ) -> Result<Option<Vec<u8>>, Self::Error> {
-        let file_location = self.get_repository_folder(&repository.name).join(location);
+        let file_location = self.get_repository_folder(repository.get_name()).join(location);
 
         debug!("Storage File Request {}", file_location.to_str().unwrap());
         if !file_location.exists() {
@@ -348,5 +270,23 @@ impl StorageType<LocalFile> for LocalStorage {
         let mut bytes = Vec::new();
         file.read(&mut bytes).await?;
         Ok(Some(bytes))
+    }
+
+    async fn load(&mut self, config: &StorageConfig) -> Result<(), Self::Error> {
+        if self.loaded {
+            panic!("Attempted to Double Load Storage");
+        }
+        /// Load Repositories
+        let repositories = Self::load_repositories(PathBuf::from(&self.config.location).join(STORAGE_CONFIG)).await?;
+        self.repositories = Arc::new(RwLock::new(repositories));
+        return Ok(());
+    }
+
+    fn unload(&mut self) -> Result<(), Self::Error> {
+        let mut repositories = self.repositories.blocking_write();
+        //repositories.drain() <--- Note to self. if we add a repository closing. Use this
+        repositories.clear();
+        self.loaded = false;
+        return Ok(());
     }
 }

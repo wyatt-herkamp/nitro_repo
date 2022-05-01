@@ -8,7 +8,6 @@ use crate::api_response::{APIResponse, SiteResponse};
 use crate::authentication::Authentication;
 use crate::constants::SUPPORTED_REPO_TYPES;
 use crate::error::response::{bad_request, not_found};
-use crate::repository::models::RepositorySummary;
 use crate::repository::settings::frontend::{BadgeSettings, Frontend};
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::webhook::{ReportGeneration, Webhook};
@@ -16,11 +15,12 @@ use crate::repository::settings::Policy;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
+use crate::repository::data::RepositoryValue;
 use crate::storage::multi::MultiStorageController;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
-    pub repositories: Vec<RepositorySummary>,
+    pub repositories: Vec<RepositoryValue>,
 }
 
 #[get("/api/admin/repositories/{storage}/list")]
@@ -69,7 +69,10 @@ pub async fn get_repo(
     let repository = storage.get_repository(&repo).await?;
     APIResponse::from(repository).respond(&r)
 }
+#[derive(serde::Deserialize, Debug, Clone)]
+pub struct NewRepository{
 
+}
 #[post("/api/admin/repository/add")]
 pub async fn add_repo(
     connection: web::Data<DatabaseConnection>,
@@ -77,7 +80,7 @@ pub async fn add_repo(
     auth: Authentication,
     storages: web::Data<MultiStorageController>,
     r: HttpRequest,
-    nc: web::Json<RepositorySummary>,
+    nc: web::Json<NewRepository>,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
