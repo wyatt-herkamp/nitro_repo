@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use crate::repository::data::RepositorySetting;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::repository::data::RepositorySetting;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct NPMSettings {}
@@ -14,7 +14,7 @@ impl TryFrom<Value> for NPMSettings {
     }
 }
 
-impl RepositorySetting for NPMSettings{}
+impl RepositorySetting for NPMSettings {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {

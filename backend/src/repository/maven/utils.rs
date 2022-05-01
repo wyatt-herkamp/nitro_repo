@@ -14,7 +14,6 @@ use crate::storage::models::Storage;
 
 use crate::utils::get_current_time;
 
-
 #[allow(dead_code)]
 fn get_artifacts(path: &Path) -> Vec<String> {
     let dir = read_dir(path).unwrap();

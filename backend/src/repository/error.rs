@@ -1,13 +1,13 @@
+use crate::authentication::UnAuthorized;
+use actix_web::body::BoxBody;
+use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, ResponseError};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::string;
-use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
-use actix_web::body::BoxBody;
-use crate::authentication::UnAuthorized;
-use crate::system::permissions::options::MissingPermission;
+
 use crate::system::permissions::PermissionError;
-use thiserror::Error;
+
 use crate::authentication::error::AuthenticationError;
 use crate::repository::maven::error::MavenError;
 use crate::repository::npm::error::NPMError;
@@ -32,7 +32,7 @@ impl Display for RepositoryError {
             }
 
             RepositoryError::MavenError(error) => write!(f, "{}", error),
-            RepositoryError::NPMError(error) => write!(f, "{}", error)
+            RepositoryError::NPMError(error) => write!(f, "{}", error),
         }
     }
 }
@@ -96,15 +96,9 @@ impl From<PermissionError> for RepositoryError {
 impl ResponseError for RepositoryError {
     fn status_code(&self) -> StatusCode {
         match self {
-            RepositoryError::InternalError(_) => {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
-            RepositoryError::RequestError(_, status) => {
-                status.clone()
-            }
-            _ => {
-                StatusCode::BAD_REQUEST
-            }
+            RepositoryError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RepositoryError::RequestError(_, status) => *status,
+            _ => StatusCode::BAD_REQUEST,
         }
     }
     fn error_response(&self) -> HttpResponse<BoxBody> {

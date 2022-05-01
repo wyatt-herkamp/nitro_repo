@@ -1,6 +1,6 @@
+use crate::repository::data::RepositorySetting;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::repository::data::RepositorySetting;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MavenSettings {}
@@ -13,7 +13,7 @@ impl TryFrom<Value> for MavenSettings {
     }
 }
 
-impl RepositorySetting for MavenSettings{}
+impl RepositorySetting for MavenSettings {}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeployMetadata {
     #[serde(rename = "groupId")]

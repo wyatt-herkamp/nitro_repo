@@ -5,7 +5,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
 
-use crate::storage::models::{Storage, StorageConfig, UnloadedStorage};
+use crate::storage::models::{StorageConfig, UnloadedStorage};
 use crate::system::permissions::options::CanIDo;
 use crate::utils::get_current_time;
 
@@ -15,11 +15,11 @@ use std::fs::{canonicalize, create_dir_all};
 use crate::authentication::Authentication;
 use std::path::Path;
 
-use crate::storage::local_storage::{LocalConfig, LocalStorage};
+use crate::storage::handler::StorageHandlerFactory;
+use crate::storage::local_storage::LocalConfig;
+use crate::storage::multi::MultiStorageController;
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
-use crate::storage::handler::StorageHandlerFactory;
-use crate::storage::multi::MultiStorageController;
 
 #[get("/api/storages/list")]
 pub async fn list_storages(
@@ -70,7 +70,7 @@ pub async fn get_by_id(
         return APIResponse::new(true, Some(false)).respond(&r);
     }
     //TODO serialize
-    return APIResponse::new(true, Some(false)).respond(&r);
+    APIResponse::new(true, Some(false)).respond(&r)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -94,10 +94,10 @@ pub async fn add_storage(
     if !path.exists() {
         create_dir_all(&path)?;
     }
-    let path = canonicalize(path)?;
+    let _path = canonicalize(path)?;
     let string = nc.0.name;
     let config = LocalConfig {
-        location: "".to_string()
+        location: "".to_string(),
     };
     let storage = UnloadedStorage {
         config: StorageConfig {

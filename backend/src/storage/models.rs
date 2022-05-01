@@ -1,25 +1,17 @@
-use actix_web::HttpRequest;
-use either::{Either, Left, Right};
-use std::collections::HashMap;
-use std::fmt;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::path::PathBuf;
 
-
-use crate::api_response::SiteResponse;
-use crate::storage::local_storage::{LocalStorage, LocalStorageError};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use crate::storage::local_storage::LocalStorageError;
+use serde::{Deserialize, Serialize};
 
 use async_trait::async_trait;
-use serde::de::{SeqAccess, Unexpected, Visitor};
-use serde::ser::SerializeStruct;
 
 use thiserror::Error;
-use tokio::fs::File;
-use crate::error::internal_error::InternalError;
-use crate::repository::data::{RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
-use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
 
+use crate::repository::data::{
+    RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue,
+};
+use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
@@ -56,7 +48,6 @@ impl From<serde_json::Error> for StorageError {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {
     pub public_name: String,
@@ -68,7 +59,6 @@ pub struct StorageConfig {
 pub struct UnloadedStorage {
     pub storage_handler: StorageHandlerFactory,
     #[serde(flatten)]
-
     pub config: StorageConfig,
 }
 
@@ -83,7 +73,8 @@ impl Storage {
     pub async fn create_repository(
         &self,
         name: String,
-        repository_type: RepositoryType) -> Result<RepositoryValue, StorageError> {
+        repository_type: RepositoryType,
+    ) -> Result<RepositoryValue, StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => local
                 .create_repository(&self.config, name, repository_type)
@@ -111,7 +102,10 @@ impl Storage {
                 .map_err(StorageError::LocalStorageError),
         };
     }
-    pub async fn get_repository<T: RepositorySetting>(&self, name: &str) -> Result<Option<RepositoryMainConfig<T>>, StorageError> {
+    pub async fn get_repository<T: RepositorySetting>(
+        &self,
+        name: &str,
+    ) -> Result<Option<RepositoryMainConfig<T>>, StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => local
                 .get_repository(&self.config, name)
@@ -119,7 +113,10 @@ impl Storage {
                 .map_err(StorageError::LocalStorageError),
         };
     }
-    pub async fn update_repository<T: RepositorySetting>(&self, repository: RepositoryMainConfig<T>) -> Result<(), StorageError> {
+    pub async fn update_repository<T: RepositorySetting>(
+        &self,
+        repository: RepositoryMainConfig<T>,
+    ) -> Result<(), StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => local
                 .update_repository(&self.config, repository)
@@ -131,7 +128,8 @@ impl Storage {
     pub async fn save_file<R: RepositoryDataType>(
         &self,
         repository: &R,
-        file: &[u8], location: &str,
+        file: &[u8],
+        location: &str,
     ) -> Result<(), StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => local
@@ -158,12 +156,10 @@ impl Storage {
         location: &str,
     ) -> Result<Option<StorageFileResponse>, StorageError> {
         return match &self.storage_handler {
-            StorageHandler::LocalStorage(local) => {
-                local
-                    .get_file_as_response(&self.config, repository, location)
-                    .await
-                    .map_err(StorageError::LocalStorageError)
-            }
+            StorageHandler::LocalStorage(local) => local
+                .get_file_as_response(&self.config, repository, location)
+                .await
+                .map_err(StorageError::LocalStorageError),
         };
     }
     pub async fn get_file<R: RepositoryDataType>(
@@ -197,7 +193,6 @@ pub enum StorageFileResponse {
     Bytes,
 }
 
-
 #[async_trait]
 pub trait StorageType {
     type Error;
@@ -211,7 +206,8 @@ pub trait StorageType {
     async fn create_repository(
         &self,
         config: &StorageConfig,
-        name: String, repository_type: RepositoryType,
+        name: String,
+        repository_type: RepositoryType,
     ) -> Result<RepositoryValue, Self::Error>;
     async fn delete_repository<R: RepositoryDataType>(
         &self,

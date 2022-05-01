@@ -117,7 +117,6 @@ impl From<serde_json::Error> for InternalError {
     }
 }
 
-
 impl std::convert::From<StorageError> for InternalError {
     fn from(err: StorageError) -> InternalError {
         InternalError::Error(err.to_string())

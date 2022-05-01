@@ -1,14 +1,12 @@
-use std::rc::Rc;
+use crate::constants::PROJECT_FILE;
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
-use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
-use actix_web::HttpRequest;
+
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use sea_orm::DatabaseConnection;
 
-use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::{MavenSettings, Pom};
 use crate::repository::settings::security::Visibility;
@@ -16,20 +14,20 @@ use crate::repository::settings::Policy;
 
 use crate::authentication::Authentication;
 use crate::repository::data::RepositoryConfig;
+use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
-use crate::repository::response::RepoResponse::{BadRequest, NotFound, ProjectResponse};
-use crate::repository::response::{Project, RepoResponse};
+use crate::repository::nitro::nitro_repository::NitroRepository;
+use crate::repository::nitro::utils::update_project_in_repositories;
+use crate::repository::response::RepoResponse;
+use crate::repository::response::RepoResponse::{BadRequest, NotFound};
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use async_trait::async_trait;
-use crate::repository::error::RepositoryError;
-use crate::repository::nitro::nitro_repository::NitroRepository;
-use crate::repository::nitro::utils::update_project_in_repositories;
 
+pub mod error;
 pub mod models;
 mod utils;
-pub mod error;
 
 pub struct MavenHandler;
 
@@ -40,20 +38,21 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
         storage: &Storage,
         path: &str,
         _: &HeaderMap,
-        conn: &DatabaseConnection, authentication: Authentication,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
     ) -> Result<RepoResponse, RepositoryError> {
         if repository.main_config.security.visibility == Visibility::Private {
             let caller: UserModel = authentication.get_user(conn).await??;
-            if let Some(value) = caller.can_read_from(&repository)? {
-                return Err(RepositoryError::RequestError(value.to_string(), StatusCode::UNAUTHORIZED));
+            if let Some(value) = caller.can_read_from(repository)? {
+                return Err(RepositoryError::RequestError(
+                    value.to_string(),
+                    StatusCode::UNAUTHORIZED,
+                ));
             }
         }
 
-        let result =
-            storage
-                .get_file_as_response(repository, &path)
-                .await?;
-        if let Some(result) = result {
+        let result = storage.get_file_as_response(repository, path).await?;
+        if let Some(_result) = result {
             todo!("Unhandled Result Type")
         } else {
             Ok(NotFound)
@@ -64,13 +63,18 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
         repository: &RepositoryConfig<MavenSettings>,
         storage: &Storage,
         path: &str,
-        http: &HeaderMap,
-        conn: &DatabaseConnection, authentication: Authentication, bytes: Bytes,
+        _http: &HeaderMap,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
+        bytes: Bytes,
     ) -> Result<RepoResponse, RepositoryError> {
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_deploy_to(&repository)? {
-            return Err(RepositoryError::RequestError(value.to_string(), StatusCode::UNAUTHORIZED));
-        }        //TODO find a better way to do this
+        if let Some(value) = caller.can_deploy_to(repository)? {
+            return Err(RepositoryError::RequestError(
+                value.to_string(),
+                StatusCode::UNAUTHORIZED,
+            ));
+        } //TODO find a better way to do this
         match repository.main_config.policy {
             Policy::Release => {
                 if path.contains("-SNAPSHOT") {
@@ -84,18 +88,13 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
             }
             Policy::Mixed => {}
         }
-        storage
-            .save_file(&repository, bytes.as_ref(), &path)
-            .await?;
+        storage.save_file(&repository, bytes.as_ref(), path).await?;
         if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec)?;
             let pom: Result<Pom, serde_xml_rs::Error> = serde_xml_rs::from_str(&result);
             if let Err(error) = &pom {
-                error!(
-                    "Unable to Parse Pom File {} Error {}",
-                    &path, error
-                );
+                error!("Unable to Parse Pom File {} Error {}", &path, error);
             }
             if let Ok(pom) = pom {
                 let project_folder =
@@ -111,7 +110,7 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
                         pom.version.clone(),
                         pom.clone(),
                     )
-                        .await
+                    .await
                     {
                         error!("Unable to update {}, {}", PROJECT_FILE, error);
                         trace!(
@@ -126,7 +125,7 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
                         &repository.init_values,
                         format!("{}:{}", &pom.group_id, &pom.artifact_id),
                     )
-                        .await
+                    .await
                     {
                         error!("Unable to update repository.json, {}", error);
                         trace!(

@@ -4,8 +4,9 @@ use std::rc::Rc;
 
 use std::time::SystemTime;
 
-use crate::authentication::{auth_token, session::Session, session::SessionManager, Authentication, verify_login};
-use crate::system;
+use crate::authentication::{
+    auth_token, session::Session, session::SessionManager, verify_login, Authentication,
+};
 
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::http::header::{HeaderValue, AUTHORIZATION, ORIGIN, SET_COOKIE};
@@ -162,10 +163,9 @@ where
                             } else {
                                 // Treat authorization as normal login
                                 trace!("Authorization Basic username:password");
-                                let user =
-                                    verify_login(username, password, database)
-                                        .await
-                                        .map_err(internal_server_error)?;
+                                let user = verify_login(username, password, database)
+                                    .await
+                                    .map_err(internal_server_error)?;
                                 if let Some(user) = user {
                                     trace!("Authorized User");
                                     (Authentication::Basic(user), None)

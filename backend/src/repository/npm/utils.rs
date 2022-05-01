@@ -8,12 +8,12 @@ use crate::repository::nitro::{NitroRepoVersions, ProjectData, VersionData};
 
 use crate::utils::get_current_time;
 
-use crate::constants::{PROJECT_FILE, VERSION_DATA};
-use sea_orm::DatabaseConnection;
 use crate::authentication::verify_login;
+use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::repository::data::RepositoryDataType;
 use crate::repository::error::RepositoryError;
 use crate::repository::nitro::utils::get_project_data;
+use sea_orm::DatabaseConnection;
 
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
@@ -170,4 +170,3 @@ pub async fn generate_get_response<R: RepositoryDataType>(
         dist_tags,
     }))
 }
-

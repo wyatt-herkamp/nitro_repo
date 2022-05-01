@@ -1,6 +1,5 @@
 pub mod database;
 
-use crate::error::internal_error::InternalError;
 pub use database::Entity as UserEntity;
 pub use database::Model as UserModel;
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};

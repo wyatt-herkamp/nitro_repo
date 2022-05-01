@@ -1,45 +1,43 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
-use actix_web::HttpRequest;
+
+use actix_web::http::header::HeaderMap;
+use actix_web::http::StatusCode;
 use log::Level::Trace;
 use log::{debug, error, log_enabled, trace};
 use regex::Regex;
-use std::string::String;
-use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
 use sea_orm::DatabaseConnection;
+use std::string::String;
 
-use crate::error::internal_error::InternalError;
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 
-use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest};
+use crate::repository::npm::models::{
+    Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest,
+};
 use crate::repository::npm::utils::{generate_get_response, is_valid};
 
 use crate::authentication::Authentication;
-use crate::repository::npm::error::NPMError;
+
+use crate::repository::response::RepoResponse;
 use crate::repository::response::RepoResponse::{
-    BadRequest, CreatedWithJSON, NotAuthorized, NotFound, ProjectResponse,
-};
-use crate::repository::response::{
-    Project, RepoResponse,
+    BadRequest, CreatedWithJSON, NotAuthorized, NotFound,
 };
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
+pub mod error;
 pub mod models;
 mod utils;
-pub mod error;
 
-use async_trait::async_trait;
 use crate::repository::data::RepositoryConfig;
-use crate::repository::handler::RepositoryHandler;
 use crate::repository::error::RepositoryError;
+use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepository;
 use crate::repository::nitro::utils::update_project_in_repositories;
+use async_trait::async_trait;
 
 pub struct NPMHandler;
 
@@ -51,11 +49,15 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, authentication: Authentication,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
     ) -> Result<RepoResponse, RepositoryError> {
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_read_from(&repository)? {
-            return Err(RepositoryError::RequestError(value.to_string(), StatusCode::UNAUTHORIZED));
+        if let Some(value) = caller.can_read_from(repository)? {
+            return Err(RepositoryError::RequestError(
+                value.to_string(),
+                StatusCode::UNAUTHORIZED,
+            ));
         }
         if headers.get("npm-command").is_some() {
             if path.contains(".tgz") {
@@ -71,31 +73,26 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                     &package, &version, &nitro_file_location
                 );
 
-                let result =
-                    storage
-                        .get_file_as_response(&repository, &nitro_file_location)
-                        .await?;
-                if let Some(result) = result {
+                let result = storage
+                    .get_file_as_response(&repository, &nitro_file_location)
+                    .await?;
+                if let Some(_result) = result {
                     //TODO Handle StorageFileResponse
                 } else {
                     return Ok(NotFound);
                 }
             }
-            let get_response =
-                generate_get_response(&storage, &repository, &path)
-                    .await
-                    .unwrap();
+            let get_response = generate_get_response(storage, &repository, path)
+                .await
+                .unwrap();
             if get_response.is_none() {
                 return Ok(NotFound);
             }
             let string = serde_json::to_string_pretty(&get_response.unwrap())?;
             Ok(RepoResponse::OkWithJSON(string))
         } else {
-            let result =
-                storage
-                    .get_file_as_response(&repository, &path)
-                    .await?;
-            if let Some(result) = result {
+            let result = storage.get_file_as_response(&repository, path).await?;
+            if let Some(_result) = result {
                 //TODO Handle StorageFileResponse
                 todo!("UN Handled Result Type")
             } else {
@@ -109,7 +106,9 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, authentication: Authentication, bytes: Bytes,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
+        bytes: Bytes,
     ) -> Result<RepoResponse, RepositoryError> {
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         // Check if its a user verification request
@@ -130,8 +129,11 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         }
         //Handle Normal Request
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_deploy_to(&repository)? {
-            return Err(RepositoryError::RequestError(value.to_string(), StatusCode::UNAUTHORIZED));
+        if let Some(value) = caller.can_deploy_to(repository)? {
+            return Err(RepositoryError::RequestError(
+                value.to_string(),
+                StatusCode::UNAUTHORIZED,
+            ));
         }
         if let Some(npm_command) = headers.get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
@@ -150,7 +152,9 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                     .collect();
                 for (attachment_key, attachment) in attachments {
                     let attachment = attachment?;
-                    let attachment_data = base64::decode(attachment.data).map_err(|error| RepositoryError::RequestError(error.to_string(), StatusCode::BAD_REQUEST))?;
+                    let attachment_data = base64::decode(attachment.data).map_err(|error| {
+                        RepositoryError::RequestError(error.to_string(), StatusCode::BAD_REQUEST)
+                    })?;
                     for (version, version_data) in publish_request.versions.iter() {
                         let version_data_string = serde_json::to_string(version_data)?;
                         trace!(
@@ -166,11 +170,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                             format!("{}/{}/package.json", &publish_request.name, version);
 
                         storage
-                            .save_file(
-                                &repository,
-                                attachment_data.as_ref(),
-                                &attachment_file_loc,
-                            )
+                            .save_file(&repository, attachment_data.as_ref(), &attachment_file_loc)
                             .await?;
 
                         storage
@@ -194,7 +194,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                                 &project_folder,
                                 version_for_saving.clone(),
                             )
-                                .await
+                            .await
                             {
                                 error!("Unable to update {}, {}", PROJECT_FILE, error);
                                 if log_enabled!(Trace) {
@@ -206,13 +206,12 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                                 }
                             }
 
-                            if let Err(error) =
-                            update_project_in_repositories(
+                            if let Err(error) = update_project_in_repositories(
                                 &storage,
                                 &repository,
                                 version_for_saving.name.clone(),
                             )
-                                .await
+                            .await
                             {
                                 error!("Unable to update repository.json, {}", error);
                                 if log_enabled!(Trace) {

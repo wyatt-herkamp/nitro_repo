@@ -1,27 +1,19 @@
 use std::collections::HashMap;
 
-use actix_web::web::Bytes;
-use actix_web::HttpRequest;
-use sea_orm::DatabaseConnection;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api_response::SiteResponse;
-use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
+
 use crate::repository::frontend::FrontendResponse;
-use crate::repository::maven::models::MavenSettings;
-use crate::repository::maven::MavenHandler;
+
 use crate::repository::nitro::{
     NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData,
 };
-use crate::repository::npm::models::NPMSettings;
-use crate::repository::npm::NPMHandler;
-use crate::storage::models::{Storage, StorageFile};
-use strum_macros::{Display, EnumString};
-use crate::repository::data::RepositoryValue;
 
+use crate::storage::models::StorageFile;
+
+use crate::repository::data::RepositoryValue;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -69,8 +61,6 @@ pub enum RepoResponse {
     NitroVersionListingResponse(NitroRepoVersions),
     NitroVersionResponse(VersionResponse),
 }
-
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VersionResponse {

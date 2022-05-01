@@ -1,14 +1,11 @@
 use std::fmt::{Display, Formatter};
 
-use serde::de::value::MapDeserializer;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryDataType;
 use crate::storage::models::Storage;
 use crate::system::user::UserModel;
-
-use crate::webhook::{DiscordConfig, DiscordHandler, WebhookHandler};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct DeployInfo {
@@ -26,8 +23,8 @@ impl Display for DeployInfo {
 
 pub async fn handle_post_deploy<R: RepositoryDataType>(
     _storage: &Storage,
-    repository: &R,
-    deploy: &DeployInfo,
+    _repository: &R,
+    _deploy: &DeployInfo,
 ) -> Result<(), InternalError> {
     todo!("Not Implemented");
     Ok(())

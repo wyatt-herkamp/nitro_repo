@@ -4,15 +4,16 @@ use std::path::Path;
 use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
-use crate::storage::models::{Storage, StorageFile, STORAGE_FILE, STORAGE_FILE_BAK, UnloadedStorage, StorageError};
-use async_trait::async_trait;
+use crate::storage::models::{
+    Storage, StorageError, StorageFile, UnloadedStorage, STORAGE_FILE, STORAGE_FILE_BAK,
+};
+
 use serde::{Serialize, Serializer};
-use thiserror::Error;
+
 use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
-use crate::error::internal_error::InternalError;
-use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
 
+use crate::storage::handler::StorageHandler;
 
 pub async fn load_storages() -> Result<HashMap<String, Storage>, StorageError> {
     let path = Path::new(STORAGE_FILE);
@@ -25,7 +26,10 @@ pub async fn load_storages() -> Result<HashMap<String, Storage>, StorageError> {
     for unloaded_storage in result {
         let key = unloaded_storage.config.name.clone();
         let storage = Storage {
-            storage_handler: crate::storage::handler::StorageHandler::load(unloaded_storage.storage_handler).await?,
+            storage_handler: crate::storage::handler::StorageHandler::load(
+                unloaded_storage.storage_handler,
+            )
+            .await?,
             config: unloaded_storage.config,
         };
 
@@ -37,7 +41,10 @@ pub async fn load_storages() -> Result<HashMap<String, Storage>, StorageError> {
 pub async fn save_storages(storages: &HashMap<String, Storage>) -> Result<(), StorageError> {
     let mut values: Vec<UnloadedStorage> = Vec::new();
     for (_, storage) in storages {
-        values.push(UnloadedStorage { storage_handler: storage.storage_handler.save_value()?, config: storage.config.clone() })
+        values.push(UnloadedStorage {
+            storage_handler: storage.storage_handler.save_value()?,
+            config: storage.config.clone(),
+        })
     }
     let result = serde_json::to_string(&values)?;
     let path = Path::new(STORAGE_FILE);
@@ -72,8 +79,8 @@ impl MultiStorageController {
 
 impl Serialize for MultiStorageController {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_some(self)
     }
@@ -86,7 +93,7 @@ impl MultiStorageController {
     }
 
     pub async fn create_storage(&self, storage: UnloadedStorage) -> Result<Storage, StorageError> {
-        let mut storages = self.storages.read().await;
+        let storages = self.storages.read().await;
         let name = storage.config.name.clone();
 
         if storages.contains_key(&name) {
@@ -104,11 +111,18 @@ impl MultiStorageController {
             };
             saving_map.insert(name.clone(), storage);
             save_storages(&saving_map).await?;
-            saving_map.remove(&name).ok_or(StorageError::LoadFailure("Failed to create storage. Unable to find new data".to_string()))
+            saving_map.remove(&name).ok_or(StorageError::LoadFailure(
+                "Failed to create storage. Unable to find new data".to_string(),
+            ))
         }?;
         let mut storages = self.storages.write().await;
         storages.insert(name.clone(), storage);
-        return Ok(storages.get(&name).cloned().ok_or(StorageError::LoadFailure("Failed to create storage. Unable to find new data".to_string()))?);
+        return storages
+            .get(&name)
+            .cloned()
+            .ok_or(StorageError::LoadFailure(
+                "Failed to create storage. Unable to find new data".to_string(),
+            ));
     }
 
     pub async fn delete_storage(&self, storage: &str) -> Result<bool, StorageError> {
@@ -119,7 +133,7 @@ impl MultiStorageController {
         }
         save_storages(&storages).await?;
         //TODO Call Delete Functions
-        return Ok(true);
+        Ok(true)
     }
 
     pub async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, StorageError> {
@@ -134,6 +148,6 @@ impl MultiStorageController {
                 created: storage.config.created as u128,
             });
         }
-        return Ok(files);
+        Ok(files)
     }
 }

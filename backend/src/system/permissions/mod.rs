@@ -1,12 +1,12 @@
 pub mod options;
 pub mod orm;
 
+use crate::repository::data::{RepositoryConfig, RepositorySetting};
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting};
 
 #[derive(Error, Debug)]
 pub enum PermissionError {
@@ -74,7 +74,10 @@ pub fn can_deploy<T: RepositorySetting>(
     Ok(false)
 }
 
-pub fn can_read<T: RepositorySetting>(user_perms: &UserPermissions, repo:  &RepositoryConfig<T>) -> Result<bool, PermissionError> {
+pub fn can_read<T: RepositorySetting>(
+    user_perms: &UserPermissions,
+    repo: &RepositoryConfig<T>,
+) -> Result<bool, PermissionError> {
     if user_perms.disabled {
         return Ok(false);
     }
@@ -96,7 +99,10 @@ pub fn can_read<T: RepositorySetting>(user_perms: &UserPermissions, repo:  &Repo
     }
 }
 
-pub fn can<T: RepositorySetting>(repo:  &RepositoryConfig<T>, perms: &RepositoryPermission) -> Result<bool, PermissionError> {
+pub fn can<T: RepositorySetting>(
+    repo: &RepositoryConfig<T>,
+    perms: &RepositoryPermission,
+) -> Result<bool, PermissionError> {
     if perms.permissions.is_empty() {
         // If nothing is set. It is a all view type of scenario
         return Ok(true);

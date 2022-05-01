@@ -1,20 +1,19 @@
 pub mod auth_token;
+pub mod error;
 pub mod middleware;
 pub mod session;
-pub mod error;
 
 use actix_web::body::BoxBody;
 use actix_web::dev::Payload;
 use actix_web::http::StatusCode;
 use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse, ResponseError};
-use std::fmt::{Debug, Display, Formatter};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use std::fmt::{Debug, Display, Formatter};
 
 use futures_util::future::{ready, Ready};
 use log::trace;
 
 use sea_orm::{DatabaseConnection, EntityTrait};
-
 
 use crate::api_response::{APIResponse, RequestErrorResponse};
 use crate::authentication::auth_token::AuthTokenModel;
@@ -131,7 +130,6 @@ impl FromRequest for Authentication {
         ready(Ok(model.unwrap()))
     }
 }
-
 
 pub async fn verify_login(
     username: String,

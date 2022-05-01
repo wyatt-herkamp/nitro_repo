@@ -5,7 +5,6 @@ pub mod frontend;
 pub mod security;
 pub mod webhook;
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Policy {
     Release,
@@ -27,8 +26,6 @@ pub struct RepositorySettings {
     pub badge: BadgeSettings,
 }
 
-
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateFrontend {
     pub frontend: Frontend,
@@ -36,7 +33,6 @@ pub struct UpdateFrontend {
 }
 
 impl RepositorySettings {
-
     pub fn update_frontend(&mut self, settings: UpdateFrontend) {
         self.frontend = settings.frontend;
         self.badge = settings.badge;

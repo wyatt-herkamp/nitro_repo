@@ -1,22 +1,13 @@
+use crate::repository::response::Project;
+use crate::storage::models::Storage;
 
-use std::error::Error;
-use std::fmt::{Display, Formatter};
-use actix_web::HttpRequest;
-use crate::repository::response::{Project, RepoResponse};
-use crate::storage::models::{Storage, StorageFile};
-use serde::{Deserialize, Serialize};
 use async_trait::async_trait;
-use sea_orm::DatabaseConnection;
-use crate::repository;
-use crate::repository::data::{RepositoryConfig, RepositorySetting, RepositoryValue};
+
+use crate::repository::data::{RepositoryConfig, RepositorySetting};
 use crate::repository::nitro::error::NitroError;
 use crate::repository::nitro::error::NitroError::ProjectNotFound;
-use crate::repository::nitro::NitroRepoVersions;
 use crate::repository::nitro::utils::{get_project_data, get_version_data, get_versions};
-use crate::repository::response::RepoResponse::ProjectResponse;
-use crate::utils::get_current_time;
-
-
+use crate::repository::nitro::NitroRepoVersions;
 
 #[async_trait]
 pub trait NitroRepository<T: RepositorySetting> {
@@ -27,7 +18,12 @@ pub trait NitroRepository<T: RepositorySetting> {
         storage: &Storage,
         project: &str,
     ) -> Result<NitroRepoVersions, NitroError> {
-        Ok(get_versions(&storage, &repository, Self::parse_project_to_directory(project)).await?)
+        Ok(get_versions(
+            storage,
+            &repository,
+            Self::parse_project_to_directory(project),
+        )
+        .await?)
     }
     async fn handle_version(
         repository: &RepositoryConfig<T>,
@@ -37,15 +33,14 @@ pub trait NitroRepository<T: RepositorySetting> {
     ) -> Result<Project, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
 
-        let project_data =
-            get_project_data(&storage, &repository, project_dir.clone()).await?;
+        let project_data = get_project_data(storage, &repository, project_dir.clone()).await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
-                &storage,
+                storage,
                 &repository,
                 format!("{}/{}", project_dir, &version),
             )
-                .await?;
+            .await?;
 
             let project = Project {
                 repo_summary: repository.init_values.clone(),
@@ -64,15 +59,14 @@ pub trait NitroRepository<T: RepositorySetting> {
     ) -> Result<Project, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
 
-        let project_data =
-            get_project_data(&storage, &repository, project_dir.clone()).await?;
+        let project_data = get_project_data(storage, &repository, project_dir.clone()).await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
-                &storage,
+                storage,
                 &repository,
                 format!("{}/{}", &project_dir, &project_data.versions.latest_version),
             )
-                .await?;
+            .await?;
 
             let project = Project {
                 repo_summary: repository.init_values.clone(),
@@ -92,7 +86,7 @@ pub trait NitroRepository<T: RepositorySetting> {
         project: &str,
     ) -> Result<String, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
-        let project_data = get_project_data(&storage, &repository, project_dir).await?;
+        let project_data = get_project_data(storage, &repository, project_dir).await?;
         if let Some(project_data) = project_data {
             let latest_release = project_data.versions.latest_release;
             if latest_release.is_empty() {

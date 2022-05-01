@@ -119,7 +119,7 @@ async fn main() -> std::io::Result<()> {
             // DONT REGISTER ANYTHING BELOW FRONTEND!
             .configure(frontend::init)
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

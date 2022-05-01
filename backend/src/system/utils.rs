@@ -1,15 +1,10 @@
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::{Argon2, PasswordHasher};
 
-use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::system::user;
-use crate::system::user::UserModel;
-
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {

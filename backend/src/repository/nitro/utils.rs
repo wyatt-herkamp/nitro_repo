@@ -1,4 +1,6 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
+use crate::repository::data::RepositoryDataType;
+use crate::repository::nitro::error::NitroError;
 use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType,
     VersionData,
@@ -8,9 +10,6 @@ use crate::storage::models::{Storage, StorageFile};
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
-use crate::repository::data::{ RepositoryDataType};
-use crate::repository::nitro::error::NitroError;
-
 
 pub async fn process_storage_files<R: RepositoryDataType>(
     storage: &Storage,
@@ -26,7 +25,12 @@ pub async fn process_storage_files<R: RepositoryDataType>(
             file,
         });
     }
-    let active_dir = format!("{}/{}/{}", &storage.config.name, &repo.get_name(), requested_dir);
+    let active_dir = format!(
+        "{}/{}/{}",
+        &storage.config.name,
+        &repo.get_name(),
+        requested_dir
+    );
     let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
     let option = storage.get_file(repo, &string).await?;
     return if let Some(data) = option {

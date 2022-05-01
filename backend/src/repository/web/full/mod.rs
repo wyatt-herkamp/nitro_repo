@@ -1,17 +1,12 @@
-use actix_web::{HttpRequest, HttpResponse, web as ActixWeb, web};
 use actix_web::http::StatusCode;
+use actix_web::web;
 use log::trace;
-use crate::api_response::{APIResponse, SiteResponse};
-use crate::error::internal_error::InternalError;
-use crate::error::response::{bad_request, i_am_a_teapot, not_found};
-use crate::NitroRepoData;
+
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::Repository;
-use crate::repository::response::{RepoResponse};
+
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
-use crate::utils::get_accept;
-
 
 pub mod admin;
 
@@ -47,16 +42,21 @@ pub async fn to_request(
     let storage = storages.get_storage_by_name(&storage_name).await?;
     if storage.is_none() {
         trace!("Storage {} not found", &storage_name);
-        return Err(RepositoryError::RequestError("Storage Not Found".to_string(), StatusCode::NOT_FOUND));
+        return Err(RepositoryError::RequestError(
+            "Storage Not Found".to_string(),
+            StatusCode::NOT_FOUND,
+        ));
     }
     let storage = storage.unwrap().clone();
     let repository = Repository::load(&storage, &repo_name).await?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
-        return Err(RepositoryError::RequestError("Repository Not Found".to_string(), StatusCode::NOT_FOUND));
+        return Err(RepositoryError::RequestError(
+            "Repository Not Found".to_string(),
+            StatusCode::NOT_FOUND,
+        ));
     }
     let repository = repository.unwrap();
-
 
     Ok((storage, repository))
 }
