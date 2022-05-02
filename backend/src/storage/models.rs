@@ -8,45 +8,13 @@ use async_trait::async_trait;
 
 use thiserror::Error;
 
-use crate::repository::data::{
-    RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue,
-};
+use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
+use crate::storage::error::StorageError;
 use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
 
-#[derive(Error, Debug)]
-pub enum StorageError {
-    #[error("{0}")]
-    LocalStorageError(LocalStorageError),
-    #[error("{0}")]
-    LoadFailure(String),
-    #[error("IO error {0}")]
-    IOError(std::io::Error),
-    #[error("JSON error {0}")]
-    JSONError(serde_json::Error),
-    #[error("Storage Already Exists!")]
-    StorageAlreadyExist,
-}
-
-impl From<std::io::Error> for StorageError {
-    fn from(err: std::io::Error) -> StorageError {
-        StorageError::IOError(err)
-    }
-}
-
-impl From<LocalStorageError> for StorageError {
-    fn from(err: LocalStorageError) -> StorageError {
-        StorageError::LocalStorageError(err)
-    }
-}
-
-impl From<serde_json::Error> for StorageError {
-    fn from(err: serde_json::Error) -> StorageError {
-        StorageError::JSONError(err)
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {
@@ -68,8 +36,8 @@ pub struct Storage {
     pub config: StorageConfig,
 }
 
+// Implementation to call the Storage Handler
 impl Storage {
-    // Repository Handlers
     pub async fn create_repository(
         &self,
         name: String,
@@ -105,10 +73,21 @@ impl Storage {
     pub async fn get_repository<T: RepositorySetting>(
         &self,
         name: &str,
-    ) -> Result<Option<RepositoryMainConfig<T>>, StorageError> {
+    ) -> Result<Option<RepositoryConfig<T>>, StorageError> {
         return match &self.storage_handler {
             StorageHandler::LocalStorage(local) => local
                 .get_repository(&self.config, name)
+                .await
+                .map_err(StorageError::LocalStorageError),
+        };
+    }
+    pub async fn get_repository_value(
+        &self,
+        name: &str,
+    ) -> Result<Option<RepositoryValue>, StorageError> {
+        return match &self.storage_handler {
+            StorageHandler::LocalStorage(local) => local
+                .get_repository_value(&self.config, name)
                 .await
                 .map_err(StorageError::LocalStorageError),
         };
@@ -197,33 +176,41 @@ pub enum StorageFileResponse {
 pub trait StorageType {
     type Error;
     type StorageConfig;
-    // Initialize the Storage at Storage start.
+    /// Initialize the Storage at Storage start.
     async fn load(&mut self, config: &StorageConfig) -> Result<(), Self::Error>;
-    // Unload the storage
+    /// Unload the storage
     fn unload(&mut self) -> Result<(), Self::Error>;
 
-    // Repository Handlers
+    /// Creates a new Repository
     async fn create_repository(
         &self,
         config: &StorageConfig,
         name: String,
         repository_type: RepositoryType,
     ) -> Result<RepositoryValue, Self::Error>;
+    /// Deletes a Repository
     async fn delete_repository<R: RepositoryDataType>(
         &self,
         config: &StorageConfig,
         repository: &R,
         delete_files: bool,
     ) -> Result<(), Self::Error>;
+    /// Gets a Vec of Repository Values
     async fn get_repositories(
         &self,
         config: &StorageConfig,
     ) -> Result<Vec<RepositoryValue>, Self::Error>;
+    async fn get_repository_value(
+        &self,
+        config: &StorageConfig,
+        repository: &str,
+    ) -> Result<Option<RepositoryValue>, Self::Error>;
+    /// Gets the RepositoryMainConfig
     async fn get_repository<RS: RepositorySetting>(
         &self,
         config: &StorageConfig,
         uuid: &str,
-    ) -> Result<Option<RepositoryMainConfig<RS>>, Self::Error>;
+    ) -> Result<Option<RepositoryConfig<RS>>, Self::Error>;
     async fn update_repository<RS: RepositorySetting>(
         &self,
         config: &StorageConfig,

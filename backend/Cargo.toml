@@ -50,7 +50,7 @@ glob = "0.3.0"
 futures-util = "0.3.17"
 time = "0.3.5"
 base64 = "0.13.0"
-tokio = "1.14.0"
+tokio = { version = "1.18.0", features = ["full"] }
 uuid = { version = "1.0.0", features = ["serde", "v4"] }
 colored = "2.0.0"
 # Log

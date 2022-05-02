@@ -10,7 +10,7 @@ use crate::repository::npm::models::NPMSettings;
 use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::security::SecurityRules;
 use crate::repository::settings::webhook::Webhook;
-use crate::repository::settings::Policy;
+use crate::repository::settings::{FRONTEND_CONFIG, Policy, WEBHOOK_CONFIG};
 use crate::storage::models::Storage;
 use async_trait::async_trait;
 
@@ -28,19 +28,31 @@ pub trait RepositoryDataType: Send + Sync + Sized {
         &self,
         storage: &Storage,
     ) -> Result<Option<Webhook>, RepositoryError> {
-        let option = storage.get_file(self, ".nitro_repo/webhook.json").await?;
+        let option = storage.get_file(self, WEBHOOK_CONFIG).await?;
         if option.is_none() {
             return Ok(None);
         }
         serde_json::from_slice(option.unwrap().as_slice())
             .map(Some)
             .map_err(RepositoryError::from)
+    }
+    async fn save_webhook_config(
+        &self,
+        storage: &Storage,
+        webhook: Option<Webhook>,
+    ) -> Result<(), RepositoryError> {
+        if webhook.is_none() {
+            // Treats a disable
+            storage.delete_file(self, WEBHOOK_CONFIG).await?;
+        }
+        let value = serde_json::to_string(&webhook.unwrap())?;
+        storage.save_file(self, value.as_bytes(), WEBHOOK_CONFIG).await.map_err(RepositoryError::from)
     }
     async fn get_frontend_config(
         &self,
         storage: &Storage,
     ) -> Result<Option<Frontend>, RepositoryError> {
-        let option = storage.get_file(self, ".nitro_repo/frontend.json").await?;
+        let option = storage.get_file(self, FRONTEND_CONFIG).await?;
         if option.is_none() {
             return Ok(None);
         }
@@ -48,8 +60,21 @@ pub trait RepositoryDataType: Send + Sync + Sized {
             .map(Some)
             .map_err(RepositoryError::from)
     }
-}
+    async fn save_frontend_config(
+        &self,
+        storage: &Storage,
+        frontend: Option<Frontend>,
+    ) -> Result<(), RepositoryError> {
+        if frontend.is_none() {
+            // Treats a disable
+            storage.delete_file(self, FRONTEND_CONFIG).await?;
+        }
+        let value = serde_json::to_string(&frontend.unwrap())?;
+        storage.save_file(self, value.as_bytes(), FRONTEND_CONFIG).await.map_err(RepositoryError::from)
+    }
 
+
+}
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryValue {
     pub name: String,
@@ -73,7 +98,7 @@ impl RepositoryDataType for RepositoryValue {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,Serialize, Deserialize)]
 pub struct RepositoryConfig<T: RepositorySetting> {
     pub init_values: RepositoryValue,
     pub main_config: RepositoryMainConfig<T>,
@@ -107,32 +132,6 @@ impl<'a, RS: RepositorySetting> RepositoryDataType for &'a RepositoryConfig<RS> 
     }
 }
 
-impl<T: RepositorySetting> RepositoryConfig<T> {
-    pub async fn get_webhook_config(
-        &self,
-        storage: &Storage,
-    ) -> Result<Option<Webhook>, RepositoryError> {
-        let option = storage.get_file(self, ".nitro_repo/webhook.json").await?;
-        if option.is_none() {
-            return Ok(None);
-        }
-        serde_json::from_slice(option.unwrap().as_slice())
-            .map(Some)
-            .map_err(RepositoryError::from)
-    }
-    pub async fn get_frontend_config(
-        &self,
-        storage: &Storage,
-    ) -> Result<Option<Frontend>, RepositoryError> {
-        let option = storage.get_file(self, ".nitro_repo/frontend.json").await?;
-        if option.is_none() {
-            return Ok(None);
-        }
-        serde_json::from_slice(option.unwrap().as_slice())
-            .map(Some)
-            .map_err(RepositoryError::from)
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryMainConfig<T: RepositorySetting> {
@@ -141,9 +140,18 @@ pub struct RepositoryMainConfig<T: RepositorySetting> {
     #[serde(default = "default")]
     pub active: bool,
     #[serde(default)]
-    pub description: String,
-    #[serde(default)]
     pub policy: Policy,
+}
+
+
+impl<T: RepositorySetting +Serialize> RepositoryMainConfig<T>{
+    pub async fn update(
+        &self,
+        storage: &Storage,
+    ) -> Result<(), RepositoryError> {
+        storage.update_repository(self.clone()).await.map_err(RepositoryError::from)
+    }
+
 }
 fn default() -> bool {
     true

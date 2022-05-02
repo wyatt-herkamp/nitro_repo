@@ -13,7 +13,7 @@ use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 
 use crate::authentication::Authentication;
-use crate::repository::data::RepositoryConfig;
+use crate::repository::data::{RepositoryConfig, RepositoryMainConfig};
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepository;
@@ -63,7 +63,7 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
         repository: &RepositoryConfig<MavenSettings>,
         storage: &Storage,
         path: &str,
-        _http: &HeaderMap,
+        _: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
         bytes: Bytes,
@@ -89,6 +89,8 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
             Policy::Mixed => {}
         }
         storage.save_file(&repository, bytes.as_ref(), path).await?;
+
+        //  Post Deploy Handler
         if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec)?;
@@ -102,59 +104,10 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
                 trace!("Project Folder Location {}", project_folder);
                 let repository = repository.clone();
                 let storage = storage.clone();
-                actix_web::rt::spawn(async move {
-                    if let Err(error) = utils::update_project(
-                        &storage,
-                        &repository.init_values,
-                        &project_folder,
-                        pom.version.clone(),
-                        pom.clone(),
-                    )
-                    .await
-                    {
-                        error!("Unable to update {}, {}", PROJECT_FILE, error);
-                        trace!(
-                            "Version {} Name: {}",
-                            &pom.version,
-                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                        );
-                    }
-
-                    if let Err(error) = update_project_in_repositories(
-                        &storage,
-                        &repository.init_values,
-                        format!("{}:{}", &pom.group_id, &pom.artifact_id),
-                    )
-                    .await
-                    {
-                        error!("Unable to update repository.json, {}", error);
-                        trace!(
-                            "Versvalueion {} Name: {}",
-                            &pom.version,
-                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                        );
-                    }
-                    let string = format!("{}/{}", project_folder, &pom.version);
-                    let info = DeployInfo {
-                        user: caller.clone(),
-                        version: pom.version,
-                        name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
-                        version_folder: string,
-                    };
-
-                    debug!("Starting Post Deploy Tasks");
-                    if log_enabled!(Trace) {
-                        trace!("Data {}", &info);
-                    }
-                    let deploy = handle_post_deploy(&storage, &repository.init_values, &info).await;
-                    if let Err(error) = deploy {
-                        error!("Error Handling Post Deploy Tasks {}", error);
-                    } else {
-                        debug!("All Post Deploy Tasks Completed and Happy :)");
-                    }
-                });
+                actix_web::rt::spawn(MavenHandler::post_deploy(storage, repository, project_folder, caller, pom));
             }
         }
+        // Everything was ok
         Ok(RepoResponse::Ok)
     }
 }
@@ -162,5 +115,59 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
 impl NitroRepository<MavenSettings> for MavenHandler {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
         value.into().replace('.', "/").replace(':', "/")
+    }
+}
+
+impl MavenHandler {
+    async fn post_deploy(storage: Storage, repository: RepositoryConfig<MavenSettings>, project_folder: String, user: UserModel, pom: Pom) {
+        if let Err(error) = utils::update_project(
+            &storage,
+            &repository.init_values,
+            &project_folder,
+            pom.version.clone(),
+            pom.clone(),
+        )
+            .await
+        {
+            error!("Unable to update {}, {}", PROJECT_FILE, error);
+            trace!(
+                            "Version {} Name: {}",
+                            &pom.version,
+                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                        );
+        }
+
+        if let Err(error) = update_project_in_repositories(
+            &storage,
+            &repository.init_values,
+            format!("{}:{}", &pom.group_id, &pom.artifact_id),
+        )
+            .await
+        {
+            error!("Unable to update repository.json, {}", error);
+            trace!(
+                            "Version {} Name: {}",
+                            &pom.version,
+                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
+                        );
+        }
+        let string = format!("{}/{}", project_folder, &pom.version);
+        let info = DeployInfo {
+            user: user.clone(),
+            version: pom.version,
+            name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
+            version_folder: string,
+        };
+
+        debug!("Starting Post Deploy Tasks");
+        if log_enabled!(Trace) {
+            trace!("Data {}", &info);
+        }
+        let deploy = handle_post_deploy(&storage, &repository.init_values, &info).await;
+        if let Err(error) = deploy {
+            error!("Error Handling Post Deploy Tasks {}", error);
+        } else {
+            debug!("All Post Deploy Tasks Completed and Happy :)");
+        }
     }
 }

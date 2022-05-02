@@ -5,10 +5,13 @@ use actix_web::HttpRequest;
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 
-use crate::repository::data::{RepositoryConfig, RepositorySetting};
+use crate::repository::data::{RepositoryConfig, RepositorySetting, RepositoryType};
 use crate::repository::error::RepositoryError;
+use crate::repository::error::RepositoryError::InternalError;
+use crate::repository::maven::MavenHandler;
 use crate::repository::maven::models::MavenSettings;
 use crate::repository::npm::models::NPMSettings;
+use crate::repository::npm::NPMHandler;
 use crate::repository::response::RepoResponse;
 use crate::storage::models::Storage;
 
@@ -19,62 +22,116 @@ pub enum Repository {
 
 impl Repository {
     pub async fn load(
-        _storage: &Storage,
-        _name: &str,
+        storage: &Storage,
+        name: &str,
     ) -> Result<Option<Repository>, RepositoryError> {
-        todo!();
+        let repository_value = storage.get_repository_value(&name).await?;
+        if repository_value.is_none() { return Ok(None); }
+        let repository_value = repository_value.unwrap();
+        return match &repository_value.repository_type {
+            RepositoryType::Maven => {
+                let main = storage.get_repository::<MavenSettings>(name).await?;
+                if main.is_none() {
+                    return Err(InternalError("Repository Registered but not found".to_string()));
+                }
+                Ok(Some(Repository::Maven(main.unwrap())))
+            }
+            RepositoryType::NPM => {
+                let main = storage.get_repository::<NPMSettings>(name).await?;
+                if main.is_none() {
+                    return Err(InternalError("Repository Registered but not found".to_string()));
+                }
+
+                Ok(Some(Repository::NPM(main.unwrap())))
+            }
+        };
     }
     async fn handle_get(
         &self,
-        _storage: &Storage,
-        _path: &str,
-        _http: &HttpRequest,
-        _conn: &DatabaseConnection,
+        storage: &Storage,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection, auth: Authentication,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
-        todo!()
+        match self {
+            Repository::Maven(maven) => {
+                MavenHandler::handle_get(maven, storage, path, headers, conn, auth).await
+            }
+            Repository::NPM(npm) => {
+                NPMHandler::handle_get(npm, storage, path, headers, conn, auth).await
+            }
+        }
     }
 
     async fn handle_post(
         &self,
-        _storage: &Storage,
-        _path: &str,
-        _http: &HttpRequest,
-        _conn: &DatabaseConnection,
-        _bytes: Bytes,
+        storage: &Storage,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection, auth: Authentication,
+        bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
-        todo!()
+        match self {
+            Repository::Maven(maven) => {
+                MavenHandler::handle_post(maven, storage, path, headers, conn, auth, bytes).await
+            }
+            Repository::NPM(npm) => {
+                NPMHandler::handle_post(npm, storage, path, headers, conn, auth, bytes).await
+            }
+        }
     }
 
     async fn handle_put(
         &self,
-        _storage: &Storage,
-        _path: &str,
-        _http: &HttpRequest,
-        _conn: &DatabaseConnection,
-        _bytes: Bytes,
+        storage: &Storage,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection, auth: Authentication,
+        bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
-        todo!()
+        match self {
+            Repository::Maven(maven) => {
+                MavenHandler::handle_put(maven, storage, path, headers, conn, auth, bytes).await
+            }
+            Repository::NPM(npm) => {
+                NPMHandler::handle_put(npm, storage, path, headers, conn, auth, bytes).await
+            }
+        }
     }
 
     async fn handle_patch(
         &self,
-        _storage: &Storage,
-        _path: &str,
-        _http: &HttpRequest,
-        _conn: &DatabaseConnection,
-        _bytes: Bytes,
+        storage: &Storage,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection, auth: Authentication,
+        bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
-        todo!()
+        match self {
+            Repository::Maven(maven) => {
+                MavenHandler::handle_patch(maven, storage, path, headers, conn, auth, bytes).await
+            }
+            Repository::NPM(npm) => {
+                NPMHandler::handle_patch(npm, storage, path, headers, conn, auth, bytes).await
+            }
+        }
     }
 
     async fn handle_head(
         &self,
-        _storage: &Storage,
-        _path: &str,
-        _http: &HttpRequest,
-        _conn: &DatabaseConnection,
+        storage: &Storage,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection, auth: Authentication,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
-        todo!()
+        match self {
+            Repository::Maven(maven) => {
+                MavenHandler::handle_head(maven, storage, path, headers, conn, auth).await
+            }
+            Repository::NPM(npm) => {
+                NPMHandler::handle_head(npm, storage, path, headers, conn, auth).await
+            }
+        }
     }
 }
 

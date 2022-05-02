@@ -7,10 +7,10 @@ fn default() -> bool {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Frontend {
-    #[serde(default = "default")]
-    pub enabled: bool,
     #[serde(default = "PageProvider::default")]
     pub page_provider: PageProvider,
+    #[serde(default)]
+    pub description: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,8 +81,8 @@ impl PageProvider {
 impl Default for Frontend {
     fn default() -> Self {
         Frontend {
-            enabled: true,
             page_provider: PageProvider::None,
+            description: "".to_string()
         }
     }
 }

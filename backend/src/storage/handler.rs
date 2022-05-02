@@ -3,8 +3,9 @@ use std::fmt::Write;
 use serde::{Deserialize, Serialize};
 
 use crate::storage::local_storage::LocalStorage;
-use crate::storage::models::{StorageError, StorageType};
+use crate::storage::models::{ StorageType};
 use serde_json::Value;
+use crate::storage::error::StorageError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageHandlerFactory {

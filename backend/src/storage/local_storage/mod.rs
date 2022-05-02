@@ -12,9 +12,7 @@ use std::path::PathBuf;
 
 use std::sync::Arc;
 
-use crate::repository::data::{
-    RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue,
-};
+use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
 use async_trait::async_trait;
 use serde_json::Value;
 use thiserror::Error;
@@ -131,9 +129,13 @@ impl StorageType for LocalStorage {
 
     async fn get_repository<T: RepositorySetting>(
         &self,
-        _config: &StorageConfig,
+        config: &StorageConfig,
         repo_name: &str,
-    ) -> Result<Option<RepositoryMainConfig<T>>, Self::Error> {
+    ) -> Result<Option<RepositoryConfig<T>>, Self::Error> {
+        let value = self.get_repository_value(config, repo_name).await?;
+        if value.is_none(){
+            return Ok(None);
+        }
         let path = self.get_repository_folder(repo_name).join(REPOSITORY_CONF);
 
         if !path.exists() {
@@ -152,10 +154,13 @@ impl StorageType for LocalStorage {
             repository_type_settings,
             security: config.security,
             active: config.active,
-            description: config.description,
             policy: config.policy,
         };
-        Ok(Some(result))
+
+        Ok(Some(RepositoryConfig::<T>{
+            init_values: value.unwrap(),
+            main_config: result
+        }))
     }
 
     async fn update_repository<RS: RepositorySetting>(
@@ -178,7 +183,7 @@ impl StorageType for LocalStorage {
         create_dir_all(file_location.parent().ok_or_else(|| {
             LocalStorageError::Error("Unable to Find Parent Location".to_string())
         })?)
-        .await?;
+            .await?;
 
         if file_location.exists() {
             remove_file(&file_location).await?;
@@ -294,5 +299,10 @@ impl StorageType for LocalStorage {
         repositories.clear();
         self.loaded = false;
         Ok(())
+    }
+
+    async fn get_repository_value(&self, config: &StorageConfig, repository: &str) -> Result<Option<RepositoryValue>, Self::Error> {
+        let repositories = self.repositories.read().await;
+        return Ok(repositories.get(repository).cloned());
     }
 }

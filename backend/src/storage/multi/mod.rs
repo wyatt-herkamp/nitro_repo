@@ -5,13 +5,14 @@ use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
 use crate::storage::models::{
-    Storage, StorageError, StorageFile, UnloadedStorage, STORAGE_FILE, STORAGE_FILE_BAK,
+    Storage, StorageFile, UnloadedStorage, STORAGE_FILE, STORAGE_FILE_BAK,
 };
 
 use serde::{Serialize, Serializer};
 
 use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
+use crate::storage::error::StorageError;
 
 use crate::storage::handler::StorageHandler;
 

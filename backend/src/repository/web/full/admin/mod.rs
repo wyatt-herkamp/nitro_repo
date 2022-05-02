@@ -1,3 +1,7 @@
+//mod controller;
+
+pub mod controller;
+
 use actix_web::web;
 
 //pub mod controller;

@@ -1,5 +1,5 @@
 use crate::repository::error::RepositoryError;
-use crate::storage::models::StorageError;
+use crate::storage::error::StorageError;
 use actix_web::http::StatusCode;
 use std::string;
 use thiserror::Error;

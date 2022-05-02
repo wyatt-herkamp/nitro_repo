@@ -4,13 +4,14 @@ use std::string::FromUtf8Error;
 use std::time::SystemTimeError;
 
 use crate::authentication::UnAuthorized;
-use crate::storage::models::StorageError;
 use crate::system::permissions::options::MissingPermission;
 use crate::system::permissions::PermissionError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
+use crate::repository::error::RepositoryError;
+use crate::storage::error::StorageError;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
@@ -119,6 +120,11 @@ impl From<serde_json::Error> for InternalError {
 
 impl std::convert::From<StorageError> for InternalError {
     fn from(err: StorageError) -> InternalError {
+        InternalError::Error(err.to_string())
+    }
+}
+impl std::convert::From<RepositoryError> for InternalError {
+    fn from(err: RepositoryError) -> InternalError {
         InternalError::Error(err.to_string())
     }
 }

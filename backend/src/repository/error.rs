@@ -11,7 +11,7 @@ use crate::system::permissions::PermissionError;
 use crate::authentication::error::AuthenticationError;
 use crate::repository::maven::error::MavenError;
 use crate::repository::npm::error::NPMError;
-use crate::storage::models::StorageError;
+use crate::storage::error::StorageError;
 
 #[derive(Debug)]
 pub enum RepositoryError {
