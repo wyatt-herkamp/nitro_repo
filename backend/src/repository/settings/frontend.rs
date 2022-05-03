@@ -82,7 +82,7 @@ impl Default for Frontend {
     fn default() -> Self {
         Frontend {
             page_provider: PageProvider::None,
-            description: "".to_string()
+            description: "".to_string(),
         }
     }
 }

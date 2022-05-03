@@ -1,20 +1,17 @@
 use std::collections::HashMap;
 
-use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
 
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
-use log::Level::Trace;
-use log::{debug, error, log_enabled, trace};
+
+use log::{debug, trace};
 use regex::Regex;
 use sea_orm::DatabaseConnection;
 use std::string::String;
 
-use crate::repository::deploy::{handle_post_deploy, DeployInfo};
-
 use crate::repository::npm::models::{
-    Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest, Version,
+    Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest,
 };
 use crate::repository::npm::utils::{generate_get_response, is_valid};
 
@@ -35,8 +32,8 @@ mod utils;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
-use crate::repository::nitro::nitro_repository::NitroRepository;
-use crate::repository::nitro::utils::update_project_in_repositories;
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+
 use async_trait::async_trait;
 
 pub struct NPMHandler;
@@ -215,7 +212,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
     }
 }
 
-impl NitroRepository<NPMSettings> for NPMHandler {
+impl NitroRepositoryHandler<NPMSettings> for NPMHandler {
     fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
         path.into().replace('.', "/").replace(':', "/")
     }

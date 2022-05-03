@@ -1,20 +1,19 @@
 use std::fmt::Debug;
 use std::path::PathBuf;
 
-use crate::storage::local_storage::LocalStorageError;
 use serde::{Deserialize, Serialize};
 
 use async_trait::async_trait;
 
-use thiserror::Error;
-
-use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
+use crate::repository::data::{
+    RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType,
+    RepositoryValue,
+};
 use crate::storage::error::StorageError;
 use crate::storage::handler::{StorageHandler, StorageHandlerFactory};
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {

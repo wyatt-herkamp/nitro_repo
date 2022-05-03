@@ -1,8 +1,8 @@
 use crate::repository::data::RepositorySetting;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use crate::repository::nitro::VersionData;
 use crate::utils::get_current_time;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MavenSettings {}
@@ -64,7 +64,7 @@ impl Into<VersionData> for Pom {
             description: self.description.unwrap_or_default(),
             source: None,
             licence: None,
-            version: self.version.clone(),
+            version: self.version,
             created: get_current_time(),
         }
     }

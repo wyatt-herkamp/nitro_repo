@@ -4,7 +4,6 @@ pub mod controller;
 
 use actix_web::web;
 
-
 pub fn init(cfg: &mut web::ServiceConfig) {
     cfg.service(controller::add_repo)
         .service(controller::get_repo)

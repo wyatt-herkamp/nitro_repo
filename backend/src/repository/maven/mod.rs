@@ -1,23 +1,20 @@
-use crate::constants::PROJECT_FILE;
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 
-use log::Level::Trace;
-use log::{debug, error, log_enabled, trace};
+use log::error;
 use sea_orm::DatabaseConnection;
 
-use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 use crate::repository::maven::models::{MavenSettings, Pom};
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 
 use crate::authentication::Authentication;
-use crate::repository::data::{RepositoryConfig, RepositoryMainConfig};
+use crate::repository::data::RepositoryConfig;
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
-use crate::repository::nitro::nitro_repository::NitroRepository;
-use crate::repository::nitro::utils::update_project_in_repositories;
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+
 use crate::repository::response::RepoResponse;
 use crate::repository::response::RepoResponse::{BadRequest, NotFound};
 use crate::storage::models::Storage;
@@ -124,7 +121,7 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
     }
 }
 
-impl NitroRepository<MavenSettings> for MavenHandler {
+impl NitroRepositoryHandler<MavenSettings> for MavenHandler {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
         value.into().replace('.', "/").replace(':', "/")
     }

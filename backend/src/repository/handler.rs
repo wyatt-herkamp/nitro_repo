@@ -1,15 +1,16 @@
 use crate::authentication::Authentication;
 use actix_web::http::header::HeaderMap;
 use actix_web::web::Bytes;
-use actix_web::HttpRequest;
+
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 
 use crate::repository::data::{RepositoryConfig, RepositorySetting, RepositoryType};
 use crate::repository::error::RepositoryError;
 use crate::repository::error::RepositoryError::InternalError;
-use crate::repository::maven::MavenHandler;
 use crate::repository::maven::models::MavenSettings;
+use crate::repository::maven::MavenHandler;
+
 use crate::repository::npm::models::NPMSettings;
 use crate::repository::npm::NPMHandler;
 use crate::repository::response::RepoResponse;
@@ -25,21 +26,27 @@ impl Repository {
         storage: &Storage,
         name: &str,
     ) -> Result<Option<Repository>, RepositoryError> {
-        let repository_value = storage.get_repository_value(&name).await?;
-        if repository_value.is_none() { return Ok(None); }
+        let repository_value = storage.get_repository_value(name).await?;
+        if repository_value.is_none() {
+            return Ok(None);
+        }
         let repository_value = repository_value.unwrap();
         return match &repository_value.repository_type {
             RepositoryType::Maven => {
                 let main = storage.get_repository::<MavenSettings>(name).await?;
                 if main.is_none() {
-                    return Err(InternalError("Repository Registered but not found".to_string()));
+                    return Err(InternalError(
+                        "Repository Registered but not found".to_string(),
+                    ));
                 }
                 Ok(Some(Repository::Maven(main.unwrap())))
             }
             RepositoryType::NPM => {
                 let main = storage.get_repository::<NPMSettings>(name).await?;
                 if main.is_none() {
-                    return Err(InternalError("Repository Registered but not found".to_string()));
+                    return Err(InternalError(
+                        "Repository Registered but not found".to_string(),
+                    ));
                 }
 
                 Ok(Some(Repository::NPM(main.unwrap())))
@@ -51,7 +58,8 @@ impl Repository {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, auth: Authentication,
+        conn: &DatabaseConnection,
+        auth: Authentication,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
         match self {
             Repository::Maven(maven) => {
@@ -68,7 +76,8 @@ impl Repository {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, auth: Authentication,
+        conn: &DatabaseConnection,
+        auth: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
         match self {
@@ -86,7 +95,8 @@ impl Repository {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, auth: Authentication,
+        conn: &DatabaseConnection,
+        auth: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
         match self {
@@ -104,7 +114,8 @@ impl Repository {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, auth: Authentication,
+        conn: &DatabaseConnection,
+        auth: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
         match self {
@@ -122,7 +133,8 @@ impl Repository {
         storage: &Storage,
         path: &str,
         headers: &HeaderMap,
-        conn: &DatabaseConnection, auth: Authentication,
+        conn: &DatabaseConnection,
+        auth: Authentication,
     ) -> Result<RepoResponse, crate::repository::error::RepositoryError> {
         match self {
             Repository::Maven(maven) => {

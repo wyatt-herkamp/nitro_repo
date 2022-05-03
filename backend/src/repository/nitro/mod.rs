@@ -1,4 +1,5 @@
 pub mod error;
+pub mod handler;
 pub mod nitro_repository;
 pub mod utils;
 

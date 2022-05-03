@@ -10,7 +10,7 @@ use crate::repository::npm::models::NPMSettings;
 use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::security::SecurityRules;
 use crate::repository::settings::webhook::Webhook;
-use crate::repository::settings::{FRONTEND_CONFIG, Policy, WEBHOOK_CONFIG};
+use crate::repository::settings::{Policy, FRONTEND_CONFIG, WEBHOOK_CONFIG};
 use crate::storage::models::Storage;
 use async_trait::async_trait;
 
@@ -46,7 +46,10 @@ pub trait RepositoryDataType: Send + Sync + Sized {
             storage.delete_file(self, WEBHOOK_CONFIG).await?;
         }
         let value = serde_json::to_string(&webhook.unwrap())?;
-        storage.save_file(self, value.as_bytes(), WEBHOOK_CONFIG).await.map_err(RepositoryError::from)
+        storage
+            .save_file(self, value.as_bytes(), WEBHOOK_CONFIG)
+            .await
+            .map_err(RepositoryError::from)
     }
     async fn get_frontend_config(
         &self,
@@ -70,10 +73,11 @@ pub trait RepositoryDataType: Send + Sync + Sized {
             storage.delete_file(self, FRONTEND_CONFIG).await?;
         }
         let value = serde_json::to_string(&frontend.unwrap())?;
-        storage.save_file(self, value.as_bytes(), FRONTEND_CONFIG).await.map_err(RepositoryError::from)
+        storage
+            .save_file(self, value.as_bytes(), FRONTEND_CONFIG)
+            .await
+            .map_err(RepositoryError::from)
     }
-
-
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryValue {
@@ -98,7 +102,7 @@ impl RepositoryDataType for RepositoryValue {
     }
 }
 
-#[derive(Clone, Debug,Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RepositoryConfig<T: RepositorySetting> {
     pub init_values: RepositoryValue,
     pub main_config: RepositoryMainConfig<T>,
@@ -132,7 +136,6 @@ impl<'a, RS: RepositorySetting> RepositoryDataType for &'a RepositoryConfig<RS> 
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryMainConfig<T: RepositorySetting> {
     pub repository_type_settings: T,
@@ -143,15 +146,13 @@ pub struct RepositoryMainConfig<T: RepositorySetting> {
     pub policy: Policy,
 }
 
-
-impl<T: RepositorySetting +Serialize> RepositoryMainConfig<T>{
-    pub async fn update(
-        &self,
-        storage: &Storage,
-    ) -> Result<(), RepositoryError> {
-        storage.update_repository(self.clone()).await.map_err(RepositoryError::from)
+impl<T: RepositorySetting + Serialize> RepositoryMainConfig<T> {
+    pub async fn update(&self, storage: &Storage) -> Result<(), RepositoryError> {
+        storage
+            .update_repository(self.clone())
+            .await
+            .map_err(RepositoryError::from)
     }
-
 }
 fn default() -> bool {
     true

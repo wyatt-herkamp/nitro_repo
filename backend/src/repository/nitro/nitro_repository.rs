@@ -13,10 +13,9 @@ use crate::repository::nitro::utils::{
 };
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, VersionData};
 use crate::system::user::UserModel;
-use crate::utils::get_current_time;
 
 #[async_trait]
-pub trait NitroRepository<T: RepositorySetting> {
+pub trait NitroRepositoryHandler<T: RepositorySetting> {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String;
     /// Handles a List of versions request
     async fn handle_versions(
@@ -154,7 +153,7 @@ pub trait NitroRepository<T: RepositorySetting> {
             );
         }
         if let Err(error) = update_project_in_repositories(
-            &storage,
+            storage,
             &repository.init_values,
             version_data.name.clone(),
         )

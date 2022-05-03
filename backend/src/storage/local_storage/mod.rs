@@ -12,7 +12,10 @@ use std::path::PathBuf;
 
 use std::sync::Arc;
 
-use crate::repository::data::{RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType, RepositoryValue};
+use crate::repository::data::{
+    RepositoryConfig, RepositoryDataType, RepositoryMainConfig, RepositorySetting, RepositoryType,
+    RepositoryValue,
+};
 use async_trait::async_trait;
 use serde_json::Value;
 use thiserror::Error;
@@ -133,7 +136,7 @@ impl StorageType for LocalStorage {
         repo_name: &str,
     ) -> Result<Option<RepositoryConfig<T>>, Self::Error> {
         let value = self.get_repository_value(config, repo_name).await?;
-        if value.is_none(){
+        if value.is_none() {
             return Ok(None);
         }
         let path = self.get_repository_folder(repo_name).join(REPOSITORY_CONF);
@@ -157,9 +160,9 @@ impl StorageType for LocalStorage {
             policy: config.policy,
         };
 
-        Ok(Some(RepositoryConfig::<T>{
+        Ok(Some(RepositoryConfig::<T> {
             init_values: value.unwrap(),
-            main_config: result
+            main_config: result,
         }))
     }
 
@@ -183,7 +186,7 @@ impl StorageType for LocalStorage {
         create_dir_all(file_location.parent().ok_or_else(|| {
             LocalStorageError::Error("Unable to Find Parent Location".to_string())
         })?)
-            .await?;
+        .await?;
 
         if file_location.exists() {
             remove_file(&file_location).await?;
@@ -301,7 +304,11 @@ impl StorageType for LocalStorage {
         Ok(())
     }
 
-    async fn get_repository_value(&self, config: &StorageConfig, repository: &str) -> Result<Option<RepositoryValue>, Self::Error> {
+    async fn get_repository_value(
+        &self,
+        _config: &StorageConfig,
+        repository: &str,
+    ) -> Result<Option<RepositoryValue>, Self::Error> {
         let repositories = self.repositories.read().await;
         return Ok(repositories.get(repository).cloned());
     }

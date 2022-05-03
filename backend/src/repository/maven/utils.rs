@@ -1,18 +1,9 @@
 use std::fs::read_dir;
 use std::path::Path;
 
-use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use chrono::NaiveDateTime;
-use log::trace;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::data::RepositoryDataType;
-use crate::repository::maven::models::Pom;
-
-use crate::repository::nitro::{ProjectData, VersionData};
-use crate::storage::models::Storage;
-
-use crate::utils::get_current_time;
 
 #[allow(dead_code)]
 fn get_artifacts(path: &Path) -> Vec<String> {
@@ -51,4 +42,3 @@ mod tests {
         );
     }
 }
-
