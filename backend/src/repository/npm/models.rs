@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use crate::repository::data::RepositorySetting;
+use crate::repository::nitro::VersionData;
+use crate::utils::get_current_time;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -50,11 +52,24 @@ pub struct Dist {
 pub struct Version {
     pub version: String,
     pub name: String,
+    #[serde(default)]
+    pub description: String,
     pub dist: Dist,
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
-
+impl Into<VersionData> for Version {
+    fn into(self) -> VersionData {
+        VersionData {
+            name: self.name,
+            description: self.description,
+            source: None,
+            licence: None,
+            version: self.version,
+            created: get_current_time(),
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DistTags {
     pub latest: String,

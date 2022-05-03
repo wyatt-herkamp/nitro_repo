@@ -13,7 +13,9 @@ use std::string::String;
 
 use crate::repository::deploy::{handle_post_deploy, DeployInfo};
 
-use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest, Version};
+use crate::repository::npm::models::{
+    Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest, Version,
+};
 use crate::repository::npm::utils::{generate_get_response, is_valid};
 
 use crate::authentication::Authentication;
@@ -180,12 +182,27 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                             .await?;
 
                         let project_folder = publish_request.name.clone();
+                        let version_folder =
+                            format!("{}/{}", &project_folder, &version_data.version);
+
                         trace!("Project Folder Location {}", project_folder);
                         let repository = repository.clone();
                         let storage = storage.clone();
                         let version_for_saving = version_data.clone();
                         let user = caller.clone();
-                        actix_web::rt::spawn(NPMHandler::post_deploy(storage, repository, user, project_folder, version_for_saving));
+                        actix_web::rt::spawn(async move {
+                            let storage = storage;
+                            let repository = repository;
+                            NPMHandler::post_deploy(
+                                &storage,
+                                &repository,
+                                project_folder,
+                                version_folder,
+                                user,
+                                version_for_saving.into(),
+                            )
+                            .await;
+                        });
                     }
                 }
 
@@ -201,64 +218,5 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
 impl NitroRepository<NPMSettings> for NPMHandler {
     fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
         path.into().replace('.', "/").replace(':', "/")
-    }
-}
-
-impl NPMHandler {
-    async fn post_deploy(storage: Storage, repository: RepositoryConfig<NPMSettings>, user: UserModel, project_folder: String, version_for_saving: Version) {
-        if let Err(error) = crate::repository::npm::utils::update_project(
-            &storage,
-            &repository,
-            &project_folder,
-            version_for_saving.clone(),
-        )
-            .await
-        {
-            error!("Unable to update {}, {}", PROJECT_FILE, error);
-            if log_enabled!(Trace) {
-                trace!(
-                                        "Version {} Name: {}",
-                                        &version_for_saving.version,
-                                        &version_for_saving.name
-                                    );
-            }
-        }
-
-        if let Err(error) = update_project_in_repositories(
-            &storage,
-            &repository,
-            version_for_saving.name.clone(),
-        )
-            .await
-        {
-            error!("Unable to update repository.json, {}", error);
-            if log_enabled!(Trace) {
-                trace!(
-                                        "Version {} Name: {}",
-                                        &version_for_saving.version,
-                                        &version_for_saving.name
-                                    );
-            }
-        }
-        let info = DeployInfo {
-            user: user.clone(),
-            version: version_for_saving.version.clone(),
-            name: version_for_saving.name.clone(),
-            version_folder: format!(
-                "{}/{}",
-                &project_folder, &version_for_saving.version
-            ),
-        };
-
-        debug!("Starting Post Deploy Tasks");
-        if log_enabled!(Trace) {
-            trace!("Data {}", &info);
-        }
-        let deploy = handle_post_deploy(&storage, &repository, &info).await;
-        if let Err(error) = deploy {
-            error!("Error Handling Post Deploy Tasks {}", error);
-        } else {
-            debug!("All Post Deploy Tasks Completed and Happy :)");
-        }
     }
 }

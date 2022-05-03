@@ -1,6 +1,8 @@
 use crate::repository::data::RepositorySetting;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::repository::nitro::VersionData;
+use crate::utils::get_current_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MavenSettings {}
@@ -14,6 +16,7 @@ impl TryFrom<Value> for MavenSettings {
 }
 
 impl RepositorySetting for MavenSettings {}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeployMetadata {
     #[serde(rename = "groupId")]
@@ -52,4 +55,17 @@ pub struct Pom {
     pub description: Option<String>,
     pub url: Option<String>,
     pub scm: Option<Scm>,
+}
+
+impl Into<VersionData> for Pom {
+    fn into(self) -> VersionData {
+        VersionData {
+            name: format!("{}:{}", &self.group_id, &self.artifact_id),
+            description: self.description.unwrap_or_default(),
+            source: None,
+            licence: None,
+            version: self.version.clone(),
+            created: get_current_time(),
+        }
+    }
 }

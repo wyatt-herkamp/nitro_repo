@@ -75,7 +75,15 @@ pub struct ProjectData {
     #[serde(default = "crate::utils::get_current_time")]
     pub updated: i64,
 }
-
+impl Default for ProjectData {
+    fn default() -> Self {
+        ProjectData {
+            versions: Default::default(),
+            created: get_current_time(),
+            updated: get_current_time(),
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectSource {
     pub name: String,
@@ -123,7 +131,8 @@ impl From<String> for NitroVersion {
 }
 
 impl NitroRepoVersions {
-    pub fn update_version(&mut self, version: String) {
+    pub fn update_version<S: Into<String>>(&mut self, version: S) {
+        let version = version.into();
         for v in self.versions.iter_mut() {
             if v.version.eq(&version) {
                 if !v.snapshot {

@@ -53,62 +53,6 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     }
 }
 
-pub async fn update_project<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
-    project_folder: &str,
-    version: Version,
-) -> Result<(), RepositoryError> {
-    let project_file = format!("{}/{}", project_folder, PROJECT_FILE);
-    let version_folder = format!("{}/{}/{}", &project_folder, &version.version, VERSION_DATA);
-
-    trace!("Project File Location {}", project_file);
-    let option = storage.get_file(repository, &project_file).await?;
-    let mut project_data: ProjectData = if let Some(data) = option {
-        let string = String::from_utf8(data)?;
-        let value = serde_json::from_str(&string)?;
-        storage.delete_file(repository, &project_file).await?;
-        value
-    } else {
-        ProjectData {
-            versions: Default::default(),
-            created: get_current_time(),
-            updated: get_current_time(),
-        }
-    };
-    project_data.updated = get_current_time();
-    let horrible_line_of_code = if let Some(desc) = version.other.get("description") {
-        desc.as_str().unwrap().to_string()
-    } else {
-        "".to_string()
-    };
-
-    let version_data = VersionData {
-        name: version.name,
-        description: horrible_line_of_code,
-        source: None,
-        licence: None,
-        version: version.version.clone(),
-        created: get_current_time(),
-    };
-    project_data.versions.update_version(version.version);
-    storage
-        .save_file(
-            repository,
-            serde_json::to_string_pretty(&project_data)?.as_bytes(),
-            &project_file,
-        )
-        .await?;
-    storage
-        .save_file(
-            repository,
-            serde_json::to_string_pretty(&version_data)?.as_bytes(),
-            &version_folder,
-        )
-        .await?;
-    Ok(())
-}
-
 pub async fn get_version_data<R: RepositoryDataType>(
     storage: &Storage,
     repository: &R,

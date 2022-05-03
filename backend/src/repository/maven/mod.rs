@@ -101,10 +101,22 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
             if let Ok(pom) = pom {
                 let project_folder =
                     format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
-                trace!("Project Folder Location {}", project_folder);
+                let version_folder = format!("{}/{}", &project_folder, &pom.version);
                 let repository = repository.clone();
                 let storage = storage.clone();
-                actix_web::rt::spawn(MavenHandler::post_deploy(storage, repository, project_folder, caller, pom));
+                actix_web::rt::spawn(async move {
+                    let storage = storage;
+                    let repository = repository;
+                    MavenHandler::post_deploy(
+                        &storage,
+                        &repository,
+                        project_folder,
+                        version_folder,
+                        caller,
+                        pom.into(),
+                    )
+                    .await;
+                });
             }
         }
         // Everything was ok
@@ -115,59 +127,5 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
 impl NitroRepository<MavenSettings> for MavenHandler {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
         value.into().replace('.', "/").replace(':', "/")
-    }
-}
-
-impl MavenHandler {
-    async fn post_deploy(storage: Storage, repository: RepositoryConfig<MavenSettings>, project_folder: String, user: UserModel, pom: Pom) {
-        if let Err(error) = utils::update_project(
-            &storage,
-            &repository.init_values,
-            &project_folder,
-            pom.version.clone(),
-            pom.clone(),
-        )
-            .await
-        {
-            error!("Unable to update {}, {}", PROJECT_FILE, error);
-            trace!(
-                            "Version {} Name: {}",
-                            &pom.version,
-                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                        );
-        }
-
-        if let Err(error) = update_project_in_repositories(
-            &storage,
-            &repository.init_values,
-            format!("{}:{}", &pom.group_id, &pom.artifact_id),
-        )
-            .await
-        {
-            error!("Unable to update repository.json, {}", error);
-            trace!(
-                            "Version {} Name: {}",
-                            &pom.version,
-                            format!("{}:{}", &pom.group_id, &pom.artifact_id)
-                        );
-        }
-        let string = format!("{}/{}", project_folder, &pom.version);
-        let info = DeployInfo {
-            user: user.clone(),
-            version: pom.version,
-            name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
-            version_folder: string,
-        };
-
-        debug!("Starting Post Deploy Tasks");
-        if log_enabled!(Trace) {
-            trace!("Data {}", &info);
-        }
-        let deploy = handle_post_deploy(&storage, &repository.init_values, &info).await;
-        if let Err(error) = deploy {
-            error!("Error Handling Post Deploy Tasks {}", error);
-        } else {
-            debug!("All Post Deploy Tasks Completed and Happy :)");
-        }
     }
 }
