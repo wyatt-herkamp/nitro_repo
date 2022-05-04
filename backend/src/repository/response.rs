@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::api_response::SiteResponse;
+use crate::repository::data::RepositoryConfig;
 
 use crate::repository::frontend::FrontendResponse;
 
@@ -12,8 +13,6 @@ use crate::repository::nitro::{
 };
 
 use crate::storage::models::StorageFile;
-
-use crate::repository::data::RepositoryValue;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -25,7 +24,7 @@ pub struct RepositoryFile {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Project {
-    pub repo_summary: RepositoryValue,
+    pub repo_summary: RepositoryConfig,
     pub project: ProjectData,
     /// Version Data will be latest if not specified
     pub version: Option<VersionData>,

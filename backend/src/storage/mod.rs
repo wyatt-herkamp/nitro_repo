@@ -1,6 +1,6 @@
 pub mod admin;
+pub mod bad_storage;
 pub mod error;
-pub mod handler;
 pub mod local_storage;
 pub mod models;
 pub mod multi;

@@ -1,5 +1,5 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
-use crate::repository::data::RepositoryDataType;
+use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::error::NitroError;
 use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType,
@@ -11,9 +11,9 @@ use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
 
-pub async fn process_storage_files<R: RepositoryDataType>(
-    storage: &Storage,
-    repo: &R,
+pub async fn process_storage_files(
+    storage: &Box<dyn Storage>,
+    repo: &RepositoryConfig,
     storage_files: Vec<StorageFile>,
     requested_dir: &str,
 ) -> Result<NitroFileResponse, NitroError> {
@@ -27,8 +27,8 @@ pub async fn process_storage_files<R: RepositoryDataType>(
     }
     let active_dir = format!(
         "{}/{}/{}",
-        &storage.config.name,
-        &repo.get_name(),
+        &storage.config_for_saving().generic_config.name,
+        &repo.name,
         requested_dir
     );
     let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
@@ -45,7 +45,7 @@ pub async fn process_storage_files<R: RepositoryDataType>(
         )
         .await?;
         let project = Project {
-            repo_summary: repo.get_repository_value().clone(),
+            repo_summary: repo.clone(),
             project: data,
             version: version_data,
             frontend_response: None,
@@ -71,7 +71,7 @@ pub async fn process_storage_files<R: RepositoryDataType>(
                 project_data.versions.latest_release = project_data.versions.latest_version.clone();
             }
             let project = Project {
-                repo_summary: repo.get_repository_value().clone(),
+                repo_summary: repo.clone(),
                 project: project_data,
                 version: Some(version),
                 frontend_response: None,
@@ -87,14 +87,14 @@ pub async fn process_storage_files<R: RepositoryDataType>(
             Ok(NitroFileResponse {
                 active_dir,
                 files: nitro_files,
-                response_type: ResponseType::Repository(repo.get_repository_value().clone()),
+                response_type: ResponseType::Repository(repo.clone()),
             })
         }
     };
 }
-pub async fn get_version<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn get_version(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     project: String,
     version: String,
 ) -> Result<Option<VersionResponse>, NitroError> {
@@ -117,9 +117,9 @@ pub fn get_version_by_data(
     None
 }
 
-pub async fn update_project_in_repositories<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn update_project_in_repositories(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     project: String,
 ) -> Result<(), NitroError> {
     let option = storage.get_file(repository, PROJECTS_FILE).await?;
@@ -139,9 +139,9 @@ pub async fn update_project_in_repositories<R: RepositoryDataType>(
     Ok(())
 }
 
-pub async fn get_versions<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn get_versions(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     path: String,
 ) -> Result<NitroRepoVersions, NitroError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
@@ -176,9 +176,9 @@ pub fn get_latest_version_data(
     }
 }
 
-pub async fn get_project_data<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn get_project_data(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     project: String,
 ) -> Result<Option<ProjectData>, NitroError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
@@ -194,9 +194,9 @@ pub async fn get_project_data<R: RepositoryDataType>(
         None
     })
 }
-pub async fn get_version_data<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn get_version_data(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     folder: String,
 ) -> Result<Option<VersionData>, NitroError> {
     let string = format!("{}/{}", folder, VERSION_DATA);

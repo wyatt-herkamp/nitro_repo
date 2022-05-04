@@ -8,7 +8,7 @@ use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 
 use crate::authentication::verify_login;
 
-use crate::repository::data::RepositoryDataType;
+use crate::repository::data::RepositoryConfig;
 use crate::repository::error::RepositoryError;
 use crate::repository::nitro::utils::get_project_data;
 use sea_orm::DatabaseConnection;
@@ -51,9 +51,9 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     }
 }
 
-pub async fn get_version_data<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn get_version_data(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     project_folder: &str,
     project: &ProjectData,
 ) -> Result<(NPMTimes, DistTags, NPMVersions), RepositoryError> {
@@ -85,9 +85,9 @@ pub async fn get_version_data<R: RepositoryDataType>(
     Ok((times, dist_tags, npm_versions))
 }
 
-pub async fn generate_get_response<R: RepositoryDataType>(
-    storage: &Storage,
-    repository: &R,
+pub async fn generate_get_response(
+    storage: &Box<dyn Storage>,
+    repository: &RepositoryConfig,
     project_folder: &str,
 ) -> Result<Option<GetResponse>, RepositoryError> {
     let option = get_project_data(storage, repository, project_folder.to_string()).await?;

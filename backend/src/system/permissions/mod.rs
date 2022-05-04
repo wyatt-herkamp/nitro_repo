@@ -57,9 +57,9 @@ impl Default for RepositoryPermission {
     }
 }
 
-pub fn can_deploy<T: RepositorySetting>(
+pub fn can_deploy(
     user_perms: &UserPermissions,
-    repo: &RepositoryConfig<T>,
+    repo: &RepositoryConfig,
 ) -> Result<bool, PermissionError> {
     if user_perms.disabled {
         return Ok(false);
@@ -74,9 +74,9 @@ pub fn can_deploy<T: RepositorySetting>(
     Ok(false)
 }
 
-pub fn can_read<T: RepositorySetting>(
+pub fn can_read(
     user_perms: &UserPermissions,
-    repo: &RepositoryConfig<T>,
+    repo: &RepositoryConfig,
 ) -> Result<bool, PermissionError> {
     if user_perms.disabled {
         return Ok(false);
@@ -85,7 +85,7 @@ pub fn can_read<T: RepositorySetting>(
         return Ok(true);
     }
 
-    match repo.main_config.security.visibility {
+    match repo.visibility {
         Visibility::Public => Ok(true),
         Visibility::Private => {
             if let Some(perms) = &user_perms.viewer {
@@ -99,16 +99,13 @@ pub fn can_read<T: RepositorySetting>(
     }
 }
 
-pub fn can<T: RepositorySetting>(
-    repo: &RepositoryConfig<T>,
-    perms: &RepositoryPermission,
-) -> Result<bool, PermissionError> {
+pub fn can(repo: &RepositoryConfig, perms: &RepositoryPermission) -> Result<bool, PermissionError> {
     if perms.permissions.is_empty() {
         // If nothing is set. It is a all view type of scenario
         return Ok(true);
     }
-    let repository = repo.init_values.name.clone();
-    let storage = repo.init_values.storage.clone();
+    let repository = repo.name.clone();
+    let storage = repo.storage.clone();
     for perm_string in perms.permissions.iter() {
         let split = perm_string.split('/').collect::<Vec<&str>>();
         let storage_perm = split.get(0).ok_or(StorageClassifier)?.to_string();
@@ -123,12 +120,12 @@ pub fn can<T: RepositorySetting>(
         if repository_perm.starts_with('{') && repository_perm.ends_with('}') {
             let permission: RepositoryPermissionValue = serde_json::from_str(&repository_perm)?;
             if let Some(policy) = &permission.policy {
-                if !policy.eq(&repo.main_config.policy) {
+                if !policy.eq(&repo.policy) {
                     return Ok(false);
                 }
             }
             if let Some(repo_type) = &permission.repo_type {
-                if !repo_type.eq(&repo.init_values.repository_type.to_string()) {
+                if !repo_type.eq(&repo.repository_type.to_string()) {
                     return Ok(false);
                 }
             }

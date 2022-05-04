@@ -1,9 +1,8 @@
 pub mod error;
-pub mod handler;
 pub mod nitro_repository;
 pub mod utils;
 
-use crate::repository::data::RepositoryValue;
+use crate::repository::data::RepositoryConfig;
 use crate::repository::response::Project;
 use crate::storage::models::StorageFile;
 use crate::utils::get_current_time;
@@ -20,7 +19,7 @@ pub struct NitroFileResponse {
 pub enum ResponseType {
     Project(Option<Project>),
     Version(VersionBrowseResponse),
-    Repository(RepositoryValue),
+    Repository(RepositoryConfig),
     Storage,
     Other,
 }

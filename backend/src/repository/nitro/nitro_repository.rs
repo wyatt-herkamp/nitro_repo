@@ -15,12 +15,12 @@ use crate::repository::nitro::{NitroRepoVersions, ProjectData, VersionData};
 use crate::system::user::UserModel;
 
 #[async_trait]
-pub trait NitroRepositoryHandler<T: RepositorySetting> {
+pub trait NitroRepositoryHandler {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String;
     /// Handles a List of versions request
     async fn handle_versions(
-        repository: &RepositoryConfig<T>,
-        storage: &Storage,
+        repository: &RepositoryConfig,
+        storage: &Box<dyn Storage>,
         project: &str,
     ) -> Result<NitroRepoVersions, NitroError> {
         Ok(get_versions(
@@ -31,8 +31,8 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
         .await?)
     }
     async fn handle_version(
-        repository: &RepositoryConfig<T>,
-        storage: &Storage,
+        repository: &RepositoryConfig,
+        storage: &Box<dyn Storage>,
         project: &str,
         version: &str,
     ) -> Result<Project, NitroError> {
@@ -48,7 +48,7 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
             .await?;
 
             let project = Project {
-                repo_summary: repository.init_values.clone(),
+                repo_summary: repository.clone(),
                 project: project_data,
                 version: version_data,
                 frontend_response: None,
@@ -58,8 +58,8 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
         return Err(ProjectNotFound);
     }
     async fn handle_project(
-        repository: &RepositoryConfig<T>,
-        storage: &Storage,
+        repository: &RepositoryConfig,
+        storage: &Box<dyn Storage>,
         project: &str,
     ) -> Result<Project, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
@@ -74,7 +74,7 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
             .await?;
 
             let project = Project {
-                repo_summary: repository.init_values.clone(),
+                repo_summary: repository.clone(),
                 project: project_data,
                 version: version_data,
                 frontend_response: None,
@@ -86,8 +86,8 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
 
     /// Returns the latest version published.
     async fn latest_version(
-        repository: &RepositoryConfig<T>,
-        storage: &Storage,
+        repository: &RepositoryConfig,
+        storage: &Box<dyn Storage>,
         project: &str,
     ) -> Result<String, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
@@ -105,8 +105,8 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
     }
     /// Handles the Update Process and Post Deploy tasks for a Nitro Repository
     async fn post_deploy(
-        storage: &Storage,
-        repository: &RepositoryConfig<T>,
+        storage: &Box<dyn Storage>,
+        repository: &RepositoryConfig,
         project_folder: String,
         version_folder: String,
         _: UserModel,
@@ -152,12 +152,8 @@ pub trait NitroRepositoryHandler<T: RepositorySetting> {
                 &version_data.name
             );
         }
-        if let Err(error) = update_project_in_repositories(
-            storage,
-            &repository.init_values,
-            version_data.name.clone(),
-        )
-        .await
+        if let Err(error) =
+            update_project_in_repositories(storage, &repository, version_data.name.clone()).await
         {
             error!("Unable to update repository.json, {}", error);
             trace!(

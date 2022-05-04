@@ -1,3 +1,5 @@
+use actix_web::error::ParseError::Status;
+use log::{error, info};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -5,49 +7,38 @@ use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
 use crate::storage::models::{
-    Storage, StorageFile, UnloadedStorage, STORAGE_FILE, STORAGE_FILE_BAK,
+    Storage, StorageFactory, StorageFile, StorageSaver, StorageStatus, STORAGE_FILE,
+    STORAGE_FILE_BAK,
 };
 
 use serde::{Serialize, Serializer};
 
+use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
 use tokio::io::AsyncWriteExt;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 
-use crate::storage::handler::StorageHandler;
-
-pub async fn load_storages() -> Result<HashMap<String, Storage>, StorageError> {
+pub async fn load_storages() -> Result<HashMap<String, Box<dyn Storage>>, StorageError> {
     let path = Path::new(STORAGE_FILE);
     if !path.exists() {
         return Ok(HashMap::new());
     }
     let string = read_to_string(&path).await?;
-    let result: Vec<UnloadedStorage> = serde_json::from_str(&string)?;
-    let mut values: HashMap<String, Storage> = HashMap::new();
-    for unloaded_storage in result {
-        let key = unloaded_storage.config.name.clone();
-        let storage = Storage {
-            storage_handler: crate::storage::handler::StorageHandler::load(
-                unloaded_storage.storage_handler,
-            )
-            .await?,
-            config: unloaded_storage.config,
+    let result: Vec<StorageFactory> = serde_json::from_str(&string)?;
+    let mut values: HashMap<String, Box<dyn Storage>> = HashMap::new();
+    for factory in result {
+        let name = factory.generic_config.name.clone();
+        let storage = match factory.build().await {
+            Ok(value) => value,
+            Err((error, factory)) => BadStorage::create(factory, error),
         };
-
-        values.insert(key, storage);
+        values.insert(name, storage);
     }
     Ok(values)
 }
 
-pub async fn save_storages(storages: &HashMap<String, Storage>) -> Result<(), StorageError> {
-    let mut values: Vec<UnloadedStorage> = Vec::new();
-    for (_, storage) in storages {
-        values.push(UnloadedStorage {
-            storage_handler: storage.storage_handler.save_value()?,
-            config: storage.config.clone(),
-        })
-    }
-    let result = serde_json::to_string(&values)?;
+pub async fn save_storages(storages: &Vec<StorageSaver>) -> Result<(), StorageError> {
+    let result = serde_json::to_string(&storages)?;
     let path = Path::new(STORAGE_FILE);
     let bak = Path::new(STORAGE_FILE_BAK);
     if bak.exists() {
@@ -66,7 +57,7 @@ pub async fn save_storages(storages: &HashMap<String, Storage>) -> Result<(), St
 }
 
 pub struct MultiStorageController {
-    pub storages: RwLock<HashMap<String, Storage>>,
+    pub storages: RwLock<HashMap<String, Box<dyn Storage>>>,
 }
 
 impl MultiStorageController {
@@ -88,42 +79,60 @@ impl Serialize for MultiStorageController {
 }
 
 impl MultiStorageController {
-    pub async fn get_storage_by_name(&self, name: &str) -> Result<Option<Storage>, StorageError> {
+    pub async fn get_storage_by_name(
+        &self,
+        name: &str,
+    ) -> Result<Option<RwLockReadGuard<'_, Box<dyn Storage>>>, StorageError> {
         let storages = self.storages.read().await;
-        return Ok(storages.get(name).cloned());
+        if storages.contains_key(name) {
+            return Ok(None);
+        }
+        let storage = RwLockReadGuard::map(storages, |storages| {
+            let storage = storages.get(name).unwrap();
+            storage
+        });
+        return Ok(Some(storage));
     }
 
-    pub async fn create_storage(&self, storage: UnloadedStorage) -> Result<Storage, StorageError> {
-        let storages = self.storages.read().await;
-        let name = storage.config.name.clone();
+    pub async fn create_storage<'a>(&self, storage: StorageFactory) -> Result<(), StorageError> {
+        let mut storages = self.storages.write().await;
+        let name = storage.generic_config.name.clone();
 
         if storages.contains_key(&name) {
             return Err(StorageError::StorageAlreadyExist);
         }
-        /// Return Storage Lock if not needed
-        let mut saving_map = storages.clone();
-        drop(storages);
-        let storage = {
-            //Initialize Storage
-            let storage_handler = StorageHandler::load(storage.storage_handler).await?;
-            let storage = Storage {
-                storage_handler,
-                config: storage.config,
-            };
-            saving_map.insert(name.clone(), storage);
-            save_storages(&saving_map).await?;
-            saving_map.remove(&name).ok_or(StorageError::LoadFailure(
-                "Failed to create storage. Unable to find new data".to_string(),
-            ))
-        }?;
-        let mut storages = self.storages.write().await;
-        storages.insert(name.clone(), storage);
-        return storages
-            .get(&name)
-            .cloned()
-            .ok_or(StorageError::LoadFailure(
-                "Failed to create storage. Unable to find new data".to_string(),
-            ));
+        {
+            let mut storages_saving = Vec::new();
+            for (_, storage) in storages.iter() {
+                storages_saving.push(storage.config_for_saving());
+            }
+            storages_saving.push(storage.config_for_saving());
+            save_storages(&storages_saving).await?;
+        }
+        let storage_name = name.clone();
+
+        let mut storage_handler = storage.build().await.unwrap();
+        storages.insert(storage_name.clone(), storage_handler);
+        return Ok(());
+    }
+    /// Attempts to run the storage load on any storages that are unloaded.
+    /// This will include the Error storages
+    pub async fn load_unloaded_storages<'a>(&self) -> Result<(), StorageError> {
+        let mut guard = self.storages.write().await;
+        for (name, storage) in guard.iter_mut() {
+            match storage.status() {
+                StorageStatus::Unloaded => {
+                    info!("Loading Storage {}", name);
+                    storage.load().await?;
+                }
+                StorageStatus::Error(_) => {
+                    info!("Loading Storage {}", name);
+                    storage.load().await?;
+                }
+                _ => {}
+            }
+        }
+        Ok(())
     }
 
     pub async fn delete_storage(&self, storage: &str) -> Result<bool, StorageError> {
@@ -132,11 +141,28 @@ impl MultiStorageController {
         if option.is_none() {
             return Ok(false);
         }
-        save_storages(&storages).await?;
-        //TODO Call Delete Functions
+        let mut storage = option.unwrap();
+        drop(storages);
+        // Save the new storages
+        save_storages(self.storage_savers().await.as_ref()).await?;
+        if let Err(error) = storage.unload() {
+            error!(
+                "Storage has been removed config. However, it failed to unload properly {}",
+                error
+            );
+        }
         Ok(true)
     }
 
+    pub async fn storage_savers(&self) -> Vec<StorageSaver> {
+        let storages = self.storages.read().await;
+
+        let mut storages_saving = Vec::new();
+        for (_, storage) in storages.iter() {
+            storages_saving.push(storage.config_for_saving().clone());
+        }
+        storages_saving
+    }
     pub async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, StorageError> {
         let storages = self.storages.read().await;
         let mut files = Vec::new();
@@ -146,7 +172,7 @@ impl MultiStorageController {
                 full_path: name.clone(),
                 directory: true,
                 file_size: 0,
-                created: storage.config.created as u128,
+                created: storage.config_for_saving().generic_config.created as u128,
             });
         }
         Ok(files)

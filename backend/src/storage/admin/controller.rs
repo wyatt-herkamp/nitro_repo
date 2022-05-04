@@ -5,7 +5,7 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
 
-use crate::storage::models::{StorageConfig, UnloadedStorage};
+use crate::storage::models::{StorageConfig, StorageFactory};
 use crate::system::permissions::options::CanIDo;
 use crate::utils::get_current_time;
 
@@ -15,7 +15,6 @@ use std::fs::{canonicalize, create_dir_all};
 use crate::authentication::Authentication;
 use std::path::Path;
 
-use crate::storage::handler::StorageHandlerFactory;
 use crate::storage::local_storage::LocalConfig;
 use crate::storage::multi::MultiStorageController;
 use crate::system::user::UserModel;
@@ -90,27 +89,5 @@ pub async fn add_storage(
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
-    let path = Path::new("storages").join(&nc.0.name);
-    if !path.exists() {
-        create_dir_all(&path)?;
-    }
-    let _path = canonicalize(path)?;
-    let string = nc.0.name;
-    let config = LocalConfig {
-        location: "".to_string(),
-    };
-    let storage = UnloadedStorage {
-        config: StorageConfig {
-            public_name: nc.0.public_name,
-            name: string.clone(),
-            created: get_current_time(),
-        },
-        storage_handler: StorageHandlerFactory {
-            storage_type: "local".to_string(),
-            config: serde_json::to_value(config)?,
-        },
-    };
-
-    storages.create_storage(storage.clone()).await?;
-    APIResponse::new(true, Some(storage)).respond(&r)
+    todo!("cREATE storages")
 }

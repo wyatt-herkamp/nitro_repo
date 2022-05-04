@@ -14,16 +14,4 @@ impl Default for Visibility {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct SecurityRules {
-    #[serde(default = "Visibility::default")]
-    pub visibility: Visibility,
-}
-
-impl SecurityRules {
-    pub fn update(&mut self, security: SecurityRules) {
-        self.visibility = security.visibility;
-    }
-    pub fn set_visibility(&mut self, visibility: Visibility) {
-        self.visibility = visibility;
-    }
-}
+pub struct SecurityRules {}

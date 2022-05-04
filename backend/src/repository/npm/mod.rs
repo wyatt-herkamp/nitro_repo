@@ -9,6 +9,7 @@ use log::{debug, trace};
 use regex::Regex;
 use sea_orm::DatabaseConnection;
 use std::string::String;
+use std::sync::Arc;
 
 use crate::repository::npm::models::{
     Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest,
@@ -29,28 +30,42 @@ pub mod error;
 pub mod models;
 mod utils;
 
-use crate::repository::data::RepositoryConfig;
+use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
 use async_trait::async_trait;
+use tokio::sync::RwLockReadGuard;
 
-pub struct NPMHandler;
+pub struct NPMHandler<'a> {
+    config: RepositoryConfig,
+    storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+}
 
+impl<'a> NPMHandler<'a> {
+    pub fn create(
+        repository: RepositoryConfig,
+        storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+    ) -> Result<NPMHandler<'a>, RepositoryError> {
+        Ok(NPMHandler {
+            config: repository,
+            storage,
+        })
+    }
+}
 // name/version
 #[async_trait]
-impl RepositoryHandler<NPMSettings> for NPMHandler {
+impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
     async fn handle_get(
-        repository: &RepositoryConfig<NPMSettings>,
-        storage: &Storage,
+        &self,
         path: &str,
         headers: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, RepositoryError> {
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_read_from(repository)? {
+        if let Some(value) = caller.can_read_from(&self.config)? {
             return Err(RepositoryError::RequestError(
                 value.to_string(),
                 StatusCode::UNAUTHORIZED,
@@ -70,8 +85,9 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                     &package, &version, &nitro_file_location
                 );
 
-                let result = storage
-                    .get_file_as_response(&repository, &nitro_file_location)
+                let result = self
+                    .storage
+                    .get_file_as_response(&self.config, &nitro_file_location)
                     .await?;
                 if let Some(_result) = result {
                     //TODO Handle StorageFileResponse
@@ -79,7 +95,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                     return Ok(NotFound);
                 }
             }
-            let get_response = generate_get_response(storage, &repository, path)
+            let get_response = generate_get_response(&self.storage, &self.config, path)
                 .await
                 .unwrap();
             if get_response.is_none() {
@@ -88,7 +104,10 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
             let string = serde_json::to_string_pretty(&get_response.unwrap())?;
             Ok(RepoResponse::OkWithJSON(string))
         } else {
-            let result = storage.get_file_as_response(&repository, path).await?;
+            let result = self
+                .storage
+                .get_file_as_response(&self.config, path)
+                .await?;
             if let Some(_result) = result {
                 //TODO Handle StorageFileResponse
                 todo!("UN Handled Result Type")
@@ -99,8 +118,8 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
     }
 
     async fn handle_put(
-        repository: &RepositoryConfig<NPMSettings>,
-        storage: &Storage,
+        &self,
+
         path: &str,
         headers: &HeaderMap,
         conn: &DatabaseConnection,
@@ -126,7 +145,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
         }
         //Handle Normal Request
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_deploy_to(repository)? {
+        if let Some(value) = caller.can_deploy_to(&self.config)? {
             return Err(RepositoryError::RequestError(
                 value.to_string(),
                 StatusCode::UNAUTHORIZED,
@@ -166,13 +185,13 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                         let npm_version_data =
                             format!("{}/{}/package.json", &publish_request.name, version);
 
-                        storage
-                            .save_file(&repository, attachment_data.as_ref(), &attachment_file_loc)
+                        self.storage
+                            .save_file(&self.config, attachment_data.as_ref(), &attachment_file_loc)
                             .await?;
 
-                        storage
+                        self.storage
                             .save_file(
-                                &repository,
+                                &self.config,
                                 version_data_string.as_bytes(),
                                 &npm_version_data,
                             )
@@ -183,23 +202,17 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
                             format!("{}/{}", &project_folder, &version_data.version);
 
                         trace!("Project Folder Location {}", project_folder);
-                        let repository = repository.clone();
-                        let storage = storage.clone();
                         let version_for_saving = version_data.clone();
                         let user = caller.clone();
-                        actix_web::rt::spawn(async move {
-                            let storage = storage;
-                            let repository = repository;
-                            NPMHandler::post_deploy(
-                                &storage,
-                                &repository,
-                                project_folder,
-                                version_folder,
-                                user,
-                                version_for_saving.into(),
-                            )
-                            .await;
-                        });
+                        NPMHandler::post_deploy(
+                            &self.storage,
+                            &self.config,
+                            project_folder,
+                            version_folder,
+                            user,
+                            version_for_saving.into(),
+                        )
+                        .await;
                     }
                 }
 
@@ -212,7 +225,7 @@ impl RepositoryHandler<NPMSettings> for NPMHandler {
     }
 }
 
-impl NitroRepositoryHandler<NPMSettings> for NPMHandler {
+impl NitroRepositoryHandler for NPMHandler<'_> {
     fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
         path.into().replace('.', "/").replace(':', "/")
     }

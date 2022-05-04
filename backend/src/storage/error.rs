@@ -1,9 +1,7 @@
-use crate::storage::local_storage::LocalStorageError;
+use std::time::SystemTimeError;
 use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum StorageError {
-    #[error("{0}")]
-    LocalStorageError(LocalStorageError),
     #[error("{0}")]
     LoadFailure(String),
     #[error("IO error {0}")]
@@ -12,6 +10,14 @@ pub enum StorageError {
     JSONError(serde_json::Error),
     #[error("Storage Already Exists!")]
     StorageAlreadyExist,
+    #[error("Repository Already Exists")]
+    RepositoryAlreadyExists,
+    #[error("Missing Repository")]
+    RepositoryMissing,
+    #[error("Unable to find Parent Directory")]
+    ParentIssue,
+    #[error("Internal Error: {0}")]
+    InternalError(String),
 }
 
 impl From<std::io::Error> for StorageError {
@@ -19,10 +25,9 @@ impl From<std::io::Error> for StorageError {
         StorageError::IOError(err)
     }
 }
-
-impl From<LocalStorageError> for StorageError {
-    fn from(err: LocalStorageError) -> StorageError {
-        StorageError::LocalStorageError(err)
+impl From<SystemTimeError> for StorageError {
+    fn from(err: SystemTimeError) -> StorageError {
+        StorageError::InternalError(err.to_string())
     }
 }
 

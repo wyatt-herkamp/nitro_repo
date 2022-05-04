@@ -1,6 +1,7 @@
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
+use std::sync::Arc;
 
 use log::error;
 use sea_orm::DatabaseConnection;
@@ -10,7 +11,7 @@ use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 
 use crate::authentication::Authentication;
-use crate::repository::data::RepositoryConfig;
+use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
@@ -21,26 +22,40 @@ use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use async_trait::async_trait;
+use tokio::sync::RwLockReadGuard;
 
 pub mod error;
 pub mod models;
 mod utils;
 
-pub struct MavenHandler;
+pub struct MavenHandler<'a> {
+    config: RepositoryConfig,
+    storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+}
 
+impl<'a> MavenHandler<'a> {
+    pub fn create(
+        repository: RepositoryConfig,
+        storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+    ) -> Result<MavenHandler<'a>, RepositoryError> {
+        Ok(MavenHandler::<'a> {
+            config: repository,
+            storage,
+        })
+    }
+}
 #[async_trait]
-impl RepositoryHandler<MavenSettings> for MavenHandler {
+impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
     async fn handle_get(
-        repository: &RepositoryConfig<MavenSettings>,
-        storage: &Storage,
+        &self,
         path: &str,
         _: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, RepositoryError> {
-        if repository.main_config.security.visibility == Visibility::Private {
+        if self.config.visibility == Visibility::Private {
             let caller: UserModel = authentication.get_user(conn).await??;
-            if let Some(value) = caller.can_read_from(repository)? {
+            if let Some(value) = caller.can_read_from(&self.config)? {
                 return Err(RepositoryError::RequestError(
                     value.to_string(),
                     StatusCode::UNAUTHORIZED,
@@ -48,7 +63,10 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
             }
         }
 
-        let result = storage.get_file_as_response(repository, path).await?;
+        let result = self
+            .storage
+            .get_file_as_response(&self.config, path)
+            .await?;
         if let Some(_result) = result {
             todo!("Unhandled Result Type")
         } else {
@@ -57,8 +75,7 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
     }
 
     async fn handle_put(
-        repository: &RepositoryConfig<MavenSettings>,
-        storage: &Storage,
+        &self,
         path: &str,
         _: &HeaderMap,
         conn: &DatabaseConnection,
@@ -66,13 +83,13 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
         bytes: Bytes,
     ) -> Result<RepoResponse, RepositoryError> {
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_deploy_to(repository)? {
+        if let Some(value) = caller.can_deploy_to(&self.config)? {
             return Err(RepositoryError::RequestError(
                 value.to_string(),
                 StatusCode::UNAUTHORIZED,
             ));
         } //TODO find a better way to do this
-        match repository.main_config.policy {
+        match self.config.policy {
             Policy::Release => {
                 if path.contains("-SNAPSHOT") {
                     return Ok(BadRequest("SNAPSHOT in release only".to_string()));
@@ -85,7 +102,9 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
             }
             Policy::Mixed => {}
         }
-        storage.save_file(&repository, bytes.as_ref(), path).await?;
+        self.storage
+            .save_file(&self.config, bytes.as_ref(), path)
+            .await?;
 
         //  Post Deploy Handler
         if path.ends_with(".pom") {
@@ -99,21 +118,15 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
                 let project_folder =
                     format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
                 let version_folder = format!("{}/{}", &project_folder, &pom.version);
-                let repository = repository.clone();
-                let storage = storage.clone();
-                actix_web::rt::spawn(async move {
-                    let storage = storage;
-                    let repository = repository;
-                    MavenHandler::post_deploy(
-                        &storage,
-                        &repository,
-                        project_folder,
-                        version_folder,
-                        caller,
-                        pom.into(),
-                    )
-                    .await;
-                });
+                MavenHandler::post_deploy(
+                    &self.storage,
+                    &self.config,
+                    project_folder,
+                    version_folder,
+                    caller,
+                    pom.into(),
+                )
+                .await;
             }
         }
         // Everything was ok
@@ -121,7 +134,7 @@ impl RepositoryHandler<MavenSettings> for MavenHandler {
     }
 }
 
-impl NitroRepositoryHandler<MavenSettings> for MavenHandler {
+impl NitroRepositoryHandler for MavenHandler<'_> {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
         value.into().replace('.', "/").replace(':', "/")
     }

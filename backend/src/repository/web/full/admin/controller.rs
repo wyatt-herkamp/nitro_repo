@@ -12,7 +12,7 @@ use crate::error::response::not_found;
 
 use crate::repository::settings::security::Visibility;
 
-use crate::repository::data::{RepositoryType, RepositoryValue};
+use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::repository::settings::Policy;
 use crate::storage::multi::MultiStorageController;
 use crate::system::permissions::options::CanIDo;
@@ -21,7 +21,7 @@ use crate::NitroRepoData;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListRepositories {
-    pub repositories: Vec<RepositoryValue>,
+    pub repositories: Vec<RepositoryConfig>,
 }
 
 #[get("/api/admin/repositories/{storage}/list")]
@@ -65,9 +65,13 @@ pub async fn get_repo(
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = storage.get_repository::<Value>(&repo).await?;
-
-    APIResponse::new(true, repository).respond(&r)
+    let repository = storage.get_repository(&repo).await?;
+    if repository.is_none() {
+        APIResponse::<RepositoryConfig>::new(true, None).respond(&r)
+    } else {
+        let config: RepositoryConfig = repository.unwrap().clone();
+        APIResponse::new(true, Some(config)).respond(&r)
+    }
 }
 
 #[derive(serde::Deserialize, Debug, Clone)]
@@ -117,14 +121,13 @@ pub async fn update_active_status(
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = storage.get_repository::<Value>(&repo).await?;
+    let repository = storage.get_repository(&repo).await?;
     if repository.is_none() {
         return not_found();
     }
-    let repository = repository.unwrap();
-    let mut main_config = repository.main_config;
-    main_config.active = active;
-    main_config.update(&storage).await?;
+    let mut repository = repository.unwrap().clone();
+    repository.active = active;
+    //TODO repository.update(&storage).await?;
     APIResponse::new(true, Some(true)).respond(&r)
 }
 
@@ -146,14 +149,13 @@ pub async fn update_policy(
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = storage.get_repository::<Value>(&repository).await?;
+    let repository = storage.get_repository(&repository).await?;
     if repository.is_none() {
         return not_found();
     }
-    let repository = repository.unwrap();
-    let mut main_config = repository.main_config;
-    main_config.policy = policy;
-    main_config.update(&storage).await?;
+    let mut repository = repository.unwrap().clone();
+    repository.policy = policy;
+    //TODO repository.update(&storage).await?;
     APIResponse::new(true, Some(true)).respond(&r)
 }
 
@@ -175,14 +177,13 @@ pub async fn modify_security(
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = storage.get_repository::<Value>(&repository).await?;
+    let repository = storage.get_repository(&repository).await?;
     if repository.is_none() {
         return not_found();
     }
-    let repository = repository.unwrap();
-    let mut main_config = repository.main_config;
-    main_config.security.visibility = visibility;
-    main_config.update(&storage).await?;
+    let mut repository = repository.unwrap().clone();
+    repository.visibility = visibility;
+    //TODO repository.update(&storage).await?;
     APIResponse::new(true, Some(true)).respond(&r)
 }
 
@@ -211,7 +212,7 @@ pub async fn delete_repository(
         return not_found();
     }
     let storage = storage.unwrap();
-    let repository = storage.get_repository::<Value>(&repository).await?;
+    let repository = storage.get_repository(&repository).await?;
     if repository.is_none() {
         return not_found();
     }

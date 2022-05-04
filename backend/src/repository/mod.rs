@@ -1,5 +1,4 @@
 pub mod data;
-pub mod deploy;
 pub mod error;
 pub mod frontend;
 pub mod handler;
@@ -11,4 +10,5 @@ pub mod settings;
 pub mod web;
 
 pub static REPOSITORY_CONF: &str = "repository.nitro_repo";
+pub static REPOSITORY_CONF_FOLDER: &str = ".config.nitro_repo";
 pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";

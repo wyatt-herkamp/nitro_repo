@@ -27,13 +27,13 @@ pub trait CanIDo {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission>;
     fn can_i_edit_users(&self) -> Result<(), MissingPermission>;
     fn can_i_admin(&self) -> Result<(), MissingPermission>;
-    fn can_deploy_to<T: RepositorySetting>(
+    fn can_deploy_to(
         &self,
-        repo: &RepositoryConfig<T>,
+        repo: &RepositoryConfig,
     ) -> Result<Option<MissingPermission>, PermissionError>;
-    fn can_read_from<T: RepositorySetting>(
+    fn can_read_from(
         &self,
-        repo: &RepositoryConfig<T>,
+        repo: &RepositoryConfig,
     ) -> Result<Option<MissingPermission>, PermissionError>;
 }
 
@@ -64,9 +64,9 @@ impl CanIDo for UserModel {
         Ok(())
     }
 
-    fn can_deploy_to<T: RepositorySetting>(
+    fn can_deploy_to(
         &self,
-        repo: &RepositoryConfig<T>,
+        repo: &RepositoryConfig,
     ) -> Result<Option<MissingPermission>, PermissionError> {
         let can_read = can_deploy(&self.permissions, repo)?;
         if can_read {
@@ -76,11 +76,11 @@ impl CanIDo for UserModel {
         }
     }
 
-    fn can_read_from<T: RepositorySetting>(
+    fn can_read_from(
         &self,
-        repo: &RepositoryConfig<T>,
+        repo: &RepositoryConfig,
     ) -> Result<Option<MissingPermission>, PermissionError> {
-        match repo.main_config.security.visibility {
+        match repo.visibility {
             Visibility::Public => Ok(None),
             Visibility::Private => {
                 let can_read = can_read(&self.permissions, repo)?;

@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::error::internal_error::InternalError;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 pub type SiteResponse = Result<HttpResponse, InternalError>;
 
@@ -80,6 +81,7 @@ impl<T: Serialize> APIResponse<T> {
             status_code: None,
         }
     }
+
     pub fn error(&self, status: StatusCode) -> SiteResponse {
         return Ok(HttpResponse::Ok()
             .status(status)

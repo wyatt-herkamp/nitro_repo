@@ -1,9 +1,14 @@
+use crate::repository::data::RepositoryType;
 use actix_web::http::StatusCode;
 use actix_web::web;
 use log::trace;
+use serde::de::Unexpected::Option;
+use std::ops::Deref;
 
 use crate::repository::error::RepositoryError;
-use crate::repository::handler::Repository;
+use crate::repository::handler::RepositoryHandler;
+use crate::repository::maven::MavenHandler;
+use crate::repository::npm::NPMHandler;
 
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
@@ -34,11 +39,11 @@ pub fn init(cfg: &mut ActixWeb::ServiceConfig) {
 }
  **/
 
-pub async fn to_request(
+pub async fn to_request<'a>(
     storage_name: String,
     repo_name: String,
-    storages: web::Data<MultiStorageController>,
-) -> Result<(Storage, Repository), RepositoryError> {
+    storages: &'a web::Data<MultiStorageController>,
+) -> Result<Box<dyn RepositoryHandler<'a> + 'a>, RepositoryError> {
     let storage = storages.get_storage_by_name(&storage_name).await?;
     if storage.is_none() {
         trace!("Storage {} not found", &storage_name);
@@ -47,8 +52,8 @@ pub async fn to_request(
             StatusCode::NOT_FOUND,
         ));
     }
-    let storage = storage.unwrap().clone();
-    let repository = Repository::load(&storage, &repo_name).await?;
+    let storage = storage.unwrap();
+    let repository = storage.get_repository(&repo_name).await?;
     if repository.is_none() {
         trace!("Repository {} not found", repo_name);
         return Err(RepositoryError::RequestError(
@@ -56,7 +61,16 @@ pub async fn to_request(
             StatusCode::NOT_FOUND,
         ));
     }
-    let repository = repository.unwrap();
+    let repository = repository.unwrap().clone();
 
-    Ok((storage, repository))
+    return match repository.repository_type {
+        RepositoryType::Maven => {
+            let handler = MavenHandler::create(repository, storage)?;
+            Ok(Box::new(handler))
+        }
+        RepositoryType::NPM => {
+            let handler = NPMHandler::create(repository, storage)?;
+            Ok(Box::new(handler))
+        }
+    };
 }
