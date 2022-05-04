@@ -1,20 +1,20 @@
-use std::error::Error;
+
 use std::fmt::{Debug, Display, Formatter};
-use std::fs::FileType;
+
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
 use async_trait::async_trait;
-use lettre::message::header::MimeVersion;
-use serde::de::DeserializeOwned;
+
+
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
-use crate::repository::data::{RepositoryConfig, RepositorySetting, RepositoryType};
+use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
 use crate::storage::local_storage::LocalStorage;
-use strum_macros::Display;
+
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
 /// Types of Storages
@@ -83,11 +83,11 @@ pub struct StorageFactory {
 }
 impl StorageFactory {
     pub fn config_for_saving(&self) -> StorageSaver {
-        return StorageSaver {
+        StorageSaver {
             storage_type: self.storage_type.clone(),
             generic_config: self.generic_config.clone(),
             handler_config: self.handler_config.clone(),
-        };
+        }
     }
 }
 impl StorageFactory {

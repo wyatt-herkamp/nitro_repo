@@ -5,17 +5,17 @@ use crate::api_response::{APIResponse, SiteResponse};
 
 use crate::error::internal_error::InternalError;
 
-use crate::storage::models::{StorageConfig, StorageFactory};
+
 use crate::system::permissions::options::CanIDo;
-use crate::utils::get_current_time;
+
 
 use sea_orm::DatabaseConnection;
-use std::fs::{canonicalize, create_dir_all};
+
 
 use crate::authentication::Authentication;
-use std::path::Path;
 
-use crate::storage::local_storage::LocalConfig;
+
+
 use crate::storage::multi::MultiStorageController;
 use crate::system::user::UserModel;
 use crate::NitroRepoData;
@@ -81,10 +81,10 @@ pub struct NewStorage {
 #[post("/api/admin/storages/add")]
 pub async fn add_storage(
     connection: web::Data<DatabaseConnection>,
-    r: HttpRequest,
+    _r: HttpRequest,
     auth: Authentication,
-    nc: web::Json<NewStorage>,
-    storages: web::Data<MultiStorageController>,
+    _nc: web::Json<NewStorage>,
+    _storages: web::Data<MultiStorageController>,
     _site: NitroRepoData,
 ) -> SiteResponse {
     let caller: UserModel = auth.get_user(&connection).await??;

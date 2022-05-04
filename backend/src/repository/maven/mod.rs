@@ -1,17 +1,16 @@
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use std::sync::Arc;
 
 use log::error;
 use sea_orm::DatabaseConnection;
 
-use crate::repository::maven::models::{MavenSettings, Pom};
+use crate::repository::maven::models::Pom;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 
 use crate::authentication::Authentication;
-use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::repository::data::RepositoryConfig;
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
@@ -118,7 +117,7 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
                 let project_folder =
                     format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
                 let version_folder = format!("{}/{}", &project_folder, &pom.version);
-                MavenHandler::post_deploy(
+                if let Err(error) = MavenHandler::post_deploy(
                     &self.storage,
                     &self.config,
                     project_folder,
@@ -126,7 +125,10 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
                     caller,
                     pom.into(),
                 )
-                .await;
+                .await
+                {
+                    error!("Unable to complete post processing Tasks {}", error);
+                }
             }
         }
         // Everything was ok

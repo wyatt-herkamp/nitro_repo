@@ -1,4 +1,4 @@
-use actix_web::error::ParseError::Status;
+
 use log::{error, info};
 use std::collections::HashMap;
 use std::path::Path;
@@ -91,7 +91,7 @@ impl MultiStorageController {
             let storage = storages.get(name).unwrap();
             storage
         });
-        return Ok(Some(storage));
+        Ok(Some(storage))
     }
 
     pub async fn create_storage<'a>(&self, storage: StorageFactory) -> Result<(), StorageError> {
@@ -111,9 +111,9 @@ impl MultiStorageController {
         }
         let storage_name = name.clone();
 
-        let mut storage_handler = storage.build().await.unwrap();
+        let storage_handler = storage.build().await.unwrap();
         storages.insert(storage_name.clone(), storage_handler);
-        return Ok(());
+        Ok(())
     }
     /// Attempts to run the storage load on any storages that are unloaded.
     /// This will include the Error storages

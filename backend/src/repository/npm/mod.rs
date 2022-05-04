@@ -5,15 +5,12 @@ use actix_web::web::Bytes;
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 
-use log::{debug, trace};
+use log::{debug, error, trace};
 use regex::Regex;
 use sea_orm::DatabaseConnection;
 use std::string::String;
-use std::sync::Arc;
 
-use crate::repository::npm::models::{
-    Attachment, LoginRequest, LoginResponse, NPMSettings, PublishRequest,
-};
+use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
 use crate::repository::npm::utils::{generate_get_response, is_valid};
 
 use crate::authentication::Authentication;
@@ -30,7 +27,7 @@ pub mod error;
 pub mod models;
 mod utils;
 
-use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::repository::data::RepositoryConfig;
 use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
@@ -204,7 +201,7 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                         trace!("Project Folder Location {}", project_folder);
                         let version_for_saving = version_data.clone();
                         let user = caller.clone();
-                        NPMHandler::post_deploy(
+                        if let Err(error) = NPMHandler::post_deploy(
                             &self.storage,
                             &self.config,
                             project_folder,
@@ -212,7 +209,10 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                             user,
                             version_for_saving.into(),
                         )
-                        .await;
+                        .await
+                        {
+                            error!("Unable to complete post processing Tasks {}", error);
+                        }
                     }
                 }
 

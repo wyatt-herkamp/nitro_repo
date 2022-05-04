@@ -4,7 +4,7 @@ use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;
 use std::fmt;
 
-use crate::repository::data::{RepositoryConfig, RepositorySetting};
+use crate::repository::data::{RepositoryConfig};
 
 #[derive(Debug)]
 pub struct MissingPermission(String);

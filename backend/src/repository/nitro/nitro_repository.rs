@@ -5,7 +5,7 @@ use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use async_trait::async_trait;
 use log::{debug, error, trace};
 
-use crate::repository::data::{RepositoryConfig, RepositorySetting};
+use crate::repository::data::{RepositoryConfig};
 use crate::repository::nitro::error::NitroError;
 use crate::repository::nitro::error::NitroError::ProjectNotFound;
 use crate::repository::nitro::utils::{
@@ -25,7 +25,7 @@ pub trait NitroRepositoryHandler {
     ) -> Result<NitroRepoVersions, NitroError> {
         Ok(get_versions(
             storage,
-            &repository,
+            repository,
             Self::parse_project_to_directory(project),
         )
         .await?)
@@ -38,11 +38,11 @@ pub trait NitroRepositoryHandler {
     ) -> Result<Project, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
 
-        let project_data = get_project_data(storage, &repository, project_dir.clone()).await?;
+        let project_data = get_project_data(storage, repository, project_dir.clone()).await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
                 storage,
-                &repository,
+                repository,
                 format!("{}/{}", project_dir, &version),
             )
             .await?;
@@ -64,11 +64,11 @@ pub trait NitroRepositoryHandler {
     ) -> Result<Project, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
 
-        let project_data = get_project_data(storage, &repository, project_dir.clone()).await?;
+        let project_data = get_project_data(storage, repository, project_dir.clone()).await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
                 storage,
-                &repository,
+                repository,
                 format!("{}/{}", &project_dir, &project_data.versions.latest_version),
             )
             .await?;
@@ -91,7 +91,7 @@ pub trait NitroRepositoryHandler {
         project: &str,
     ) -> Result<String, NitroError> {
         let project_dir = Self::parse_project_to_directory(project);
-        let project_data = get_project_data(storage, &repository, project_dir).await?;
+        let project_data = get_project_data(storage, repository, project_dir).await?;
         if let Some(project_data) = project_data {
             let latest_release = project_data.versions.latest_release;
             if latest_release.is_empty() {
@@ -117,11 +117,11 @@ pub trait NitroRepositoryHandler {
         trace!("Project File Location {}", project_file);
         trace!("Version File Location {}", version_file);
         let result: Result<(), NitroError> = {
-            let option = storage.get_file(&repository, &project_file).await?;
+            let option = storage.get_file(repository, &project_file).await?;
             let mut project_data: ProjectData = if let Some(data) = option {
                 let string = String::from_utf8(data)?;
                 let value = serde_json::from_str(&string)?;
-                storage.delete_file(&repository, &project_file).await?;
+                storage.delete_file(repository, &project_file).await?;
                 value
             } else {
                 debug!("Creating new Project Data Value");
@@ -130,14 +130,14 @@ pub trait NitroRepositoryHandler {
             project_data.versions.update_version(&version_data.version);
             storage
                 .save_file(
-                    &repository,
+                    repository,
                     serde_json::to_string_pretty(&project_data)?.as_bytes(),
                     &project_file,
                 )
                 .await?;
             storage
                 .save_file(
-                    &repository,
+                    repository,
                     serde_json::to_string_pretty(&version_data)?.as_bytes(),
                     &version_folder,
                 )
@@ -153,7 +153,7 @@ pub trait NitroRepositoryHandler {
             );
         }
         if let Err(error) =
-            update_project_in_repositories(storage, &repository, version_data.name.clone()).await
+            update_project_in_repositories(storage, repository, version_data.name.clone()).await
         {
             error!("Unable to update repository.json, {}", error);
             trace!(

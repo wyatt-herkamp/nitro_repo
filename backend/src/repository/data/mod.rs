@@ -2,16 +2,16 @@ use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use serde_json::Value;
+
 
 use crate::repository::error::RepositoryError;
 
 use crate::repository::settings::frontend::Frontend;
-use crate::repository::settings::security::{SecurityRules, Visibility};
-use crate::repository::settings::webhook::Webhook;
-use crate::repository::settings::{Policy, FRONTEND_CONFIG, WEBHOOK_CONFIG};
+use crate::repository::settings::security::{Visibility};
+
+use crate::repository::settings::{Policy, FRONTEND_CONFIG};
 use crate::storage::models::Storage;
-use async_trait::async_trait;
+
 use serde::de::DeserializeOwned;
 
 /// Types of Repositories that can exist.

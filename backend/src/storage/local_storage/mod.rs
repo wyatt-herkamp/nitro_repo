@@ -1,4 +1,4 @@
-use crate::repository::{REPOSITORY_CONF, REPOSITORY_CONF_FOLDER};
+use crate::repository::REPOSITORY_CONF_FOLDER;
 use crate::storage::models::{
     Storage, StorageConfig, StorageFactory, StorageFile, StorageFileResponse, StorageSaver,
     StorageStatus, StorageType,
@@ -10,21 +10,18 @@ use log::{debug, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::sync::Arc;
+
 use std::time::SystemTime;
 
-use crate::repository::data::{RepositoryConfig, RepositorySetting, RepositoryType};
+use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
 use crate::storage::error::StorageError::RepositoryMissing;
 use async_trait::async_trait;
-use serde::de::DeserializeOwned;
-use serde_json::{Error, Value};
-use thiserror::Error;
-use tokio::fs::{
-    create_dir, create_dir_all, read_to_string, remove_dir, remove_file, File, OpenOptions,
-};
+
+use serde_json::Value;
+
+use tokio::fs::{create_dir, create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{RwLock, RwLockReadGuard};
 
@@ -107,7 +104,6 @@ impl Storage for LocalStorage {
                 "Attempted Double Load".to_string(),
             ));
         }
-        /// Load Repositories
         let repositories =
             Self::load_repositories(PathBuf::from(&self.config.location).join(STORAGE_CONFIG))
                 .await?;
@@ -124,11 +120,11 @@ impl Storage for LocalStorage {
     }
     fn config_for_saving(&self) -> StorageSaver {
         let value = serde_json::to_value(self.config.clone()).unwrap();
-        return StorageSaver {
+        StorageSaver {
             storage_type: StorageType::LocalStorage,
             generic_config: self.storage_config.clone(),
             handler_config: value,
-        };
+        }
     }
 
     fn storage_config(&self) -> &StorageConfig {
@@ -136,7 +132,7 @@ impl Storage for LocalStorage {
     }
 
     fn impl_config(&self) -> Value {
-        return serde_json::to_value(self.config.clone()).unwrap();
+        serde_json::to_value(self.config.clone()).unwrap()
     }
 
     fn storage_type(&self) -> &StorageType {
@@ -144,7 +140,7 @@ impl Storage for LocalStorage {
     }
 
     fn status(&self) -> &StorageStatus {
-        return &self.status;
+        &self.status
     }
 
     async fn create_repository(
@@ -182,7 +178,7 @@ impl Storage for LocalStorage {
         }
         repositories.insert(name.clone(), config);
         drop(repositories);
-        self.save_repositories();
+        self.save_repositories().await?;
         Ok(())
     }
 
@@ -193,7 +189,7 @@ impl Storage for LocalStorage {
     ) -> Result<(), StorageError> {
         let mut repositories = self.repositories.write().await;
         if repositories.remove(&repository.name).is_none() {
-            return Err(StorageError::RepositoryMissing);
+            return Err(RepositoryMissing);
         }
         let repository_folder = self.get_repository_folder(&repository.name);
 
@@ -306,12 +302,7 @@ impl Storage for LocalStorage {
     ) -> Result<(), StorageError> {
         let file_location = self.get_repository_folder(&repository.name).join(location);
         trace!("Saving File {:?}", &file_location);
-        create_dir_all(
-            file_location
-                .parent()
-                .ok_or_else(|| StorageError::ParentIssue)?,
-        )
-        .await?;
+        create_dir_all(file_location.parent().ok_or(StorageError::ParentIssue)?).await?;
 
         if file_location.exists() {
             remove_file(&file_location).await?;
@@ -332,7 +323,7 @@ impl Storage for LocalStorage {
         let file_location = self.get_repository_folder(&repository.name).join(location);
         remove_file(file_location)
             .await
-            .map_err(|error| StorageError::IOError(error))
+            .map_err(StorageError::IOError)
     }
 
     async fn get_file_as_response(

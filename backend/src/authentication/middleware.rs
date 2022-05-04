@@ -18,7 +18,7 @@ use actix_web::{
 
 use futures_util::future::LocalBoxFuture;
 use log::{debug, trace, warn};
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::DatabaseConnection;
 
 use crate::authentication::session::SessionManagerType;
 
