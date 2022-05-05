@@ -1,7 +1,6 @@
 use crate::repository::REPOSITORY_CONF_FOLDER;
 use crate::storage::models::{
-    Storage, StorageConfig, StorageFactory, StorageFile, StorageFileResponse, StorageSaver,
-    StorageStatus, StorageType,
+    Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
 };
 use crate::storage::STORAGE_CONFIG;
 use crate::utils::get_current_time;
@@ -21,6 +20,7 @@ use async_trait::async_trait;
 
 use serde_json::Value;
 
+use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
 use tokio::fs::{create_dir, create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{RwLock, RwLockReadGuard};
@@ -299,20 +299,24 @@ impl Storage for LocalStorage {
         repository: &RepositoryConfig,
         data: &[u8],
         location: &str,
-    ) -> Result<(), StorageError> {
+    ) -> Result<bool, StorageError> {
         let file_location = self.get_repository_folder(&repository.name).join(location);
         trace!("Saving File {:?}", &file_location);
         create_dir_all(file_location.parent().ok_or(StorageError::ParentIssue)?).await?;
 
-        if file_location.exists() {
+        let exists = if file_location.exists() {
             remove_file(&file_location).await?;
-        }
+            true
+        } else {
+            false
+        };
         let mut file = OpenOptions::new()
             .create_new(true)
             .open(&file_location)
             .await?;
         file.write_all(data).await?;
-        Ok(())
+
+        Ok(exists)
     }
 
     async fn delete_file(
@@ -330,10 +334,10 @@ impl Storage for LocalStorage {
         &self,
         repository: &RepositoryConfig,
         location: &str,
-    ) -> Result<Option<StorageFileResponse>, StorageError> {
+    ) -> Result<StorageFileResponse, StorageError> {
         let file_location = self.get_repository_folder(&repository.name).join(location);
         if !file_location.exists() {
-            return Ok(None);
+            return Ok(StorageFileResponse::NotFound);
         }
         if file_location.is_dir() {
             let mut path = format!("{}/{}", self.storage_config.name, repository.name);
@@ -344,30 +348,28 @@ impl Storage for LocalStorage {
                 }
             }
             trace!("Directory Listing at {:?}", &path);
+            let directory = StorageFile::create(&path, &file_location).await?;
             //Using STD because Into Iterator is missing
             let dir = std::fs::read_dir(&file_location)?;
             let mut files = Vec::new();
             for x in dir {
                 let entry = x?;
-                let string = entry.file_name().into_string().unwrap();
-                if string.ends_with(".nitro_repo") || string.starts_with(".nitro_repo") {
+
+                let name = entry.file_name().into_string();
+                if name.is_err() {
+                    continue;
+                }
+                let name = name.unwrap();
+                if name.ends_with(".nitro_repo") || name.starts_with(".nitro_repo") {
                     //Hide All .nitro_repo files from File Listings
                     continue;
                 }
-                let full = format!("{}/{}", path, &string);
-                let metadata = entry.metadata().unwrap();
-                let time = get_current_time() as u128;
-                let file = StorageFile {
-                    name: string,
-                    full_path: full,
-                    directory: entry.file_type()?.is_dir(),
-                    file_size: metadata.len(),
-                    created: time,
-                };
-                files.push(file);
+                let relative_path = format!("{}/{}", path, &name);
+                let result = StorageFile::create_from_entry(relative_path, &entry).await?;
+                files.push(result);
             }
-
-            return Ok(Some(StorageFileResponse::List(files)));
+            let response = StorageDirectoryResponse { files, directory };
+            return Ok(Some(StorageFileResponse::List(response)));
         }
         trace!("Returning File {:?}", &file_location);
         Ok(Some(StorageFileResponse::File(file_location)))
@@ -382,27 +384,8 @@ impl Storage for LocalStorage {
         if !file_location.exists() {
             return Ok(None);
         }
-        let file = OpenOptions::new().read(true).open(&file_location).await?;
-        let metadata = file.metadata().await?;
-        let created = metadata
-            .created()?
-            .duration_since(SystemTime::UNIX_EPOCH)?
-            .as_micros();
-        let name = file_location
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-        let file_type = metadata.file_type();
-        let file = StorageFile {
-            name,
-            full_path: location.to_string(),
-            directory: file_type.is_dir(),
-            file_size: metadata.len(),
-            created,
-        };
-        return Ok(Some(file));
+
+        return Ok(Some(StorageFile::create(location, &file_location).await?));
     }
 
     async fn get_file(

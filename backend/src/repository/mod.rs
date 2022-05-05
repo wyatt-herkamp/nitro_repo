@@ -1,5 +1,4 @@
 pub mod data;
-pub mod error;
 pub mod frontend;
 pub mod handler;
 pub mod maven;

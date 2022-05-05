@@ -1,10 +1,10 @@
-use crate::api_response::{APIResponse, SiteResponse};
+use crate::api_response::{APIResponse, NRResponse};
 use crate::authentication::auth_token::database::TokenProperties;
 use crate::authentication::auth_token::{
     generate_token, AuthTokenEntity, AuthTokenModel, TokenResponse,
 };
 use crate::authentication::{auth_token, Authentication};
-use crate::error::internal_error::InternalError::NotFound;
+use crate::error::internal_error::InternalError;
 use crate::system::controllers::me::ActiveValue::{NotSet, Set};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
@@ -23,14 +23,16 @@ pub async fn delete_token(
     r: HttpRequest,
     auth: Authentication,
     path: Path<i64>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&database).await??;
 
     let auth_token = path.into_inner();
     let token: AuthTokenModel = AuthTokenEntity::find_by_id(auth_token)
         .one(database.as_ref())
-        .await?
-        .ok_or(NotFound)?;
+        .await
+        .map_err(InternalError::from)?
+        .ok_or(APIResponse::not_found())?;
+
     if token.user_id != caller.id {
         //They can delete other tokens if they are not the user
         caller.can_i_edit_users()?;
@@ -38,8 +40,9 @@ pub async fn delete_token(
     let token = token.into_active_model();
     AuthTokenEntity::delete(token)
         .exec(database.as_ref())
-        .await?;
-    APIResponse::new(true, Some(true)).respond(&r)
+        .await
+        .map_err(InternalError::from)?;
+    Ok(APIResponse::ok())
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -68,10 +71,10 @@ pub async fn create_token(
     r: HttpRequest,
     auth: Authentication,
     token_settings: Json<NewToken>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&database).await??;
     let token = generate_token();
-    let response = APIResponse::new(true, Some(token.clone()));
+    let response = APIResponse::from(Some(token.clone()));
     let database = database.clone();
     actix_web::rt::spawn(async move {
         let database = database;
@@ -93,17 +96,17 @@ pub async fn create_token(
         }
     });
 
-    response.respond(&r)
+    response
 }
 #[get("/api/auth/user/token/list")]
 pub async fn list_tokens(
     database: Data<DatabaseConnection>,
     r: HttpRequest,
     auth: Authentication,
-) -> SiteResponse {
+) -> NRResponse {
     println!("HEY");
     let caller: UserModel = auth.get_user(&database).await??;
 
     let user: Vec<TokenResponse> = auth_token::get_tokens_by_user(caller.id, &database).await?;
-    APIResponse::new(true, Some(user)).respond(&r)
+    Ok(APIResponse::from(Some(user)))
 }

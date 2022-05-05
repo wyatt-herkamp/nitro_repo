@@ -1,20 +1,8 @@
-
 use crate::storage::models::{
-    Storage, StorageConfig, StorageFactory, StorageFile, StorageFileResponse, StorageSaver,
-    StorageStatus, StorageType,
+    Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
 };
 
-
-
-use log::{warn};
-
-
-
-
-
-
-
-
+use log::warn;
 
 use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
@@ -22,9 +10,8 @@ use async_trait::async_trait;
 
 use serde_json::Value;
 
-
-
-use tokio::sync::{RwLockReadGuard};
+use crate::storage::file::{StorageFile, StorageFileResponse};
+use tokio::sync::RwLockReadGuard;
 
 /// This is a storage that is here to represent a storage that failed to load from the config stage
 #[derive(Debug)]
@@ -135,7 +122,7 @@ impl Storage for BadStorage {
         _repository: &RepositoryConfig,
         _file: &[u8],
         _location: &str,
-    ) -> Result<(), StorageError> {
+    ) -> Result<bool, StorageError> {
         panic!("This should not be called!")
     }
 
@@ -151,7 +138,7 @@ impl Storage for BadStorage {
         &self,
         _repository: &RepositoryConfig,
         _location: &str,
-    ) -> Result<Option<StorageFileResponse>, StorageError> {
+    ) -> Result<StorageFileResponse, StorageError> {
         panic!("This should not be called!")
     }
 

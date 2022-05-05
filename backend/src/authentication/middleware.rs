@@ -166,7 +166,7 @@ where
                                 let user = verify_login(username, password, database)
                                     .await
                                     .map_err(internal_server_error)?;
-                                if let Some(user) = user {
+                                if let Ok(user) = user {
                                     trace!("Authorized User");
                                     (Authentication::Basic(user), None)
                                 } else {

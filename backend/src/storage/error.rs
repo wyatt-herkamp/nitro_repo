@@ -1,5 +1,9 @@
+use crate::api_response::APIResponse;
+use crate::error::internal_error::InternalError;
+use actix_web::http::StatusCode;
 use std::time::SystemTimeError;
 use thiserror::Error;
+
 #[derive(Error, Debug)]
 pub enum StorageError {
     #[error("{0}")]
@@ -19,7 +23,17 @@ pub enum StorageError {
     #[error("Internal Error: {0}")]
     InternalError(String),
 }
-
+impl From<StorageError> for APIResponse {
+    fn from(storage_error: StorageError) -> Self {
+        match storage_error {
+            StorageError::RepositoryAlreadyExists => {
+                APIResponse::from(("already exists", StatusCode::CONFLICT))
+            }
+            StorageError::RepositoryMissing => return APIResponse::not_found(),
+            value => InternalError::from(value).into(),
+        }
+    }
+}
 impl From<std::io::Error> for StorageError {
     fn from(err: std::io::Error) -> StorageError {
         StorageError::IOError(err)

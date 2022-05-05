@@ -4,11 +4,8 @@ use actix_web::{delete, get, patch, post, web, HttpRequest};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-
-use crate::api_response::{APIResponse, SiteResponse};
+use crate::api_response::{APIResponse, NRResponse};
 use crate::authentication::Authentication;
-
-use crate::error::response::not_found;
 
 use crate::repository::settings::security::Visibility;
 
@@ -32,7 +29,7 @@ pub async fn list_repos_by_storage(
     auth: Authentication,
     storages: web::Data<MultiStorageController>,
     storage: Path<String>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let storage = storage.into_inner();
@@ -55,7 +52,7 @@ pub async fn get_repo(
     auth: Authentication,
     storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String)>,
-) -> SiteResponse {
+) -> NRResponse {
     let (storage, repo) = path.into_inner();
 
     let caller: UserModel = auth.get_user(&connection).await??;
@@ -66,12 +63,7 @@ pub async fn get_repo(
     }
     let storage = storage.unwrap();
     let repository = storage.get_repository(&repo).await?;
-    if repository.is_none() {
-        APIResponse::<RepositoryConfig>::new(true, None).respond(&r)
-    } else {
-        let config: RepositoryConfig = repository.unwrap().clone();
-        APIResponse::new(true, Some(config)).respond(&r)
-    }
+    APIResponse::from(config.cloned())
 }
 
 #[derive(serde::Deserialize, Debug, Clone)]
@@ -89,7 +81,7 @@ pub async fn add_repo(
     storages: web::Data<MultiStorageController>,
     r: HttpRequest,
     nc: web::Json<NewRepository>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let storage = storages.get_storage_by_name(&nc.storage).await?;
@@ -111,7 +103,7 @@ pub async fn update_active_status(
     auth: Authentication,
     storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String, bool)>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
 
@@ -139,7 +131,7 @@ pub async fn update_policy(
     auth: Authentication,
     storages: web::Data<MultiStorageController>,
     path: web::Path<(String, String, Policy)>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
 
@@ -167,7 +159,7 @@ pub async fn modify_security(
     r: HttpRequest,
     auth: Authentication,
     path: web::Path<(String, String, Visibility)>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository, visibility) = path.into_inner();
@@ -201,7 +193,7 @@ pub async fn delete_repository(
     path: web::Path<(String, String)>,
     storages: web::Data<MultiStorageController>,
     query: web::Query<DeleteRequest>,
-) -> SiteResponse {
+) -> NRResponse {
     let caller: UserModel = auth.get_user(&connection).await??;
     caller.can_i_edit_repos()?;
     let (storage, repository) = path.into_inner();

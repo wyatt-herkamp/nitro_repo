@@ -11,14 +11,11 @@ use sea_orm::DatabaseConnection;
 use std::string::String;
 
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
-use crate::repository::npm::utils::{generate_get_response, is_valid};
+use crate::repository::npm::utils::generate_get_response;
 
-use crate::authentication::Authentication;
+use crate::authentication::{verify_login, Authentication};
 
 use crate::repository::response::RepoResponse;
-use crate::repository::response::RepoResponse::{
-    BadRequest, CreatedWithJSON, NotAuthorized, NotFound,
-};
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
@@ -28,10 +25,11 @@ pub mod models;
 mod utils;
 
 use crate::repository::data::RepositoryConfig;
-use crate::repository::error::RepositoryError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
+use crate::api_response::{APIError, APIResponse};
+use crate::error::internal_error::InternalError;
 use async_trait::async_trait;
 use tokio::sync::RwLockReadGuard;
 
@@ -44,11 +42,14 @@ impl<'a> NPMHandler<'a> {
     pub fn create(
         repository: RepositoryConfig,
         storage: RwLockReadGuard<'a, Box<dyn Storage>>,
-    ) -> Result<NPMHandler<'a>, RepositoryError> {
-        Ok(NPMHandler {
+    ) -> NPMHandler<'a> {
+        NPMHandler {
             config: repository,
             storage,
-        })
+        }
+    }
+    fn bad_npm_command() -> APIError {
+        APIResponse::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()
     }
 }
 // name/version
@@ -60,13 +61,10 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
         headers: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
-    ) -> Result<RepoResponse, RepositoryError> {
+    ) -> Result<RepoResponse, APIError> {
         let caller: UserModel = authentication.get_user(conn).await??;
         if let Some(value) = caller.can_read_from(&self.config)? {
-            return Err(RepositoryError::RequestError(
-                value.to_string(),
-                StatusCode::UNAUTHORIZED,
-            ));
+            return Err(value.into());
         }
         if headers.get("npm-command").is_some() {
             if path.contains(".tgz") {
@@ -89,27 +87,28 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                 if let Some(_result) = result {
                     //TODO Handle StorageFileResponse
                 } else {
-                    return Ok(NotFound);
+                    return Ok(RepoResponse::Response(APIResponse::ok()));
                 }
             }
             let get_response = generate_get_response(&self.storage, &self.config, path)
                 .await
                 .unwrap();
             if get_response.is_none() {
-                return Ok(NotFound);
+                return Ok(RepoResponse::Response(APIResponse::ok()));
             }
-            let string = serde_json::to_string_pretty(&get_response.unwrap())?;
-            Ok(RepoResponse::OkWithJSON(string))
+            let string = serde_json::to_value(&get_response.unwrap())?;
+            Ok(RepoResponse::Json(string, StatusCode::OK))
         } else {
             let result = self
                 .storage
                 .get_file_as_response(&self.config, path)
-                .await?;
+                .await
+                .map_err(InternalError::from)?;
             if let Some(_result) = result {
                 //TODO Handle StorageFileResponse
                 todo!("UN Handled Result Type")
             } else {
-                Ok(NotFound)
+                return Ok(RepoResponse::Response(APIResponse::ok()));
             }
         }
     }
@@ -122,54 +121,49 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
         conn: &DatabaseConnection,
         authentication: Authentication,
         bytes: Bytes,
-    ) -> Result<RepoResponse, RepositoryError> {
+    ) -> Result<RepoResponse, APIError> {
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         // Check if its a user verification request
         if user.is_match(path) {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = path.replace("-/user/org.couchdb.user:", "");
-            return if is_valid(&username, &json, conn).await? {
-                trace!("User Request for {} was authorized", &username);
-                let message = format!("user '{}' created", username);
-                Ok(CreatedWithJSON(serde_json::to_string(&LoginResponse {
-                    ok: message,
-                })?))
-            } else {
-                trace!("User Request for {} was not authorized", &username);
-                Ok(NotAuthorized)
-            };
+            let user = verify_login(username, json.password, conn).await??;
+            trace!("User Request for {} was authorized", &user.username);
+            let message = format!("user '{}' created", user.username);
+            let created_response = serde_json::to_value(&LoginResponse { ok: message })
+                .map_err(InternalError::from)?;
+            Ok(RepoResponse::Json(created_response, StatusCode::CREATED));
         }
         //Handle Normal Request
         let caller: UserModel = authentication.get_user(conn).await??;
         if let Some(value) = caller.can_deploy_to(&self.config)? {
-            return Err(RepositoryError::RequestError(
-                value.to_string(),
-                StatusCode::UNAUTHORIZED,
-            ));
+            return Err(value.into());
         }
         if let Some(npm_command) = headers.get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
             trace!("NPM {} Command {}", &path, &npm_command);
             if npm_command.eq("publish") {
-                let publish_request: PublishRequest = serde_json::from_slice(bytes.as_ref())?;
+                let publish_request: PublishRequest =
+                    serde_json::from_slice(bytes.as_ref()).map_err(APIResponse::bad_request)?;
 
                 let attachments: HashMap<String, serde_json::Result<Attachment>> = publish_request
                     ._attachments
                     .iter()
                     .map(|(key, path)| {
                         let attachment: serde_json::Result<Attachment> =
-                            serde_json::from_value(path.clone());
+                            serde_json::from_value(path.clone()).map_err(APIResponse::bad_request);
                         (key.clone(), attachment)
                     })
                     .collect();
+                let mut exists = false;
                 for (attachment_key, attachment) in attachments {
                     let attachment = attachment?;
-                    let attachment_data = base64::decode(attachment.data).map_err(|error| {
-                        RepositoryError::RequestError(error.to_string(), StatusCode::BAD_REQUEST)
-                    })?;
+                    let attachment_data =
+                        base64::decode(attachment.data).map_err(APIResponse::bad_request)?;
                     for (version, version_data) in publish_request.versions.iter() {
-                        let version_data_string = serde_json::to_string(version_data)?;
+                        let version_data_string = serde_json::to_string(version_data)
+                            .map_err(APIResponse::bad_request)?;
                         trace!(
                             "Publishing {} Version: {} File:{} Data {}",
                             &publish_request.name,
@@ -182,17 +176,27 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                         let npm_version_data =
                             format!("{}/{}/package.json", &publish_request.name, version);
 
-                        self.storage
+                        if self
+                            .storage
                             .save_file(&self.config, attachment_data.as_ref(), &attachment_file_loc)
-                            .await?;
+                            .await
+                            .map_err(InternalError::from)?
+                        {
+                            exists = true
+                        };
 
-                        self.storage
+                        if self
+                            .storage
                             .save_file(
                                 &self.config,
                                 version_data_string.as_bytes(),
                                 &npm_version_data,
                             )
-                            .await?;
+                            .await
+                            .map_err(InternalError::from)?
+                        {
+                            exists = true;
+                        };
 
                         let project_folder = publish_request.name.clone();
                         let version_folder =
@@ -201,26 +205,25 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                         trace!("Project Folder Location {}", project_folder);
                         let version_for_saving = version_data.clone();
                         let user = caller.clone();
-                        if let Err(error) = NPMHandler::post_deploy(
-                            &self.storage,
-                            &self.config,
-                            project_folder,
-                            version_folder,
-                            user,
-                            version_for_saving.into(),
-                        )
-                        .await
+                        if let Err(error) = self
+                            .post_deploy(
+                                project_folder,
+                                version_folder,
+                                user,
+                                version_for_saving.into(),
+                            )
+                            .await
                         {
                             error!("Unable to complete post processing Tasks {}", error);
                         }
                     }
                 }
 
-                return Ok(RepoResponse::Ok);
+                return Ok(RepoResponse::PUTResponse(exists));
             }
-            Ok(BadRequest(format!("Bad Request {}", npm_command)))
+            Err(NPMHandler::bad_npm_command())
         } else {
-            Ok(BadRequest("Missing NPM-Command".to_string()))
+            Err(NPMHandler::bad_npm_command())
         }
     }
 }
@@ -228,5 +231,13 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
 impl NitroRepositoryHandler for NPMHandler<'_> {
     fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
         path.into().replace('.', "/").replace(':', "/")
+    }
+
+    fn storage(&self) -> &Box<dyn Storage> {
+        &self.storage
+    }
+
+    fn repository(&self) -> &RepositoryConfig {
+        &self.config
     }
 }

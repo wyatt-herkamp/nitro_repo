@@ -12,7 +12,6 @@ pub mod storage;
 pub mod system;
 pub mod updater;
 pub mod utils;
-
 use crate::settings::models::{GeneralSettings, Settings};
 use actix_web::web::Data;
 use tokio::sync::RwLock;

@@ -1,4 +1,3 @@
-
 use std::fmt::{Debug, Display, Formatter};
 
 use std::path::PathBuf;
@@ -7,12 +6,12 @@ use serde::{Deserialize, Serialize};
 
 use async_trait::async_trait;
 
-
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
 use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
+use crate::storage::file::{StorageFile, StorageFileResponse};
 use crate::storage::local_storage::LocalStorage;
 
 pub static STORAGE_FILE: &str = "storages.json";
@@ -98,26 +97,6 @@ impl StorageFactory {
     }
 }
 
-///Storage Files are just a data container holding the file name, directory relative to the root of nitro_repo and if its a directory
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct StorageFile {
-    pub name: String,
-    pub full_path: String,
-    pub directory: bool,
-    pub file_size: u64,
-    pub created: u128,
-}
-
-/// The Types of Storage File web responses it can have
-pub enum StorageFileResponse {
-    /// A Location to a Local File
-    File(PathBuf),
-    /// A list of StorageFiles. Usually Responded when a directory
-    List(Vec<StorageFile>),
-    /// Bytes of the Storage File
-    Bytes(Vec<u8>, String),
-}
-
 #[async_trait]
 pub trait Storage: Send + Sync {
     /// Initialize the Storage at Storage start.
@@ -184,7 +163,7 @@ pub trait Storage: Send + Sync {
         repository: &RepositoryConfig,
         file: &[u8],
         location: &str,
-    ) -> Result<(), StorageError>;
+    ) -> Result<bool, StorageError>;
     /// Deletes a file at a given location
     async fn delete_file(
         &self,
@@ -197,7 +176,7 @@ pub trait Storage: Send + Sync {
         &self,
         repository: &RepositoryConfig,
         location: &str,
-    ) -> Result<Option<StorageFileResponse>, StorageError>;
+    ) -> Result<StorageFileResponse, StorageError>;
     /// Returns Information about the file
     async fn get_file_information(
         &self,

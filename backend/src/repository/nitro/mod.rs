@@ -1,22 +1,21 @@
-pub mod error;
 pub mod nitro_repository;
 pub mod utils;
 
 use crate::repository::data::RepositoryConfig;
 use crate::repository::response::Project;
-use crate::storage::models::StorageFile;
+use crate::storage::file::StorageFile;
 use crate::utils::get_current_time;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,
-    pub response_type: ResponseType,
+    pub response_type: NitroFileResponseType,
     pub active_dir: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum ResponseType {
+pub enum NitroFileResponseType {
     Project(Option<Project>),
     Version(VersionBrowseResponse),
     Repository(RepositoryConfig),
@@ -30,9 +29,9 @@ pub struct VersionBrowseResponse {
     pub version: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct NitroFile {
-    pub response_type: ResponseType,
+    pub response_type: NitroFileResponseType,
     #[serde(flatten)]
     pub file: StorageFile,
 }

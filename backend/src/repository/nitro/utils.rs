@@ -1,103 +1,23 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
+use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
-use crate::repository::nitro::error::NitroError;
 use crate::repository::nitro::{
-    NitroFile, NitroFileResponse, NitroRepoVersions, ProjectData, RepositoryListing, ResponseType,
-    VersionData,
+    NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
+    RepositoryListing, VersionData,
 };
 use crate::repository::response::{Project, VersionResponse};
-use crate::storage::models::{Storage, StorageFile};
+use crate::storage::file::StorageDirectoryResponse;
+use crate::storage::models::Storage;
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
 
-pub async fn process_storage_files(
-    storage: &Box<dyn Storage>,
-    repo: &RepositoryConfig,
-    storage_files: Vec<StorageFile>,
-    requested_dir: &str,
-) -> Result<NitroFileResponse, NitroError> {
-    let mut nitro_files = Vec::new();
-    for file in storage_files {
-        nitro_files.push(NitroFile {
-            //TODO Implement This
-            response_type: ResponseType::Other,
-            file,
-        });
-    }
-    let active_dir = format!(
-        "{}/{}/{}",
-        &storage.config_for_saving().generic_config.name,
-        &repo.name,
-        requested_dir
-    );
-    let string = format!("{}/{}", &requested_dir, PROJECT_FILE);
-    let option = storage.get_file(repo, &string).await?;
-    return if let Some(data) = option {
-        let mut data: ProjectData = serde_json::from_slice(data.as_slice())?;
-        if data.versions.latest_release.is_empty() {
-            data.versions.latest_release = data.versions.latest_version.clone();
-        }
-        let version_data = get_version_data(
-            storage,
-            repo,
-            format!("{}/{}", requested_dir, data.versions.latest_release),
-        )
-        .await?;
-        let project = Project {
-            repo_summary: repo.clone(),
-            project: data,
-            version: version_data,
-            frontend_response: None,
-        };
-        Ok(NitroFileResponse {
-            files: nitro_files,
-            response_type: ResponseType::Project(Some(project)),
-            active_dir,
-        })
-    } else {
-        let string = format!("{}/{}", &requested_dir, VERSION_DATA);
-        let option = storage.get_file(repo, &string).await?;
-
-        if let Some(version) = option {
-            let version: VersionData = serde_json::from_slice(version.as_slice())?;
-
-            let x = Path::new(&requested_dir).parent().unwrap();
-            let string = format!("{}/{}", x.to_str().unwrap(), PROJECT_FILE);
-            let option = storage.get_file(repo, &string).await?;
-
-            let mut project_data: ProjectData = serde_json::from_slice(option.unwrap().as_slice())?;
-            if project_data.versions.latest_release.is_empty() {
-                project_data.versions.latest_release = project_data.versions.latest_version.clone();
-            }
-            let project = Project {
-                repo_summary: repo.clone(),
-                project: project_data,
-                version: Some(version),
-                frontend_response: None,
-            };
-
-            Ok(NitroFileResponse {
-                files: nitro_files,
-                active_dir,
-
-                response_type: ResponseType::Project(Some(project)),
-            })
-        } else {
-            Ok(NitroFileResponse {
-                active_dir,
-                files: nitro_files,
-                response_type: ResponseType::Repository(repo.clone()),
-            })
-        }
-    };
-}
 pub async fn get_version(
     storage: &Box<dyn Storage>,
     repository: &RepositoryConfig,
     project: String,
     version: String,
-) -> Result<Option<VersionResponse>, NitroError> {
+) -> Result<Option<VersionResponse>, InternalError> {
     let versions_value = get_versions(storage, repository, project).await?;
     Ok(get_version_by_data(&versions_value, version))
 }
@@ -121,7 +41,7 @@ pub async fn update_project_in_repositories(
     storage: &Box<dyn Storage>,
     repository: &RepositoryConfig,
     project: String,
-) -> Result<(), NitroError> {
+) -> Result<(), InternalError> {
     let option = storage.get_file(repository, PROJECTS_FILE).await?;
     let mut repo_listing: RepositoryListing = if let Some(data) = option {
         let data = String::from_utf8(data)?;
@@ -143,7 +63,7 @@ pub async fn get_versions(
     storage: &Box<dyn Storage>,
     repository: &RepositoryConfig,
     path: String,
-) -> Result<NitroRepoVersions, NitroError> {
+) -> Result<NitroRepoVersions, InternalError> {
     let string = format!("{}/{}", path, PROJECT_FILE);
     let option = storage.get_file(repository, &string).await?;
     Ok(if let Some(vec) = option {
@@ -179,8 +99,8 @@ pub fn get_latest_version_data(
 pub async fn get_project_data(
     storage: &Box<dyn Storage>,
     repository: &RepositoryConfig,
-    project: String,
-) -> Result<Option<ProjectData>, NitroError> {
+    project: &str,
+) -> Result<Option<ProjectData>, InternalError> {
     let string = format!("{}/{}", project, PROJECT_FILE);
     debug!("Project Data Location {}", &string);
     let option = storage.get_file(repository, &string).await?;
@@ -197,8 +117,8 @@ pub async fn get_project_data(
 pub async fn get_version_data(
     storage: &Box<dyn Storage>,
     repository: &RepositoryConfig,
-    folder: String,
-) -> Result<Option<VersionData>, NitroError> {
+    folder: &str,
+) -> Result<Option<VersionData>, InternalError> {
     let string = format!("{}/{}", folder, VERSION_DATA);
     debug!("Version Data Location {}", &string);
     let option = storage.get_file(repository, &string).await?;

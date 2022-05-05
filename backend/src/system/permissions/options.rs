@@ -1,28 +1,22 @@
 use crate::system::permissions::{can_deploy, can_read, PermissionError, UserPermissions};
 
+use crate::api_response::{APIError, APIResponse};
+use crate::error::internal_error::InternalError;
 use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;
+use actix_web::http::StatusCode;
 use std::fmt;
 
-use crate::repository::data::{RepositoryConfig};
+use crate::repository::data::RepositoryConfig;
 
 #[derive(Debug)]
 pub struct MissingPermission(String);
 
-impl From<&str> for MissingPermission {
-    fn from(value: &str) -> Self {
-        MissingPermission(value.to_string())
+impl From<MissingPermission> for APIError {
+    fn from(mp: MissingPermission) -> Self {
+        APIResponse::from((mp.0, StatusCode::FORBIDDEN)).into()
     }
 }
-
-impl fmt::Display for MissingPermission {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Missing permission: {}", self.0)
-    }
-}
-
-impl std::error::Error for MissingPermission {}
-
 pub trait CanIDo {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission>;
     fn can_i_edit_users(&self) -> Result<(), MissingPermission>;
@@ -30,11 +24,11 @@ pub trait CanIDo {
     fn can_deploy_to(
         &self,
         repo: &RepositoryConfig,
-    ) -> Result<Option<MissingPermission>, PermissionError>;
+    ) -> Result<Option<MissingPermission>, InternalError>;
     fn can_read_from(
         &self,
         repo: &RepositoryConfig,
-    ) -> Result<Option<MissingPermission>, PermissionError>;
+    ) -> Result<Option<MissingPermission>, InternalError>;
 }
 
 impl CanIDo for UserModel {
@@ -67,7 +61,7 @@ impl CanIDo for UserModel {
     fn can_deploy_to(
         &self,
         repo: &RepositoryConfig,
-    ) -> Result<Option<MissingPermission>, PermissionError> {
+    ) -> Result<Option<MissingPermission>, InternalError> {
         let can_read = can_deploy(&self.permissions, repo)?;
         if can_read {
             Ok(None)
@@ -79,7 +73,7 @@ impl CanIDo for UserModel {
     fn can_read_from(
         &self,
         repo: &RepositoryConfig,
-    ) -> Result<Option<MissingPermission>, PermissionError> {
+    ) -> Result<Option<MissingPermission>, InternalError> {
         match repo.visibility {
             Visibility::Public => Ok(None),
             Visibility::Private => {

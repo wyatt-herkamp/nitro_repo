@@ -1,9 +1,14 @@
+use actix_web::body::BoxBody;
+use actix_web::http::header::CONTENT_LOCATION;
+use actix_web::http::StatusCode;
+use actix_web::web::Json;
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use std::collections::HashMap;
 
+use crate::api_response::APIResponse;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api_response::SiteResponse;
 use crate::repository::data::RepositoryConfig;
 
 use crate::repository::frontend::FrontendResponse;
@@ -11,8 +16,7 @@ use crate::repository::frontend::FrontendResponse;
 use crate::repository::nitro::{
     NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData,
 };
-
-use crate::storage::models::StorageFile;
+use crate::storage::file::StorageFileResponse;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {
@@ -33,32 +37,11 @@ pub struct Project {
 
 /// Types of Valid Repo Responses
 pub enum RepoResponse {
-    FileList(Vec<StorageFile>),
-    NitroFileList(NitroFileResponse),
-    /// Responds all the information about the project
-    ProjectResponse(Project),
-    /// Respond a file so it can be downloaded
-    FileResponse(SiteResponse),
-    /// Ok
-    Ok,
-    //Ok With Json
-    OkWithJSON(String),
-    /// CREATED WITH_JSON
-    CreatedWithJSON(String),
-    /// Not Found
-    NotFound,
-    /// Not Authorized
-    NotAuthorized,
-    /// Bad Request
-    BadRequest(String),
-    /// I am A Teapot. This is a joke. And is used inside Maven to state that Such as POST and PATCH
-    IAmATeapot(String),
-    /// A list of versions in a specific artifact. This is generated in Maven by bad code
-    VersionListingResponse(Vec<VersionResponse>),
-    /// Classic Version Response will be removed
-    NitroProjectResponse(ProjectData),
-    NitroVersionListingResponse(NitroRepoVersions),
-    NitroVersionResponse(VersionResponse),
+    Response(APIResponse),
+    FileResponse(StorageFileResponse),
+    HttpResponse(HttpResponse),
+    Json(Value, StatusCode),
+    PUTResponse(bool, String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -66,4 +49,26 @@ pub struct VersionResponse {
     pub version: NitroVersion,
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
+}
+impl Responder for RepoResponse {
+    type Body = BoxBody;
+
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
+        match self {
+            RepoResponse::Response(response) => response.respond_to(req),
+            RepoResponse::FileResponse(file) => file.respond_to(req),
+            RepoResponse::HttpResponse(http) => http,
+            RepoResponse::Json(value, status) => {
+                Json(value).customize().with_status(status).respond_to(req)
+            }
+            RepoResponse::PUTResponse(exists, content_location) => {
+                let header = (CONTENT_LOCATION, content_location);
+                if exists {
+                    HttpResponse::Created().insert_header(header)
+                } else {
+                    HttpResponse::NoContent().insert_header(header)
+                }
+            }
+        }
+    }
 }

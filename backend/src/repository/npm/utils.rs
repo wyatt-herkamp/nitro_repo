@@ -8,8 +8,8 @@ use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 
 use crate::authentication::verify_login;
 
+use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
-use crate::repository::error::RepositoryError;
 use crate::repository::nitro::utils::get_project_data;
 use sea_orm::DatabaseConnection;
 
@@ -17,18 +17,6 @@ use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
 };
 use crate::storage::models::Storage;
-
-pub async fn is_valid(
-    username: &str,
-    request: &LoginRequest,
-    conn: &DatabaseConnection,
-) -> Result<bool, RepositoryError> {
-    Ok(
-        verify_login(username.to_string(), request.password.clone(), conn)
-            .await?
-            .is_some(),
-    )
-}
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
 
@@ -56,7 +44,7 @@ pub async fn get_version_data(
     repository: &RepositoryConfig,
     project_folder: &str,
     project: &ProjectData,
-) -> Result<(NPMTimes, DistTags, NPMVersions), RepositoryError> {
+) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
     let mut times = NPMTimes {
         created: format_time(project.created),
         modified: format_time(project.updated),
@@ -89,8 +77,8 @@ pub async fn generate_get_response(
     storage: &Box<dyn Storage>,
     repository: &RepositoryConfig,
     project_folder: &str,
-) -> Result<Option<GetResponse>, RepositoryError> {
-    let option = get_project_data(storage, repository, project_folder.to_string()).await?;
+) -> Result<Option<GetResponse>, InternalError> {
+    let option = get_project_data(storage, repository, project_folder).await?;
     if option.is_none() {
         return Ok(None);
     }

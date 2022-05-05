@@ -1,4 +1,4 @@
-use crate::api_response::{APIResponse, SiteResponse};
+use crate::api_response::{APIResponse, NRResponse};
 use crate::NitroRepoData;
 use actix_web::{get, HttpRequest};
 use serde::{Deserialize, Serialize};
@@ -10,12 +10,12 @@ pub struct SiteInfo {
 }
 
 #[get("/api/info/site")]
-pub async fn site_info(site: NitroRepoData, request: HttpRequest) -> SiteResponse {
+pub async fn site_info(site: NitroRepoData, request: HttpRequest) -> NRResponse {
     let mutex = site.settings.read().await;
 
     let info = SiteInfo {
         name: mutex.site.name.clone(),
         description: mutex.site.name.clone(),
     };
-    APIResponse::respond_new(Some(info), &request)
+    Ok(Some(info).into())
 }

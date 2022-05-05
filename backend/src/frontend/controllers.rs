@@ -3,12 +3,11 @@ use std::path::Path;
 
 use actix_files::Files;
 use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, Responder};
 use handlebars::Handlebars;
 use log::{debug, trace, warn};
 use serde_json::json;
 
-use crate::api_response::SiteResponse;
 use crate::NitroRepoData;
 
 pub fn init(cfg: &mut web::ServiceConfig) {
@@ -39,7 +38,10 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(Files::new("/", frontend_path).show_files_listing());
 }
 
-pub async fn frontend_handler(hb: web::Data<Handlebars<'_>>, site: NitroRepoData) -> SiteResponse {
+pub async fn frontend_handler(
+    hb: web::Data<Handlebars<'_>>,
+    site: NitroRepoData,
+) -> impl Responder {
     let guard = site.settings.read().await;
 
     let value = json!({"base_url":     site.core.application.app_url, "title": guard.site.name,"description": guard.site.description});

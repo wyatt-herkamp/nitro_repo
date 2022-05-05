@@ -3,16 +3,14 @@ use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 use std::time::SystemTimeError;
 
-use crate::authentication::UnAuthorized;
-use crate::repository::error::RepositoryError;
 use crate::storage::error::StorageError;
-use crate::system::permissions::options::MissingPermission;
-use crate::system::permissions::PermissionError;
+
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
+use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
-
+/// Errors that happen internally to the system.
+/// Not as a direct result of a Request
 #[derive(Error, Debug)]
 pub enum InternalError {
     #[error("JSON error {0}")]
@@ -21,9 +19,6 @@ pub enum InternalError {
     IOError(std::io::Error),
     #[error("DB error {0}")]
     DBError(sea_orm::error::DbErr),
-    #[error("Actix Error")]
-    ActixWebError(actix_web::Error),
-
     #[error("Boolean Parse Error")]
     BooleanParseError(ParseBoolError),
     #[error("Decode Error")]
@@ -32,65 +27,18 @@ pub enum InternalError {
     UTF8Error(FromUtf8Error),
     #[error("SMTP Error")]
     SMTPTransportError(lettre::transport::smtp::Error),
-    #[error("Missing Argument {0}")]
-    MissingArgument(String),
-
     #[error("Internal Error {0}")]
     Error(String),
     #[error("Missing Config Value {0}")]
     ConfigError(String),
+    #[error("Storage Error: {0}")]
+    StorageError(StorageError),
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
-    #[error("Permission Error: {0}")]
-    PermissionError(PermissionError),
-    // Request Errors
-    #[error("{0}")]
-    UnAuthorized(UnAuthorized),
-    #[error("{0}")]
-    MissingPermission(MissingPermission),
-    #[error("Not Found")]
-    NotFound,
 }
-
-pub type NResult<T> = Result<T, InternalError>;
-
-impl InternalError {
-    pub fn json_error(&self) -> HttpResponse {
-        match self {
-            InternalError::UnAuthorized(not_authed) => not_authed.error_response(),
-            error => {
-                let result = HttpResponse::Ok()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .content_type("text/plain")
-                    .body(error.to_string());
-                result
-            }
-        }
-    }
-}
-
-impl actix_web::error::ResponseError for InternalError {
-    fn error_response(&self) -> HttpResponse {
-        self.json_error()
-    }
-}
-
-//from<Error>
-impl From<PermissionError> for InternalError {
-    fn from(err: PermissionError) -> InternalError {
-        InternalError::PermissionError(err)
-    }
-}
-
-impl From<MissingPermission> for InternalError {
-    fn from(err: MissingPermission) -> InternalError {
-        InternalError::MissingPermission(err)
-    }
-}
-
-impl From<UnAuthorized> for InternalError {
-    fn from(err: UnAuthorized) -> InternalError {
-        InternalError::UnAuthorized(err)
+impl From<StorageError> for InternalError {
+    fn from(storage_error: StorageError) -> Self {
+        InternalError::StorageError(storage_error)
     }
 }
 
@@ -115,17 +63,6 @@ impl From<std::io::Error> for InternalError {
 impl From<serde_json::Error> for InternalError {
     fn from(err: serde_json::Error) -> InternalError {
         InternalError::JSONError(err)
-    }
-}
-
-impl std::convert::From<StorageError> for InternalError {
-    fn from(err: StorageError) -> InternalError {
-        InternalError::Error(err.to_string())
-    }
-}
-impl std::convert::From<RepositoryError> for InternalError {
-    fn from(err: RepositoryError) -> InternalError {
-        InternalError::Error(err.to_string())
     }
 }
 
@@ -180,11 +117,5 @@ impl From<lettre::transport::smtp::Error> for InternalError {
 impl From<ParseBoolError> for InternalError {
     fn from(err: ParseBoolError) -> InternalError {
         InternalError::BooleanParseError(err)
-    }
-}
-
-impl From<&str> for InternalError {
-    fn from(error: &str) -> Self {
-        InternalError::Error(error.to_string())
     }
 }

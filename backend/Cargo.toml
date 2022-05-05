@@ -53,6 +53,7 @@ base64 = "0.13.0"
 tokio = { version = "1.18.0", features = ["full"] }
 uuid = { version = "1.0.0", features = ["serde", "v4"] }
 colored = "2.0.0"
+mime_guess = "2.0.4"
 # Log
 nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["time", "colors"] }
 log = "0.4.14"

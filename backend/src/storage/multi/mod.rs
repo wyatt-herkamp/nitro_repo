@@ -1,4 +1,3 @@
-
 use log::{error, info};
 use std::collections::HashMap;
 use std::path::Path;
@@ -7,7 +6,7 @@ use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
 use crate::storage::models::{
-    Storage, StorageFactory, StorageFile, StorageSaver, StorageStatus, STORAGE_FILE,
+    Storage, StorageFactory, StorageSaver, StorageStatus, STORAGE_FILE,
     STORAGE_FILE_BAK,
 };
 
@@ -69,15 +68,6 @@ impl MultiStorageController {
     }
 }
 
-impl Serialize for MultiStorageController {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_some(self)
-    }
-}
-
 impl MultiStorageController {
     pub async fn get_storage_by_name(
         &self,
@@ -92,6 +82,10 @@ impl MultiStorageController {
             storage
         });
         Ok(Some(storage))
+    }
+    pub async fn does_storage_exist(&self, name: &str) -> Result<bool, StorageError> {
+        let storages = self.storages.read().await;
+        Ok(storages.contains_key(name))
     }
 
     pub async fn create_storage<'a>(&self, storage: StorageFactory) -> Result<(), StorageError> {
@@ -153,7 +147,6 @@ impl MultiStorageController {
         }
         Ok(true)
     }
-
     pub async fn storage_savers(&self) -> Vec<StorageSaver> {
         let storages = self.storages.read().await;
 

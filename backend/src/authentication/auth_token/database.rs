@@ -1,7 +1,8 @@
 use crate::error::internal_error::InternalError;
+use std::convert::Infallible;
 
 use actix_web::dev::Payload;
-use actix_web::{FromRequest, HttpMessage, HttpRequest};
+use actix_web::{Error, FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::{ready, Ready};
 
 use sea_orm::entity::prelude::*;
@@ -82,17 +83,13 @@ impl Model {
 }
 
 impl FromRequest for Model {
-    type Error = InternalError;
+    type Error = Infallible;
     type Future = Ready<Result<Model, Self::Error>>;
 
     #[inline]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        let model = req.extensions_mut().get::<Model>().cloned();
-        if model.is_none() {
-            return ready(Err(InternalError::Error("Dont Fail".to_string())));
-        }
-
-        ready(Ok(model.unwrap()))
+        let model = req.extensions_mut().get::<Model>().cloned().unwrap();
+        ready(Ok(model))
     }
 }
 
