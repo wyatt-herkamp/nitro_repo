@@ -15,7 +15,7 @@ use crate::repository::data::RepositoryConfig;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
-use crate::api_response::{APIError, APIResponse};
+use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::response::RepoResponse;
 use crate::storage::file::StorageFileResponse;
@@ -23,6 +23,7 @@ use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use async_trait::async_trait;
+use sqlx::Error;
 use tokio::sync::RwLockReadGuard;
 
 pub mod error;
@@ -54,7 +55,7 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
         _: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
-    ) -> Result<RepoResponse, APIError> {
+    ) -> Result<RepoResponse, actix_web::Error> {
         if self.config.visibility == Visibility::Private {
             let caller: UserModel = authentication.get_user(conn).await??;
             if let Some(value) = caller.can_read_from(&self.config)? {
@@ -70,7 +71,7 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
         {
             StorageFileResponse::List(list) => {
                 let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::Response(APIResponse::from(Some(files))))
+                Ok(RepoResponse::try_from((files, StatusCode::OK))?)
             }
             value => Ok(RepoResponse::FileResponse(value)),
         }
@@ -83,22 +84,26 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
         conn: &DatabaseConnection,
         authentication: Authentication,
         bytes: Bytes,
-    ) -> Result<RepoResponse, APIError> {
+    ) -> Result<RepoResponse, actix_web::Error> {
         let caller: UserModel = authentication.get_user(conn).await??;
         if let Some(value) = caller.can_deploy_to(&self.config)? {}
         match self.config.policy {
             Policy::Release => {
                 if path.contains("-SNAPSHOT") {
-                    return Ok(RepoResponse::Response(
-                        ("SNAPSHOT in release only", StatusCode::BAD_REQUEST).into(),
-                    ));
+                    return Err(APIError::from((
+                        "SNAPSHOT in release only",
+                        StatusCode::BAD_REQUEST,
+                    ))
+                    .into());
                 }
             }
             Policy::Snapshot => {
                 if !path.contains("-SNAPSHOT") {
-                    return Ok(RepoResponse::Response(
-                        ("Release in a snapshot only", StatusCode::BAD_REQUEST).into(),
-                    ));
+                    return Err(APIError::from((
+                        "Release in a snapshot only",
+                        StatusCode::BAD_REQUEST,
+                    ))
+                    .into());
                 }
             }
             Policy::Mixed => {}
@@ -112,8 +117,8 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
         //  Post Deploy Handler
         if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
-            let result = String::from_utf8(vec).map_err(APIResponse::bad_request)?;
-            let pom: Pom = serde_xml_rs::from_str(&result).map_err(APIResponse::bad_request)?;
+            let result = String::from_utf8(vec).map_err(APIError::bad_request)?;
+            let pom: Pom = serde_xml_rs::from_str(&result).map_err(APIError::bad_request)?;
 
             let project_folder = format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
             let version_folder = format!("{}/{}", &project_folder, &pom.version);

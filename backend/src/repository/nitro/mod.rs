@@ -7,7 +7,7 @@ use crate::storage::file::StorageFile;
 use crate::utils::get_current_time;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,
     pub response_type: NitroFileResponseType,

@@ -2,6 +2,7 @@ use std::fs::read_to_string;
 use std::path::Path;
 
 use actix_files::Files;
+use actix_web::error::ErrorInternalServerError;
 use actix_web::web::Data;
 use actix_web::{web, HttpResponse, Responder};
 use handlebars::Handlebars;
@@ -41,10 +42,12 @@ pub fn init(cfg: &mut web::ServiceConfig) {
 pub async fn frontend_handler(
     hb: web::Data<Handlebars<'_>>,
     site: NitroRepoData,
-) -> impl Responder {
+) -> Result<HttpResponse, actix_web::Error> {
     let guard = site.settings.read().await;
 
     let value = json!({"base_url":     site.core.application.app_url, "title": guard.site.name,"description": guard.site.description});
-    let content = hb.render("index", &value)?;
+    let content = hb
+        .render("index", &value)
+        .map_err(ErrorInternalServerError)?;
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }

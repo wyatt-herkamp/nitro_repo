@@ -1,5 +1,4 @@
-use crate::api_response::APIResponse;
-use actix_web::error::JsonPayloadError;
+use actix_web::error::{ErrorBadRequest, JsonPayloadError};
 use actix_web::http::StatusCode;
 use actix_web::web::JsonConfig;
 use actix_web::HttpRequest;
@@ -11,5 +10,5 @@ pub fn json_config() -> JsonConfig {
 
 pub fn handle(payload: JsonPayloadError, _request: &HttpRequest) -> actix_web::Error {
     trace!("JSON Error: {}", payload);
-    ("Json Bad Content Type", StatusCode::BAD_REQUEST).into()
+    ErrorBadRequest(format!("Bad Json Payload {}", payload.to_string()))
 }

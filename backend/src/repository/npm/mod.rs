@@ -28,8 +28,9 @@ use crate::repository::data::RepositoryConfig;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
-use crate::api_response::{APIError, APIResponse};
+use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
+use crate::storage::file::StorageFileResponse;
 use async_trait::async_trait;
 use tokio::sync::RwLockReadGuard;
 
@@ -48,8 +49,8 @@ impl<'a> NPMHandler<'a> {
             storage,
         }
     }
-    fn bad_npm_command() -> APIError {
-        APIResponse::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()
+    fn bad_npm_command() -> actix_web::Error {
+        APIError::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()
     }
 }
 // name/version
@@ -61,7 +62,7 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
         headers: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
-    ) -> Result<RepoResponse, APIError> {
+    ) -> Result<RepoResponse, actix_web::Error> {
         let caller: UserModel = authentication.get_user(conn).await??;
         if let Some(value) = caller.can_read_from(&self.config)? {
             return Err(value.into());
@@ -83,32 +84,31 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                 let result = self
                     .storage
                     .get_file_as_response(&self.config, &nitro_file_location)
-                    .await?;
-                if let Some(_result) = result {
-                    //TODO Handle StorageFileResponse
-                } else {
-                    return Ok(RepoResponse::Response(APIResponse::ok()));
-                }
+                    .await
+                    .map_err(InternalError::from)?;
+                return Ok(RepoResponse::FileResponse(result));
             }
             let get_response = generate_get_response(&self.storage, &self.config, path)
                 .await
                 .unwrap();
             if get_response.is_none() {
-                return Ok(RepoResponse::Response(APIResponse::ok()));
+                return Err(APIError::not_found().into());
             }
-            let string = serde_json::to_value(&get_response.unwrap())?;
+            let string =
+                serde_json::to_value(&get_response.unwrap()).map_err(InternalError::from)?;
             Ok(RepoResponse::Json(string, StatusCode::OK))
         } else {
-            let result = self
+            match self
                 .storage
                 .get_file_as_response(&self.config, path)
                 .await
-                .map_err(InternalError::from)?;
-            if let Some(_result) = result {
-                //TODO Handle StorageFileResponse
-                todo!("UN Handled Result Type")
-            } else {
-                return Ok(RepoResponse::Response(APIResponse::ok()));
+                .map_err(InternalError::from)?
+            {
+                StorageFileResponse::List(list) => {
+                    let files = self.process_storage_files(list, path).await?;
+                    Ok(RepoResponse::try_from((files, StatusCode::OK))?)
+                }
+                value => Ok(RepoResponse::FileResponse(value)),
             }
         }
     }
@@ -121,7 +121,7 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
         conn: &DatabaseConnection,
         authentication: Authentication,
         bytes: Bytes,
-    ) -> Result<RepoResponse, APIError> {
+    ) -> Result<RepoResponse, actix_web::Error> {
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         // Check if its a user verification request
         if user.is_match(path) {
@@ -133,7 +133,7 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
             let message = format!("user '{}' created", user.username);
             let created_response = serde_json::to_value(&LoginResponse { ok: message })
                 .map_err(InternalError::from)?;
-            Ok(RepoResponse::Json(created_response, StatusCode::CREATED));
+            return Ok(RepoResponse::Json(created_response, StatusCode::CREATED));
         }
         //Handle Normal Request
         let caller: UserModel = authentication.get_user(conn).await??;
@@ -145,14 +145,14 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
             trace!("NPM {} Command {}", &path, &npm_command);
             if npm_command.eq("publish") {
                 let publish_request: PublishRequest =
-                    serde_json::from_slice(bytes.as_ref()).map_err(APIResponse::bad_request)?;
+                    serde_json::from_slice(bytes.as_ref()).map_err(APIError::bad_request)?;
 
-                let attachments: HashMap<String, serde_json::Result<Attachment>> = publish_request
+                let attachments: HashMap<String, Result<Attachment, APIError>> = publish_request
                     ._attachments
                     .iter()
                     .map(|(key, path)| {
-                        let attachment: serde_json::Result<Attachment> =
-                            serde_json::from_value(path.clone()).map_err(APIResponse::bad_request);
+                        let attachment: Result<Attachment, APIError> =
+                            serde_json::from_value(path.clone()).map_err(APIError::bad_request);
                         (key.clone(), attachment)
                     })
                     .collect();
@@ -160,10 +160,10 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                 for (attachment_key, attachment) in attachments {
                     let attachment = attachment?;
                     let attachment_data =
-                        base64::decode(attachment.data).map_err(APIResponse::bad_request)?;
+                        base64::decode(attachment.data).map_err(APIError::bad_request)?;
                     for (version, version_data) in publish_request.versions.iter() {
-                        let version_data_string = serde_json::to_string(version_data)
-                            .map_err(APIResponse::bad_request)?;
+                        let version_data_string =
+                            serde_json::to_string(version_data).map_err(APIError::bad_request)?;
                         trace!(
                             "Publishing {} Version: {} File:{} Data {}",
                             &publish_request.name,
@@ -219,7 +219,15 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                     }
                 }
 
-                return Ok(RepoResponse::PUTResponse(exists));
+                return Ok(RepoResponse::PUTResponse(
+                    exists,
+                    format!(
+                        "/storages/{}/{}/{}",
+                        &self.storage.storage_config().name,
+                        &self.config.name,
+                        path
+                    ),
+                ));
             }
             Err(NPMHandler::bad_npm_command())
         } else {

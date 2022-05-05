@@ -4,8 +4,9 @@ use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 use std::collections::HashMap;
+use std::os::linux::raw::stat;
 
-use crate::api_response::APIResponse;
+use crate::error::internal_error::InternalError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -37,13 +38,19 @@ pub struct Project {
 
 /// Types of Valid Repo Responses
 pub enum RepoResponse {
-    Response(APIResponse),
     FileResponse(StorageFileResponse),
     HttpResponse(HttpResponse),
     Json(Value, StatusCode),
     PUTResponse(bool, String),
 }
+impl<T: Serialize> TryFrom<(T, StatusCode)> for RepoResponse {
+    type Error = InternalError;
 
+    fn try_from((value, status): (T, StatusCode)) -> Result<Self, Self::Error> {
+        let result = serde_json::to_value(value)?;
+        return Ok(Self::Json(result, status));
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VersionResponse {
     pub version: NitroVersion,
@@ -55,18 +62,19 @@ impl Responder for RepoResponse {
 
     fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
         match self {
-            RepoResponse::Response(response) => response.respond_to(req),
             RepoResponse::FileResponse(file) => file.respond_to(req),
             RepoResponse::HttpResponse(http) => http,
-            RepoResponse::Json(value, status) => {
-                Json(value).customize().with_status(status).respond_to(req)
-            }
+            RepoResponse::Json(value, status) => Json(value)
+                .customize()
+                .with_status(status)
+                .respond_to(req)
+                .map_into_boxed_body(),
             RepoResponse::PUTResponse(exists, content_location) => {
                 let header = (CONTENT_LOCATION, content_location);
                 if exists {
-                    HttpResponse::Created().insert_header(header)
+                    return HttpResponse::Created().insert_header(header).finish();
                 } else {
-                    HttpResponse::NoContent().insert_header(header)
+                    return HttpResponse::NoContent().insert_header(header).finish();
                 }
             }
         }

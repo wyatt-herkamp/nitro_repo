@@ -1,4 +1,3 @@
-pub mod controllers;
 pub mod database;
 
 use crate::authentication::auth_token::database::TokenProperties;

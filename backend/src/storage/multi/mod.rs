@@ -6,14 +6,14 @@ use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 
 use crate::storage::models::{
-    Storage, StorageFactory, StorageSaver, StorageStatus, STORAGE_FILE,
-    STORAGE_FILE_BAK,
+    Storage, StorageFactory, StorageSaver, StorageStatus, STORAGE_FILE, STORAGE_FILE_BAK,
 };
 
 use serde::{Serialize, Serializer};
 
 use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
+use crate::storage::file::StorageFile;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::{RwLock, RwLockReadGuard};
 
@@ -163,8 +163,10 @@ impl MultiStorageController {
             files.push(StorageFile {
                 name: name.clone(),
                 full_path: name.clone(),
+                mime: "text/directory".to_string(),
                 directory: true,
                 file_size: 0,
+                modified: 0,
                 created: storage.config_for_saving().generic_config.created as u128,
             });
         }

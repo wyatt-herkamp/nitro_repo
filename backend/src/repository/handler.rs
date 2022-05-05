@@ -3,7 +3,7 @@ use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 
-use crate::api_response::{APIError, APIResponse};
+use crate::error::api_error::APIError;
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 
@@ -18,8 +18,8 @@ pub trait RepositoryHandler<'a>: Send + Sync {
         _http: &HeaderMap,
         _conn: &DatabaseConnection,
         _authentication: Authentication,
-    ) -> Result<RepoResponse, APIError> {
-        Err(APIResponse::from((
+    ) -> Result<RepoResponse, actix_web::Error> {
+        Err(APIError::from((
             "Get is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
@@ -33,8 +33,8 @@ pub trait RepositoryHandler<'a>: Send + Sync {
         _conn: &DatabaseConnection,
         _authentication: Authentication,
         _bytes: Bytes,
-    ) -> Result<RepoResponse, APIError> {
-        Err(APIResponse::from((
+    ) -> Result<RepoResponse, actix_web::Error> {
+        Err(APIError::from((
             "POST is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
@@ -48,8 +48,8 @@ pub trait RepositoryHandler<'a>: Send + Sync {
         _conn: &DatabaseConnection,
         _authentication: Authentication,
         _bytes: Bytes,
-    ) -> Result<RepoResponse, APIError> {
-        Err(APIResponse::from((
+    ) -> Result<RepoResponse, actix_web::Error> {
+        Err(APIError::from((
             "PUT is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
@@ -63,8 +63,8 @@ pub trait RepositoryHandler<'a>: Send + Sync {
         _conn: &DatabaseConnection,
         _authentication: Authentication,
         _bytes: Bytes,
-    ) -> Result<RepoResponse, APIError> {
-        Err(APIResponse::from((
+    ) -> Result<RepoResponse, actix_web::Error> {
+        Err(APIError::from((
             "Patch is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
@@ -77,8 +77,8 @@ pub trait RepositoryHandler<'a>: Send + Sync {
         _http: &HeaderMap,
         _conn: &DatabaseConnection,
         _authentication: Authentication,
-    ) -> Result<RepoResponse, APIError> {
-        Err(APIResponse::from((
+    ) -> Result<RepoResponse, actix_web::Error> {
+        Err(APIError::from((
             "Head is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))

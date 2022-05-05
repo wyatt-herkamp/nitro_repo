@@ -369,10 +369,10 @@ impl Storage for LocalStorage {
                 files.push(result);
             }
             let response = StorageDirectoryResponse { files, directory };
-            return Ok(Some(StorageFileResponse::List(response)));
+            return Ok((StorageFileResponse::List(response)));
         }
         trace!("Returning File {:?}", &file_location);
-        Ok(Some(StorageFileResponse::File(file_location)))
+        Ok((StorageFileResponse::File(file_location)))
     }
 
     async fn get_file_information(

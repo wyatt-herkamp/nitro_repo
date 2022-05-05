@@ -51,7 +51,7 @@ impl RepositoryConfig {
         }
         serde_json::from_slice(option.unwrap().as_slice())
             .map(Some)
-            .map_err(InternalError::from())
+            .map_err(InternalError::from)
     }
     /// Update the frontend config
     async fn save_frontend_config(
@@ -66,8 +66,8 @@ impl RepositoryConfig {
         let value = serde_json::to_string(&frontend.unwrap())?;
         storage
             .save_file(self, value.as_bytes(), FRONTEND_CONFIG)
-            .await
-            .map_err(InternalError::from())
+            .await?;
+        Ok(())
     }
 }
 

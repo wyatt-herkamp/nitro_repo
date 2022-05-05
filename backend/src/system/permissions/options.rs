@@ -1,22 +1,41 @@
 use crate::system::permissions::{can_deploy, can_read, PermissionError, UserPermissions};
 
-use crate::api_response::{APIError, APIResponse};
+use crate::authentication::NotAuthenticated;
 use crate::error::internal_error::InternalError;
 use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;
 use actix_web::http::StatusCode;
+use actix_web::ResponseError;
 use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
 
 use crate::repository::data::RepositoryConfig;
 
-#[derive(Debug)]
 pub struct MissingPermission(String);
 
-impl From<MissingPermission> for APIError {
-    fn from(mp: MissingPermission) -> Self {
-        APIResponse::from((mp.0, StatusCode::FORBIDDEN)).into()
+impl Debug for MissingPermission {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Forbidden: Missing Permission {}", &self.0)
     }
 }
+
+impl Display for MissingPermission {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Forbidden: Missing Permission {}", &self.0)
+    }
+}
+
+impl ResponseError for MissingPermission {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::FORBIDDEN
+    }
+}
+impl From<&str> for MissingPermission {
+    fn from(value: &str) -> Self {
+        MissingPermission(format!("Missing Permission `{}`", value))
+    }
+}
+
 pub trait CanIDo {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission>;
     fn can_i_edit_users(&self) -> Result<(), MissingPermission>;

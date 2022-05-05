@@ -14,14 +14,31 @@ use log::trace;
 
 use sea_orm::{DatabaseConnection, EntityTrait};
 
-use crate::api_response::APIResponse;
 use crate::authentication::auth_token::AuthTokenModel;
 use crate::authentication::session::Session;
 use crate::error::internal_error::InternalError;
 use crate::system::user;
 
 use crate::system::user::{UserEntity, UserModel};
+pub struct NotAuthenticated;
 
+impl Debug for NotAuthenticated {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Not Authenticated")
+    }
+}
+
+impl Display for NotAuthenticated {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Not Authenticated")
+    }
+}
+
+impl ResponseError for NotAuthenticated {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::UNAUTHORIZED
+    }
+}
 #[derive(Clone, Debug, PartialEq)]
 pub enum Authentication {
     /// Neither a Session or Auth Token exist.
@@ -50,14 +67,14 @@ impl Authentication {
     pub async fn get_user(
         self,
         database: &DatabaseConnection,
-    ) -> Result<Result<UserModel, APIResponse>, InternalError> {
+    ) -> Result<Result<UserModel, NotAuthenticated>, InternalError> {
         match self {
             Authentication::AuthToken(auth) => {
                 let option = auth.get_user(database).await?;
                 if let Some(user) = option {
                     Ok(Ok(user))
                 } else {
-                    Ok(Self::unauthorized())
+                    Ok(Err(NotAuthenticated))
                 }
             }
             Authentication::Session(session) => {
@@ -66,21 +83,15 @@ impl Authentication {
                     if let Some(user) = option {
                         Ok(Ok(user))
                     } else {
-                        Ok(Self::unauthorized())
+                        Ok(Err(NotAuthenticated))
                     }
                 } else {
-                    Ok(Self::unauthorized())
+                    Ok(Err(NotAuthenticated))
                 }
             }
             Authentication::Basic(user) => Ok(Ok(user)),
-            _ => Ok(Self::unauthorized()),
+            _ => Ok(Err(NotAuthenticated)),
         }
-    }
-    fn unauthorized() -> Result<UserModel, APIResponse> {
-        Err(APIResponse::from((
-            "Un Authorized",
-            StatusCode::UNAUTHORIZED,
-        )))
     }
 }
 
@@ -104,10 +115,10 @@ pub async fn verify_login(
     username: String,
     password: String,
     database: &DatabaseConnection,
-) -> Result<Result<UserModel, APIResponse>, InternalError> {
+) -> Result<Result<UserModel, NotAuthenticated>, InternalError> {
     let user_found: Option<UserModel> = user::get_by_username(&username, database).await?;
     if user_found.is_none() {
-        return Ok(Authentication::unauthorized());
+        return Ok(Err(NotAuthenticated));
     }
     let argon2 = Argon2::default();
     let user = user_found.unwrap();
@@ -116,7 +127,7 @@ pub async fn verify_login(
         .verify_password(password.as_bytes(), &parsed_hash)
         .is_err()
     {
-        return Ok(Authentication::unauthorized());
+        return Ok(Err(NotAuthenticated));
     }
     Ok(Ok(user))
 }

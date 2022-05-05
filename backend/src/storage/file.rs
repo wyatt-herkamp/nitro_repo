@@ -1,10 +1,11 @@
-use crate::api_response::APIResponse;
+use crate::error::api_error::APIError;
+use crate::error::internal_error::InternalError;
 use crate::storage::error::StorageError;
 use actix_files::NamedFile;
 use actix_web::body::BoxBody;
 use actix_web::http::header::ACCEPT;
 use actix_web::http::{Method, StatusCode};
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError};
 use log::error;
 use serde::Serialize;
 use std::fs::{DirEntry, Metadata};
@@ -113,49 +114,47 @@ pub enum StorageFileResponse {
 /// A Simple trait for handling file List responses
 pub trait FileListResponder {
     /// Parses the Accept the header(badly) to decide the Response Type
-    fn listing(self, request: &HttpRequest) -> Result<HttpResponse, HttpResponse>
+    fn listing(self, request: &HttpRequest) -> Result<HttpResponse, actix_web::Error>
     where
         Self: std::marker::Sized,
     {
         if request.method() == Method::HEAD {}
         return if let Some(accept) = request.headers().get(ACCEPT) {
-            let x = accept
-                .to_str()
-                .map_err(|e| APIResponse::bad_request(e).respond_to(request))?;
+            let x = accept.to_str().map_err(APIError::bad_request)?;
             if x.contains("application/json") {
                 self.json_listing(request)
             } else if x.contains("text/html") {
                 self.html_listing(request)
             } else {
-                Ok(Self::invalid_accept_type(request))
+                Err(Self::invalid_accept_type().into())
             }
         } else {
             self.html_listing(request)
         };
     }
     /// Converts Self into a JSOn based Http Response
-    fn json_listing(self, request: &HttpRequest) -> Result<HttpResponse, HttpResponse>
+    fn json_listing(self, request: &HttpRequest) -> Result<HttpResponse, actix_web::Error>
     where
         Self: std::marker::Sized;
     /// Converts Self Into a HTML based HTTP Response
-    fn html_listing(self, request: &HttpRequest) -> Result<HttpResponse, HttpResponse>
+    fn html_listing(self, request: &HttpRequest) -> Result<HttpResponse, actix_web::Error>
     where
         Self: std::marker::Sized,
     {
-        Ok(Self::invalid_accept_type(request))
+        Err(Self::invalid_accept_type().into())
     }
     /// For Internal Use
     /// Invalid Data Type
-    fn invalid_accept_type(request: &HttpRequest) -> HttpResponse {
-        APIResponse::from(("Invalid Accept Header", StatusCode::BAD_REQUEST)).respond_to(request)
+    fn invalid_accept_type() -> APIError {
+        APIError::from(("Invalid Accept Header", StatusCode::BAD_REQUEST))
     }
 }
 impl FileListResponder for StorageDirectoryResponse {
-    fn json_listing(self, request: &HttpRequest) -> Result<HttpResponse, HttpResponse>
+    fn json_listing(self, request: &HttpRequest) -> Result<HttpResponse, actix_web::Error>
     where
         Self: std::marker::Sized,
     {
-        Ok(APIResponse::from(Some(self.files)).respond_to(request))
+        Ok(HttpResponse::Ok().json(self.files).respond_to(request))
     }
 }
 
@@ -173,9 +172,9 @@ impl Responder for StorageFileResponse {
             },
             StorageFileResponse::List(list) => match list.listing(req) {
                 Ok(response) => response,
-                Err(response) => response,
+                Err(response) => response.error_response(),
             },
-            StorageFileResponse::NotFound => APIResponse::not_found().respond_to(req),
+            StorageFileResponse::NotFound => APIError::not_found().error_response(),
         }
     }
 }

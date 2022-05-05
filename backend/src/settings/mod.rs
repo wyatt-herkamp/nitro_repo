@@ -4,12 +4,7 @@ use actix_web::web;
 use std::path::Path;
 use tokio::fs::read_to_string;
 
-pub mod controller;
 pub mod models;
-
-pub fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(controller::setting_report);
-}
 
 pub async fn load_configs() -> anyhow::Result<Settings> {
     let cfgs = Path::new("cfg");

@@ -163,9 +163,7 @@ where
                             } else {
                                 // Treat authorization as normal login
                                 trace!("Authorization Basic username:password");
-                                let user = verify_login(username, password, database)
-                                    .await
-                                    .map_err(internal_server_error)?;
+                                let user = verify_login(username, password, database).await?;
                                 if let Ok(user) = user {
                                     trace!("Authorized User");
                                     (Authentication::Basic(user), None)

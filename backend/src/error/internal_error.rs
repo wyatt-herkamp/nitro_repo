@@ -5,10 +5,12 @@ use std::time::SystemTimeError;
 
 use crate::storage::error::StorageError;
 
+use crate::system::permissions::PermissionError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use base64::DecodeError;
 use thiserror::Error;
+
 /// Errors that happen internally to the system.
 /// Not as a direct result of a Request
 #[derive(Error, Debug)]
@@ -36,6 +38,7 @@ pub enum InternalError {
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
 }
+impl ResponseError for InternalError {}
 impl From<StorageError> for InternalError {
     fn from(storage_error: StorageError) -> Self {
         InternalError::StorageError(storage_error)
@@ -96,12 +99,6 @@ impl From<handlebars::RenderError> for InternalError {
     }
 }
 
-impl From<actix_web::Error> for InternalError {
-    fn from(err: actix_web::Error) -> InternalError {
-        InternalError::ActixWebError(err)
-    }
-}
-
 impl From<SystemTimeError> for InternalError {
     fn from(err: SystemTimeError) -> InternalError {
         InternalError::Error(err.to_string())
@@ -117,5 +114,10 @@ impl From<lettre::transport::smtp::Error> for InternalError {
 impl From<ParseBoolError> for InternalError {
     fn from(err: ParseBoolError) -> InternalError {
         InternalError::BooleanParseError(err)
+    }
+}
+impl From<PermissionError> for InternalError {
+    fn from(err: PermissionError) -> InternalError {
+        InternalError::ConfigError(err.to_string())
     }
 }
