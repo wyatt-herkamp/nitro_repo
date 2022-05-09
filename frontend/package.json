@@ -26,7 +26,7 @@
     "vue-axios": "^3.4.1",
     "vue-class-component": "^8.0.0-0",
     "vue-color-kit": "^1.0.5",
-    "vue-final-modal": "^3.4.3",
+    "vue-final-modal": "^3.4.4",
     "vue-meta": "3.0.0-alpha.10",
     "vue-prism-editor": "^2.0.0-alpha.2",
     "vue-router": "^4.0.15",
