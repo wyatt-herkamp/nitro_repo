@@ -16,7 +16,7 @@ openssl = { version = "0.10.40", features = ["v110"], optional = true }
 actix-files = "0.6.0"
 # Partly Web
 lettre = "0.10.0-rc.6"
-handlebars = "4.2.2"
+handlebars = "4.3.0"
 # Database
 diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
 diesel_migrations = "1.4.0"
@@ -41,7 +41,7 @@ glob = "0.3.0"
 futures-util = "0.3.21"
 time = "0.3.9"
 base64 = "0.13.0"
-tokio = "1.18.1"
+tokio = "1.18.2"
 uuid = { version = "1.0.0", features = ["serde", "v4"] }
 colored = "2.0.0"
 # Log
@@ -62,11 +62,11 @@ webhook = "2.0.0"
 # Installer
 tui = "0.18.0"
 crossterm = "0.23.2"
-clap = { version = "3.1.15", features = ["derive"] }
+clap = { version = "3.1.18", features = ["derive"] }
 unicode-width = "0.1.9"
 
 [build-dependencies]
-vergen = "7.0.0"
+vergen = "7.1.0"
 [features]
 ssl = ["openssl", "actix-web/openssl"]
 
