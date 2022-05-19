@@ -22,7 +22,7 @@
     "prismjs": "^1.28.0",
     "ts-results": "^3.3.0",
     "vite-plugin-ejs": "^1.4.4",
-    "vue": "^3.2.33",
+    "vue": "^3.2.34",
     "vue-axios": "^3.4.1",
     "vue-class-component": "^8.0.0-0",
     "vue-color-kit": "^1.0.5",
