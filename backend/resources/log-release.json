@@ -1,16 +1,14 @@
 {
-  "default_loggers": [
+  "root_loggers": [
     {
       "levels": [
         "WARN",
         "ERROR"
       ],
+      "format": "[{{module({})}}] {{level({\"colored\":true})}}: {{message({})}}",
       "targets": [
         {
-          "type": "console",
-          "properties": {
-            "format": "[%module%] %level_{color='true'}%: %message%"
-          }
+          "type": "console"
         }
       ]
     }
@@ -19,24 +17,36 @@
     {
       "module": "nitro_repo",
       "levels": [
-        "TRACE",
-        "DEBUG",
         "INFO",
         "WARN",
         "ERROR"
       ],
+      "format": "[{{module({})}}] {{level({\"colored\":true})}}: {{message({})}}",
       "targets": [
         {
-          "type": "console",
-          "properties": {
-            "format": "[%module%] %level_{color='true'}%: %message%"
-          }
-        },
+          "type": "console"
+        }
+      ]
+    },
+    {
+      "module": "nitro_repo",
+      "levels": [
+        "INFO",
+        "WARN",
+        "ERROR"
+      ],
+      "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
+      "targets": [
         {
           "type": "file-logger",
-          "properties": {
-            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
-            "file": "%env_{key='LOG_LOCATION'}%/%module%/nitro-repo.log"
+          "file": {
+            "format": "{{env(LOG_LOCATION)}}/{{module({})}}.log",
+            "placeholders": {
+              "LOG_LOCATION": {
+                "key": "LOG_LOCATION",
+                "save": true
+              }
+            }
           }
         }
       ]
@@ -52,8 +62,15 @@
         {
           "type": "file-logger",
           "properties": {
-            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %level%: %message%",
-            "file": "%env_{key='LOG_LOCATION'}%/requests/request.log"
+            "file": {
+              "format": "{{env(LOG_LOCATION)}}/requests/request.log",
+              "placeholders": {
+                "LOG_LOCATION": {
+                  "key": "LOG_LOCATION",
+                  "save": true
+                }
+              }
+            }
           }
         }
       ]

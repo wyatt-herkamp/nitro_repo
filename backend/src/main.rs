@@ -9,12 +9,12 @@ extern crate strum_macros;
 use actix_cors::Cors;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{middleware, web, App, HttpServer};
-use std::fs::{read_to_string};
+use std::fs::read_to_string;
 use std::path::Path;
 
 use log::{error, info, trace};
 use nitro_log::config::Config;
-use nitro_log::NitroLogger;
+use nitro_log::{LoggerBuilders, NitroLogger};
 
 use crate::api_response::{APIResponse, SiteResponse};
 use crate::utils::Resources;
@@ -83,7 +83,7 @@ fn load_logger<T: AsRef<Mode>>(logger: T) {
         Mode::Install => "log-install.json",
     };
     let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
-    NitroLogger::load(config, None).unwrap();
+    NitroLogger::load(config, LoggerBuilders::default()).unwrap();
 }
 
 #[actix_web::main]
@@ -189,7 +189,7 @@ async fn main() -> std::io::Result<()> {
             .configure(misc::init)
             .configure(frontend::init)
     })
-        .workers(2);
+    .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added
