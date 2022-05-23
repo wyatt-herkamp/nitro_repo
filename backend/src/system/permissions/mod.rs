@@ -47,13 +47,13 @@ pub struct UserPermissions {
 
 impl UserPermissions {
     pub fn can_access_repository(&self) -> bool {
-        return self.admin || self.repository_manager;
+         self.admin || self.repository_manager
     }
 }
 
 impl FromSql<Text, Mysql> for UserPermissions {
     fn from_sql(
-        bytes: Option<&<diesel::mysql::Mysql as Backend>::RawValue>,
+        bytes: Option<&<Mysql as Backend>::RawValue>,
     ) -> deserialize::Result<UserPermissions> {
         let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
         let result: UserPermissions = serde_json::from_str(t.as_str())?;
@@ -74,18 +74,13 @@ pub struct RepositoryPermission {
     pub permissions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RepositoryPermissionValue {
     pub policy: Option<Policy>,
     #[serde(rename = "type")]
     pub repo_type: Option<String>,
 }
 
-impl Default for RepositoryPermission {
-    fn default() -> Self {
-        RepositoryPermission { permissions: vec![] }
-    }
-}
 
 
 pub fn can_deploy(
