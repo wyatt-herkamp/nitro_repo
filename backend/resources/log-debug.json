@@ -58,7 +58,7 @@
       "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
       "targets": [
         {
-          "type": "file-logger",
+          "type": "file_logger",
           "properties": {
             "file": {
               "format": "{{env(LOG_LOCATION)}}/{{module({})}}.log",

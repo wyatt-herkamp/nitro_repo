@@ -38,13 +38,15 @@
       "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
       "targets": [
         {
-          "type": "file-logger",
-          "file": {
-            "format": "{{env(LOG_LOCATION)}}/{{module({})}}.log",
-            "placeholders": {
-              "LOG_LOCATION": {
-                "key": "LOG_LOCATION",
-                "save": true
+          "type": "file_logger",
+          "properties": {
+            "file": {
+              "format": "{{env(LOG_LOCATION)}}/{{module({})}}.log",
+              "placeholders": {
+                "LOG_LOCATION": {
+                  "key": "LOG_LOCATION",
+                  "save": true
+                }
               }
             }
           }
@@ -58,9 +60,10 @@
         "WARN",
         "ERROR"
       ],
+      "format": " {{level({})}}: {{message({})}}",
       "targets": [
         {
-          "type": "file-logger",
+          "type": "file_logger",
           "properties": {
             "file": {
               "format": "{{env(LOG_LOCATION)}}/requests/request.log",

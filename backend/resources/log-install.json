@@ -18,7 +18,7 @@
       },
       "targets": [
         {
-          "type": "file-logger",
+          "type": "file_logger",
           "properties": {
             "file": "install.log"
           }
