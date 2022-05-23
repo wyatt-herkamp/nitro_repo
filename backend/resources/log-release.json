@@ -60,7 +60,14 @@
         "WARN",
         "ERROR"
       ],
-      "format": " {{level({})}}: {{message({})}}",
+      "format": {
+        "format": "[{{chrono(DATE_TIME)}}] {{level({})}}: {{message({})}}",
+        "placeholders": {
+          "DATE_TIME": {
+            "format": "%Y-%m-%d %H:%M:%S"
+          }
+        }
+      },
       "targets": [
         {
           "type": "file_logger",

@@ -45,7 +45,7 @@ tokio = "1.18.2"
 uuid = { version = "1.0.0", features = ["serde", "v4"] }
 colored = "2.0.0"
 # Log
-nitro_log = { git = "https://github.com/wherkamp/nitro_log",branch="kv"}
+nitro_log = { git = "https://github.com/wherkamp/nitro_log", features=["chrono","colored"]}
 log = "0.4.17"
 # Rust Internal
 strum = { version = "0.24.0", features = ["derive"] }
