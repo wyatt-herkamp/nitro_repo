@@ -1,5 +1,5 @@
 {
-  "default_loggers": [
+  "root_loggers": [
     {
       "levels": [
         "DEBUG",
@@ -7,12 +7,17 @@
         "WARN",
         "ERROR"
       ],
+      "format": {
+        "format": "[{{module({})}}] {{level(LEVEL_SETTINGS)}}: {{message({})}}",
+        "placeholders": {
+          "LEVEL_SETTINGS": {
+            "colored": true
+          }
+        }
+      },
       "targets": [
         {
-          "type": "console",
-          "properties": {
-            "format": "[%module%] %level_{color='true'}%: %message%"
-          }
+          "type": "console"
         }
       ]
     }
@@ -27,33 +32,43 @@
         "WARN",
         "ERROR"
       ],
+      "format": {
+        "format": "[{{module({})}}] {{level(LEVEL_SETTINGS)}}: {{message({})}}",
+        "placeholders": {
+          "LEVEL_SETTINGS": {
+            "colored": true
+          }
+        }
+      },
       "targets": [
         {
-          "type": "console",
-          "properties": {
-            "format": "[%module%] %level_{color='true'}%: %message%"
-          }
-        },
-        {
-          "type": "file-logger",
-          "properties": {
-            "format": "%datetime_{format='$Y-$m-$d $H:$M:$S'}% %module% %level%: %message%",
-            "file": "%env_{key='LOG_LOCATION'}%/%module%/nitro-repo.log"
-          }
+          "type": "console"
         }
       ]
     },
     {
-      "module": "serde_xml_rs::de",
+      "module": "nitro_repo",
       "levels": [
+        "TRACE",
+        "DEBUG",
+        "INFO",
         "WARN",
         "ERROR"
       ],
+      "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
       "targets": [
         {
-          "type": "console",
+          "type": "file_logger",
           "properties": {
-            "format": "[%module%] %level_{color='true'}%: %message%"
+            "file": {
+              "format": "{{env(LOG_LOCATION)}}/{{module({})}}.log",
+              "placeholders": {
+                "LOG_LOCATION": {
+                  "key": "LOG_LOCATION",
+                  "save": true
+                }
+              }
+            }
           }
         }
       ]
