@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, Local};
 use nitro_log::config::Config;
-use nitro_log::NitroLogger;
+use nitro_log::{LoggerBuilders, NitroLogger};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +19,7 @@ pub fn load_logger<T: AsRef<Mode>>(logger: T) {
         Mode::Install => "log-install.json",
     };
     let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
-    NitroLogger::load(config, None).unwrap();
+    NitroLogger::load(config, LoggerBuilders::default()).unwrap();
 }
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
