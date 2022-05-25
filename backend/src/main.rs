@@ -43,8 +43,8 @@ use crate::settings::models::{
 };
 use crate::storage::models::{load_storages, Storages};
 use clap::Parser;
-use crossterm::style::Stylize;
 use tokio::sync::RwLock;
+use style_term::{DefaultColor, StyleString};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -96,10 +96,10 @@ async fn main() -> std::io::Result<()> {
             load_logger(Mode::Install);
             if let Err(error) = load_installer(path) {
                 error!("Unable to complete Install {error}");
-                println!("{}", "Unable to Complete Installation".red());
+                println!("{}", "Unable to Complete Installation".style().text_color(DefaultColor::Red));
                 std::process::exit(1);
             }
-            println!("{}", "Installation Complete".green());
+            println!("{}", "Installation Complete".style().text_color(DefaultColor::Green));
             return Ok(());
         } else {
             println!(
@@ -189,7 +189,7 @@ async fn main() -> std::io::Result<()> {
             .configure(misc::init)
             .configure(frontend::init)
     })
-    .workers(2);
+        .workers(2);
 
     // I am pretty sure this is correctly working
     // If I am correct this will only be available if the feature ssl is added

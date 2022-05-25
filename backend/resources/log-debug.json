@@ -11,7 +11,7 @@
         "format": "[{{module({})}}] {{level(LEVEL_SETTINGS)}}: {{message({})}}",
         "placeholders": {
           "LEVEL_SETTINGS": {
-            "colored": true
+            "styles": {}
           }
         }
       },
@@ -36,7 +36,7 @@
         "format": "[{{module({})}}] {{level(LEVEL_SETTINGS)}}: {{message({})}}",
         "placeholders": {
           "LEVEL_SETTINGS": {
-            "colored": true
+            "styles": {}
           }
         }
       },
