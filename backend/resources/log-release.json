@@ -21,7 +21,7 @@
         "WARN",
         "ERROR"
       ],
-      "format": "[{{module({})}}] {{level({\"colored\":true})}}: {{message({})}}",
+      "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
       "targets": [
         {
           "type": "console"
