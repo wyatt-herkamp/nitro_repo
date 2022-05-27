@@ -4,7 +4,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use actix_web::{HttpRequest, HttpResponse, Responder};
 use std::collections::HashMap;
-use std::os::linux::raw::stat;
+
 
 use crate::error::internal_error::InternalError;
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ use crate::repository::data::RepositoryConfig;
 use crate::repository::frontend::FrontendResponse;
 
 use crate::repository::nitro::{
-    NitroFileResponse, NitroRepoVersions, NitroVersion, ProjectData, VersionData,
+    NitroVersion, ProjectData, VersionData,
 };
 use crate::storage::file::StorageFileResponse;
 

@@ -1,6 +1,6 @@
 use crate::settings::models::{EmailSetting, SecuritySettings, SiteSetting};
 use crate::Settings;
-use actix_web::web;
+
 use std::path::Path;
 use tokio::fs::read_to_string;
 

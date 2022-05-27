@@ -26,7 +26,7 @@ pub enum DynamicStorage {
 
 #[async_trait]
 impl Storage for DynamicStorage {
-    fn new(config: StorageFactory) -> Result<DynamicStorage, (StorageError, StorageFactory)> where Self: Sized {
+    fn new(_config: StorageFactory) -> Result<DynamicStorage, (StorageError, StorageFactory)> where Self: Sized {
         panic!("Illegal Call")
     }
 

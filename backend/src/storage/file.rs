@@ -1,5 +1,5 @@
 use crate::error::api_error::APIError;
-use crate::error::internal_error::InternalError;
+
 use crate::storage::error::StorageError;
 use actix_files::NamedFile;
 use actix_web::body::BoxBody;
@@ -137,7 +137,7 @@ pub trait FileListResponder {
     where
         Self: std::marker::Sized;
     /// Converts Self Into a HTML based HTTP Response
-    fn html_listing(self, request: &HttpRequest) -> Result<HttpResponse, actix_web::Error>
+    fn html_listing(self, _request: &HttpRequest) -> Result<HttpResponse, actix_web::Error>
     where
         Self: std::marker::Sized,
     {

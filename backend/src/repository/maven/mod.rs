@@ -1,7 +1,7 @@
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use actix_web::Responder;
+
 
 use log::error;
 use sea_orm::DatabaseConnection;
@@ -23,7 +23,7 @@ use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use async_trait::async_trait;
-use sqlx::Error;
+
 use tokio::sync::RwLockReadGuard;
 use crate::storage::DynamicStorage;
 
@@ -87,7 +87,7 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
         let caller: UserModel = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_deploy_to(&self.config)? {}
+        if let Some(_value) = caller.can_deploy_to(&self.config)? {}
         match self.config.policy {
             Policy::Release => {
                 if path.contains("-SNAPSHOT") {

@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 use std::path::PathBuf;
 
-use std::time::SystemTime;
+
 
 use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
@@ -372,10 +372,10 @@ impl Storage for LocalStorage {
                 files.push(result);
             }
             let response = StorageDirectoryResponse { files, directory };
-            return Ok((StorageFileResponse::List(response)));
+            return Ok(StorageFileResponse::List(response));
         }
         trace!("Returning File {:?}", &file_location);
-        Ok((StorageFileResponse::File(file_location)))
+        Ok(StorageFileResponse::File(file_location))
     }
 
     async fn get_file_information(

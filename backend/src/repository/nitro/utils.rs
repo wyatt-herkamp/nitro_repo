@@ -2,11 +2,11 @@ use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::{
-    NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
+    NitroRepoVersions, ProjectData,
     RepositoryListing, VersionData,
 };
-use crate::repository::response::{Project, VersionResponse};
-use crate::storage::file::StorageDirectoryResponse;
+use crate::repository::response::{VersionResponse};
+
 use crate::storage::models::Storage;
 use log::debug;
 use std::fs::read_to_string;

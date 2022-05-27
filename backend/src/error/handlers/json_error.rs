@@ -1,5 +1,5 @@
 use actix_web::error::{ErrorBadRequest, JsonPayloadError};
-use actix_web::http::StatusCode;
+
 use actix_web::web::JsonConfig;
 use actix_web::HttpRequest;
 use log::trace;

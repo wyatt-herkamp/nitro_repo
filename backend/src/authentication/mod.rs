@@ -2,10 +2,10 @@ pub mod auth_token;
 pub mod middleware;
 pub mod session;
 
-use actix_web::body::BoxBody;
+
 use actix_web::dev::Payload;
 use actix_web::http::StatusCode;
-use actix_web::{FromRequest, HttpMessage, HttpRequest, HttpResponse, ResponseError};
+use actix_web::{FromRequest, HttpMessage, HttpRequest, ResponseError};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use std::fmt::{Debug, Display, Formatter};
 

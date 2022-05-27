@@ -1,7 +1,7 @@
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
-use actix_web::web::Json;
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder, ResponseError};
+
+use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use serde_json::json;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};

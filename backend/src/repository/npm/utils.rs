@@ -6,15 +6,15 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 
-use crate::authentication::verify_login;
+
 
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::utils::get_project_data;
-use sea_orm::DatabaseConnection;
+
 
 use crate::repository::npm::models::{
-    DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
+    DistTags, GetResponse, NPMTimes, NPMVersions, Version,
 };
 use crate::storage::DynamicStorage;
 use crate::storage::models::Storage;

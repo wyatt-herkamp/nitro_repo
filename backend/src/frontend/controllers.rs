@@ -4,7 +4,7 @@ use std::path::Path;
 use actix_files::Files;
 use actix_web::error::ErrorInternalServerError;
 use actix_web::web::Data;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse};
 use handlebars::Handlebars;
 use log::{debug, trace, warn};
 use serde_json::json;

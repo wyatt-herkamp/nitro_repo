@@ -1,8 +1,8 @@
-use crate::error::internal_error::InternalError;
+
 use std::convert::Infallible;
 
 use actix_web::dev::Payload;
-use actix_web::{Error, FromRequest, HttpMessage, HttpRequest};
+use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::{ready, Ready};
 
 use sea_orm::entity::prelude::*;
