@@ -5,13 +5,14 @@ use std::net::ToSocketAddrs;
 use std::process::exit;
 use std::rc::Rc;
 use actix_web::{App, HttpServer, web};
+use actix_web::guard::GuardContext;
 use actix_web::web::Data;
 use log::{info, trace};
 use semver::Version;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
 use api::cli::handle_cli;
-use api::NitroRepo;
+use api::{NitroRepo, system};
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
 use api::storage::multi::MultiStorageController;
@@ -72,6 +73,11 @@ async fn main() -> std::io::Result<()> {
             app_data(site_state.clone()).
             app_data(database_data.clone()).
             app_data(session_data.clone()).wrap(HandleSession {})
+            .service(
+                web::scope("/api")
+                    .configure(system::web::init_public_routes)
+                    .service(web::scope("/admin"))
+            )
     });
 
     #[cfg(feature = "ssl")]
@@ -93,7 +99,6 @@ async fn main() -> std::io::Result<()> {
 
     return server.bind(address)?.run().await;
 }
-
 
 fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error {
     std::io::Error::new(ErrorKind::Other, e)
