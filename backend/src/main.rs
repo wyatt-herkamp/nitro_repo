@@ -2,9 +2,6 @@
 extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
-extern crate core;
-extern crate strum;
-extern crate strum_macros;
 
 use actix_cors::Cors;
 use actix_web::web::{Data, PayloadConfig};
