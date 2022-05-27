@@ -10,17 +10,20 @@ use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
 use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::storage::DynamicStorage;
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 use crate::storage::local_storage::LocalStorage;
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
+
 /// Types of Storages
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StorageType {
     LocalStorage,
 }
+
 /// Storage Status
 #[derive(Debug)]
 pub enum StorageStatus {
@@ -33,11 +36,13 @@ pub enum StorageStatus {
     /// Storage Errored out during creation. Usually meaning bad config
     CreateError(StorageError),
 }
+
 impl PartialEq for StorageStatus {
     fn eq(&self, other: &Self) -> bool {
         self.to_string() == other.to_string()
     }
 }
+
 impl Display for StorageStatus {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -65,6 +70,7 @@ pub struct StorageSaver {
     /// Storage Handler Config
     pub handler_config: Value,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {
     pub public_name: String,
@@ -80,6 +86,7 @@ pub struct StorageFactory {
     /// Storage Handler Config
     pub handler_config: Value,
 }
+
 impl StorageFactory {
     pub fn config_for_saving(&self) -> StorageSaver {
         StorageSaver {
@@ -89,10 +96,13 @@ impl StorageFactory {
         }
     }
 }
+
 impl StorageFactory {
-    pub async fn build(self) -> Result<Box<dyn Storage>, (StorageError, StorageFactory)> {
+    pub async fn build(self) -> Result<DynamicStorage, (StorageError, StorageFactory)> {
         match &self.storage_type {
-            StorageType::LocalStorage => LocalStorage::new(self),
+            StorageType::LocalStorage => {
+                LocalStorage::new(self).map(|v| DynamicStorage::LocalStorage(v))
+            }
         }
     }
 }
@@ -100,9 +110,9 @@ impl StorageFactory {
 #[async_trait]
 pub trait Storage: Send + Sync {
     /// Initialize the Storage at Storage start.
-    fn new(config: StorageFactory) -> Result<Box<dyn Storage>, (StorageError, StorageFactory)>
-    where
-        Self: Sized;
+    fn new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+        where
+            Self: Sized;
     // Attempts to Load the Storage
     async fn load(&mut self) -> Result<(), StorageError>;
     /// Unload the storage

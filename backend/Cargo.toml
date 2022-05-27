@@ -48,10 +48,10 @@ futures-util = "0.3.21"
 base64 = "0.13.0"
 tokio = { version = "1.18.1", features = ["full"] }
 uuid = { version = "1.0.0", features = ["serde", "v4"] }
-colored = "2.0.0"
+style-term = "1.0.0"
 mime_guess = "2.0.4"
 # Log
-nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "colored"] }
+nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = "0.4.17"
 # Rust Internal
 strum = { version = "0.24.0", features = ["derive"] }

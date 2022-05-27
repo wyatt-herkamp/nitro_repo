@@ -25,6 +25,7 @@ use crate::system::user::UserModel;
 use async_trait::async_trait;
 use sqlx::Error;
 use tokio::sync::RwLockReadGuard;
+use crate::storage::DynamicStorage;
 
 pub mod error;
 pub mod models;
@@ -32,13 +33,13 @@ mod utils;
 
 pub struct MavenHandler<'a> {
     config: RepositoryConfig,
-    storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+    storage: RwLockReadGuard<'a, DynamicStorage>,
 }
 
 impl<'a> MavenHandler<'a> {
     pub fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+        storage: RwLockReadGuard<'a, DynamicStorage>,
     ) -> MavenHandler<'a> {
         MavenHandler::<'a> {
             config: repository,
@@ -147,7 +148,7 @@ impl NitroRepositoryHandler for MavenHandler<'_> {
         value.into().replace('.', "/").replace(':', "/")
     }
 
-    fn storage(&self) -> &Box<dyn Storage> {
+    fn storage(&self) -> &DynamicStorage {
         &self.storage
     }
 

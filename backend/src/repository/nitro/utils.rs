@@ -11,9 +11,10 @@ use crate::storage::models::Storage;
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
+use crate::storage::DynamicStorage;
 
 pub async fn get_version(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     project: String,
     version: String,
@@ -38,7 +39,7 @@ pub fn get_version_by_data(
 }
 
 pub async fn update_project_in_repositories(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     project: String,
 ) -> Result<(), InternalError> {
@@ -60,7 +61,7 @@ pub async fn update_project_in_repositories(
 }
 
 pub async fn get_versions(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     path: String,
 ) -> Result<NitroRepoVersions, InternalError> {
@@ -97,7 +98,7 @@ pub fn get_latest_version_data(
 }
 
 pub async fn get_project_data(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     project: &str,
 ) -> Result<Option<ProjectData>, InternalError> {
@@ -115,7 +116,7 @@ pub async fn get_project_data(
     })
 }
 pub async fn get_version_data(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     folder: &str,
 ) -> Result<Option<VersionData>, InternalError> {

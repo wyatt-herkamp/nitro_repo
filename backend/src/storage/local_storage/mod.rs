@@ -32,6 +32,7 @@ pub struct LocalStorage {
     pub status: StorageStatus,
     pub repositories: RwLock<HashMap<String, RepositoryConfig>>,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalConfig {
     pub location: String,
@@ -49,6 +50,7 @@ impl LocalStorage {
         self.get_storage_folder().join(repository)
     }
 }
+
 impl LocalStorage {
     async fn load_repositories(
         path: PathBuf,
@@ -79,11 +81,12 @@ impl LocalStorage {
         Ok(())
     }
 }
+
 #[async_trait]
 impl Storage for LocalStorage {
-    fn new(config: StorageFactory) -> Result<Box<dyn Storage>, (StorageError, StorageFactory)>
-    where
-        Self: Sized,
+    fn new(config: StorageFactory) -> Result<LocalStorage, (StorageError, StorageFactory)>
+        where
+            Self: Sized,
     {
         match serde_json::from_value::<LocalConfig>(config.handler_config.clone()) {
             Ok(local) => {
@@ -93,7 +96,7 @@ impl Storage for LocalStorage {
                     repositories: RwLock::new(Default::default()),
                     status: StorageStatus::Unloaded,
                 };
-                Ok(Box::new(storage))
+                Ok(storage)
             }
             Err(error) => Err((StorageError::JSONError(error), config)),
         }

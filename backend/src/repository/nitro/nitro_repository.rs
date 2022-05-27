@@ -15,13 +15,14 @@ use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
     VersionData,
 };
+use crate::storage::DynamicStorage;
 use crate::storage::file::StorageDirectoryResponse;
 use crate::system::user::UserModel;
 
 #[async_trait]
 pub trait NitroRepositoryHandler {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String;
-    fn storage(&self) -> &Box<dyn Storage>;
+    fn storage(&self) -> &DynamicStorage;
     fn repository(&self) -> &RepositoryConfig;
     /// Handles a List of versions request
     async fn get_versions(

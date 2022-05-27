@@ -16,6 +16,7 @@ use sea_orm::DatabaseConnection;
 use crate::repository::npm::models::{
     DistTags, GetResponse, LoginRequest, NPMTimes, NPMVersions, Version,
 };
+use crate::storage::DynamicStorage;
 use crate::storage::models::Storage;
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
@@ -40,7 +41,7 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
 }
 
 pub async fn get_version_data(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     project_folder: &str,
     project: &ProjectData,
@@ -74,7 +75,7 @@ pub async fn get_version_data(
 }
 
 pub async fn generate_get_response(
-    storage: &Box<dyn Storage>,
+    storage: &DynamicStorage,
     repository: &RepositoryConfig,
     project_folder: &str,
 ) -> Result<Option<GetResponse>, InternalError> {

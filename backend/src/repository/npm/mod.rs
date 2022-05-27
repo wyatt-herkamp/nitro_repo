@@ -33,16 +33,17 @@ use crate::error::internal_error::InternalError;
 use crate::storage::file::StorageFileResponse;
 use async_trait::async_trait;
 use tokio::sync::RwLockReadGuard;
+use crate::storage::DynamicStorage;
 
 pub struct NPMHandler<'a> {
     config: RepositoryConfig,
-    storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+    storage: RwLockReadGuard<'a, DynamicStorage>,
 }
 
 impl<'a> NPMHandler<'a> {
     pub fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, Box<dyn Storage>>,
+        storage: RwLockReadGuard<'a, DynamicStorage>,
     ) -> NPMHandler<'a> {
         NPMHandler {
             config: repository,
@@ -241,7 +242,7 @@ impl NitroRepositoryHandler for NPMHandler<'_> {
         path.into().replace('.', "/").replace(':', "/")
     }
 
-    fn storage(&self) -> &Box<dyn Storage> {
+    fn storage(&self) -> &DynamicStorage {
         &self.storage
     }
 

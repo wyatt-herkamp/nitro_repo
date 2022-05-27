@@ -16,20 +16,21 @@ use crate::storage::error::StorageError;
 use crate::storage::file::StorageFile;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::{RwLock, RwLockReadGuard};
+use crate::storage::DynamicStorage;
 
-pub async fn load_storages() -> Result<HashMap<String, Box<dyn Storage>>, StorageError> {
+pub async fn load_storages() -> Result<HashMap<String, DynamicStorage>, StorageError> {
     let path = Path::new(STORAGE_FILE);
     if !path.exists() {
         return Ok(HashMap::new());
     }
     let string = read_to_string(&path).await?;
     let result: Vec<StorageFactory> = serde_json::from_str(&string)?;
-    let mut values: HashMap<String, Box<dyn Storage>> = HashMap::new();
+    let mut values: HashMap<String, DynamicStorage> = HashMap::new();
     for factory in result {
         let name = factory.generic_config.name.clone();
         let storage = match factory.build().await {
             Ok(value) => value,
-            Err((error, factory)) => BadStorage::create(factory, error),
+            Err((error, factory)) => DynamicStorage::BadStorage(BadStorage::create(factory, error)),
         };
         values.insert(name, storage);
     }
@@ -56,7 +57,7 @@ pub async fn save_storages(storages: &Vec<StorageSaver>) -> Result<(), StorageEr
 }
 
 pub struct MultiStorageController {
-    pub storages: RwLock<HashMap<String, Box<dyn Storage>>>,
+    pub storages: RwLock<HashMap<String, DynamicStorage>>,
 }
 
 impl MultiStorageController {
@@ -72,7 +73,7 @@ impl MultiStorageController {
     pub async fn get_storage_by_name(
         &self,
         name: &str,
-    ) -> Result<Option<RwLockReadGuard<'_, Box<dyn Storage>>>, StorageError> {
+    ) -> Result<Option<RwLockReadGuard<'_, DynamicStorage>>, StorageError> {
         let storages = self.storages.read().await;
         if storages.contains_key(name) {
             return Ok(None);

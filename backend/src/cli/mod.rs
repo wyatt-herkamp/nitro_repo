@@ -3,9 +3,9 @@ use crate::settings::models::Mode;
 use crate::updater;
 use crate::utils::load_logger;
 use clap::Parser;
-use colored::Colorize;
 use log::error;
 use std::path::Path;
+use style_term::{DefaultColor, StyleString};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -24,13 +24,13 @@ pub async fn handle_cli() -> std::io::Result<bool> {
         load_logger(Mode::Install);
         if let Err(error) = load_installer(path).await {
             error!("Unable to complete Install {error}");
-            println!("{}", "Unable to Complete Installation".red());
+            println!("{}", "Unable to Complete Installation".style().text_color(DefaultColor::Red));
         }
         return Ok(true);
     } else if let Some(update) = parse.update {
         if let Err(error) = updater::update(update).await {
             error!("Unable to complete update {error}");
-            println!("{}", "Unable to Complete Update".red());
+            println!("{}", "Unable to Complete Update".style().text_color(DefaultColor::Red));
         }
         return Ok(true);
     }
