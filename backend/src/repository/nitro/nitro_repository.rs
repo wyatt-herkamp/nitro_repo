@@ -15,8 +15,8 @@ use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
     VersionData,
 };
-use crate::storage::DynamicStorage;
 use crate::storage::file::StorageDirectoryResponse;
+use crate::storage::DynamicStorage;
 use crate::system::user::UserModel;
 
 #[async_trait]
@@ -150,7 +150,7 @@ pub trait NitroRepositoryHandler {
 
             let project = Project {
                 repo_summary: self.repository().clone(),
-                project: project,
+                project,
                 version: Some(version),
                 frontend_response: None,
             };

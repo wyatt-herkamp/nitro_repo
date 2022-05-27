@@ -6,18 +6,13 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 
-
-
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::utils::get_project_data;
 
-
-use crate::repository::npm::models::{
-    DistTags, GetResponse, NPMTimes, NPMVersions, Version,
-};
-use crate::storage::DynamicStorage;
+use crate::repository::npm::models::{DistTags, GetResponse, NPMTimes, NPMVersions, Version};
 use crate::storage::models::Storage;
+use crate::storage::DynamicStorage;
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
 

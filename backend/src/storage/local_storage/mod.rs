@@ -11,8 +11,6 @@ use std::collections::HashMap;
 
 use std::path::PathBuf;
 
-
-
 use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
 use crate::storage::error::StorageError::RepositoryMissing;
@@ -85,8 +83,8 @@ impl LocalStorage {
 #[async_trait]
 impl Storage for LocalStorage {
     fn new(config: StorageFactory) -> Result<LocalStorage, (StorageError, StorageFactory)>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         match serde_json::from_value::<LocalConfig>(config.handler_config.clone()) {
             Ok(local) => {

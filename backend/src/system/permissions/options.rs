@@ -1,6 +1,5 @@
 use crate::system::permissions::{can_deploy, can_read, UserPermissions};
 
-
 use crate::error::internal_error::InternalError;
 use crate::repository::settings::security::Visibility;
 use crate::system::user::UserModel;

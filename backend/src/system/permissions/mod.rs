@@ -1,7 +1,7 @@
 pub mod options;
 pub mod orm;
 
-use crate::repository::data::{RepositoryConfig};
+use crate::repository::data::RepositoryConfig;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};

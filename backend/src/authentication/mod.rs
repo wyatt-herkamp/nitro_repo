@@ -2,7 +2,6 @@ pub mod auth_token;
 pub mod middleware;
 pub mod session;
 
-
 use actix_web::dev::Payload;
 use actix_web::http::StatusCode;
 use actix_web::{FromRequest, HttpMessage, HttpRequest, ResponseError};

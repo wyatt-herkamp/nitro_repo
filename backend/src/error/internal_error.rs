@@ -7,7 +7,7 @@ use crate::storage::error::StorageError;
 
 use crate::system::permissions::PermissionError;
 
-use actix_web::{ResponseError};
+use actix_web::ResponseError;
 use base64::DecodeError;
 use thiserror::Error;
 

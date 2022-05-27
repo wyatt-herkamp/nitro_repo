@@ -3,17 +3,13 @@ use std::io;
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode}, ExecutableCommand, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{DatabaseConnection, EntityTrait, Schema};
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -25,9 +21,7 @@ use tui::{
 
 use thiserror::Error;
 
-use crate::settings::models::{
-    Application, Database, EmailSetting, Mode, SecuritySettings, SiteSetting, StringMap,
-};
+use crate::settings::models::{Application, Database, EmailSetting, Mode, MysqlSettings, SecuritySettings, SiteSetting, StringMap};
 use crate::system::permissions::UserPermissions;
 use crate::system::user;
 use crate::system::user::UserEntity;
@@ -72,17 +66,15 @@ struct DatabaseStage {
     pub database: Option<String>,
 }
 
-impl From<DatabaseStage> for Database<StringMap> {
+impl From<DatabaseStage> for Database {
     fn from(db: DatabaseStage) -> Self {
-        let mut map = StringMap::new();
-        map.insert("user".to_string(), db.user.unwrap());
-        map.insert("password".to_string(), db.password.unwrap());
-        map.insert("host".to_string(), db.host.unwrap());
-        map.insert("database".to_string(), db.database.unwrap());
-        Self {
-            db_type: "mysql".to_string(),
-            settings: map,
-        }
+        let mysql_settings = MysqlSettings {
+            user: db.user.unwrap(),
+            password: db.password.unwrap(),
+            host: db.host.unwrap(),
+            database: db.database.unwrap(),
+        };
+        crate::settings::models::Database::Mysql(mysql_settings)
     }
 }
 
@@ -125,8 +117,8 @@ impl From<UserStage> for user::database::ActiveModel {
                 deployer: None,
                 viewer: None,
             }
-            .try_into()
-            .unwrap()),
+                .try_into()
+                .unwrap()),
             created: Set(get_current_time()),
         }
     }
@@ -389,7 +381,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-            .as_ref(),
+                .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -511,7 +503,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     )
 }
 
-pub async fn load_installer(config: &Path) -> anyhow::Result<()> {
+pub async fn load_installer(working_dir: PathBuf) -> anyhow::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -525,16 +517,16 @@ pub async fn load_installer(config: &Path) -> anyhow::Result<()> {
         application: Application::from(app.other_stage),
         internal: Default::default(),
         session: Default::default(),
-        env: Default::default(),
     };
-    create_dir_all(config)?;
+    let configs = working_dir.join("cfg");
+    create_dir_all(&configs)?;
 
     let other = toml::to_string_pretty(&general)?;
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("nitro_repo.toml"))?;
+        .open(working_dir.join("nitro_repo.toml"))?;
     file.write_all(other.as_bytes())?;
 
     let security = toml::to_string_pretty(&SecuritySettings::default())?;
@@ -542,7 +534,7 @@ pub async fn load_installer(config: &Path) -> anyhow::Result<()> {
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("security.toml"))?;
+        .open(configs.join("security.toml"))?;
     file.write_all(security.as_bytes())?;
 
     let email = toml::to_string_pretty(&EmailSetting::default())?;
@@ -550,14 +542,14 @@ pub async fn load_installer(config: &Path) -> anyhow::Result<()> {
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("email.toml"))?;
+        .open(configs.join("email.toml"))?;
     file.write_all(email.as_bytes())?;
     let site = toml::to_string_pretty(&SiteSetting::default())?;
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("site.toml"))?;
+        .open(configs.join("site.toml"))?;
     file.write_all(site.as_bytes())?;
     info!("Installation Complete");
     Ok(())
@@ -570,6 +562,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-    .unwrap();
+        .unwrap();
     terminal.show_cursor().unwrap();
 }

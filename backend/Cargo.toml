@@ -5,14 +5,13 @@ authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
 license-file = "../LICENSE"
-default-run = "nitro_repo"
+default-run = "nitro_repo_full"
 
 [lib]
 name = "api"
 path = "src/lib.rs"
 [[bin]]
-name = "nitro_repo"
-path = "src/web/full.rs"
+name = "nitro_repo_full"
 required-features = ["multi_storage"]
 
 

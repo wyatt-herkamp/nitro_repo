@@ -1,17 +1,14 @@
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
-use crate::repository::nitro::{
-    NitroRepoVersions, ProjectData,
-    RepositoryListing, VersionData,
-};
-use crate::repository::response::{VersionResponse};
+use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing, VersionData};
+use crate::repository::response::VersionResponse;
 
 use crate::storage::models::Storage;
+use crate::storage::DynamicStorage;
 use log::debug;
 use std::fs::read_to_string;
 use std::path::Path;
-use crate::storage::DynamicStorage;
 
 pub async fn get_version(
     storage: &DynamicStorage,

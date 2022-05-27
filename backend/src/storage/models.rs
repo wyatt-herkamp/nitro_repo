@@ -1,7 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
 
-
-
 use serde::{Deserialize, Serialize};
 
 use async_trait::async_trait;
@@ -10,10 +8,10 @@ use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
 use crate::repository::data::{RepositoryConfig, RepositoryType};
-use crate::storage::DynamicStorage;
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 use crate::storage::local_storage::LocalStorage;
+use crate::storage::DynamicStorage;
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
@@ -111,8 +109,8 @@ impl StorageFactory {
 pub trait Storage: Send + Sync {
     /// Initialize the Storage at Storage start.
     fn new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
     // Attempts to Load the Storage
     async fn load(&mut self) -> Result<(), StorageError>;
     /// Unload the storage

@@ -13,7 +13,6 @@ use serde_json::Value;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 use tokio::sync::RwLockReadGuard;
 
-
 /// This is a storage that is here to represent a storage that failed to load from the config stage
 #[derive(Debug)]
 pub struct BadStorage {
@@ -22,7 +21,7 @@ pub struct BadStorage {
 }
 impl BadStorage {
     pub fn create(factory: StorageFactory, error: StorageError) -> BadStorage {
-       BadStorage {
+        BadStorage {
             factory,
             status: StorageStatus::CreateError(error),
         }
