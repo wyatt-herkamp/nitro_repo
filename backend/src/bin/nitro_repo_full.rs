@@ -80,9 +80,9 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_method()
                     .allow_any_origin().supports_credentials(),
             )
+
             .service(
-                web::scope("/api")
-                    .wrap(HandleSession {})
+                web::scope("/api").wrap(HandleSession {})
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)
                     .service(web::scope("/admin")

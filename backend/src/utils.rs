@@ -55,15 +55,6 @@ pub fn default_expiration() -> i64 {
     time.add(Duration::days(30)).timestamp_millis()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EmailChangeRequest {
-    pub email_username: Option<String>,
-    pub email_password: Option<String>,
-    pub email_host: Option<String>,
-    pub encryption: Option<String>,
-    pub from: Option<String>,
-    pub port: Option<i64>,
-}
 
 pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
     let option = header_map.get("accept");

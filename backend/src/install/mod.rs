@@ -23,9 +23,8 @@ use thiserror::Error;
 
 use crate::settings::models::{Application, Database, EmailSetting, Mode, MysqlSettings, SecuritySettings, SiteSetting, StringMap};
 use crate::system::permissions::UserPermissions;
-use crate::system::user;
+use crate::system::{hash, user};
 use crate::system::user::UserEntity;
-use crate::system::utils::hash;
 use crate::utils::get_current_time;
 use crate::{authentication, GeneralSettings};
 use sea_orm::ConnectionTrait;

@@ -3,6 +3,7 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::collections::HashMap;
 use std::ops::Add;
+use log::trace;
 
 use crate::authentication::session::{Session, SessionManagerType};
 use time::{Duration, OffsetDateTime};
@@ -43,8 +44,8 @@ impl SessionManagerType for BasicSessionManager {
 
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
         let guard = self.sessions.read().await;
-        for x in guard.iter() {
-            println!("{:?}", x.0);
+        for (session, value) in guard.iter() {
+            trace!("Session {}: {:?}", session, value);
         }
         return Ok(guard.get(token).cloned());
     }

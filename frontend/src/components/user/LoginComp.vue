@@ -38,6 +38,9 @@ import { defineComponent, ref } from "vue";
 import { login } from "@nitro_repo/nitro_repo-api-wrapper";
 import { AuthToken } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useCookies } from "vue3-cookies";
+import apiClient from "@/http-common";
+import { Result } from "ts-results";
+import { valueToNode } from "@babel/types";
 
 export default defineComponent({
   setup() {
@@ -51,26 +54,20 @@ export default defineComponent({
   },
   methods: {
     async onSubmit(username: string, password: string) {
-      const value = await login(username, password);
-      if (value.ok) {
-        let loginRequest = value.val as AuthToken;
-        let date = new Date(loginRequest.expiration * 1000);
-        this.cookies.set(
-          "token",
-          loginRequest.token,
-          date,
-          undefined,
-          undefined,
-          undefined,
-          "Lax"
-        );
+      let response: Result<object, object> = await apiClient.post("api/login", {
+        username: username,
+        password: password,
+      });
+      if (response.ok) {
         location.reload();
-      } else {
-        this.form.password = "";
-        this.$notify({
-          title: value.val.user_friendly_message,
-          type: "warn",
-        });
+      } else if (response.err) {
+        if (response.val) {
+          this.form.password = "";
+          this.$notify({
+            title: response.val.data.error,
+            type: "warn",
+          });
+        }
       }
     },
   },

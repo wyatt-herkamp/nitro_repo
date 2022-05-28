@@ -32,5 +32,5 @@ pub async fn login(
             );
         }
     });
-    Ok(HttpResponse::Ok().finish())
+    Ok(HttpResponse::Ok().json(user))
 }

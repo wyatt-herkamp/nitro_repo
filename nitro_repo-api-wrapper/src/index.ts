@@ -1,5 +1,4 @@
 export * from "./NitroRepoAPI"
-export *from "./Generic"
 export * from "./repository/repositoryAdminAPI"
 export * from "./repository/repositoryTypes"
 export *from "./repository/repositoryUserAPI"
