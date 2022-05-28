@@ -1,24 +1,15 @@
 use std::io;
 
-use crate::database::init_single_connection;
-
 use log::{error, info, trace};
 use serde::{Deserialize, Serialize};
 
-use crate::system::action::add_new_user;
-
-use crate::system::models::{User};
-
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-use diesel::MysqlConnection;
+use crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode}, ExecutableCommand, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
+use sea_orm::ActiveValue::Set;
+use sea_orm::{DatabaseConnection, EntityTrait, Schema};
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::{Stdout, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -30,12 +21,15 @@ use tui::{
 
 use thiserror::Error;
 
-use crate::settings::models::{Application, Database};
+use crate::settings::models::{Application, Database, EmailSetting, Mode, MysqlSettings, SecuritySettings, SiteSetting, StringMap};
+use crate::system::permissions::UserPermissions;
+use crate::system::user;
+use crate::system::user::UserEntity;
 use crate::system::utils::hash;
 use crate::utils::get_current_time;
-use crate::{EmailSetting, GeneralSettings, Mode, SecuritySettings, SiteSetting, StringMap};
+use crate::{authentication, GeneralSettings};
+use sea_orm::ConnectionTrait;
 use unicode_width::UnicodeWidthStr;
-use crate::system::permissions::UserPermissions;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -57,6 +51,12 @@ impl From<std::io::Error> for InstallError {
     }
 }
 
+impl std::convert::From<sea_orm::DbErr> for InstallError {
+    fn from(error: sea_orm::DbErr) -> Self {
+        InstallError::InstallError(error.to_string())
+    }
+}
+
 //mysql://newuser:"password"@127.0.0.1/nitro_repo
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct DatabaseStage {
@@ -66,17 +66,15 @@ struct DatabaseStage {
     pub database: Option<String>,
 }
 
-impl From<DatabaseStage> for Database<StringMap> {
+impl From<DatabaseStage> for Database {
     fn from(db: DatabaseStage) -> Self {
-        let mut map = StringMap::new();
-        map.insert("user".to_string(), db.user.unwrap());
-        map.insert("password".to_string(), db.password.unwrap());
-        map.insert("host".to_string(), db.host.unwrap());
-        map.insert("database".to_string(), db.database.unwrap());
-        Self {
-            db_type: "mysql".to_string(),
-            settings: map,
-        }
+        let mysql_settings = MysqlSettings {
+            user: db.user.unwrap(),
+            password: db.password.unwrap(),
+            host: db.host.unwrap(),
+            database: db.database.unwrap(),
+        };
+        crate::settings::models::Database::Mysql(mysql_settings)
     }
 }
 
@@ -103,23 +101,25 @@ pub struct UserStage {
     pub password_two: Option<String>,
 }
 
-impl From<UserStage> for User {
+impl From<UserStage> for user::database::ActiveModel {
     fn from(value: UserStage) -> Self {
-        User {
-            id: 0,
-            name: value.name.unwrap_or_default(),
-            username: value.username.unwrap_or_default(),
-            email: value.email.unwrap_or_default(),
-            password: hash(value.password.unwrap_or_default()).unwrap(),
-            permissions: UserPermissions {
+        user::database::ActiveModel {
+            id: Default::default(),
+            name: Set(value.name.unwrap_or_default()),
+            username: Set(value.username.unwrap_or_default()),
+            email: Set(value.email.unwrap_or_default()),
+            password: Set(hash(value.password.unwrap_or_default()).unwrap()),
+            permissions: Set(UserPermissions {
                 disabled: false,
                 admin: true,
                 user_manager: true,
                 repository_manager: true,
                 deployer: None,
-                viewer: None
-            },
-            created: get_current_time(),
+                viewer: None,
+            }
+                .try_into()
+                .unwrap()),
+            created: Set(get_current_time()),
         }
     }
 }
@@ -156,7 +156,7 @@ struct App {
     database_stage: DatabaseStage,
     user_stage: UserStage,
     other_stage: OtherStage,
-    connection: Option<MysqlConnection>,
+    connection: Option<DatabaseConnection>,
 }
 
 impl Default for App {
@@ -188,7 +188,7 @@ impl Default for App {
     }
 }
 
-fn run_app(
+async fn run_app(
     mut terminal: Terminal<CrosstermBackend<Stdout>>,
     mut app: App,
 ) -> Result<App, InstallError> {
@@ -221,25 +221,21 @@ fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                let result = init_single_connection(&string);
-                                match result {
-                                    Ok(db) => {
-                                        app.connection = Some(db);
-                                        app.stage = 1;
-                                    }
-                                    Err(error) => {
-                                        error!(
-                                            "Unable to Connect to Database {} :{}",
-                                            string, error
-                                        );
-                                        app.database_stage = DatabaseStage {
-                                            user: None,
-                                            password: None,
-                                            host: None,
-                                            database: None,
-                                        }
-                                    }
-                                }
+                                let database_conn = sea_orm::Database::connect(string).await?;
+                                let schema = Schema::new(database_conn.get_database_backend());
+                                let users = schema.create_table_from_entity(UserEntity);
+                                database_conn
+                                    .execute(database_conn.get_database_backend().build(&users))
+                                    .await?;
+                                let tokens = schema.create_table_from_entity(
+                                    authentication::auth_token::AuthTokenEntity,
+                                );
+                                database_conn
+                                    .execute(database_conn.get_database_backend().build(&tokens))
+                                    .await?;
+
+                                app.connection = Some(database_conn);
+                                app.stage = 1;
                             }
                         }
                         1 => {
@@ -256,11 +252,8 @@ fn run_app(
                                 let stage = app.user_stage.clone();
 
                                 //TODO dont kill program on failure to create user
-                                if let Err(error) = add_new_user(&stage.into(), connection) {
-                                    error!("Unable to Create user, {}", error);
-                                    std::process::exit(1);
-                                }
-
+                                let user: user::database::ActiveModel = stage.into();
+                                UserEntity::insert(user).exec(connection).await?;
                                 app.stage = 2;
                             }
                         }
@@ -388,7 +381,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-            .as_ref(),
+                .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -510,29 +503,30 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     )
 }
 
-pub fn load_installer(config: &Path) -> anyhow::Result<()> {
+pub async fn load_installer(working_dir: PathBuf) -> anyhow::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
 
-    let app = run_app(terminal, App::default())?;
+    let app = run_app(terminal, App::default()).await?;
 
     let general = GeneralSettings {
         database: app.database_stage.into(),
         application: Application::from(app.other_stage),
         internal: Default::default(),
-        env: Default::default()
+        session: Default::default(),
     };
-    create_dir_all(config)?;
+    let configs = working_dir.join("cfg");
+    create_dir_all(&configs)?;
 
     let other = toml::to_string_pretty(&general)?;
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("nitro_repo.toml"))?;
+        .open(working_dir.join("nitro_repo.toml"))?;
     file.write_all(other.as_bytes())?;
 
     let security = toml::to_string_pretty(&SecuritySettings::default())?;
@@ -540,7 +534,7 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("security.toml"))?;
+        .open(configs.join("security.toml"))?;
     file.write_all(security.as_bytes())?;
 
     let email = toml::to_string_pretty(&EmailSetting::default())?;
@@ -548,14 +542,14 @@ pub fn load_installer(config: &Path) -> anyhow::Result<()> {
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("email.toml"))?;
+        .open(configs.join("email.toml"))?;
     file.write_all(email.as_bytes())?;
     let site = toml::to_string_pretty(&SiteSetting::default())?;
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
-        .open(config.join("site.toml"))?;
+        .open(configs.join("site.toml"))?;
     file.write_all(site.as_bytes())?;
     info!("Installation Complete");
     Ok(())
@@ -568,6 +562,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-    .unwrap();
+        .unwrap();
     terminal.show_cursor().unwrap();
 }

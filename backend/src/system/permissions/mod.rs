@@ -1,19 +1,12 @@
 pub mod options;
+pub mod orm;
 
-use serde::{Serialize, Deserialize};
-use crate::repository::models::{Repository};
-use thiserror::Error;
-use crate::repository::settings::Policy;
+use crate::repository::data::RepositoryConfig;
 use crate::repository::settings::security::Visibility;
+use crate::repository::settings::Policy;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
-use std::io::Write;
-
-use diesel::backend::Backend;
-use diesel::deserialize::FromSql;
-use diesel::mysql::Mysql;
-use diesel::serialize::{Output, ToSql};
-use diesel::sql_types::Text;
-use diesel::{deserialize, serialize};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PermissionError {
@@ -34,8 +27,7 @@ impl From<serde_json::Error> for PermissionError {
     }
 }
 
-#[derive(AsExpression, Debug, Deserialize, Serialize, FromSqlRow, Clone, Default)]
-#[sql_type = "Text"]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct UserPermissions {
     pub disabled: bool,
     pub admin: bool,
@@ -45,47 +37,29 @@ pub struct UserPermissions {
     pub viewer: Option<RepositoryPermission>,
 }
 
-impl UserPermissions {
-    pub fn can_access_repository(&self) -> bool {
-         self.admin || self.repository_manager
-    }
-}
-
-impl FromSql<Text, Mysql> for UserPermissions {
-    fn from_sql(
-        bytes: Option<&<Mysql as Backend>::RawValue>,
-    ) -> deserialize::Result<UserPermissions> {
-        let t = <String as FromSql<Text, Mysql>>::from_sql(bytes)?;
-        let result: UserPermissions = serde_json::from_str(t.as_str())?;
-        Ok(result)
-    }
-}
-
-impl ToSql<Text, Mysql> for UserPermissions {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let s = serde_json::to_string(&self)?;
-        <String as ToSql<Text, Mysql>>::to_sql(&s, out)
-    }
-}
-
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RepositoryPermission {
     pub permissions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RepositoryPermissionValue {
     pub policy: Option<Policy>,
     #[serde(rename = "type")]
     pub repo_type: Option<String>,
 }
 
-
+impl Default for RepositoryPermission {
+    fn default() -> Self {
+        RepositoryPermission {
+            permissions: vec![],
+        }
+    }
+}
 
 pub fn can_deploy(
     user_perms: &UserPermissions,
-    repo: &Repository,
+    repo: &RepositoryConfig,
 ) -> Result<bool, PermissionError> {
     if user_perms.disabled {
         return Ok(false);
@@ -100,10 +74,9 @@ pub fn can_deploy(
     Ok(false)
 }
 
-
 pub fn can_read(
     user_perms: &UserPermissions,
-    repo: &Repository,
+    repo: &RepositoryConfig,
 ) -> Result<bool, PermissionError> {
     if user_perms.disabled {
         return Ok(false);
@@ -112,7 +85,7 @@ pub fn can_read(
         return Ok(true);
     }
 
-    match repo.security.visibility {
+    match repo.visibility {
         Visibility::Public => Ok(true),
         Visibility::Private => {
             if let Some(perms) = &user_perms.viewer {
@@ -126,7 +99,7 @@ pub fn can_read(
     }
 }
 
-pub fn can(repo: &Repository, perms: &RepositoryPermission) -> Result<bool, PermissionError> {
+pub fn can(repo: &RepositoryConfig, perms: &RepositoryPermission) -> Result<bool, PermissionError> {
     if perms.permissions.is_empty() {
         // If nothing is set. It is a all view type of scenario
         return Ok(true);
@@ -147,12 +120,12 @@ pub fn can(repo: &Repository, perms: &RepositoryPermission) -> Result<bool, Perm
         if repository_perm.starts_with('{') && repository_perm.ends_with('}') {
             let permission: RepositoryPermissionValue = serde_json::from_str(&repository_perm)?;
             if let Some(policy) = &permission.policy {
-                if !policy.eq(&repo.settings.policy) {
+                if !policy.eq(&repo.policy) {
                     return Ok(false);
                 }
             }
             if let Some(repo_type) = &permission.repo_type {
-                if !repo_type.eq(&repo.repo_type.to_string()) {
+                if !repo_type.eq(&repo.repository_type.to_string()) {
                     return Ok(false);
                 }
             }

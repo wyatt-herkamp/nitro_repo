@@ -1,28 +1,37 @@
 [package]
 name = "nitro_repo"
-version = "1.0.1"
+version = "1.1.0-BETA"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
 license-file = "../LICENSE"
+default-run = "nitro_repo_full"
+
+[lib]
+name = "api"
+path = "src/lib.rs"
+[[bin]]
+name = "nitro_repo_full"
+required-features = ["multi_storage"]
+
+
 [dependencies]
 # Web
-actix-web = { version = "4.0.1", features = ["openssl"] }
+actix-web = { version = "4.0.1", features = ["openssl", "cookies"] }
 actix-cors = "0.6.1"
 actix-service = "2.0.2"
 openssl = { version = "0.10.40", features = ["v110"], optional = true }
 actix-files = "0.6.0"
 # Partly Web
 lettre = "0.10.0-rc.6"
-handlebars = "4.3.0"
+handlebars = "4.2.2"
 # Database
-diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
-diesel_migrations = "1.4.0"
-r2d2 = "0.8.9"
-r2d2_mysql = "21.0.0"
+sea-orm = { version = "0.7.1", features = ["sqlx-mysql", "sqlx-sqlite", "runtime-actix-native-tls", "macros"] }
+sqlx = "0.5.13"
 # Serde
 serde = { version = "1.0.137", features = ["derive"] }
 serde_json = "1.0.81"
+futures = "0.3.21"
 serde-xml-rs = "0.5.1"
 toml = "0.5.9"
 
@@ -32,13 +41,16 @@ rand_core = { version = "0.6.3", features = ["std"] }
 rust-embed = { version = "6.4.0", features = ["interpolate-folder-path"] }
 argon2 = "0.4.0"
 chrono = "0.4.19"
-regex = "1.5.6"
+time = "0.3.9"
+regex = "1.5.5"
 futures-util = "0.3.21"
 base64 = "0.13.0"
-tokio = "1.18.2"
+tokio = { version = "1.18.1", features = ["full"] }
+uuid = { version = "1.0.0", features = ["serde", "v4"] }
 style-term = "1.0.0"
+mime_guess = "2.0.4"
 # Log
-nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["chrono", "style-term"] }
+nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = "0.4.17"
 # Rust Internal
 strum = { version = "0.24.0", features = ["derive"] }
@@ -55,11 +67,17 @@ webhook = "2.0.0"
 # Installer
 tui = "0.18.0"
 crossterm = "0.23.2"
-clap = { version = "3.1.18", features = ["derive"] }
+clap = { version = "3.1.15", features = ["derive"] }
 unicode-width = "0.1.9"
-
+semver = "1.0.9"
 [build-dependencies]
-vergen = "7.1.0"
+vergen = "7.0.0"
 [features]
+# The latest Updaters will always be under default features
+default = ["updater_one-one", "multi_storage"]
 ssl = ["openssl", "actix-web/openssl"]
 
+multi_storage = []
+# Updaters
+# Updater for 1.0.0 - 1.1.0
+updater_one-one = []

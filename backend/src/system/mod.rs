@@ -1,5 +1,5 @@
-pub mod action;
-pub mod controllers;
 pub mod models;
-pub mod utils;
 pub mod permissions;
+pub mod user;
+pub mod utils;
+pub mod web;

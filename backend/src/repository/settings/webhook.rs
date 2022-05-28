@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::ops::Deref;
-use serde::{Serialize, Deserialize};
-use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ReportValues {

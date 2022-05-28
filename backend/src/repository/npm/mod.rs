@@ -1,48 +1,76 @@
 use std::collections::HashMap;
 
-use crate::constants::PROJECT_FILE;
 use actix_web::web::Bytes;
-use actix_web::HttpRequest;
-use diesel::MysqlConnection;
-use log::Level::Trace;
-use log::{debug, error, log_enabled, trace};
+
+use actix_web::http::header::HeaderMap;
+use actix_web::http::StatusCode;
+
+use log::{debug, error, trace};
 use regex::Regex;
+use sea_orm::DatabaseConnection;
 use std::string::String;
 
-use crate::error::internal_error::InternalError;
-use crate::repository::deploy::{handle_post_deploy, DeployInfo};
-use crate::repository::models::RepositorySummary;
-
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
-use crate::repository::npm::utils::{generate_get_response, is_valid, parse_project_to_directory};
+use crate::repository::npm::utils::generate_get_response;
 
-use crate::repository::types::RepoResponse::{
-    BadRequest, CreatedWithJSON, IAmATeapot, NotAuthorized, NotFound, ProjectResponse,
-};
-use crate::repository::types::{
-    Project, RepoResponse, RepoResult, RepositoryRequest, RepositoryHandler,
-};
-use crate::repository::utils::{get_project_data, get_versions, process_storage_files};
-use crate::system::utils::{can_deploy_basic_auth, can_read_basic_auth};
+use crate::authentication::{verify_login, Authentication};
 
+use crate::repository::response::RepoResponse;
+use crate::storage::models::Storage;
+use crate::system::permissions::options::CanIDo;
+use crate::system::user::UserModel;
+
+pub mod error;
 pub mod models;
 mod utils;
 
-pub struct NPMHandler;
+use crate::repository::data::RepositoryConfig;
+use crate::repository::handler::RepositoryHandler;
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
-// name/version
-impl RepositoryHandler for NPMHandler {
-    fn handle_get(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return RepoResult::Ok(NotAuthorized);
+use crate::error::api_error::APIError;
+use crate::error::internal_error::InternalError;
+use crate::storage::file::StorageFileResponse;
+use crate::storage::DynamicStorage;
+use async_trait::async_trait;
+use tokio::sync::RwLockReadGuard;
+
+pub struct NPMHandler<'a> {
+    config: RepositoryConfig,
+    storage: RwLockReadGuard<'a, DynamicStorage>,
+}
+
+impl<'a> NPMHandler<'a> {
+    pub fn create(
+        repository: RepositoryConfig,
+        storage: RwLockReadGuard<'a, DynamicStorage>,
+    ) -> NPMHandler<'a> {
+        NPMHandler {
+            config: repository,
+            storage,
         }
-        if http.headers().get("npm-command").is_some() {
-            if request.value.contains(".tgz") {
-                let split: Vec<&str> = request.value.split("/-/").collect();
+    }
+    fn bad_npm_command() -> actix_web::Error {
+        APIError::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()
+    }
+}
+// name/version
+#[async_trait]
+impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
+    async fn handle_get(
+        &self,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
+    ) -> Result<RepoResponse, actix_web::Error> {
+        let caller: UserModel = authentication.get_user(conn).await??;
+        if let Some(value) = caller.can_read_from(&self.config)? {
+            return Err(value.into());
+        }
+        if headers.get("npm-command").is_some() {
+            if path.contains(".tgz") {
+                let split: Vec<&str> = path.split("/-/").collect();
                 let package = split.get(0).unwrap().to_string();
                 let file = split.get(1).unwrap().to_string();
                 let version = file
@@ -53,107 +81,90 @@ impl RepositoryHandler for NPMHandler {
                     "Trying to Retrieve Package: {} Version {}. Location {}",
                     &package, &version, &nitro_file_location
                 );
-                let result = request.storage.get_file_as_response(
-                    &request.repository,
-                    &nitro_file_location,
-                    http,
-                )?;
-                return if result.is_left() {
-                    Ok(RepoResponse::FileResponse(result.left().unwrap()))
-                } else {
-                    Ok(BadRequest("Expected File got Folder".to_string()))
-                };
-            }
-            let get_response =
-                generate_get_response(&request.storage, &request.repository, &request.value)
-                    .unwrap();
-            if get_response.is_none() {
-                return Ok(NotFound);
-            }
-            let string = serde_json::to_string_pretty(&get_response.unwrap())?;
-            Ok(RepoResponse::OkWithJSON(string))
-        } else {
-            let result =
-                request
+
+                let result = self
                     .storage
-                    .get_file_as_response(&request.repository, &request.value, http)?;
-            if result.is_left() {
-                Ok(RepoResponse::FileResponse(result.left().unwrap()))
-            } else {
-                let vec = result.right().unwrap();
-
-                let file_response = process_storage_files(
-                    &request.storage,
-                    &request.repository,
-                    vec,
-                    &request.value,
-                )?;
-                Ok(RepoResponse::NitroFileList(file_response))
+                    .get_file_as_response(&self.config, &nitro_file_location)
+                    .await
+                    .map_err(InternalError::from)?;
+                return Ok(RepoResponse::FileResponse(result));
+            }
+            let get_response = generate_get_response(&self.storage, &self.config, path)
+                .await
+                .unwrap();
+            if get_response.is_none() {
+                return Err(APIError::not_found().into());
+            }
+            let string =
+                serde_json::to_value(&get_response.unwrap()).map_err(InternalError::from)?;
+            Ok(RepoResponse::Json(string, StatusCode::OK))
+        } else {
+            match self
+                .storage
+                .get_file_as_response(&self.config, path)
+                .await
+                .map_err(InternalError::from)?
+            {
+                StorageFileResponse::List(list) => {
+                    let files = self.process_storage_files(list, path).await?;
+                    Ok(RepoResponse::try_from((files, StatusCode::OK))?)
+                }
+                value => Ok(RepoResponse::FileResponse(value)),
             }
         }
     }
 
-    fn handle_post(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-        _bytes: Bytes,
-    ) -> RepoResult {
-        Ok(IAmATeapot("POST is not handled in NPM".to_string()))
-    }
+    async fn handle_put(
+        &self,
 
-    fn handle_put(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
+        path: &str,
+        headers: &HeaderMap,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
         bytes: Bytes,
-    ) -> RepoResult {
-        for x in http.headers() {
-            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
-        }
-        log::trace!("URL: {}", request.value);
+    ) -> Result<RepoResponse, actix_web::Error> {
         let user = Regex::new(r"-/user/org\.couchdb\.user:[a-zA-Z]+").unwrap();
         // Check if its a user verification request
-        if user.is_match(request.value.as_str()) {
+        if user.is_match(path) {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
-            let username = request.value.replace("-/user/org.couchdb.user:", "");
-            return if is_valid(&username, &json, conn)? {
-                trace!("User Request for {} was authorized", &username);
-                let message = format!("user '{}' created", username);
-                Ok(CreatedWithJSON(serde_json::to_string(&LoginResponse {
-                    ok: message,
-                })?))
-            } else {
-                trace!("User Request for {} was not authorized", &username);
-                Ok(NotAuthorized)
-            };
+            let username = path.replace("-/user/org.couchdb.user:", "");
+            let user = verify_login(username, json.password, conn).await??;
+            trace!("User Request for {} was authorized", &user.username);
+            let message = format!("user '{}' created", user.username);
+            let created_response = serde_json::to_value(&LoginResponse { ok: message })
+                .map_err(InternalError::from)?;
+            return Ok(RepoResponse::Json(created_response, StatusCode::CREATED));
         }
         //Handle Normal Request
-        let (allowed, user) = can_deploy_basic_auth(http.headers(), &request.repository, conn)?;
-        if !allowed {
-            return RepoResult::Ok(NotAuthorized);
+        let caller: UserModel = authentication.get_user(conn).await??;
+        if let Some(value) = caller.can_deploy_to(&self.config)? {
+            return Err(value.into());
         }
-        let user = user.unwrap();
-        if let Some(npm_command) = http.headers().get("npm-command") {
+        if let Some(npm_command) = headers.get("npm-command") {
             let npm_command = npm_command.to_str().unwrap();
-            trace!("NPM {} Command {}", &request.value, &npm_command);
+            trace!("NPM {} Command {}", &path, &npm_command);
             if npm_command.eq("publish") {
-                let publish_request: PublishRequest = serde_json::from_slice(bytes.as_ref())?;
-                let attachments: HashMap<String, serde_json::Result<Attachment>> = publish_request
+                let publish_request: PublishRequest =
+                    serde_json::from_slice(bytes.as_ref()).map_err(APIError::bad_request)?;
+
+                let attachments: HashMap<String, Result<Attachment, APIError>> = publish_request
                     ._attachments
                     .iter()
-                    .map(|(key, value)| {
-                        let attachment: serde_json::Result<Attachment> =
-                            serde_json::from_value(value.clone());
+                    .map(|(key, path)| {
+                        let attachment: Result<Attachment, APIError> =
+                            serde_json::from_value(path.clone()).map_err(APIError::bad_request);
                         (key.clone(), attachment)
                     })
                     .collect();
+                let mut exists = false;
                 for (attachment_key, attachment) in attachments {
                     let attachment = attachment?;
-                    let attachment_data = base64::decode(attachment.data)?;
+                    let attachment_data =
+                        base64::decode(attachment.data).map_err(APIError::bad_request)?;
                     for (version, version_data) in publish_request.versions.iter() {
-                        let version_data_string = serde_json::to_string(version_data)?;
+                        let version_data_string =
+                            serde_json::to_string(version_data).map_err(APIError::bad_request)?;
                         trace!(
                             "Publishing {} Version: {} File:{} Data {}",
                             &publish_request.name,
@@ -165,203 +176,77 @@ impl RepositoryHandler for NPMHandler {
                             format!("{}/{}/{}", &publish_request.name, version, &attachment_key);
                         let npm_version_data =
                             format!("{}/{}/package.json", &publish_request.name, version);
-                        request.storage.save_file(
-                            &request.repository,
-                            attachment_data.as_ref(),
-                            &attachment_file_loc,
-                        )?;
-                        request.storage.save_file(
-                            &request.repository,
-                            version_data_string.as_bytes(),
-                            &npm_version_data,
-                        )?;
+
+                        if self
+                            .storage
+                            .save_file(&self.config, attachment_data.as_ref(), &attachment_file_loc)
+                            .await
+                            .map_err(InternalError::from)?
+                        {
+                            exists = true
+                        };
+
+                        if self
+                            .storage
+                            .save_file(
+                                &self.config,
+                                version_data_string.as_bytes(),
+                                &npm_version_data,
+                            )
+                            .await
+                            .map_err(InternalError::from)?
+                        {
+                            exists = true;
+                        };
 
                         let project_folder = publish_request.name.clone();
+                        let version_folder =
+                            format!("{}/{}", &project_folder, &version_data.version);
+
                         trace!("Project Folder Location {}", project_folder);
-                        let repository = request.repository.clone();
-                        let storage = request.storage.clone();
                         let version_for_saving = version_data.clone();
-                        let user = user.clone();
-                        actix_web::rt::spawn(async move {
-                            if let Err(error) = crate::repository::npm::utils::update_project(
-                                &storage,
-                                &repository,
-                                &project_folder,
-                                version_for_saving.clone(),
-                            ) {
-                                error!("Unable to update {}, {}", PROJECT_FILE, error);
-                                if log_enabled!(Trace) {
-                                    trace!(
-                                        "Version {} Name: {}",
-                                        &version_for_saving.version,
-                                        &version_for_saving.name
-                                    );
-                                }
-                            }
-
-                            if let Err(error) =
-                            crate::repository::utils::update_project_in_repositories(
-                                &storage,
-                                &repository,
-                                version_for_saving.name.clone(),
+                        let user = caller.clone();
+                        if let Err(error) = self
+                            .post_deploy(
+                                project_folder,
+                                version_folder,
+                                user,
+                                version_for_saving.into(),
                             )
-                            {
-                                error!("Unable to update repository.json, {}", error);
-                                if log_enabled!(Trace) {
-                                    trace!(
-                                        "Version {} Name: {}",
-                                        &version_for_saving.version,
-                                        &version_for_saving.name
-                                    );
-                                }
-                            }
-                            let info = DeployInfo {
-                                user: user.clone(),
-                                version: version_for_saving.version.clone(),
-                                name: version_for_saving.name.clone(),
-                                version_folder: format!(
-                                    "{}/{}",
-                                    &project_folder, &version_for_saving.version
-                                ),
-                            };
-
-                            debug!("Starting Post Deploy Tasks");
-                            if log_enabled!(Trace) {
-                                trace!("Data {}", &info);
-                            }
-                            let deploy = handle_post_deploy(&storage, &repository, &info).await;
-                            if let Err(error) = deploy {
-                                error!("Error Handling Post Deploy Tasks {}", error);
-                            } else {
-                                debug!("All Post Deploy Tasks Completed and Happy :)");
-                            }
-                        });
+                            .await
+                        {
+                            error!("Unable to complete post processing Tasks {}", error);
+                        }
                     }
                 }
 
-                return Ok(RepoResponse::Ok);
+                return Ok(RepoResponse::PUTResponse(
+                    exists,
+                    format!(
+                        "/storages/{}/{}/{}",
+                        &self.storage.storage_config().name,
+                        &self.config.name,
+                        path
+                    ),
+                ));
             }
-            Ok(BadRequest(format!("Bad Request {}", npm_command)))
+            Err(NPMHandler::bad_npm_command())
         } else {
-            Ok(BadRequest("Missing NPM-Command".to_string()))
+            Err(NPMHandler::bad_npm_command())
         }
     }
+}
 
-    fn handle_patch(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-        _bytes: Bytes,
-    ) -> RepoResult {
-        Ok(IAmATeapot("Patch is not handled in NPM".to_string()))
+impl NitroRepositoryHandler for NPMHandler<'_> {
+    fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
+        path.into().replace('.', "/").replace(':', "/")
     }
 
-    fn handle_head(
-        _request: &RepositoryRequest,
-        _http: &HttpRequest,
-        _conn: &MysqlConnection,
-    ) -> RepoResult {
-        Ok(IAmATeapot("HEAD is not handled in NPM".to_string()))
+    fn storage(&self) -> &DynamicStorage {
+        &self.storage
     }
 
-    fn handle_versions(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return RepoResult::Ok(NotAuthorized);
-        }
-
-        let vec = get_versions(&request.storage, &request.repository, request.value.clone())?;
-        Ok(RepoResponse::NitroVersionListingResponse(vec))
-    }
-
-    fn handle_version(
-        request: &RepositoryRequest,
-        version: String,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return RepoResult::Ok(NotAuthorized);
-        }
-        let project_dir = parse_project_to_directory(&request.value);
-
-        let project_data =
-            get_project_data(&request.storage, &request.repository, project_dir.clone())?;
-        if let Some(project_data) = project_data {
-            let version_data = crate::repository::utils::get_version_data(
-                &request.storage,
-                &request.repository,
-                format!("{}/{}", project_dir, &version),
-            )?;
-
-            let project = Project {
-                repo_summary: RepositorySummary::new(&request.repository),
-                project: project_data,
-                version: version_data,
-                frontend_response: None,
-            };
-            return Ok(ProjectResponse(project));
-        }
-        RepoResult::Ok(NotFound)
-    }
-
-    fn handle_project(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> RepoResult {
-        for x in http.headers() {
-            log::trace!("Header {}: {}", x.0, x.1.to_str().unwrap());
-        }
-        log::trace!("URL: {}", request.value);
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return RepoResult::Ok(NotAuthorized);
-        }
-        let project_dir = parse_project_to_directory(&request.value);
-
-        let project_data =
-            get_project_data(&request.storage, &request.repository, project_dir.clone())?;
-        if let Some(project_data) = project_data {
-            let version_data = crate::repository::utils::get_version_data(
-                &request.storage,
-                &request.repository,
-                format!("{}/{}", project_dir, &project_data.versions.latest_version),
-            )?;
-
-            let project = Project {
-                repo_summary: RepositorySummary::new(&request.repository),
-                project: project_data,
-                version: version_data,
-                frontend_response: None,
-            };
-            return Ok(ProjectResponse(project));
-        }
-        RepoResult::Ok(NotFound)
-    }
-
-    fn latest_version(
-        request: &RepositoryRequest,
-        http: &HttpRequest,
-        conn: &MysqlConnection,
-    ) -> Result<Option<String>, InternalError> {
-        if !can_read_basic_auth(http.headers(), &request.repository, conn)?.0 {
-            return Ok(None);
-        }
-        let project_dir = parse_project_to_directory(&request.value);
-
-        let project_data = get_project_data(&request.storage, &request.repository, project_dir)?;
-        Ok(if let Some(project_data) = project_data {
-            let latest_release = project_data.versions.latest_release;
-            if latest_release.is_empty() {
-                Some(project_data.versions.latest_version)
-            } else {
-                Some(latest_release)
-            }
-        } else {
-            None
-        })
+    fn repository(&self) -> &RepositoryConfig {
+        &self.config
     }
 }
