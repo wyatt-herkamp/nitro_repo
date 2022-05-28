@@ -73,6 +73,7 @@ pub struct StorageSaver {
 pub struct StorageConfig {
     pub public_name: String,
     pub name: String,
+    #[serde(default="crate::utils::get_current_time")]
     pub created: i64,
 }
 

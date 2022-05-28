@@ -1,3 +1,5 @@
+pub mod web;
+
 use log::{error, info};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

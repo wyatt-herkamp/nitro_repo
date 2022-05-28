@@ -83,13 +83,10 @@ export async function getUser(token: string | undefined) {
         const resultData = result.data;
         let value = JSON.stringify(resultData);
 
-        let response: BasicResponse<unknown> = JSON.parse(value);
+        let response: User = JSON.parse(value);
 
-        if (response.success) {
-          return Ok(response.data as User);
-        } else {
-          return Err(INTERNAL_ERROR);
-        }
+        return Ok(response);
+
       },
       (err) => {
         if (err.response) {
