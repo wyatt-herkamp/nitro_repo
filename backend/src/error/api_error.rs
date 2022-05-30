@@ -6,6 +6,7 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use serde_json::json;
 
+#[derive(Debug)]
 pub struct APIError {
     pub message: Option<String>,
     pub status_code: StatusCode,
@@ -35,15 +36,6 @@ impl From<(&str, StatusCode)> for APIError {
         APIError {
             message: Some(message.to_string()),
             status_code: status,
-        }
-    }
-}
-impl Debug for APIError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if let Some(message) = &self.message {
-            write!(f, "Status Code: {} Error: {}", self.status_code, message)
-        } else {
-            write!(f, "Status Code: {}", self.status_code,)
         }
     }
 }
