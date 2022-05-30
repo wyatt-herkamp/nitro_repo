@@ -1,15 +1,13 @@
 use std::fmt::Debug;
 
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::error::internal_error::InternalError;
 use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::security::Visibility;
-
 use crate::repository::settings::{Policy, FRONTEND_CONFIG};
 use crate::storage::models::Storage;
-
-use crate::error::internal_error::InternalError;
-use serde::de::DeserializeOwned;
 
 /// Types of Repositories that can exist.
 #[derive(Serialize, Deserialize, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
@@ -43,7 +41,7 @@ impl RepositoryConfig {
     /// Pull the Frontend Config
     pub async fn get_frontend_config(
         &self,
-        storage: &Box<dyn Storage>,
+        storage: &dyn Storage,
     ) -> Result<Option<Frontend>, InternalError> {
         let option = storage.get_file(self, FRONTEND_CONFIG).await?;
         if option.is_none() {
@@ -56,7 +54,7 @@ impl RepositoryConfig {
     /// Update the frontend config
     async fn save_frontend_config(
         &self,
-        storage: &Box<dyn Storage>,
+        storage: &dyn Storage,
         frontend: Option<Frontend>,
     ) -> Result<(), InternalError> {
         if frontend.is_none() {

@@ -7,7 +7,6 @@ use chrono::{DateTime, Duration, Local};
 use nitro_log::config::Config;
 use nitro_log::{LoggerBuilders, NitroLogger};
 use rust_embed::RustEmbed;
-use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
 use crate::settings::models::Mode;
@@ -54,7 +53,6 @@ pub fn default_expiration() -> i64 {
     let time = Local::now();
     time.add(Duration::days(30)).timestamp_millis()
 }
-
 
 pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
     let option = header_map.get("accept");

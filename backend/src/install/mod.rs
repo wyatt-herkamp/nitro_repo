@@ -1,15 +1,20 @@
-use std::io;
-
-use log::{error, info, trace};
-use serde::{Deserialize, Serialize};
-
-use crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode}, ExecutableCommand, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
-use sea_orm::ActiveValue::Set;
-use sea_orm::{DatabaseConnection, EntityTrait, Schema};
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
+use std::io;
 use std::io::{Stdout, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use log::{error, info, trace};
+use sea_orm::ActiveValue::Set;
+use sea_orm::ConnectionTrait;
+use sea_orm::{DatabaseConnection, EntityTrait, Schema};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -18,17 +23,16 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame, Terminal,
 };
+use unicode_width::UnicodeWidthStr;
 
-use thiserror::Error;
-
-use crate::settings::models::{Application, Database, EmailSetting, Mode, MysqlSettings, SecuritySettings, SiteSetting, StringMap};
+use crate::settings::models::{
+    Application, Database, EmailSetting, Mode, MysqlSettings, SecuritySettings, SiteSetting,
+};
 use crate::system::permissions::UserPermissions;
-use crate::system::{hash, user};
 use crate::system::user::UserEntity;
+use crate::system::{hash, user};
 use crate::utils::get_current_time;
 use crate::{authentication, GeneralSettings};
-use sea_orm::ConnectionTrait;
-use unicode_width::UnicodeWidthStr;
 
 #[derive(Error, Debug)]
 pub enum InstallError {
@@ -115,9 +119,7 @@ impl From<UserStage> for user::database::ActiveModel {
                 repository_manager: true,
                 deployer: None,
                 viewer: None,
-            }
-                .try_into()
-                .unwrap()),
+            }),
             created: Set(get_current_time()),
         }
     }
@@ -380,7 +382,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
                 Constraint::Length(1),
                 Constraint::Length(3),
             ]
-                .as_ref(),
+            .as_ref(),
         )
         .split(f.size());
     let mut messages: Vec<ListItem> = Vec::new();
@@ -561,6 +563,6 @@ fn close(mut terminal: Terminal<CrosstermBackend<Stdout>>) {
         LeaveAlternateScreen,
         DisableMouseCapture
     )
-        .unwrap();
+    .unwrap();
     terminal.show_cursor().unwrap();
 }

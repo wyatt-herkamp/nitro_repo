@@ -1,12 +1,13 @@
 use std::env::current_dir;
+
+use clap::Parser;
+use log::error;
+use style_term::{DefaultColor, StyleString};
+
 use crate::install::load_installer;
 use crate::settings::models::Mode;
 use crate::updater;
 use crate::utils::load_logger;
-use clap::Parser;
-use log::error;
-use std::path::Path;
-use style_term::{DefaultColor, StyleString};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

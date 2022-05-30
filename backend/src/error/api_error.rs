@@ -1,10 +1,10 @@
-use actix_web::body::BoxBody;
-use actix_web::http::StatusCode;
-
-use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
-use serde_json::json;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+
+use actix_web::body::BoxBody;
+use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
+use serde_json::json;
 
 pub struct APIError {
     pub message: Option<String>,
@@ -41,14 +41,9 @@ impl From<(&str, StatusCode)> for APIError {
 impl Debug for APIError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(message) = &self.message {
-            write!(
-                f,
-                "Status Code: {} Error: {}",
-                self.status_code.to_string(),
-                message
-            )
+            write!(f, "Status Code: {} Error: {}", self.status_code, message)
         } else {
-            write!(f, "Status Code: {}", self.status_code.to_string(),)
+            write!(f, "Status Code: {}", self.status_code,)
         }
     }
 }
@@ -56,14 +51,9 @@ impl Debug for APIError {
 impl Display for APIError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(message) = &self.message {
-            write!(
-                f,
-                "Status Code: {} Error: {}",
-                self.status_code.to_string(),
-                message
-            )
+            write!(f, "Status Code: {} Error: {}", self.status_code, message)
         } else {
-            write!(f, "Status Code: {}", self.status_code.to_string(),)
+            write!(f, "Status Code: {}", self.status_code,)
         }
     }
 }

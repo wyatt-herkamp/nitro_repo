@@ -1,18 +1,16 @@
+use std::collections::HashMap;
+
 use actix_web::body::BoxBody;
 use actix_web::http::header::CONTENT_LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use actix_web::{HttpRequest, HttpResponse, Responder};
-use std::collections::HashMap;
-
-use crate::error::internal_error::InternalError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
-
 use crate::repository::frontend::FrontendResponse;
-
 use crate::repository::nitro::{NitroVersion, ProjectData, VersionData};
 use crate::storage::file::StorageFileResponse;
 
@@ -45,7 +43,7 @@ impl<T: Serialize> TryFrom<(T, StatusCode)> for RepoResponse {
 
     fn try_from((value, status): (T, StatusCode)) -> Result<Self, Self::Error> {
         let result = serde_json::to_value(value)?;
-        return Ok(Self::Json(result, status));
+        Ok(Self::Json(result, status))
     }
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]

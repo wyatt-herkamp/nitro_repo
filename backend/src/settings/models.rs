@@ -1,11 +1,9 @@
-use crate::error::internal_error::InternalError;
-
-use semver::{Error, Version};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+
 use sea_orm::ConnectOptions;
-use sea_orm::DbErr::Conn;
+use semver::{Error, Version};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -51,15 +49,13 @@ impl Default for Internal {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "type", content = "settings")]
 pub enum Database {
-    Mysql(MysqlSettings)
+    Mysql(MysqlSettings),
 }
-
+#[allow(clippy::from_over_into)]
 impl Into<sea_orm::ConnectOptions> for Database {
     fn into(self) -> ConnectOptions {
         match self {
-            Database::Mysql(mysql) => {
-                ConnectOptions::new(mysql.to_string())
-            }
+            Database::Mysql(mysql) => ConnectOptions::new(mysql.to_string()),
         }
     }
 }

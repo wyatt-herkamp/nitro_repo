@@ -1,27 +1,25 @@
 use std::env::current_dir;
 use std::error::Error;
 use std::io::ErrorKind;
-use std::net::ToSocketAddrs;
 use std::process::exit;
-use std::rc::Rc;
+
 use actix_cors::Cors;
-use actix_web::{App, HttpServer, web};
-use actix_web::guard::GuardContext;
-use actix_web::web::Data;
-use log::{info, trace};
+use actix_web::main;
+use actix_web::web::{Data, PayloadConfig};
+use actix_web::{web, App, HttpServer};
+use log::info;
 use semver::Version;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
+
+use api::authentication::middleware::HandleSession;
+use api::authentication::session::SessionManager;
 use api::cli::handle_cli;
-use api::{frontend, NitroRepo, storage, system};
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
 use api::storage::multi::MultiStorageController;
 use api::utils::load_logger;
-use actix_web::main;
-use sea_orm::DatabaseConnection;
-use api::authentication::middleware::HandleSession;
-use api::authentication::session::SessionManager;
+use api::{frontend, storage, system, NitroRepo};
 
 #[main]
 async fn main() -> std::io::Result<()> {
@@ -32,25 +30,32 @@ async fn main() -> std::io::Result<()> {
     let configs = current_dir.join("cfg");
     let main_config = current_dir.join("nitro_repo.toml");
     if !main_config.exists() {
-        eprintln!("Config not found. Should be at {:?}", main_config.as_os_str());
+        eprintln!(
+            "Config not found. Should be at {:?}",
+            main_config.as_os_str()
+        );
         exit(1)
     }
 
-    let init_settings: GeneralSettings = toml::from_str(&read_to_string(&main_config).await?).map_err(convert_error)?;
+    let init_settings: GeneralSettings =
+        toml::from_str(&read_to_string(&main_config).await?).map_err(convert_error)?;
     let version = Version::parse(&init_settings.internal.version).map_err(convert_error)?;
     // Sets the Log Location
     std::env::set_var("LOG_LOCATION", &init_settings.application.log);
     load_logger(&init_settings.application.mode);
     info!("Initializing Database Connection");
-    let connection = sea_orm::Database::connect(init_settings.database.clone()).await.map_err(convert_error)?;
+    let connection = sea_orm::Database::connect(init_settings.database.clone())
+        .await
+        .map_err(convert_error)?;
     info!("Initializing Session and Authorization");
     let session_manager = SessionManager::try_from(init_settings.session.clone()).unwrap();
     info!("Initializing State");
     let settings = load_configs(configs).await.map_err(convert_error)?;
 
-
     let storages = current_dir.join("storages.json");
-    let storages = MultiStorageController::init(storages).await.map_err(convert_error)?;
+    let storages = MultiStorageController::init(storages)
+        .await
+        .map_err(convert_error)?;
 
     let nitro_repo = NitroRepo {
         settings: RwLock::new(settings),
@@ -60,7 +65,7 @@ async fn main() -> std::io::Result<()> {
 
     let application = nitro_repo.core.application.clone();
 
-    let max_upload = application.max_upload;
+    let max_upload = Data::new(PayloadConfig::default().limit(application.max_upload));
 
     let address = application.address.clone();
     let storages_data = Data::new(storages);
@@ -69,26 +74,29 @@ async fn main() -> std::io::Result<()> {
     let session_data = Data::new(session_manager);
 
     let server = HttpServer::new(move || {
-        App::new().
-            app_data(storages_data.clone()).
-            app_data(site_state.clone()).
-            app_data(database_data.clone()).
-            app_data(session_data.clone())
+        App::new()
+            .app_data(storages_data.clone())
+            .app_data(site_state.clone())
+            .app_data(database_data.clone())
+            .app_data(session_data.clone())
+            .app_data(max_upload.clone())
             .wrap(
                 Cors::default()
                     .allow_any_header()
                     .allow_any_method()
-                    .allow_any_origin().supports_credentials(),
+                    .allow_any_origin()
+                    .supports_credentials(),
             )
-
             .service(
-                web::scope("/api").wrap(HandleSession {})
+                web::scope("/api")
+                    .wrap(HandleSession {})
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)
-                    .service(web::scope("/admin")
-                        .configure(system::web::init_user_manager_routes)
-                        .configure(storage::multi::web::init_admin_routes)
-                    )
+                    .service(
+                        web::scope("/admin")
+                            .configure(system::web::init_user_manager_routes)
+                            .configure(storage::multi::web::init_admin_routes),
+                    ),
             )
             .configure(frontend::init)
     });
@@ -112,7 +120,6 @@ async fn main() -> std::io::Result<()> {
 
     return server.bind(address)?.run().await;
 }
-
 fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error {
     std::io::Error::new(ErrorKind::Other, e)
 }

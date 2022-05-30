@@ -1,17 +1,18 @@
-use crate::error::api_error::APIError;
+use std::fs::{DirEntry, Metadata};
+use std::path::PathBuf;
+use std::time::SystemTime;
 
-use crate::storage::error::StorageError;
 use actix_files::NamedFile;
 use actix_web::body::BoxBody;
 use actix_web::http::header::ACCEPT;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError};
-use log::error;
+use log::{as_error, error};
 use serde::Serialize;
-use std::fs::{DirEntry, Metadata};
-use std::path::PathBuf;
-use std::time::SystemTime;
 use tokio::fs::OpenOptions;
+
+use crate::error::api_error::APIError;
+use crate::storage::error::StorageError;
 
 ///Storage Files are just a data container holding the file name, directory relative to the root of nitro_repo and if its a directory
 #[derive(Serialize, Clone, Debug)]
@@ -29,7 +30,10 @@ impl StorageFile {
     fn meta_data(metadata: Metadata) -> (u128, u128, u64, bool) {
         let created = metadata
             .created()
-            .unwrap_or(SystemTime::now())
+            .unwrap_or_else(|error| {
+                error!(error = as_error!(error); "Error getting created time");
+                SystemTime::now()
+            })
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_micros();

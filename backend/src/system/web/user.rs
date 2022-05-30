@@ -1,9 +1,9 @@
-use actix_web::{HttpRequest, HttpResponse, web};
-use actix_web::web::JsonBody;
+use actix_web::get;
+use actix_web::{web, HttpResponse};
 use sea_orm::DatabaseConnection;
+
 use crate::authentication::Authentication;
 use crate::system::user::UserModel;
-use actix_web::get;
 
 #[get("/me")]
 pub async fn me(

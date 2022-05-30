@@ -1,24 +1,25 @@
-pub mod web;
-
-use log::{error, info};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use log::{error, info};
 use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
-
-use crate::storage::models::{
-    Storage, StorageFactory, StorageSaver, StorageStatus, STORAGE_FILE, STORAGE_FILE_BAK,
-};
+use tokio::io::AsyncWriteExt;
+use tokio::sync::{RwLock, RwLockReadGuard};
 
 use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
 use crate::storage::file::StorageFile;
+use crate::storage::models::{
+    Storage, StorageFactory, StorageSaver, StorageStatus, STORAGE_FILE, STORAGE_FILE_BAK,
+};
 use crate::storage::DynamicStorage;
-use tokio::io::AsyncWriteExt;
-use tokio::sync::{RwLock, RwLockReadGuard};
 
-async fn load_storages(storages_file: PathBuf) -> Result<HashMap<String, DynamicStorage>, StorageError> {
+pub mod web;
+
+async fn load_storages(
+    storages_file: PathBuf,
+) -> Result<HashMap<String, DynamicStorage>, StorageError> {
     if !storages_file.exists() {
         return Ok(HashMap::new());
     }

@@ -1,5 +1,4 @@
 use actix_web::error::{ErrorBadRequest, JsonPayloadError};
-
 use actix_web::web::JsonConfig;
 use actix_web::HttpRequest;
 use log::trace;
@@ -10,5 +9,5 @@ pub fn json_config() -> JsonConfig {
 
 pub fn handle(payload: JsonPayloadError, _request: &HttpRequest) -> actix_web::Error {
     trace!("JSON Error: {}", payload);
-    ErrorBadRequest(format!("Bad Json Payload {}", payload.to_string()))
+    ErrorBadRequest(format!("Bad Json Payload {}", payload))
 }

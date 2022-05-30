@@ -1,13 +1,14 @@
-use actix_web::{HttpRequest, HttpResponse, HttpResponseBuilder, post};
 use actix_web::cookie::Cookie;
 use actix_web::web;
+use actix_web::{post, HttpRequest, HttpResponse};
 use log::error;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
+
 use crate::authentication::session::SessionManager;
 use crate::authentication::session::SessionManagerType;
 use crate::authentication::verify_login;
-use crate::system::user::UserModel;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
     pub username: String,

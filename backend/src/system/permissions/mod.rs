@@ -1,12 +1,13 @@
-pub mod options;
-pub mod orm;
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::repository::data::RepositoryConfig;
 use crate::repository::settings::security::Visibility;
 use crate::repository::settings::Policy;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
+
+pub mod options;
+pub mod orm;
 
 #[derive(Error, Debug)]
 pub enum PermissionError {
@@ -42,19 +43,11 @@ pub struct RepositoryPermission {
     pub permissions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct RepositoryPermissionValue {
     pub policy: Option<Policy>,
     #[serde(rename = "type")]
     pub repo_type: Option<String>,
-}
-
-impl Default for RepositoryPermission {
-    fn default() -> Self {
-        RepositoryPermission {
-            permissions: vec![],
-        }
-    }
 }
 
 pub fn can_deploy(

@@ -1,9 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 
-use serde::{Deserialize, Serialize};
-
 use async_trait::async_trait;
-
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
@@ -73,7 +71,7 @@ pub struct StorageSaver {
 pub struct StorageConfig {
     pub public_name: String,
     pub name: String,
-    #[serde(default="crate::utils::get_current_time")]
+    #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
 }
 
@@ -99,9 +97,7 @@ impl StorageFactory {
 impl StorageFactory {
     pub async fn build(self) -> Result<DynamicStorage, (StorageError, StorageFactory)> {
         match &self.storage_type {
-            StorageType::LocalStorage => {
-                LocalStorage::new(self).map(|v| DynamicStorage::LocalStorage(v))
-            }
+            StorageType::LocalStorage => LocalStorage::new(self).map(DynamicStorage::LocalStorage),
         }
     }
 }

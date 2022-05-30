@@ -1,10 +1,6 @@
 use badge_maker::Style;
 use serde::{Deserialize, Serialize};
 
-fn default() -> bool {
-    true
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Frontend {
     #[serde(default = "PageProvider::default")]

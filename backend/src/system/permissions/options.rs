@@ -1,14 +1,14 @@
-use crate::system::permissions::{can_deploy, can_read, UserPermissions};
-
-use crate::error::internal_error::InternalError;
-use crate::repository::settings::security::Visibility;
-use crate::system::user::UserModel;
-use actix_web::http::StatusCode;
-use actix_web::ResponseError;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 
+use actix_web::http::StatusCode;
+use actix_web::ResponseError;
+
+use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
+use crate::repository::settings::security::Visibility;
+use crate::system::permissions::{can_deploy, can_read};
+use crate::system::user::UserModel;
 
 pub struct MissingPermission(String);
 
@@ -51,7 +51,7 @@ pub trait CanIDo {
 
 impl CanIDo for UserModel {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission> {
-        let permissions: UserPermissions = self.permissions.clone().try_into().unwrap();
+        let permissions = &self.permissions;
 
         if !permissions.admin && !permissions.repository_manager {
             return Err("repository_manager".into());
@@ -60,7 +60,7 @@ impl CanIDo for UserModel {
     }
 
     fn can_i_edit_users(&self) -> Result<(), MissingPermission> {
-        let permissions: UserPermissions = self.permissions.clone().try_into().unwrap();
+        let permissions = &self.permissions;
         if !permissions.admin && !permissions.user_manager {
             return Err("user_manager".into());
         }
@@ -68,7 +68,7 @@ impl CanIDo for UserModel {
     }
 
     fn can_i_admin(&self) -> Result<(), MissingPermission> {
-        let permissions: UserPermissions = self.permissions.clone().try_into().unwrap();
+        let permissions = &self.permissions;
 
         if !permissions.admin {
             return Err("admin".into());

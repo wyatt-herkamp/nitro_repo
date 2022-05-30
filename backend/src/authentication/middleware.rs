@@ -1,12 +1,7 @@
 use std::fmt;
 use std::future::{ready, Ready};
 use std::rc::Rc;
-
 use std::time::SystemTime;
-
-use crate::authentication::{
-    auth_token, session::Session, session::SessionManager, verify_login, Authentication,
-};
 
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::http::header::{HeaderValue, AUTHORIZATION, ORIGIN, SET_COOKIE};
@@ -15,12 +10,14 @@ use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     web, Error, HttpMessage,
 };
-
 use futures_util::future::LocalBoxFuture;
 use log::{debug, trace, warn};
 use sea_orm::DatabaseConnection;
 
 use crate::authentication::session::SessionManagerType;
+use crate::authentication::{
+    auth_token, session::Session, session::SessionManager, verify_login, Authentication,
+};
 
 pub struct HandleSession;
 
@@ -97,8 +94,7 @@ where
                     } else {
                         (Authentication::NoIdentification, Option::None)
                     }
-                } else {
-                    let mut session = session.unwrap();
+                } else if let Some(mut session) = session {
                     if session.expiration <= SystemTime::UNIX_EPOCH {
                         session = session_manager
                             .re_create_session(&session.token)
@@ -106,6 +102,8 @@ where
                             .unwrap();
                     }
                     (Authentication::Session(session.clone()), Option::None)
+                } else {
+                    (Authentication::NoIdentification, Option::None)
                 }
             } else if let Some(header) = req.headers().get(AUTHORIZATION) {
                 //If it is an Authorization Header pull Database from App Data
