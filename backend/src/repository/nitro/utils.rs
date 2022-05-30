@@ -1,17 +1,18 @@
+use std::fs::read_to_string;
+use std::path::Path;
+
+use log::debug;
+
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing, VersionData};
 use crate::repository::response::VersionResponse;
-
 use crate::storage::models::Storage;
 use crate::storage::DynamicStorage;
-use log::debug;
-use std::fs::read_to_string;
-use std::path::Path;
 
-pub async fn get_version(
-    storage: &DynamicStorage,
+pub async fn get_version<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     project: String,
     version: String,
@@ -35,8 +36,8 @@ pub fn get_version_by_data(
     None
 }
 
-pub async fn update_project_in_repositories(
-    storage: &DynamicStorage,
+pub async fn update_project_in_repositories<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     project: String,
 ) -> Result<(), InternalError> {
@@ -57,8 +58,8 @@ pub async fn update_project_in_repositories(
     Ok(())
 }
 
-pub async fn get_versions(
-    storage: &DynamicStorage,
+pub async fn get_versions<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     path: String,
 ) -> Result<NitroRepoVersions, InternalError> {
@@ -94,8 +95,8 @@ pub fn get_latest_version_data(
     }
 }
 
-pub async fn get_project_data(
-    storage: &DynamicStorage,
+pub async fn get_project_data<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     project: &str,
 ) -> Result<Option<ProjectData>, InternalError> {
@@ -112,8 +113,9 @@ pub async fn get_project_data(
         None
     })
 }
-pub async fn get_version_data(
-    storage: &DynamicStorage,
+
+pub async fn get_version_data<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     folder: &str,
 ) -> Result<Option<VersionData>, InternalError> {

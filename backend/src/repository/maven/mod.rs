@@ -1,45 +1,41 @@
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-
+use async_trait::async_trait;
 use log::error;
 use sea_orm::DatabaseConnection;
-
-use crate::repository::maven::models::Pom;
-use crate::repository::settings::security::Visibility;
-use crate::repository::settings::Policy;
+use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::Authentication;
-use crate::repository::data::RepositoryConfig;
-use crate::repository::handler::RepositoryHandler;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
+use crate::repository::data::RepositoryConfig;
+use crate::repository::handler::RepositoryHandler;
+use crate::repository::maven::models::Pom;
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
+use crate::repository::settings::security::Visibility;
+use crate::repository::settings::Policy;
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
+use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
-use async_trait::async_trait;
-
-use crate::storage::DynamicStorage;
-use tokio::sync::RwLockReadGuard;
 
 pub mod error;
 pub mod models;
 mod utils;
 
-pub struct MavenHandler<'a> {
+pub struct MavenHandler<'a, S: Storage> {
     config: RepositoryConfig,
-    storage: RwLockReadGuard<'a, DynamicStorage>,
+    storage: RwLockReadGuard<'a, S>,
 }
 
-impl<'a> MavenHandler<'a> {
+impl<'a, S: Storage> MavenHandler<'a, S> {
     pub fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, DynamicStorage>,
-    ) -> MavenHandler<'a> {
+        storage: RwLockReadGuard<'a, S>,
+    ) -> MavenHandler<'a, S> {
         MavenHandler::<'a> {
             config: repository,
             storage,
@@ -48,7 +44,7 @@ impl<'a> MavenHandler<'a> {
 }
 
 #[async_trait]
-impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
+impl<'a, S: Storage> RepositoryHandler<'a, S> for MavenHandler<'a, S> {
     async fn handle_get(
         &self,
         path: &str,
@@ -142,12 +138,12 @@ impl<'a> RepositoryHandler<'a> for MavenHandler<'a> {
     }
 }
 
-impl NitroRepositoryHandler for MavenHandler<'_> {
+impl<StorageType: Storage> NitroRepositoryHandler<StorageType> for MavenHandler<'_, StorageType> {
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
         value.into().replace('.', "/").replace(':', "/")
     }
 
-    fn storage(&self) -> &DynamicStorage {
+    fn storage(&self) -> &StorageType {
         &self.storage
     }
 

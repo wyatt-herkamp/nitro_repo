@@ -1,15 +1,12 @@
 use std::collections::HashMap;
 
-use log::warn;
-
 use chrono::{DateTime, NaiveDateTime, Utc};
-
-use crate::repository::nitro::{NitroRepoVersions, ProjectData};
+use log::warn;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::utils::get_project_data;
-
+use crate::repository::nitro::{NitroRepoVersions, ProjectData};
 use crate::repository::npm::models::{DistTags, GetResponse, NPMTimes, NPMVersions, Version};
 use crate::storage::models::Storage;
 use crate::storage::DynamicStorage;
@@ -35,8 +32,8 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     }
 }
 
-pub async fn get_version_data(
-    storage: &DynamicStorage,
+pub async fn get_version_data<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     project_folder: &str,
     project: &ProjectData,
@@ -69,8 +66,8 @@ pub async fn get_version_data(
     Ok((times, dist_tags, npm_versions))
 }
 
-pub async fn generate_get_response(
-    storage: &DynamicStorage,
+pub async fn generate_get_response<StorageType: Storage>(
+    storage: &StorageType,
     repository: &RepositoryConfig,
     project_folder: &str,
 ) -> Result<Option<GetResponse>, InternalError> {

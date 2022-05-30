@@ -1,16 +1,16 @@
-use crate::authentication::Authentication;
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-
-use crate::error::api_error::APIError;
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 
+use crate::authentication::Authentication;
+use crate::error::api_error::APIError;
 use crate::repository::response::RepoResponse;
+use crate::storage::models::Storage;
 
 #[async_trait]
-pub trait RepositoryHandler<'a>: Send + Sync {
+pub trait RepositoryHandler<'a, S: Storage>: Send + Sync {
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,

@@ -1,22 +1,27 @@
 use std::collections::HashMap;
-
-use actix_web::web::Bytes;
+use std::string::String;
 
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
-
+use actix_web::web::Bytes;
+use async_trait::async_trait;
 use log::{debug, error, trace};
 use regex::Regex;
 use sea_orm::DatabaseConnection;
-use std::string::String;
-
-use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
-use crate::repository::npm::utils::generate_get_response;
+use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::{verify_login, Authentication};
-
+use crate::error::api_error::APIError;
+use crate::error::internal_error::InternalError;
+use crate::repository::data::RepositoryConfig;
+use crate::repository::handler::RepositoryHandler;
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
+use crate::repository::npm::utils::generate_get_response;
 use crate::repository::response::RepoResponse;
+use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
+use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
@@ -24,27 +29,16 @@ pub mod error;
 pub mod models;
 mod utils;
 
-use crate::repository::data::RepositoryConfig;
-use crate::repository::handler::RepositoryHandler;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-
-use crate::error::api_error::APIError;
-use crate::error::internal_error::InternalError;
-use crate::storage::file::StorageFileResponse;
-use crate::storage::DynamicStorage;
-use async_trait::async_trait;
-use tokio::sync::RwLockReadGuard;
-
-pub struct NPMHandler<'a> {
+pub struct NPMHandler<'a, StorageType: Storage> {
     config: RepositoryConfig,
-    storage: RwLockReadGuard<'a, DynamicStorage>,
+    storage: RwLockReadGuard<'a, StorageType>,
 }
 
-impl<'a> NPMHandler<'a> {
+impl<'a, StorageType: Storage> NPMHandler<'a, StorageType> {
     pub fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, DynamicStorage>,
-    ) -> NPMHandler<'a> {
+        storage: RwLockReadGuard<'a, StorageType>,
+    ) -> NPMHandler<'a, StorageType> {
         NPMHandler {
             config: repository,
             storage,
@@ -54,9 +48,10 @@ impl<'a> NPMHandler<'a> {
         APIError::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()
     }
 }
+
 // name/version
 #[async_trait]
-impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
+impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler<'a, StorageType> {
     async fn handle_get(
         &self,
         path: &str,
@@ -89,9 +84,10 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                     .map_err(InternalError::from)?;
                 return Ok(RepoResponse::FileResponse(result));
             }
-            let get_response = generate_get_response(&self.storage, &self.config, path)
-                .await
-                .unwrap();
+            let get_response =
+                generate_get_response::<StorageType>(&self.storage, &self.config, path)
+                    .await
+                    .unwrap();
             if get_response.is_none() {
                 return Err(APIError::not_found().into());
             }
@@ -230,19 +226,19 @@ impl<'a> RepositoryHandler<'a> for NPMHandler<'a> {
                     ),
                 ));
             }
-            Err(NPMHandler::bad_npm_command())
+            Err(NPMHandler::<StorageType>::bad_npm_command())
         } else {
-            Err(NPMHandler::bad_npm_command())
+            Err(NPMHandler::<StorageType>::bad_npm_command())
         }
     }
 }
 
-impl NitroRepositoryHandler for NPMHandler<'_> {
+impl<StorageType: Storage> NitroRepositoryHandler<StorageType> for NPMHandler<'_, StorageType> {
     fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
         path.into().replace('.', "/").replace(':', "/")
     }
 
-    fn storage(&self) -> &DynamicStorage {
+    fn storage(&self) -> &StorageType {
         &self.storage
     }
 
