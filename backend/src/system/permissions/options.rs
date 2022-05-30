@@ -3,7 +3,9 @@ use std::fmt::{Debug, Display, Formatter};
 
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
+use serde_json::json;
 
+use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::settings::security::Visibility;
@@ -20,7 +22,11 @@ impl Debug for MissingPermission {
 
 impl Display for MissingPermission {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Forbidden: Missing Permission {}", &self.0)
+        let result = serde_json::to_string(&json!({
+            "error": format!("Missing Permission {}", &self.0),
+        }))
+        .map_err(|_| fmt::Error)?;
+        write!(f, "{}", result)
     }
 }
 
@@ -48,7 +54,6 @@ pub trait CanIDo {
         repo: &RepositoryConfig,
     ) -> Result<Option<MissingPermission>, InternalError>;
 }
-
 impl CanIDo for UserModel {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission> {
         let permissions = &self.permissions;

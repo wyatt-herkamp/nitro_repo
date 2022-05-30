@@ -1,3 +1,7 @@
+use async_trait::async_trait;
+use serde_json::Value;
+use tokio::sync::RwLockReadGuard;
+
 use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
@@ -6,9 +10,6 @@ use crate::storage::local_storage::LocalStorage;
 use crate::storage::models::{
     Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
 };
-use async_trait::async_trait;
-use serde_json::Value;
-use tokio::sync::RwLockReadGuard;
 
 pub mod bad_storage;
 pub mod error;
@@ -28,6 +29,13 @@ pub enum DynamicStorage {
 
 #[async_trait]
 impl Storage for DynamicStorage {
+    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    where
+        Self: Sized,
+    {
+        panic!("Illegal Call")
+    }
+
     fn new(_config: StorageFactory) -> Result<DynamicStorage, (StorageError, StorageFactory)>
     where
         Self: Sized,

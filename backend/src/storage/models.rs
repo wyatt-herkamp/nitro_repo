@@ -81,6 +81,7 @@ pub struct StorageFactory {
     #[serde(flatten)]
     pub generic_config: StorageConfig,
     /// Storage Handler Config
+    #[serde(default)]
     pub handler_config: Value,
 }
 
@@ -104,6 +105,10 @@ impl StorageFactory {
 
 #[async_trait]
 pub trait Storage: Send + Sync {
+    /// Initialize the Storage at Storage start.
+    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    where
+        Self: Sized;
     /// Initialize the Storage at Storage start.
     fn new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
     where

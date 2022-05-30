@@ -1,27 +1,24 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+use async_trait::async_trait;
+use log::{debug, trace, warn};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use tokio::fs::{create_dir, create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::sync::{RwLock, RwLockReadGuard};
+
+use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::repository::REPOSITORY_CONF_FOLDER;
+use crate::storage::error::StorageError;
+use crate::storage::error::StorageError::RepositoryMissing;
+use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
 use crate::storage::models::{
     Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
 };
 use crate::storage::STORAGE_CONFIG;
 use crate::utils::get_current_time;
-
-use log::{debug, trace, warn};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-
-use std::path::PathBuf;
-
-use crate::repository::data::{RepositoryConfig, RepositoryType};
-use crate::storage::error::StorageError;
-use crate::storage::error::StorageError::RepositoryMissing;
-use async_trait::async_trait;
-
-use serde_json::Value;
-
-use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
-use tokio::fs::{create_dir, create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::{RwLock, RwLockReadGuard};
 
 #[derive(Debug)]
 pub struct LocalStorage {
@@ -33,7 +30,7 @@ pub struct LocalStorage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalConfig {
-    pub location: String,
+    pub location: PathBuf,
 }
 
 pub struct LocalFile {
@@ -42,7 +39,7 @@ pub struct LocalFile {
 
 impl LocalStorage {
     pub fn get_storage_folder(&self) -> PathBuf {
-        PathBuf::from(&self.config.location)
+        self.config.location.clone()
     }
     pub fn get_repository_folder(&self, repository: &str) -> PathBuf {
         self.get_storage_folder().join(repository)
@@ -82,6 +79,28 @@ impl LocalStorage {
 
 #[async_trait]
 impl Storage for LocalStorage {
+    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    where
+        Self: Sized,
+    {
+        let string = std::env::var("STORAGE_LOCATION").map_err(|e| {
+            (
+                StorageError::StorageCreateError(e.to_string()),
+                config.clone(),
+            )
+        })?;
+        let location = PathBuf::from(&string);
+        let local_config = LocalConfig {
+            location: location.join(&config.generic_config.name),
+        };
+        Ok(LocalStorage {
+            config: local_config,
+            storage_config: config.generic_config,
+            status: StorageStatus::Unloaded,
+            repositories: RwLock::new(HashMap::new()),
+        })
+    }
+
     fn new(config: StorageFactory) -> Result<LocalStorage, (StorageError, StorageFactory)>
     where
         Self: Sized,

@@ -1,17 +1,14 @@
-use crate::storage::models::{
-    Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
-};
-
+use async_trait::async_trait;
 use log::warn;
+use serde_json::Value;
+use tokio::sync::RwLockReadGuard;
 
 use crate::repository::data::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
-use async_trait::async_trait;
-
-use serde_json::Value;
-
 use crate::storage::file::{StorageFile, StorageFileResponse};
-use tokio::sync::RwLockReadGuard;
+use crate::storage::models::{
+    Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
+};
 
 /// This is a storage that is here to represent a storage that failed to load from the config stage
 #[derive(Debug)]
@@ -29,6 +26,13 @@ impl BadStorage {
 }
 #[async_trait]
 impl Storage for BadStorage {
+    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    where
+        Self: Sized,
+    {
+        panic!("Illegal Call")
+    }
+
     fn new(_: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
     where
         Self: Sized,

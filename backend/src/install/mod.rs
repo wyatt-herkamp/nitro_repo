@@ -1,3 +1,4 @@
+use std::env::current_dir;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io;
@@ -8,6 +9,7 @@ use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
 use log::{error, info, trace};
 use sea_orm::ActiveValue::Set;
@@ -135,12 +137,14 @@ pub struct OtherStage {
 
 impl From<OtherStage> for Application {
     fn from(other: OtherStage) -> Self {
+        let storages = current_dir().unwrap().join("storages");
         Self {
             log: other.log_location.unwrap(),
             address: other.address.unwrap(),
             app_url: other.app_url.unwrap(),
             max_upload: other.max_upload.unwrap().parse().unwrap(),
             mode: Mode::Release,
+            storage_location: storages,
             ssl_private_key: None,
             ssl_cert_key: None,
         }

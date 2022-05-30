@@ -1,24 +1,25 @@
-pub mod auth_token;
-pub mod middleware;
-pub mod session;
+use std::fmt;
+use std::fmt::{Debug, Display, Formatter};
 
 use actix_web::dev::Payload;
 use actix_web::http::StatusCode;
 use actix_web::{FromRequest, HttpMessage, HttpRequest, ResponseError};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use std::fmt::{Debug, Display, Formatter};
-
 use futures_util::future::{ready, Ready};
 use log::trace;
-
 use sea_orm::{DatabaseConnection, EntityTrait};
+use serde_json::json;
 
 use crate::authentication::auth_token::AuthTokenModel;
 use crate::authentication::session::Session;
 use crate::error::internal_error::InternalError;
 use crate::system::user;
-
 use crate::system::user::{UserEntity, UserModel};
+
+pub mod auth_token;
+pub mod middleware;
+pub mod session;
+
 pub struct NotAuthenticated;
 
 impl Debug for NotAuthenticated {
@@ -29,7 +30,11 @@ impl Debug for NotAuthenticated {
 
 impl Display for NotAuthenticated {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Not Authenticated")
+        let result = serde_json::to_string(&json!({
+            "error": "Not Authenticated",
+        }))
+        .map_err(|_| fmt::Error)?;
+        write!(f, "{}", result)
     }
 }
 

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
 
 use sea_orm::ConnectOptions;
 use semver::{Error, Version};
@@ -87,6 +88,7 @@ pub struct Application {
     pub app_url: String,
     pub max_upload: usize,
     pub mode: Mode,
+    pub storage_location: PathBuf,
     pub ssl_private_key: Option<String>,
     pub ssl_cert_key: Option<String>,
 }

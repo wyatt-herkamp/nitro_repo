@@ -1,10 +1,11 @@
-use std::env::current_dir;
+use std::env::{current_dir, set_var};
 use std::error::Error;
 use std::io::ErrorKind;
 use std::process::exit;
 
 use actix_cors::Cors;
 use actix_web::main;
+use actix_web::middleware::DefaultHeaders;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
 use log::info;
@@ -64,7 +65,7 @@ async fn main() -> std::io::Result<()> {
     };
 
     let application = nitro_repo.core.application.clone();
-
+    set_var("STORAGE_LOCATION", &application.storage_location);
     let max_upload = Data::new(PayloadConfig::default().limit(application.max_upload));
 
     let address = application.address.clone();
@@ -80,6 +81,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(database_data.clone())
             .app_data(session_data.clone())
             .app_data(max_upload.clone())
+            .wrap(DefaultHeaders::new().add(("X-Powered-By", "Nitro Repo powered by Actix.rs")))
             .wrap(
                 Cors::default()
                     .allow_any_header()
@@ -89,6 +91,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/api")
+                    .wrap(DefaultHeaders::new().add(("Content-Type", "application/json")))
                     .wrap(HandleSession {})
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)

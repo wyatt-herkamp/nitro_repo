@@ -1,4 +1,6 @@
 use std::time::SystemTimeError;
+
+use actix_web::ResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -11,6 +13,8 @@ pub enum StorageError {
     JSONError(serde_json::Error),
     #[error("Storage Already Exists!")]
     StorageAlreadyExist,
+    #[error("Unable to create a new storage {0}")]
+    StorageCreateError(String),
     #[error("Repository Already Exists")]
     RepositoryAlreadyExists,
     #[error("Missing Repository")]
