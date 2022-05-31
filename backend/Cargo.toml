@@ -38,7 +38,8 @@ base64 = "0.13.0"
 tokio = "1.18.2"
 style-term = "1.0.0"
 # Log
-nitro_log = { git = "https://github.com/wherkamp/nitro_log", features = ["chrono", "style-term"] }
+# Unstable Use git = "https://github.com/wherkamp/nitro_log"
+nitro_log = { version = "1.0.1", features = ["chrono", "style-term"] }
 log = "0.4.17"
 # Rust Internal
 strum = { version = "0.24.0", features = ["derive"] }
