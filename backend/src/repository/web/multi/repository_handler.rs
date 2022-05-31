@@ -1,24 +1,15 @@
-use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use actix_web::{get, web, HttpRequest, HttpResponse};
-use log::{debug, trace};
+use actix_web::{web, HttpRequest};
 use sea_orm::DatabaseConnection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::data::RepositoryType::{Maven, NPM};
 use crate::repository::get_repository_handler;
 use crate::repository::handler::RepositoryHandler;
-use crate::repository::maven::MavenHandler;
-use crate::repository::nitro::NitroFileResponseType::Storage;
-use crate::repository::nitro::{NitroFile, NitroFileResponse};
-use crate::repository::npm::NPMHandler;
 use crate::repository::response::RepoResponse;
 use crate::storage::multi::MultiStorageController;
-use crate::utils::get_accept;
-use crate::NitroRepoData;
 
 #[derive(Deserialize, Clone)]
 pub struct GetPath {
@@ -39,10 +30,10 @@ pub async fn get_repository(
         .get_storage_by_name(&path.storage)
         .await
         .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
+        .ok_or_else(APIError::storage_not_found)?;
     let repository_handler = get_repository_handler(storage, path.repository.as_str())
         .await?
-        .ok_or_else(|| APIError::repository_not_found())?;
+        .ok_or_else(APIError::repository_not_found)?;
     repository_handler
         .handle_get(path.file.as_str(), r.headers(), pool.get_ref(), auth)
         .await
@@ -60,10 +51,10 @@ pub async fn put_repository(
         .get_storage_by_name(&path.storage)
         .await
         .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
+        .ok_or_else(APIError::storage_not_found)?;
     let repository_handler = get_repository_handler(storage, path.repository.as_str())
         .await?
-        .ok_or_else(|| APIError::repository_not_found())?;
+        .ok_or_else(APIError::repository_not_found)?;
     repository_handler
         .handle_put(path.file.as_str(), r.headers(), pool.get_ref(), auth, bytes)
         .await
@@ -80,10 +71,10 @@ pub async fn head_repository(
         .get_storage_by_name(&path.storage)
         .await
         .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
+        .ok_or_else(APIError::storage_not_found)?;
     let repository_handler = get_repository_handler(storage, path.repository.as_str())
         .await?
-        .ok_or_else(|| APIError::repository_not_found())?;
+        .ok_or_else(APIError::repository_not_found)?;
     repository_handler
         .handle_head(path.file.as_str(), r.headers(), pool.get_ref(), auth)
         .await
@@ -101,10 +92,10 @@ pub async fn post_repository(
         .get_storage_by_name(&path.storage)
         .await
         .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
+        .ok_or_else(APIError::storage_not_found)?;
     let repository_handler = get_repository_handler(storage, path.repository.as_str())
         .await?
-        .ok_or_else(|| APIError::repository_not_found())?;
+        .ok_or_else(APIError::repository_not_found)?;
     repository_handler
         .handle_post(path.file.as_str(), r.headers(), pool.get_ref(), auth, bytes)
         .await
@@ -122,10 +113,10 @@ pub async fn patch_repository(
         .get_storage_by_name(&path.storage)
         .await
         .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
+        .ok_or_else(APIError::storage_not_found)?;
     let repository_handler = get_repository_handler(storage, path.repository.as_str())
         .await?
-        .ok_or_else(|| APIError::repository_not_found())?;
+        .ok_or_else(APIError::repository_not_found)?;
     repository_handler
         .handle_patch(path.file.as_str(), r.headers(), pool.get_ref(), auth, bytes)
         .await

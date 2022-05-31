@@ -29,7 +29,7 @@ pub enum DynamicStorage {
 
 #[async_trait]
 impl Storage for DynamicStorage {
-    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    fn create_new(_config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
     where
         Self: Sized,
     {

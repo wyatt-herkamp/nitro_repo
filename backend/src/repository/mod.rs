@@ -1,12 +1,10 @@
 use std::ops::Deref;
 
-use futures_util::TryFutureExt;
 use tokio::sync::RwLockReadGuard;
 
-use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::data::{RepositoryConfig, RepositoryType};
-use crate::repository::handler::{DynamicRepositoryHandler, RepositoryHandler};
+use crate::repository::data::RepositoryType;
+use crate::repository::handler::DynamicRepositoryHandler;
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
 use crate::storage::models::Storage;

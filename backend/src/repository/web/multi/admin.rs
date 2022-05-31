@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use actix_web::http::StatusCode;
-use actix_web::{delete, get, post, web, HttpRequest, HttpResponse, ResponseError};
+use actix_web::{delete, get, post, web, HttpResponse};
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 
@@ -12,7 +12,6 @@ use crate::repository::data::RepositoryType;
 use crate::repository::web::RepositoryResponse;
 use crate::storage::error::StorageError;
 use crate::storage::models::Storage;
-use crate::storage::models::StorageFactory;
 use crate::storage::multi::MultiStorageController;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;

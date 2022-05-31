@@ -1,7 +1,5 @@
 use actix_web::web;
 
-use crate::system::web::public;
-
 pub mod admin;
 pub mod repository_handler;
 

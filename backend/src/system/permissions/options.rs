@@ -5,7 +5,6 @@ use actix_web::http::StatusCode;
 use actix_web::ResponseError;
 use serde_json::json;
 
-use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::data::RepositoryConfig;
 use crate::repository::settings::security::Visibility;

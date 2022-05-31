@@ -62,7 +62,7 @@ pub async fn delete_storage(
     if storage_handler
         .delete_storage(&name.into_inner())
         .await
-        .map_err(|error| InternalError::from(error))?
+        .map_err(InternalError::from)?
     {
         Ok(HttpResponse::Ok().finish())
     } else {

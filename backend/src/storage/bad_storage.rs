@@ -26,7 +26,7 @@ impl BadStorage {
 }
 #[async_trait]
 impl Storage for BadStorage {
-    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    fn create_new(_config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
     where
         Self: Sized,
     {
