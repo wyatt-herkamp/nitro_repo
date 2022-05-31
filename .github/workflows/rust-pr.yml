@@ -2,7 +2,7 @@ name: Pull Request Rust
 
 on:
   pull_request:
-    branches:  master
+    branches: master
 
 env:
   CARGO_TERM_COLOR: always
@@ -34,4 +34,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           # Yes by doing this we are not checking the feature code. However, it is a small point. And I really dont want to have to run the build script
-          args: --manifest-path backend/Cargo.toml --no-default-features
+          args: --manifest-path backend/Cargo.toml --no-default-features --no-deps
