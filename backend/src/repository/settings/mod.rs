@@ -4,12 +4,24 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
-use crate::repository::settings::security::Visibility;
 use crate::storage::models::Storage;
 
+pub mod badge;
 pub mod frontend;
-pub mod security;
-pub mod webhook;
+pub mod post_deploy;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
+pub enum Visibility {
+    Public,
+    Private,
+    Hidden,
+}
+
+impl Default for Visibility {
+    fn default() -> Self {
+        Visibility::Public
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Policy {
@@ -109,4 +121,7 @@ impl RepositoryConfig {
 /// Represents a Repository Setting group. That is not apart of the core config set
 pub trait RepositoryConfigType: Send + Sync + Clone + Debug + Serialize + DeserializeOwned {
     fn config_name() -> &'static str;
+    fn from_slice_json(slice: &[u8]) -> Result<Self, serde_json::Error> {
+        serde_json::from_slice(slice)
+    }
 }

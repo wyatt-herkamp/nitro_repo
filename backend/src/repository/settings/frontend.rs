@@ -1,12 +1,29 @@
-use badge_maker::Style;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::settings::RepositoryConfigType;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
+pub enum PageProvider {
+    // Do not create a page for this projects in this repository
+    None,
+    /// The README is pulled from Github
+    ReadmeGit,
+    /// The README is sent to the repository
+    ReadmeSent,
+}
+
+impl Default for PageProvider {
+    fn default() -> Self {
+        PageProvider::None
+    }
+}
+
+/// Frontend Settings
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Frontend {
-    #[serde(default = "PageProvider::default")]
     pub page_provider: PageProvider,
+    /// The Description of the Repository
     #[serde(default)]
     pub description: String,
 }
@@ -14,76 +31,6 @@ pub struct Frontend {
 impl RepositoryConfigType for Frontend {
     fn config_name() -> &'static str {
         "frontend.json"
-    }
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum BadgeStyle {
-    Flat,
-    FlatSquare,
-    Plastic,
-}
-
-impl Default for BadgeStyle {
-    fn default() -> Self {
-        BadgeStyle::Flat
-    }
-}
-
-impl BadgeStyle {
-    pub fn to_badge_maker_style(&self) -> badge_maker::Style {
-        match self {
-            BadgeStyle::Flat => Style::Flat,
-            BadgeStyle::FlatSquare => Style::FlatSquare,
-            BadgeStyle::Plastic => Style::Plastic,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BadgeSettings {
-    #[serde(default = "BadgeStyle::default")]
-    pub style: BadgeStyle,
-    #[serde(default = "default_label_color")]
-    pub label_color: String,
-    #[serde(default = "default_color")]
-    pub color: String,
-}
-
-impl RepositoryConfigType for BadgeSettings {
-    fn config_name() -> &'static str {
-        "badge.json"
-    }
-}
-
-impl Default for BadgeSettings {
-    fn default() -> Self {
-        BadgeSettings {
-            style: Default::default(),
-            label_color: default_label_color(),
-            color: default_color(),
-        }
-    }
-}
-
-fn default_color() -> String {
-    "#33B5E5".to_string()
-}
-
-fn default_label_color() -> String {
-    "#555".to_string()
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum PageProvider {
-    None,
-    README,
-    ReadmeGit,
-    ReadmeSent,
-}
-
-impl PageProvider {
-    fn default() -> Self {
-        PageProvider::None
     }
 }
 

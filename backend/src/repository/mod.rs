@@ -24,7 +24,7 @@ pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";
 
 pub async fn get_repository_handler<'a, StorageType: Storage>(
     storage: RwLockReadGuard<'a, StorageType>,
-    repository: &str,
+    repository: &'a str,
 ) -> Result<Option<DynamicRepositoryHandler<'a, StorageType>>, InternalError> {
     let value = storage.get_repository(repository).await?;
     if value.is_none() {

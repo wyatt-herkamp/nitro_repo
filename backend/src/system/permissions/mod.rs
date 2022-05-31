@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::repository::settings::security::Visibility;
+use crate::repository::settings::Visibility;
 use crate::repository::settings::{Policy, RepositoryConfig};
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 

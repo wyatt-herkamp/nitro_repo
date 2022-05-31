@@ -192,7 +192,7 @@ impl Default for App {
         }
     }
 }
-
+#[allow(unused_mut)]
 async fn run_app(
     mut terminal: Terminal<CrosstermBackend<Stdout>>,
     mut app: App,
@@ -226,7 +226,7 @@ async fn run_app(
                             } else {
                                 let string = app.database_stage.to_string();
                                 trace!("Database String: {}", &string);
-                                let database_conn = sea_orm::Database::connect(string).await?;
+                                let mut database_conn = sea_orm::Database::connect(string).await?;
                                 let schema = Schema::new(database_conn.get_database_backend());
                                 let users = schema.create_table_from_entity(UserEntity);
                                 database_conn

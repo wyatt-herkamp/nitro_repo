@@ -376,7 +376,7 @@ impl Storage for LocalStorage {
         config_name: &str,
         data: &ConfigType,
     ) -> Result<(), StorageError> {
-        let mut repositories = self.repositories.write().await;
+        let repositories = self.repositories.write().await;
         if !repositories.contains_key(&repository.name) {
             return Err(StorageError::RepositoryMissing);
         }
@@ -418,7 +418,7 @@ impl Storage for LocalStorage {
         repository: &RepositoryConfig,
         config_name: &str,
     ) -> Result<(), StorageError> {
-        let mut repositories = self.repositories.write().await;
+        let repositories = self.repositories.write().await;
         if !repositories.contains_key(&repository.name) {
             return Err(StorageError::RepositoryMissing);
         }

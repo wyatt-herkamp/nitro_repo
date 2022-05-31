@@ -20,7 +20,7 @@ use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
 use api::storage::multi::MultiStorageController;
 use api::utils::load_logger;
-use api::{frontend, storage, system, NitroRepo};
+use api::{frontend, repository, storage, system, NitroRepo};
 
 #[main]
 async fn main() -> std::io::Result<()> {
@@ -98,9 +98,15 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/admin")
                             .configure(system::web::init_user_manager_routes)
-                            .configure(storage::multi::web::init_admin_routes),
+                            .configure(storage::multi::web::init_admin_routes)
+                            .configure(repository::web::multi::init_admin),
                     ),
             )
+            .service(
+                web::scope("/nitro_repo/help")
+                    .service(repository::web::multi::helpers::help_update_type),
+            )
+            .configure(repository::web::multi::init_repository_handlers)
             .configure(frontend::init)
     });
 

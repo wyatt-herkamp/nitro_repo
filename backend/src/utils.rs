@@ -1,6 +1,8 @@
-use std::fs::read;
+use std::borrow::Cow;
+use std::fs::OpenOptions;
+use std::io::Read;
 use std::ops::Add;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, Local};
@@ -17,7 +19,12 @@ pub fn load_logger<T: AsRef<Mode>>(logger: T) {
         Mode::Release => "log-release.json",
         Mode::Install => "log-install.json",
     };
-    let config: Config = serde_json::from_str(Resources::file_get_string(file).as_str()).unwrap();
+    let config: Config = serde_json::from_slice(
+        Resources::file_get(file)
+            .as_ref()
+            .expect("Unable to load the logger!"),
+    )
+    .unwrap();
     NitroLogger::load(config, LoggerBuilders::default()).unwrap();
 }
 #[derive(RustEmbed)]
@@ -25,17 +32,18 @@ pub fn load_logger<T: AsRef<Mode>>(logger: T) {
 pub struct Resources;
 
 impl Resources {
-    pub fn file_get(file: &str) -> Vec<u8> {
+    pub fn file_get<'a>(file: &str) -> Result<Cow<'a, [u8]>, InternalError> {
         let buf = Path::new("resources").join(file);
         if buf.exists() {
-            read(buf).unwrap()
+            let mut buffer = Vec::new();
+            OpenOptions::new()
+                .read(true)
+                .open(buf)?
+                .read_to_end(&mut buffer)?;
+            Ok(Cow::Owned(buffer))
         } else {
-            Resources::get(file).unwrap().data.to_vec()
+            Ok(Resources::get(file).unwrap().data)
         }
-    }
-    pub fn file_get_string(file: &str) -> String {
-        let vec = Resources::file_get(file);
-        String::from_utf8(vec).unwrap()
     }
 }
 
@@ -63,8 +71,4 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
     if x.is_err() {}
     let header = x.unwrap().to_string();
     Ok(Some(header))
-}
-
-pub fn get_storage_location() -> PathBuf {
-    PathBuf::from("./")
 }

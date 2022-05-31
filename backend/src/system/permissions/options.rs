@@ -6,8 +6,8 @@ use actix_web::ResponseError;
 use serde_json::json;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::settings::security::Visibility;
 use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::Visibility;
 use crate::system::permissions::{can_deploy, can_read};
 use crate::system::user::UserModel;
 
