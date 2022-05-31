@@ -12,6 +12,3 @@ impl Default for Visibility {
         Visibility::Public
     }
 }
-
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct SecurityRules {}

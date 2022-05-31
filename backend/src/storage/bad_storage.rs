@@ -1,9 +1,11 @@
 use async_trait::async_trait;
 use log::warn;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
-use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 use crate::storage::models::{
@@ -104,23 +106,6 @@ impl Storage for BadStorage {
         panic!("This should not be called!")
     }
 
-    async fn update_repository_config(
-        &self,
-        _repository: &RepositoryConfig,
-        _file: &str,
-        _data: &Option<Value>,
-    ) -> Result<(), StorageError> {
-        panic!("This should not be called!")
-    }
-
-    async fn get_repository_config(
-        &self,
-        _repository: &RepositoryConfig,
-        _file: &str,
-    ) -> Result<Option<Value>, StorageError> {
-        panic!("This should not be called!")
-    }
-
     async fn save_file(
         &self,
         _repository: &RepositoryConfig,
@@ -159,6 +144,31 @@ impl Storage for BadStorage {
         _repository: &RepositoryConfig,
         _location: &str,
     ) -> Result<Option<Vec<u8>>, StorageError> {
+        panic!("This should not be called!")
+    }
+
+    async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+        data: &ConfigType,
+    ) -> Result<(), StorageError> {
+        panic!("This should not be called!")
+    }
+
+    async fn get_repository_config<ConfigType: DeserializeOwned>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<Option<ConfigType>, StorageError> {
+        panic!("This should not be called!")
+    }
+
+    async fn delete_repository_config(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<(), StorageError> {
         panic!("This should not be called!")
     }
 }

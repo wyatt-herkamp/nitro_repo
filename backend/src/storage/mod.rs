@@ -1,8 +1,10 @@
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
-use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
@@ -144,35 +146,6 @@ impl Storage for DynamicStorage {
         }
     }
 
-    async fn update_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        file: &str,
-        data: &Option<Value>,
-    ) -> Result<(), StorageError> {
-        match self {
-            DynamicStorage::LocalStorage(local) => {
-                local.update_repository_config(repository, file, data).await
-            }
-            DynamicStorage::BadStorage(bad) => {
-                bad.update_repository_config(repository, file, data).await
-            }
-        }
-    }
-
-    async fn get_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        file: &str,
-    ) -> Result<Option<Value>, StorageError> {
-        match self {
-            DynamicStorage::LocalStorage(local) => {
-                local.get_repository_config(repository, file).await
-            }
-            DynamicStorage::BadStorage(bad) => bad.get_repository_config(repository, file).await,
-        }
-    }
-
     async fn save_file(
         &self,
         repository: &RepositoryConfig,
@@ -232,6 +205,57 @@ impl Storage for DynamicStorage {
         match self {
             DynamicStorage::LocalStorage(local) => local.get_file(repository, location).await,
             DynamicStorage::BadStorage(bad) => bad.get_file(repository, location).await,
+        }
+    }
+
+    async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+        data: &ConfigType,
+    ) -> Result<(), StorageError> {
+        match self {
+            DynamicStorage::LocalStorage(local) => {
+                local
+                    .update_repository_config(repository, config_name, data)
+                    .await
+            }
+            DynamicStorage::BadStorage(bad) => {
+                bad.update_repository_config(repository, config_name, data)
+                    .await
+            }
+        }
+    }
+
+    async fn get_repository_config<ConfigType: DeserializeOwned>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<Option<ConfigType>, StorageError> {
+        match self {
+            DynamicStorage::LocalStorage(local) => {
+                local.get_repository_config(repository, config_name).await
+            }
+            DynamicStorage::BadStorage(bad) => {
+                bad.get_repository_config(repository, config_name).await
+            }
+        }
+    }
+
+    async fn delete_repository_config(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<(), StorageError> {
+        match self {
+            DynamicStorage::LocalStorage(local) => {
+                local
+                    .delete_repository_config(repository, config_name)
+                    .await
+            }
+            DynamicStorage::BadStorage(bad) => {
+                bad.delete_repository_config(repository, config_name).await
+            }
         }
     }
 }

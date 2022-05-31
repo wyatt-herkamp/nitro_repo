@@ -1,11 +1,12 @@
-pub mod nitro_repository;
-pub mod utils;
+use serde::{Deserialize, Serialize};
 
-use crate::repository::data::RepositoryConfig;
 use crate::repository::response::Project;
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::file::StorageFile;
 use crate::utils::get_current_time;
-use serde::{Deserialize, Serialize};
+
+pub mod nitro_repository;
+pub mod utils;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct NitroFileResponse {

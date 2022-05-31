@@ -3,13 +3,14 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use log::{debug, trace, warn};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::fs::{create_dir, create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{RwLock, RwLockReadGuard};
 
-use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::repository::REPOSITORY_CONF_FOLDER;
 use crate::storage::error::StorageError;
 use crate::storage::error::StorageError::RepositoryMissing;
@@ -259,61 +260,6 @@ impl Storage for LocalStorage {
         return Ok(());
     }
 
-    async fn update_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        file: &str,
-        data: &Option<Value>,
-    ) -> Result<(), StorageError> {
-        let repositories = self.repositories.write().await;
-        if !repositories.contains_key(&repository.name) {
-            return Err(RepositoryMissing);
-        }
-        let conf = self
-            .get_repository_folder(&repository.name)
-            .join(REPOSITORY_CONF_FOLDER)
-            .join(file);
-
-        if data.is_none() {
-            remove_file(&conf).await?;
-        } else if let Some(value) = data {
-            let file = OpenOptions::new()
-                .create(true)
-                .open(&conf)
-                .await?
-                .into_std()
-                .await;
-            serde_json::to_writer_pretty(file, value)?;
-        }
-        return Ok(());
-    }
-
-    async fn get_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        file: &str,
-    ) -> Result<Option<Value>, StorageError> {
-        let repositories = self.repositories.write().await;
-        if !repositories.contains_key(&repository.name) {
-            return Err(RepositoryMissing);
-        }
-        let conf = self
-            .get_repository_folder(&repository.name)
-            .join(REPOSITORY_CONF_FOLDER)
-            .join(file);
-        if !conf.exists() {
-            return Ok(None);
-        }
-        let file = OpenOptions::new()
-            .read(true)
-            .open(&conf)
-            .await?
-            .into_std()
-            .await;
-
-        Ok(serde_json::from_reader(file)?)
-    }
-
     async fn save_file(
         &self,
         repository: &RepositoryConfig,
@@ -422,5 +368,65 @@ impl Storage for LocalStorage {
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes).await?;
         Ok(Some(bytes))
+    }
+
+    async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+        data: &ConfigType,
+    ) -> Result<(), StorageError> {
+        let mut repositories = self.repositories.write().await;
+        if !repositories.contains_key(&repository.name) {
+            return Err(StorageError::RepositoryMissing);
+        }
+        let buf = self
+            .get_repository_folder(repository.name.as_str())
+            .join(".config")
+            .join(config_name);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(buf)
+            .await?;
+        file.write_all(serde_json::to_string(data).unwrap().as_bytes())
+            .await?;
+        return Ok(());
+    }
+
+    async fn get_repository_config<ConfigType: DeserializeOwned>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<Option<ConfigType>, StorageError> {
+        let buf = self
+            .get_repository_folder(repository.name.as_str())
+            .join(".config")
+            .join(config_name);
+        if !buf.exists() {
+            Ok(None)
+        } else {
+            let string = read_to_string(buf).await.map_err(StorageError::IOError)?;
+            serde_json::from_str(&string)
+                .map_err(StorageError::JSONError)
+                .map(Some)
+        }
+    }
+
+    async fn delete_repository_config(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<(), StorageError> {
+        let mut repositories = self.repositories.write().await;
+        if !repositories.contains_key(&repository.name) {
+            return Err(StorageError::RepositoryMissing);
+        }
+        let buf = self
+            .get_repository_folder(repository.name.as_str())
+            .join(".config")
+            .join(config_name);
+        remove_file(buf).await?;
+        return Ok(());
     }
 }

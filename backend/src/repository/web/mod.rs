@@ -1,8 +1,8 @@
 use serde::Serialize;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::data::RepositoryConfig;
 use crate::repository::settings::frontend::{BadgeSettings, Frontend};
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 
 pub mod multi;
@@ -15,12 +15,12 @@ pub struct RepositoryResponse<'a> {
 }
 
 impl<'a> RepositoryResponse<'a> {
-    pub async fn new(
+    pub async fn new<StorageType: Storage>(
         config: &'a RepositoryConfig,
-        storage: &dyn Storage,
+        storage: &StorageType,
     ) -> Result<RepositoryResponse<'a>, InternalError> {
-        let frontend = config.get_frontend_config(storage).await?;
-        let badge: Option<BadgeSettings> = None;
+        let frontend = config.get_config(storage).await?;
+        let badge = config.get_config(storage).await?;
         Ok(RepositoryResponse {
             config,
             frontend,

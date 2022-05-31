@@ -1,11 +1,12 @@
 use std::fmt::{Debug, Display, Formatter};
 
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
 
-use crate::repository::data::{RepositoryConfig, RepositoryType};
+use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 use crate::storage::local_storage::LocalStorage;
@@ -151,21 +152,6 @@ pub trait Storage: Send + Sync {
     ) -> Result<Option<RwLockReadGuard<'_, RepositoryConfig>>, StorageError>;
 
     async fn update_repository(&self, repository: RepositoryConfig) -> Result<(), StorageError>;
-    /// Locks the Repositories for updating
-    /// Keeps all config files in .config
-    async fn update_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        file: &str,
-        data: &Option<Value>,
-    ) -> Result<(), StorageError>;
-    /// Gets a Repository Config
-    async fn get_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        file: &str,
-    ) -> Result<Option<Value>, StorageError>;
-
     /// Saves a File to a location
     /// Will overwrite any data found
     async fn save_file(
@@ -200,4 +186,25 @@ pub trait Storage: Send + Sync {
         repository: &RepositoryConfig,
         location: &str,
     ) -> Result<Option<Vec<u8>>, StorageError>;
+
+    /// Locks the Repositories for updating
+    /// Keeps all config files in .config
+    async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+        data: &ConfigType,
+    ) -> Result<(), StorageError>;
+    /// Gets a Repository Config
+    async fn get_repository_config<ConfigType: DeserializeOwned>(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<Option<ConfigType>, StorageError>;
+    /// Delete Repository Config
+    async fn delete_repository_config(
+        &self,
+        repository: &RepositoryConfig,
+        config_name: &str,
+    ) -> Result<(), StorageError>;
 }

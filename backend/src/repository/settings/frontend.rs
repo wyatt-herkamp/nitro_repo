@@ -1,6 +1,8 @@
 use badge_maker::Style;
 use serde::{Deserialize, Serialize};
 
+use crate::repository::settings::RepositoryConfigType;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Frontend {
     #[serde(default = "PageProvider::default")]
@@ -9,6 +11,11 @@ pub struct Frontend {
     pub description: String,
 }
 
+impl RepositoryConfigType for Frontend {
+    fn config_name() -> &'static str {
+        "frontend.json"
+    }
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BadgeStyle {
     Flat,
@@ -40,6 +47,12 @@ pub struct BadgeSettings {
     pub label_color: String,
     #[serde(default = "default_color")]
     pub color: String,
+}
+
+impl RepositoryConfigType for BadgeSettings {
+    fn config_name() -> &'static str {
+        "badge.json"
+    }
 }
 
 impl Default for BadgeSettings {

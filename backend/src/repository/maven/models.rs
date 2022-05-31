@@ -1,21 +1,17 @@
-use crate::repository::data::RepositorySetting;
-use crate::repository::nitro::VersionData;
-use crate::utils::get_current_time;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+
+use crate::repository::nitro::VersionData;
+use crate::repository::settings::RepositoryConfigType;
+use crate::utils::get_current_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct MavenSettings {}
 
-impl TryFrom<Value> for MavenSettings {
-    type Error = serde_json::Error;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        serde_json::from_value(value)
+impl RepositoryConfigType for MavenSettings {
+    fn config_name() -> &'static str {
+        "maven.json"
     }
 }
-
-impl RepositorySetting for MavenSettings {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeployMetadata {

@@ -5,9 +5,9 @@ use log::debug;
 
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
-use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing, VersionData};
 use crate::repository::response::VersionResponse;
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 
 pub async fn get_version<StorageType: Storage>(

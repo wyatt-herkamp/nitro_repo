@@ -3,13 +3,12 @@ use std::ops::Deref;
 use tokio::sync::RwLockReadGuard;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::data::RepositoryType;
 use crate::repository::handler::DynamicRepositoryHandler;
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
+use crate::repository::settings::RepositoryType;
 use crate::storage::models::Storage;
 
-pub mod data;
 pub mod frontend;
 pub mod handler;
 pub mod maven;

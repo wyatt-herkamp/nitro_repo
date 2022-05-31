@@ -3,7 +3,6 @@ use log::{debug, error, trace};
 
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
-use crate::repository::data::RepositoryConfig;
 use crate::repository::nitro::utils::{
     get_project_data, get_version_data, get_versions, update_project_in_repositories,
 };
@@ -12,6 +11,7 @@ use crate::repository::nitro::{
     VersionData,
 };
 use crate::repository::response::Project;
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::file::StorageDirectoryResponse;
 use crate::storage::models::Storage;
 use crate::system::user::UserModel;
