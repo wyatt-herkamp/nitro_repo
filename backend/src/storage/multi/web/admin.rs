@@ -83,7 +83,7 @@ pub async fn get_storage(
     if let Some(storage) = storage_handler
         .get_storage_by_name(&name.into_inner())
         .await
-        .map_err(|e| InternalError::from(e))?
+        .map_err(InternalError::from)?
     {
         Ok(HttpResponse::Ok().json(storage.config_for_saving()))
     } else {

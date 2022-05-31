@@ -149,7 +149,7 @@ pub trait FileListResponder {
     }
     /// For Internal Use
     /// Invalid Data Type
-    fn invalid_accept_type() -> APIError {
+    fn invalid_accept_type() -> APIError<'static> {
         APIError::from(("Invalid Accept Header", StatusCode::BAD_REQUEST))
     }
 }
