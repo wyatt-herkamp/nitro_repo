@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,400;0,500;1,100;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+html, body {
+    --color-primary: 212, 95%, 58%;
+    --color-secondary: 219, 26%, 35%;
+    --color-gradient: 262, 88%, 65%;
+    --color-accent: 326, 100%, 66%;
+    min-height: 100%;
+    @apply from-primary;
+    @apply to-gradient;
+    @apply bg-gradient-to-tl;
+
+}
