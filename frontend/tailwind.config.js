@@ -8,15 +8,15 @@ function withOpacityValue(variable) {
 }
 
 module.exports = {
-    content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+    content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
     theme: {
-
         extend: {
             colors: {
-                primary: withOpacityValue('--color-primary'),
-                secondary: withOpacityValue('--color-secondary'),
-                gradient: withOpacityValue('--color-gradient'),
-                accent: withOpacityValue('--color-accent'),
+                primary: withOpacityValue("--color-primary"),
+                secondary: withOpacityValue("--color-secondary"),
+                tertiary: withOpacityValue("--color-tertiary"),
+                quaternary: withOpacityValue("--color-quaternary"),
+                accent: withOpacityValue("--color-accent"),
             },
         },
     },

@@ -1,30 +1,24 @@
-import path from 'path';
-import {defineConfig} from 'vite';
-import vue from '@vitejs/plugin-vue';
+import path from "path";
+import {defineConfig} from "vite";
+import vue from "@vitejs/plugin-vue";
 
-import Components from 'unplugin-vue-components/vite';
-import {ViteEjsPlugin} from 'vite-plugin-ejs';
+import Components from "unplugin-vue-components/vite";
+import {ViteEjsPlugin} from "vite-plugin-ejs";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    resolve: {
-        alias: {
-            '~/': `${path.resolve(__dirname, 'src')}/`,
-            '@/': `${path.resolve(__dirname, 'src')}/`,
-        },
+  resolve: {
+    alias: {
+      "~/": `${path.resolve(__dirname, "src")}/`,
+      "@/": `${path.resolve(__dirname, "src")}/`,
     },
-    css: {
+  },
+  css: {
     preprocessorOptions: {
       scss: {
-          additionalData: '@use "~/styles/element/index.scss" as *;',
+        additionalData: '@use "~/styles/element/index.scss" as *;',
       },
     },
   },
-  plugins: [
-    vue(),
-    ViteEjsPlugin(),
-
-    Components({
-    }),
-  ],
+  plugins: [vue(), ViteEjsPlugin(), Components({})],
 });
