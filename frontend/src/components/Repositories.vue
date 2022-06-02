@@ -40,7 +40,7 @@ export default defineComponent({
     if (token == undefined) {
       useRouter().push("login");
     }
-        const list = ref<ListItem[]>([]);
+    const list = ref<ListItem[]>([]);
     let openModel = ref(false);
 
     const getRepos = async () => {

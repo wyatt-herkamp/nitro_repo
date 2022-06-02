@@ -15,7 +15,7 @@
     "@uppy/vue": "^0.4.8",
     "axios": "^0.27.2",
     "boxicons": "^2.1.2",
-    "core-js": "^3.22.7",
+    "core-js": "^3.22.8",
     "equal-vue": "^0.79.3",
     "fast-xml-parser": "^4.0.8",
     "pinia": "^2.0.14",
@@ -33,26 +33,25 @@
     "vue3-cookies": "^1.0.6"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.27.0",
-    "@typescript-eslint/parser": "^5.27.0",
     "@vitejs/plugin-vue": "^2.3.3",
     "@vue/cli-plugin-babel": "~5.0.4",
-    "@vue/cli-plugin-eslint": "~5.0.4",
     "@vue/cli-plugin-router": "~5.0.4",
     "@vue/cli-plugin-typescript": "~5.0.4",
     "@vue/cli-plugin-vuex": "~5.0.4",
     "@vue/cli-service": "~5.0.4",
     "@vue/compiler-sfc": "^3.2.36",
-    "@vue/eslint-config-prettier": "^7.0.0",
-    "@vue/eslint-config-typescript": "^10.0.0",
-    "eslint": "^8.16.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-vue": "^9.0.1",
     "prettier": "2.6.2",
     "sass": "^1.52.1",
     "tailwindcss": "^3.0.24",
     "typescript": "~4.7.2",
     "unplugin-vue-components": "^0.19.6",
-    "vite": "^2.9.9"
+    "vite": "^2.9.9",
+    "@vue/eslint-config-prettier": "7.0.0",
+    "@vue/eslint-config-typescript": "10.0.0",
+    "@typescript-eslint/eslint-plugin": "5.27.0",
+    "@typescript-eslint/parser": "5.27.0",
+    "eslint": "8.16.0",
+    "eslint-plugin-prettier": "4.0.0",
+    "eslint-plugin-vue": "8.0.1"
   }
 }

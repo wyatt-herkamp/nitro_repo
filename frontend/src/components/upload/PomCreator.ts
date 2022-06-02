@@ -1,13 +1,12 @@
 export interface Pom {
-    project: Project
+  project: Project;
 }
 export const xmlOptions = {
-    ignoreAttributes: false,
+  ignoreAttributes: false,
 };
 export interface Project {
-    modelVersion: string;
-    groupId: string;
-    artifactId: string;
-    version: string;
+  modelVersion: string;
+  groupId: string;
+  artifactId: string;
+  version: string;
 }
-

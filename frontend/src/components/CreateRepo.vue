@@ -122,6 +122,5 @@ export default defineComponent({
   },
   components: { NitroModal },
 });
-
 </script>
 <style scoped></style>

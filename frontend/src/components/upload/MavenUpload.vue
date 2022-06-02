@@ -4,15 +4,7 @@
       <PomCreator v-model="pom" />
     </div>
     <div
-      class="
-        flex flex-row flex-wrap
-        w-full
-        max-w-6xl
-        mx-auto
-        mt-2
-        rounded-md
-        bg-slate-800
-      "
+      class="flex flex-row flex-wrap w-full max-w-6xl mx-auto mt-2 rounded-md bg-slate-800"
     >
       <div class="flex flex-col basis-full md:basis-1/2 lg:border-r-2 pb-5">
         <h1 class="text-left mx-5 mt-6 font-bold mb-0">Upload Files</h1>

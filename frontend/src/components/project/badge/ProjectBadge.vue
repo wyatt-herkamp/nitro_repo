@@ -9,8 +9,8 @@
         </div>
         <div class="mr-5">
           <img
-              class="object-none my-5"
-              :src="
+            class="object-none my-5"
+            :src="
               url +
               '/badge/' +
               project.repo_summary.storage +
@@ -28,16 +28,15 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, ref} from "vue";
-import {useRouter} from "vue-router";
-import {Project, Repository} from "@nitro_repo/nitro_repo-api-wrapper";
-import {apiURL} from "@/http-common";
-import {createProjectSnippet} from "@/api/repository/BadgeGen";
+import { computed, defineComponent, ref } from "vue";
+import { useRouter } from "vue-router";
+import { Project, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import { apiURL } from "@/http-common";
+import { createProjectSnippet } from "@/api/repository/BadgeGen";
 
 export default defineComponent({
   components: {},
   props: {
-
     project: {
       required: true,
       type: Object as () => Project,
@@ -46,16 +45,16 @@ export default defineComponent({
   setup(props) {
     const url = apiURL;
     const projectPath = props.project.version.name
-        .replace(":", "/")
-        .replace(".", "/");
+      .replace(":", "/")
+      .replace(".", "/");
     const snippets = createProjectSnippet(
-        props.project.repo_summary.storage,
-        props.project.repo_summary.name,
-        projectPath,
-        props.project.version.name
+      props.project.repo_summary.storage,
+      props.project.repo_summary.name,
+      projectPath,
+      props.project.version.name
     );
     let page = ref(snippets[0].name);
-    return {url, page, snippets, projectPath};
+    return { url, page, snippets, projectPath };
   },
 
   methods: {

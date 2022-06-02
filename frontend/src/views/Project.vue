@@ -17,16 +17,10 @@ export default defineComponent({
     const repository = route.params.repo as string;
     const id = route.params.id as string;
     let version = route.params.version as string;
-    const token: string | undefined = inject('token')
+    const token: string | undefined = inject("token");
     const project = ref<Project | undefined>(undefined);
     const getInfo = async () => {
-      let value = await getProject(
-        token,
-        storage,
-        repository,
-        id,
-        version
-      );
+      let value = await getProject(token, storage, repository, id, version);
       console.log(value);
       project.value = value;
     };

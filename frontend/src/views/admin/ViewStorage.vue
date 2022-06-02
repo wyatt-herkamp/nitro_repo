@@ -3,9 +3,18 @@
     <SubNavBar>
       <LinkNavItem :href="'/admin/storages/'" icon="arrow-back" name="Back" />
 
-  <LinkNavItem v-if="user.permissions.admin || user.permissions.user_manager" href="/admin/users" icon="user" name="Users" />
-      <LinkNavItem v-if="user.permissions.admin || user.permissions.repository_manager" href="/admin/storages" icon="box" name="Storages" />
-
+      <LinkNavItem
+        v-if="user.permissions.admin || user.permissions.user_manager"
+        href="/admin/users"
+        icon="user"
+        name="Users"
+      />
+      <LinkNavItem
+        v-if="user.permissions.admin || user.permissions.repository_manager"
+        href="/admin/storages"
+        icon="box"
+        name="Storages"
+      />
     </SubNavBar>
     <UpdateStorage :storageId="storage" />
   </div>

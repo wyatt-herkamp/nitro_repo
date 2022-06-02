@@ -76,8 +76,7 @@
     </div>
   </div>
 </template>
-<style>
-</style>
+<style></style>
 
 <script lang="ts">
 import { defineComponent, onBeforeUnmount, ref } from "vue";

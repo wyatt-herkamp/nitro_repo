@@ -22,7 +22,10 @@
 <script lang="ts">
 import { defineComponent, inject } from "vue";
 import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
-import { setVisibility, updateDeployReport } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  setVisibility,
+  updateDeployReport,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 export default defineComponent({
   props: {
     repository: {

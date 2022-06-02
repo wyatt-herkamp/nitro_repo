@@ -1,9 +1,9 @@
 <template>
   <div class="grid grid-row-2 gap-4" v-if="repository != undefined">
-    <div class=" m-2 ">
+    <div class="m-2">
       <RepositoryBadge :repository="repository" />
     </div>
-    <div class=" m-2">
+    <div class="m-2">
       <MavenRepoInfo
         v-if="repositoryType === 'Maven'"
         :repository="repository"
@@ -13,7 +13,10 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { getRepoPublic, PublicRepositoryInfo } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  getRepoPublic,
+  PublicRepositoryInfo,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
 import { defineComponent, inject, ref } from "vue";

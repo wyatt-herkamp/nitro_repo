@@ -1,4 +1,3 @@
-
 <template>
   <CodeMenu :codes="snippets">
     <template v-slot:header>

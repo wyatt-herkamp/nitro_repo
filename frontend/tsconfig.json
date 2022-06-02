@@ -24,7 +24,8 @@
     "src/**/*.vue",
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    "main.ts"
-, "src/components/upload/MavenUpload.js"  ],
+    "main.ts",
+    "src/components/upload/MavenUpload.js"
+  ],
   "exclude": ["node_modules"]
 }

@@ -55,14 +55,7 @@
     </div>
     <div class="flex-grow lg:m-5 border-slate-500 border-2 rounded-lg">
       <h1
-        class="
-          text-left
-          ml-2
-          md:text-4xl
-          text-3xl
-          border-b-2 border-slate-500
-          p-2
-        "
+        class="text-left ml-2 md:text-4xl text-3xl border-b-2 border-slate-500 p-2"
       >
         Permissions
       </h1>
@@ -74,7 +67,10 @@
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from "vue";
 import { updateOtherPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updateNameAndEmail, updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  updateNameAndEmail,
+  updatePermission,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";

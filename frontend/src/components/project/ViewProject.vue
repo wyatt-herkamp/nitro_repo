@@ -26,7 +26,6 @@ export default defineComponent({
       required: true,
       type: Object as () => Project,
     },
-
   },
   setup(props) {
     console.log(props.project == undefined);

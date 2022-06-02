@@ -1,6 +1,6 @@
 <template>
   <div v-if="repository != undefined">
-    <MavenUpload :repo="repository"/>
+    <MavenUpload :repo="repository" />
   </div>
 </template>
 
@@ -9,14 +9,17 @@ import { defineComponent, inject, onBeforeMount, ref } from "vue";
 
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import { useRoute } from "vue-router";
-import { getRepoByNameAndStorage, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  getRepoByNameAndStorage,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 
 export default defineComponent({
   components: { MavenUpload },
 
   setup() {
     const route = useRoute();
-    const token: string | undefined = inject('token')
+    const token: string | undefined = inject("token");
 
     const storage = route.params.storage as string;
     const repositoryName = route.params.repo as string;

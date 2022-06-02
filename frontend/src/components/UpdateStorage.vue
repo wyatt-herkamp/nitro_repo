@@ -7,7 +7,7 @@
     <Repositories :storage="storage" v-if="storageTab == 'Repositories'" />
     <div v-else-if="storageTab == 'General'" class="settingContent">
       <div class="settingBox">
-        <label  class="nitroLabel"  for="grid-name"> name </label>
+        <label class="nitroLabel" for="grid-name"> name </label>
         <input
           class="nitroTextInput"
           id="grid-name"
@@ -17,7 +17,7 @@
         />
       </div>
       <div class="settingBox">
-        <label  class="nitroLabel"  for="grid-public-name"> Public Name </label>
+        <label class="nitroLabel" for="grid-public-name"> Public Name </label>
         <input
           class="nitroTextInput"
           id="grid-public-name"
@@ -27,7 +27,7 @@
         />
       </div>
       <div class="settingBox">
-        <label  class="nitroLabel"  for="grid-created"> Date Created </label>
+        <label class="nitroLabel" for="grid-created"> Date Created </label>
         <input
           class="nitroTextInput"
           id="grid-created"

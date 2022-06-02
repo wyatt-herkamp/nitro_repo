@@ -1,5 +1,5 @@
 <template>
-  <MavenProjectCopy  :project="project" />
+  <MavenProjectCopy :project="project" />
 </template>
 <style scoped></style>
 <script lang="ts">
@@ -13,7 +13,6 @@ export default defineComponent({
       required: true,
       type: Object as () => Project,
     },
-
   },
   setup() {
     let url = apiURL;

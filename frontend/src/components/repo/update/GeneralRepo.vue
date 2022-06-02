@@ -92,15 +92,7 @@
           </Switch>
         </div>
         <button
-          class="
-            bg-slate-900
-            py-2
-            my-3
-            hover:bg-red-700
-            rounded-md
-            cursor-pointer
-            text-white
-          "
+          class="bg-slate-900 py-2 my-3 hover:bg-red-700 rounded-md cursor-pointer text-white"
         >
           Delete Repository
         </button>
@@ -110,7 +102,10 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import { deleteRepository, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  deleteRepository,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { setActiveStatus, setPolicy } from "@nitro_repo/nitro_repo-api-wrapper";
 export default defineComponent({
   props: {

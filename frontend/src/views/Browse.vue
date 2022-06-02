@@ -32,16 +32,7 @@
     </div>
     <!-- Optional Extra Info -->
     <div
-      class="
-        hidden
-        basis-1/2
-        md:flex
-        m-2
-        rounded-md
-        bg-slate-900
-        grow-0
-        shrink-0
-      "
+      class="hidden basis-1/2 md:flex m-2 rounded-md bg-slate-900 grow-0 shrink-0"
       v-if="activeResponse != undefined"
     >
       <div v-if="activeResponse.Project != undefined">
@@ -98,7 +89,11 @@
 }
 </style>
 <script lang="ts">
-import { browse, BrowseResponse, FileResponse } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  browse,
+  BrowseResponse,
+  FileResponse,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 
 import { apiURL } from "@/http-common";
 import { defineComponent, inject, ref, watch } from "vue";
