@@ -1,6 +1,6 @@
 [package]
 name = "nitro_repo"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Wyatt Jacob Herkamp <wherkamp@kingtux.me>"]
 edition = "2021"
 build = "build.rs"
@@ -45,7 +45,7 @@ log = "0.4.17"
 strum = { version = "0.24.0", features = ["derive"] }
 strum_macros = "0.24.0"
 derive_more = "0.99.17"
-async-trait = "0.1.53"
+async-trait = "0.1.56"
 thiserror = "1.0.31"
 anyhow = "1.0.57"
 either = "1.6.1"

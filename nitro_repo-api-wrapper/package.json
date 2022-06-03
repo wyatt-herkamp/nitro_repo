@@ -1,6 +1,6 @@
 {
   "name": "@nitro_repo/nitro_repo-api-wrapper",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "The Implementation of the Nitro_Repo API in Typescript",
   "author": "Wyatt Jacob Herkamp",
   "license": "MIT",
@@ -12,7 +12,6 @@
     "build:ts": "tsc -p tsconfig.json",
     "login-snapshot": "npm login --registry=https://repo.kingtux.me/storages/nitro_repo/npm-snapshot/ ",
     "push-snapshot": "npm publish --registry=https://repo.kingtux.me/storages/nitro_repo/npm-snapshot/ "
-
   },
   "dependencies": {
     "axios": "^0.27.2",
