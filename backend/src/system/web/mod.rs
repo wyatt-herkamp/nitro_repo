@@ -1,5 +1,6 @@
 use actix_web::web::ServiceConfig;
 
+pub mod admin;
 pub mod public;
 pub mod user;
 
