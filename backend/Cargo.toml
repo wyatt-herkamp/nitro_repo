@@ -7,14 +7,14 @@ build = "build.rs"
 license-file = "../LICENSE"
 [dependencies]
 # Web
-actix-web = { version = "4.0.1", features = ["openssl"] }
+actix-web = { version = "4.1.0", features = ["openssl"] }
 actix-cors = "0.6.1"
 actix-service = "2.0.2"
 openssl = { version = "0.10.40", features = ["v110"], optional = true }
-actix-files = "0.6.0"
+actix-files = "0.6.1"
 # Partly Web
-lettre = "0.10.0-rc.6"
-handlebars = "4.3.0"
+lettre = "0.10.0-rc.7"
+handlebars = "4.3.1"
 # Database
 diesel = { version = "1.4.8", features = ["mysql", "r2d2"] }
 diesel_migrations = "1.4.0"
@@ -35,15 +35,15 @@ chrono = "0.4.19"
 regex = "1.5.6"
 futures-util = "0.3.21"
 base64 = "0.13.0"
-tokio = "1.18.2"
+tokio = "1.19.2"
 style-term = "1.0.0"
 # Log
 # Unstable Use git = "https://github.com/wherkamp/nitro_log"
 nitro_log = { version = "1.0.1", features = ["chrono", "style-term"] }
 log = "0.4.17"
 # Rust Internal
-strum = { version = "0.24.0", features = ["derive"] }
-strum_macros = "0.24.0"
+strum = { version = "0.24.1", features = ["derive"] }
+strum_macros = "0.24.1"
 derive_more = "0.99.17"
 async-trait = "0.1.56"
 thiserror = "1.0.31"
@@ -56,7 +56,7 @@ webhook = "2.0.0"
 # Installer
 tui = "0.18.0"
 crossterm = "0.23.2"
-clap = { version = "3.1.18", features = ["derive"] }
+clap = { version = "3.2.1", features = ["derive"] }
 unicode-width = "0.1.9"
 
 [build-dependencies]
