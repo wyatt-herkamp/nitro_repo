@@ -51,7 +51,7 @@
             </div>
             <PermissionList
               class="md:basis-3/4"
-              v-if="user.permissions.deployer != undefined"
+              v-if="user.permissions.deployer !== undefined"
               v-model="user.permissions.deployer"
             />
           </div>
@@ -66,7 +66,7 @@
             </div>
             <PermissionList
               class="md:basis-3/4"
-              v-if="user.permissions.viewer != undefined"
+              v-if="user.permissions.viewer !== undefined"
               v-model="user.permissions.viewer"
             />
           </div>
@@ -85,18 +85,13 @@
 .otherPermissions {
   @apply w-full;
 }
-.admin {
-  @apply opacity-50;
-  @apply backdrop-brightness-95;
-}
 </style>
 <script lang="ts">
 import { computed, defineComponent, inject, ref, watch } from "vue";
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
 import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
 import PermissionList from "./PermissionList.vue";
+import { User } from "@/types/user";
 export default defineComponent({
   props: {
     user: {
@@ -149,23 +144,7 @@ export default defineComponent({
   },
   methods: {
     async updatePermissions() {
-      const response = await updatePermission(
-        this.user.username,
-        this.permissions,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Permissions",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Permissions",
-          text: JSON.stringify(response.val.user_friendly_message),
-          r,
-        });
-      }
+      // TODO update permissions
     },
   },
   components: { Switch, PermissionList },

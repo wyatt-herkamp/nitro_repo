@@ -1,9 +1,9 @@
 import path from "path";
-import {defineConfig} from "vite";
+import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
 import Components from "unplugin-vue-components/vite";
-import {ViteEjsPlugin} from "vite-plugin-ejs";
+import { ViteEjsPlugin } from "vite-plugin-ejs";
 
 // https://vitejs.dev/config/
 export default defineConfig({

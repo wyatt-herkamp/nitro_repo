@@ -26,13 +26,13 @@
 
         <!-- Secondary Navbar items -->
         <ul class="hidden md:flex items-center space-x-3">
-          <li v-if="user == undefined" class="fullScreenItem">
+          <li v-if="user === undefined" class="fullScreenItem">
             <button @click="openLogin = true">Login</button>
           </li>
-          <li v-if="user != undefined" class="fullScreenItem">
+          <li v-if="user !== undefined" class="fullScreenItem">
             <router-link to="/admin">Admin</router-link>
           </li>
-          <li v-if="user != undefined" class="fullScreenItem">
+          <li v-if="user !== undefined" class="fullScreenItem">
             <router-link to="/me">Me</router-link>
           </li>
         </ul>
@@ -41,7 +41,6 @@
           <button @click="openNav" class="outline-none mobile-menu-button">
             <svg
               class="w-6 h-6 text-tertiary hover:text-accent"
-              x-s800how="!showMenu"
               fill="none"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -66,16 +65,16 @@
           >Browse</router-link
         >
       </li>
-      <li v-if="user != undefined" class="smItem">
+      <li v-if="user !== undefined" class="smItem">
         <router-link to="/me" @click="openNav" class="smItem">Me</router-link>
       </li>
       <li class="smItem">
-        <router-link v-if="user == undefined" to="/login" @click="openNav"
+        <router-link v-if="user === undefined" to="/login" @click="openNav"
           >Login</router-link
         >
       </li>
 
-      <AdminDropBox @clicked="openNav()" v-if="user != undefined" />
+      <AdminDropBox @clicked="openNav()" v-if="user !== undefined" />
     </ul>
   </div>
   <Login v-model="openLogin" />
@@ -131,13 +130,7 @@ export default defineComponent({
   @apply hover:bg-primary/10;
   @apply tracking-wide;
 }
-.login {
-  @apply font-medium;
-  @apply text-white;
-  @apply bg-slate-800;
-  @apply rounded;
-  @apply hover:bg-slate-900;
-}
+
 .mediumMenu {
   @apply md:items-center;
   @apply md:space-x-1;

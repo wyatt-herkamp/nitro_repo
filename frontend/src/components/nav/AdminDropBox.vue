@@ -11,7 +11,7 @@
           xmlns="http://www.w3.org/2000/svg"
           width="24"
           height="24"
-          style="fill: rgba(255, 255, 255, 1); transform: ; msfilter: "
+          style="fill: rgba(255, 255, 255, 1)"
           :class="adminDropDown ? 'rotateSVG' : ''"
         >
           <path
@@ -21,7 +21,7 @@
       </div>
     </div>
   </li>
-  <ui ref="adminDropDownUI" :class="adminDropDown ? 'flex flex-col' : 'hidden'">
+  <ul ref="adminDropDownUI" :class="adminDropDown ? 'flex flex-col' : 'hidden'">
     <li>
       <router-link to="/admin" @click="close()" class="smItem"
         >Admin
@@ -37,7 +37,7 @@
         >Storages</router-link
       >
     </li>
-  </ui>
+  </ul>
 </template>
 
 <script lang="ts">
@@ -68,38 +68,6 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-.fullScreenItem {
-  @apply inline;
-  @apply py-4;
-  @apply px-2;
-  @apply text-gray-500;
-  @apply font-semibold;
-  @apply hover:text-green-500;
-  @apply transition;
-  @apply duration-300;
-}
-.login {
-  @apply font-medium;
-  @apply text-white;
-  @apply bg-green-500;
-  @apply rounded;
-  @apply hover:bg-green-400;
-}
-.mediumMenu {
-  @apply md:items-center;
-  @apply md:space-x-1;
-  @apply md:flex;
-  @apply md:flex-row;
-}
-.smMenu {
-  @apply absolute;
-  @apply right-0;
-  @apply min-h-fit;
-  @apply transition;
-  @apply ease-in-out;
-  @apply duration-300;
-}
-
 .smItemHeader {
   @apply text-lg;
   @apply px-2;
@@ -126,8 +94,5 @@ svg {
 
   @apply ease-in-out;
   @apply duration-300;
-}
-.rotateSVG {
-  @apply rotate-180;
 }
 </style>

@@ -24,7 +24,7 @@
         <ul ref="core">
           <li v-for="value in modelValue" :key="value.name">
             <router-link
-              v-if="value.goTo != undefined"
+              v-if="value.goTo !== undefined"
               :to="value.goTo"
               class="routerLink"
             >

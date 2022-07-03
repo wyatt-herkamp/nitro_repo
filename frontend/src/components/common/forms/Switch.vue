@@ -59,7 +59,7 @@ export default defineComponent({
     });
     const setBackgroundColor = (): void => {
       const dotElement = core.value;
-      if (dotElement != undefined) {
+      if (dotElement != undefined && input.value != undefined) {
         if (input.value.checked) {
           dotElement.style.backgroundColor = "#48bb78";
           dotElement.style.transform = "translateX(100%)";
