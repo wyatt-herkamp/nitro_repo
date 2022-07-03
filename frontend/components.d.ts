@@ -9,7 +9,6 @@ declare module '@vue/runtime-core' {
     ArtifactSearch: typeof import('./src/components/artifact-search.vue')['default']
     CodeCard: typeof import('./src/components/common/code/CodeCard.vue')['default']
     CodeMenu: typeof import('./src/components/common/code/CodeMenu.vue')['default']
-    HelloWorld: typeof import("./src/components/HelloWorld.vue")["default"];
     LinkNavItem: typeof import('./src/components/common/nav/LinkNavItem.vue')['default']
     Login: typeof import('./src/components/nav/Login.vue')['default']
     LoginComp: typeof import('./src/components/user/LoginComp.vue')['default']
@@ -21,7 +20,6 @@ declare module '@vue/runtime-core' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchableList: typeof import('./src/components/common/list/SearchableList.vue')['default']
-    SearchBar: typeof import("./src/components/search-bar.vue")["default"];
     SubNavBar: typeof import('./src/components/common/nav/SubNavBar.vue')['default']
     SubNavItem: typeof import('./src/components/common/nav/SubNavItem.vue')['default']
     Switch: typeof import('./src/components/common/forms/Switch.vue')['default']

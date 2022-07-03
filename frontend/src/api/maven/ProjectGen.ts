@@ -1,9 +1,9 @@
-import {SnippetInfo} from "../CodeGenGeneral";
+import { SnippetInfo } from "../CodeGenGeneral";
 
 export default function createProjectGen(
-    groupID: string,
-    artifactID: string,
-    version: string
+  groupID: string,
+  artifactID: string,
+  version: string
 ): SnippetInfo[] {
   return [
     {

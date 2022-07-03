@@ -1,4 +1,4 @@
 export interface ListItem {
-    name: string;
-    goTo?: string;
+  name: string;
+  goTo?: string;
 }

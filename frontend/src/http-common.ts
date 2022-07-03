@@ -1,12 +1,12 @@
-import axios, {AxiosInstance} from "axios";
+import create from "axios";
 
 const appURL = "http://localhost:3000";
 const apiURL =
-    import.meta.env.VITE_API_URL === undefined
-        ? appURL
-        : (import.meta.env.VITE_API_URL as string);
+  import.meta.env.VITE_API_URL === undefined
+    ? appURL
+    : (import.meta.env.VITE_API_URL as string);
 
-const apiClient: AxiosInstance = axios.create({
+const apiClient = create({
   baseURL: apiURL,
   headers: {
     "Content-Type": "application/json",
@@ -15,4 +15,4 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-export default {apiClient, apiURL};
+export default { apiClient, apiURL };

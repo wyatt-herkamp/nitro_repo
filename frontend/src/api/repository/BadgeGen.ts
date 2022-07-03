@@ -1,9 +1,9 @@
-import {apiURL} from "@/http-common";
-import {SnippetInfo} from "../CodeGenGeneral";
+import { apiURL } from "@/http-common";
+import { SnippetInfo } from "../CodeGenGeneral";
 
 export function createBadgeSnippets(
-    storage: string,
-    repository: string
+  storage: string,
+  repository: string
 ): SnippetInfo[] {
   const url = apiURL;
   const badgeURL = `${url}/badge/${storage}/${repository}/nitro_repo_info/badge`;
@@ -26,10 +26,10 @@ export function createBadgeSnippets(
 }
 
 export function createProjectSnippet(
-    storage: string,
-    repository: string,
-    project: string,
-    projectName: string
+  storage: string,
+  repository: string,
+  project: string,
+  projectName: string
 ): SnippetInfo[] {
   const url = apiURL;
   const badgeURL = `${url}/badge/${storage}/${repository}/${project}/badge`;

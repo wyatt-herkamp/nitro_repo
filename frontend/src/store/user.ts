@@ -1,5 +1,5 @@
-import {acceptHMRUpdate, defineStore} from "pinia";
-import {User} from "@/types/user";
+import { acceptHMRUpdate, defineStore } from "pinia";
+import { User } from "@/types/user";
 import httpCommon from "@/http-common";
 
 const useUserStore = defineStore({
@@ -10,12 +10,12 @@ const useUserStore = defineStore({
 
   actions: {
     logout() {
-      this.$patch({user: undefined});
+      this.$patch({ user: undefined });
     },
     async getAccount() {
       httpCommon.apiClient.get("/api/me").then((response) => {
         if (response.status === 200) {
-          this.$patch({user: response.data});
+          this.$patch({ user: response.data });
         }
       });
     },

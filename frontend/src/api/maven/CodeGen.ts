@@ -1,8 +1,8 @@
-import {SnippetInfo} from "../CodeGenGeneral";
+import { SnippetInfo } from "../CodeGenGeneral";
 
 export default function createRepositoryInfo(
-    url: string,
-    name: string
+  url: string,
+  name: string
 ): SnippetInfo[] {
   return [
     {
