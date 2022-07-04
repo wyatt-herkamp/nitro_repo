@@ -11,6 +11,16 @@ const routes: Array<RouteRecordRaw> = [
     name: "Login",
     component: () => import("@/views/login.vue"),
   },
+  {
+    path: "/browse/:catchAll(.*)?",
+    name: "Browse",
+    component: () => import("@/views/Browse.vue"),
+  },
+  {
+    path: "/admin",
+    name: "Admin",
+    component: () => import("@/views/admin.vue"),
+  },
 ];
 
 const router = createRouter({

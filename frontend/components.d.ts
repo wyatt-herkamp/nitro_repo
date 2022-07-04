@@ -6,7 +6,7 @@ import '@vue/runtime-core'
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AdminDropBox: typeof import('./src/components/nav/AdminDropBox.vue')['default']
-    ArtifactSearch: typeof import('./src/components/artifact-search.vue')['default']
+    ArtifactSearch: typeof import('./src/components/ArtifactSearch.vue')['default']
     CodeCard: typeof import('./src/components/common/code/CodeCard.vue')['default']
     CodeMenu: typeof import('./src/components/common/code/CodeMenu.vue')['default']
     LinkNavItem: typeof import('./src/components/common/nav/LinkNavItem.vue')['default']
