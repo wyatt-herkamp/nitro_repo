@@ -19,3 +19,4 @@ docs/docs/.vitepress/dist
 *.log
 *.env*
 *.tar.gz
+test/
