@@ -6,8 +6,8 @@ export function createBadgeSnippets(
   repository: string
 ): SnippetInfo[] {
   const url = apiURL;
-  const badgeURL = `${url}/badge/${storage}/${repository}/nitro_repo_info/badge`;
-  const appURL = `${url}/repositories/${storage}/${repository}/`;
+  const badgeURL = `${url}badge/${storage}/${repository}/nitro_repo_info/badge`;
+  const appURL = `${url}repositories/${storage}/${repository}/`;
   const text = `${repository} Repository`;
   return [
     {
@@ -31,8 +31,8 @@ export function createProjectSnippet(
   projectName: string
 ): SnippetInfo[] {
   const url = apiURL;
-  const badgeURL = `${url}/badge/${storage}/${repository}/${project}/badge`;
-  const appURL = `${url}/project/${storage}/${repository}/${projectName}`;
+  const badgeURL = `${url}badge/${storage}/${repository}/${project}/badge`;
+  const appURL = `${url}project/${storage}/${repository}/${projectName}`;
   const text = `${repository} Repository`;
   return [
     {

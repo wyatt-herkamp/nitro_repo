@@ -12,7 +12,7 @@
             class="object-none my-5"
             :src="
               url +
-              '/badge/' +
+              'badge/' +
               repository.storage +
               '/' +
               repository.name +

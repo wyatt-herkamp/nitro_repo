@@ -5,7 +5,7 @@
     </div>
     <div class="m-2">
       <MavenRepoInfo
-        v-if="repositoryType.repo_type === 'Maven'"
+        v-if="repository.repo_type === 'Maven'"
         :repository="repository"
       />
     </div>
