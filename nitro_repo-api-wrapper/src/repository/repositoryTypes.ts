@@ -112,7 +112,7 @@ export interface VersionBrowseResponse {
     Version: string
 }
 export interface ResponseType {
-    Project?: ProjectData
+    Project?: Project
     Repository?: Repository
     Version?: VersionBrowseResponse
 }

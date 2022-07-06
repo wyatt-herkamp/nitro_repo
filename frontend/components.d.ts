@@ -50,5 +50,4 @@ declare module '@vue/runtime-core' {
     ViewProject: typeof import('./src/components/project/ViewProject.vue')['default']
     ViewRepo: typeof import('./src/components/repo/ViewRepo.vue')['default']
   }
-
 }

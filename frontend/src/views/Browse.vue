@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 flex flex-row">
     <div
-      :class="[activeResponse != undefined ? 'lg:basis-1/2' : 'flex-grow']"
+      :class="[activeResponse !== undefined ? 'lg:basis-1/2' : 'flex-grow']"
       class="m-2 rounded-md bg-gray-900"
     >
       <div class="flex flex-col">
@@ -21,7 +21,7 @@
             </router-link>
           </div>
         </div>
-        <ul v-if="tableData != undefined" class="w-full text-left p-3">
+        <ul v-if="tableData !== undefined" class="w-full text-left p-3">
           <BrowseBox
             v-for="value in tableData"
             :key="value.name"
@@ -33,9 +33,9 @@
     <!-- Optional Extra Info -->
     <div
       class="hidden basis-1/2 md:flex m-2 rounded-md bg-slate-900 grow-0 shrink-0"
-      v-if="activeResponse != undefined"
+      v-if="activeResponse !== undefined"
     >
-      <div v-if="activeResponse.Project != undefined">
+      <div v-if="activeResponse.Project !== undefined">
         <router-link
           :to="{
             name: 'Project',
@@ -50,7 +50,7 @@
         <ViewProject :project="activeResponse.Project" />
       </div>
 
-      <div v-if="activeResponse.Repository != undefined">
+      <div v-if="activeResponse.Repository !== undefined">
         <router-link
           :to="{
             name: 'ViewRepository',
@@ -93,14 +93,14 @@ import {
   browse,
   BrowseResponse,
   FileResponse,
+  ResponseType,
 } from "@nitro_repo/nitro_repo-api-wrapper";
 
 import { apiURL } from "@/http-common";
-import { defineComponent, inject, ref, watch } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import { useRoute } from "vue-router";
-import { BrowsePath } from "./Browse";
+import { BrowsePath } from "@/api/Browse";
 import ViewProject from "@/components/project/ViewProject.vue";
-import ViewRepo from "@/components/repo/ViewRepo.vue";
 import BrowseBox from "@/components/browse/BrowseBox.vue";
 
 export default defineComponent({
@@ -120,7 +120,7 @@ export default defineComponent({
       path.value = route.fullPath;
       catchAll.value = route.params.catchAll as string;
 
-      var upperPath = path.value.split("/");
+      const upperPath = path.value.split("/");
 
       if (upperPath.length > 0) {
         upperPath.splice(upperPath.length - 1);
@@ -128,7 +128,7 @@ export default defineComponent({
       up.value = upperPath.join("/");
       try {
         const value = await browse(route.params.catchAll as string, token);
-        if (value == undefined) {
+        if (value === undefined) {
           console.warn("No Response from Backend");
           return;
         }
@@ -141,10 +141,7 @@ export default defineComponent({
             pathSplit.value.push({ name: element, path: url });
           });
         }
-        if (
-          fileResponse.response_type != undefined &&
-          typeof fileResponse.response_type != "string"
-        ) {
+        if (typeof fileResponse.response_type != "string") {
           activeResponse.value = fileResponse.response_type as ResponseType;
         }
         tableData.value = value.files;
@@ -164,6 +161,6 @@ export default defineComponent({
       activeResponse,
     };
   },
-  components: { ViewProject, ViewRepo, BrowseBox },
+  components: { ViewProject, BrowseBox },
 });
 </script>
