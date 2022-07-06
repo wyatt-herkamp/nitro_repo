@@ -18,7 +18,6 @@ import {
   onBeforeUnmount,
   onMounted,
   reactive,
-  ref,
 } from "vue";
 import { MenuItemType, MenuProvider } from "./SubNavType";
 
@@ -36,7 +35,6 @@ export default defineComponent({
   setup(props, { emit }) {
     const rootMenu = inject<MenuProvider>("rootMenu") as MenuProvider;
     const active = computed(() => {
-      console.log(props.index === rootMenu.activeIndex);
       return props.index === rootMenu.activeIndex;
     });
 

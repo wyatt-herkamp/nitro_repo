@@ -1,13 +1,13 @@
 <template>
-  <div class="" v-if="pom == undefined">
+  <div class="" v-if="pom === undefined">
     <SubNavBar v-model="activePage">
       <SubNavItem index="UploadPom"> Upload Pom </SubNavItem>
       <SubNavItem index="CreatePom"> Create Pom </SubNavItem>
     </SubNavBar>
-    <div class="mx-2 mb-3" v-if="activePage == 'UploadPom'">
+    <div class="mx-2 mb-3" v-if="activePage === 'UploadPom'">
       <drag-drop :uppy="uppy"></drag-drop>
     </div>
-    <div class="mx-2 mb-3" v-if="activePage == 'CreatePom'">
+    <div class="mx-2 mb-3" v-if="activePage === 'CreatePom'">
       <form
         autocomplete="off"
         class="settingContent flex flex-row"
@@ -79,7 +79,7 @@
 <style></style>
 
 <script lang="ts">
-import { defineComponent, onBeforeUnmount, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import { DragDrop } from "@uppy/vue";
 
 import "@uppy/core/dist/style.css";
@@ -89,7 +89,7 @@ import Uppy from "@uppy/core";
 import SubNavBar from "../common/nav/SubNavBar.vue";
 import SubNavItem from "../common/nav/SubNavItem.vue";
 import { XMLParser } from "fast-xml-parser";
-import { Pom, xmlOptions } from "./PomCreator";
+import { Pom, xmlOptions } from "../../api/PomCreator";
 
 export default defineComponent({
   props: {
@@ -134,8 +134,8 @@ export default defineComponent({
   methods: {
     handleAdd: async function (file: any) {
       const parser = new XMLParser(xmlOptions);
-      let text = await file.data.text();
-      let data = parser.parse(text);
+      const text = await file.data.text();
+      const data = parser.parse(text);
       this.handleChange(data);
       this.uppy.close();
     },

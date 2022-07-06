@@ -38,7 +38,7 @@ export default defineComponent({
 
   setup() {
     const route = useRoute();
-    let page = ref(route.params.page as string);
+    const page = ref(route.params.page as string);
     const userStore = useUserStore();
     const user = computed(() => {
       return userStore.$state.user;

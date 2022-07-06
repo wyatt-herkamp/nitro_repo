@@ -82,8 +82,7 @@
   </div>
 </template>
 <script lang="ts">
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { createNewUser } from "@nitro_repo/nitro_repo-api-wrapper";
+import { createNewUser, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -110,7 +109,7 @@ export default defineComponent({
       emit("update:modelValue", val);
     });
 
-    let form = ref({
+    const form = ref({
       error: "",
       name: "",
       username: "",
@@ -139,7 +138,7 @@ export default defineComponent({
         this.token as string
       );
       if (response.ok) {
-        let data = response.val as User;
+        const data = response.val as User;
         this.$notify({
           title: "User Created",
           type: "success",

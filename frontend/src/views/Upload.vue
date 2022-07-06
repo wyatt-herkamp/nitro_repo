@@ -1,11 +1,11 @@
 <template>
-  <div v-if="repository != undefined">
+  <div v-if="repository !== undefined">
     <MavenUpload :repo="repository" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, inject, onBeforeMount, ref } from "vue";
+import { defineComponent, inject, ref } from "vue";
 
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import { useRoute } from "vue-router";
@@ -26,12 +26,11 @@ export default defineComponent({
     const repository = ref<Repository | undefined>(undefined);
     const getRepo = async () => {
       try {
-        const value = await getRepoByNameAndStorage(
+        repository.value = await getRepoByNameAndStorage(
           token,
           storage,
           repositoryName
         );
-        repository.value = value;
       } catch (e) {
         console.log(e);
       }

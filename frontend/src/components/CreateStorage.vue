@@ -48,9 +48,8 @@
 </template>
 
 <script lang="ts">
-import { Storage } from "@nitro_repo/nitro_repo-api-wrapper";
+import { createNewStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
-import { createNewStorage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
@@ -73,7 +72,7 @@ export default defineComponent({
     watch(showModel, (val) => {
       emit("update:modelValue", val);
     });
-    let form = ref({
+    const form = ref({
       name: "",
       public_name: "",
       error: "",
@@ -88,7 +87,7 @@ export default defineComponent({
         this.token
       );
       if (response.ok) {
-        let data = response.val as Storage;
+        const data = response.val as Storage;
         this.$notify({
           title: "Storage Created",
           type: "success",

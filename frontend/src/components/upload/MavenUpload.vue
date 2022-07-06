@@ -71,8 +71,8 @@ import Uppy from "@uppy/core";
 import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import PomCreator from "./PomCreator.vue";
 import apiClient, { apiURL } from "@/http-common";
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
-import { xmlOptions } from "./PomCreator";
+import { XMLBuilder } from "fast-xml-parser";
+import { xmlOptions } from "@/api/PomCreator";
 import { useRouter } from "vue-router";
 
 /**
@@ -90,10 +90,10 @@ export default defineComponent({
   computed: {
     uppy: function () {
       return new Uppy()
-        .on("file-added", (file) => {
+        .on("file-added", () => {
           this.files = this.files + 1;
         })
-        .on("file-removed", (file) => {
+        .on("file-removed", () => {
           this.files = this.files - 1;
         });
     },

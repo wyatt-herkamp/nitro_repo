@@ -7,9 +7,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, provide, reactive, ref, watch } from "vue";
-
-import { apiURL } from "@/http-common";
+import { defineComponent, provide, reactive, ref, watch } from "vue";
 import { MenuProvider } from "./SubNavType";
 
 export default defineComponent({

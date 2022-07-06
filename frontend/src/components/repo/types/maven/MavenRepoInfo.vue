@@ -11,11 +11,12 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
-import { useRouter } from "vue-router";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
+import {
+  PublicRepositoryInfo,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
-import { PublicRepositoryInfo } from "@nitro_repo/nitro_repo-api-wrapper";
 import createRepositoryInfo from "@/api/maven/CodeGen";
 
 export default defineComponent({
@@ -31,7 +32,7 @@ export default defineComponent({
     const repoURL =
       url + "/" + props.repository.storage + "/" + props.repository.name;
     const snippets = createRepositoryInfo(repoURL, props.repository.name);
-    let page = ref(snippets[0].name);
+    const page = ref(snippets[0].name);
     return { url, page, snippets };
   },
 

@@ -27,10 +27,11 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, inject, ref } from "vue";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updateDeployReport } from "@nitro_repo/nitro_repo-api-wrapper";
-import { useRouter } from "vue-router";
+import { defineComponent, inject } from "vue";
+import {
+  Repository,
+  updateDeployReport,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 
 export default defineComponent({
   props: {
@@ -49,7 +50,7 @@ export default defineComponent({
   },
   methods: {
     async updateReport() {
-      if (this.repository == undefined) {
+      if (this.repository === undefined) {
         this.$notify({
           title: "Unable Update Repository",
           text: "Repository is still undefined",
@@ -66,7 +67,6 @@ export default defineComponent({
         this.token
       );
       if (response.ok) {
-        console.log(response.val.security.visibility);
         this.$notify({
           title: "Updated Report Settings",
           type: "info",

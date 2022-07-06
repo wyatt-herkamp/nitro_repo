@@ -66,14 +66,14 @@
 
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from "vue";
-import { updateOtherPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import {
   updateNameAndEmail,
-  updatePermission,
+  updateOtherPassword,
+  User,
 } from "@nitro_repo/nitro_repo-api-wrapper";
-import Switch from "@/components/common/forms/Switch.vue";
 import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";
+
 export default defineComponent({
   props: {
     user: {
@@ -86,11 +86,11 @@ export default defineComponent({
     if (token == undefined) {
       useRouter().push("login");
     }
-    let password = ref({
+    const password = ref({
       password: "",
       confirm: "",
     });
-    let canSubmitPassword = computed(() => {
+    const canSubmitPassword = computed(() => {
       if (password.value.password.length >= 1) {
         if (password.value.password === password.value.confirm) {
           return true;
@@ -118,7 +118,6 @@ export default defineComponent({
         this.token
       );
       if (response.ok) {
-        let data = response.val as User;
         this.$notify({
           title: "User Updated",
           type: "success",
@@ -147,7 +146,6 @@ export default defineComponent({
       this.password.password = "";
       this.password.confirm = "";
       if (response.ok) {
-        let data = response.val as User;
         this.$notify({
           title: "Password Updated",
           type: "success",
@@ -161,6 +159,6 @@ export default defineComponent({
       }
     },
   },
-  components: { Switch, Permissions },
+  components: { Permissions },
 });
 </script>

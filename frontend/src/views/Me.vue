@@ -58,7 +58,7 @@
 <script lang="ts">
 import { useUserStore } from "@/store/user";
 import { updateMyPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { computed, defineComponent, inject, onMounted, ref } from "vue";
+import { computed, defineComponent, inject, ref } from "vue";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
@@ -74,11 +74,11 @@ export default defineComponent({
     const date = computed(() => {
       return userStore.$state.date;
     });
-    let password = ref({
+    const password = ref({
       password: "",
       confirm: "",
     });
-    let canSubmitPassword = computed(() => {
+    const canSubmitPassword = computed(() => {
       if (password.value.password.length >= 1) {
         if (password.value.password === password.value.confirm) {
           return true;
@@ -105,7 +105,7 @@ export default defineComponent({
       this.password.password = "";
       this.password.confirm = "";
       if (response.ok) {
-        let data = response.val as User;
+        const data = response.val as User;
         this.$notify({
           title: "Password Updated",
           type: "success",

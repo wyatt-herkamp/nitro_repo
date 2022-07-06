@@ -84,13 +84,14 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject } from "vue";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import {
+  Repository,
   updateBadge,
   updateFrontend,
 } from "@nitro_repo/nitro_repo-api-wrapper";
 import { ColorPicker } from "vue-color-kit";
 import "vue-color-kit/dist/vue-color-kit.css";
+
 export default defineComponent({
   components: {
     ColorPicker,
@@ -123,7 +124,7 @@ export default defineComponent({
       this.repository.settings.badge.color = color.hex;
     },
     async submitBadge() {
-      let response = await updateBadge(
+      const response = await updateBadge(
         this.repository.storage,
         this.repository.name,
         this.repository.settings.badge.style,

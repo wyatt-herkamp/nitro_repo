@@ -1,5 +1,5 @@
 <template>
-  <div v-if="repository != undefined">
+  <div v-if="repository">
     <ViewRepo :storage="storage" :repositoryName="repository" />
   </div>
 </template>

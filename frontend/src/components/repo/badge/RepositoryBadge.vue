@@ -18,6 +18,7 @@
               repository.name +
               '/nitro_repo_info/badge'
             "
+            :alt="repository.storage + '/' + repository.name"
           />
         </div>
       </div>
@@ -26,10 +27,12 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import { defineComponent } from "vue";
+import {
+  PublicRepositoryInfo,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
-import { PublicRepositoryInfo } from "@nitro_repo/nitro_repo-api-wrapper";
 import { createBadgeSnippets } from "@/api/repository/BadgeGen";
 import CodeMenu from "@/components/common/code/CodeMenu.vue";
 

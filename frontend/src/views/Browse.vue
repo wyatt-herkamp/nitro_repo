@@ -107,9 +107,9 @@ export default defineComponent({
   setup() {
     const token: string | undefined = inject("token");
 
-    let url = apiURL;
+    const url = apiURL;
     const route = useRoute();
-    let pathSplit = ref<BrowsePath[]>([]);
+    const pathSplit = ref<BrowsePath[]>([]);
     const tableData = ref<FileResponse[] | undefined>();
     const activeResponse = ref<ResponseType | undefined>();
     const catchAll = ref(route.params.catchAll as string);
@@ -136,7 +136,7 @@ export default defineComponent({
         {
           // Generates the needed information for the path
           let url = "";
-          fileResponse.active_dir.split("/").forEach((element) => {
+          fileResponse.active_dir.split("/").forEach((element: string) => {
             url = url + "/" + element;
             pathSplit.value.push({ name: element, path: url });
           });

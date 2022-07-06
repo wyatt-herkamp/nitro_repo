@@ -1,5 +1,5 @@
 <template>
-  <div v-if="repository != undefined">
+  <div v-if="repository !== undefined">
     <div class="mx-auto">
       <SubNavBar v-model="view">
         <SubNavItem index="General"> General </SubNavItem>
@@ -21,18 +21,19 @@
         </SubNavItem>
       </SubNavBar>
       <div class="w-auto m-auto">
-        <GeneralRepo :repository="repository" v-if="view == 'General'" />
-        <FrontendRepo :repository="repository" v-if="view == 'Frontend'" />
-        <SecurityRepo :repository="repository" v-if="view == 'Security'" />
-        <DeployRepo :repository="repository" v-if="view == 'Deploy'" />
+        <GeneralRepo :repository="repository" v-if="view === 'General'" />
+        <FrontendRepo :repository="repository" v-if="view === 'Frontend'" />
+        <SecurityRepo :repository="repository" v-if="view === 'Security'" />
+        <DeployRepo :repository="repository" v-if="view === 'Deploy'" />
       </div>
     </div>
   </div>
 </template>
 <script lang="ts">
-import { getRepoByNameAndStorage } from "@nitro_repo/nitro_repo-api-wrapper";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
-import ViewRepo from "@/components/repo/ViewRepo.vue";
+import {
+  getRepoByNameAndStorage,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRoute, useRouter } from "vue-router";
@@ -44,7 +45,6 @@ import { apiURL } from "@/http-common";
 
 export default defineComponent({
   components: {
-    ViewRepo,
     GeneralRepo,
     FrontendRepo,
     DeployRepo,
@@ -54,9 +54,9 @@ export default defineComponent({
     const url = apiURL;
 
     const router = useRouter();
-    let view = ref("General");
+    const view = ref("General");
 
-    let repository = ref<Repository | undefined>(undefined);
+    const repository = ref<Repository | undefined>(undefined);
     const token: string | undefined = inject("token");
     if (token == undefined) {
       useRouter().push("login");

@@ -46,10 +46,11 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  createNewRepository,
+  Repository,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
-import { createNewRepository } from "@nitro_repo/nitro_repo-api-wrapper";
-import NitroModal from "@/components/common/model/NitroModal.vue";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
@@ -65,7 +66,7 @@ export default defineComponent({
     if (token == undefined) {
       useRouter().push("login");
     }
-    let form = ref({
+    const form = ref({
       name: "",
       type: "",
       error: "",
@@ -103,7 +104,7 @@ export default defineComponent({
         this.token
       );
       if (response.ok) {
-        let data = response.val as Repository;
+        const data = response.val as Repository;
         this.$notify({
           title: "Repository Created",
           type: "success",
@@ -120,7 +121,6 @@ export default defineComponent({
       }
     },
   },
-  components: { NitroModal },
 });
 </script>
 <style scoped></style>

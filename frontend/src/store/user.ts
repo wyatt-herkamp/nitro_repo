@@ -1,5 +1,5 @@
 import { getUser, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { defineStore, acceptHMRUpdate } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 import { inject } from "vue";
 
 export const useUserStore = defineStore({

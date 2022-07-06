@@ -11,7 +11,6 @@ import Repository from "../views/Repository.vue";
 import Me from "../views/Me.vue";
 import Login from "../views/Login.vue";
 import { useCookies } from "vue3-cookies";
-import { inject } from "vue";
 
 const routes: Array<RouteRecordRaw> = [
   {

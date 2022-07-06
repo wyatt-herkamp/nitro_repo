@@ -1,11 +1,11 @@
 <template>
-  <div class="grid grid-row-2 gap-4" v-if="repository != undefined">
+  <div class="grid grid-row-2 gap-4" v-if="repository !== undefined">
     <div class="m-2">
       <RepositoryBadge :repository="repository" />
     </div>
     <div class="m-2">
       <MavenRepoInfo
-        v-if="repositoryType === 'Maven'"
+        v-if="repositoryType.repo_type === 'Maven'"
         :repository="repository"
       />
     </div>
@@ -16,8 +16,8 @@
 import {
   getRepoPublic,
   PublicRepositoryInfo,
+  Repository,
 } from "@nitro_repo/nitro_repo-api-wrapper";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
@@ -43,7 +43,7 @@ export default defineComponent({
   setup(props) {
     const router = useRouter();
 
-    let repository = ref<Repository | PublicRepositoryInfo | undefined>(
+    const repository = ref<Repository | PublicRepositoryInfo | undefined>(
       props.repositoryType
     );
     const token: string | undefined = inject("token");
@@ -77,7 +77,6 @@ export default defineComponent({
     return {
       repository,
       router,
-      repositoryType,
     };
   },
 });

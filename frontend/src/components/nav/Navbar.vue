@@ -29,18 +29,18 @@
         <!-- Secondary Navbar items -->
         <ul class="hidden md:flex items-center space-x-3">
           <button
-            v-if="user == undefined"
+            v-if="user === undefined"
             @click="openLogin = true"
             class="fullScreenItem login"
           >
             Login
           </button>
-          <li v-if="user != undefined">
+          <li v-if="user !== undefined">
             <router-link to="/admin" class="fullScreenItem login"
               >Admin</router-link
             >
           </li>
-          <li v-if="user != undefined">
+          <li v-if="user !== undefined">
             <router-link to="/me" class="fullScreenItem login">Me</router-link>
           </li>
         </ul>
@@ -49,7 +49,6 @@
           <button @click="openNav" class="outline-none mobile-menu-button">
             <svg
               class="w-6 h-6 text-gray-500 hover:text-green-500"
-              x-show="!showMenu"
               fill="none"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -75,12 +74,12 @@
             >Browse</router-link
           >
         </li>
-        <li v-if="user != undefined">
+        <li v-if="user !== undefined">
           <router-link to="/me" @click="openNav" class="smItem">Me</router-link>
         </li>
         <li>
           <router-link
-            v-if="user == undefined"
+            v-if="user === undefined"
             to="/login"
             @click="openNav"
             class="smItem login"
@@ -88,7 +87,7 @@
           >
         </li>
 
-        <AdminDropBox @clicked="openNav()" v-if="user != undefined" />
+        <AdminDropBox @clicked="openNav()" v-if="user !== undefined" />
       </ul>
     </div>
   </div>
@@ -99,9 +98,7 @@
 import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 import { User } from "@nitro_repo/nitro_repo-api-wrapper";
-import MenuButton from "@/components/nav/MenuButton.vue";
 import Login from "@/components/nav/Login.vue";
-import { react } from "@babel/types";
 import AdminDropBox from "./AdminDropBox.vue";
 
 export default defineComponent({
@@ -111,7 +108,7 @@ export default defineComponent({
       type: Object as () => User,
     },
   },
-  components: { MenuButton, Login, AdminDropBox },
+  components: { Login, AdminDropBox },
   setup() {
     const router = useRouter();
     const activeIndex = ref(router.currentRoute.value.name);

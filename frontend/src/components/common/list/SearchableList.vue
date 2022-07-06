@@ -24,7 +24,7 @@
         <ul ref="core">
           <li v-for="value in modelValue" :key="value.name">
             <router-link
-              v-if="value.goTo != undefined"
+              v-if="value.goTo !== undefined"
               :to="value.goTo"
               class="routerLink"
             >
@@ -82,7 +82,7 @@
 }
 </style>
 <script lang="ts">
-import { defineComponent, nextTick, onMounted, ref, watch } from "vue";
+import { defineComponent, ref } from "vue";
 import { ListItem } from "./ListTypes";
 
 export default defineComponent({
@@ -92,7 +92,7 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, { emit }) {
+  setup(props) {
     const core = ref<HTMLUListElement>();
     console.log(props.modelValue.length);
     return { core };

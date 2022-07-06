@@ -105,8 +105,10 @@ import { defineComponent, inject, ref } from "vue";
 import {
   deleteRepository,
   Repository,
+  setActiveStatus,
+  setPolicy,
 } from "@nitro_repo/nitro_repo-api-wrapper";
-import { setActiveStatus, setPolicy } from "@nitro_repo/nitro_repo-api-wrapper";
+
 export default defineComponent({
   props: {
     repository: {
@@ -121,7 +123,7 @@ export default defineComponent({
   },
   setup(props) {
     const deleteOpen = ref(false);
-    let deleteFiles = ref(false);
+    const deleteFiles = ref(false);
     const repositoryType = Object.keys(props.repository.repo_type)[0];
     const date = new Date(props.repository.created).toLocaleDateString("en-US");
     return { repositoryType, date, deleteOpen, deleteFiles };

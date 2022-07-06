@@ -12,7 +12,6 @@
 import { useUserStore } from "@/store/user";
 import Navbar from "@/components/nav/Navbar.vue";
 import { computed, defineComponent, onMounted } from "vue";
-import { useMeta } from "vue-meta";
 
 export default defineComponent({
   name: "App",

@@ -10,9 +10,8 @@
 </template>
 
 <script lang="ts">
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
+import { getUserByID, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
-import { getUserByID } from "@nitro_repo/nitro_repo-api-wrapper";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
 import { useRouter } from "vue-router";
@@ -32,7 +31,10 @@ export default defineComponent({
     const user = ref<User | undefined>();
     const loadUser = async () => {
       try {
-        let value = (await getUserByID(token as string, props.userID)) as User;
+        const value = (await getUserByID(
+          token as string,
+          props.userID
+        )) as User;
         user.value = value as User;
       } catch (e) {}
     };

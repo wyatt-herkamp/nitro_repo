@@ -7,7 +7,7 @@
           xmlns="http://www.w3.org/2000/svg"
           width="24"
           height="24"
-          style="fill: rgba(255, 255, 255, 1); transform: ; msfilter: "
+          style="fill: rgba(255, 255, 255, 1)"
           :class="adminDropDown ? 'rotateSVG' : ''"
         >
           <path
@@ -17,7 +17,7 @@
       </div>
     </div>
   </li>
-  <ui ref="adminDropDownUI" :class="adminDropDown ? 'flex flex-col' : 'hidden'">
+  <ul ref="adminDropDownUI" :class="adminDropDown ? 'flex flex-col' : 'hidden'">
     <li>
       <router-link to="/admin" @click="close()" class="smItem"
         >Admin
@@ -33,19 +33,15 @@
         >Storages</router-link
       >
     </li>
-  </ui>
+  </ul>
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
-import MenuButton from "@/components/nav/MenuButton.vue";
-import Login from "@/components/nav/Login.vue";
-import { react } from "@babel/types";
 
 export default defineComponent({
-  components: { MenuButton, Login },
+  emits: ["clicked"],
   setup(props, { emit }) {
     const router = useRouter();
     const adminDropDownUI = ref<HTMLUListElement>();

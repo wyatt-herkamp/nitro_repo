@@ -1,15 +1,21 @@
-<template></template>
+<template>
+  <h1>
+    Hey you!
+  </h1>
+</template>
 
 <script lang="ts">
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
+import {
+  getUser,
+  updateMyPassword,
+  User,
+} from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
-import { getUser } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updateMyPassword } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
   setup() {
-    let password = ref({
+    const password = ref({
       password: "",
       confirm: "",
       error: "",
@@ -25,12 +31,14 @@ export default defineComponent({
     const loadUser = async () => {
       isLoading.value = true;
       try {
-        let value = await getUser(token as string);
+        const value = await getUser(token as string);
 
         user.value = value.val as User;
 
         isLoading.value = false;
-      } catch (e) {}
+      } catch (e) {
+        isLoading.value = false;
+      }
     };
     loadUser();
 
@@ -49,7 +57,6 @@ export default defineComponent({
         this.token as string
       );
       if (response.ok) {
-        let data = response.val as User;
         this.$notify({
           title: "Password Updated",
           type: "success",

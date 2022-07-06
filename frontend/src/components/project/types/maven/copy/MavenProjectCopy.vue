@@ -7,9 +7,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
-import { useRouter } from "vue-router";
-import { Project, Repository } from "@nitro_repo/nitro_repo-api-wrapper";
+import { defineComponent, ref } from "vue";
+import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import createProjectGen from "@/api/maven/ProjectGen";
 
@@ -29,7 +28,7 @@ export default defineComponent({
       value[1],
       props.project.project.versions.latest_release
     );
-    let page = ref(snippets[0].name);
+    const page = ref(snippets[0].name);
     return { url, page, snippets };
   },
 

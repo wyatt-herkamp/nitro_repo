@@ -35,15 +35,14 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { login } from "@nitro_repo/nitro_repo-api-wrapper";
-import { AuthToken } from "@nitro_repo/nitro_repo-api-wrapper";
+import { AuthToken, login } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useCookies } from "vue3-cookies";
 
 export default defineComponent({
   setup() {
     const { cookies } = useCookies();
 
-    let form = ref({
+    const form = ref({
       username: "",
       password: "",
     });
@@ -53,8 +52,8 @@ export default defineComponent({
     async onSubmit(username: string, password: string) {
       const value = await login(username, password);
       if (value.ok) {
-        let loginRequest = value.val as AuthToken;
-        let date = new Date(loginRequest.expiration * 1000);
+        const loginRequest = value.val as AuthToken;
+        const date = new Date(loginRequest.expiration * 1000);
         this.cookies.set(
           "token",
           loginRequest.token,

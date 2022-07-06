@@ -19,6 +19,7 @@ export default defineComponent({
   props: {
     modelValue: Boolean,
   },
+  emits: ["update:modelValue"],
   setup(props, { emit }) {
     const showLogin = ref(props.modelValue);
     watch(

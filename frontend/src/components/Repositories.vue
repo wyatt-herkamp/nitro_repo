@@ -41,7 +41,7 @@ export default defineComponent({
       useRouter().push("login");
     }
     const list = ref<ListItem[]>([]);
-    let openModel = ref(false);
+    const openModel = ref(false);
 
     const getRepos = async () => {
       try {

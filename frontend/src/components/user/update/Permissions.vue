@@ -51,7 +51,7 @@
             </div>
             <PermissionList
               class="md:basis-3/4"
-              v-if="user.permissions.deployer != undefined"
+              v-if="user.permissions.deployer !== undefined"
               v-model="user.permissions.deployer"
             />
           </div>
@@ -66,7 +66,7 @@
             </div>
             <PermissionList
               class="md:basis-3/4"
-              v-if="user.permissions.viewer != undefined"
+              v-if="user.permissions.viewer !== undefined"
               v-model="user.permissions.viewer"
             />
           </div>
@@ -92,11 +92,10 @@
 </style>
 <script lang="ts">
 import { computed, defineComponent, inject, ref, watch } from "vue";
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
-import Switch from "@/components/common/forms/Switch.vue";
+import { updatePermission, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 import PermissionList from "./PermissionList.vue";
+
 export default defineComponent({
   props: {
     user: {
@@ -163,11 +162,10 @@ export default defineComponent({
         this.$notify({
           title: "Unable Update Permissions",
           text: JSON.stringify(response.val.user_friendly_message),
-          r,
         });
       }
     },
   },
-  components: { Switch, PermissionList },
+  components: { PermissionList },
 });
 </script>

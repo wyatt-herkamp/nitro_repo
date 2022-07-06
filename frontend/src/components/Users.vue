@@ -24,12 +24,12 @@
 
 <style scoped></style>
 <script lang="ts">
-import { defineComponent, inject, ref, watch } from "vue";
+import { defineComponent, inject, ref } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
 import UpdateUser from "@/components/UpdateUser.vue";
 import { getUsers } from "@nitro_repo/nitro_repo-api-wrapper";
 import { ListItem } from "./common/list/ListTypes";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   components: { CreateUser, UpdateUser },
@@ -39,9 +39,9 @@ export default defineComponent({
     if (token == undefined) {
       useRouter().push("login");
     }
-    let createUser = ref(false);
+    const createUser = ref(false);
 
-    let list = ref<ListItem[]>([]);
+    const list = ref<ListItem[]>([]);
     const getUser = async () => {
       try {
         const value = await getUsers(token as string);

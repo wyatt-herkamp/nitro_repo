@@ -40,11 +40,10 @@
   </div>
 </template>
 <script lang="ts">
-import { getStorage } from "@nitro_repo/nitro_repo-api-wrapper";
+import { getStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
-import { useRoute, useRouter } from "vue-router";
-import { Storage } from "@nitro_repo/nitro_repo-api-wrapper";
+import { useRouter } from "vue-router";
 import Repositories from "./Repositories.vue";
 
 export default defineComponent({
@@ -55,8 +54,8 @@ export default defineComponent({
     },
   },
   setup(props) {
-    let storage = ref<Storage | undefined>(undefined);
-    let date = ref<string | undefined>(undefined);
+    const storage = ref<Storage | undefined>(undefined);
+    const date = ref<string | undefined>(undefined);
     const token: string | undefined = inject("token");
     if (token == undefined) {
       useRouter().push("login");
