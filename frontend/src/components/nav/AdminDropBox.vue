@@ -1,6 +1,10 @@
 <template>
   <li>
-    <div class="cursor-pointer text-left" @click="openAdminBox()">
+    <div
+      class="cursor-pointer text-left"
+      @click="openAdminBox()"
+      @keyup.space="openAdminBox()"
+    >
       <span class="smItemHeader">Admin</span>
       <div class="icon">
         <svg
@@ -41,7 +45,6 @@ import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
-  emits: ["clicked"],
   setup(props, { emit }) {
     const router = useRouter();
     const adminDropDownUI = ref<HTMLUListElement>();
@@ -65,38 +68,6 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-.fullScreenItem {
-  @apply inline;
-  @apply py-4;
-  @apply px-2;
-  @apply text-gray-500;
-  @apply font-semibold;
-  @apply hover:text-green-500;
-  @apply transition;
-  @apply duration-300;
-}
-.login {
-  @apply font-medium;
-  @apply text-white;
-  @apply bg-green-500;
-  @apply rounded;
-  @apply hover:bg-green-400;
-}
-.mediumMenu {
-  @apply md:items-center;
-  @apply md:space-x-1;
-  @apply md:flex;
-  @apply md:flex-row;
-}
-.smMenu {
-  @apply absolute;
-  @apply right-0;
-  @apply min-h-fit;
-  @apply transition;
-  @apply ease-in-out;
-  @apply duration-300;
-}
-
 .smItemHeader {
   @apply text-lg;
   @apply px-2;
@@ -123,8 +94,5 @@ svg {
 
   @apply ease-in-out;
   @apply duration-300;
-}
-.rotateSVG {
-  @apply rotate-180;
 }
 </style>

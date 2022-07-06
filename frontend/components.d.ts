@@ -8,6 +8,7 @@ export {}
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AdminDropBox: typeof import('./src/components/nav/AdminDropBox.vue')['default']
+    ArtifactSearch: typeof import('./src/components/ArtifactSearch.vue')['default']
     BrowseBox: typeof import('./src/components/browse/BrowseBox.vue')['default']
     CodeCard: typeof import('./src/components/common/code/CodeCard.vue')['default']
     CodeMenu: typeof import('./src/components/common/code/CodeMenu.vue')['default']
@@ -24,7 +25,6 @@ declare module '@vue/runtime-core' {
     MavenProjectInfo: typeof import('./src/components/project/types/maven/MavenProjectInfo.vue')['default']
     MavenRepoInfo: typeof import('./src/components/repo/types/maven/MavenRepoInfo.vue')['default']
     MavenUpload: typeof import('./src/components/upload/MavenUpload.vue')['default']
-    Me: typeof import('./src/components/Me.vue')['default']
     MenuButton: typeof import('./src/components/nav/MenuButton.vue')['default']
     Navbar: typeof import('./src/components/nav/Navbar.vue')['default']
     NitroModal: typeof import('./src/components/common/model/NitroModal.vue')['default']

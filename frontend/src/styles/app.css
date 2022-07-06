@@ -2,11 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-body,
-html {
-  background-color: hsla(208, 23%, 23%, 1);
-}
-
-p {
-  @apply text-white;
+html,
+body {
+  --color-primary: 206, 25%, 26%;
+  --color-secondary: 207, 45%, 41%;
+  --color-tertiary: 175, 100%, 59%;
+  --color-quaternary: 11, 88%, 96%;
+  --color-accent: 2, 83%, 43%;
+  min-height: 100%;
+  @apply bg-primary;
 }
