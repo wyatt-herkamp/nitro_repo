@@ -7,7 +7,7 @@
       <SearchableList v-model="list">
         <template v-slot:title> Users </template>
         <template v-slot:createButton>
-          <button class="openModalButton" @click="createUser = true">
+          <button class="buttonOne" @click="createUser = true">
             Create User
           </button>
         </template>
@@ -26,13 +26,12 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
-import UpdateUser from "@/components/UpdateUser.vue";
 import { getUsers } from "@nitro_repo/nitro_repo-api-wrapper";
 import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
-  components: { CreateUser, UpdateUser },
+  components: { CreateUser },
 
   setup() {
     const token: string | undefined = inject("token");
@@ -51,7 +50,7 @@ export default defineComponent({
         value.users.forEach((user) => {
           list.value.push({
             name: user.name,
-            goTo: "/admin/user/" + user.id,
+            goTo: "/admin/User/" + user.id,
           });
         });
       } catch (e) {}

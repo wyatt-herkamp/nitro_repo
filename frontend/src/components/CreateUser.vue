@@ -1,19 +1,11 @@
 <template>
-  <div class="flex w-full">
-    <form class="appearance-none flex-col" @submit.prevent="onSubmit()">
-      <div class="flex flex-row">
-        <div class="grow">
-          <p class="header">Create User</p>
-        </div>
-        <div class="m-auto pt-5 pr-3">
-          <button
-            type="button"
-            class="xButton block"
-            @click="showModel = false"
-          >
-            🗙
-          </button>
-        </div>
+  <div class="sideCreate">
+    <form @submit.prevent="onSubmit()">
+      <div class="flex flex-row pl-6">
+        <p class="headerOne">Create User</p>
+        <button type="button" class="xButton" @click="showModel = false">
+          🗙
+        </button>
       </div>
 
       <div class="flex-row">
@@ -77,7 +69,9 @@
           />
         </div>
       </div>
-      <button class="nitroButtonLight">Create User</button>
+      <div class="flex flex-row h-12 mt-5">
+        <button class="buttonOne">Create User</button>
+      </div>
     </form>
   </div>
 </template>
@@ -155,16 +149,3 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-.xButton {
-  @apply float-right;
-}
-.header {
-  @apply font-bold;
-  @apply text-xl;
-  @apply pb-2;
-  @apply pt-2;
-  @apply text-left;
-  @apply w-3/4;
-}
-</style>

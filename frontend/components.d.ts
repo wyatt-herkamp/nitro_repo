@@ -42,6 +42,8 @@ declare module '@vue/runtime-core' {
     SubNavBar: typeof import('./src/components/common/nav/SubNavBar.vue')['default']
     SubNavItem: typeof import('./src/components/common/nav/SubNavItem.vue')['default']
     Switch: typeof import('./src/components/common/forms/Switch.vue')['default']
+    Tab: typeof import('./src/components/common/tabs/Tab.vue')['default']
+    Tabs: typeof import('./src/components/common/tabs/Tabs.vue')['default']
     UpdateRepo: typeof import('./src/components/repo/update/UpdateRepo.vue')['default']
     UpdateStorage: typeof import('./src/components/UpdateStorage.vue')['default']
     UpdateUser: typeof import('./src/components/UpdateUser.vue')['default']

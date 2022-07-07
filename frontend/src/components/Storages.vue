@@ -7,7 +7,7 @@
       <SearchableList v-model="list">
         <template v-slot:title> Storages </template>
         <template v-slot:createButton>
-          <button class="openModalButton" @click="openModel = true">
+          <button class="buttonOne" @click="openModel = true">
             Create Storage
           </button>
         </template>

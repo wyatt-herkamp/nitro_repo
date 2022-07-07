@@ -1,21 +1,12 @@
 <template>
-  <div class="flex w-full">
-    <form class="appearance-none flex-col" @submit.prevent="onSubmit()">
-      <div class="flex flex-row">
-        <div class="grow">
-          <p class="header">Create Storage</p>
-        </div>
-        <div class="m-auto pt-5 pr-3">
-          <button
-            type="button"
-            class="xButton block"
-            @click="showModel = false"
-          >
-            🗙
-          </button>
-        </div>
+  <div class="sideCreate">
+    <form @submit.prevent="onSubmit()">
+      <div class="sideHeader">
+        <p class="headerOne">Create User</p>
+        <button type="button" class="xButton" @click="showModel = false">
+          🗙
+        </button>
       </div>
-
       <div class="flex-row">
         <div class="px-3">
           <label class="nitroLabel" for="name"> Storage ID/Name </label>
@@ -42,7 +33,9 @@
           />
         </div>
       </div>
-      <button class="nitroButtonLight">Create Storage</button>
+      <div class="flex flex-row h-12 mt-5">
+        <button class="buttonOne">Create User</button>
+      </div>
     </form>
   </div>
 </template>
@@ -51,7 +44,7 @@
 import { createNewStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-
+import "@/styles/sideCreate.css";
 export default defineComponent({
   props: {
     modelValue: Boolean,

@@ -1,21 +1,17 @@
 <template>
-  <div v-if="user != undefined" class="w-full">
-    <SubNavBar v-model="page">
-      <LinkNavItem
-        v-if="user.permissions.admin || user.permissions.user_manager"
-        href="/admin/users"
-        icon="user"
-        name="Users"
-      />
-      <LinkNavItem
-        v-if="user.permissions.admin || user.permissions.repository_manager"
-        href="/admin/storages"
-        icon="box"
-        name="Storages"
-      />
-    </SubNavBar>
-    <Storages class="mt-2 md:mt-0" v-if="page == 'storages'" />
-    <Users class="mt-2 md:mt-0" v-if="page == 'users'" />
+  <div class="w-full">
+    <Tabs :defaultTab="page" @tabChange="onTabChange">
+      <Tab name="General" icon="tachometer">
+        <h1>General</h1>
+        <h3>Coming Soon</h3>
+      </Tab>
+      <Tab name="Users" icon="user">
+        <Users />
+      </Tab>
+      <Tab name="Storages" icon="box">
+        <Storages />
+      </Tab>
+    </Tabs>
   </div>
 </template>
 
@@ -24,29 +20,40 @@ import { computed, defineComponent, ref } from "vue";
 import Storages from "@/components/Storages.vue";
 import Users from "@/components/Users.vue";
 import { useRoute } from "vue-router";
-import SubNavBar from "@/components/common/nav/SubNavBar.vue";
-import LinkNavItem from "../../components/common/nav/LinkNavItem.vue";
+import Tabs from "@/components/common/tabs/Tabs.vue";
+import Tab from "@/components/common/tabs/Tab.vue";
 import { useUserStore } from "@/store/user";
+import { useMeta } from "vue-meta";
 
 export default defineComponent({
   components: {
     Storages,
     Users,
-    SubNavBar,
-    LinkNavItem,
+    Tabs,
+    Tab,
   },
 
   setup() {
     const route = useRoute();
-    const page = ref(route.params.page as string);
+    const page = ref(
+      route.params.page ? (route.params.page as string) : undefined
+    );
     const userStore = useUserStore();
     const user = computed(() => {
       return userStore.$state.user;
+    });
+    useMeta({
+      title: page.value ? page.value + " - Admin" : "Admin",
     });
     return {
       user,
       page,
     };
+  },
+  methods: {
+    onTabChange(tab: string) {
+      this.$router.push("/admin/" + tab);
+    },
   },
 });
 </script>

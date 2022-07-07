@@ -1,23 +1,5 @@
 <template>
-  <div v-if="me != undefined">
-    <SubNavBar>
-      <LinkNavItem :href="'/admin/users/'" icon="arrow-back" name="Back" />
-
-      <LinkNavItem
-        v-if="me.permissions.admin || me.permissions.user_manager"
-        href="/admin/users"
-        icon="user"
-        name="Users"
-      />
-      <LinkNavItem
-        v-if="me.permissions.admin || me.permissions.repository_manager"
-        href="/admin/storages"
-        icon="box"
-        name="Storages"
-      />
-    </SubNavBar>
-    <UpdateUser :userID="user" />
-  </div>
+  <UpdateUser :userID="user" />
 </template>
 <style scoped></style>
 <script lang="ts">

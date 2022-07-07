@@ -1,23 +1,15 @@
 <template>
-  <div class="flex w-full">
-    <form class="nitroForm" @submit.prevent="onSubmit()">
-      <div class="flex flex-row">
-        <div class="grow">
-          <p class="header">Create Repository</p>
-        </div>
-        <div class="m-auto pt-5 pr-3">
-          <button
-            type="button"
-            class="xButton block"
-            @click="showModel = false"
-          >
-            🗙
-          </button>
-        </div>
+  <div class="sideCreate">
+    <form @submit.prevent="onSubmit()">
+      <div class="sideHeader">
+        <p class="headerOne">Create User</p>
+        <button type="button" class="xButton" @click="showModel = false">
+          🗙
+        </button>
       </div>
 
-      <div class="settingRow">
-        <div class="settingBox">
+      <div class="flex-row">
+        <div class="px-3">
           <label class="nitroLabel" for="name"> Repository Name </label>
           <input
             id="name"
@@ -30,8 +22,8 @@
           />
         </div>
       </div>
-      <div class="settingRow">
-        <div class="settingBox">
+      <div class="flex-row">
+        <div class="px-3">
           <label class="nitroLabel" for="name"> Repository Type </label>
           <select id="type" v-model="form.type" required class="nitroSelectBox">
             <option disabled selected value="">Repository Type</option>
@@ -40,7 +32,9 @@
           </select>
         </div>
       </div>
-      <button class="nitroButtonLight">Create Repository</button>
+      <div class="flex flex-row h-12 mt-5">
+        <button class="buttonOne">Create User</button>
+      </div>
     </form>
   </div>
 </template>
@@ -49,6 +43,7 @@
 import {
   createNewRepository,
   Repository,
+  Storage,
 } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
 import { useRouter } from "vue-router";

@@ -85,13 +85,28 @@
   @apply cursor-pointer;
   @apply text-white;
 }
-.openModalButton {
-  @apply text-white;
-  @apply bg-slate-600;
-  @apply ml-3;
+.buttonOne {
+  @apply bg-secondary;
+  @apply hover:bg-secondary/90;
+  @apply transition-colors;
+  @apply ease-in-out;
+  @apply duration-200;
+  @apply mx-auto;
   @apply rounded-md;
-  @apply text-white;
+  @apply text-quaternary;
   @apply w-3/4;
+}
+.headerOne {
+  @apply text-quaternary;
+  @apply font-bold;
+  @apply text-xl;
+  @apply w-3/4;
+}
+.xButton{
+  @apply text-quaternary;
+  @apply font-bold;
+  @apply w-1/4;
+
 }
 .nitroForm {
   @apply appearance-none;
