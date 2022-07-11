@@ -9,7 +9,7 @@ import { inject } from "vue";
 export default {
   props: {
     icon: {
-      required: true,
+      required: false,
       type: String,
     },
     name: {

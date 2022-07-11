@@ -4,13 +4,16 @@
       <li
         v-for="tab in tabNames"
         :key="tab.name"
-        class="flex flex-row items-center h-12 tab"
+        class="flex flex-row items-center mx-auto h-12 tab"
         @click="handleClick(tab.name)"
       >
-        <span class="inline-flex items-center justify-center w-12">
+        <span
+          v-show="tab.icon"
+          class="inline-flex items-center justify-center w-12"
+        >
           <box-icon :name="tab.icon"></box-icon>
         </span>
-        <span class="text-sm font-medium mr-2">{{ tab.name }}</span>
+        <span class="text-sm px-2 font-medium mr-2">{{ tab.name }}</span>
       </li>
     </ul>
   </div>

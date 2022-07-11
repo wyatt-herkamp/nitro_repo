@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-if="user != undefined"
-    class="min-h-screen w-full flex flex-wrap lg:flex-nowrap"
-  >
+  <div class="min-h-screen w-full flex flex-wrap lg:flex-nowrap">
     <div class="flex flex-col w-full">
       <UserGeneral :user="user" />
     </div>
@@ -23,22 +20,15 @@ export default defineComponent({
       type: Number,
     },
   },
-  setup(props) {
+  async setup(props) {
     const token: string | undefined = inject("token");
     if (token == undefined) {
-      useRouter().push("login");
+      await useRouter().push("login");
     }
     const user = ref<User | undefined>();
-    const loadUser = async () => {
-      try {
-        const value = (await getUserByID(
-          token as string,
-          props.userID
-        )) as User;
-        user.value = value as User;
-      } catch (e) {}
-    };
-    loadUser();
+    const value = (await getUserByID(token as string, props.userID)) as User;
+    user.value = value as User;
+
     return { user };
   },
 

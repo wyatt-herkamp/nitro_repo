@@ -1,5 +1,10 @@
 <template>
   <UpdateUser :userID="user" />
+  <Suspense>
+    <UpdateUser :userID="user" />
+
+    <template #fallback> Loading user... </template>
+  </Suspense>
 </template>
 <style scoped></style>
 <script lang="ts">
