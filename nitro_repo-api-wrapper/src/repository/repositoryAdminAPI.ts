@@ -1,7 +1,9 @@
 import {Err, Ok} from "ts-results";
 import {createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED, apiClient, BasicResponse} from "../NitroRepoAPI";
 import {Repository, RepositoryList} from "./repositoryTypes";
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function createNewRepository(
     name: string,
     storage: string,
@@ -53,7 +55,9 @@ export async function createNewRepository(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function deleteRepository(
     name: string,
     storage: string,
@@ -104,7 +108,9 @@ export async function deleteRepository(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function setActiveStatus(
     storage: String,
     repository: String,
@@ -148,7 +154,9 @@ export async function setActiveStatus(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function setPolicy(storage: String,
                                 repository: String, policy: string, token: string) {
     return apiClient
@@ -188,7 +196,9 @@ export async function setPolicy(storage: String,
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateBadge(
     storage: String,
     repository: String,
@@ -234,7 +244,9 @@ export async function updateBadge(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateFrontend(
     storage: String,
     repository: String,
@@ -327,7 +339,9 @@ export async function setVisibility(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function clearAll(storage: String,
                                repository: String, what: string, token: string) {
     return apiClient
@@ -367,7 +381,9 @@ export async function clearAll(storage: String,
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function addOrRemoveReadersOrDeployers(
     storage: String,
     repository: String,
@@ -420,7 +436,9 @@ export async function addOrRemoveReadersOrDeployers(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateDeployReport(
     storage: String,
     repository: String,
@@ -465,7 +483,9 @@ export async function updateDeployReport(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateOrAddWebhppl(
     storage: String,
     repository: String,
@@ -511,7 +531,9 @@ export async function updateOrAddWebhppl(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function deleteWebhook(storage: String,
                                     repository: String, name: string, token: string) {
     return apiClient
@@ -547,7 +569,9 @@ export async function deleteWebhook(storage: String,
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getRepositories(token: string): Promise<RepositoryList | undefined> {
     const value = await apiClient.get("/api/admin/repositories/list", {
         headers: {
@@ -564,7 +588,9 @@ export async function getRepositories(token: string): Promise<RepositoryList | u
 
     return undefined;
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getRepositoriesByStorage(token: string, storage: string): Promise<RepositoryList | undefined> {
     const value = await apiClient.get("/api/admin/repositories/" + storage + "/list", {
         headers: {
@@ -583,7 +609,9 @@ export async function getRepositoriesByStorage(token: string, storage: string): 
     return undefined;
 }
 
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getRepoByNameAndStorage(
     token: string | undefined,
     storage: string,

@@ -4,7 +4,9 @@ import { Err, Ok } from "ts-results";
 
 
 
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function createNewUser(
     name: string,
     username: string,
@@ -59,7 +61,9 @@ export async function createNewUser(
             }
         );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateOtherPassword(
     user: string,
     password: string,
@@ -102,6 +106,9 @@ export async function updateOtherPassword(
             }
         );
 }
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateNameAndEmail(
     user: string,
     name: string,
@@ -145,6 +152,9 @@ export async function updateNameAndEmail(
             }
         );
 }
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updatePermission(
     user: string,
     permissions: UserPermissions,
@@ -188,7 +198,9 @@ export async function updatePermission(
         );
 }
 
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getUsers(token: string): Promise<UserList | undefined> {
     //${API_URL}
     const value = await apiClient.get("/api/admin/user/list", {
@@ -207,7 +219,9 @@ export async function getUsers(token: string): Promise<UserList | undefined> {
 
     return undefined;
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getUserByID(
     token: string,
     id: number

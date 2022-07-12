@@ -7,7 +7,9 @@ export interface SiteInfo {
     description: string;
 }
 
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getSiteInfo() {
     return apiClient
         .get("/api/info/site")

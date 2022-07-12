@@ -2,7 +2,9 @@
 import {Err, Ok} from "ts-results";
 import {apiClient, BasicResponse, INTERNAL_ERROR, INVALID_LOGIN, NOT_AUTHORIZED,} from "../NitroRepoAPI";
 import {AuthToken, User} from "./userTypes";
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function login(username: string, password: string) {
   let loginRequest = {
     username: username,
@@ -39,7 +41,9 @@ export async function login(username: string, password: string) {
     }
   );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function updateMyPassword(password: string, token: string) {
   return apiClient
     .post(
@@ -78,7 +82,9 @@ export async function updateMyPassword(password: string, token: string) {
       }
     );
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getUser(token: string) {
   return apiClient
     .get("/api/me", {

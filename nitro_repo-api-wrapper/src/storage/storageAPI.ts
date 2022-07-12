@@ -2,7 +2,9 @@ import {apiClient, BasicResponse, createAPIError, INTERNAL_ERROR, NOT_AUTHORIZED
 import {Storage, StorageList} from "../storage/storageTypes";
 import {Err, Ok} from "ts-results";
 import { BrowseResponse } from "src/repository/repositoryTypes";
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getStorages(token: string): Promise<Array<Storage> | undefined> {
     const value = await apiClient.get("/api/storages/list", {
         headers: {
@@ -20,7 +22,9 @@ export async function getStorages(token: string): Promise<Array<Storage> | undef
 
     return undefined;
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getStoragesPublicAccess():  Promise<BrowseResponse | undefined> {
     const value = await apiClient.get("/storages.json", {});
 
@@ -34,7 +38,9 @@ export async function getStoragesPublicAccess():  Promise<BrowseResponse | undef
 
     return undefined;
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function getStorage(token: string, id: string): Promise<Storage | undefined> {
     const value = await apiClient.get("/api/storages/id/" + id, {
         headers: {
@@ -52,7 +58,9 @@ export async function getStorage(token: string, id: string): Promise<Storage | u
 
     return undefined;
 }
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function createNewStorage(
     name: string,
     public_name: string,
@@ -98,7 +106,9 @@ export async function createNewStorage(
                 }
             }
         );
-}
+}/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export async function deleteStorage(
     name: string,
     token: string

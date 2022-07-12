@@ -9,7 +9,9 @@ export let apiClient: AxiosInstance = axios.create({
         Accept: "application/json",
     },
 });
-
+/**
+ * @deprecated The nitro_repo_api-wrapper is deprecated and will be removed in a future release.
+ */
 export function init(myURL: string) {
     apiURL = myURL
     apiClient = axios.create({
