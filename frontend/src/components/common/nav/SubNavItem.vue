@@ -18,7 +18,6 @@ import {
   onBeforeUnmount,
   onMounted,
   reactive,
-  ref,
 } from "vue";
 import { MenuItemType, MenuProvider } from "./SubNavType";
 

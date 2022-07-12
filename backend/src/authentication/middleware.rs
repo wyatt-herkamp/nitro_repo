@@ -204,7 +204,7 @@ where
             if let Some(session) = session {
                 let mut cookie = Cookie::new("session", &session.token);
                 cookie.set_secure(false);
-                cookie.set_same_site(SameSite::Lax);
+                cookie.set_same_site(SameSite::None);
                 cookie.set_path("/");
                 cookie.set_expires(session.expiration);
                 let cookie_encoded = cookie.encoded().to_string();

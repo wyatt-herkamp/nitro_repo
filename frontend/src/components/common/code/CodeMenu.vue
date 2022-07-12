@@ -23,7 +23,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { apiURL } from "@/http-common";
+import httpCommon from "@/http-common";
 import CodeCard from "@/components/common/code/CodeCard.vue";
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
@@ -36,7 +36,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const url = apiURL;
+    const url = httpCommon.apiURL;
     const currentTab = ref(props.codes[0].name);
 
     return { url, currentTab };

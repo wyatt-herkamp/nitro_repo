@@ -19,6 +19,7 @@
   @apply right-0;
   @apply mt-5;
   @apply mr-5;
+  @apply text-quaternary;
 }
 .header {
   @apply font-bold;
@@ -28,17 +29,18 @@
 .modal {
   @apply relative;
   @apply border;
-  @apply bg-slate-700;
-  @apply border-black;
+  @apply bg-primary;
+  @apply border-primary/90;
   @apply py-5;
   @apply px-10;
   @apply rounded-2xl;
   @apply shadow-xl;
   @apply text-center;
+  @apply min-h-full;
 }
 </style>
 <script lang="ts">
-import { defineComponent, onMounted, ref, toRef, watch } from "vue";
+import { defineComponent, onMounted, ref, watch } from "vue";
 
 export default defineComponent({
   props: {

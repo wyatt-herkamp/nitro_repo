@@ -74,7 +74,7 @@ impl MultiStorageController {
     pub async fn get_storage_by_name(
         &self,
         name: &str,
-    ) -> Result<Option<RwLockReadGuard<'_, DynamicStorage>>, StorageError> {
+    ) -> Result<Option<RwLockReadGuard<DynamicStorage>>, StorageError> {
         let storages = self.storages.read().await;
         if storages.contains_key(name) {
             return Ok(None);

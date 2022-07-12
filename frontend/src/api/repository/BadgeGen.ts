@@ -24,6 +24,7 @@ export function createBadgeSnippets(
     },
   ];
 }
+
 export function createProjectSnippet(
   storage: string,
   repository: string,

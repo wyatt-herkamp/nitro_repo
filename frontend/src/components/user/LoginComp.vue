@@ -1,33 +1,30 @@
 <template>
   <div>
-    <form
-      class="nitroForm"
-      @submit.prevent="onSubmit(form.username, form.password)"
-    >
-      <div class="py-2">
-        <label class="nitroLabel" for="username">Username</label>
+    <form class="nitroForm" @submit.prevent="onSubmit()">
+      <div class="formGroup">
+        <label class="formLabel" for="username">Username</label>
         <input
           id="username"
           v-model="form.username"
           autocomplete="username"
-          class="nitroTextInput"
+          class="formInput"
           placeholder="Username"
           type="text"
         />
       </div>
-      <div class="py-2">
-        <label class="nitroLabel" for="password">Password</label>
+      <div class="formGroup">
+        <label class="formLabel" for="password">Password</label>
         <input
           id="password"
           v-model="form.password"
           autocomplete="current-password"
-          class="nitroTextInput"
+          class="formInput"
           placeholder="Password"
           type="password"
         />
       </div>
-      <div class="py-2">
-        <button class="loginButton nitroButton">Sign in</button>
+      <div class="formGroup flex flex-row-reverse">
+        <button class="loginButton">Sign in</button>
       </div>
     </form>
   </div>
@@ -35,47 +32,51 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { login } from "@nitro_repo/nitro_repo-api-wrapper";
-import { AuthToken } from "@nitro_repo/nitro_repo-api-wrapper";
-import { useCookies } from "vue3-cookies";
-import apiClient from "@/http-common";
-import { Result } from "ts-results";
-import { valueToNode } from "@babel/types";
-
+import httpCommon from "@/http-common";
+import "@/styles/forms.css";
 export default defineComponent({
+  emits: ["login"],
   setup() {
-    const { cookies } = useCookies();
-
-    let form = ref({
+    const form = ref({
       username: "",
       password: "",
     });
-    return { form, cookies };
+    return { form };
   },
   methods: {
-    async onSubmit(username: string, password: string) {
-      let response: Result<object, object> = await apiClient.post("api/login", {
-        username: username,
-        password: password,
-      });
-      if (response.ok) {
-        location.reload();
-      } else if (response.err) {
-        if (response.val) {
-          this.form.password = "";
-          this.$notify({
-            title: response.val.data.error,
-            type: "warn",
-          });
-        }
-      }
+    async onSubmit() {
+      await httpCommon.apiClient
+        .post("/api/login", this.form)
+        .then((res) => {
+          if (res.status === 200) {
+            this.$emit("login", "success");
+          }
+        })
+        .catch((err) => {
+          if (err.response) {
+            if (err.response.status === 401) {
+              this.form.password = "";
+              this.$emit("login", "failure");
+            } else {
+              console.error(err.response.data);
+              this.$emit("login", "internal_error");
+            }
+          } else {
+            console.error(err.request);
+            this.$emit("login", "frontend_error");
+          }
+        });
     },
   },
 });
 </script>
-<style>
-.loginButton:hover {
-  @apply bg-slate-900;
-  transition: background-color 0.5s;
+<style scoped>
+.loginButton {
+  @apply bg-secondary;
+  @apply text-quaternary;
+  @apply py-2;
+  @apply px-4;
+  @apply rounded-md;
+  @apply hover:bg-secondary/70;
 }
 </style>

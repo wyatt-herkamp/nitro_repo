@@ -46,16 +46,20 @@ export default defineComponent({
       checked.value = value;
       emit("update:modelValue", value);
       nextTick(() => {
-        input.value.checked = value;
+        if (input.value != undefined) {
+          input.value.checked = value;
+        }
       });
     };
     onMounted(() => {
-      input.value!.checked = checked.value;
-      setBackgroundColor();
+      if (input.value != undefined) {
+        input.value.checked = checked.value;
+        setBackgroundColor();
+      }
     });
     const setBackgroundColor = (): void => {
       const dotElement = core.value;
-      if (dotElement != undefined) {
+      if (dotElement != undefined && input.value != undefined) {
         if (input.value.checked) {
           dotElement.style.backgroundColor = "#48bb78";
           dotElement.style.transform = "translateX(100%)";

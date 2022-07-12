@@ -1,6 +1,13 @@
 <template>
   <NitroModal v-model="showLogin">
-    <template v-slot:header>Login</template>
+    <template v-slot:header
+      ><div class="py-2">
+        <h1 class="text-quaternary text-3xl py-2">Welcome</h1>
+        <h6 class="text-sm text-quaternary/50">
+          Login to your Nitro Repo Account
+        </h6>
+      </div></template
+    >
     <template v-slot:content><LoginComp /> </template>
   </NitroModal>
 </template>
@@ -12,8 +19,8 @@
 <script lang="ts">
 import { defineComponent, ref, watch } from "vue";
 
-import LoginComp from "../user/LoginComp.vue";
-import NitroModal from "../common/model/NitroModal.vue";
+import LoginComp from "@/components//user/LoginComp.vue";
+import NitroModal from "@/components/common/model/NitroModal.vue";
 
 export default defineComponent({
   props: {

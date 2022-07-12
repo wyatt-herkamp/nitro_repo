@@ -31,7 +31,8 @@ export default defineComponent({
       highlighter: (code: string) =>
         prism.highlight(
           code,
-          prism.languages[props.snippetInfo.lang] ?? prism.languages.js
+          prism.languages[props.snippetInfo.lang] ?? prism.languages.js,
+          props.snippetInfo.lang
         ),
       ...props.snippetInfo,
     }));

@@ -1,6 +1,6 @@
 <template>
   <!-- Navbar goes here -->
-  <nav class="bg-slate-900 shadow-lg">
+  <nav class="shadow-lg bg-secondary">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between">
         <div class="flex space-x-7">
@@ -15,41 +15,32 @@
           </div>
 
           <ul class="hidden mediumMenu">
-            <li>
-              <router-link to="/" class="fullScreenItem">Home</router-link>
+            <li class="fullScreenItem">
+              <router-link to="/">Home</router-link>
             </li>
-            <li>
-              <router-link to="/browse" class="fullScreenItem"
-                >Browse</router-link
-              >
+            <li class="fullScreenItem">
+              <router-link to="/browse">Browse</router-link>
             </li>
           </ul>
         </div>
 
         <!-- Secondary Navbar items -->
         <ul class="hidden md:flex items-center space-x-3">
-          <button
-            v-if="user == undefined"
-            @click="openLogin = true"
-            class="fullScreenItem login"
-          >
-            Login
-          </button>
-          <li v-if="user != undefined">
-            <router-link to="/admin" class="fullScreenItem login"
-              >Admin</router-link
-            >
+          <li v-if="user === undefined" class="fullScreenItem">
+            <button @click="openLogin = true">Login</button>
           </li>
-          <li v-if="user != undefined">
-            <router-link to="/me" class="fullScreenItem login">Me</router-link>
+          <li v-if="user !== undefined" class="fullScreenItem">
+            <router-link to="/admin">Admin</router-link>
+          </li>
+          <li v-if="user !== undefined" class="fullScreenItem">
+            <router-link to="/me">Me</router-link>
           </li>
         </ul>
         <!-- Mobile menu button -->
         <div class="md:hidden flex items-center">
           <button @click="openNav" class="outline-none mobile-menu-button">
             <svg
-              class="w-6 h-6 text-gray-500 hover:text-green-500"
-              x-show="!showMenu"
+              class="w-6 h-6 text-tertiary hover:text-accent"
               fill="none"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -65,32 +56,26 @@
     </div>
   </nav>
   <div ref="mobileNav" class="hidden smMenu">
-    <div class="w-44 rounded-md float-right bg-slate-800">
-      <ul class="flex flex-col py-4">
-        <li>
-          <router-link to="/" @click="openNav" class="smItem">Home</router-link>
-        </li>
-        <li>
-          <router-link to="/browse" @click="openNav" class="smItem"
-            >Browse</router-link
-          >
-        </li>
-        <li v-if="user != undefined">
-          <router-link to="/me" @click="openNav" class="smItem">Me</router-link>
-        </li>
-        <li>
-          <router-link
-            v-if="user == undefined"
-            to="/login"
-            @click="openNav"
-            class="smItem login"
-            >Login</router-link
-          >
-        </li>
+    <ul class="flex flex-col w-full">
+      <li class="smItem">
+        <router-link to="/" @click="openNav" class="smItem">Home</router-link>
+      </li>
+      <li class="smItem">
+        <router-link to="/browse" @click="openNav" class="smItem"
+          >Browse</router-link
+        >
+      </li>
+      <li v-if="user !== undefined" class="smItem">
+        <router-link to="/me" @click="openNav" class="smItem">Me</router-link>
+      </li>
+      <li class="smItem">
+        <router-link v-if="user === undefined" to="/login" @click="openNav"
+          >Login</router-link
+        >
+      </li>
 
-        <AdminDropBox @clicked="openNav()" v-if="user != undefined" />
-      </ul>
-    </div>
+      <AdminDropBox @clicked="openNav()" v-if="user !== undefined" />
+    </ul>
   </div>
   <Login v-model="openLogin" />
 </template>
@@ -98,11 +83,9 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
-import MenuButton from "@/components/nav/MenuButton.vue";
 import Login from "@/components/nav/Login.vue";
-import { react } from "@babel/types";
-import AdminDropBox from "./AdminDropBox.vue";
+import AdminDropBox from "@/components/nav/AdminDropBox.vue";
+import { User } from "@/types/user";
 
 export default defineComponent({
   props: {
@@ -111,7 +94,7 @@ export default defineComponent({
       type: Object as () => User,
     },
   },
-  components: { MenuButton, Login, AdminDropBox },
+  components: { Login, AdminDropBox },
   setup() {
     const router = useRouter();
     const activeIndex = ref(router.currentRoute.value.name);
@@ -142,21 +125,12 @@ export default defineComponent({
 </script>
 <style scoped>
 .fullScreenItem {
-  @apply inline;
-  @apply py-4;
+  @apply text-quaternary;
   @apply px-2;
-  @apply font-semibold;
-  @apply hover:text-slate-300;
-  @apply transition;
-  @apply duration-300;
+  @apply hover:bg-primary/10;
+  @apply tracking-wide;
 }
-.login {
-  @apply font-medium;
-  @apply text-white;
-  @apply bg-slate-800;
-  @apply rounded;
-  @apply hover:bg-slate-900;
-}
+
 .mediumMenu {
   @apply md:items-center;
   @apply md:space-x-1;
@@ -164,24 +138,21 @@ export default defineComponent({
   @apply md:flex-row;
 }
 .smMenu {
-  @apply absolute;
-  @apply right-0;
-  @apply h-auto;
-  min-height: 25%;
-  @apply transition;
-  @apply ease-in-out;
-  @apply duration-300;
+  @apply border-t-2;
+  @apply border-primary/10;
+  @apply w-full;
+  @apply bg-secondary/90;
+  @apply shadow-md;
+  @apply rounded-b-md;
 }
 
 .smItem {
+  @apply text-quaternary;
+  @apply w-full;
   @apply block;
-  @apply text-sm;
-  @apply px-4;
-  @apply pt-4;
-  @apply pb-6;
-  @apply hover:bg-green-500;
-  @apply transition;
-  @apply duration-300;
-  @apply text-left;
+  @apply tracking-wide;
+  @apply py-2;
+  @apply hover:bg-secondary/80;
+  @apply text-center;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-wrap flex-row">
     <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
-      <form class="settingContent" @submit.prevent="onSettingSubmit()">
+      <form class="settingContent" @submit.prevent="updateGenericProperties()">
         <h2 class="settingHeader">User General</h2>
         <div class="settingBox">
           <label class="nitroLabel" for="grid-name"> Name </label>
@@ -55,14 +55,7 @@
     </div>
     <div class="flex-grow lg:m-5 border-slate-500 border-2 rounded-lg">
       <h1
-        class="
-          text-left
-          ml-2
-          md:text-4xl
-          text-3xl
-          border-b-2 border-slate-500
-          p-2
-        "
+        class="text-left ml-2 md:text-4xl text-3xl border-b-2 border-slate-500 p-2"
       >
         Permissions
       </h1>
@@ -72,12 +65,10 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, inject, ref } from "vue";
-import { updateOtherPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { updateNameAndEmail, updatePermission } from "@nitro_repo/nitro_repo-api-wrapper";
-import Switch from "@/components/common/forms/Switch.vue";
-import { useRouter } from "vue-router";
+import { computed, defineComponent, ref } from "vue";
 import Permissions from "./Permissions.vue";
+import { User } from "@/types/user";
+
 export default defineComponent({
   props: {
     user: {
@@ -86,10 +77,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     let password = ref({
       password: "",
       confirm: "",
@@ -103,37 +90,11 @@ export default defineComponent({
       return false;
     });
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date, token: token as string, password, canSubmitPassword };
+    return { date, password, canSubmitPassword };
   },
   methods: {
-    async onSettingSubmit() {
-      if (this.user == undefined) {
-        this.$notify({
-          title: "Unable Update Name and Email",
-          text: "User is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await updateNameAndEmail(
-        this.user.username,
-        this.user.name,
-        this.user.email,
-        this.token
-      );
-      if (response.ok) {
-        let data = response.val as User;
-        this.$notify({
-          title: "User Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update User",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+    async updateGenericProperties() {
+      // TODO generic user data
     },
     async updatePassword() {
       if (!this.canSubmitPassword) {
@@ -143,28 +104,9 @@ export default defineComponent({
         });
         return;
       }
-      const response = await updateOtherPassword(
-        this.user.username,
-        this.password.password,
-        this.token
-      );
-      this.password.password = "";
-      this.password.confirm = "";
-      if (response.ok) {
-        let data = response.val as User;
-        this.$notify({
-          title: "Password Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Password",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update password
     },
   },
-  components: { Switch, Permissions },
+  components: { Permissions },
 });
 </script>

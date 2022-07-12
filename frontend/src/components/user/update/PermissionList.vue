@@ -28,8 +28,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { RepositoryPermissions } from "@nitro_repo/nitro_repo-api-wrapper";
-import Switch from "@/components/common/forms/Switch.vue";
+import { RepositoryPermissions } from "@/types/user";
 export default defineComponent({
   props: {
     modelValue: {
@@ -60,7 +59,5 @@ export default defineComponent({
       removePermission,
     };
   },
-
-  components: { Switch },
 });
 </script>

@@ -1,5 +1,6 @@
 backend/target
 backend/test
+test/
 *.iml
 .idea
 log
