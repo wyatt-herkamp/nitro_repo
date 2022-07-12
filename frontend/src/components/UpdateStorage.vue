@@ -1,7 +1,7 @@
 <template>
   <div>
-    <Tabs>
-      <Tab name="General">
+    <SimpleTabs>
+      <SimpleTab name="General">
         <div class="settingContent">
           <div class="settingBox">
             <label class="nitroLabel" for="grid-name"> name </label>
@@ -36,11 +36,11 @@
             />
           </div>
         </div>
-      </Tab>
-      <Tab name="Repositories">
+      </SimpleTab>
+      <SimpleTab name="Repositories">
         <Repositories :storage="storage" />
-      </Tab>
-    </Tabs>
+      </SimpleTab>
+    </SimpleTabs>
   </div>
 </template>
 <script lang="ts">

@@ -1,65 +1,43 @@
 <template>
   <div class="bg-secondary md:mt-1 rounded-lg xl:w-1/2 xl:mx-auto">
-    <ul class="flex flex-wrap justify-center justify-between w-1/2 m-auto">
-      <li
-        v-for="tab in tabNames"
-        :key="tab.name"
-        class="flex flex-row items-center mx-auto h-12 tab"
-        @click="handleClick(tab.name)"
-      >
-        <span
-          v-show="tab.icon"
-          class="inline-flex items-center justify-center w-12"
-        >
-          <box-icon :name="tab.icon"></box-icon>
-        </span>
-        <span class="text-sm px-2 font-medium mr-2">{{ tab.name }}</span>
-      </li>
+    <ul class="tabs">
+      <slot />
     </ul>
   </div>
-  <slot></slot>
 </template>
 
-<script lang="js">
+<script lang="ts">
 import { defineComponent, provide, ref } from "vue";
+import { TabData } from "./TabData";
 export default defineComponent({
   props: {
-
-    defaultTab: {
-      required: false,
-      type: String,
-    },
+    modelValue: String,
   },
-  emits: ["tabChange"],
-  setup(props, { slots }) {
-    const tabNames = ref(slots.default().map((item) => {
-      return {
-        name: item.props.name,
-        icon: item.props.icon
-      };
-    }));
-    const tab = ref(props.defaultTab ? props.defaultTab : tabNames.value[0].name);
-
-    provide("tab", tab);
-    return { tab, tabNames };
+  emits: ["tabChange", "update:modelValue"],
+  setup(props, { emit }) {
+    const tab = ref(props.modelValue ? props.modelValue : "Users");
+    const handleChange = (new_tab: string): void => {
+      emit("update:modelValue", new_tab);
+      emit("tabChange", new_tab);
+      tab.value = new_tab;
+    };
+    const data: TabData = {
+      currentTab: tab,
+      update: handleChange,
+    };
+    provide("tabData", data);
+    return { tab };
   },
-  methods:{
-    handleClick(value){
-      this.tab = value;
-      this.$emit("tabChange", value);
-    }
-  }
 });
 </script>
 <style scoped>
-.tab {
-  @apply text-quaternary;
-  @apply hover:cursor-pointer;
-  @apply hover:border-b-accent/25;
-  @apply border-b-2;
-  @apply border-transparent;
-  @apply hover:shadow-accent;
-  @apply hover:drop-shadow-sm;
-  transition: border-bottom-color 0.2s ease-in-out;
+.tabs {
+  @apply flex;
+  @apply flex-wrap;
+  @apply lg:flex-nowrap;
+  @apply justify-center;
+  @apply justify-between;
+  @apply w-1/2;
+  @apply m-auto;
 }
 </style>
