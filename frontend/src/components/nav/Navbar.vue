@@ -83,9 +83,9 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
-import Login from "@/components/nav/Login.vue";
-import AdminDropBox from "@/components/nav/AdminDropBox.vue";
-import { User } from "@/types/user";
+import Login from "./Login.vue";
+import AdminDropBox from "./AdminDropBox.vue";
+import { User } from "@nitro_repo/nitro_repo-api-wrapper";
 
 export default defineComponent({
   props: {

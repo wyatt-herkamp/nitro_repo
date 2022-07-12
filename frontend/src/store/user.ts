@@ -1,27 +1,35 @@
+import { getUser, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { User } from "@/types/user";
-import httpCommon from "@/http-common";
+import { inject } from "vue";
 
-const useUserStore = defineStore({
+export const useUserStore = defineStore({
   id: "user",
   state: () => ({
     user: <User | undefined>undefined,
+    date: new Date(),
   }),
 
   actions: {
     logout() {
-      this.$patch({ user: undefined });
+      this.$patch({ user: undefined, date: new Date() });
     },
-    async getAccount() {
-      httpCommon.apiClient.get("/api/me").then((response) => {
-        if (response.status === 200) {
-          this.$patch({ user: response.data });
-        }
+
+    async loadUser() {
+      const token: string | undefined = inject("token");
+      if (token == undefined) {
+        return;
+      }
+
+      const user = await getUser(token);
+      if (user.err) return;
+      this.$patch({
+        user: user.val,
+        date: new Date(user.val.created).toLocaleDateString("en-US"),
       });
     },
   },
 });
+
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useUserStore, import.meta.hot));
 }
-export default useUserStore;

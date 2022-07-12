@@ -6,7 +6,6 @@ function withOpacityValue(variable) {
     return `hsla(var(${variable}) , ${opacityValue})`;
   };
 }
-
 module.exports = {
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {

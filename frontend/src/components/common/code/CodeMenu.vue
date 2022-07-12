@@ -6,7 +6,7 @@
         <div
           v-for="code in codes"
           :key="code.name"
-          :class="currentTab == code.name ? 'active item' : 'item'"
+          :class="currentTab === code.name ? 'active item' : 'item'"
           @click="currentTab = code.name"
         >
           {{ code.name }}

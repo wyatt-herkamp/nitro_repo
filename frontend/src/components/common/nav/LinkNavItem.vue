@@ -44,8 +44,6 @@ export default defineComponent({
   setup(props) {
     const rootMenu = inject<MenuProvider>("rootMenu") as MenuProvider;
     const active = computed(() => {
-      console.log(props.name);
-      console.log(rootMenu.activeIndex);
       return props.name.toLocaleLowerCase() === rootMenu.activeIndex;
     });
 

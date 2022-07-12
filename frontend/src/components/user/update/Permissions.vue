@@ -85,13 +85,17 @@
 .otherPermissions {
   @apply w-full;
 }
+.admin {
+  @apply opacity-50;
+  @apply backdrop-brightness-95;
+}
 </style>
 <script lang="ts">
 import { computed, defineComponent, inject, ref, watch } from "vue";
-import Switch from "@/components/common/forms/Switch.vue";
+import { updatePermission, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { useRouter } from "vue-router";
 import PermissionList from "./PermissionList.vue";
-import { User } from "@/types/user";
+
 export default defineComponent({
   props: {
     user: {
@@ -144,9 +148,24 @@ export default defineComponent({
   },
   methods: {
     async updatePermissions() {
-      // TODO update permissions
+      const response = await updatePermission(
+        this.user.username,
+        this.permissions,
+        this.token
+      );
+      if (response.ok) {
+        this.$notify({
+          title: "Updated Permissions",
+          type: "info",
+        });
+      } else {
+        this.$notify({
+          title: "Unable Update Permissions",
+          text: JSON.stringify(response.val.user_friendly_message),
+        });
+      }
     },
   },
-  components: { Switch, PermissionList },
+  components: { PermissionList },
 });
 </script>

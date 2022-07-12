@@ -1,0 +1,14 @@
+.sideCreate {
+  @apply lg:border-l-2;
+  @apply border-quaternary/25;
+  @apply pr-5;
+  @apply mt-5;
+}
+.sideCreate > form {
+  @apply appearance-none;
+}
+.sideHeader{
+  @apply flex;
+  @apply flex-row;
+  @apply pl-6;
+}

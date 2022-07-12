@@ -32,51 +32,47 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import httpCommon from "@/http-common";
-import "@/styles/forms.css";
+import { AuthToken, login } from "@nitro_repo/nitro_repo-api-wrapper";
+import { useCookies } from "vue3-cookies";
+
 export default defineComponent({
   emits: ["login"],
   setup() {
+    const { cookies } = useCookies();
+
     const form = ref({
       username: "",
       password: "",
     });
-    return { form };
+    return { form, cookies };
   },
   methods: {
     async onSubmit() {
-      await httpCommon.apiClient
-        .post("/api/login", this.form)
-        .then((res) => {
-          if (res.status === 200) {
-            this.$emit("login", "success");
-          }
-        })
-        .catch((err) => {
-          if (err.response) {
-            if (err.response.status === 401) {
-              this.form.password = "";
-              this.$emit("login", "failure");
-            } else {
-              console.error(err.response.data);
-              this.$emit("login", "internal_error");
-            }
-          } else {
-            console.error(err.request);
-            this.$emit("login", "frontend_error");
-          }
-        });
+      const value = await login(this.form.username, this.form.password);
+      if (value.ok) {
+        const loginRequest = value.val as AuthToken;
+        const date = new Date(loginRequest.expiration * 1000);
+        this.cookies.set(
+          "token",
+          loginRequest.token,
+          date,
+          undefined,
+          undefined,
+          undefined,
+          "Lax"
+        );
+        this.$emit("login", "success");
+      } else {
+        this.form.password = "";
+        this.$emit("login", "failure");
+      }
     },
   },
 });
 </script>
-<style scoped>
-.loginButton {
-  @apply bg-secondary;
-  @apply text-quaternary;
-  @apply py-2;
-  @apply px-4;
-  @apply rounded-md;
-  @apply hover:bg-secondary/70;
+<style>
+.loginButton:hover {
+  @apply bg-slate-900;
+  transition: background-color 0.5s;
 }
 </style>

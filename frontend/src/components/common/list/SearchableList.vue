@@ -1,8 +1,6 @@
 <template>
   <div class="w-full">
-    <div
-      class="bg-slate-800 shadow-md rounded-lg px-3 py-2 mb-4 max-w-screen-xl"
-    >
+    <div class="bg-tertiary rounded-lg px-3 py-2 mb-4">
       <div id="header">
         <slot name="title"></slot>
       </div>
@@ -92,6 +90,7 @@ export default defineComponent({
       required: true,
     },
   },
+  slots: ["title", "createButton"],
   setup(props) {
     const core = ref<HTMLUListElement>();
     console.log(props.modelValue.length);

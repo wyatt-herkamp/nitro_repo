@@ -37,7 +37,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const input = ref<HTMLInputElement>();
     const core = ref<HTMLDivElement>();
-    let checked = ref(props.modelValue);
+    const checked = ref(props.modelValue);
     watch(checked, () => {
       setBackgroundColor();
     });
@@ -46,20 +46,16 @@ export default defineComponent({
       checked.value = value;
       emit("update:modelValue", value);
       nextTick(() => {
-        if (input.value != undefined) {
-          input.value.checked = value;
-        }
+        input.value!.checked = value;
       });
     };
     onMounted(() => {
-      if (input.value != undefined) {
-        input.value.checked = checked.value;
-        setBackgroundColor();
-      }
+      input.value!.checked = checked.value;
+      setBackgroundColor();
     });
     const setBackgroundColor = (): void => {
       const dotElement = core.value;
-      if (dotElement != undefined && input.value != undefined) {
+      if (dotElement !== undefined && input.value !== undefined) {
         if (input.value.checked) {
           dotElement.style.backgroundColor = "#48bb78";
           dotElement.style.transform = "translateX(100%)";

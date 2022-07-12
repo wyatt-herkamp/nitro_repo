@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-wrap flex-row">
     <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
-      <form class="settingContent" @submit.prevent="updateGenericProperties()">
+      <form class="settingContent" @submit.prevent="onSettingSubmit()">
         <h2 class="settingHeader">User General</h2>
         <div class="settingBox">
           <label class="nitroLabel" for="grid-name"> Name </label>
@@ -65,9 +65,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
+import { computed, defineComponent, inject, ref } from "vue";
+import {
+  updateNameAndEmail,
+  updateOtherPassword,
+  User,
+} from "@nitro_repo/nitro_repo-api-wrapper";
+import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";
-import { User } from "@/types/user";
 
 export default defineComponent({
   props: {
@@ -77,11 +82,15 @@ export default defineComponent({
     },
   },
   setup(props) {
-    let password = ref({
+    const token: string | undefined = inject("token");
+    if (token == undefined) {
+      useRouter().push("login");
+    }
+    const password = ref({
       password: "",
       confirm: "",
     });
-    let canSubmitPassword = computed(() => {
+    const canSubmitPassword = computed(() => {
       if (password.value.password.length >= 1) {
         if (password.value.password === password.value.confirm) {
           return true;
@@ -90,11 +99,36 @@ export default defineComponent({
       return false;
     });
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date, password, canSubmitPassword };
+    return { date, token: token as string, password, canSubmitPassword };
   },
   methods: {
-    async updateGenericProperties() {
-      // TODO generic user data
+    async onSettingSubmit() {
+      if (this.user == undefined) {
+        this.$notify({
+          title: "Unable Update Name and Email",
+          text: "User is still undefined",
+          type: "error",
+        });
+        return;
+      }
+      const response = await updateNameAndEmail(
+        this.user.username,
+        this.user.name,
+        this.user.email,
+        this.token
+      );
+      if (response.ok) {
+        this.$notify({
+          title: "User Updated",
+          type: "success",
+        });
+      } else {
+        this.$notify({
+          title: "Unable Update User",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
+      }
     },
     async updatePassword() {
       if (!this.canSubmitPassword) {
@@ -104,7 +138,25 @@ export default defineComponent({
         });
         return;
       }
-      // TODO update password
+      const response = await updateOtherPassword(
+        this.user.username,
+        this.password.password,
+        this.token
+      );
+      this.password.password = "";
+      this.password.confirm = "";
+      if (response.ok) {
+        this.$notify({
+          title: "Password Updated",
+          type: "success",
+        });
+      } else {
+        this.$notify({
+          title: "Unable Update Password",
+          text: JSON.stringify(response.val.user_friendly_message),
+          type: "error",
+        });
+      }
     },
   },
   components: { Permissions },

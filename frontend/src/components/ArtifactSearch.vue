@@ -3,12 +3,15 @@
     <label for="search">Artifact Search(AQL)</label>
     <div class="relative">
       <input
+        disabled
         type="search"
         id="search"
         placeholder="storage: public; repository: maven; groupID: me.kingtux"
         required
       />
-      <button type="submit">Search</button>
+      <button type="submit" disabled hov title="Currently Not Implemented">
+        Search
+      </button>
     </div>
   </form>
 </template>

@@ -12,8 +12,8 @@
 import { computed, defineComponent } from "vue";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css";
-
 import prism from "prismjs";
+
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
 import "@/styles/prism-atom-dark.css";

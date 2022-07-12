@@ -28,7 +28,8 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { RepositoryPermissions } from "@/types/user";
+import { RepositoryPermissions } from "@nitro_repo/nitro_repo-api-wrapper";
+
 export default defineComponent({
   props: {
     modelValue: {

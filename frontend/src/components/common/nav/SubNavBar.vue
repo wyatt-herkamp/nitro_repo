@@ -8,7 +8,6 @@
 
 <script lang="ts">
 import { defineComponent, provide, reactive, ref, watch } from "vue";
-
 import { MenuProvider } from "./SubNavType";
 
 export default defineComponent({
