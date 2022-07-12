@@ -35,9 +35,7 @@ export default defineComponent({
   @apply flex;
   @apply flex-wrap;
   @apply lg:flex-nowrap;
-  @apply justify-center;
   @apply justify-between;
-  @apply w-1/2;
   @apply m-auto;
 }
 </style>

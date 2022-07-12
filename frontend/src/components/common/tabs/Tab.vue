@@ -29,11 +29,7 @@ export default defineComponent({
       type: Boolean,
     },
   },
-  slots: {
-    icon: {
-      required: false,
-    },
-  },
+  slots: ["icon", "default"],
   setup(props, { emit }) {
     const tab: TabData | undefined = inject("tabData");
 

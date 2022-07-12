@@ -45,6 +45,7 @@ import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
+  emits: ["clicked"],
   setup(props, { emit }) {
     const router = useRouter();
     const adminDropDownUI = ref<HTMLUListElement>();

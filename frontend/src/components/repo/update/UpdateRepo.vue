@@ -4,22 +4,29 @@
     <Tab name="Frontend"> Frontend </Tab>
     <Tab name="Security"> Security </Tab>
     <Tab name="DeploySettings"> Deploy Settings </Tab>
-
-    <li class="flex flex-row items-center mx-auto min-w-fit">
-      <ApachemavenIcon
-        style="fill: white"
-        v-show="repositoryType === 'Maven'"
-      />
-      <NpmIcon style="fill: white" v-show="repositoryType === 'NPM'" />
-      <span class="text-sm font-medium text-quaternary">
-        {{ repositoryType }}</span
+    <Tab name="artifact">
+      <template v-slot:icon>
+        <DynamicIcon :repositoryType="repositoryType" />
+      </template>
+      {{ repositoryType }}
+    </Tab>
+    <Tab>
+      <router-link
+        :to="{
+          name: 'ViewRepository',
+          storage: repository.storage,
+          repo: repository.name,
+        }"
       >
-    </li>
+        Repository Page</router-link
+      ></Tab
+    >
   </Tabs>
+  <GeneralRepo v-if="view === 'General'" :repository="repository" />
   <SecurityRepo v-show="view === 'Security'" :repository="repository" />
   <FrontendRepo v-show="view === 'Frontend'" :repository="repository" />
-  <GeneralRepo v-show="view === 'General'" :repository="repository" />
   <DeployRepo v-show="view === 'DeploySettings'" :repository="repository" />
+  <ArtifactSettings v-show="view === 'artifact'" :repository="repository" />
 </template>
 <script lang="ts">
 import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
@@ -31,14 +38,15 @@ import FrontendRepo from "@/components/repo/update/FrontendRepo.vue";
 import DeployRepo from "@/components/repo/update/DeployRepo.vue";
 import SecurityRepo from "@/components/repo/update/SecurityRepo.vue";
 import { apiURL } from "@/http-common";
-import { ApachemavenIcon, NpmIcon } from "vue3-simple-icons";
+import ArtifactSettings from "@/components/repo/update/ArtifactSettings.vue";
+import DynamicIcon from "@/components/repo/DynamicIcon.vue";
 export default defineComponent({
   components: {
+    DynamicIcon,
+    ArtifactSettings,
     GeneralRepo,
     FrontendRepo,
     DeployRepo,
-    ApachemavenIcon,
-    NpmIcon,
     SecurityRepo,
   },
   props: {
@@ -55,15 +63,12 @@ export default defineComponent({
     const router = useRouter();
     const view = ref("General");
 
-    const exampleBadgeURL = ref("");
-
     useMeta({
-      title: props.repository.name,
+      title: props.repository.name + " - " + view.value,
     });
 
     return {
       repositoryType,
-      exampleBadgeURL,
       router,
       view,
       url,

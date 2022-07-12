@@ -7,11 +7,11 @@
       <div class="flex flex-col">
         <div>
           <div class="m-5">
-            <router-link class="backLink" to="/browse">
+            <router-link class="backLink text-quaternary" to="/browse">
               <span>Browse</span>
             </router-link>
             <router-link
-              class="backLink mx-1 sm:m-0 inline-block sm:inline"
+              class="backLink text-quaternary mx-1 sm:m-0 inline-block sm:inline"
               v-for="value in pathSplit"
               :key="value.name"
               :to="'/browse' + value.path"
