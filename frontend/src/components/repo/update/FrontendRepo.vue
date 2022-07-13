@@ -84,11 +84,8 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject } from "vue";
-import {
-  Repository,
-  updateBadge,
-  updateFrontend,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@/types/repositoryTypes";
+
 import { ColorPicker } from "vue-color-kit";
 import "vue-color-kit/dist/vue-color-kit.css";
 
@@ -117,58 +114,17 @@ export default defineComponent({
     };
   },
   methods: {
-    changeLabelColor(color: any) {
+    changeLabelColor(color: { hex: string }) {
       this.repository.settings.badge.label_color = color.hex;
     },
-    changeBadgeColor(color: any) {
+    changeBadgeColor(color: { hex: string }) {
       this.repository.settings.badge.color = color.hex;
     },
     async submitBadge() {
-      const response = await updateBadge(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.badge.style,
-        this.repository.settings.badge.label_color,
-        this.repository.settings.badge.color,
-        this.token
-      );
-      if (response.ok) {
-        console.log(response.val.security.visibility);
-        this.$notify({
-          title: "Updated Badge",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO submit badge settings
     },
     async submitFrontend() {
-      const response = await updateFrontend(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.frontend.enabled,
-        this.repository.settings.frontend.page_provider,
-        this.token
-      );
-      if (response.ok) {
-        this.$cookie.getCookie("token");
-
-        console.log(response.val.security.visibility);
-        this.$notify({
-          title: "Updated Frontend",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO submit frontend settings
     },
   },
 });

@@ -66,13 +66,10 @@
 
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from "vue";
-import {
-  updateNameAndEmail,
-  updateOtherPassword,
-  User,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+
 import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";
+import { User } from "@/types/userTypes";
 
 export default defineComponent({
   props: {
@@ -103,60 +100,10 @@ export default defineComponent({
   },
   methods: {
     async onSettingSubmit() {
-      if (this.user == undefined) {
-        this.$notify({
-          title: "Unable Update Name and Email",
-          text: "User is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await updateNameAndEmail(
-        this.user.username,
-        this.user.name,
-        this.user.email,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "User Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update User",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update user
     },
     async updatePassword() {
-      if (!this.canSubmitPassword) {
-        this.$notify({
-          title: "Passwords do not match",
-          type: "error",
-        });
-        return;
-      }
-      const response = await updateOtherPassword(
-        this.user.username,
-        this.password.password,
-        this.token
-      );
-      this.password.password = "";
-      this.password.confirm = "";
-      if (response.ok) {
-        this.$notify({
-          title: "Password Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Password",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update password
     },
   },
   components: { Permissions },

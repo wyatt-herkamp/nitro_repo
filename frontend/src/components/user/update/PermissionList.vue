@@ -27,8 +27,8 @@
 </template>
 
 <script lang="ts">
+import { RepositoryPermissions } from "@/types/userTypes";
 import { defineComponent, ref } from "vue";
-import { RepositoryPermissions } from "@nitro_repo/nitro_repo-api-wrapper";
 
 export default defineComponent({
   props: {

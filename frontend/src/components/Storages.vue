@@ -22,10 +22,11 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import CreateStorage from "@/components/CreateStorage.vue";
-import { getStorages } from "@nitro_repo/nitro_repo-api-wrapper";
 import SearchableList from "./common/list/SearchableList.vue";
 import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";
+import httpCommon from "@/http-common";
+import { Storage } from "@/types/storageTypes";
 
 export default defineComponent({
   components: { CreateStorage, SearchableList },
@@ -39,20 +40,16 @@ export default defineComponent({
     const openModel = ref(false);
 
     const getStorage = async () => {
-      try {
-        const value = await getStorages(token as string);
-        if (value == undefined) {
-          return;
-        }
-        value.forEach((storage) => {
-          list.value.push({
-            name: storage.public_name,
-            goTo: "/admin/storage/" + storage.name,
+      await httpCommon.apiClient
+        .get<Array<Storage>>("api/admin/storages")
+        .then((response) => {
+          response.data.forEach((storage) => {
+            list.value.push({
+              name: storage.public_name,
+              goTo: "/admin/storage/" + storage.name,
+            });
           });
         });
-      } catch (e) {
-        console.error(e);
-      }
     };
     getStorage();
     return {

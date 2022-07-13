@@ -29,7 +29,6 @@
   <ArtifactSettings v-show="view === 'artifact'" :repository="repository" />
 </template>
 <script lang="ts">
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
@@ -40,6 +39,7 @@ import SecurityRepo from "@/components/repo/update/SecurityRepo.vue";
 import { apiURL } from "@/http-common";
 import ArtifactSettings from "@/components/repo/update/ArtifactSettings.vue";
 import DynamicIcon from "@/components/repo/DynamicIcon.vue";
+import { Repository } from "@/types/repositoryTypes";
 export default defineComponent({
   components: {
     DynamicIcon,

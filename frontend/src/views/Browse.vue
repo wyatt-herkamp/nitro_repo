@@ -89,24 +89,20 @@
 }
 </style>
 <script lang="ts">
-import {
-  browse,
-  BrowseResponse,
-  FileResponse,
-  ResponseType,
-} from "@nitro_repo/nitro_repo-api-wrapper";
-
-import { apiURL } from "@/http-common";
-import { defineComponent, inject, ref } from "vue";
+import httpCommon, { apiURL } from "@/http-common";
+import { defineComponent, ref } from "vue";
 import { useRoute } from "vue-router";
 import { BrowsePath } from "@/api/Browse";
 import ViewProject from "@/components/project/ViewProject.vue";
 import BrowseBox from "@/components/browse/BrowseBox.vue";
+import {
+  BrowseResponse,
+  FileResponse,
+  ResponseType,
+} from "@/types/repositoryTypes";
 
 export default defineComponent({
   setup() {
-    const token: string | undefined = inject("token");
-
     const url = apiURL;
     const route = useRoute();
     const pathSplit = ref<BrowsePath[]>([]);
@@ -126,28 +122,21 @@ export default defineComponent({
         upperPath.splice(upperPath.length - 1);
       }
       up.value = upperPath.join("/");
-      try {
-        const value = await browse(route.params.catchAll as string, token);
-        if (value === undefined) {
-          console.warn("No Response from Backend");
-          return;
-        }
-        const fileResponse: BrowseResponse = value as BrowseResponse;
-        {
-          // Generates the needed information for the path
+      await httpCommon.apiClient
+        .get<BrowseResponse>(`/storages/${catchAll.value}/`)
+        .then((response) => {
+          const fileResponse = response.data as BrowseResponse;
           let url = "";
           fileResponse.active_dir.split("/").forEach((element: string) => {
             url = url + "/" + element;
             pathSplit.value.push({ name: element, path: url });
           });
-        }
-        if (typeof fileResponse.response_type != "string") {
-          activeResponse.value = fileResponse.response_type as ResponseType;
-        }
-        tableData.value = value.files;
-      } catch (e) {
-        console.error(e);
-      }
+
+          if (typeof fileResponse.response_type != "string") {
+            activeResponse.value = fileResponse.response_type as ResponseType;
+          }
+          tableData.value = fileResponse.files;
+        });
     };
 
     getFiles();

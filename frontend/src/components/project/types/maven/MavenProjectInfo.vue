@@ -3,10 +3,10 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import { defineComponent } from "vue";
 import MavenProjectCopy from "./copy/MavenProjectCopy.vue";
+import { Project } from "@/types/repositoryTypes";
 
 export default defineComponent({
   props: {

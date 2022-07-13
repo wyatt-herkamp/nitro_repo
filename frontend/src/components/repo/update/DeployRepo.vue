@@ -28,10 +28,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject } from "vue";
-import {
-  Repository,
-  updateDeployReport,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   props: {
@@ -50,34 +47,7 @@ export default defineComponent({
   },
   methods: {
     async updateReport() {
-      if (this.repository === undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
-        });
-        return;
-      }
-
-      const response = await updateDeployReport(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.deploy_settings.report_generation.active,
-        this.repository.deploy_settings.report_generation.values,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Report Settings",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update report
     },
   },
 });

@@ -7,11 +7,11 @@
 </template>
 
 <script lang="ts">
-import { getUserByID, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
 import { useRouter } from "vue-router";
+import { User } from "@/types/user";
 
 export default defineComponent({
   props: {
@@ -26,8 +26,7 @@ export default defineComponent({
       await useRouter().push("login");
     }
     const user = ref<User | undefined>();
-    const value = (await getUserByID(token as string, props.userID)) as User;
-    user.value = value as User;
+    //TODO: get user from API
 
     return { user };
   },

@@ -11,12 +11,12 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenProjectInfo from "@/components/project/types/maven/MavenProjectInfo.vue";
 import { defineComponent } from "vue";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
 import ProjectBadge from "./badge/ProjectBadge.vue";
+import { Project } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: { MavenProjectInfo, ProjectBadge },

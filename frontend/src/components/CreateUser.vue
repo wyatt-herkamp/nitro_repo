@@ -118,33 +118,7 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      if (this.form.password.password != this.form.password.password_two) {
-        this.$notify({
-          title: "Passwords do not match",
-          type: "error",
-        });
-      }
-      const response = await createNewUser(
-        this.form.name,
-        this.form.username,
-        this.form.password.password,
-        this.form.email,
-        this.token as string
-      );
-      if (response.ok) {
-        const data = response.val as User;
-        this.$notify({
-          title: "User Created",
-          type: "success",
-        });
-        this.$router.push("/admin/user/" + data.id);
-      } else {
-        this.$notify({
-          title: "Unable to Create user",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      //TODO create user
     },
   },
 });

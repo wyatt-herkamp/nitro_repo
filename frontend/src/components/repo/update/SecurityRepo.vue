@@ -20,8 +20,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, inject } from "vue";
-import { Repository, setVisibility } from "@nitro_repo/nitro_repo-api-wrapper";
+import { defineComponent } from "vue";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   props: {
@@ -30,32 +30,9 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data() {
-    const token = inject("token") as string;
-
-    return { token };
-  },
   methods: {
     async updateVisibility() {
-      const response = await setVisibility(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.security.visibility,
-        this.token
-      );
-      if (response.ok) {
-        console.log(response.val.security.visibility);
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update visibility
     },
   },
 });

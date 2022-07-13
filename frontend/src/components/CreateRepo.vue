@@ -40,11 +40,6 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import {
-  createNewRepository,
-  Repository,
-  Storage,
-} from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -85,35 +80,7 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      if (this.form.type === "") {
-        this.$notify({
-          title: "Please Specify a Repository Type",
-          type: "warn",
-        });
-        return;
-      }
-      const response = await createNewRepository(
-        this.form.name,
-        this.$props.storage.name,
-        this.form.type,
-        this.token
-      );
-      if (response.ok) {
-        const data = response.val as Repository;
-        this.$notify({
-          title: "Repository Created",
-          type: "success",
-        });
-        this.$router.push(
-          "/admin/repository/" + data.storage + "/" + data.name
-        );
-      } else {
-        this.$notify({
-          title: "Unable to Create Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      //TODO create repository
     },
   },
 });

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="user != undefined" class="flex flex-wrap flex-row">
+  <div class="flex flex-wrap flex-row">
     <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
       <form class="settingContent" @submit.prevent>
         <h2 class="settingHeader">User General</h2>
@@ -57,16 +57,10 @@
 
 <script lang="ts">
 import { useUserStore } from "@/store/user";
-import { updateMyPassword, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { computed, defineComponent, inject, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, defineComponent, ref } from "vue";
 
 export default defineComponent({
   setup() {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const userStore = useUserStore();
     const user = computed(() => {
       return userStore.$state.user;
@@ -87,36 +81,11 @@ export default defineComponent({
       return false;
     });
 
-    return { user, date, canSubmitPassword, password, token };
+    return { user, date, canSubmitPassword, password };
   },
   methods: {
     async updatePassword() {
-      if (!this.canSubmitPassword) {
-        this.$notify({
-          title: "Passwords do not match",
-          type: "error",
-        });
-        return;
-      }
-      const response = await updateMyPassword(
-        this.password.password,
-        this.token as string
-      );
-      this.password.password = "";
-      this.password.confirm = "";
-      if (response.ok) {
-        const data = response.val as User;
-        this.$notify({
-          title: "Password Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Password",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO: update password
     },
   },
 });

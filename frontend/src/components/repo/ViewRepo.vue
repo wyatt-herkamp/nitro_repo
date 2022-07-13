@@ -13,16 +13,12 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import {
-  getRepoPublic,
-  PublicRepositoryInfo,
-  Repository,
-} from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenRepoInfo from "@/components/repo/types/maven/MavenRepoInfo.vue";
-import { defineComponent, inject, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
 import RepositoryBadge from "./badge/RepositoryBadge.vue";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: { MavenRepoInfo, RepositoryBadge },
@@ -37,43 +33,17 @@ export default defineComponent({
     },
     repositoryType: {
       required: false,
-      type: Object as () => Repository | PublicRepositoryInfo,
+      type: Object as () => Repository,
     },
   },
   setup(props) {
     const router = useRouter();
 
-    const repository = ref<Repository | PublicRepositoryInfo | undefined>(
-      props.repositoryType
-    );
-    const token: string | undefined = inject("token");
-    const repositoryType = ref("");
+    const repository = ref<Repository | undefined>(props.repositoryType);
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
-    if (repository.value == undefined) {
-      if (props.repositoryName != undefined && props.storage != undefined) {
-        const getRepo = async () => {
-          try {
-            const value = (await getRepoPublic(
-              token,
-              props.storage as string,
-              props.repositoryName as string
-            )) as PublicRepositoryInfo;
-            repository.value = value;
-            repositoryType.value = value.repo_type;
-            meta.title = value.name;
-          } catch (e) {
-            console.log(e);
-          }
-        };
-        getRepo();
-      }
-    } else {
-      meta.title = repository.value.name;
-      repositoryType.value = Object.keys(repository.value.repo_type)[0];
-    }
-
+    // TODO pull repository data
     return {
       repository,
       router,

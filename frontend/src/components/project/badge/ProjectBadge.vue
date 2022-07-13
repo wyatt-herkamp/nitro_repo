@@ -29,9 +29,9 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { Project } from "@nitro_repo/nitro_repo-api-wrapper";
 import { apiURL } from "@/http-common";
 import { createProjectSnippet } from "@/api/repository/BadgeGen";
+import { Project } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: {},

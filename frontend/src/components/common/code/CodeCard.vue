@@ -16,7 +16,6 @@ import prism from "prismjs";
 
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
-import "@/styles/prism-atom-dark.css";
 
 export default defineComponent({
   components: { PrismEditor },

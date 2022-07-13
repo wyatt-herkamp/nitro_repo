@@ -12,19 +12,17 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import {
-  PublicRepositoryInfo,
-  Repository,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+
 import { apiURL } from "@/http-common";
 import createRepositoryInfo from "@/api/maven/CodeGen";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: {},
   props: {
     repository: {
       required: true,
-      type: Object as () => Repository | PublicRepositoryInfo,
+      type: Object as () => Repository,
     },
   },
   setup(props) {

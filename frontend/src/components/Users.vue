@@ -26,9 +26,10 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import CreateUser from "@/components/CreateUser.vue";
-import { getUsers } from "@nitro_repo/nitro_repo-api-wrapper";
 import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";
+import httpCommon from "@/http-common";
+import { User } from "@/types/userTypes";
 
 export default defineComponent({
   components: { CreateUser },
@@ -42,18 +43,16 @@ export default defineComponent({
 
     const list = ref<ListItem[]>([]);
     const getUser = async () => {
-      try {
-        const value = await getUsers(token as string);
-        if (value == undefined) {
-          return;
-        }
-        value.users.forEach((user) => {
-          list.value.push({
-            name: user.name,
-            goTo: "/admin/User/" + user.id,
+      await httpCommon.apiClient
+        .get<Array<User>>("api/admin/users")
+        .then((response) => {
+          response.data.forEach((user) => {
+            list.value.push({
+              name: user.name,
+              goTo: "/admin/user/" + user.name,
+            });
           });
         });
-      } catch (e) {}
     };
     getUser();
     return {

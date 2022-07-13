@@ -41,7 +41,6 @@
 </template>
 
 <script lang="ts">
-import { createNewStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import "@/styles/sideCreate.css";
@@ -74,25 +73,7 @@ export default defineComponent({
   },
   methods: {
     async onSubmit() {
-      const response = await createNewStorage(
-        this.form.name,
-        this.form.public_name,
-        this.token
-      );
-      if (response.ok) {
-        const data = response.val as Storage;
-        this.$notify({
-          title: "Storage Created",
-          type: "success",
-        });
-        this.$router.push("/admin/storage/" + data.name);
-      } else {
-        this.$notify({
-          title: "Unable to Create Storage",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO : create new storage
     },
   },
 });

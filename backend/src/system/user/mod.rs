@@ -13,3 +13,7 @@ pub async fn get_by_username(
         .one(connection)
         .await
 }
+
+pub async fn get_users(connection: &DatabaseConnection) -> Result<Vec<UserModel>, DbErr> {
+    UserEntity::find().all(connection).await
+}

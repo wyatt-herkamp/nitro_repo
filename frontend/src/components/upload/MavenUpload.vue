@@ -68,12 +68,13 @@ import "@uppy/core/dist/style.css";
 import "@uppy/drag-drop/dist/style.css";
 
 import Uppy from "@uppy/core";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import PomCreator from "./PomCreator.vue";
-import apiClient, { apiURL } from "@/http-common";
+import { apiURL } from "@/http-common";
 import { XMLBuilder } from "fast-xml-parser";
 import { xmlOptions } from "@/api/PomCreator";
 import { useRouter } from "vue-router";
+import httpCommon from "@/http-common";
+import { Repository } from "@/types/repositoryTypes";
 
 /**
  * How does the manual upload work?
@@ -102,17 +103,13 @@ export default defineComponent({
     this.uppy.close();
   },
   setup() {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const pom = ref<Object | undefined>(undefined);
     //This exists to trigger a rerender on Vue.
     const files = ref<number>(0);
     watch(pom, () => {
       console.log("New Data");
     });
-    return { pom, files, token: token as string };
+    return { pom, files };
   },
   methods: {
     async upload() {
@@ -146,38 +143,32 @@ export default defineComponent({
     },
 
     async uploadFile(url: string, file: any) {
-      await apiClient
-        .put(url, file, {
-          headers: {
-            Authorization: "Bearer " + this.token,
-          },
-        })
-        .then(
-          (result) => {
+      await httpCommon.apiClient.put(url, file).then(
+        () => {
+          this.$notify({
+            title: `${url} was uploaded`,
+            type: "info",
+          });
+        },
+        (err) => {
+          if (err.response) {
             this.$notify({
-              title: `${url} was uploaded`,
-              type: "info",
+              title: `${url} failed to upload error ${err.response.status}`,
+              type: "error",
             });
-          },
-          (err) => {
-            if (err.response) {
-              this.$notify({
-                title: `${url} failed to upload error ${err.response.status}`,
-                type: "error",
-              });
-            } else if (err.request) {
-              this.$notify({
-                title: `${url} failed to upload error ${err.request}`,
-                type: "error",
-              });
-            } else {
-              this.$notify({
-                title: `${url} failed to unknown error`,
-                type: "error",
-              });
-            }
+          } else if (err.request) {
+            this.$notify({
+              title: `${url} failed to upload error ${err.request}`,
+              type: "error",
+            });
+          } else {
+            this.$notify({
+              title: `${url} failed to unknown error`,
+              type: "error",
+            });
           }
-        );
+        }
+      );
     },
   },
   components: { PomCreator, DragDrop },

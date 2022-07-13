@@ -102,12 +102,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import {
-  deleteRepository,
-  Repository,
-  setActiveStatus,
-  setPolicy,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   props: {
@@ -130,82 +125,14 @@ export default defineComponent({
   },
   methods: {
     async updateActiveStatus() {
-      if (this.repository == undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await setActiveStatus(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.active,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update active status
     },
 
     async deleteRepo() {
-      const response = await deleteRepository(
-        this.$props.repository.name,
-        this.$props.repository.storage,
-        this.deleteFiles,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Repository Deleted",
-          type: "success",
-        });
-        this.$router.push("/admin/storage/" + this.$props.repository.storage);
-      } else {
-        this.$notify({
-          title: "Unable to Delete Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO delete repo
     },
     async updatePolicy() {
-      if (this.repository == undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await setPolicy(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.policy,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update policy
     },
   },
   components: {},

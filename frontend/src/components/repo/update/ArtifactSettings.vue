@@ -4,9 +4,9 @@
 </template>
 <script lang="ts">
 import { defineComponent } from "vue";
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import MavenSettings from "@/components/repo/types/maven/MavenSettings.vue";
 import NPMSettings from "@/components/repo/types/npm/NPMSettings.vue";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   name: "ArtifactSettings",
