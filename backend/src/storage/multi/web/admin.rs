@@ -12,7 +12,11 @@ use crate::storage::multi::MultiStorageController;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
-/// API handler for getting storages
+#[utoipa::path(
+get,
+path = "/api/storages",
+responses((status = 200, description = "A list of storages", body = [StorageSaver])),
+)]
 #[get("/storages")]
 pub async fn get_storages(
     storage_handler: web::Data<MultiStorageController>,
@@ -70,7 +74,17 @@ pub async fn delete_storage(
     }
 }
 
-/// Gets the storage based on the name
+#[utoipa::path(
+get,
+path = "/api/storages/{id}",
+responses(
+(status = 200, description = "Storage found succesfully", body = StorageSaver),
+(status = 404, description = "Storage was not found")
+),
+params(
+("id" = string, path, description = "Storage name"),
+)
+)]
 #[get("/storage/{name}")]
 pub async fn get_storage(
     storage_handler: web::Data<MultiStorageController>,

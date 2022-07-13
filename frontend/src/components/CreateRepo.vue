@@ -40,8 +40,11 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import { defineComponent, inject, ref, watch } from "vue";
+import { defineComponent, ref, watch } from "vue";
+import httpCommon from "@/http-common";
+import { notify } from "@kyvg/vue3-notification";
 import { useRouter } from "vue-router";
+import { Storage } from "@/types/storageTypes";
 
 export default defineComponent({
   props: {
@@ -52,10 +55,6 @@ export default defineComponent({
     modelValue: Boolean,
   },
   setup(props, { emit }) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const form = ref({
       name: "",
       type: "",
@@ -75,12 +74,37 @@ export default defineComponent({
     return {
       form,
       showModel,
-      token: token as string,
     };
   },
   methods: {
     async onSubmit() {
-      //TODO create repository
+      const storageName = this.storage.name;
+      await httpCommon.apiClient
+        .post(
+          `/api/admin/repositories/${storageName}/new/${this.form.name}/${this.form.type}`,
+          {}
+        )
+        .then((response) => {
+          if (response.status == 200) {
+            notify({
+              title: "Success",
+              type: "success",
+            });
+
+            useRouter().push({
+              name: "AdminRepoView",
+              params: {
+                storage: storageName,
+                repo: this.form.name,
+              },
+            });
+          } else if (response.status == 409) {
+            this.$notify({
+              title: "Repository already exists",
+              type: "error",
+            });
+          }
+        });
     },
   },
 });

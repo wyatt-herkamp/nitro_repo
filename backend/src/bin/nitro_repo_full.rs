@@ -12,7 +12,10 @@ use log::info;
 use semver::Version;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
+use api::api::ApiDoc;
 use api::authentication::middleware::HandleSession;
 use api::authentication::session::SessionManager;
 use api::cli::handle_cli;
@@ -73,9 +76,13 @@ async fn main() -> std::io::Result<()> {
     let site_state = Data::new(nitro_repo);
     let database_data = Data::new(connection);
     let session_data = Data::new(session_manager);
+    let openapi = ApiDoc::openapi();
 
     let server = HttpServer::new(move || {
         App::new()
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-doc/openapi.json", openapi.clone()),
+            )
             .app_data(storages_data.clone())
             .app_data(site_state.clone())
             .app_data(database_data.clone())

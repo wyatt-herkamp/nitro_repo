@@ -12,4 +12,6 @@ pub fn user_routes(cfg: &mut ServiceConfig) {
     cfg.service(user::me);
 }
 
-pub fn init_user_manager_routes(_cfg: &mut ServiceConfig) {}
+pub fn init_user_manager_routes(cfg: &mut ServiceConfig) {
+    cfg.service(admin::list_users);
+}

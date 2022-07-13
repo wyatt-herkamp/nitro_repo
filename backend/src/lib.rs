@@ -5,6 +5,7 @@ use tokio::sync::RwLock;
 
 use crate::settings::models::{GeneralSettings, Settings};
 
+pub mod api;
 pub mod authentication;
 pub mod cli;
 pub mod constants;

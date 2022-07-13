@@ -203,7 +203,7 @@ where
             // If a new cookie needs to be added. Do it
             if let Some(session) = session {
                 let mut cookie = Cookie::new("session", &session.token);
-                cookie.set_secure(false);
+                cookie.set_secure(true);
                 cookie.set_same_site(SameSite::None);
                 cookie.set_path("/");
                 cookie.set_expires(session.expiration);

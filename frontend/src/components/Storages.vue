@@ -32,10 +32,6 @@ export default defineComponent({
   components: { CreateStorage, SearchableList },
 
   setup() {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const list = ref<ListItem[]>([]);
     const openModel = ref(false);
 

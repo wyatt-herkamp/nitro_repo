@@ -85,7 +85,7 @@ import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 import Login from "./Login.vue";
 import AdminDropBox from "./AdminDropBox.vue";
-import { User } from "@nitro_repo/nitro_repo-api-wrapper";
+import {User} from "@/types/userTypes";
 
 export default defineComponent({
   props: {

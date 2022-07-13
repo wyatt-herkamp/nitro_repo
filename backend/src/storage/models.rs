@@ -5,6 +5,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
+use utoipa::Component;
 
 use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
@@ -16,7 +17,7 @@ pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
 
 /// Types of Storages
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component)]
 pub enum StorageType {
     LocalStorage,
 }
@@ -59,19 +60,25 @@ impl Display for StorageStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component)]
 pub struct StorageSaver {
+    /// The Type of the Storage
+    #[component(example = StorageType::LocalStorage)]
     pub storage_type: StorageType,
+    /// The Storage Config
     #[serde(flatten)]
     pub generic_config: StorageConfig,
     /// Storage Handler Config
     pub handler_config: Value,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Component)]
 pub struct StorageConfig {
+    /// The public name of the storage
     pub public_name: String,
+    /// The internal name of the storage
     pub name: String,
+    /// This is created internally by the storage. No need to set this.
     #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
 }

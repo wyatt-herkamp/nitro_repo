@@ -35,16 +35,12 @@ export default defineComponent({
   components: { CreateUser },
 
   setup() {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const createUser = ref(false);
 
     const list = ref<ListItem[]>([]);
     const getUser = async () => {
       await httpCommon.apiClient
-        .get<Array<User>>("api/admin/users")
+        .get<Array<User>>("api/admin/users/list")
         .then((response) => {
           response.data.forEach((user) => {
             list.value.push({

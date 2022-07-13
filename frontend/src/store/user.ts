@@ -1,6 +1,7 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { User } from "@/types/user";
 import httpCommon from "@/http-common";
+import { useCookies } from "vue3-cookies";
 
 export const useUserStore = defineStore({
   id: "user",
@@ -21,6 +22,11 @@ export const useUserStore = defineStore({
             user: result.data,
             date: new Date(result.data.created).toLocaleDateString("en-US"),
           });
+          const cookies = useCookies();
+          // This only exists for quick route guard checking. This does not hurt security because the backend will deny any unauthorized access.
+          if (cookies.cookies.get("logged_in") !== "true") {
+            cookies.cookies.set("logged_in", "true");
+          }
         }
       });
     },

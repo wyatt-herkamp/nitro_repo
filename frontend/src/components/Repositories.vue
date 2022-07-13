@@ -37,10 +37,6 @@ export default defineComponent({
     },
   },
   async setup(props) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      await useRouter().push("login");
-    }
     const list = ref<ListItem[]>([]);
     const openModel = ref(false);
     await httpCommon.apiClient

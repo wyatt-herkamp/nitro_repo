@@ -76,7 +76,7 @@ impl MultiStorageController {
         name: &str,
     ) -> Result<Option<RwLockReadGuard<DynamicStorage>>, StorageError> {
         let storages = self.storages.read().await;
-        if storages.contains_key(name) {
+        if !storages.contains_key(name) {
             return Ok(None);
         }
         let storage = RwLockReadGuard::map(storages, |storages| {

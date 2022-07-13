@@ -56,19 +56,17 @@ pub async fn create_repository(
     storage_handler: web::Data<MultiStorageController>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
-    storage_name: web::Path<String>,
-    query_params: web::Path<(String, RepositoryType)>,
+    query_params: web::Path<(String, String, RepositoryType)>,
 ) -> actix_web::Result<HttpResponse> {
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
+    let (storage_name, repository_name, repository_type) = query_params.into_inner();
 
     let storage = storage_handler
-        .get_storage_by_name(&storage_name.into_inner())
+        .get_storage_by_name(&storage_name)
         .await
         .map_err(InternalError::from)?
         .ok_or_else(|| APIError::from(("Storage not found", StatusCode::NOT_FOUND)))?;
-
-    let (repository_name, repository_type) = query_params.into_inner();
 
     if let Err(error) = storage
         .create_repository(repository_name, repository_type)

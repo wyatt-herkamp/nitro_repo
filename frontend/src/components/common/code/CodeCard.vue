@@ -16,7 +16,6 @@ import prism from "prismjs";
 
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
-
 export default defineComponent({
   components: { PrismEditor },
   props: {
