@@ -79,10 +79,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const password = ref({
       password: "",
       confirm: "",
@@ -96,7 +92,7 @@ export default defineComponent({
       return false;
     });
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date, token: token as string, password, canSubmitPassword };
+    return { date, password, canSubmitPassword };
   },
   methods: {
     async onSettingSubmit() {

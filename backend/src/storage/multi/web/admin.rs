@@ -14,7 +14,7 @@ use crate::system::user::UserModel;
 
 #[utoipa::path(
 get,
-path = "/api/storages",
+path = "/api/admin/storages",
 responses((status = 200, description = "A list of storages", body = [StorageSaver])),
 )]
 #[get("/storages")]

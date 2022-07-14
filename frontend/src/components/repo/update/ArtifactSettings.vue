@@ -1,6 +1,12 @@
 <template>
-  <MavenSettings v-if="repositoryType === 'Maven'" :repository="repository" />
-  <NPMSettings v-else-if="repositoryType === 'NPM'" :repository="repository" />
+  <MavenSettings
+    v-if="repository.repository_type === 'Maven'"
+    :repository="repository"
+  />
+  <NPMSettings
+    v-else-if="repository.repository_type === 'NPM'"
+    :repository="repository"
+  />
 </template>
 <script lang="ts">
 import { defineComponent } from "vue";
@@ -17,11 +23,6 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  setup(props) {
-    const repositoryType = Object.keys(props.repository.repo_type)[0];
-    return {
-      repositoryType,
-    };
-  },
+  setup(props) {},
 });
 </script>

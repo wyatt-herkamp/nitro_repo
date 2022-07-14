@@ -45,7 +45,7 @@ export default defineComponent({
           response.data.forEach((user) => {
             list.value.push({
               name: user.name,
-              goTo: "/admin/user/" + user.name,
+              goTo: "/admin/user/" + user.id,
             });
           });
         });

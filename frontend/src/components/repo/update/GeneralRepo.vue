@@ -70,6 +70,24 @@
           <option>false</option>
         </select>
       </div>
+      <div class="settingBox">
+        <label for="grid-policy">Page Provider</label>
+        <select
+          v-model="repository.visibility"
+          @change="
+            this.$notify({
+              title: 'Page Provider',
+              message: 'Page Provider Updated. Not Implemented',
+              type: 'warn',
+            })
+          "
+          class="nitroTextInput"
+        >
+          <option value="Public">Public</option>
+          <option value="Private">Private</option>
+          <option value="Hidden">Hidden</option>
+        </select>
+      </div>
     </div>
     <h2 class="settingHeader">Danger Area</h2>
     <div class="settingContent">

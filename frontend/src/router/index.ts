@@ -74,7 +74,7 @@ const routes: Array<RouteRecordRaw> = [
   },
 
   {
-    path: "/browse/:catchAll(.*)?",
+    path: "/browse/:storage/:repo/:catchAll(.*)?",
     name: "Browse",
     component: Browse,
   },

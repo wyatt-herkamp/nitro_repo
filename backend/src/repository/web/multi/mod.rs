@@ -9,6 +9,9 @@ pub mod repository_handler;
 pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource([
+            "/repositories/{storage}/{repository}",
+            "/repositories/{storage}/{repository}/{file:.*}",
+            "/repositories/{storage}/{repository}/",
             "/storages/{storage}/{repository}",
             "/storages/{storage}/{repository}/{file:.*}",
             "/storages/{storage}/{repository}/",

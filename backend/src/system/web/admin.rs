@@ -27,3 +27,21 @@ pub async fn list_users(
 
     Ok(HttpResponse::Ok().json(result))
 }
+
+#[get("user/{id}")]
+pub async fn get_user(
+    auth: Authentication,
+    database: web::Data<DatabaseConnection>,
+    id: web::Path<i64>,
+) -> actix_web::Result<HttpResponse> {
+    let user: UserModel = auth.get_user(&database).await??;
+    user.can_i_edit_users()?;
+    let result: Option<UserModel> = super::super::user::get_by_id(id.into_inner(), &database)
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
+    if let Some(result) = result {
+        Ok(HttpResponse::Ok().json(result))
+    } else {
+        Ok(HttpResponse::NotFound().finish())
+    }
+}

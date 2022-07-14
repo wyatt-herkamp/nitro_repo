@@ -45,7 +45,7 @@ async fn main() -> std::io::Result<()> {
         toml::from_str(&read_to_string(&main_config).await?).map_err(convert_error)?;
     let version = Version::parse(&init_settings.internal.version).map_err(convert_error)?;
     // Sets the Log Location
-    std::env::set_var("LOG_LOCATION", &init_settings.application.log);
+    set_var("LOG_LOCATION", &init_settings.application.log);
     load_logger(&init_settings.application.mode);
     info!("Initializing Database Connection");
     let connection = sea_orm::Database::connect(init_settings.database.clone())
@@ -107,7 +107,8 @@ async fn main() -> std::io::Result<()> {
                             .configure(system::web::init_user_manager_routes)
                             .configure(storage::multi::web::init_admin_routes)
                             .configure(repository::web::multi::init_admin),
-                    ),
+                    )
+                    .configure(storage::multi::web::init_public_routes),
             )
             .service(
                 web::scope("/nitro_repo/help")

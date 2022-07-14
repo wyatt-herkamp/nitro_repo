@@ -160,6 +160,10 @@ impl MultiStorageController {
         }
         storages_saving
     }
+    pub async fn names(&self) -> Vec<String> {
+        let storages = self.storages.read().await;
+        storages.keys().cloned().collect()
+    }
     pub async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, StorageError> {
         let storages = self.storages.read().await;
         let mut files = Vec::new();

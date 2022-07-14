@@ -32,14 +32,13 @@ import { defineComponent } from "vue";
 import { apiURL } from "@/http-common";
 import { createBadgeSnippets } from "@/api/repository/BadgeGen";
 import CodeMenu from "@/components/common/code/CodeMenu.vue";
-import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: { CodeMenu },
   props: {
     repository: {
       required: true,
-      type: Object as () => Repository,
+      type: Object as () => { name: string; storage: string },
     },
   },
   setup(props) {

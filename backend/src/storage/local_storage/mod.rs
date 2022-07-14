@@ -94,7 +94,15 @@ impl Storage for LocalStorage {
         })?;
         let location = PathBuf::from(&string);
         let local_config = LocalConfig {
-            location: location.join(&config.generic_config.name),
+            location: location
+                .join(&config.generic_config.name)
+                .canonicalize()
+                .map_err(|e| {
+                    (
+                        StorageError::StorageCreateError(e.to_string()),
+                        config.clone(),
+                    )
+                })?,
         };
         Ok(LocalStorage {
             config: local_config,
