@@ -20,11 +20,8 @@ Storage/
 └── adoptium-rs/
 └── push(The Job Name)/
 ├── 1/
-│   ├── nitro_repo-linux.tar.gz
-│   └── nitro_repo-windows.zip
+│   └── adoptium
 ├── 2/
-│   ├── nitro_repo-linux.tar.gz
-│   └── nitro_repo-windows.zip
+│   └── adoptium
 └── 3/
-├── nitro_repo-linux.tar.gz
-└── nitro_repo-windows.zip
+└── adoptium
