@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use sea_orm::ConnectOptions;
 use semver::{Error, Version};
 use serde::{Deserialize, Serialize};
+use toml::Value;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -111,6 +112,7 @@ pub struct SiteSetting {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SessionSettings {
     pub manager: String,
+    pub value: Option<Value>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -159,6 +161,7 @@ impl Default for SessionSettings {
     fn default() -> Self {
         SessionSettings {
             manager: "BasicSessionManager".to_string(),
+            value: None,
         }
     }
 }

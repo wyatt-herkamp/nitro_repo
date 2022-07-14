@@ -1,12 +1,17 @@
 pub mod basic;
+pub mod redis_manager;
 
 use crate::authentication::session::basic::BasicSessionManager;
+use crate::authentication::session::redis_manager::RedisSessionManager;
 use crate::settings::models::SessionSettings;
 use async_trait::async_trait;
+use serde::ser::Error;
+use std::io::stderr;
 use time::OffsetDateTime;
 
 pub enum SessionManager {
     BasicSessionManager(BasicSessionManager),
+    RedisSessionManager(RedisSessionManager),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -28,35 +33,90 @@ pub trait SessionManagerType {
 
 #[async_trait]
 impl SessionManagerType for SessionManager {
-    type Error = ();
+    type Error = anyhow::Error;
 
     async fn delete_session(&self, token: &str) -> Result<(), Self::Error> {
         return match self {
-            SessionManager::BasicSessionManager(basic) => basic.delete_session(token).await,
+            SessionManager::BasicSessionManager(basic) => {
+                basic.delete_session(token).await.map_err(|_| {
+                    anyhow::Error::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Not implemented",
+                    ))
+                })
+            }
+            SessionManager::RedisSessionManager(basic) => basic
+                .delete_session(token)
+                .await
+                .map_err(|e| anyhow::Error::new(e)),
         };
     }
 
     async fn create_session(&self) -> Result<Session, Self::Error> {
         return match self {
-            SessionManager::BasicSessionManager(basic) => basic.create_session().await,
+            SessionManager::BasicSessionManager(basic) => {
+                basic.create_session().await.map_err(|_| {
+                    anyhow::Error::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Not implemented",
+                    ))
+                })
+            }
+            SessionManager::RedisSessionManager(basic) => basic
+                .create_session()
+                .await
+                .map_err(|e| anyhow::Error::new(e)),
         };
     }
 
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
         return match self {
-            SessionManager::BasicSessionManager(basic) => basic.retrieve_session(token).await,
+            SessionManager::BasicSessionManager(basic) => {
+                basic.retrieve_session(token).await.map_err(|_| {
+                    anyhow::Error::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Not implemented",
+                    ))
+                })
+            }
+            SessionManager::RedisSessionManager(basic) => basic
+                .retrieve_session(token)
+                .await
+                .map_err(|e| anyhow::Error::new(e)),
         };
     }
 
     async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error> {
         return match self {
-            SessionManager::BasicSessionManager(basic) => basic.re_create_session(token).await,
+            SessionManager::BasicSessionManager(basic) => {
+                basic.re_create_session(token).await.map_err(|_| {
+                    anyhow::Error::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Not implemented",
+                    ))
+                })
+            }
+            SessionManager::RedisSessionManager(basic) => basic
+                .re_create_session(token)
+                .await
+                .map_err(|e| anyhow::Error::new(e)),
         };
     }
 
     async fn set_user(&self, token: &str, user: i64) -> Result<(), Self::Error> {
         return match self {
-            SessionManager::BasicSessionManager(basic) => basic.set_user(token, user).await,
+            SessionManager::BasicSessionManager(basic) => {
+                basic.set_user(token, user).await.map_err(|_| {
+                    anyhow::Error::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "Not implemented",
+                    ))
+                })
+            }
+            SessionManager::RedisSessionManager(basic) => basic
+                .set_user(token, user)
+                .await
+                .map_err(|e| anyhow::Error::new(e)),
         };
     }
 }

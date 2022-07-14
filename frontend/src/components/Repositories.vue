@@ -45,7 +45,7 @@ export default defineComponent({
         response.data.forEach((repo) => {
           list.value.push({
             name: repo.name,
-            goTo: "/admin/repo/" + repo.name,
+            goTo: `/admin/repository/${repo.storage}/${repo.name}`,
           });
         });
       });

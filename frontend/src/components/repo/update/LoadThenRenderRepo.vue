@@ -33,7 +33,7 @@ export default defineComponent({
     const repository = ref<Repository | undefined>(undefined);
     await httpCommon.apiClient
       .get<Repository>(
-        `admin/repositories/${props.storageId}/${props.repositoryId}`
+        `api/admin/repositories/${props.storageId}/${props.repositoryId}`
       )
       .then((response) => {
         repository.value = response.data;

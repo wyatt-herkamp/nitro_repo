@@ -47,6 +47,12 @@ pub enum RepositoryType {
     Maven,
     /// A NPM Repository
     NPM,
+    /// CI Artifact Upload
+    CI,
+    /// A Docker Repository
+    Docker,
+    /// Raw Repository
+    Raw,
 }
 
 /// The Basic Repository Config

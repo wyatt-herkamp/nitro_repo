@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
@@ -51,6 +52,7 @@ impl LocalStorage {
     async fn load_repositories(
         path: PathBuf,
     ) -> Result<HashMap<String, RepositoryConfig>, StorageError> {
+        trace!("Loading repositories from {}", path.display());
         if !path.exists() {
             return Ok(HashMap::new());
         }
@@ -66,14 +68,14 @@ impl LocalStorage {
         let repositories = self.repositories.read().await;
         let conf = self.get_storage_folder().join(STORAGE_CONFIG);
 
-        let file = OpenOptions::new()
+        let mut file = OpenOptions::new()
             .create(true)
+            .write(true)
             .open(conf)
-            .await?
-            .into_std()
-            .await;
+            .await?;
         let values: Vec<&RepositoryConfig> = repositories.values().collect();
-        serde_json::to_writer_pretty(file, &values)?;
+        let string = serde_json::to_string_pretty(&values)?;
+        file.write_all(string.as_bytes()).await?;
         Ok(())
     }
 }
@@ -179,8 +181,6 @@ impl Storage for LocalStorage {
                 "Creating {:?} on already existing files. This could result in unexpected behavior",
                 &repository_folder
             );
-        } else {
-            create_dir_all(&repository_folder).await?;
         }
         let config = RepositoryConfig {
             name: name.clone(),
@@ -195,8 +195,16 @@ impl Storage for LocalStorage {
             .get_repository_folder(&name)
             .join(REPOSITORY_CONF_FOLDER);
         if !conf_folder.exists() {
-            create_dir(&conf_folder).await?;
+            create_dir_all(&conf_folder).await?;
         }
+        let buf = conf_folder.join("config.json");
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(buf)
+            .await?;
+        file.write_all(serde_json::to_string_pretty(&config)?.as_bytes())
+            .await?;
         repositories.insert(name.clone(), config);
         drop(repositories);
         self.save_repositories().await?;

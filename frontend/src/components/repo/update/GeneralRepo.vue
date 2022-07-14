@@ -49,7 +49,7 @@
       <div class="settingBox">
         <label class="nitroLabel" for="grid-policy"> Repo Policy</label>
         <select
-          v-model="repository.settings.policy"
+          v-model="repository.policy"
           class="nitroSelectBox"
           @change="updatePolicy()"
         >
@@ -62,7 +62,7 @@
       <div class="settingBox">
         <label class="nitroLabel" for="grid-active">Repo Active</label>
         <select
-          v-model="repository.settings.active"
+          v-model="repository.active"
           class="nitroSelectBox"
           @change="updateActiveStatus()"
         >
@@ -111,15 +111,10 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data(props) {
-    const token = inject("token") as string;
-    console.log(props.repository.repo_type);
-    return { token };
-  },
   setup(props) {
     const deleteOpen = ref(false);
     const deleteFiles = ref(false);
-    const repositoryType = Object.keys(props.repository.repo_type)[0];
+    const repositoryType = ref(props.repository.repository_type);
     const date = new Date(props.repository.created).toLocaleDateString("en-US");
     return { repositoryType, date, deleteOpen, deleteFiles };
   },

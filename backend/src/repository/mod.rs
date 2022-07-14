@@ -3,17 +3,23 @@ use std::ops::Deref;
 use tokio::sync::RwLockReadGuard;
 
 use crate::error::internal_error::InternalError;
+use crate::repository::ci::CIHandler;
+use crate::repository::docker::DockerHandler;
 use crate::repository::handler::DynamicRepositoryHandler;
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
+use crate::repository::raw::RawHandler;
 use crate::repository::settings::RepositoryType;
 use crate::storage::models::Storage;
 
+pub mod ci;
+pub mod docker;
 pub mod frontend;
 pub mod handler;
 pub mod maven;
 pub mod nitro;
 pub mod npm;
+pub mod raw;
 pub mod response;
 pub mod settings;
 pub mod web;
@@ -37,6 +43,17 @@ pub async fn get_repository_handler<'a, StorageType: Storage>(
             storage,
         )))),
         RepositoryType::NPM => Ok(Some(DynamicRepositoryHandler::NPM(NPMHandler::create(
+            repository_config,
+            storage,
+        )))),
+        RepositoryType::CI => Ok(Some(DynamicRepositoryHandler::CI(CIHandler::create(
+            repository_config,
+            storage,
+        )))),
+        RepositoryType::Docker => Ok(Some(DynamicRepositoryHandler::Docker(
+            DockerHandler::create(repository_config, storage),
+        ))),
+        RepositoryType::Raw => Ok(Some(DynamicRepositoryHandler::Raw(RawHandler::create(
             repository_config,
             storage,
         )))),

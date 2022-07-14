@@ -1,11 +1,10 @@
 export interface Repository {
-  id: number;
   name: string;
-  repo_type: any;
-  settings: RepoSettings;
-  deploy_settings: DeploySettings;
-  security: SecurityRules;
+  repository_type: string;
   storage: string;
+  visibility: string;
+  active: boolean;
+  policy: Policy;
   created: number;
 }
 export interface ReportGeneration {
@@ -13,11 +12,6 @@ export interface ReportGeneration {
   values: Array<string>;
 }
 
-export interface Webhook {
-  id: string;
-  handler: string;
-  settings: Map<String, any>;
-}
 export interface RepositoryListResponse {
   name: string;
   repo_type: string;
@@ -46,11 +40,6 @@ export interface RepoSettings {
 export interface Frontend {
   page_provider: string;
   enabled: boolean;
-}
-
-export interface DeploySettings {
-  report_generation: ReportGeneration;
-  webhooks: Array<Webhook>;
 }
 
 export interface Version {

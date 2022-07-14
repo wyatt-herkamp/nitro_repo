@@ -56,7 +56,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const repositoryType = Object.keys(props.repository.repo_type)[0];
+    const repositoryType = Object.keys(props.repository.repository_type)[0];
 
     const url = apiURL;
 

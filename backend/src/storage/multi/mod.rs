@@ -64,9 +64,11 @@ impl MultiStorageController {
     pub async fn init(storages_file: PathBuf) -> Result<MultiStorageController, StorageError> {
         info!("Loading Storages");
         let result = load_storages(storages_file).await?;
-        Ok(MultiStorageController {
+        let controller = MultiStorageController {
             storages: RwLock::new(result),
-        })
+        };
+        controller.load_unloaded_storages().await?;
+        Ok(controller)
     }
 }
 
