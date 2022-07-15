@@ -17,20 +17,20 @@ required-features = ["multi_storage"]
 
 [dependencies]
 # Web
-actix-web = { version = "4.0.1", features = ["openssl", "cookies"] }
+actix-web = { version = "4.1.0", features = ["openssl", "cookies"] }
 actix-cors = "0.6.1"
 actix-service = "2.0.2"
-openssl = { version = "0.10.40", features = ["v110"], optional = true }
-actix-files = "0.6.0"
+openssl = { version = "0.10.41", features = ["v110"], optional = true }
+actix-files = "0.6.1"
 # Partly Web
-lettre = "0.10.0-rc.6"
-handlebars = "4.2.2"
+lettre = "0.10.0"
+handlebars = "4.3.2"
 # Database
 sea-orm = { version = "0.8.0", features = ["sqlx-mysql", "sqlx-sqlite", "runtime-actix-native-tls", "macros"] }
 sqlx = "0.5.13"
 # Serde
-serde = { version = "1.0.137", features = ["derive"] }
-serde_json = "1.0.81"
+serde = { version = "1.0.139", features = ["derive"] }
+serde_json = "1.0.82"
 futures = "0.3.21"
 serde-xml-rs = "0.5.1"
 toml = "0.5.9"
@@ -39,37 +39,37 @@ toml = "0.5.9"
 rand = "0.8.5"
 rand_core = { version = "0.6.3", features = ["std"] }
 rust-embed = { version = "6.4.0", features = ["interpolate-folder-path"] }
-argon2 = "0.4.0"
+argon2 = "0.4.1"
 chrono = "0.4.19"
-time = "0.3.9"
-regex = "1.5.5"
+time = "0.3.11"
+regex = "1.6.0"
 futures-util = "0.3.21"
 base64 = "0.13.0"
-tokio = { version = "1.18.1", features = ["full"] }
-uuid = { version = "1.0.0", features = ["serde", "v4"] }
+tokio = { version = "1.20.0", features = ["full"] }
+uuid = { version = "1.1.2", features = ["serde", "v4"] }
 style-term = "1.0.0"
 mime_guess = "2.0.4"
 # Log
 nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = { version = "0.4.17", features = ["kv_unstable", "kv_unstable_std", "kv_unstable_serde"] }
 # Rust Internal
-strum = { version = "0.24.0", features = ["derive"] }
-strum_macros = "0.24.0"
+strum = { version = "0.24.1", features = ["derive"] }
+strum_macros = "0.24.2"
 derive_more = "0.99.17"
-async-trait = "0.1.53"
+async-trait = "0.1.56"
 thiserror = "1.0.31"
-anyhow = "1.0.57"
-either = "1.6.1"
+anyhow = "1.0.58"
+either = "1.7.0"
 # Badge Stuff
-badge-maker = "0.2.1"
+badge-maker = "0.3.1"
 # Webhook
 webhook = "2.0.0"
 # Installer
 tui = "0.18.0"
-crossterm = "0.23.2"
-clap = { version = "3.1.15", features = ["derive"] }
+crossterm = "0.24.0"
+clap = { version = "3.2.12", features = ["derive"] }
 unicode-width = "0.1.9"
-semver = "1.0.9"
+semver = "1.0.12"
 # Docs
 schemars = "0.8.10"
 utoipa = { version = "1.1.0", features = ["actix_extras"] }
