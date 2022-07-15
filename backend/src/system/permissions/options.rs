@@ -53,6 +53,48 @@ pub trait CanIDo {
         repo: &RepositoryConfig,
     ) -> Result<Option<MissingPermission>, InternalError>;
 }
+impl<E: CanIDo> CanIDo for Option<E> {
+    fn can_i_edit_repos(&self) -> Result<(), MissingPermission> {
+        match self.as_ref() {
+            Some(e) => e.can_i_edit_repos(),
+            None => Err(MissingPermission("can_i_edit_repos".to_string())),
+        }
+    }
+
+    fn can_i_edit_users(&self) -> Result<(), MissingPermission> {
+        match self.as_ref() {
+            Some(e) => e.can_i_edit_users(),
+            None => Err(MissingPermission("edit_users".to_string())),
+        }
+    }
+
+    fn can_i_admin(&self) -> Result<(), MissingPermission> {
+        match self.as_ref() {
+            Some(e) => e.can_i_edit_users(),
+            None => Err(MissingPermission("admin".to_string())),
+        }
+    }
+
+    fn can_deploy_to(
+        &self,
+        repo: &RepositoryConfig,
+    ) -> Result<Option<MissingPermission>, InternalError> {
+        match self.as_ref() {
+            Some(e) => e.can_deploy_to(repo),
+            None => Ok(Some(MissingPermission("Logged In".to_string()))),
+        }
+    }
+
+    fn can_read_from(
+        &self,
+        repo: &RepositoryConfig,
+    ) -> Result<Option<MissingPermission>, InternalError> {
+        match self.as_ref() {
+            Some(e) => e.can_read_from(repo),
+            None => Ok(Some(MissingPermission("Logged In".to_string()))),
+        }
+    }
+}
 impl CanIDo for UserModel {
     fn can_i_edit_repos(&self) -> Result<(), MissingPermission> {
         let permissions = &self.permissions;

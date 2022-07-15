@@ -108,7 +108,8 @@ async fn main() -> std::io::Result<()> {
                             .configure(storage::multi::web::init_admin_routes)
                             .configure(repository::web::multi::init_admin),
                     )
-                    .configure(storage::multi::web::init_public_routes),
+                    .configure(storage::multi::web::init_public_routes)
+                    .configure(repository::web::multi::public::init_public),
             )
             .service(
                 web::scope("/nitro_repo/help")

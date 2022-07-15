@@ -1,18 +1,11 @@
-use actix_web::http::StatusCode;
-use actix_web::{delete, get, post, web, HttpResponse, ResponseError};
+use actix_web::{get, web, HttpResponse};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use utoipa::Component;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
-use crate::error::internal_error::InternalError;
-use crate::storage::error::StorageError;
 use crate::storage::models::Storage;
-use crate::storage::models::StorageFactory;
 use crate::storage::multi::MultiStorageController;
-use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
 #[derive(Debug, Clone, Serialize, Deserialize, Component)]
 pub struct PublicStorageResponse {
     /// The List of Storages that are available to the current user

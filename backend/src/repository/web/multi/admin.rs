@@ -2,7 +2,6 @@ use std::ops::Deref;
 
 use actix_web::http::StatusCode;
 use actix_web::{delete, get, post, put, web, HttpResponse};
-use badge_maker::Badge;
 use schemars::schema::RootSchema;
 use schemars::schema_for;
 use sea_orm::DatabaseConnection;
@@ -14,13 +13,11 @@ use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
-use crate::repository::settings::{
-    badge, Policy, RepositoryConfig, RepositoryConfigType, Visibility,
-};
+use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType, Visibility};
 use crate::repository::web::RepositoryResponse;
 use crate::repository::RepositoryType;
 use crate::storage::error::StorageError;
-use crate::storage::models::{Storage, StorageType};
+use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;

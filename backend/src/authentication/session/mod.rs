@@ -5,8 +5,6 @@ use crate::authentication::session::basic::BasicSessionManager;
 use crate::authentication::session::redis_manager::RedisSessionManager;
 use crate::settings::models::SessionSettings;
 use async_trait::async_trait;
-use serde::ser::Error;
-use std::io::stderr;
 use time::OffsetDateTime;
 
 pub enum SessionManager {

@@ -1,6 +1,6 @@
-use crate::authentication::session::{Session, SessionManager, SessionManagerType};
+use crate::authentication::session::{Session, SessionManagerType};
 use async_trait::async_trait;
-use redis::{Commands, RedisResult};
+use redis::RedisResult;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 

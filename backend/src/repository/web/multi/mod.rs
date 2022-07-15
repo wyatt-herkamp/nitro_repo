@@ -1,9 +1,8 @@
-use std::ops::Deref;
-
 use actix_web::web;
 
 pub mod admin;
 pub mod helpers;
+pub mod public;
 pub mod repository_handler;
 
 pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {

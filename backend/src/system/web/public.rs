@@ -1,7 +1,6 @@
-use actix_web::cookie::Cookie;
+use actix_web::http::StatusCode;
 use actix_web::web;
 use actix_web::{post, HttpRequest, HttpResponse};
-use actix_web::http::StatusCode;
 use log::error;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
@@ -29,10 +28,10 @@ pub async fn login(
         actix_web::rt::spawn(async move {
             if (session_manager.set_user(cookie.value(), user.id).await).is_err() {
                 error!(
-                "Unable to save user {} to cookie {}",
-                user.id,
-                cookie.value()
-            );
+                    "Unable to save user {} to cookie {}",
+                    user.id,
+                    cookie.value()
+                );
             }
         });
         Ok(HttpResponse::Ok().json(user))

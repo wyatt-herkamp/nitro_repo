@@ -11,6 +11,7 @@ pub mod cli;
 pub mod constants;
 pub mod error;
 pub mod frontend;
+pub mod helpers;
 pub mod install;
 pub mod repository;
 pub mod settings;

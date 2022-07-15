@@ -6,6 +6,7 @@ use actix_web::{get, web, HttpResponse};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
+use crate::helpers::unwrap_or_not_found;
 // struct that derives Serialize and Deserialize contains the number of active storages, number of active repositories, and the number of active users.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SystemStatus {
@@ -36,12 +37,9 @@ pub async fn get_user(
 ) -> actix_web::Result<HttpResponse> {
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_users()?;
-    let result: Option<UserModel> = super::super::user::get_by_id(id.into_inner(), &database)
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?;
-    if let Some(result) = result {
-        Ok(HttpResponse::Ok().json(result))
-    } else {
-        Ok(HttpResponse::NotFound().finish())
-    }
+    let result: UserModel =
+        unwrap_or_not_found!(super::super::user::get_by_id(id.into_inner(), &database)
+            .await
+            .map_err(actix_web::error::ErrorInternalServerError)?);
+    Ok(HttpResponse::Ok().json(result))
 }
