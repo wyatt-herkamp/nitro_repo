@@ -37,7 +37,6 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
     }
     async fn get_project_specific_version(
         &self,
-
         project: &str,
         version: &str,
     ) -> Result<Option<Project>, InternalError> {

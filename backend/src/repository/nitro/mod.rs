@@ -9,6 +9,14 @@ pub mod nitro_repository;
 pub mod post_deploy;
 pub mod utils;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRequest {
+    pub storage: String,
+    pub repository: String,
+    pub project_name: String,
+    pub version: String,
+}
+
 #[derive(Serialize, Clone, Debug)]
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,
