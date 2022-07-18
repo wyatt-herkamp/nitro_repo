@@ -94,13 +94,6 @@ pub async fn get_storage(
 ) -> actix_web::Result<HttpResponse> {
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
-    if let Some(storage) = storage_handler
-        .get_storage_by_name(&name.into_inner())
-        .await
-        .map_err(InternalError::from)?
-    {
-        Ok(HttpResponse::Ok().json(storage.config_for_saving()))
-    } else {
-        Ok(APIError::from(("Storage not found", StatusCode::NOT_FOUND)).error_response())
-    }
+    let storage = crate::helpers::get_storage!(storage_handler, name);
+    Ok(HttpResponse::Ok().json(storage.config_for_saving()))
 }

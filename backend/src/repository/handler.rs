@@ -8,6 +8,7 @@ use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
+use crate::error::internal_error::InternalError;
 use crate::repository::ci::CIHandler;
 use crate::repository::docker::DockerHandler;
 use crate::repository::maven::MavenHandler;
@@ -15,6 +16,7 @@ use crate::repository::npm::NPMHandler;
 use crate::repository::raw::RawHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::RepositoryType;
 use crate::storage::models::Storage;
 
 #[async_trait]
@@ -93,19 +95,31 @@ pub trait RepositoryHandler<'a, S: Storage>: Send + Sync {
         .into())
     }
 }
-
-pub enum DynamicRepositoryHandler<'a, StorageType: Storage> {
-    Maven(MavenHandler<'a, StorageType>),
-    NPM(NPMHandler<'a, StorageType>),
-    Raw(RawHandler<'a, StorageType>),
-    CI(CIHandler<'a, StorageType>),
-    Docker(DockerHandler<'a, StorageType>),
-}
-/// Impls the RepositoryHandler for the DynamicRepositoryHandler
+/// Creates a DynamicRepositoryHandler to handle all types of Repositories
 /// # Arguments
-/// Array<Name> of the Repository Types
-macro_rules! impl_repository_handler {
-    ($($name: ident),*) => {
+/// Array<Name, RepositoryHandlerType>
+macro_rules! repository_handler {
+    ($($repository_type:ident,$repository_tt:tt),*) => {
+        pub enum DynamicRepositoryHandler<'a, StorageType: Storage> {
+            $(
+                $repository_type($repository_tt<'a, StorageType>),
+            )*
+        }
+        #[inline]
+        pub async fn get_repository_handler<StorageType: Storage>(
+            storage: RwLockReadGuard<'_, StorageType>,
+            repository_config: RepositoryConfig,
+        ) -> Result<Option<DynamicRepositoryHandler<StorageType>>, InternalError> {
+            match repository_config.repository_type {
+                $(
+                    RepositoryType::$repository_type => {
+                        let handler = $repository_tt::create(repository_config, storage);
+                        Ok(Some(DynamicRepositoryHandler::$repository_type(handler)))
+                    },
+                )*
+            }
+        }
+
         #[async_trait]
         impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType>
             for DynamicRepositoryHandler<'a, StorageType>
@@ -119,7 +133,7 @@ macro_rules! impl_repository_handler {
             ) -> Result<RepoResponse, Error> {
                 match self {
                     $(
-                        DynamicRepositoryHandler::$name(handler) => handler.handle_get(
+                        DynamicRepositoryHandler::$repository_type(handler) => handler.handle_get(
                             path,
                             header,
                             conn,
@@ -138,7 +152,7 @@ macro_rules! impl_repository_handler {
             ) -> Result<RepoResponse, Error> {
                 match self {
                     $(
-                        DynamicRepositoryHandler::$name(handler) => handler.handle_post(
+                        DynamicRepositoryHandler::$repository_type(handler) => handler.handle_post(
                             path,
                             header,
                             conn,
@@ -158,7 +172,7 @@ macro_rules! impl_repository_handler {
             ) -> Result<RepoResponse, Error> {
                 match self {
                     $(
-                        DynamicRepositoryHandler::$name(handler) => handler.handle_put(
+                        DynamicRepositoryHandler::$repository_type(handler) => handler.handle_put(
                             path,
                             header,
                             conn,
@@ -178,7 +192,7 @@ macro_rules! impl_repository_handler {
             ) -> Result<RepoResponse, Error> {
                 match self {
                     $(
-                        DynamicRepositoryHandler::$name(handler) => handler.handle_patch(
+                        DynamicRepositoryHandler::$repository_type(handler) => handler.handle_patch(
                             path,
                             header,
                             conn,
@@ -197,7 +211,7 @@ macro_rules! impl_repository_handler {
             ) -> Result<RepoResponse, Error> {
                 match self {
                     $(
-                        DynamicRepositoryHandler::$name(handler) => handler.handle_head(
+                        DynamicRepositoryHandler::$repository_type(handler) => handler.handle_head(
                             path,
                             header,
                             conn,
@@ -210,4 +224,16 @@ macro_rules! impl_repository_handler {
 
     };
 }
-impl_repository_handler!(Maven, NPM, Raw, CI, Docker);
+
+repository_handler!(
+    NPM,
+    NPMHandler,
+    Maven,
+    MavenHandler,
+    Docker,
+    DockerHandler,
+    CI,
+    CIHandler,
+    Raw,
+    RawHandler
+);

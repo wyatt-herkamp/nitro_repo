@@ -2,21 +2,43 @@ use crate::error::internal_error::InternalError;
 use crate::repository::maven::MavenHandler;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::nitro::{NitroFileResponse, NitroRepoVersions, VersionData};
+use crate::repository::npm::NPMHandler;
 use crate::repository::response::Project;
 use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::RepositoryType;
 use crate::storage::file::StorageDirectoryResponse;
 use crate::storage::models::Storage;
 use crate::system::user::database::Model;
 use async_trait::async_trait;
+use tokio::sync::RwLockReadGuard;
 
-pub enum DynamicNitroRepositoryHandler<'a, StorageType: Storage> {
-    Maven(MavenHandler<'a, StorageType>),
-}
 /// Impls the NitroRepository for the DynamicNitroRepositoryHandler
 /// # Arguments
 /// Array<Name> of the Repository Types
-macro_rules! impl_repository_handler {
-    ($($name: ident),*) => {
+macro_rules! nitro_repo_handler {
+    ($($name: ident, $ty:tt),*) => {
+
+        pub enum DynamicNitroRepositoryHandler<'a, StorageType: Storage> {
+            $(
+                $name($ty<'a, StorageType>),
+            )*
+        }
+        #[inline]
+        pub async fn nitro_repo_handler<StorageType: Storage>(
+            storage: RwLockReadGuard<'_, StorageType>,
+            repository_config: RepositoryConfig,
+        ) -> Result<Option<NitroRepoHandler<StorageType>>, InternalError> {
+            match repository_config.repository_type {
+                $(
+                    RepositoryType::$name => {
+                        let handler = $ty::create(repository_config, storage);
+                        Ok(Some(NitroRepoHandler::Supported(DynamicNitroRepositoryHandler::$name(handler))))
+                    },
+                )*
+                _ => Ok(Some(NitroRepoHandler::Unsupported(repository_config))),
+
+            }
+        }
         #[async_trait]
         impl<'a, StorageType: Storage> NitroRepositoryHandler<StorageType>
             for DynamicNitroRepositoryHandler<'a, StorageType>
@@ -90,5 +112,10 @@ macro_rules! impl_repository_handler {
         }
     };
 }
+pub enum NitroRepoHandler<'a, StorageType: Storage> {
+    Supported(DynamicNitroRepositoryHandler<'a, StorageType>),
+    /// it is a teapot! [Teapot](https://http.cat/418)
+    Unsupported(RepositoryConfig),
+}
 
-impl_repository_handler!(Maven);
+nitro_repo_handler!(Maven, MavenHandler, NPM, NPMHandler);

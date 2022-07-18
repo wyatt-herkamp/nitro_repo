@@ -71,11 +71,11 @@ impl Responder for RepoResponse {
                 .map_into_boxed_body(),
             RepoResponse::PUTResponse(exists, content_location) => {
                 let header = (CONTENT_LOCATION, content_location);
-                if exists {
-                    return HttpResponse::Created().insert_header(header).finish();
+                return if exists {
+                    HttpResponse::Created().insert_header(header).finish()
                 } else {
-                    return HttpResponse::NoContent().insert_header(header).finish();
-                }
+                    HttpResponse::NoContent().insert_header(header).finish()
+                };
             }
         }
     }

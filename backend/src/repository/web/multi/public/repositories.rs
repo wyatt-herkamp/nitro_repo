@@ -29,10 +29,7 @@ pub async fn get_repositories(
     path: web::Path<String>,
 ) -> actix_web::Result<HttpResponse> {
     let storage_name = path.into_inner();
-    let value: RwLockReadGuard<'_, DynamicStorage> = unwrap_or_not_found!(storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?);
+    let value = crate::helpers::get_storage!(storage_handler, storage_name);
 
     let vec: Vec<PublicRepositoryResponse> = value
         .get_repositories()
