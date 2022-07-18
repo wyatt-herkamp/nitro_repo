@@ -44,9 +44,13 @@ impl RepositoryHandler for MavenHandler {
             Ok(RepoResponse::FileResponse(result.left().unwrap()))
         } else {
             let vec = result.right().unwrap();
-            let file_response =
-                process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
-            Ok(RepoResponse::NitroFileList(file_response))
+            if vec.is_empty() {
+                Ok(RepoResponse::NotFound)
+            } else {
+                let file_response =
+                    process_storage_files(&request.storage, &request.repository, vec, &request.value)?;
+                Ok(RepoResponse::NitroFileList(file_response))
+            }
         }
     }
 
