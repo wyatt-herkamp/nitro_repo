@@ -26,9 +26,6 @@ pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
 }
 
 pub fn init_admin(cfg: &mut web::ServiceConfig) {
-    cfg.configure(repository_page::init_repository_page);
-    cfg.configure(frontend::init_frontend);
-    cfg.configure(badge::init_badge);
     cfg.service(admin::get_repository)
         .service(admin::get_repositories)
         .service(admin::create_repository)
@@ -36,4 +33,20 @@ pub fn init_admin(cfg: &mut web::ServiceConfig) {
         .service(admin::update_repository_active)
         .service(admin::update_repository_policy)
         .service(admin::update_repository_visibility);
+    cfg.configure(configs_impls::init_repository_configs);
+}
+
+pub mod configs_impls {
+    use super::configs::define_repository_config_handlers_group;
+    use crate::repository::settings::badge::BadgeSettings;
+    use crate::repository::settings::frontend::Frontend;
+    use crate::repository::settings::repository_page::RepositoryPage;
+    define_repository_config_handlers_group!(
+        "badge",
+        BadgeSettings,
+        "frontend",
+        Frontend,
+        "repository_page",
+        RepositoryPage
+    );
 }

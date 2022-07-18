@@ -3,7 +3,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::settings::RepositoryConfigType;
-use crate::repository::web::multi::configs::define_repository_config_handlers;
 
 #[derive(Debug, Clone, Serialize, JsonSchema, Deserialize)]
 pub struct BadgeSettings {
@@ -61,5 +60,3 @@ impl BadgeStyle {
         }
     }
 }
-
-define_repository_config_handlers!("badge", BadgeSettings);

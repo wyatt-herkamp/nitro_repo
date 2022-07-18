@@ -1,5 +1,4 @@
 use crate::repository::settings::RepositoryConfigType;
-use crate::repository::web::multi::configs::define_repository_config_handlers;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -20,5 +19,3 @@ impl RepositoryConfigType for RepositoryPage {
         "repository_page.json"
     }
 }
-
-define_repository_config_handlers!("repository_page", RepositoryPage);

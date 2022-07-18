@@ -4,6 +4,7 @@ use actix_web::web::Bytes;
 use actix_web::Error;
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
+use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
@@ -13,6 +14,7 @@ use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
 use crate::repository::raw::RawHandler;
 use crate::repository::response::RepoResponse;
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 
 #[async_trait]
@@ -205,6 +207,7 @@ macro_rules! impl_repository_handler {
                 }
             }
         }
+
     };
 }
 impl_repository_handler!(Maven, NPM, Raw, CI, Docker);

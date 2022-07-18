@@ -28,61 +28,61 @@ pub mod web;
 pub static REPOSITORY_CONF: &str = "repository.nitro_repo";
 pub static REPOSITORY_CONF_FOLDER: &str = ".config.nitro_repo";
 pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";
-#[inline]
-pub async fn get_repository_handler<'a, StorageType: Storage>(
-    storage: RwLockReadGuard<'a, StorageType>,
-    repository: &'a str,
-) -> Result<Option<DynamicRepositoryHandler<'a, StorageType>>, InternalError> {
-    let value = storage.get_repository(repository).await?;
-    if value.is_none() {
-        return Ok(None);
-    }
-    let repository_config = value.unwrap().deref().clone();
-    match repository_config.repository_type {
-        RepositoryType::Maven => Ok(Some(DynamicRepositoryHandler::Maven(MavenHandler::create(
-            repository_config,
-            storage,
-        )))),
-        RepositoryType::NPM => Ok(Some(DynamicRepositoryHandler::NPM(NPMHandler::create(
-            repository_config,
-            storage,
-        )))),
-        RepositoryType::CI => Ok(Some(DynamicRepositoryHandler::CI(CIHandler::create(
-            repository_config,
-            storage,
-        )))),
-        RepositoryType::Docker => Ok(Some(DynamicRepositoryHandler::Docker(
-            DockerHandler::create(repository_config, storage),
-        ))),
-        RepositoryType::Raw => Ok(Some(DynamicRepositoryHandler::Raw(RawHandler::create(
-            repository_config,
-            storage,
-        )))),
-    }
+macro_rules! repository_handler {
+    ($($repository_type:ident, $repository:tt),*) => {
+        #[inline]
+        pub async fn get_repository_handler<StorageType: Storage>(
+            storage: RwLockReadGuard<'_, StorageType>,
+            repository_config: RepositoryConfig,
+        ) -> Result<Option<DynamicRepositoryHandler<StorageType>>, InternalError> {
+            match repository_config.repository_type {
+                $(
+                    RepositoryType::$repository_type => {
+                        let handler = $repository::create(repository_config, storage);
+                        Ok(Some(DynamicRepositoryHandler::$repository_type(handler)))
+                    },
+                )*
+            }
+        }
+    };
 }
+repository_handler!(
+    NPM,
+    NPMHandler,
+    Maven,
+    MavenHandler,
+    Docker,
+    DockerHandler,
+    CI,
+    CIHandler,
+    Raw,
+    RawHandler
+);
+
 pub enum NitroRepoHandler<'a, StorageType: Storage> {
     Supported(DynamicNitroRepositoryHandler<'a, StorageType>),
     /// it is a teapot! [Teapot](https://http.cat/418)
     Unsupported(RepositoryConfig),
 }
-#[inline]
-pub async fn get_nitro_repo_handler<'a, StorageType: Storage>(
-    storage: RwLockReadGuard<'a, StorageType>,
-    repository: &'a str,
-) -> Result<Option<NitroRepoHandler<'a, StorageType>>, InternalError> {
-    let value = storage.get_repository(repository).await?;
-    if value.is_none() {
-        return Ok(None);
-    }
-    let repository_config = value.unwrap().deref().clone();
-    match repository_config.repository_type {
-        RepositoryType::Maven => {
-            let handler = DynamicNitroRepositoryHandler::Maven(MavenHandler::create(
-                repository_config,
-                storage,
-            ));
-            Ok(Some(NitroRepoHandler::Supported(handler)))
+
+macro_rules! gen_nitro_repo_handler {
+    ($($repository_type:ident, $repository:tt),*) => {
+        #[inline]
+        pub async fn nitro_repo_handler<StorageType: Storage>(
+            storage: RwLockReadGuard<'_, StorageType>,
+            repository_config: RepositoryConfig,
+        ) -> Result<Option<NitroRepoHandler<StorageType>>, InternalError> {
+            match repository_config.repository_type {
+                $(
+                    RepositoryType::$repository_type => {
+                        let handler = $repository::create(repository_config, storage);
+                        Ok(Some(NitroRepoHandler::Supported(DynamicNitroRepositoryHandler::$repository_type(handler))))
+                    },
+                )*
+                _ => Ok(Some(NitroRepoHandler::Unsupported(repository_config))),
+
+            }
         }
-        _ => Ok(Some(NitroRepoHandler::Unsupported(repository_config))),
-    }
+    };
 }
+gen_nitro_repo_handler!(Maven, MavenHandler);

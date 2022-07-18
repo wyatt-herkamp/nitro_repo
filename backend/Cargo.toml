@@ -60,7 +60,6 @@ derive_more = "0.99.17"
 async-trait = "0.1.56"
 thiserror = "1.0.31"
 anyhow = "1.0.58"
-either = "1.7.0"
 # Badge Stuff
 badge-maker = "0.3.1"
 # Webhook

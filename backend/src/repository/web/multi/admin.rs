@@ -33,11 +33,7 @@ pub async fn get_repositories(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
 
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name.into_inner())
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::from(("Storage not found", StatusCode::NOT_FOUND)))?;
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
 
     Ok(HttpResponse::Ok().json(
         storage
@@ -59,12 +55,7 @@ pub async fn create_repository(
     user.can_i_edit_repos()?;
     let (storage_name, repository_name, repository_type) = query_params.into_inner();
 
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::from(("Storage not found", StatusCode::NOT_FOUND)))?;
-
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
     if let Err(error) = storage
         .create_repository(repository_name, repository_type)
         .await
@@ -99,23 +90,17 @@ pub async fn get_repository(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::from(("Storage not found", StatusCode::NOT_FOUND)))?;
-    let repository = storage
-        .get_repository(&repository_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::from(("Repository not found", StatusCode::NOT_FOUND)))?;
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let mut repository = crate::helpers::get_repository!(storage, repository_name)
+        .deref()
+        .clone();
     // Check if the query param contains all_info
     if query_params.all_info {
         //Generate a RepositoryResponse
         let response = RepositoryResponse::new(&repository, storage.deref()).await?;
         Ok(HttpResponse::Ok().json(response))
     } else {
-        Ok(HttpResponse::Ok().json(repository.deref()))
+        Ok(HttpResponse::Ok().json(repository))
     }
 }
 
@@ -136,16 +121,10 @@ pub async fn delete_repository(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::from(("Storage not found", StatusCode::NOT_FOUND)))?;
-    let repository = storage
-        .get_repository(&repository_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::from(("Repository not found", StatusCode::NOT_FOUND)))?;
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let mut repository = crate::helpers::get_repository!(storage, repository_name)
+        .deref()
+        .clone();
     storage
         .delete_repository(&repository, query_params.purge_repository)
         .await
@@ -163,16 +142,8 @@ pub async fn update_repository_visibility(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name, visibility) = path_params.into_inner();
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
-    let mut repository = storage
-        .get_repository(&repository_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::repository_not_found())?
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let mut repository = crate::helpers::get_repository!(storage, repository_name)
         .deref()
         .clone();
     repository.visibility = visibility;
@@ -194,16 +165,8 @@ pub async fn update_repository_active(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name, active) = path_params.into_inner();
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
-    let mut repository = storage
-        .get_repository(&repository_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::repository_not_found())?
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let mut repository = crate::helpers::get_repository!(storage, repository_name)
         .deref()
         .clone();
     repository.active = active;
@@ -225,16 +188,8 @@ pub async fn update_repository_policy(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name, policy) = path_params.into_inner();
-    let storage = storage_handler
-        .get_storage_by_name(&storage_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::storage_not_found())?;
-    let mut repository = storage
-        .get_repository(&repository_name)
-        .await
-        .map_err(InternalError::from)?
-        .ok_or_else(|| APIError::repository_not_found())?
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let mut repository = crate::helpers::get_repository!(storage, repository_name)
         .deref()
         .clone();
     repository.policy = policy;

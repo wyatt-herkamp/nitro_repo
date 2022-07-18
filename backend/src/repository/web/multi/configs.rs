@@ -15,16 +15,8 @@ use crate::system::permissions::options::CanIDo;
             let user: crate::system::user::UserModel = auth.get_user(&database).await??;
             user.can_i_edit_repos()?;
             let (storage_name, repository_name) = path_params.into_inner();
-            let storage = storage_handler
-                .get_storage_by_name(&storage_name)
-                .await
-                .map_err(crate::error::internal_error::InternalError::from)?
-                .ok_or_else(|| crate::error::api_error::APIError::storage_not_found())?;
-            let repository = storage
-                .get_repository(&repository_name)
-                .await
-                .map_err(crate::error::internal_error::InternalError::from)?
-                .ok_or_else(|| crate::error::api_error::APIError::repository_not_found())?;
+            let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+            let repository = crate::helpers::get_repository!(storage, repository_name);
             let config = repository
                 .get_config::<$ty, crate::storage::DynamicStorage>(&storage)
                 .await
@@ -53,16 +45,8 @@ use crate::system::permissions::options::CanIDo;
         let user: crate::system::user::UserModel = auth.get_user(&database).await??;
         user.can_i_edit_repos()?;
         let (storage_name, repository_name) = path_params.into_inner();
-        let storage = storage_handler
-            .get_storage_by_name(&storage_name)
-            .await
-            .map_err(crate::error::internal_error::InternalError::from)?
-            .ok_or_else(|| crate::error::api_error::APIError::storage_not_found())?;
-        let repository = storage
-            .get_repository(&repository_name)
-            .await
-            .map_err(crate::error::internal_error::InternalError::from)?
-            .ok_or_else(|| crate::error::api_error::APIError::repository_not_found())?;
+            let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+            let repository = crate::helpers::get_repository!(storage, repository_name);
         let body = body.into_inner();
         repository
             .save_config::<$ty, crate::storage::DynamicStorage>(&storage,Some(&body))
@@ -83,20 +67,12 @@ macro_rules! define_repository_config_delete {
                 path_params: actix_web::web::Path<(String, String)>,
             ) -> actix_web::Result<actix_web::HttpResponse> {
                 use crate::storage::models::Storage;
-use crate::system::permissions::options::CanIDo;
-        let user: crate::system::user::UserModel = auth.get_user(&database).await??;
-        user.can_i_edit_repos()?;
+                use crate::system::permissions::options::CanIDo;
+                let user: crate::system::user::UserModel = auth.get_user(&database).await??;
+                user.can_i_edit_repos()?;
         let (storage_name, repository_name) = path_params.into_inner();
-        let storage = storage_handler
-            .get_storage_by_name(&storage_name)
-            .await
-            .map_err(crate::error::internal_error::InternalError::from)?
-            .ok_or_else(|| crate::error::api_error::APIError::storage_not_found())?;
-        let repository = storage
-            .get_repository(&repository_name)
-            .await
-            .map_err(crate::error::internal_error::InternalError::from)?
-            .ok_or_else(|| crate::error::api_error::APIError::repository_not_found())?;
+            let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+            let repository = crate::helpers::get_repository!(storage, repository_name);
         repository
             .save_config::<$ty, crate::storage::DynamicStorage>(&storage, None)
             .await
@@ -107,24 +83,28 @@ use crate::system::permissions::options::CanIDo;
     };
 }
 
-macro_rules! define_repository_config_handlers {
-    ($value:literal,$ty:tt ) => {
-        crate::repository::web::multi::configs::define_repository_config_get!($value, $ty);
-        crate::repository::web::multi::configs::define_repository_config_set!($value, $ty);
-        crate::repository::web::multi::configs::define_repository_config_delete!($value, $ty);
+macro_rules! define_repository_config_handlers_group {
+    ($($value:literal, $ty:tt),*) => {
+        $(
+            crate::repository::web::multi::configs::define_repository_config_get!($value, $ty);
+            crate::repository::web::multi::configs::define_repository_config_set!($value, $ty);
+            crate::repository::web::multi::configs::define_repository_config_delete!($value, $ty);
+        )*
+    pub fn init_repository_configs(cfg: &mut actix_web::web::ServiceConfig) {
+        $(
         paste::paste! {
-                pub fn [<init_ $value>](cfg: &mut actix_web::web::ServiceConfig) {
-                        cfg.service(actix_web::web::resource(["/repositories/{storage}/{repository}/config/".to_owned() + $value])
-                        .route(actix_web::web::get().to([<get_ $value>]))
-                        .route(actix_web::web::put().to([<set_ $value>]))
-                        .route(actix_web::web::delete().to([<delete_ $value>]))
-                        );
-                }
-            }
+            cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", $value)])
+                .route(actix_web::web::get().to([<get_ $value>]))
+                .route(actix_web::web::put().to([<set_ $value>]))
+                .route(actix_web::web::delete().to([<delete_ $value>])));
+    }
+        )*
+    }
     };
 }
+use crate::repository::settings::badge::BadgeSettings;
 
 pub(crate) use define_repository_config_delete;
 pub(crate) use define_repository_config_get;
-pub(crate) use define_repository_config_handlers;
+pub(crate) use define_repository_config_handlers_group;
 pub(crate) use define_repository_config_set;
