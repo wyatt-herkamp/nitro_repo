@@ -9,6 +9,7 @@ use crate::storage::models::Storage;
 pub mod badge;
 pub mod frontend;
 pub mod post_deploy;
+pub mod repository_page;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
 pub enum Visibility {

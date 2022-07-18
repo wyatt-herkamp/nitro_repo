@@ -1,3 +1,4 @@
+use crate::repository::web::multi::configs::define_repository_config_handlers;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -42,3 +43,4 @@ impl Default for Frontend {
         }
     }
 }
+define_repository_config_handlers!("frontend", Frontend);

@@ -7,9 +7,10 @@ use crate::repository::ci::CIHandler;
 use crate::repository::docker::DockerHandler;
 use crate::repository::handler::DynamicRepositoryHandler;
 use crate::repository::maven::MavenHandler;
+use crate::repository::nitro::dynamic::DynamicNitroRepositoryHandler;
 use crate::repository::npm::NPMHandler;
 use crate::repository::raw::RawHandler;
-use crate::repository::settings::RepositoryType;
+use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::models::Storage;
 
 pub mod ci;
@@ -27,7 +28,7 @@ pub mod web;
 pub static REPOSITORY_CONF: &str = "repository.nitro_repo";
 pub static REPOSITORY_CONF_FOLDER: &str = ".config.nitro_repo";
 pub static REPOSITORY_CONF_BAK: &str = "repository.nitro_repo.bak";
-
+#[inline]
 pub async fn get_repository_handler<'a, StorageType: Storage>(
     storage: RwLockReadGuard<'a, StorageType>,
     repository: &'a str,
@@ -57,5 +58,31 @@ pub async fn get_repository_handler<'a, StorageType: Storage>(
             repository_config,
             storage,
         )))),
+    }
+}
+pub enum NitroRepoHandler<'a, StorageType: Storage> {
+    Supported(DynamicNitroRepositoryHandler<'a, StorageType>),
+    /// it is a teapot! [Teapot](https://http.cat/418)
+    Unsupported(RepositoryConfig),
+}
+#[inline]
+pub async fn get_nitro_repo_handler<'a, StorageType: Storage>(
+    storage: RwLockReadGuard<'a, StorageType>,
+    repository: &'a str,
+) -> Result<Option<NitroRepoHandler<'a, StorageType>>, InternalError> {
+    let value = storage.get_repository(repository).await?;
+    if value.is_none() {
+        return Ok(None);
+    }
+    let repository_config = value.unwrap().deref().clone();
+    match repository_config.repository_type {
+        RepositoryType::Maven => {
+            let handler = DynamicNitroRepositoryHandler::Maven(MavenHandler::create(
+                repository_config,
+                storage,
+            ));
+            Ok(Some(NitroRepoHandler::Supported(handler)))
+        }
+        _ => Ok(Some(NitroRepoHandler::Unsupported(repository_config))),
     }
 }

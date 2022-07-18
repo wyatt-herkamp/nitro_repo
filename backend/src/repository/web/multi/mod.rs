@@ -1,10 +1,12 @@
 use actix_web::web;
 
 pub mod admin;
-pub mod helpers;
+pub mod configs;
 pub mod public;
 pub mod repository_handler;
-
+use crate::repository::settings::badge;
+use crate::repository::settings::frontend;
+use crate::repository::settings::repository_page;
 pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource([
@@ -24,13 +26,13 @@ pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
 }
 
 pub fn init_admin(cfg: &mut web::ServiceConfig) {
+    cfg.configure(repository_page::init_repository_page);
+    cfg.configure(frontend::init_frontend);
+    cfg.configure(badge::init_badge);
     cfg.service(admin::get_repository)
         .service(admin::get_repositories)
         .service(admin::create_repository)
         .service(admin::delete_repository)
-        .service(admin::update_repository_config)
-        .service(admin::get_repository_config)
-        .service(admin::remove_repository_config)
         .service(admin::update_repository_active)
         .service(admin::update_repository_policy)
         .service(admin::update_repository_visibility);
