@@ -21,7 +21,7 @@ use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
-
+use paste::paste;
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
 pub async fn get_repositories(
@@ -131,71 +131,42 @@ pub async fn delete_repository(
         .map_err(InternalError::from)?;
     Ok(HttpResponse::NoContent().finish())
 }
+macro_rules! update_repository_core_prop {
+    ($($name:ident,$value_type:tt),*) => {
+        $(
+        paste! {
+        pub async fn [<update_repository_ $name>](
+            storage_handler: web::Data<MultiStorageController>,
+            database: web::Data<DatabaseConnection>,
+            auth: Authentication,
+            path_params: web::Path<(String, String, $value_type)>,
+        ) -> actix_web::Result<HttpResponse> {
+            let user: UserModel = auth.get_user(&database).await??;
+            user.can_i_edit_repos()?;
+            let (storage_name, repository_name, value) = path_params.into_inner();
+            let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+            let mut repository = crate::helpers::get_repository!(storage, repository_name)
+                .deref()
+                .clone();
+            repository.$name = value;
 
-#[put("/repositories/{storage_name}/{repository_name}/main/visibility/{visibility}")]
-pub async fn update_repository_visibility(
-    storage_handler: web::Data<MultiStorageController>,
-    database: web::Data<DatabaseConnection>,
-    auth: Authentication,
-    path_params: web::Path<(String, String, Visibility)>,
-) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
-    user.can_i_edit_repos()?;
-    let (storage_name, repository_name, visibility) = path_params.into_inner();
-    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let mut repository = crate::helpers::get_repository!(storage, repository_name)
-        .deref()
-        .clone();
-    repository.visibility = visibility;
-    storage
-        .update_repository(repository)
-        .await
-        .map_err(InternalError::from)?;
+            storage
+                .update_repository(repository)
+                .await
+                .map_err(InternalError::from)?;
 
-    Ok(HttpResponse::NoContent().finish())
+            Ok(HttpResponse::NoContent().finish())
+        }
+        }
+        )*
+        pub fn register_core_updates(cfg: &mut actix_web::web::ServiceConfig){
+            $(
+            paste! {
+            cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", stringify!($name), "{value}")])
+                .route(actix_web::web::put().to([<update_repository_ $name>])));
+            }
+            )*
+        }
+    };
 }
-
-#[put("/repositories/{storage_name}/{repository_name}/main/active/{active}")]
-pub async fn update_repository_active(
-    storage_handler: web::Data<MultiStorageController>,
-    database: web::Data<DatabaseConnection>,
-    auth: Authentication,
-    path_params: web::Path<(String, String, bool)>,
-) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
-    user.can_i_edit_repos()?;
-    let (storage_name, repository_name, active) = path_params.into_inner();
-    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let mut repository = crate::helpers::get_repository!(storage, repository_name)
-        .deref()
-        .clone();
-    repository.active = active;
-    storage
-        .update_repository(repository)
-        .await
-        .map_err(InternalError::from)?;
-
-    Ok(HttpResponse::NoContent().finish())
-}
-
-#[put("/repositories/{storage_name}/{repository_name}/main/policy/{policy}")]
-pub async fn update_repository_policy(
-    storage_handler: web::Data<MultiStorageController>,
-    database: web::Data<DatabaseConnection>,
-    auth: Authentication,
-    path_params: web::Path<(String, String, Policy)>,
-) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
-    user.can_i_edit_repos()?;
-    let (storage_name, repository_name, policy) = path_params.into_inner();
-    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let mut repository = crate::helpers::get_repository!(storage, repository_name)
-        .deref()
-        .clone();
-    repository.policy = policy;
-    storage
-        .update_repository(repository)
-        .await
-        .map_err(InternalError::from)?;
-    Ok(HttpResponse::NoContent().finish())
-}
+update_repository_core_prop!(visibility, Visibility, active, bool, policy, Policy);

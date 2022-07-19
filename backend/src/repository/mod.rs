@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use tokio::sync::RwLockReadGuard;
 
 use crate::error::internal_error::InternalError;

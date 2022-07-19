@@ -29,10 +29,8 @@ pub fn init_admin(cfg: &mut web::ServiceConfig) {
     cfg.service(admin::get_repository)
         .service(admin::get_repositories)
         .service(admin::create_repository)
-        .service(admin::delete_repository)
-        .service(admin::update_repository_active)
-        .service(admin::update_repository_policy)
-        .service(admin::update_repository_visibility);
+        .service(admin::delete_repository);
+    cfg.configure(admin::register_core_updates);
     cfg.configure(configs_impls::init_repository_configs);
 }
 
