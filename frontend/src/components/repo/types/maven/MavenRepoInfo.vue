@@ -28,7 +28,11 @@ export default defineComponent({
   setup(props) {
     const url = apiURL;
     const repoURL =
-      url + "/" + props.repository.storage + "/" + props.repository.name;
+      url +
+      "storages/" +
+      props.repository.storage +
+      "/" +
+      props.repository.name;
     const snippets = createRepositoryInfo(repoURL, props.repository.name);
     const page = ref(snippets[0].name);
     return { url, page, snippets };

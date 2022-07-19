@@ -8,6 +8,7 @@ export default function createRepositoryInfo(
     {
       name: "Maven",
       lang: "xml",
+      grammar: "xml",
       snippet: `<repository>
     <id>${name}</id>
     <url>${url}</url>
@@ -16,11 +17,13 @@ export default function createRepositoryInfo(
     {
       name: "Gradle",
       lang: "groovy",
+      grammar: "groovy",
       snippet: `maven {\n    url "${url}"\n}`.trim(),
     },
     {
       name: "Gradle.kts",
       lang: "kotlin",
+      grammar: "kotlin",
       snippet: `maven("${url}")`,
     },
   ];
