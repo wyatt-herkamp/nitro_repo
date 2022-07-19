@@ -63,18 +63,10 @@ export default defineComponent({
 .codeMenu {
   @apply bg-slate-800;
 }
-.codeBox {
-  @apply relative;
-  min-height: 8rem;
-  @apply overflow-hidden;
-}
+
+
 .codeBlock {
   @apply pl-2;
   @apply my-auto;
-}
-.nitroEditor {
-}
-.prism-editor__textarea:focus {
-  outline: none;
 }
 </style>

@@ -13,9 +13,9 @@
             :src="
               url +
               '/badge/' +
-              project.repo_summary.storage +
+              project.storage +
               '/' +
-              project.repo_summary.name +
+              project.repository +
               '/' +
               projectPath +
               '/badge'
@@ -31,26 +31,30 @@
 import { defineComponent, ref } from "vue";
 import { apiURL } from "@/http-common";
 import { createProjectSnippet } from "@/api/repository/BadgeGen";
-import { Project } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: {},
   props: {
     project: {
       required: true,
-      type: Object as () => Project,
+      type: Object as () => {
+        storage: string;
+        repository: string;
+        project: string;
+        version: string;
+      },
     },
   },
   setup(props) {
     const url = apiURL;
-    const projectPath = props.project.version.name
+    const projectPath = props.project.version
       .replace(":", "/")
       .replace(".", "/");
     const snippets = createProjectSnippet(
-      props.project.repo_summary.storage,
-      props.project.repo_summary.name,
+      props.project.storage,
+      props.project.repository,
       projectPath,
-      props.project.version.name
+      props.project.version
     );
     const page = ref(snippets[0].name);
     return { url, page, snippets, projectPath };

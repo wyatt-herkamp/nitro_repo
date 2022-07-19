@@ -47,4 +47,10 @@ export default defineComponent({
   font-size: 16px;
   @apply text-white;
 }
+.nitroEditor .card-editor.prism-editor__textarea {
+  display: none;
+}
+.nitroEditor {
+  user-select: none;
+}
 </style>

@@ -15,9 +15,18 @@ pub struct ProjectRequest {
     pub storage: String,
     pub repository: String,
     pub project_name: String,
-    pub version: String,
+    pub version: Option<String>,
 }
-
+impl ProjectRequest {
+    pub fn into_inner(self) -> (String, String, String, Option<String>) {
+        (
+            self.storage,
+            self.repository,
+            self.project_name,
+            self.version,
+        )
+    }
+}
 #[derive(Serialize, Clone, Debug)]
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,

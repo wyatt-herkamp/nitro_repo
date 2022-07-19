@@ -28,7 +28,7 @@ pub struct Project {
     pub project: ProjectData,
     /// Version Data will be latest if not specified
     pub version: Option<VersionData>,
-    pub frontend_response: Option<FrontendResponse>,
+    pub frontend_response: String,
 }
 
 /// Types of Valid Repo Responses

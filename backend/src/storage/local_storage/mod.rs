@@ -293,6 +293,7 @@ impl Storage for LocalStorage {
         };
         let mut file = OpenOptions::new()
             .create_new(true)
+            .write(true)
             .open(&file_location)
             .await?;
         file.write_all(data).await?;
@@ -397,8 +398,9 @@ impl Storage for LocalStorage {
         }
         let buf = self
             .get_repository_folder(repository.name.as_str())
-            .join(".config")
+            .join(".config.nitro_repo")
             .join(config_name);
+        trace!("Saving Config {:?}", &buf);
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -416,7 +418,7 @@ impl Storage for LocalStorage {
     ) -> Result<Option<ConfigType>, StorageError> {
         let buf = self
             .get_repository_folder(repository.name.as_str())
-            .join(".config")
+            .join(".config.nitro_repo")
             .join(config_name);
         if !buf.exists() {
             Ok(None)
@@ -439,7 +441,7 @@ impl Storage for LocalStorage {
         }
         let buf = self
             .get_repository_folder(repository.name.as_str())
-            .join(".config")
+            .join(".config.nitro_repo")
             .join(config_name);
         remove_file(buf).await?;
         return Ok(());

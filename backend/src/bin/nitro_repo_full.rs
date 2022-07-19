@@ -69,7 +69,8 @@ async fn main() -> std::io::Result<()> {
 
     let application = nitro_repo.core.application.clone();
     set_var("STORAGE_LOCATION", &application.storage_location);
-    let max_upload = Data::new(PayloadConfig::default().limit(application.max_upload));
+    let max_upload =
+        Data::new(PayloadConfig::default().limit(application.max_upload * 1024 * 1024));
 
     let address = application.address.clone();
     let storages_data = Data::new(storages);
@@ -98,8 +99,8 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("/api")
+                    .wrap(HandleSession(true))
                     .wrap(DefaultHeaders::new().add(("Content-Type", "application/json")))
-                    .wrap(HandleSession {})
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)
                     .service(
@@ -111,7 +112,11 @@ async fn main() -> std::io::Result<()> {
                     .configure(storage::multi::web::init_public_routes)
                     .configure(repository::web::multi::public::init_public),
             )
-            .configure(repository::web::multi::init_repository_handlers)
+            .service(
+                web::scope("")
+                    .wrap(HandleSession(false))
+                    .configure(repository::web::multi::init_repository_handlers),
+            )
             .configure(frontend::init)
     });
 

@@ -79,13 +79,13 @@ const routes: Array<RouteRecordRaw> = [
     component: Browse,
   },
   {
-    path: "/repository/:storage/:repo",
+    path: "/repository/:storage/:repository",
     name: "ViewRepository",
     component: Repository,
   },
 
   {
-    path: "/project/:storage/:repo/:id/:version?",
+    path: "/project/:storage/:repository/:project/:version?",
     name: "Project",
     component: Project,
   },

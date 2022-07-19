@@ -56,7 +56,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 repo_summary: self.repository().clone(),
                 project: project_data,
                 version: version_data,
-                frontend_response: None,
+                frontend_response: String::new(),
             };
             return Ok(Some(project));
         }
@@ -79,7 +79,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 repo_summary: self.repository().clone(),
                 project: project_data,
                 version: version_data,
-                frontend_response: None,
+                frontend_response: String::new(),
             };
             return Ok(Some(project));
         }
@@ -133,7 +133,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 repo_summary: self.repository().clone(),
                 project: project_data,
                 version: version_data,
-                frontend_response: None,
+                frontend_response: String::new(),
             };
             NitroFileResponseType::Project(Some(project))
         } else if let Some(version) =
@@ -148,7 +148,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 repo_summary: self.repository().clone(),
                 project,
                 version: Some(version),
-                frontend_response: None,
+                frontend_response: String::new(),
             };
             NitroFileResponseType::Project(Some(project))
         } else {
@@ -201,7 +201,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 .save_file(
                     self.repository(),
                     serde_json::to_string_pretty(&version_data)?.as_bytes(),
-                    &version_folder,
+                    &version_file,
                 )
                 .await?;
             Ok(())

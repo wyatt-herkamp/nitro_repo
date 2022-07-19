@@ -11,7 +11,7 @@ use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 
 use crate::repository::settings::repository_page::{PageType, RepositoryPage};
-use crate::repository::settings::{RepositoryType, Visibility};
+use crate::repository::settings::{RepositoryConfig, RepositoryType, Visibility};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;

@@ -15,14 +15,13 @@ import { defineComponent, ref } from "vue";
 
 import { apiURL } from "@/http-common";
 import createRepositoryInfo from "@/api/maven/CodeGen";
-import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: {},
   props: {
     repository: {
       required: true,
-      type: Object as () => Repository,
+      type: Object as () => { name: string; storage: string },
     },
   },
   setup(props) {

@@ -19,7 +19,7 @@ use crate::authentication::{
     auth_token, session::Session, session::SessionManager, verify_login, Authentication,
 };
 
-pub struct HandleSession;
+pub struct HandleSession(pub bool);
 
 impl<S, B> Transform<S, ServiceRequest> for HandleSession
 where
@@ -36,12 +36,14 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(SessionMiddleware {
             service: Rc::new(service),
+            run_cookies: self.0,
         }))
     }
 }
 
 pub struct SessionMiddleware<S> {
     service: Rc<S>,
+    run_cookies: bool,
 }
 
 impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
@@ -66,8 +68,10 @@ where
         }
         let service: Rc<S> = Rc::clone(&self.service);
         trace!("Request at {}", req.path());
+        let run_cookies = self.run_cookies;
         // Move all into an Async Box.
         Box::pin(async move {
+            let run_cookies = run_cookies;
             //Step One Find the Authorization
             let session_manager: &web::Data<SessionManager> = req.app_data().unwrap();
 
@@ -180,17 +184,21 @@ where
                         }
                     }
                 } else {
-                    // Try to create a new Session for the user. Could be a first request
-                    // Require a Origin Header for request
-                    if let Some(origin) = req.headers().get(ORIGIN) {
-                        trace!(
-                            "Creating a new Session for {}. ",
-                            origin.to_str().unwrap_or("Bad Origin")
-                        );
-                        let session = session_manager.create_session().await.unwrap();
-                        (Authentication::Session(session.clone()), Some(session))
+                    if run_cookies {
+                        // Try to create a new Session for the user. Could be a first request
+                        // Require a Origin Header for request
+                        if let Some(origin) = req.headers().get(ORIGIN) {
+                            trace!(
+                                "Creating a new Session for {}. ",
+                                origin.to_str().unwrap_or("Bad Origin")
+                            );
+                            let session = session_manager.create_session().await.unwrap();
+                            (Authentication::Session(session.clone()), Some(session))
+                        } else {
+                            warn!("A Not Origin Not Authorized Request was made");
+                            (Authentication::NoIdentification, Option::None)
+                        }
                     } else {
-                        warn!("A Not Origin Not Authorized Request was made");
                         (Authentication::NoIdentification, Option::None)
                     }
                 };
@@ -200,19 +208,22 @@ where
             let fut = service.call(req);
             // Get the response
             let mut res: Self::Response = fut.await?;
-            // If a new cookie needs to be added. Do it
-            if let Some(session) = session {
-                let mut cookie = Cookie::new("session", &session.token);
-                cookie.set_secure(true);
-                cookie.set_same_site(SameSite::None);
-                cookie.set_path("/");
-                cookie.set_expires(session.expiration);
-                let cookie_encoded = cookie.encoded().to_string();
-                trace!("Sending Cookie Response {}", &cookie_encoded);
-                let val = HeaderValue::from_str(&cookie_encoded).unwrap();
+            if run_cookies {
+                // If a new cookie needs to be added. Do it
+                if let Some(session) = session {
+                    let mut cookie = Cookie::new("session", &session.token);
+                    cookie.set_secure(true);
+                    cookie.set_same_site(SameSite::None);
+                    cookie.set_path("/");
+                    cookie.set_expires(session.expiration);
+                    let cookie_encoded = cookie.encoded().to_string();
+                    trace!("Sending Cookie Response {}", &cookie_encoded);
+                    let val = HeaderValue::from_str(&cookie_encoded).unwrap();
 
-                res.headers_mut().append(SET_COOKIE, val);
+                    res.headers_mut().append(SET_COOKIE, val);
+                }
             }
+
             Ok(res)
         })
     }
