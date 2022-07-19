@@ -1,4 +1,5 @@
 use actix_web::{get, web, HttpResponse};
+use comrak::Arena;
 use log::warn;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
@@ -9,7 +10,7 @@ use utoipa::Component;
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 
-use crate::repository::settings::repository_page::RepositoryPage;
+use crate::repository::settings::repository_page::{PageType, RepositoryPage};
 use crate::repository::settings::{RepositoryType, Visibility};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
@@ -73,6 +74,7 @@ pub async fn get_repositories(
 pub struct RepositoryPageResponse {
     pub name: String,
     pub repository_type: RepositoryType,
+    pub page_content: String,
 }
 #[get("repositories/{storage_name}/{repository_name}")]
 pub async fn get_repository(
@@ -90,9 +92,29 @@ pub async fn get_repository(
             return Err(value.into());
         }
     }
-    let storage: Option<RepositoryPage> = repository
+    let repository_page: Option<RepositoryPage> = repository
         .get_config::<RepositoryPage, DynamicStorage>(storage.deref())
         .await?;
+    let page_content = if let Some(value) = repository_page {
+        match value.page_type {
+            PageType::None => String::new(),
+            PageType::Markdown(markdown) => {
+                let arena = Arena::new();
+                let html =
+                    comrak::parse_document(&arena, &markdown, &comrak::ComrakOptions::default());
+                let mut content = vec![];
+                comrak::format_html(html, &comrak::ComrakOptions::default(), &mut content);
+                String::from_utf8(content).unwrap()
+            }
+        }
+    } else {
+        String::new()
+    };
+    let value = RepositoryPageResponse {
+        name: repository.name.clone(),
+        repository_type: repository.repository_type.clone(),
+        page_content,
+    };
 
-    Ok(HttpResponse::Ok().json(storage))
+    Ok(HttpResponse::Ok().json(value))
 }
