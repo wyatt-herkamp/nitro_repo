@@ -1,6 +1,3 @@
-use paste::paste;
-use schemars::schema_for;
-
 macro_rules! define_repository_config_get {
     ($value:literal,$ty:tt ) => {
         paste::paste! {
@@ -102,7 +99,6 @@ macro_rules! define_repository_config_handlers_group {
     }
     };
 }
-use crate::repository::settings::badge::BadgeSettings;
 
 pub(crate) use define_repository_config_delete;
 pub(crate) use define_repository_config_get;

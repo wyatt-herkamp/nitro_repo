@@ -4,9 +4,7 @@ pub mod admin;
 pub mod configs;
 pub mod public;
 pub mod repository_handler;
-use crate::repository::settings::badge;
-use crate::repository::settings::frontend;
-use crate::repository::settings::repository_page;
+
 pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource([

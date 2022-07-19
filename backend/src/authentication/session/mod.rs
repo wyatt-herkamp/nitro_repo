@@ -46,7 +46,7 @@ impl SessionManagerType for SessionManager {
             SessionManager::RedisSessionManager(basic) => basic
                 .delete_session(token)
                 .await
-                .map_err(|e| anyhow::Error::new(e)),
+                .map_err(anyhow::Error::new),
         };
     }
 
@@ -60,10 +60,9 @@ impl SessionManagerType for SessionManager {
                     ))
                 })
             }
-            SessionManager::RedisSessionManager(basic) => basic
-                .create_session()
-                .await
-                .map_err(|e| anyhow::Error::new(e)),
+            SessionManager::RedisSessionManager(basic) => {
+                basic.create_session().await.map_err(anyhow::Error::new)
+            }
         };
     }
 
@@ -80,7 +79,7 @@ impl SessionManagerType for SessionManager {
             SessionManager::RedisSessionManager(basic) => basic
                 .retrieve_session(token)
                 .await
-                .map_err(|e| anyhow::Error::new(e)),
+                .map_err(anyhow::Error::new),
         };
     }
 
@@ -97,7 +96,7 @@ impl SessionManagerType for SessionManager {
             SessionManager::RedisSessionManager(basic) => basic
                 .re_create_session(token)
                 .await
-                .map_err(|e| anyhow::Error::new(e)),
+                .map_err(anyhow::Error::new),
         };
     }
 
@@ -114,7 +113,7 @@ impl SessionManagerType for SessionManager {
             SessionManager::RedisSessionManager(basic) => basic
                 .set_user(token, user)
                 .await
-                .map_err(|e| anyhow::Error::new(e)),
+                .map_err(anyhow::Error::new),
         };
     }
 }

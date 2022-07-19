@@ -32,19 +32,16 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { useCookies } from "vue3-cookies";
 import httpCommon from "@/http-common";
 
 export default defineComponent({
   emits: ["login"],
   setup() {
-    const { cookies } = useCookies();
-
     const form = ref({
       username: "",
       password: "",
     });
-    return { form, cookies };
+    return { form };
   },
   methods: {
     async onSubmit() {

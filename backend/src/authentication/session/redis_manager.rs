@@ -26,7 +26,7 @@ impl RedisSessionManager {
 impl SessionManagerType for RedisSessionManager {
     type Error = redis::RedisError;
 
-    async fn delete_session(&self, token: &str) -> Result<(), Self::Error> {
+    async fn delete_session(&self, _token: &str) -> Result<(), Self::Error> {
         todo!()
     }
 
@@ -34,15 +34,15 @@ impl SessionManagerType for RedisSessionManager {
         todo!()
     }
 
-    async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error> {
+    async fn retrieve_session(&self, _token: &str) -> Result<Option<Session>, Self::Error> {
         todo!()
     }
 
-    async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error> {
+    async fn re_create_session(&self, _token: &str) -> Result<Session, Self::Error> {
         todo!()
     }
 
-    async fn set_user(&self, token: &str, user: i64) -> Result<(), Self::Error> {
+    async fn set_user(&self, _token: &str, _user: i64) -> Result<(), Self::Error> {
         todo!()
     }
 }

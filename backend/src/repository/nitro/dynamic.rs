@@ -43,7 +43,7 @@ macro_rules! nitro_repo_handler {
         impl<'a, StorageType: Storage> NitroRepositoryHandler<StorageType>
             for DynamicNitroRepositoryHandler<'a, StorageType>
         {
-            fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
+            fn parse_project_to_directory<S: Into<String>>(_value: S) -> String {
                 panic!("Parse Should be implemented in the Dynamic Nitro Repository Handler");
             }
 

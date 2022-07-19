@@ -149,25 +149,25 @@ impl Storage for BadStorage {
 
     async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
         &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
-        data: &ConfigType,
+        _repository: &RepositoryConfig,
+        _config_name: &str,
+        _data: &ConfigType,
     ) -> Result<(), StorageError> {
         panic!("This should not be called!")
     }
 
     async fn get_repository_config<ConfigType: DeserializeOwned>(
         &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
+        _repository: &RepositoryConfig,
+        _config_name: &str,
     ) -> Result<Option<ConfigType>, StorageError> {
         panic!("This should not be called!")
     }
 
     async fn delete_repository_config(
         &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
+        _repository: &RepositoryConfig,
+        _config_name: &str,
     ) -> Result<(), StorageError> {
         panic!("This should not be called!")
     }

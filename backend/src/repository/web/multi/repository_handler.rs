@@ -6,7 +6,7 @@ use std::ops::Deref;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
-use crate::error::internal_error::InternalError;
+
 use crate::repository::get_repository_handler;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::response::RepoResponse;

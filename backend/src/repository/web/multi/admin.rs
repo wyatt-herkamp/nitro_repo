@@ -1,19 +1,16 @@
 use std::ops::Deref;
 
 use actix_web::http::StatusCode;
-use actix_web::{delete, get, post, put, web, HttpResponse};
-use schemars::schema::RootSchema;
-use schemars::schema_for;
+use actix_web::{delete, get, post, web, HttpResponse};
+
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
-use serde_json::Value;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType, Visibility};
+
+use crate::repository::settings::{Policy, Visibility};
 use crate::repository::web::RepositoryResponse;
 use crate::repository::RepositoryType;
 use crate::storage::error::StorageError;
@@ -91,7 +88,7 @@ pub async fn get_repository(
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let mut repository = crate::helpers::get_repository!(storage, repository_name)
+    let repository = crate::helpers::get_repository!(storage, repository_name)
         .deref()
         .clone();
     // Check if the query param contains all_info
@@ -122,7 +119,7 @@ pub async fn delete_repository(
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let mut repository = crate::helpers::get_repository!(storage, repository_name)
+    let repository = crate::helpers::get_repository!(storage, repository_name)
         .deref()
         .clone();
     storage

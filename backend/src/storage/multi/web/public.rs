@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use utoipa::Component;
 
 use crate::authentication::Authentication;
-use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 #[derive(Debug, Clone, Serialize, Deserialize, Component)]
 pub struct PublicStorageResponse {
@@ -22,8 +21,8 @@ responses((status = 200, description = "A list of storages", body = PublicStorag
 #[get("/storages")]
 pub async fn get_storages_multi(
     storage_handler: web::Data<MultiStorageController>,
-    database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    _database: web::Data<DatabaseConnection>,
+    _auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {
     let names = storage_handler.names().await;
     let public_storage_response = PublicStorageResponse {
