@@ -40,7 +40,7 @@ pub async fn get_project(
             return Err(value.into());
         }
     }
-    let handler = get_nitro_handler(storage, repository)?;
+    let handler = get_nitro_handler(storage, repository).await?;
     match handler {
         NitroRepoHandler::Supported(supported) => {
             let value = if let Some(version) = version {

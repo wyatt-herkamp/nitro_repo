@@ -24,14 +24,14 @@ macro_rules! nitro_repo_handler {
             )*
         }
         #[inline]
-        pub fn get_nitro_handler<StorageType: Storage>(
+        pub async fn get_nitro_handler<StorageType: Storage>(
             storage: RwLockReadGuard<'_, StorageType>,
             repository_config: RepositoryConfig,
         ) -> Result<NitroRepoHandler<StorageType>, InternalError> {
             match repository_config.repository_type {
                 $(
                     RepositoryType::$name => {
-                        let handler = $ty::create(repository_config, storage);
+                        let handler = $ty::create(repository_config, storage).await?;
                         Ok(NitroRepoHandler::Supported(DynamicNitroRepositoryHandler::$name(handler)))
                     },
                 )*

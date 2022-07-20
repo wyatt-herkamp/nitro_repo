@@ -5,7 +5,23 @@ use crate::repository::settings::RepositoryConfigType;
 use crate::utils::get_current_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct MavenSettings {}
+pub struct MavenSettings {
+    pub repository_type: MavenType,
+}
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub enum MavenType {
+    #[default]
+    Hosted,
+    Proxy {
+        proxies: Vec<ProxySettings>,
+    },
+}
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct ProxySettings {
+    pub proxy_url: String,
+    pub proxy_username: String,
+    pub proxy_password: String,
+}
 
 impl RepositoryConfigType for MavenSettings {
     fn config_name() -> &'static str {

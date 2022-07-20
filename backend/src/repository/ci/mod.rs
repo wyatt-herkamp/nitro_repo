@@ -1,3 +1,4 @@
+use crate::error::internal_error::InternalError;
 use crate::repository::handler::RepositoryHandler;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
@@ -9,8 +10,11 @@ pub struct CIHandler<'a, StorageType: Storage> {
     storage: RwLockReadGuard<'a, StorageType>,
 }
 impl<'a, StorageType: Storage> CIHandler<'a, StorageType> {
-    pub fn create(config: RepositoryConfig, storage: RwLockReadGuard<'a, StorageType>) -> Self {
-        CIHandler { config, storage }
+    pub async fn create(
+        config: RepositoryConfig,
+        storage: RwLockReadGuard<'a, StorageType>,
+    ) -> Result<CIHandler<'a, StorageType>, InternalError> {
+        Ok(CIHandler { config, storage })
     }
 }
 

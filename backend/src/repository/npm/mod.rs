@@ -34,14 +34,14 @@ pub struct NPMHandler<'a, StorageType: Storage> {
 }
 
 impl<'a, StorageType: Storage> NPMHandler<'a, StorageType> {
-    pub fn create(
+    pub async fn create(
         repository: RepositoryConfig,
         storage: RwLockReadGuard<'a, StorageType>,
-    ) -> NPMHandler<'a, StorageType> {
-        NPMHandler {
+    ) -> Result<NPMHandler<'a, StorageType>, InternalError> {
+        Ok(NPMHandler {
             config: repository,
             storage,
-        }
+        })
     }
     fn bad_npm_command() -> actix_web::Error {
         APIError::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()

@@ -10,7 +10,8 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 
-use crate::repository::settings::{Policy, Visibility};
+use crate::repository::maven::models::MavenSettings;
+use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::repository::web::RepositoryResponse;
 use crate::repository::RepositoryType;
 use crate::storage::error::StorageError;
@@ -19,6 +20,9 @@ use crate::storage::multi::MultiStorageController;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use paste::paste;
+use serde_json::Value;
+use tokio::sync::RwLockReadGuard;
+
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
 pub async fn get_repositories(
@@ -47,25 +51,46 @@ pub async fn create_repository(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     query_params: web::Path<(String, String, RepositoryType)>,
+    inner_config: web::Json<Option<Value>>,
 ) -> actix_web::Result<HttpResponse> {
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name, repository_type) = query_params.into_inner();
 
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    if let Err(error) = storage
-        .create_repository(repository_name, repository_type)
+    match storage
+        .create_repository(repository_name.clone(), repository_type)
         .await
     {
-        return match error {
+        Ok(()) => {
+            let repository_config = storage
+                .get_repository(repository_name.as_str())
+                .await
+                .map_err(actix_web::error::ErrorInternalServerError)?;
+            match repository_config {
+                None => Ok(HttpResponse::InternalServerError().finish()),
+                Some(config) => {
+                    if let Some(inner_config) = inner_config.into_inner() {
+                        match config.repository_type {
+                            RepositoryType::Maven => {
+                                let maven: MavenSettings = serde_json::from_value(inner_config)
+                                    .map_err(actix_web::error::ErrorBadRequest)?;
+                                config.save_config(storage.deref(), Some(&maven)).await?;
+                            }
+                            _ => {}
+                        }
+                    }
+                    Ok(HttpResponse::NoContent().finish())
+                }
+            }
+        }
+        Err(error) => match error {
             StorageError::RepositoryAlreadyExists => {
                 Err(APIError::from(("Repository already exists", StatusCode::CONFLICT)).into())
             }
             value => Err(InternalError::from(value).into()),
-        };
+        },
     }
-
-    Ok(HttpResponse::NoContent().finish())
 }
 
 #[derive(Deserialize)]
