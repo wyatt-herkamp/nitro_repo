@@ -21,10 +21,12 @@ use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use hosted::HostedMavenRepository;
 use proxy::ProxyMavenRepository;
+use staging::StagingRepository;
 pub mod error;
 pub mod hosted;
 pub mod models;
 pub mod proxy;
+mod staging;
 mod utils;
 
 use actix_web::Error;
@@ -34,7 +36,9 @@ repository_handler!(
     Hosted,
     HostedMavenRepository,
     Proxy,
-    ProxyMavenRepository
+    ProxyMavenRepository,
+    Staging,
+    StagingRepository
 );
 
 impl<'a, S: Storage> MavenHandler<'a, S> {
@@ -47,7 +51,7 @@ impl<'a, S: Storage> MavenHandler<'a, S> {
             .await?;
         if let Some(config) = result {
             match config.repository_type {
-                MavenType::Hosted => Ok(HostedMavenRepository {
+                MavenType::Hosted { .. } => Ok(HostedMavenRepository {
                     config: repository,
                     storage,
                 }
@@ -58,6 +62,18 @@ impl<'a, S: Storage> MavenHandler<'a, S> {
                     storage,
                 }
                 .into()),
+                MavenType::Staging {
+                    stage_to,
+                    pre_stage_requirements,
+                } => {
+                    let staging = StagingRepository {
+                        config: repository,
+                        stage_to,
+                        storage,
+                        deploy_requirement: pre_stage_requirements,
+                    };
+                    Ok(staging.into())
+                }
             }
         } else {
             Ok(HostedMavenRepository {
@@ -78,6 +94,7 @@ impl<StorageType: Storage> NitroRepositoryHandler<StorageType> for MavenHandler<
         match self {
             MavenHandler::Hosted(repository) => &repository.storage,
             MavenHandler::Proxy(repository) => &repository.storage,
+            MavenHandler::Staging(repository) => &repository.storage,
         }
     }
 
@@ -85,6 +102,7 @@ impl<StorageType: Storage> NitroRepositoryHandler<StorageType> for MavenHandler<
         match self {
             MavenHandler::Hosted(repository) => &repository.config,
             MavenHandler::Proxy(repository) => &repository.config,
+            MavenHandler::Staging(repository) => &repository.config,
         }
     }
 }

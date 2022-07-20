@@ -1,3 +1,4 @@
+use crate::repository::maven::staging::{DeployRequirement, StageSettings};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::nitro::VersionData;
@@ -8,13 +9,26 @@ use crate::utils::get_current_time;
 pub struct MavenSettings {
     pub repository_type: MavenType,
 }
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum MavenType {
-    #[default]
-    Hosted,
-    Proxy {
-        proxies: Vec<ProxySettings>,
+    /// Hosted on the Storage Only
+    Hosted { allow_pushing: bool },
+    ///  An intermediary repository for intake of new artifacts. Pushes the artifacts to other repositories
+    Staging {
+        stage_to: Vec<StageSettings>,
+        pre_stage_requirements: Vec<DeployRequirement>,
     },
+    /// Uses Remote Proxies to get the artifacts.
+    /// Uses the storage to hold a backup of the artifacts.
+    Proxy { proxies: Vec<ProxySettings> },
+}
+impl Default for MavenType {
+    fn default() -> Self {
+        MavenType::Hosted {
+            allow_pushing: true,
+        }
+    }
 }
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ProxySettings {
