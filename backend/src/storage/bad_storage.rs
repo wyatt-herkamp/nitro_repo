@@ -1,4 +1,6 @@
 use async_trait::async_trait;
+use bytes::Bytes;
+use futures::Stream;
 use log::warn;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -111,6 +113,15 @@ impl Storage for BadStorage {
         _repository: &RepositoryConfig,
         _file: &[u8],
         _location: &str,
+    ) -> Result<bool, StorageError> {
+        panic!("This should not be called!")
+    }
+
+    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
+        &self,
+        repository: &RepositoryConfig,
+        s: S,
+        location: &str,
     ) -> Result<bool, StorageError> {
         panic!("This should not be called!")
     }

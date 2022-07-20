@@ -1,10 +1,12 @@
 use std::fmt::{Debug, Display, Formatter};
 
 use async_trait::async_trait;
+use bytes::Bytes;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
+use tokio_stream::Stream;
 
 use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
@@ -165,6 +167,13 @@ pub trait Storage: Send + Sync {
         file: &[u8],
         location: &str,
     ) -> Result<bool, StorageError>;
+    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
+        &self,
+        repository: &RepositoryConfig,
+        s: S,
+        location: &str,
+    ) -> Result<bool, StorageError>;
+
     /// Deletes a file at a given location
     async fn delete_file(
         &self,

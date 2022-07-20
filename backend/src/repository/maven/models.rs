@@ -11,6 +11,7 @@ pub struct MavenSettings {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "page_type", content = "content")]
 pub enum MavenType {
     /// Hosted on the Storage Only
     Hosted { allow_pushing: bool },
@@ -33,8 +34,12 @@ impl Default for MavenType {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ProxySettings {
     pub proxy_url: String,
-    pub proxy_username: String,
-    pub proxy_password: String,
+    pub proxy_username: Option<LoginSettings>,
+}
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct LoginSettings {
+    pub username: String,
+    pub password: String,
 }
 
 impl RepositoryConfigType for MavenSettings {

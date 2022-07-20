@@ -1,4 +1,6 @@
 use async_trait::async_trait;
+use bytes::Bytes;
+use futures::Stream;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
@@ -157,6 +159,18 @@ impl Storage for DynamicStorage {
                 local.save_file(repository, file, location).await
             }
             DynamicStorage::BadStorage(bad) => bad.save_file(repository, file, location).await,
+        }
+    }
+
+    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
+        &self,
+        repository: &RepositoryConfig,
+        s: S,
+        location: &str,
+    ) -> Result<bool, StorageError> {
+        match self {
+            DynamicStorage::LocalStorage(local) => local.write_file_stream(repository, s, location),
+            DynamicStorage::BadStorage(bad) => bad.write_file_stream(repository, s, location),
         }
     }
 

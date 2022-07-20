@@ -55,7 +55,7 @@ pub async fn save_storages(storages: &Vec<StorageSaver>) -> Result<(), StorageEr
     file.write_all(result.as_bytes()).await?;
     Ok(())
 }
-
+#[derive(Debug)]
 pub struct MultiStorageController {
     pub storages: RwLock<HashMap<String, DynamicStorage>>,
 }

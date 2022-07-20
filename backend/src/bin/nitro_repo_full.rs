@@ -11,6 +11,7 @@ use actix_web::{web, App, HttpServer};
 use api::authentication::middleware::HandleSession;
 use api::authentication::session::SessionManager;
 use api::cli::handle_cli;
+use api::repository::maven::models::{MavenSettings, MavenType, ProxySettings};
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
 use api::storage::multi::MultiStorageController;

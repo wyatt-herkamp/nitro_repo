@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
+use bytes::Bytes;
+use futures::Stream;
 use log::{debug, trace, warn};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -9,6 +11,7 @@ use serde_json::Value;
 use tokio::fs::{create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{RwLock, RwLockReadGuard};
+use tokio_stream::StreamExt;
 
 use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::repository::REPOSITORY_CONF_FOLDER;
@@ -298,6 +301,42 @@ impl Storage for LocalStorage {
             .await?;
         file.write_all(data).await?;
 
+        Ok(exists)
+    }
+
+    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
+        &self,
+        repository: &RepositoryConfig,
+        mut s: S,
+        location: &str,
+    ) -> Result<bool, StorageError> {
+        let file_location = self.get_repository_folder(&repository.name).join(location);
+        trace!("Saving File {:?}", &file_location);
+        std::fs::create_dir_all(file_location.parent().ok_or(StorageError::ParentIssue)?)?;
+
+        let exists = if file_location.exists() { true } else { false };
+        let existss = exists;
+        tokio::spawn(async move {
+            let mut s = s;
+            if existss {
+                remove_file(&file_location)
+                    .await
+                    .expect("Failed to remove file");
+            }
+            let mut file_location = OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(file_location)
+                .await
+                .expect("Failed to open file");
+            while let Some(chunk) = s.next().await {
+                file_location
+                    .write_all(chunk.as_ref())
+                    .await
+                    .expect("Failed to write file");
+            }
+            trace!("File saved");
+        });
         Ok(exists)
     }
 

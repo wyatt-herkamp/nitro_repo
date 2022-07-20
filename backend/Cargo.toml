@@ -48,7 +48,11 @@ tokio = { version = "1.20.0", features = ["full"] }
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
 style-term = "1.0.0"
 mime_guess = "2.0.4"
-paste="1.0.7"
+paste = "1.0.7"
+reqwest = { version = "0.11.11", features = ["stream"] }
+bytes = "1.2.0"
+tokio-stream = "0.1.9"
+lockfree = "0.5.1"
 # Log
 nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = { version = "0.4.17", features = ["kv_unstable", "kv_unstable_std", "kv_unstable_serde"] }
