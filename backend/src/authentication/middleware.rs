@@ -217,10 +217,7 @@ where
                     cookie.set_secure(true);
                     cookie.set_same_site(SameSite::None);
                     cookie.set_path("/");
-                    cookie.set_expires(Expiration::DateTime(
-                        OffsetDateTime::from_unix_timestamp(session.expiration as i64)
-                            .expect("Time has Broken. its is the end times"),
-                    ));
+                    cookie.set_expires(Expiration::Session);
                     let cookie_encoded = cookie.encoded().to_string();
                     trace!("Sending Cookie Response {}", &cookie_encoded);
                     let val = HeaderValue::from_str(&cookie_encoded).unwrap();
