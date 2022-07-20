@@ -11,7 +11,6 @@ use rand::Rng;
 use sea_orm::FromQueryResult;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromQueryResult)]
 pub struct TokenResponse {
@@ -82,5 +81,5 @@ pub fn generate_token() -> String {
 }
 
 pub fn token_expiration(add: i64) -> i64 {
-    OffsetDateTime::now_utc().unix_timestamp() + add
+    get_current_time() + add
 }

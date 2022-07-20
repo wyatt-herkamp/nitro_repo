@@ -7,7 +7,6 @@ use std::path::Path;
 use crate::authentication;
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, Local};
-use crossterm::ExecutableCommand;
 use nitro_log::config::Config;
 use nitro_log::{LoggerBuilders, NitroLogger};
 use rust_embed::RustEmbed;

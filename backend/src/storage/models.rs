@@ -5,7 +5,6 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::sync::RwLockReadGuard;
-use utoipa::Component;
 
 use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::error::StorageError;
@@ -17,7 +16,7 @@ pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
 
 /// Types of Storages
-#[derive(Debug, Clone, Serialize, Deserialize, Component)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StorageType {
     LocalStorage,
 }
@@ -60,10 +59,9 @@ impl Display for StorageStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageSaver {
     /// The Type of the Storage
-    #[component(example = StorageType::LocalStorage)]
     pub storage_type: StorageType,
     /// The Storage Config
     #[serde(flatten)]
@@ -72,7 +70,7 @@ pub struct StorageSaver {
     pub handler_config: Value,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Component)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {
     /// The public name of the storage
     pub public_name: String,

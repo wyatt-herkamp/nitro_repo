@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::internal_error::InternalError;
-use crate::repository::frontend::FrontendResponse;
 use crate::repository::nitro::{NitroVersion, ProjectData, VersionData};
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::file::StorageFileResponse;

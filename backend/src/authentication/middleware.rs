@@ -3,7 +3,8 @@ use std::future::{ready, Ready};
 use std::rc::Rc;
 use std::time::SystemTime;
 
-use actix_web::cookie::{Cookie, SameSite};
+use actix_web::cookie::time::OffsetDateTime;
+use actix_web::cookie::{Cookie, Expiration, SameSite};
 use actix_web::http::header::{HeaderValue, AUTHORIZATION, ORIGIN, SET_COOKIE};
 use actix_web::http::Method;
 use actix_web::{
@@ -18,6 +19,7 @@ use crate::authentication::session::SessionManagerType;
 use crate::authentication::{
     auth_token, session::Session, session::SessionManager, verify_login, Authentication,
 };
+use crate::utils::get_current_time;
 
 pub struct HandleSession(pub bool);
 
@@ -97,7 +99,7 @@ where
                             (Authentication::NoIdentification, Option::None)
                         }
                     } else if let Some(mut session) = session {
-                        if session.expiration <= SystemTime::UNIX_EPOCH {
+                        if session.expiration <= get_current_time() as u64 {
                             session = session_manager
                                 .re_create_session(&session.token)
                                 .await
@@ -215,7 +217,10 @@ where
                     cookie.set_secure(true);
                     cookie.set_same_site(SameSite::None);
                     cookie.set_path("/");
-                    cookie.set_expires(session.expiration);
+                    cookie.set_expires(Expiration::DateTime(
+                        OffsetDateTime::from_unix_timestamp(session.expiration as i64)
+                            .expect("Time has Broken. its is the end times"),
+                    ));
                     let cookie_encoded = cookie.encoded().to_string();
                     trace!("Sending Cookie Response {}", &cookie_encoded);
                     let val = HeaderValue::from_str(&cookie_encoded).unwrap();

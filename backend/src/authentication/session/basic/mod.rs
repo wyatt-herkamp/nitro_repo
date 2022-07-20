@@ -2,13 +2,14 @@ use std::collections::HashMap;
 use std::ops::Add;
 
 use async_trait::async_trait;
+use chrono::Duration;
 use log::trace;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use time::{Duration, OffsetDateTime};
 use tokio::sync::RwLock;
 
 use crate::authentication::session::{Session, SessionManagerType};
+use crate::utils::get_current_time;
 
 pub struct BasicSessionManager {
     pub sessions: RwLock<HashMap<String, Session>>,
@@ -93,6 +94,6 @@ fn generate_token() -> String {
     format!("nrs_{}", token)
 }
 
-pub fn token_expiration() -> OffsetDateTime {
-    OffsetDateTime::now_utc().add(Duration::days(1))
+pub fn token_expiration() -> u64 {
+    (Duration::days(1).num_milliseconds() + get_current_time()) as u64
 }

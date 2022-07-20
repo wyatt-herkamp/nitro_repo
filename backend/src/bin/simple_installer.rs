@@ -109,6 +109,6 @@ async fn main() {
         internal: Default::default(),
         session: Default::default(),
     };
-    api::install::utils::install_data(env::current_dir().unwrap(), general)
+    api::install::install_data(env::current_dir().unwrap(), general)
         .expect("Failed to install data");
 }

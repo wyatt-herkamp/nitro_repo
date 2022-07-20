@@ -5,8 +5,6 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
-use utoipa::Component;
-
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 
@@ -17,17 +15,12 @@ use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::{CanIDo, MissingPermission};
 use crate::system::user::UserModel;
-#[derive(Debug, Clone, Serialize, Deserialize, Component)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
     pub name: String,
     pub repository_type: RepositoryType,
 }
-#[utoipa::path(
-get,
-path = "/api/repositories/{storage_name}",
-responses((status = 200, description = "A list of storages", body = [PublicRepositoryResponse])),
 
-)]
 #[get("repositories/{storage_name}")]
 pub async fn get_repositories(
     storage_handler: web::Data<MultiStorageController>,

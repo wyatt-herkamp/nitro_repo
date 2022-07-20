@@ -5,8 +5,6 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
-use utoipa::Component;
-
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 

@@ -5,7 +5,7 @@ use crate::authentication::session::basic::BasicSessionManager;
 use crate::authentication::session::redis_manager::RedisSessionManager;
 use crate::settings::models::SessionSettings;
 use async_trait::async_trait;
-use time::OffsetDateTime;
+use chrono::NaiveDateTime;
 
 pub enum SessionManager {
     BasicSessionManager(BasicSessionManager),
@@ -16,7 +16,7 @@ pub enum SessionManager {
 pub struct Session {
     pub token: String,
     pub user: Option<i64>,
-    pub expiration: OffsetDateTime,
+    pub expiration: u64,
 }
 
 #[async_trait]

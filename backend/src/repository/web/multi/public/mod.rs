@@ -1,4 +1,4 @@
-use actix_web::{web, Route};
+use actix_web::web;
 
 pub mod project;
 pub mod repositories;
