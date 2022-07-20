@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 use sea_orm::ConnectOptions;
@@ -52,12 +53,14 @@ impl Default for Internal {
 #[serde(tag = "type", content = "settings")]
 pub enum Database {
     Mysql(MysqlSettings),
+    Sqlite(SqliteSettings),
 }
 #[allow(clippy::from_over_into)]
 impl Into<sea_orm::ConnectOptions> for Database {
     fn into(self) -> ConnectOptions {
         match self {
             Database::Mysql(mysql) => ConnectOptions::new(mysql.to_string()),
+            Database::Sqlite(database) => ConnectOptions::new(database.to_string()),
         }
     }
 }
@@ -81,7 +84,15 @@ pub struct MysqlSettings {
     pub host: String,
     pub database: String,
 }
-
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SqliteSettings {
+    pub database_file: PathBuf,
+}
+impl Display for SqliteSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "sqlite:{}", self.database_file.display())
+    }
+}
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Application {
     pub log: String,
@@ -94,6 +105,22 @@ pub struct Application {
     pub ssl_cert_key: Option<String>,
 }
 
+impl Default for Application {
+    fn default() -> Self {
+        let buf = PathBuf::from("storage");
+        create_dir_all(&buf).unwrap();
+        Self {
+            log: "./".to_string(),
+            address: "0.0.0.0:6742".to_string(),
+            app_url: "http://127.0.0.1:6742".to_string(),
+            max_upload: 1024,
+            mode: Mode::Release,
+            storage_location: buf.canonicalize().unwrap(),
+            ssl_private_key: None,
+            ssl_cert_key: None,
+        }
+    }
+}
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
     pub database: Database,

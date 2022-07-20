@@ -135,7 +135,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 version: version_data,
                 frontend_response: String::new(),
             };
-            NitroFileResponseType::Project(Some(project))
+            NitroFileResponseType::Project(project)
         } else if let Some(version) =
             get_version_data(self.storage(), self.repository(), requested_dir).await?
         {
@@ -150,7 +150,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 version: Some(version),
                 frontend_response: String::new(),
             };
-            NitroFileResponseType::Project(Some(project))
+            NitroFileResponseType::Project(project)
         } else {
             NitroFileResponseType::Other
         };

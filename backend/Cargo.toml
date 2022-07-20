@@ -13,7 +13,8 @@ path = "src/lib.rs"
 [[bin]]
 name = "nitro_repo_full"
 required-features = ["multi_storage"]
-
+[[bin]]
+name = "simple_installer"
 
 [dependencies]
 # Web

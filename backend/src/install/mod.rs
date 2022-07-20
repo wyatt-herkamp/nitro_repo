@@ -1,3 +1,6 @@
+pub mod utils;
+
+use anyhow::Error;
 use std::env::current_dir;
 use std::fmt::{Display, Formatter};
 use std::fs::{create_dir_all, OpenOptions};
@@ -517,6 +520,10 @@ pub async fn load_installer(working_dir: PathBuf) -> anyhow::Result<()> {
 
     let app = run_app(terminal, App::default()).await?;
 
+    install_data(working_dir, app)
+}
+
+fn install_data(working_dir: PathBuf, app: App) -> Result<(), Error> {
     let general = GeneralSettings {
         database: app.database_stage.into(),
         application: Application::from(app.other_stage),

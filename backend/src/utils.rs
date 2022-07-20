@@ -4,15 +4,31 @@ use std::io::Read;
 use std::ops::Add;
 use std::path::Path;
 
+use crate::authentication;
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, Local};
+use crossterm::ExecutableCommand;
 use nitro_log::config::Config;
 use nitro_log::{LoggerBuilders, NitroLogger};
 use rust_embed::RustEmbed;
+use sea_orm::{DatabaseConnection, DbErr, Schema};
 
 use crate::error::internal_error::InternalError;
 use crate::settings::models::Mode;
-
+use crate::system::user::UserEntity;
+use sea_orm::ConnectionTrait;
+pub async fn run_database_setup(database: &mut DatabaseConnection) -> Result<(), DbErr> {
+    let schema = Schema::new(database.get_database_backend());
+    let users = schema.create_table_from_entity(UserEntity);
+    database
+        .execute(database.get_database_backend().build(&users))
+        .await?;
+    let tokens = schema.create_table_from_entity(authentication::auth_token::AuthTokenEntity);
+    database
+        .execute(database.get_database_backend().build(&tokens))
+        .await?;
+    Ok(())
+}
 pub fn load_logger<T: AsRef<Mode>>(logger: T) {
     let file = match logger.as_ref() {
         Mode::Debug => "log-debug.json",

@@ -36,10 +36,7 @@ pub struct NitroFileResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum NitroFileResponseType {
-    Project(Option<Project>),
-    Version(VersionBrowseResponse),
-    Repository(RepositoryConfig),
-    Storage,
+    Project(Project),
     Other,
 }
 
