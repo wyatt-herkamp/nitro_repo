@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::authentication::Authentication;
 use crate::storage::multi::MultiStorageController;
+use crate::storage::DynamicStorage;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicStorageResponse {
     /// The List of Storages that are available to the current user
@@ -13,7 +14,7 @@ pub struct PublicStorageResponse {
 }
 #[get("/storages")]
 pub async fn get_storages_multi(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     _database: web::Data<DatabaseConnection>,
     _auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {

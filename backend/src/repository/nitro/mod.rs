@@ -6,7 +6,6 @@ use crate::utils::get_current_time;
 
 pub mod dynamic;
 pub mod nitro_repository;
-pub mod post_deploy;
 pub mod utils;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,7 +1,6 @@
 use crate::repository::maven::staging::{DeployRequirement, StageSettings};
 use serde::{Deserialize, Serialize};
 
-use crate::repository::nitro::VersionData;
 use crate::repository::settings::RepositoryConfigType;
 use crate::utils::get_current_time;
 
@@ -44,7 +43,7 @@ pub struct Pom {
     pub url: Option<String>,
     pub scm: Option<Scm>,
 }
-
+/*
 impl Into<VersionData> for Pom {
     fn into(self) -> VersionData {
         VersionData {
@@ -57,3 +56,4 @@ impl Into<VersionData> for Pom {
         }
     }
 }
+*/

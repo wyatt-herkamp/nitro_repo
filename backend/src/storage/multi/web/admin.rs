@@ -7,14 +7,14 @@ use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::storage::error::StorageError;
 use crate::storage::models::Storage;
-use crate::storage::models::StorageFactory;
 use crate::storage::multi::MultiStorageController;
+use crate::storage::{DynamicStorage, StorageSaver};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 
 #[get("/storages")]
 pub async fn get_storages(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {
@@ -27,8 +27,8 @@ pub async fn get_storages(
 /// Creates a new storage based on the Storage Factory
 #[post("/storage/new")]
 pub async fn new_storage(
-    storage_handler: web::Data<MultiStorageController>,
-    new_storage: web::Json<StorageFactory>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
+    new_storage: web::Json<StorageSaver>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {
@@ -51,7 +51,7 @@ pub async fn new_storage(
 /// Delete the storage based on the name
 #[delete("/storage/{name}")]
 pub async fn delete_storage(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     name: web::Path<String>,
@@ -71,7 +71,7 @@ pub async fn delete_storage(
 
 #[get("/storage/{name}")]
 pub async fn get_storage(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     name: web::Path<String>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
@@ -79,5 +79,5 @@ pub async fn get_storage(
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let storage = crate::helpers::get_storage!(storage_handler, name);
-    Ok(HttpResponse::Ok().json(storage.config_for_saving()))
+    Ok(HttpResponse::Ok().json(storage.storage_config()))
 }

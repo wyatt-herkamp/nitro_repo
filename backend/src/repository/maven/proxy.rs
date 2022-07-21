@@ -1,8 +1,7 @@
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::RepositoryHandler;
+use crate::repository::handler::Repository;
 use crate::repository::maven::settings::ProxySettings;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{RepositoryConfig, Visibility};
 use crate::storage::file::StorageFileResponse;
@@ -19,15 +18,24 @@ use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
+use std::sync::{Arc, Weak};
 use tokio::io::{duplex, AsyncWriteExt};
 use tokio::sync::RwLockReadGuard;
-pub struct ProxyMavenRepository<'a, S: Storage> {
+pub struct ProxyMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub proxy: Vec<ProxySettings>,
-    pub storage: RwLockReadGuard<'a, S>,
+    pub storage: Arc<S>,
 }
 #[async_trait]
-impl<'a, S: Storage> RepositoryHandler<'a, S> for ProxyMavenRepository<'a, S> {
+impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
+    fn get_repository(&self) -> &RepositoryConfig {
+        &self.config
+    }
+
+    fn get_storage(&self) -> &S {
+        self.storage.as_ref()
+    }
+
     async fn handle_get(
         &self,
         path: &str,
@@ -49,8 +57,9 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for ProxyMavenRepository<'a, S> {
             .map_err(InternalError::from)?
         {
             StorageFileResponse::List(list) => {
-                let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::try_from((files, StatusCode::OK))?)
+                /*                let files = self.process_storage_files(list, path).await?;
+                Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
+                panic!("Not implemented")
             }
 
             StorageFileResponse::NotFound => {
@@ -89,20 +98,5 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for ProxyMavenRepository<'a, S> {
             }
             v => Ok(RepoResponse::FileResponse(v)),
         }
-    }
-}
-impl<StorageType: Storage> NitroRepositoryHandler<StorageType>
-    for ProxyMavenRepository<'_, StorageType>
-{
-    fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
-        value.into().replace('.', "/").replace(':', "/")
-    }
-
-    fn storage(&self) -> &StorageType {
-        &self.storage
-    }
-
-    fn repository(&self) -> &RepositoryConfig {
-        &self.config
     }
 }

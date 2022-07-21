@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::error::internal_error::InternalError;
+pub use crate::repository::handler::RepositoryType;
 use crate::storage::models::Storage;
 
 pub mod badge;
@@ -39,21 +40,6 @@ impl Default for Policy {
 
 fn default() -> bool {
     true
-}
-
-/// Types of Repositories that can exist.
-#[derive(Serialize, Deserialize, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
-pub enum RepositoryType {
-    /// A Maven Repository
-    Maven,
-    /// A NPM Repository
-    NPM,
-    /// CI Artifact Upload
-    CI,
-    /// A Docker Repository
-    Docker,
-    /// Raw Repository
-    Raw,
 }
 
 /// The Basic Repository Config
@@ -109,19 +95,7 @@ impl RepositoryConfig {
         storage: &StorageType,
         config: Option<&Config>,
     ) -> Result<(), InternalError> {
-        if let Some(value) = config {
-            storage
-                .update_repository_config(self, Config::config_name(), &value)
-                .await
-                .map_err(InternalError::StorageError)
-        } else {
-            // Deleting the config means for the Config type that the feature set has been disabled
-            // If the type should not be disabled. This is a bug.
-            storage
-                .delete_repository_config(self, Config::config_name())
-                .await
-                .map_err(InternalError::StorageError)
-        }
+        panic!("To be replaced");
     }
 }
 

@@ -1,9 +1,13 @@
 use std::collections::HashMap;
+use std::hint::unreachable_unchecked;
 use std::path::PathBuf;
+use std::sync::Arc;
 
+use crate::repository::handler::{DynamicRepositoryHandler, Repository};
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
+use lockfree::map::{Map, Removed};
 use log::{debug, trace, warn};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -18,18 +22,17 @@ use crate::repository::REPOSITORY_CONF_FOLDER;
 use crate::storage::error::StorageError;
 use crate::storage::error::StorageError::RepositoryMissing;
 use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
-use crate::storage::models::{
-    Storage, StorageConfig, StorageFactory, StorageSaver, StorageStatus, StorageType,
-};
-use crate::storage::STORAGE_CONFIG;
+
+use crate::storage::models::{Storage, StorageStatus};
+use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG};
 use crate::utils::get_current_time;
 
 #[derive(Debug)]
 pub struct LocalStorage {
     pub config: LocalConfig,
-    pub storage_config: StorageConfig,
+    pub storage_config: StorageSaver,
     pub status: StorageStatus,
-    pub repositories: RwLock<HashMap<String, RepositoryConfig>>,
+    pub repositories: Map<String, Arc<DynamicRepositoryHandler<DynamicStorage>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,8 +69,16 @@ impl LocalStorage {
         }
         Ok(values)
     }
+    async fn number_of_repos(path: PathBuf) -> Result<usize, StorageError> {
+        trace!("Loading repositories from {}", path.display());
+        if !path.exists() {
+            return Ok(0);
+        }
+        let string = read_to_string(&path).await?;
+        let result: Vec<RepositoryConfig> = serde_json::from_str(&string)?;
+        Ok(result.len())
+    }
     async fn save_repositories(&self) -> Result<(), StorageError> {
-        let repositories = self.repositories.read().await;
         let conf = self.get_storage_folder().join(STORAGE_CONFIG);
 
         let mut file = OpenOptions::new()
@@ -75,7 +86,11 @@ impl LocalStorage {
             .write(true)
             .open(conf)
             .await?;
-        let values: Vec<&RepositoryConfig> = repositories.values().collect();
+        let values: Vec<RepositoryConfig> = self
+            .repositories
+            .iter()
+            .map(|v| v.val().get_repository().clone())
+            .collect();
         let string = serde_json::to_string_pretty(&values)?;
         file.write_all(string.as_bytes()).await?;
         Ok(())
@@ -84,198 +99,106 @@ impl LocalStorage {
 
 #[async_trait]
 impl Storage for LocalStorage {
-    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    type Repository = DynamicRepositoryHandler<DynamicStorage>;
+
+    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
     {
-        let string = std::env::var("STORAGE_LOCATION").map_err(|e| {
-            (
-                StorageError::StorageCreateError(e.to_string()),
-                config.clone(),
-            )
-        })?;
-        let location = PathBuf::from(&string);
-        let local_config = LocalConfig {
-            location: location
-                .join(&config.generic_config.name)
-                .canonicalize()
-                .map_err(|e| {
-                    (
-                        StorageError::StorageCreateError(e.to_string()),
-                        config.clone(),
-                    )
-                })?,
-        };
-        Ok(LocalStorage {
-            config: local_config,
-            storage_config: config.generic_config,
-            status: StorageStatus::Unloaded,
-            repositories: RwLock::new(HashMap::new()),
-        })
+        todo!()
     }
 
-    fn new(config: StorageFactory) -> Result<LocalStorage, (StorageError, StorageFactory)>
+    async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
     {
-        match serde_json::from_value::<LocalConfig>(config.handler_config.clone()) {
-            Ok(local) => {
-                let storage = LocalStorage {
-                    storage_config: config.generic_config,
-                    config: local,
-                    repositories: RwLock::new(Default::default()),
-                    status: StorageStatus::Unloaded,
-                };
-                Ok(storage)
-            }
-            Err(error) => Err((StorageError::JSONError(error), config)),
-        }
+        let v = if let StorageConfig::LocalStorage(local) = config.handler_config.clone() {
+            local
+        } else {
+            unsafe { unreachable_unchecked() }
+        };
+        let mut storage = LocalStorage {
+            config: v,
+            storage_config: config,
+            status: StorageStatus::Unloaded,
+            repositories: Map::new(),
+        };
+        Ok(storage)
     }
-    async fn load(&mut self) -> Result<(), StorageError> {
-        if self.status == StorageStatus::Loaded {
-            return Err(StorageError::LoadFailure(
-                "Attempted Double Load".to_string(),
-            ));
-        }
+
+    async fn get_repos_to_load(&self) -> Result<HashMap<String, RepositoryConfig>, StorageError> {
         let repositories =
             Self::load_repositories(PathBuf::from(&self.config.location).join(STORAGE_CONFIG))
                 .await?;
-        self.repositories = RwLock::new(repositories);
-        return Ok(());
+        Ok(repositories)
+    }
+
+    fn add_repo_loaded<R: Into<Self::Repository> + Send>(
+        &self,
+        repo: R,
+    ) -> Result<(), StorageError> {
+        let repo = repo.into();
+        self.repositories
+            .insert(repo.get_repository().name.clone(), Arc::new(repo));
+        Ok(())
     }
 
     fn unload(&mut self) -> Result<(), StorageError> {
-        let mut repositories = self.repositories.blocking_write();
         //repositories.drain() <--- Note to self. if we add a repository closing. Use this
-        repositories.clear();
+        self.repositories.clear();
         self.status = StorageStatus::Unloaded;
         Ok(())
     }
-    fn config_for_saving(&self) -> StorageSaver {
-        let value = serde_json::to_value(self.config.clone()).unwrap();
-        StorageSaver {
-            storage_type: StorageType::LocalStorage,
-            generic_config: self.storage_config.clone(),
-            handler_config: value,
-        }
-    }
 
-    fn storage_config(&self) -> &StorageConfig {
+    fn storage_config(&self) -> &StorageSaver {
         &self.storage_config
     }
 
-    fn impl_config(&self) -> Value {
-        serde_json::to_value(self.config.clone()).unwrap()
-    }
-
-    fn storage_type(&self) -> &StorageType {
-        &StorageType::LocalStorage
-    }
-
-    fn status(&self) -> &StorageStatus {
-        &self.status
-    }
-
-    async fn create_repository(
+    async fn create_repository<R: Into<Self::Repository> + Send>(
         &self,
-        name: String,
-        repository_type: RepositoryType,
+        repository: R,
     ) -> Result<(), StorageError> {
-        let mut repositories = self.repositories.write().await;
-        let repository_folder = self.get_repository_folder(&name);
-        if repositories.contains_key(&name) {
-            return Err(StorageError::RepositoryAlreadyExists);
-        }
-        if repository_folder.exists() {
-            warn!(
-                "Creating {:?} on already existing files. This could result in unexpected behavior",
-                &repository_folder
-            );
-        }
-        let config = RepositoryConfig {
-            name: name.clone(),
-            repository_type,
-            storage: self.storage_config.name.clone(),
-            visibility: Default::default(),
-            active: true,
-            policy: Default::default(),
-            created: get_current_time(),
-        };
-        let conf_folder = self
-            .get_repository_folder(&name)
-            .join(REPOSITORY_CONF_FOLDER);
-        if !conf_folder.exists() {
-            create_dir_all(&conf_folder).await?;
-        }
-        let buf = conf_folder.join("config.json");
-        let mut file = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(buf)
-            .await?;
-        file.write_all(serde_json::to_string_pretty(&config)?.as_bytes())
-            .await?;
-        repositories.insert(name.clone(), config);
-        drop(repositories);
-        self.save_repositories().await?;
-        Ok(())
+        todo!()
     }
 
-    async fn delete_repository(
+    async fn delete_repository<S: AsRef<str> + Send>(
         &self,
-        repository: &RepositoryConfig,
+        repository: S,
         delete_files: bool,
     ) -> Result<(), StorageError> {
-        let mut repositories = self.repositories.write().await;
-        if repositories.remove(&repository.name).is_none() {
-            return Err(RepositoryMissing);
-        }
-        let repository_folder = self.get_repository_folder(&repository.name);
-
-        if delete_files {
-            remove_dir(repository_folder).await?;
-        } else {
-            let conf_folder = repository_folder.join(REPOSITORY_CONF_FOLDER);
-            if conf_folder.exists() {
-                remove_dir(conf_folder).await?;
-            }
-        }
-        drop(repositories);
-        self.save_repositories().await?;
-        Ok(())
+        todo!()
     }
 
-    async fn get_repositories(&self) -> Result<Vec<RepositoryConfig>, StorageError> {
-        let mut repositories_res = Vec::new();
-
-        let repositories = self.repositories.read().await;
-        for (_, config) in repositories.iter() {
-            repositories_res.push(config.clone());
-        }
-        return Ok(repositories_res);
+    fn get_repository_list(&self) -> Result<Vec<RepositoryConfig>, StorageError> {
+        todo!()
     }
 
-    async fn get_repository(
+    fn get_repository<S: AsRef<str>>(
         &self,
-        repository: &str,
-    ) -> Result<Option<RwLockReadGuard<'_, RepositoryConfig>>, StorageError> {
-        let repositories = self.repositories.read().await;
-        if !repositories.contains_key(repository) {
-            return Ok(None);
-        }
-        Ok(Some(RwLockReadGuard::map(repositories, |repos| {
-            repos.get(repository).unwrap()
-        })))
+        repository: S,
+    ) -> Result<Option<Arc<Self::Repository>>, StorageError> {
+        todo!()
     }
 
-    async fn update_repository(&self, repository: RepositoryConfig) -> Result<(), StorageError> {
-        let mut repositories = self.repositories.write().await;
-        if !repositories.contains_key(&repository.name) {
-            return Err(RepositoryMissing);
-        }
-        repositories.insert(repository.name.clone(), repository);
-        self.save_repositories().await?;
-        return Ok(());
+    fn remove_repository_for_updating<S: AsRef<str>>(
+        &self,
+        repository: S,
+    ) -> Result<Removed<String, Arc<Self::Repository>>, StorageError> {
+        todo!()
+    }
+
+    async fn add_repository_for_updating(
+        &self,
+        repository_arc: Self::Repository,
+    ) -> Result<(), StorageError> {
+        todo!()
+    }
+
+    async fn add_repository_for_updating_removed(
+        &self,
+        repository_arc: Removed<String, Arc<Self::Repository>>,
+    ) -> Result<(), StorageError> {
+        todo!()
     }
 
     async fn save_file(
@@ -361,7 +284,10 @@ impl Storage for LocalStorage {
             return Ok(StorageFileResponse::NotFound);
         }
         if file_location.is_dir() {
-            let mut path = format!("{}/{}", self.storage_config.name, repository.name);
+            let mut path = format!(
+                "{}/{}",
+                self.storage_config.generic_config.id, repository.name
+            );
 
             for x in location.split('/') {
                 if !x.is_empty() {
@@ -425,31 +351,6 @@ impl Storage for LocalStorage {
         Ok(Some(bytes))
     }
 
-    async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
-        &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
-        data: &ConfigType,
-    ) -> Result<(), StorageError> {
-        let repositories = self.repositories.write().await;
-        if !repositories.contains_key(&repository.name) {
-            return Err(StorageError::RepositoryMissing);
-        }
-        let buf = self
-            .get_repository_folder(repository.name.as_str())
-            .join(".config.nitro_repo")
-            .join(config_name);
-        trace!("Saving Config {:?}", &buf);
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(buf)
-            .await?;
-        file.write_all(serde_json::to_string(data).unwrap().as_bytes())
-            .await?;
-        return Ok(());
-    }
-
     async fn get_repository_config<ConfigType: DeserializeOwned>(
         &self,
         repository: &RepositoryConfig,
@@ -467,22 +368,5 @@ impl Storage for LocalStorage {
                 .map_err(StorageError::JSONError)
                 .map(Some)
         }
-    }
-
-    async fn delete_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
-    ) -> Result<(), StorageError> {
-        let repositories = self.repositories.write().await;
-        if !repositories.contains_key(&repository.name) {
-            return Err(StorageError::RepositoryMissing);
-        }
-        let buf = self
-            .get_repository_folder(repository.name.as_str())
-            .join(".config.nitro_repo")
-            .join(config_name);
-        remove_file(buf).await?;
-        return Ok(());
     }
 }

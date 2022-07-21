@@ -4,41 +4,33 @@ use crate::error::internal_error::InternalError;
 use crate::repository::settings::{RepositoryConfig, RepositoryType};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
+use crate::storage::DynamicStorage;
 use std::sync::Arc;
 use tokio::sync::RwLockReadGuard;
 
 macro_rules! gen_dynamic_stage {
     ($($name: ident, $ty:tt),*) => {
 
-        pub enum DynamicStageHandler<'a, StorageType: Storage> {
+        pub enum DynamicStageHandler<StorageType: Storage> {
             $(
-                $name($ty<'a, StorageType>),
+                $name($ty<StorageType>),
             )*
         }
         #[inline]
         pub async fn get_stage_handler<StorageType: Storage>(
-            storage: RwLockReadGuard<'_, StorageType>,
+            storage: Arc<StorageType>,
             repository_config: RepositoryConfig,
         ) -> Result<StageHandlerResult<StorageType>, InternalError> {
-            match repository_config.repository_type {
-                $(
-                    RepositoryType::$name => {
-                        let handler = $ty::create(repository_config, storage).await?;
-                        Ok(StageHandlerResult::Supported(DynamicStageHandler::$name(handler)))
-                    },
-                )*
-                _ => Ok(StageHandlerResult::Unsupported(repository_config)),
-
-            }
+            panic!("Not implemented");
         }
         #[async_trait::async_trait]
-        impl<'a, StorageType: Storage> StageHandler<'a, StorageType>
-            for DynamicStageHandler<'a, StorageType>{
+        impl<StorageType: Storage> StageHandler<StorageType>
+            for DynamicStageHandler<StorageType>{
     async fn push(
         &self,
         directory: String,
         process: ProcessingStage,
-        storages: Arc<MultiStorageController>,
+        storages: Arc<MultiStorageController<DynamicStorage>>,
     ) -> Result<(), InternalError>{
         match self {
             $(
@@ -49,8 +41,8 @@ macro_rules! gen_dynamic_stage {
         }
     };
 }
-pub enum StageHandlerResult<'a, StorageType: Storage> {
-    Supported(DynamicStageHandler<'a, StorageType>),
+pub enum StageHandlerResult<StorageType: Storage> {
+    Supported(DynamicStageHandler<StorageType>),
     /// it is a teapot! [Teapot](https://http.cat/418)
     Unsupported(RepositoryConfig),
 }

@@ -1,7 +1,11 @@
+use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
+use std::sync::Arc;
 
+use crate::repository::handler::Repository;
 use async_trait::async_trait;
 use bytes::Bytes;
+use lockfree::map::Removed;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -9,19 +13,14 @@ use tokio::sync::RwLockReadGuard;
 use tokio_stream::Stream;
 
 use crate::repository::settings::{RepositoryConfig, RepositoryType};
-use crate::storage::dynamic::DynamicStorage;
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 use crate::storage::local_storage::LocalStorage;
+use crate::storage::DynamicStorage;
+use crate::storage::{StorageConfig, StorageSaver};
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
-
-/// Types of Storages
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum StorageType {
-    LocalStorage,
-}
 
 /// Storage Status
 #[derive(Debug)]
@@ -61,104 +60,62 @@ impl Display for StorageStatus {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StorageSaver {
-    /// The Type of the Storage
-    pub storage_type: StorageType,
-    /// The Storage Config
-    #[serde(flatten)]
-    pub generic_config: StorageConfig,
-    /// Storage Handler Config
-    pub handler_config: Value,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StorageConfig {
-    /// The public name of the storage
-    pub public_name: String,
-    /// The internal name of the storage
-    pub name: String,
-    /// This is created internally by the storage. No need to set this.
-    #[serde(default = "crate::utils::get_current_time")]
-    pub created: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StorageFactory {
-    pub storage_type: StorageType,
-    #[serde(flatten)]
-    pub generic_config: StorageConfig,
-    /// Storage Handler Config
-    #[serde(default)]
-    pub handler_config: Value,
-}
-
-impl StorageFactory {
-    pub fn config_for_saving(&self) -> StorageSaver {
-        StorageSaver {
-            storage_type: self.storage_type.clone(),
-            generic_config: self.generic_config.clone(),
-            handler_config: self.handler_config.clone(),
-        }
-    }
-}
-
-impl StorageFactory {
-    pub async fn build(self) -> Result<DynamicStorage, (StorageError, StorageFactory)> {
-        match &self.storage_type {
-            StorageType::LocalStorage => LocalStorage::new(self).map(DynamicStorage::LocalStorage),
-        }
-    }
-}
-
 #[async_trait]
 pub trait Storage: Send + Sync {
+    type Repository: Repository<DynamicStorage>;
     /// Initialize the Storage at Storage start.
-    fn create_new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized;
     /// Initialize the Storage at Storage start.
-    fn new(config: StorageFactory) -> Result<Self, (StorageError, StorageFactory)>
+    async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized;
     // Attempts to Load the Storage
-    async fn load(&mut self) -> Result<(), StorageError>;
+    async fn get_repos_to_load(&self) -> Result<HashMap<String, RepositoryConfig>, StorageError>;
+
+    fn add_repo_loaded<R: Into<Self::Repository> + Send>(
+        &self,
+        repo: R,
+    ) -> Result<(), StorageError>;
     /// Unload the storage
     fn unload(&mut self) -> Result<(), StorageError>;
-    /// Returns a StorageSaver
-    /// I would like this to be a data reference in the future
-    fn config_for_saving(&self) -> StorageSaver;
 
-    fn storage_config(&self) -> &StorageConfig;
-    /// Returns a Owned copy of the Implementation of Type Config. As a serde_json::Value
-    fn impl_config(&self) -> Value;
-    /// Returns the Storage Type
-    fn storage_type(&self) -> &StorageType;
-    /// The current status of the Storage
-    fn status(&self) -> &StorageStatus;
+    fn storage_config(&self) -> &StorageSaver;
     /// Creates a new Repository
     /// Requires just the name and RepositoryType
-    async fn create_repository(
+    async fn create_repository<R: Into<Self::Repository> + Send>(
         &self,
-        name: String,
-        repository_type: RepositoryType,
+        repository: R,
     ) -> Result<(), StorageError>;
     /// Deletes a Repository
     /// delete_files rather or not to clean out the Repository Data
-    async fn delete_repository(
+    async fn delete_repository<S: AsRef<str> + Send>(
         &self,
-        repository: &RepositoryConfig,
+        repository: S,
         delete_files: bool,
     ) -> Result<(), StorageError>;
     /// Gets a Owned Vec of Repositories
-    async fn get_repositories(&self) -> Result<Vec<RepositoryConfig>, StorageError>;
+    fn get_repository_list(&self) -> Result<Vec<RepositoryConfig>, StorageError>;
     /// Returns a RwLockReadGuard of the RepositoryConfig
-    async fn get_repository(
+    fn get_repository<S: AsRef<str>>(
         &self,
-        repository: &str,
-    ) -> Result<Option<RwLockReadGuard<'_, RepositoryConfig>>, StorageError>;
+        repository: S,
+    ) -> Result<Option<Arc<Self::Repository>>, StorageError>;
 
-    async fn update_repository(&self, repository: RepositoryConfig) -> Result<(), StorageError>;
+    fn remove_repository_for_updating<S: AsRef<str>>(
+        &self,
+        repository: S,
+    ) -> Result<Removed<String, Arc<Self::Repository>>, StorageError>;
+    /// Will update all configs for the Repository
+    async fn add_repository_for_updating(
+        &self,
+        repository_arc: Self::Repository,
+    ) -> Result<(), StorageError>;
+    async fn add_repository_for_updating_removed(
+        &self,
+        repository_arc: Removed<String, Arc<Self::Repository>>,
+    ) -> Result<(), StorageError>;
     /// Saves a File to a location
     /// Will overwrite any data found
     async fn save_file(
@@ -200,25 +157,10 @@ pub trait Storage: Send + Sync {
         repository: &RepositoryConfig,
         location: &str,
     ) -> Result<Option<Vec<u8>>, StorageError>;
-
-    /// Locks the Repositories for updating
-    /// Keeps all config files in .config
-    async fn update_repository_config<ConfigType: Serialize + Send + Sync>(
-        &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
-        data: &ConfigType,
-    ) -> Result<(), StorageError>;
     /// Gets a Repository Config
     async fn get_repository_config<ConfigType: DeserializeOwned>(
         &self,
         repository: &RepositoryConfig,
         config_name: &str,
     ) -> Result<Option<ConfigType>, StorageError>;
-    /// Delete Repository Config
-    async fn delete_repository_config(
-        &self,
-        repository: &RepositoryConfig,
-        config_name: &str,
-    ) -> Result<(), StorageError>;
 }

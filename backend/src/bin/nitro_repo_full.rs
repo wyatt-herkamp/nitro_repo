@@ -15,7 +15,9 @@ use api::repository::maven::settings::{MavenSettings, MavenType, ProxySettings};
 use api::repository::maven::staging::StageSettings;
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
+use api::storage::local_storage::LocalConfig;
 use api::storage::multi::MultiStorageController;
+use api::storage::{GeneralConfig, StorageConfig, StorageSaver, StorageType};
 use api::utils::load_logger;
 use api::{frontend, repository, storage, system, NitroRepo};
 use log::info;
@@ -25,6 +27,17 @@ use tokio::sync::RwLock;
 
 #[main]
 async fn main() -> std::io::Result<()> {
+    let test = StorageSaver {
+        storage_type: StorageType::LocalStorage,
+        generic_config: GeneralConfig {
+            id: "public".to_string(),
+            created: 0,
+        },
+        handler_config: StorageConfig::LocalStorage(LocalConfig {
+            location: Default::default(),
+        }),
+    };
+    println!("{}", serde_json::to_string_pretty(&test).unwrap());
     if handle_cli().await.map_err(convert_error)? {
         return Ok(());
     }

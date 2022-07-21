@@ -10,6 +10,7 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 
+use crate::repository::handler::Repository;
 use crate::repository::maven::settings::MavenSettings;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::repository::web::RepositoryResponse;
@@ -17,6 +18,7 @@ use crate::repository::RepositoryType;
 use crate::storage::error::StorageError;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
+use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use paste::paste;
@@ -26,7 +28,7 @@ use tokio::sync::RwLockReadGuard;
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
 pub async fn get_repositories(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     storage_name: web::Path<String>,
@@ -36,18 +38,13 @@ pub async fn get_repositories(
 
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
 
-    Ok(HttpResponse::Ok().json(
-        storage
-            .get_repositories()
-            .await
-            .map_err(InternalError::from)?,
-    ))
+    Ok(HttpResponse::Ok().json(storage.get_repository_list().map_err(InternalError::from)?))
 }
 
 /// Create a new repository
 #[post("/repositories/{storage_name}/new/{repository_name}/{repository_type}")]
 pub async fn create_repository(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     query_params: web::Path<(String, String, RepositoryType)>,
@@ -58,39 +55,7 @@ pub async fn create_repository(
     let (storage_name, repository_name, repository_type) = query_params.into_inner();
 
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    match storage
-        .create_repository(repository_name.clone(), repository_type)
-        .await
-    {
-        Ok(()) => {
-            let repository_config = storage
-                .get_repository(repository_name.as_str())
-                .await
-                .map_err(actix_web::error::ErrorInternalServerError)?;
-            match repository_config {
-                None => Ok(HttpResponse::InternalServerError().finish()),
-                Some(config) => {
-                    if let Some(inner_config) = inner_config.into_inner() {
-                        match config.repository_type {
-                            RepositoryType::Maven => {
-                                let maven: MavenSettings = serde_json::from_value(inner_config)
-                                    .map_err(actix_web::error::ErrorBadRequest)?;
-                                config.save_config(storage.deref(), Some(&maven)).await?;
-                            }
-                            _ => {}
-                        }
-                    }
-                    Ok(HttpResponse::NoContent().finish())
-                }
-            }
-        }
-        Err(error) => match error {
-            StorageError::RepositoryAlreadyExists => {
-                Err(APIError::from(("Repository already exists", StatusCode::CONFLICT)).into())
-            }
-            value => Err(InternalError::from(value).into()),
-        },
-    }
+    todo!("Create Repository");
 }
 
 #[derive(Deserialize)]
@@ -103,7 +68,7 @@ pub struct GetRepositoryQuery {
 /// If the query param all_info is present. It will include other repository configs such as Frontend and Badge
 #[get("/repositories/{storage_name}/{repository_name}")]
 pub async fn get_repository(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     path_params: web::Path<(String, String)>,
@@ -113,17 +78,9 @@ pub async fn get_repository(
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let repository = crate::helpers::get_repository!(storage, repository_name)
-        .deref()
-        .clone();
-    // Check if the query param contains all_info
-    if query_params.all_info {
-        //Generate a RepositoryResponse
-        let response = RepositoryResponse::new(&repository, storage.deref()).await?;
-        Ok(HttpResponse::Ok().json(response))
-    } else {
-        Ok(HttpResponse::Ok().json(repository))
-    }
+    let repository = crate::helpers::get_repository!(storage, repository_name);
+
+    Ok(HttpResponse::Ok().json(repository.get_repository()))
 }
 
 #[derive(Deserialize)]
@@ -134,7 +91,7 @@ pub struct DeleteRepositoryQuery {
 
 #[delete("/repositories/{storage_name}/{repository_name}")]
 pub async fn delete_repository(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     path_params: web::Path<(String, String)>,
@@ -144,11 +101,9 @@ pub async fn delete_repository(
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let repository = crate::helpers::get_repository!(storage, repository_name)
-        .deref()
-        .clone();
+    let repository = crate::helpers::get_repository!(storage, repository_name);
     storage
-        .delete_repository(&repository, query_params.purge_repository)
+        .delete_repository(repository_name, query_params.purge_repository)
         .await
         .map_err(InternalError::from)?;
     Ok(HttpResponse::NoContent().finish())
@@ -158,7 +113,7 @@ macro_rules! update_repository_core_prop {
         $(
         paste! {
         pub async fn [<update_repository_ $name>](
-            storage_handler: web::Data<MultiStorageController>,
+            storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
             database: web::Data<DatabaseConnection>,
             auth: Authentication,
             path_params: web::Path<(String, String, $value_type)>,
@@ -191,4 +146,4 @@ macro_rules! update_repository_core_prop {
         }
     };
 }
-update_repository_core_prop!(visibility, Visibility, active, bool, policy, Policy);
+//update_repository_core_prop!(visibility, Visibility, active, bool, policy, Policy);

@@ -1,25 +1,31 @@
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::RepositoryHandler;
+use crate::repository::handler::Repository;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use async_trait::async_trait;
+use std::sync::Arc;
 use tokio::sync::RwLockReadGuard;
 
-pub struct DockerHandler<'a, StorageType: Storage> {
+pub struct DockerHandler<StorageType: Storage> {
     config: RepositoryConfig,
-    storage: RwLockReadGuard<'a, StorageType>,
+    storage: Arc<StorageType>,
 }
-impl<'a, StorageType: Storage> DockerHandler<'a, StorageType> {
+impl<StorageType: Storage> DockerHandler<StorageType> {
     pub async fn create(
         config: RepositoryConfig,
-        storage: RwLockReadGuard<'a, StorageType>,
-    ) -> Result<DockerHandler<'a, StorageType>, InternalError> {
+        storage: Arc<StorageType>,
+    ) -> Result<DockerHandler<StorageType>, InternalError> {
         Ok(DockerHandler { config, storage })
     }
 }
 
 #[async_trait]
-impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType>
-    for DockerHandler<'a, StorageType>
-{
+impl<StorageType: Storage> Repository<StorageType> for DockerHandler<StorageType> {
+    fn get_repository(&self) -> &RepositoryConfig {
+        &self.config
+    }
+
+    fn get_storage(&self) -> &StorageType {
+        &self.storage
+    }
 }

@@ -3,6 +3,7 @@ use log::{debug, error, trace};
 
 use crate::constants::{PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
+use crate::repository::handler::Repository;
 use crate::repository::nitro::utils::{
     get_project_data, get_version_data, get_versions, update_project_in_repositories,
 };
@@ -17,10 +18,11 @@ use crate::storage::models::Storage;
 use crate::system::user::UserModel;
 
 #[async_trait]
-pub trait NitroRepositoryHandler<StorageType: Storage> {
+pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> {
+    fn supports_nitro(&self) -> bool {
+        true
+    }
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String;
-    fn storage(&self) -> &StorageType;
-    fn repository(&self) -> &RepositoryConfig;
     /// Handles a List of versions request
     async fn get_versions(
         &self,
@@ -28,8 +30,8 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
     ) -> Result<Option<NitroRepoVersions>, InternalError> {
         Ok(Some(
             get_versions(
-                self.storage(),
-                self.repository(),
+                self.get_storage(),
+                self.get_repository(),
                 Self::parse_project_to_directory(project),
             )
             .await?,
@@ -42,18 +44,22 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
     ) -> Result<Option<Project>, InternalError> {
         let project_dir = Self::parse_project_to_directory(project);
 
-        let project_data =
-            get_project_data(self.storage(), self.repository(), &project_dir.clone()).await?;
+        let project_data = get_project_data(
+            self.get_storage(),
+            self.get_repository(),
+            &project_dir.clone(),
+        )
+        .await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
-                self.storage(),
-                self.repository(),
+                self.get_storage(),
+                self.get_repository(),
                 &format!("{}/{}", project_dir, &version),
             )
             .await?;
 
             let project = Project {
-                repo_summary: self.repository().clone(),
+                repo_summary: self.get_repository().clone(),
                 project: project_data,
                 version: version_data,
                 frontend_response: String::new(),
@@ -66,17 +72,17 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
         let project_dir = Self::parse_project_to_directory(project);
 
         let project_data =
-            get_project_data(self.storage(), self.repository(), &project_dir).await?;
+            get_project_data(self.get_storage(), self.get_repository(), &project_dir).await?;
         if let Some(project_data) = project_data {
             let version_data = get_version_data(
-                self.storage(),
-                self.repository(),
+                self.get_storage(),
+                self.get_repository(),
                 &format!("{}/{}", &project_dir, &project_data.versions.latest_version),
             )
             .await?;
 
             let project = Project {
-                repo_summary: self.repository().clone(),
+                repo_summary: self.get_repository().clone(),
                 project: project_data,
                 version: version_data,
                 frontend_response: String::new(),
@@ -90,7 +96,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
     async fn latest_version(&self, project: &str) -> Result<Option<String>, InternalError> {
         let project_dir = Self::parse_project_to_directory(project);
         let project_data =
-            get_project_data(self.storage(), self.repository(), &project_dir).await?;
+            get_project_data(self.get_storage(), self.get_repository(), &project_dir).await?;
         if let Some(project_data) = project_data {
             let latest_release = project_data.versions.latest_release;
             if latest_release.is_empty() {
@@ -117,11 +123,11 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
             });
         }
         let value = if let Some(project_data) =
-            get_project_data(self.storage(), self.repository(), requested_dir).await?
+            get_project_data(self.get_storage(), self.get_repository(), requested_dir).await?
         {
             let version_data = get_version_data(
-                self.storage(),
-                self.repository(),
+                self.get_storage(),
+                self.get_repository(),
                 &format!(
                     "{}/{}",
                     &requested_dir, &project_data.versions.latest_version
@@ -130,22 +136,22 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
             .await?;
 
             let project = Project {
-                repo_summary: self.repository().clone(),
+                repo_summary: self.get_repository().clone(),
                 project: project_data,
                 version: version_data,
                 frontend_response: String::new(),
             };
             NitroFileResponseType::Project(project)
         } else if let Some(version) =
-            get_version_data(self.storage(), self.repository(), requested_dir).await?
+            get_version_data(self.get_storage(), self.get_repository(), requested_dir).await?
         {
             let project_dir = Self::parse_project_to_directory(&version.name);
-            let project = get_project_data(self.storage(), self.repository(), &project_dir)
+            let project = get_project_data(self.get_storage(), self.get_repository(), &project_dir)
                 .await?
                 .unwrap();
 
             let project = Project {
-                repo_summary: self.repository().clone(),
+                repo_summary: self.get_repository().clone(),
                 project,
                 version: Some(version),
                 frontend_response: String::new(),
@@ -175,14 +181,14 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
         trace!("Version File Location {}", version_file);
         let result: Result<(), InternalError> = {
             let option = self
-                .storage()
-                .get_file(self.repository(), &project_file)
+                .get_storage()
+                .get_file(self.get_repository(), &project_file)
                 .await?;
             let mut project_data: ProjectData = if let Some(data) = option {
                 let string = String::from_utf8(data)?;
                 let value = serde_json::from_str(&string)?;
-                self.storage()
-                    .delete_file(self.repository(), &project_file)
+                self.get_storage()
+                    .delete_file(self.get_repository(), &project_file)
                     .await?;
                 value
             } else {
@@ -190,16 +196,16 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
                 ProjectData::default()
             };
             project_data.versions.update_version(&version_data.version);
-            self.storage()
+            self.get_storage()
                 .save_file(
-                    self.repository(),
+                    self.get_repository(),
                     serde_json::to_string_pretty(&project_data)?.as_bytes(),
                     &project_file,
                 )
                 .await?;
-            self.storage()
+            self.get_storage()
                 .save_file(
-                    self.repository(),
+                    self.get_repository(),
                     serde_json::to_string_pretty(&version_data)?.as_bytes(),
                     &version_file,
                 )
@@ -215,8 +221,8 @@ pub trait NitroRepositoryHandler<StorageType: Storage> {
             );
         }
         if let Err(error) = update_project_in_repositories(
-            self.storage(),
-            self.repository(),
+            self.get_storage(),
+            self.get_repository(),
             version_data.name.clone(),
         )
         .await

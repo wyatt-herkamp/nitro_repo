@@ -26,7 +26,6 @@ macro_rules! get_repository {
     ($storage:ident, $repository:ident) => {
         if let Some(value) = $storage
             .get_repository(&$repository)
-            .await
             .map_err(actix_web::error::ErrorInternalServerError)?
         {
             value

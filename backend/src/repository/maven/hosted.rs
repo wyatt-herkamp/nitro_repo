@@ -1,10 +1,9 @@
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::RepositoryHandler;
+use crate::repository::handler::Repository;
 use crate::repository::maven::models::Pom;
 use crate::repository::maven::settings::ProxySettings;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::storage::file::StorageFileResponse;
@@ -17,14 +16,23 @@ use actix_web::web::Bytes;
 use async_trait::async_trait;
 use log::error;
 use sea_orm::DatabaseConnection;
+use std::sync::{Arc, Weak};
 use tokio::sync::RwLockReadGuard;
 
-pub struct HostedMavenRepository<'a, S: Storage> {
+pub struct HostedMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
-    pub storage: RwLockReadGuard<'a, S>,
+    pub storage: Arc<S>,
 }
 #[async_trait]
-impl<'a, S: Storage> RepositoryHandler<'a, S> for HostedMavenRepository<'a, S> {
+impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
+    fn get_repository(&self) -> &RepositoryConfig {
+        &self.config
+    }
+
+    fn get_storage(&self) -> &S {
+        self.storage.as_ref()
+    }
+
     async fn handle_get(
         &self,
         path: &str,
@@ -46,8 +54,9 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for HostedMavenRepository<'a, S> {
             .map_err(InternalError::from)?
         {
             StorageFileResponse::List(list) => {
-                let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::try_from((files, StatusCode::OK))?)
+                /*                let files = self.process_storage_files(list, path).await?;
+                Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
+                panic!("Not implemented")
             }
             value => Ok(RepoResponse::FileResponse(value)),
         }
@@ -91,7 +100,7 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for HostedMavenRepository<'a, S> {
             .map_err(InternalError::from)?;
 
         //  Post Deploy Handler
-        if path.ends_with(".pom") {
+        /*        if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec).map_err(APIError::bad_request)?;
             let pom: Pom = serde_xml_rs::from_str(&result).map_err(APIError::bad_request)?;
@@ -104,31 +113,16 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for HostedMavenRepository<'a, S> {
             {
                 error!("Unable to complete post processing Tasks {}", error);
             }
-        }
+        }*/
         // Everything was ok
         Ok(RepoResponse::PUTResponse(
             exists,
             format!(
                 "/storages/{}/{}/{}",
-                &self.storage.storage_config().name,
+                &self.storage.storage_config().generic_config.id,
                 &self.config.name,
                 path
             ),
         ))
-    }
-}
-impl<StorageType: Storage> NitroRepositoryHandler<StorageType>
-    for HostedMavenRepository<'_, StorageType>
-{
-    fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
-        value.into().replace('.', "/").replace(':', "/")
-    }
-
-    fn storage(&self) -> &StorageType {
-        &self.storage
-    }
-
-    fn repository(&self) -> &RepositoryConfig {
-        &self.config
     }
 }

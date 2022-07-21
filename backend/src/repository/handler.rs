@@ -4,23 +4,22 @@ use actix_web::web::Bytes;
 use actix_web::Error;
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
+use std::sync::{Arc, Weak};
 use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::ci::CIHandler;
-use crate::repository::docker::DockerHandler;
-use crate::repository::maven::MavenHandler;
-use crate::repository::npm::NPMHandler;
-use crate::repository::raw::RawHandler;
+
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::RepositoryConfig;
-use crate::repository::settings::RepositoryType;
 use crate::storage::models::Storage;
-
+use serde::{Deserialize, Serialize};
 #[async_trait]
-pub trait RepositoryHandler<'a, S: Storage>: Send + Sync {
+pub trait Repository<S: Storage>: Send + Sync {
+    fn get_repository(&self) -> &RepositoryConfig;
+    fn get_storage(&self) -> &S;
+
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,
@@ -98,23 +97,39 @@ pub trait RepositoryHandler<'a, S: Storage>: Send + Sync {
 
 macro_rules! repository_handler {
     ($name:ident, $($repository_type:ident,$repository_tt:tt),*) => {
-        pub enum $name<'a, StorageType: Storage> {
+
+        pub enum $name<StorageType: Storage> {
             $(
-                $repository_type($repository_tt<'a, StorageType>),
+                $repository_type($repository_tt<StorageType>),
             )*
         }
         // Implement From<$repository_tt> for $name
         $(
-        impl<'a, StorageType: Storage> From<$repository_tt<'a, StorageType>> for $name<'a, StorageType> {
-            fn from(repository: $repository_tt<'a, StorageType>) -> Self {
+        impl<'a, StorageType: Storage> From<$repository_tt<StorageType>> for $name<StorageType> {
+            fn from(repository: $repository_tt<StorageType>) -> Self {
                 $name::$repository_type(repository)
             }
         }
         )*
         #[async_trait]
-        impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType>
-            for $name<'a, StorageType>
+        impl<StorageType: Storage> Repository<StorageType>
+            for $name<StorageType>
         {
+            fn get_repository(&self) -> &RepositoryConfig {
+                match self {
+                    $(
+                        $name::$repository_type(repository) => repository.get_repository(),
+                    )*
+                }
+            }
+            fn get_storage(&self) -> &StorageType {
+                match self {
+                    $(
+                        $name::$repository_type(repository) => repository.get_storage(),
+                    )*
+                }
+            }
+
             async fn handle_get(
                 &self,
                 path: &str,
@@ -225,34 +240,47 @@ macro_rules! dynamic_repository_handler {
             DynamicRepositoryHandler,
             $($repository_type,$repository_tt),*
         );
-        #[inline]
-        pub async fn get_repository_handler<StorageType: Storage>(
-            storage: RwLockReadGuard<'_, StorageType>,
+
+        /// Types of Repositories that can exist.
+        #[derive(Serialize, Deserialize, Clone, Debug, strum_macros::Display, strum_macros::EnumString)]
+        pub enum RepositoryType {
+            $($repository_type),*
+        }
+
+        impl<StorageType: Storage> DynamicRepositoryHandler<StorageType>{
+                    #[inline]
+        pub async fn new_dyn_storage(
+            storage: Arc<StorageType>,
             repository_config: RepositoryConfig,
-        ) -> Result<Option<DynamicRepositoryHandler<StorageType>>, InternalError> {
-            match repository_config.repository_type {
+        ) -> Result<DynamicRepositoryHandler<StorageType>, InternalError> {
+            let repository_handler = match repository_config.repository_type {
                 $(
                     RepositoryType::$repository_type => {
-                        let handler = $repository_tt::create(repository_config, storage).await?;
-                        Ok(Some(DynamicRepositoryHandler::$repository_type(handler)))
-                    },
+                        let repository = $repository_tt::create(
+                            repository_config,
+                            storage,
+                        ).await?;
+                        DynamicRepositoryHandler::$repository_type(repository)
+                    }
                 )*
-            }
+            };
+            Ok(repository_handler)
+        }
         }
 
 
     };
 }
+//    NPM,
+//     NPMHandler,
+//     Docker,
+//     DockerHandler,
+//     CI,
+//     CIHandler,
+//     Raw,
+//     RawHandler
 
-dynamic_repository_handler!(
-    NPM,
-    NPMHandler,
-    Maven,
-    MavenHandler,
-    Docker,
-    DockerHandler,
-    CI,
-    CIHandler,
-    Raw,
-    RawHandler
-);
+use crate::repository::maven::MavenHandler;
+dynamic_repository_handler!(Maven, MavenHandler);
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+crate::repository::nitro::dynamic::nitro_repo_handler!(DynamicRepositoryHandler,);

@@ -18,14 +18,7 @@ pub struct RepositoryResponse<'a> {
 impl<'a> RepositoryResponse<'a> {
     pub async fn new<StorageType: Storage>(
         config: &'a RepositoryConfig,
-        storage: &StorageType,
     ) -> Result<RepositoryResponse<'a>, InternalError> {
-        let frontend = config.get_config(storage).await?;
-        let badge = config.get_config(storage).await?;
-        Ok(RepositoryResponse {
-            config,
-            frontend,
-            badge,
-        })
+        todo!("create big boi")
     }
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::string::String;
+use std::sync::Arc;
 
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
@@ -13,7 +14,7 @@ use tokio::sync::RwLockReadGuard;
 use crate::authentication::{verify_login, Authentication};
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::RepositoryHandler;
+use crate::repository::handler::Repository;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
 use crate::repository::npm::utils::generate_get_response;
@@ -28,16 +29,16 @@ pub mod error;
 pub mod models;
 mod utils;
 
-pub struct NPMHandler<'a, StorageType: Storage> {
+pub struct NPMHandler<StorageType: Storage> {
     config: RepositoryConfig,
-    storage: RwLockReadGuard<'a, StorageType>,
+    storage: Arc<StorageType>,
 }
 
-impl<'a, StorageType: Storage> NPMHandler<'a, StorageType> {
+impl<StorageType: Storage> NPMHandler<StorageType> {
     pub async fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, StorageType>,
-    ) -> Result<NPMHandler<'a, StorageType>, InternalError> {
+        storage: Arc<StorageType>,
+    ) -> Result<NPMHandler<StorageType>, InternalError> {
         Ok(NPMHandler {
             config: repository,
             storage,
@@ -50,7 +51,14 @@ impl<'a, StorageType: Storage> NPMHandler<'a, StorageType> {
 
 // name/version
 #[async_trait]
-impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler<'a, StorageType> {
+impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
+    fn get_repository(&self) -> &RepositoryConfig {
+        &self.config
+    }
+
+    fn get_storage(&self) -> &StorageType {
+        &self.storage
+    }
     async fn handle_get(
         &self,
         path: &str,
@@ -101,8 +109,10 @@ impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler
                 .map_err(InternalError::from)?
             {
                 StorageFileResponse::List(list) => {
+                    /*
                     let files = self.process_storage_files(list, path).await?;
-                    Ok(RepoResponse::try_from((files, StatusCode::OK))?)
+                    Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
+                    panic!("Not implemented")
                 }
                 value => Ok(RepoResponse::FileResponse(value)),
             }
@@ -201,7 +211,7 @@ impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler
                         trace!("Project Folder Location {}", project_folder);
                         let version_for_saving = version_data.clone();
                         let user = caller.clone();
-                        if let Err(error) = self
+                        /*                      if let Err(error) = self
                             .post_deploy(
                                 project_folder,
                                 version_folder,
@@ -211,7 +221,7 @@ impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler
                             .await
                         {
                             error!("Unable to complete post processing Tasks {}", error);
-                        }
+                        }*/
                     }
                 }
 
@@ -219,7 +229,7 @@ impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler
                     exists,
                     format!(
                         "/storages/{}/{}/{}",
-                        &self.storage.storage_config().name,
+                        &self.storage.storage_config().generic_config.id,
                         &self.config.name,
                         path
                     ),
@@ -229,19 +239,5 @@ impl<'a, StorageType: Storage> RepositoryHandler<'a, StorageType> for NPMHandler
         } else {
             Err(NPMHandler::<StorageType>::bad_npm_command())
         }
-    }
-}
-
-impl<StorageType: Storage> NitroRepositoryHandler<StorageType> for NPMHandler<'_, StorageType> {
-    fn parse_project_to_directory<S: Into<String>>(path: S) -> String {
-        path.into().replace('.', "/").replace(':', "/")
-    }
-
-    fn storage(&self) -> &StorageType {
-        &self.storage
-    }
-
-    fn repository(&self) -> &RepositoryConfig {
-        &self.config
     }
 }

@@ -7,12 +7,13 @@ use std::ops::Deref;
 
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
+use crate::repository::handler::Repository;
 
 use crate::repository::settings::repository_page::{PageType, RepositoryPage};
 use crate::repository::settings::{RepositoryConfig, RepositoryType, Visibility};
-use crate::storage::dynamic::DynamicStorage;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
+use crate::storage::DynamicStorage;
 use crate::system::permissions::options::{CanIDo, MissingPermission};
 use crate::system::user::UserModel;
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +24,7 @@ pub struct PublicRepositoryResponse {
 
 #[get("repositories/{storage_name}")]
 pub async fn get_repositories(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     authentication: Authentication,
     path: web::Path<String>,
@@ -33,8 +34,7 @@ pub async fn get_repositories(
 
     let caller: Option<UserModel> = authentication.get_user(database.as_ref()).await?.ok();
     let vec: Vec<PublicRepositoryResponse> = value
-        .get_repositories()
-        .await
+        .get_repository_list()
         .map_err(actix_web::error::ErrorInternalServerError)?
         .into_iter()
         .filter(|repo| {
@@ -71,7 +71,7 @@ pub struct RepositoryPageResponse {
 }
 #[get("repositories/{storage_name}/{repository_name}")]
 pub async fn get_repository(
-    storage_handler: web::Data<MultiStorageController>,
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     authentication: Authentication,
     path: web::Path<(String, String)>,
@@ -79,14 +79,19 @@ pub async fn get_repository(
     let (storage_name, repository_name) = path.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
     let repository = crate::helpers::get_repository!(storage, repository_name);
-    if !repository.visibility.eq(&Visibility::Public) {
+    if !repository
+        .get_repository()
+        .visibility
+        .eq(&Visibility::Public)
+    {
         let caller: UserModel = authentication.get_user(database.as_ref()).await??;
-        if let Some(value) = caller.can_read_from(&repository)? {
+        if let Some(value) = caller.can_read_from(repository.get_repository())? {
             return Err(value.into());
         }
     }
     let repository_page: Option<RepositoryPage> = repository
-        .get_config::<RepositoryPage, DynamicStorage>(storage.deref())
+        .get_repository()
+        .get_config::<RepositoryPage, DynamicStorage>(&storage)
         .await?;
     let page_content = if let Some(value) = repository_page {
         match value.page_type {
@@ -104,8 +109,8 @@ pub async fn get_repository(
         String::new()
     };
     let value = RepositoryPageResponse {
-        name: repository.name.clone(),
-        repository_type: repository.repository_type.clone(),
+        name: repository.get_repository().name.clone(),
+        repository_type: repository.get_repository().repository_type.clone(),
         page_content,
     };
 

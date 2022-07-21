@@ -5,14 +5,14 @@ use async_trait::async_trait;
 use log::error;
 use sea_orm::DatabaseConnection;
 use std::ops::Deref;
+use std::sync::{Arc, Weak};
 use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::{repository_handler, RepositoryHandler};
+use crate::repository::handler::{repository_handler, Repository};
 use crate::repository::maven::models::Pom;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::storage::file::StorageFileResponse;
@@ -43,14 +43,12 @@ repository_handler!(
     StagingRepository
 );
 
-impl<'a, S: Storage> MavenHandler<'a, S> {
+impl<S: Storage> MavenHandler<S> {
     pub async fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, S>,
-    ) -> Result<MavenHandler<'a, S>, InternalError> {
-        let result = repository
-            .get_config::<MavenSettings, S>(storage.deref())
-            .await?;
+        storage: Arc<S>,
+    ) -> Result<MavenHandler<S>, InternalError> {
+        let result = repository.get_config::<MavenSettings, S>(&storage).await?;
         if let Some(config) = result {
             match config.repository_type {
                 MavenType::Hosted { .. } => Ok(HostedMavenRepository {
@@ -85,28 +83,6 @@ impl<'a, S: Storage> MavenHandler<'a, S> {
                 storage,
             }
             .into())
-        }
-    }
-}
-
-impl<StorageType: Storage> NitroRepositoryHandler<StorageType> for MavenHandler<'_, StorageType> {
-    fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
-        value.into().replace('.', "/").replace(':', "/")
-    }
-
-    fn storage(&self) -> &StorageType {
-        match self {
-            MavenHandler::Hosted(repository) => &repository.storage,
-            MavenHandler::Proxy(repository) => &repository.storage,
-            MavenHandler::Staging(repository) => &repository.storage,
-        }
-    }
-
-    fn repository(&self) -> &RepositoryConfig {
-        match self {
-            MavenHandler::Hosted(repository) => &repository.config,
-            MavenHandler::Proxy(repository) => &repository.config,
-            MavenHandler::Staging(repository) => &repository.config,
         }
     }
 }

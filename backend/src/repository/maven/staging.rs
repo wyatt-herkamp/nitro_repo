@@ -1,17 +1,16 @@
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::RepositoryHandler;
+use crate::repository::handler::Repository;
 use crate::repository::maven::models::Pom;
 use crate::repository::maven::settings::{MavenSettings, MavenType, ProxySettings};
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::repository::staging::{ProcessingStage, ProjectsToStage, StageHandler};
-use crate::storage::dynamic::DynamicStorage;
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
+use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use actix_web::http::header::HeaderMap;
@@ -27,7 +26,7 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use tokio::io::{duplex, AsyncWriteExt};
 use tokio::sync::RwLockReadGuard;
 
@@ -52,22 +51,20 @@ pub enum StageSettings {
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DeployRequirement {}
-pub struct StagingRepository<'a, S: Storage> {
+pub struct StagingRepository<S: Storage> {
     pub config: RepositoryConfig,
-    pub storage: RwLockReadGuard<'a, S>,
+    pub storage: Arc<S>,
     pub stage_to: Vec<StageSettings>,
     pub parent: ProxySettings,
     pub deploy_requirement: Vec<DeployRequirement>,
 }
 
-impl<'a, S: Storage> StagingRepository<'a, S> {
+impl<'a, S: Storage> StagingRepository<S> {
     pub async fn create(
         repository: RepositoryConfig,
-        storage: RwLockReadGuard<'a, S>,
-    ) -> Result<StagingRepository<'a, S>, InternalError> {
-        let result = repository
-            .get_config::<MavenSettings, S>(storage.deref())
-            .await?;
+        storage: Arc<S>,
+    ) -> Result<StagingRepository<S>, InternalError> {
+        let result = repository.get_config::<MavenSettings, S>(&storage).await?;
         if let Some(config) = result {
             match config.repository_type {
                 MavenType::Staging {
@@ -95,18 +92,26 @@ impl<'a, S: Storage> StagingRepository<'a, S> {
 }
 
 #[async_trait]
-impl<'a, S: Storage> StageHandler<'a, S> for StagingRepository<'a, S> {
+impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
     async fn push(
         &self,
         directory: String,
         process: ProcessingStage,
-        storages: Arc<MultiStorageController>,
+        storages: Arc<MultiStorageController<DynamicStorage>>,
     ) -> Result<(), InternalError> {
         todo!()
     }
 }
 #[async_trait]
-impl<'a, S: Storage> RepositoryHandler<'a, S> for StagingRepository<'a, S> {
+impl<S: Storage> Repository<S> for StagingRepository<S> {
+    fn get_repository(&self) -> &RepositoryConfig {
+        &self.config
+    }
+
+    fn get_storage(&self) -> &S {
+        self.storage.as_ref()
+    }
+
     async fn handle_get(
         &self,
         path: &str,
@@ -128,8 +133,10 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for StagingRepository<'a, S> {
             .map_err(InternalError::from)?
         {
             StorageFileResponse::List(list) => {
+                /*
                 let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::try_from((files, StatusCode::OK))?)
+                Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
+                panic!("Not implemented")
             }
 
             StorageFileResponse::NotFound => {
@@ -195,25 +202,10 @@ impl<'a, S: Storage> RepositoryHandler<'a, S> for StagingRepository<'a, S> {
             exists,
             format!(
                 "/storages/{}/{}/{}",
-                &self.storage.storage_config().name,
+                &self.storage.storage_config().generic_config.id,
                 &self.config.name,
                 path
             ),
         ))
-    }
-}
-impl<StorageType: Storage> NitroRepositoryHandler<StorageType>
-    for StagingRepository<'_, StorageType>
-{
-    fn parse_project_to_directory<S: Into<String>>(value: S) -> String {
-        value.into().replace('.', "/").replace(':', "/")
-    }
-
-    fn storage(&self) -> &StorageType {
-        &self.storage
-    }
-
-    fn repository(&self) -> &RepositoryConfig {
-        &self.config
     }
 }

@@ -2,7 +2,7 @@ macro_rules! define_repository_config_get {
     ($value:literal,$ty:tt ) => {
         paste::paste! {
         pub async fn [<get_ $value>](
-            storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController>,
+            storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController<DynamicStorage>>,
             database: actix_web::web::Data<sea_orm::DatabaseConnection>,
             auth: crate::authentication::Authentication,
             path_params: actix_web::web::Path<(String, String)>,
@@ -31,7 +31,7 @@ macro_rules! define_repository_config_set {
     ($value:literal,$ty:tt ) => {
         paste::paste! {
             pub async fn [<set_ $value>](
-                storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController>,
+                storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController<DynamicStorage>>,
                 database: actix_web::web::Data<sea_orm::DatabaseConnection>,
                 auth: crate::authentication::Authentication,
                 path_params: actix_web::web::Path<(String, String)>,
@@ -58,7 +58,7 @@ macro_rules! define_repository_config_delete {
     ($value:literal,$ty:tt ) => {
         paste::paste! {
             pub async fn [<delete_ $value>](
-                storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController>,
+                storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController<DynamicStorage>>,
                 database: actix_web::web::Data<sea_orm::DatabaseConnection>,
                 auth: crate::authentication::Authentication,
                 path_params: actix_web::web::Path<(String, String)>,
