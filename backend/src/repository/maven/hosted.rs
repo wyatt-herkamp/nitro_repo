@@ -2,7 +2,8 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::RepositoryHandler;
-use crate::repository::maven::models::{Pom, ProxySettings};
+use crate::repository::maven::models::Pom;
+use crate::repository::maven::settings::ProxySettings;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
@@ -17,6 +18,7 @@ use async_trait::async_trait;
 use log::error;
 use sea_orm::DatabaseConnection;
 use tokio::sync::RwLockReadGuard;
+
 pub struct HostedMavenRepository<'a, S: Storage> {
     pub config: RepositoryConfig,
     pub storage: RwLockReadGuard<'a, S>,

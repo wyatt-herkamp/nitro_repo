@@ -11,7 +11,7 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::{repository_handler, RepositoryHandler};
-use crate::repository::maven::models::{MavenSettings, MavenType, Pom};
+use crate::repository::maven::models::Pom;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
@@ -26,10 +26,12 @@ pub mod error;
 pub mod hosted;
 pub mod models;
 pub mod proxy;
-mod staging;
+pub mod settings;
+pub mod staging;
 mod utils;
 
 use actix_web::Error;
+use settings::{MavenSettings, MavenType};
 
 repository_handler!(
     MavenHandler,
@@ -65,12 +67,14 @@ impl<'a, S: Storage> MavenHandler<'a, S> {
                 MavenType::Staging {
                     stage_to,
                     pre_stage_requirements,
+                    parent,
                 } => {
                     let staging = StagingRepository {
                         config: repository,
                         stage_to,
                         storage,
                         deploy_requirement: pre_stage_requirements,
+                        parent,
                     };
                     Ok(staging.into())
                 }

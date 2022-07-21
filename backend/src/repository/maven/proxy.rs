@@ -1,7 +1,7 @@
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::RepositoryHandler;
-use crate::repository::maven::models::ProxySettings;
+use crate::repository::maven::settings::ProxySettings;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{RepositoryConfig, Visibility};

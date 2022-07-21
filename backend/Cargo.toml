@@ -53,6 +53,7 @@ reqwest = { version = "0.11.11", features = ["stream"] }
 bytes = "1.2.0"
 tokio-stream = "0.1.9"
 lockfree = "0.5.1"
+
 # Log
 nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = { version = "0.4.17", features = ["kv_unstable", "kv_unstable_std", "kv_unstable_serde"] }
@@ -72,7 +73,9 @@ semver = "1.0.12"
 # Cache
 redis = "0.21.5"
 comrak = "0.14"
-
+# Staging
+tempfile="3.3.0"
+git2 = "0.14.4"
 [build-dependencies]
 vergen = "7.0.0"
 [features]

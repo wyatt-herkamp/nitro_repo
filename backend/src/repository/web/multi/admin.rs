@@ -10,7 +10,7 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 
-use crate::repository::maven::models::MavenSettings;
+use crate::repository::maven::settings::MavenSettings;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::repository::web::RepositoryResponse;
 use crate::repository::RepositoryType;

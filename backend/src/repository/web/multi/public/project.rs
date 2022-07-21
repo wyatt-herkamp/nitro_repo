@@ -10,9 +10,9 @@ use crate::error::internal_error::InternalError;
 
 use crate::repository::settings::repository_page::{PageType, RepositoryPage};
 use crate::repository::settings::{RepositoryConfig, Visibility};
+use crate::storage::dynamic::DynamicStorage;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
 use crate::system::permissions::options::{CanIDo, MissingPermission};
 use crate::system::user::UserModel;
 
