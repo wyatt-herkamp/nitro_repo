@@ -3,18 +3,17 @@ use comrak::Arena;
 use log::warn;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use std::ops::Deref;
 
 use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
+
 use crate::repository::handler::Repository;
 
 use crate::repository::settings::repository_page::{PageType, RepositoryPage};
-use crate::repository::settings::{RepositoryConfig, RepositoryType, Visibility};
+use crate::repository::settings::{RepositoryType, Visibility};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
-use crate::system::permissions::options::{CanIDo, MissingPermission};
+use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -39,21 +38,15 @@ pub async fn get_repositories(
         .into_iter()
         .filter(|repo| {
             if !repo.visibility.eq(&Visibility::Public) {
-                match CanIDo::can_read_from(&caller, &repo) {
-                    Ok(ok) => {
-                        if ok.is_none() {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }
+                match CanIDo::can_read_from(&caller, repo) {
+                    Ok(ok) => ok.is_none(),
                     Err(error) => {
                         warn!("{}", error);
-                        return false;
+                        false
                     }
                 }
             } else {
-                return true;
+                true
             }
         })
         .map(|repo| PublicRepositoryResponse {

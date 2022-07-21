@@ -1,8 +1,4 @@
-use crate::repository::maven::staging::{DeployRequirement, StageSettings};
 use serde::{Deserialize, Serialize};
-
-use crate::repository::settings::RepositoryConfigType;
-use crate::utils::get_current_time;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeployMetadata {

@@ -6,8 +6,8 @@ use api::system::{hash, user};
 use api::utils::get_current_time;
 use clap::{Parser, Subcommand};
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ConnectOptions, DatabaseConnection, EntityTrait};
-use semver::Op;
+use sea_orm::{ConnectOptions, EntityTrait};
+
 use std::env;
 use std::fs::OpenOptions;
 use std::path::Path;
@@ -67,7 +67,7 @@ async fn main() {
         }
     };
     if let Database::Sqlite(sql) = &config {
-        println!("{}", sql.to_string());
+        println!("{}", sql);
         OpenOptions::new()
             .create(true)
             .write(true)

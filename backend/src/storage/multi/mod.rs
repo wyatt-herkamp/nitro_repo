@@ -1,5 +1,5 @@
 use lockfree::map::Map;
-use std::collections::HashMap;
+
 use std::mem;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -9,7 +9,6 @@ use log::{error, info};
 use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 use tokio::io::AsyncWriteExt;
-use tokio::sync::{RwLock, RwLockReadGuard};
 
 use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
@@ -28,7 +27,7 @@ async fn load_storages(
     }
     let string = read_to_string(&storages_file).await?;
     let result: Vec<StorageSaver> = serde_json::from_str(&string)?;
-    let mut values: Map<String, Arc<DynamicStorage>> = Map::new();
+    let values: Map<String, Arc<DynamicStorage>> = Map::new();
     for factory in result {
         let name = factory.generic_config.id.clone();
         let storage = match DynamicStorage::new(factory).await {
@@ -96,7 +95,7 @@ impl MultiStorageController<DynamicStorage> {
     /// Attempts to run the storage load on any storages that are unloaded.
     /// This will include the Error storages
     pub async fn load_unloaded_storages<'a>(&mut self) -> Result<(), StorageError> {
-        let mut unloaded = mem::take(&mut self.unloaded_storages);
+        let unloaded = mem::take(&mut self.unloaded_storages);
         for (name, storage) in unloaded.into_iter() {
             match storage.get_repos_to_load().await {
                 Ok(repositories) => {
@@ -105,7 +104,7 @@ impl MultiStorageController<DynamicStorage> {
                         let handler =
                             DynamicRepositoryHandler::new_dyn_storage(storage.clone(), repository)
                                 .await
-                                .map_err(|error| {
+                                .map_err(|_error| {
                                     error!("Error loading repository {}", name);
                                 });
                         if let Ok(handler) = handler {
@@ -122,11 +121,11 @@ impl MultiStorageController<DynamicStorage> {
         Ok(())
     }
 
-    pub async fn create_storage<'a>(&self, storage: StorageSaver) -> Result<(), StorageError> {
+    pub async fn create_storage<'a>(&self, _storage: StorageSaver) -> Result<(), StorageError> {
         todo!()
     }
 
-    pub async fn delete_storage(&self, storage: &str) -> Result<bool, StorageError> {
+    pub async fn delete_storage(&self, _storage: &str) -> Result<bool, StorageError> {
         todo!()
     }
     pub async fn storage_savers(&self) -> Vec<StorageSaver> {

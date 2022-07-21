@@ -17,7 +17,7 @@ pub struct RepositoryResponse<'a> {
 
 impl<'a> RepositoryResponse<'a> {
     pub async fn new<StorageType: Storage>(
-        config: &'a RepositoryConfig,
+        _config: &'a RepositoryConfig,
     ) -> Result<RepositoryResponse<'a>, InternalError> {
         todo!("create big boi")
     }

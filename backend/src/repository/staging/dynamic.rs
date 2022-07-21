@@ -1,12 +1,11 @@
 use super::super::maven::staging::StagingRepository;
 use super::{ProcessingStage, StageHandler};
 use crate::error::internal_error::InternalError;
-use crate::repository::settings::{RepositoryConfig, RepositoryType};
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use std::sync::Arc;
-use tokio::sync::RwLockReadGuard;
 
 macro_rules! gen_dynamic_stage {
     ($($name: ident, $ty:tt),*) => {
@@ -18,8 +17,8 @@ macro_rules! gen_dynamic_stage {
         }
         #[inline]
         pub async fn get_stage_handler<StorageType: Storage>(
-            storage: Arc<StorageType>,
-            repository_config: RepositoryConfig,
+            _storage: Arc<StorageType>,
+            _repository_config: RepositoryConfig,
         ) -> Result<StageHandlerResult<StorageType>, InternalError> {
             panic!("Not implemented");
         }

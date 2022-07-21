@@ -4,8 +4,7 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use async_trait::async_trait;
 use std::sync::Arc;
-use tokio::sync::RwLockReadGuard;
-
+#[derive(Debug)]
 pub struct RawHandler<StorageType: Storage> {
     config: RepositoryConfig,
     storage: Arc<StorageType>,
@@ -18,13 +17,22 @@ impl<StorageType: Storage> RawHandler<StorageType> {
         Ok(RawHandler { config, storage })
     }
 }
-
+impl<S: Storage> Clone for RawHandler<S> {
+    fn clone(&self) -> Self {
+        RawHandler {
+            config: self.config.clone(),
+            storage: self.storage.clone(),
+        }
+    }
+}
 #[async_trait]
 impl<StorageType: Storage> Repository<StorageType> for RawHandler<StorageType> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config
     }
-
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+        &mut self.config
+    }
     fn get_storage(&self) -> &StorageType {
         &self.storage
     }

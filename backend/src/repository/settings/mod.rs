@@ -92,8 +92,8 @@ impl RepositoryConfig {
     /// This will overwrite the config file.
     pub async fn save_config<Config: RepositoryConfigType, StorageType: Storage>(
         &self,
-        storage: &StorageType,
-        config: Option<&Config>,
+        _storage: &StorageType,
+        _config: Option<&Config>,
     ) -> Result<(), InternalError> {
         panic!("To be replaced");
     }

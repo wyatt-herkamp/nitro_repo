@@ -4,8 +4,7 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use async_trait::async_trait;
 use std::sync::Arc;
-use tokio::sync::RwLockReadGuard;
-
+#[derive(Debug)]
 pub struct DockerHandler<StorageType: Storage> {
     config: RepositoryConfig,
     storage: Arc<StorageType>,
@@ -19,12 +18,23 @@ impl<StorageType: Storage> DockerHandler<StorageType> {
     }
 }
 
+impl<StorageType: Storage> Clone for DockerHandler<StorageType> {
+    fn clone(&self) -> Self {
+        DockerHandler {
+            config: self.config.clone(),
+            storage: self.storage.clone(),
+        }
+    }
+}
+
 #[async_trait]
 impl<StorageType: Storage> Repository<StorageType> for DockerHandler<StorageType> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config
     }
-
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+        &mut self.config
+    }
     fn get_storage(&self) -> &StorageType {
         &self.storage
     }

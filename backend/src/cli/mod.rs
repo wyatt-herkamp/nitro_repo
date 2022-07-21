@@ -14,7 +14,7 @@ struct NitroRepoCLI {
 }
 
 pub async fn handle_cli() -> std::io::Result<bool> {
-    let path = current_dir()?;
+    let _path = current_dir()?;
 
     let parse: NitroRepoCLI = NitroRepoCLI::parse();
     if let Some(update) = parse.update {

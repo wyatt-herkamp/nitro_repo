@@ -6,16 +6,15 @@ use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use async_trait::async_trait;
-use log::{debug, error, trace};
+use log::{debug, trace};
 use regex::Regex;
 use sea_orm::DatabaseConnection;
-use tokio::sync::RwLockReadGuard;
 
 use crate::authentication::{verify_login, Authentication};
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
 use crate::repository::npm::utils::generate_get_response;
 use crate::repository::response::RepoResponse;
@@ -28,12 +27,19 @@ use crate::system::user::UserModel;
 pub mod error;
 pub mod models;
 mod utils;
-
+#[derive(Debug)]
 pub struct NPMHandler<StorageType: Storage> {
     config: RepositoryConfig,
     storage: Arc<StorageType>,
 }
-
+impl<S: Storage> Clone for NPMHandler<S> {
+    fn clone(&self) -> Self {
+        NPMHandler {
+            config: self.config.clone(),
+            storage: self.storage.clone(),
+        }
+    }
+}
 impl<StorageType: Storage> NPMHandler<StorageType> {
     pub async fn create(
         repository: RepositoryConfig,
@@ -55,7 +61,9 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config
     }
-
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+        &mut self.config
+    }
     fn get_storage(&self) -> &StorageType {
         &self.storage
     }
@@ -108,7 +116,7 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
                 .await
                 .map_err(InternalError::from)?
             {
-                StorageFileResponse::List(list) => {
+                StorageFileResponse::List(_list) => {
                     /*
                     let files = self.process_storage_files(list, path).await?;
                     Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
@@ -205,12 +213,12 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
                         };
 
                         let project_folder = publish_request.name.clone();
-                        let version_folder =
+                        let _version_folder =
                             format!("{}/{}", &project_folder, &version_data.version);
 
                         trace!("Project Folder Location {}", project_folder);
-                        let version_for_saving = version_data.clone();
-                        let user = caller.clone();
+                        let _version_for_saving = version_data.clone();
+                        let _user = caller.clone();
                         /*                      if let Err(error) = self
                             .post_deploy(
                                 project_folder,

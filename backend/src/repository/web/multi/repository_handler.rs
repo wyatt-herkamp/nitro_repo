@@ -2,10 +2,8 @@ use actix_web::web::Bytes;
 use actix_web::{web, HttpRequest};
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
-use std::ops::Deref;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
 
 use crate::repository::handler::Repository;
 use crate::repository::response::RepoResponse;

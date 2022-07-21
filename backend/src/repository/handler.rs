@@ -4,8 +4,7 @@ use actix_web::web::Bytes;
 use actix_web::Error;
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
-use std::sync::{Arc, Weak};
-use tokio::sync::RwLockReadGuard;
+use std::sync::Arc;
 
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
@@ -16,8 +15,9 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use serde::{Deserialize, Serialize};
 #[async_trait]
-pub trait Repository<S: Storage>: Send + Sync {
+pub trait Repository<S: Storage>: Send + Sync + Clone {
     fn get_repository(&self) -> &RepositoryConfig;
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig;
     fn get_storage(&self) -> &S;
 
     /// Handles a get request to a Repo
@@ -97,11 +97,20 @@ pub trait Repository<S: Storage>: Send + Sync {
 
 macro_rules! repository_handler {
     ($name:ident, $($repository_type:ident,$repository_tt:tt),*) => {
-
+        #[derive(Debug)]
         pub enum $name<StorageType: Storage> {
             $(
                 $repository_type($repository_tt<StorageType>),
             )*
+        }
+        impl< StorageType: Storage> Clone for $name<StorageType> {
+            fn clone(&self) -> Self {
+                match self {
+                    $(
+                        $name::$repository_type(repo) => $name::$repository_type((repo).clone()),
+                    )*
+                }
+            }
         }
         // Implement From<$repository_tt> for $name
         $(
@@ -115,10 +124,18 @@ macro_rules! repository_handler {
         impl<StorageType: Storage> Repository<StorageType>
             for $name<StorageType>
         {
+
             fn get_repository(&self) -> &RepositoryConfig {
                 match self {
                     $(
                         $name::$repository_type(repository) => repository.get_repository(),
+                    )*
+                }
+            }
+            fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+                match self {
+                    $(
+                        $name::$repository_type(repository) => repository.get_mut_config(),
                     )*
                 }
             }

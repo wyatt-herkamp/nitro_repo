@@ -1,21 +1,23 @@
-use std::ops::Deref;
 
-use actix_web::http::StatusCode;
+use std::sync::Arc;
+
+
 use actix_web::{delete, get, post, web, HttpResponse};
+use lockfree::map::Removed;
 
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
+
 use crate::error::internal_error::InternalError;
 
-use crate::repository::handler::Repository;
-use crate::repository::maven::settings::MavenSettings;
-use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
-use crate::repository::web::RepositoryResponse;
+use crate::repository::handler::{Repository};
+
+use crate::repository::settings::{Policy, Visibility};
+
 use crate::repository::RepositoryType;
-use crate::storage::error::StorageError;
+
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
@@ -23,7 +25,7 @@ use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use paste::paste;
 use serde_json::Value;
-use tokio::sync::RwLockReadGuard;
+
 
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
@@ -48,13 +50,13 @@ pub async fn create_repository(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     query_params: web::Path<(String, String, RepositoryType)>,
-    inner_config: web::Json<Option<Value>>,
+    _inner_config: web::Json<Option<Value>>,
 ) -> actix_web::Result<HttpResponse> {
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
-    let (storage_name, repository_name, repository_type) = query_params.into_inner();
+    let (storage_name, _repository_name, _repository_type) = query_params.into_inner();
 
-    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let _storage = crate::helpers::get_storage!(storage_handler, storage_name);
     todo!("Create Repository");
 }
 
@@ -72,7 +74,7 @@ pub async fn get_repository(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     path_params: web::Path<(String, String)>,
-    query_params: web::Query<GetRepositoryQuery>,
+    _query_params: web::Query<GetRepositoryQuery>,
 ) -> actix_web::Result<HttpResponse> {
     let user: UserModel = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
@@ -101,13 +103,14 @@ pub async fn delete_repository(
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    let repository = crate::helpers::get_repository!(storage, repository_name);
+    let _repository = crate::helpers::get_repository!(storage, repository_name);
     storage
         .delete_repository(repository_name, query_params.purge_repository)
         .await
         .map_err(InternalError::from)?;
     Ok(HttpResponse::NoContent().finish())
 }
+
 macro_rules! update_repository_core_prop {
     ($($name:ident,$value_type:tt),*) => {
         $(
@@ -122,15 +125,9 @@ macro_rules! update_repository_core_prop {
             user.can_i_edit_repos()?;
             let (storage_name, repository_name, value) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
-            let mut repository = crate::helpers::get_repository!(storage, repository_name)
-                .deref()
-                .clone();
-            repository.$name = value;
-
-            storage
-                .update_repository(repository)
-                .await
-                .map_err(InternalError::from)?;
+            let (name, mut repository) = crate::helpers::take_repository!(storage, repository_name);
+            repository.get_mut_config().$name = value;
+            storage.add_repository_for_updating(name, repository).expect("Failed to add repository for updating");
 
             Ok(HttpResponse::NoContent().finish())
         }
@@ -146,4 +143,4 @@ macro_rules! update_repository_core_prop {
         }
     };
 }
-//update_repository_core_prop!(visibility, Visibility, active, bool, policy, Policy);
+update_repository_core_prop!(visibility, Visibility, active, bool, policy, Policy);

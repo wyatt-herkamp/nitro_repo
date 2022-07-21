@@ -28,14 +28,11 @@ pub fn init_admin(cfg: &mut web::ServiceConfig) {
         .service(admin::get_repositories)
         .service(admin::create_repository)
         .service(admin::delete_repository);
-    //cfg.configure(admin::register_core_updates);
+    cfg.configure(admin::register_core_updates);
 }
 
 pub mod configs_impls {
-    use super::configs::define_repository_config_handlers_group;
-    use crate::repository::settings::badge::BadgeSettings;
-    use crate::repository::settings::frontend::Frontend;
-    use crate::repository::settings::repository_page::RepositoryPage;
+
     //    define_repository_config_handlers_group!(
     //       "badge",
     //      BadgeSettings,

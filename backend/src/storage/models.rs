@@ -7,17 +7,15 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use lockfree::map::Removed;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use tokio::sync::RwLockReadGuard;
+
 use tokio_stream::Stream;
 
-use crate::repository::settings::{RepositoryConfig, RepositoryType};
+use crate::repository::settings::RepositoryConfig;
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
-use crate::storage::local_storage::LocalStorage;
+
 use crate::storage::DynamicStorage;
-use crate::storage::{StorageConfig, StorageSaver};
+use crate::storage::StorageSaver;
 
 pub static STORAGE_FILE: &str = "storages.json";
 pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
@@ -106,15 +104,12 @@ pub trait Storage: Send + Sync {
     fn remove_repository_for_updating<S: AsRef<str>>(
         &self,
         repository: S,
-    ) -> Result<Removed<String, Arc<Self::Repository>>, StorageError>;
+    ) -> Option<Removed<String, Arc<Self::Repository>>>;
     /// Will update all configs for the Repository
-    async fn add_repository_for_updating(
+    fn add_repository_for_updating(
         &self,
+        name: String,
         repository_arc: Self::Repository,
-    ) -> Result<(), StorageError>;
-    async fn add_repository_for_updating_removed(
-        &self,
-        repository_arc: Removed<String, Arc<Self::Repository>>,
     ) -> Result<(), StorageError>;
     /// Saves a File to a location
     /// Will overwrite any data found

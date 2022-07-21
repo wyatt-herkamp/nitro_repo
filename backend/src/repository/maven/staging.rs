@@ -2,11 +2,11 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::maven::models::Pom;
+
 use crate::repository::maven::settings::{MavenSettings, MavenType, ProxySettings};
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
-use crate::repository::staging::{ProcessingStage, ProjectsToStage, StageHandler};
+use crate::repository::staging::{ProcessingStage, StageHandler};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
@@ -18,17 +18,17 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
-use bytes::{BufMut, BytesMut};
-use futures::channel::mpsc::unbounded;
+
+
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use std::ops::Deref;
-use std::path::PathBuf;
-use std::sync::{Arc, Weak};
-use tokio::io::{duplex, AsyncWriteExt};
-use tokio::sync::RwLockReadGuard;
+
+
+use std::sync::{Arc};
+
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum StageSettings {
@@ -51,6 +51,7 @@ pub enum StageSettings {
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DeployRequirement {}
+#[derive(Debug)]
 pub struct StagingRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub storage: Arc<S>,
@@ -95,19 +96,34 @@ impl<'a, S: Storage> StagingRepository<S> {
 impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
     async fn push(
         &self,
-        directory: String,
-        process: ProcessingStage,
-        storages: Arc<MultiStorageController<DynamicStorage>>,
+        _directory: String,
+        _process: ProcessingStage,
+        _storages: Arc<MultiStorageController<DynamicStorage>>,
     ) -> Result<(), InternalError> {
         todo!()
     }
 }
+
+impl<S: Storage> Clone for StagingRepository<S> {
+    fn clone(&self) -> Self {
+        StagingRepository {
+            config: self.config.clone(),
+            storage: self.storage.clone(),
+            stage_to: self.stage_to.clone(),
+            parent: self.parent.clone(),
+            deploy_requirement: self.deploy_requirement.clone(),
+        }
+    }
+}
+
 #[async_trait]
 impl<S: Storage> Repository<S> for StagingRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config
     }
-
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+        &mut self.config
+    }
     fn get_storage(&self) -> &S {
         self.storage.as_ref()
     }
@@ -115,7 +131,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
     async fn handle_get(
         &self,
         path: &str,
-        http: &HeaderMap,
+        _http: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, Error> {
@@ -132,7 +148,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(list) => {
+            StorageFileResponse::List(_list) => {
                 /*
                 let files = self.process_storage_files(list, path).await?;
                 Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
@@ -145,10 +161,10 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
                     .build()
                     .unwrap();
                 let url = format!("{}/{}", self.parent.proxy_url, path);
-                let mut response = builder.get(&url).send().await;
-                if let Ok(mut response) = response {
+                let response = builder.get(&url).send().await;
+                if let Ok(response) = response {
                     if response.status().is_success() {
-                        let mut stream = response.bytes_stream();
+                        let stream = response.bytes_stream();
                         return Ok(RepoResponse::HttpResponse(
                             HttpResponse::Ok().streaming(stream),
                         ));

@@ -2,8 +2,7 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::maven::models::Pom;
-use crate::repository::maven::settings::ProxySettings;
+
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
 use crate::storage::file::StorageFileResponse;
@@ -14,19 +13,32 @@ use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use async_trait::async_trait;
-use log::error;
-use sea_orm::DatabaseConnection;
-use std::sync::{Arc, Weak};
-use tokio::sync::RwLockReadGuard;
 
+use sea_orm::DatabaseConnection;
+use std::sync::Arc;
+#[derive(Debug)]
 pub struct HostedMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub storage: Arc<S>,
 }
+
+impl<S: Storage> Clone for HostedMavenRepository<S> {
+    fn clone(&self) -> Self {
+        HostedMavenRepository {
+            config: self.config.clone(),
+            storage: self.storage.clone(),
+        }
+    }
+}
+
 #[async_trait]
 impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config
+    }
+
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+        &mut self.config
     }
 
     fn get_storage(&self) -> &S {
@@ -53,7 +65,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(list) => {
+            StorageFileResponse::List(_list) => {
                 /*                let files = self.process_storage_files(list, path).await?;
                 Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
                 panic!("Not implemented")

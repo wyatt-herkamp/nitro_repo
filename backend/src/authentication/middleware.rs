@@ -1,9 +1,7 @@
 use std::fmt;
 use std::future::{ready, Ready};
 use std::rc::Rc;
-use std::time::SystemTime;
 
-use actix_web::cookie::time::OffsetDateTime;
 use actix_web::cookie::{Cookie, Expiration, SameSite};
 use actix_web::http::header::{HeaderValue, AUTHORIZATION, ORIGIN, SET_COOKIE};
 use actix_web::http::Method;
@@ -185,24 +183,22 @@ where
                             )
                         }
                     }
-                } else {
-                    if run_cookies {
-                        // Try to create a new Session for the user. Could be a first request
-                        // Require a Origin Header for request
-                        if let Some(origin) = req.headers().get(ORIGIN) {
-                            trace!(
-                                "Creating a new Session for {}. ",
-                                origin.to_str().unwrap_or("Bad Origin")
-                            );
-                            let session = session_manager.create_session().await.unwrap();
-                            (Authentication::Session(session.clone()), Some(session))
-                        } else {
-                            warn!("A Not Origin Not Authorized Request was made");
-                            (Authentication::NoIdentification, Option::None)
-                        }
+                } else if run_cookies {
+                    // Try to create a new Session for the user. Could be a first request
+                    // Require a Origin Header for request
+                    if let Some(origin) = req.headers().get(ORIGIN) {
+                        trace!(
+                            "Creating a new Session for {}. ",
+                            origin.to_str().unwrap_or("Bad Origin")
+                        );
+                        let session = session_manager.create_session().await.unwrap();
+                        (Authentication::Session(session.clone()), Some(session))
                     } else {
+                        warn!("A Not Origin Not Authorized Request was made");
                         (Authentication::NoIdentification, Option::None)
                     }
+                } else {
+                    (Authentication::NoIdentification, Option::None)
                 };
             // Add the authentication Information for the data
             req.extensions_mut().insert(authentication);

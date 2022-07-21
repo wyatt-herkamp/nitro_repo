@@ -34,5 +34,29 @@ macro_rules! get_repository {
         }
     };
 }
+
+macro_rules! take_repository {
+    ($storage:ident, $repository:ident) => {
+        if let Some(repository) = $storage.remove_repository_for_updating($repository) {
+            match Removed::try_into(repository) {
+                Ok((name, arc)) => match Arc::try_unwrap(arc) {
+                    Ok(ok) => (name, ok),
+                    Err(v) => {
+                        let arc1 = (*v).clone();
+                        (name, arc1)
+                    }
+                },
+                Err(v) => {
+                    let (name, arc) = (*v).clone();
+                    let arc = (*arc).clone();
+                    (name, arc)
+                }
+            }
+        } else {
+            return Ok(actix_web::HttpResponse::NotFound().finish().into());
+        }
+    };
+}
 pub(crate) use get_repository;
 pub(crate) use get_storage;
+pub(crate) use take_repository;

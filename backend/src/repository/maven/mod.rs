@@ -1,24 +1,22 @@
 use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
+
 use actix_web::web::Bytes;
 use async_trait::async_trait;
-use log::error;
+
 use sea_orm::DatabaseConnection;
-use std::ops::Deref;
-use std::sync::{Arc, Weak};
-use tokio::sync::RwLockReadGuard;
+
+use std::sync::Arc;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
+
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::{repository_handler, Repository};
-use crate::repository::maven::models::Pom;
+
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
-use crate::storage::file::StorageFileResponse;
+use crate::repository::settings::RepositoryConfig;
+
 use crate::storage::models::Storage;
-use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
+
 use hosted::HostedMavenRepository;
 use proxy::ProxyMavenRepository;
 use staging::StagingRepository;

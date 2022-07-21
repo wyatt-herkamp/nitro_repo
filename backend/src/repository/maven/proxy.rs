@@ -9,29 +9,39 @@ use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
 use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
+
 use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
-use bytes::{BufMut, BytesMut};
+
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
-use std::sync::{Arc, Weak};
-use tokio::io::{duplex, AsyncWriteExt};
-use tokio::sync::RwLockReadGuard;
+use std::sync::Arc;
+#[derive(Debug)]
 pub struct ProxyMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub proxy: Vec<ProxySettings>,
     pub storage: Arc<S>,
+}
+impl<S: Storage> Clone for ProxyMavenRepository<S> {
+    fn clone(&self) -> Self {
+        ProxyMavenRepository {
+            config: self.config.clone(),
+            storage: self.storage.clone(),
+            proxy: self.proxy.clone(),
+        }
+    }
 }
 #[async_trait]
 impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config
     }
-
+    fn get_mut_config(&mut self) -> &mut RepositoryConfig {
+        &mut self.config
+    }
     fn get_storage(&self) -> &S {
         self.storage.as_ref()
     }
@@ -39,7 +49,7 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
     async fn handle_get(
         &self,
         path: &str,
-        http: &HeaderMap,
+        _http: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, Error> {
@@ -56,7 +66,7 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(list) => {
+            StorageFileResponse::List(_list) => {
                 /*                let files = self.process_storage_files(list, path).await?;
                 Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
                 panic!("Not implemented")
@@ -69,13 +79,13 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
                     .unwrap();
                 for proxy in &self.proxy {
                     let url = format!("{}/{}", proxy.proxy_url, path);
-                    let mut response = builder.get(&url).send().await;
-                    if let Ok(mut response) = response {
+                    let response = builder.get(&url).send().await;
+                    if let Ok(response) = response {
                         if response.status().is_success() {
                             let mut stream = response.bytes_stream();
-                            let (mut server, mut client) =
+                            let (mut server, client) =
                                 unbounded::<Result<actix_web::web::Bytes, InternalError>>();
-                            let (mut file_server, mut file_client) = unbounded::<Bytes>();
+                            let (mut file_server, file_client) = unbounded::<Bytes>();
                             actix_web::rt::spawn(async move {
                                 while let Some(chunk) = stream.next().await {
                                     if let Ok(chunk) = chunk {

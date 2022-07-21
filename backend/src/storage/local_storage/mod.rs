@@ -8,24 +8,23 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
 use lockfree::map::{Map, Removed};
-use log::{debug, trace, warn};
+use log::{debug, trace};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use tokio::fs::{create_dir_all, read_to_string, remove_dir, remove_file, OpenOptions};
+
+use tokio::fs::{create_dir_all, read_to_string, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::{RwLock, RwLockReadGuard};
+
 use tokio_stream::StreamExt;
 
-use crate::repository::settings::{RepositoryConfig, RepositoryType};
-use crate::repository::REPOSITORY_CONF_FOLDER;
+use crate::repository::settings::RepositoryConfig;
+
 use crate::storage::error::StorageError;
-use crate::storage::error::StorageError::RepositoryMissing;
+
 use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
 
 use crate::storage::models::{Storage, StorageStatus};
 use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG};
-use crate::utils::get_current_time;
 
 #[derive(Debug)]
 pub struct LocalStorage {
@@ -101,7 +100,7 @@ impl LocalStorage {
 impl Storage for LocalStorage {
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
-    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
+    async fn create_new(_config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
     {
@@ -117,7 +116,7 @@ impl Storage for LocalStorage {
         } else {
             unsafe { unreachable_unchecked() }
         };
-        let mut storage = LocalStorage {
+        let storage = LocalStorage {
             config: v,
             storage_config: config,
             status: StorageStatus::Unloaded,
@@ -156,15 +155,15 @@ impl Storage for LocalStorage {
 
     async fn create_repository<R: Into<Self::Repository> + Send>(
         &self,
-        repository: R,
+        _repository: R,
     ) -> Result<(), StorageError> {
         todo!()
     }
 
     async fn delete_repository<S: AsRef<str> + Send>(
         &self,
-        repository: S,
-        delete_files: bool,
+        _repository: S,
+        _delete_files: bool,
     ) -> Result<(), StorageError> {
         todo!()
     }
@@ -177,28 +176,27 @@ impl Storage for LocalStorage {
         &self,
         repository: S,
     ) -> Result<Option<Arc<Self::Repository>>, StorageError> {
-        todo!()
+        let option = self
+            .repositories
+            .get(repository.as_ref())
+            .and_then(|v| Some(v.val().clone()));
+        Ok(option)
     }
 
     fn remove_repository_for_updating<S: AsRef<str>>(
         &self,
         repository: S,
-    ) -> Result<Removed<String, Arc<Self::Repository>>, StorageError> {
-        todo!()
+    ) -> Option<Removed<String, Arc<Self::Repository>>> {
+        self.repositories.remove(repository.as_ref())
     }
 
-    async fn add_repository_for_updating(
+    fn add_repository_for_updating(
         &self,
+        name: String,
         repository_arc: Self::Repository,
     ) -> Result<(), StorageError> {
-        todo!()
-    }
-
-    async fn add_repository_for_updating_removed(
-        &self,
-        repository_arc: Removed<String, Arc<Self::Repository>>,
-    ) -> Result<(), StorageError> {
-        todo!()
+        self.repositories.insert(name, Arc::new(repository_arc));
+        Ok(())
     }
 
     async fn save_file(
@@ -230,14 +228,14 @@ impl Storage for LocalStorage {
     fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
         &self,
         repository: &RepositoryConfig,
-        mut s: S,
+        s: S,
         location: &str,
     ) -> Result<bool, StorageError> {
         let file_location = self.get_repository_folder(&repository.name).join(location);
         trace!("Saving File {:?}", &file_location);
         std::fs::create_dir_all(file_location.parent().ok_or(StorageError::ParentIssue)?)?;
 
-        let exists = if file_location.exists() { true } else { false };
+        let exists = file_location.exists();
         let existss = exists;
         tokio::spawn(async move {
             let mut s = s;
