@@ -106,3 +106,50 @@ pub trait RepositoryConfigType: Send + Sync + Clone + Debug + Serialize + Deseri
         serde_json::from_slice(slice)
     }
 }
+
+pub trait RepositoryConfigHandler<Config: RepositoryConfigType> {
+    fn supports_config(&self) -> bool {
+        true
+    }
+
+    fn update(&mut self, config: Config) -> Result<(), InternalError>;
+
+    fn get(&self) -> &Config;
+
+    fn get_mut(&mut self) -> &mut Config;
+}
+macro_rules! define_config_handler {
+    ($name:ident, $handler:ty, $config:ty, $check:ident) => {
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
+            for $handler
+        {
+            fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
+                self.$name = $check(config)?;
+                Ok(())
+            }
+            fn get(&self) -> &$config {
+                &self.$name
+            }
+            fn get_mut(&mut self) -> &mut $config {
+                &mut self.$name
+            }
+        }
+    };
+    ($name:ident, $handler:ty, $config:ident) => {
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
+            for $handler
+        {
+            fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
+                self.$name = config;
+                Ok(())
+            }
+            fn get(&self) -> &$config {
+                &self.$name
+            }
+            fn get_mut(&mut self) -> &mut $config {
+                &mut self.$name
+            }
+        }
+    };
+}
+pub(crate) use define_config_handler;

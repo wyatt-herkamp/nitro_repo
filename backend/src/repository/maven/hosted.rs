@@ -4,7 +4,7 @@ use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
+use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType, Visibility};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
@@ -14,19 +14,55 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use async_trait::async_trait;
 
+use crate::repository::settings::badge::BadgeSettings;
+use crate::repository::settings::frontend::Frontend;
 use sea_orm::DatabaseConnection;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
 #[derive(Debug)]
 pub struct HostedMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub storage: Arc<S>,
+    pub badge: BadgeSettings,
+    pub frontend: Frontend,
 }
+crate::repository::settings::define_config_handler!(
+    badge,
+    HostedMavenRepository<StorageType>,
+    BadgeSettings
+);
+crate::repository::settings::define_config_handler!(
+    frontend,
+    HostedMavenRepository<StorageType>,
+    Frontend
+);
 
 impl<S: Storage> Clone for HostedMavenRepository<S> {
     fn clone(&self) -> Self {
         HostedMavenRepository {
             config: self.config.clone(),
             storage: self.storage.clone(),
+            badge: self.badge.clone(),
+            frontend: self.frontend.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MavenHosted {
+    pub allow_pushing: bool,
+}
+impl RepositoryConfigType for MavenHosted {
+    fn config_name() -> &'static str {
+        "maven_hosted.json"
+    }
+}
+
+impl Default for MavenHosted {
+    fn default() -> Self {
+        MavenHosted {
+            allow_pushing: true,
         }
     }
 }

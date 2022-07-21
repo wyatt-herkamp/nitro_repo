@@ -265,7 +265,7 @@ macro_rules! dynamic_repository_handler {
         }
 
         impl<StorageType: Storage> DynamicRepositoryHandler<StorageType>{
-                    #[inline]
+            #[inline]
         pub async fn new_dyn_storage(
             storage: Arc<StorageType>,
             repository_config: RepositoryConfig,
@@ -288,16 +288,85 @@ macro_rules! dynamic_repository_handler {
 
     };
 }
-//    NPM,
-//     NPMHandler,
-//     Docker,
-//     DockerHandler,
-//     CI,
-//     CIHandler,
-//     Raw,
-//     RawHandler
-
+use crate::repository::ci::CIHandler;
+use crate::repository::docker::DockerHandler;
 use crate::repository::maven::MavenHandler;
-dynamic_repository_handler!(Maven, MavenHandler);
+use crate::repository::npm::NPMHandler;
+use crate::repository::raw::RawHandler;
+dynamic_repository_handler!(
+    Maven,
+    MavenHandler,
+    NPM,
+    NPMHandler,
+    Docker,
+    DockerHandler,
+    CI,
+    CIHandler,
+    Raw,
+    RawHandler
+);
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-crate::repository::nitro::dynamic::nitro_repo_handler!(DynamicRepositoryHandler,);
+crate::repository::nitro::dynamic::nitro_repo_handler!(
+    DynamicRepositoryHandler,
+    Maven,
+    MavenHandler
+);
+macro_rules! repository_config_group {
+    ($handler:tt,$config:path,$($repository:ident),*) => {
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
+            for $handler<StorageType>
+        {
+            fn supports_config(&self) -> bool {
+                match self {
+                    $(
+                        $handler::$repository(handler) => crate::repository::settings::RepositoryConfigHandler::<$config>::supports_config(handler),
+                    )*
+                    _ => unsafe {
+                        core::hint::unreachable_unchecked();
+                    }
+                }
+            }
+            fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
+                match self {
+                    $(
+                        $handler::$repository(handler) => crate::repository::settings::RepositoryConfigHandler::<$config>::update(handler, config),
+                    )*
+                    _ => unsafe {
+                        core::hint::unreachable_unchecked();
+                    }
+                }
+            }
+            fn get(&self) -> &$config {
+                match self {
+                    $(
+                        $handler::$repository(handler) => crate::repository::settings::RepositoryConfigHandler::<$config>::get(handler),
+                    )*
+                    _ => unsafe {
+                        core::hint::unreachable_unchecked();
+                    }
+                }
+            }
+            fn get_mut(&mut self) -> &mut $config {
+                match self {
+                    $(
+                        $handler::$repository(handler) => crate::repository::settings::RepositoryConfigHandler::<$config>::get_mut(handler),
+                    )*
+                    _ => unsafe {
+                        core::hint::unreachable_unchecked();
+                    }
+                }
+            }
+        }
+    };
+}
+pub(crate) use repository_config_group;
+repository_config_group!(
+    DynamicRepositoryHandler,
+    crate::repository::settings::badge::BadgeSettings,
+    Maven
+);
+repository_config_group!(
+    DynamicRepositoryHandler,
+    crate::repository::settings::frontend::Frontend,
+    Maven
+);

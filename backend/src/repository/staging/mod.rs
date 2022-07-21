@@ -26,6 +26,10 @@ impl RepositoryConfigType for ProcessingStage {
 }
 #[async_trait]
 pub trait StageHandler<S: Storage> {
+    fn staging_repository(&self) -> bool {
+        true
+    }
+
     async fn push(
         &self,
         directory: String,

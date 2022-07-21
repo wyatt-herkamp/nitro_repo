@@ -5,7 +5,7 @@ use crate::repository::handler::Repository;
 
 use crate::repository::maven::settings::{MavenSettings, MavenType, ProxySettings};
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, Visibility};
+use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType, Visibility};
 use crate::repository::staging::{ProcessingStage, StageHandler};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
@@ -19,16 +19,25 @@ use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
 
-
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
+use std::sync::Arc;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MavenStagingConfig {
+    /// This is a parent that nothing is actually pushed it. It just allows for data retrieval.
+    parent: ProxySettings,
+    stage_to: Vec<StageSettings>,
+    pre_stage_requirements: Vec<DeployRequirement>,
+}
 
-use std::sync::{Arc};
-
-
+impl RepositoryConfigType for MavenStagingConfig {
+    fn config_name() -> &'static str {
+        "maven_staging.json"
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum StageSettings {
@@ -55,43 +64,13 @@ pub enum DeployRequirement {}
 pub struct StagingRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub storage: Arc<S>,
-    pub stage_to: Vec<StageSettings>,
-    pub parent: ProxySettings,
-    pub deploy_requirement: Vec<DeployRequirement>,
+    pub stage_settings: MavenStagingConfig,
 }
-
-impl<'a, S: Storage> StagingRepository<S> {
-    pub async fn create(
-        repository: RepositoryConfig,
-        storage: Arc<S>,
-    ) -> Result<StagingRepository<S>, InternalError> {
-        let result = repository.get_config::<MavenSettings, S>(&storage).await?;
-        if let Some(config) = result {
-            match config.repository_type {
-                MavenType::Staging {
-                    stage_to,
-                    pre_stage_requirements,
-                    parent,
-                } => {
-                    let staging = StagingRepository {
-                        config: repository,
-                        stage_to,
-                        storage,
-                        deploy_requirement: pre_stage_requirements,
-                        parent,
-                    };
-                    Ok(staging.into())
-                }
-                _ => {
-                    panic!("Staging Repository can only be used with Staging Repository Type");
-                }
-            }
-        } else {
-            panic!("Staging Repository can only be used with Staging Repository Type");
-        }
-    }
-}
-
+crate::repository::settings::define_config_handler!(
+    stage_settings,
+    StagingRepository<StorageType>,
+    MavenStagingConfig
+);
 #[async_trait]
 impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
     async fn push(
@@ -109,9 +88,7 @@ impl<S: Storage> Clone for StagingRepository<S> {
         StagingRepository {
             config: self.config.clone(),
             storage: self.storage.clone(),
-            stage_to: self.stage_to.clone(),
-            parent: self.parent.clone(),
-            deploy_requirement: self.deploy_requirement.clone(),
+            stage_settings: self.stage_settings.clone(),
         }
     }
 }
@@ -160,7 +137,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
                     .user_agent("Nitro Repo Staging Service")
                     .build()
                     .unwrap();
-                let url = format!("{}/{}", self.parent.proxy_url, path);
+                let url = format!("{}/{}", self.stage_settings.parent.proxy_url, path);
                 let response = builder.get(&url).send().await;
                 if let Ok(response) = response {
                     if response.status().is_success() {

@@ -1,9 +1,9 @@
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::maven::settings::ProxySettings;
+use crate::repository::maven::settings::{LoginSettings, ProxySettings};
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{RepositoryConfig, Visibility};
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType, Visibility};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
@@ -14,26 +14,62 @@ use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
 
+use crate::repository::settings::badge::BadgeSettings;
+use crate::repository::settings::frontend::Frontend;
+use crate::storage::DynamicStorage;
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 #[derive(Debug)]
 pub struct ProxyMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
-    pub proxy: Vec<ProxySettings>,
+    pub proxy: MavenProxySettings,
+    pub badge: BadgeSettings,
+    pub frontend: Frontend,
+
     pub storage: Arc<S>,
 }
+
 impl<S: Storage> Clone for ProxyMavenRepository<S> {
     fn clone(&self) -> Self {
         ProxyMavenRepository {
             config: self.config.clone(),
             storage: self.storage.clone(),
             proxy: self.proxy.clone(),
+            badge: self.badge.clone(),
+            frontend: self.frontend.clone(),
         }
     }
 }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MavenProxySettings {
+    proxies: Vec<ProxySettings>,
+}
+impl RepositoryConfigType for MavenProxySettings {
+    fn config_name() -> &'static str {
+        "maven_proxy.json"
+    }
+}
+crate::repository::settings::define_config_handler!(
+    proxy,
+    ProxyMavenRepository<StorageType>,
+    MavenProxySettings
+);
+
+crate::repository::settings::define_config_handler!(
+    badge,
+    ProxyMavenRepository<StorageType>,
+    BadgeSettings
+);
+crate::repository::settings::define_config_handler!(
+    frontend,
+    ProxyMavenRepository<StorageType>,
+    Frontend
+);
+
 #[async_trait]
 impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
@@ -77,7 +113,7 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
                     .user_agent("Nitro Repo Proxy Service")
                     .build()
                     .unwrap();
-                for proxy in &self.proxy {
+                for proxy in &self.proxy.proxies {
                     let url = format!("{}/{}", proxy.proxy_url, path);
                     let response = builder.get(&url).send().await;
                     if let Ok(response) = response {
