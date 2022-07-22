@@ -104,7 +104,9 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
     fn get_storage(&self) -> &S {
         self.storage.as_ref()
     }
-
+    fn features(&self) -> Vec<&'static str> {
+        vec!["proxy"]
+    }
     async fn handle_get(
         &self,
         path: &str,

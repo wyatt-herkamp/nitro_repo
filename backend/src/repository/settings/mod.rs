@@ -108,6 +108,7 @@ pub trait RepositoryConfigType: Send + Sync + Clone + Debug + Serialize + Deseri
 }
 
 pub trait RepositoryConfigHandler<Config: RepositoryConfigType> {
+    #[inline(always)]
     fn supports_config(&self) -> bool {
         true
     }

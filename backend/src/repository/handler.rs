@@ -19,6 +19,10 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
     fn get_repository(&self) -> &RepositoryConfig;
     fn get_mut_config(&mut self) -> &mut RepositoryConfig;
     fn get_storage(&self) -> &S;
+    #[inline(always)]
+    fn features(&self) -> Vec<&'static str> {
+        vec![]
+    }
 
     /// Handles a get request to a Repo
     async fn handle_get(
@@ -143,6 +147,14 @@ macro_rules! repository_handler {
                 match self {
                     $(
                         $name::$repository_type(repository) => repository.get_storage(),
+                    )*
+                }
+            }
+            #[inline(always)]
+            fn features(&self) -> Vec<&'static str> {
+                match self {
+                    $(
+                        $name::$repository_type(repository) => repository.features(),
                     )*
                 }
             }
@@ -305,12 +317,7 @@ dynamic_repository_handler!(
     Raw,
     RawHandler
 );
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-crate::repository::nitro::dynamic::nitro_repo_handler!(
-    DynamicRepositoryHandler,
-    Maven,
-    MavenHandler
-);
+
 macro_rules! repository_config_group {
     ($handler:tt,$config:path,$($repository:ident),*) => {
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
@@ -321,9 +328,7 @@ macro_rules! repository_config_group {
                     $(
                         $handler::$repository(handler) => crate::repository::settings::RepositoryConfigHandler::<$config>::supports_config(handler),
                     )*
-                    _ => unsafe {
-                        core::hint::unreachable_unchecked();
-                    }
+                    _ => false,
                 }
             }
             fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
@@ -360,13 +365,10 @@ macro_rules! repository_config_group {
     };
 }
 pub(crate) use repository_config_group;
-repository_config_group!(
+
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+crate::repository::nitro::dynamic::main_nitro_handler!(
     DynamicRepositoryHandler,
-    crate::repository::settings::badge::BadgeSettings,
-    Maven
-);
-repository_config_group!(
-    DynamicRepositoryHandler,
-    crate::repository::settings::frontend::Frontend,
-    Maven
+    Maven,
+    MavenHandler
 );

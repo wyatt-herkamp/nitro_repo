@@ -81,7 +81,9 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
     fn get_storage(&self) -> &S {
         self.storage.as_ref()
     }
-
+    fn features(&self) -> Vec<&'static str> {
+        vec!["badge", "frontend", "proxy"]
+    }
     async fn handle_get(
         &self,
         path: &str,

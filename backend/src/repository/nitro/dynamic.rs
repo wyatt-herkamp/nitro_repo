@@ -3,13 +3,18 @@
 /// Array<Name> of the Repository Types
 macro_rules! nitro_repo_handler {
     ($v:ident, $($name: ident, $ty:tt),*) => {
+        // Configs that only nitro repositories can have
+        crate::repository::handler::repository_config_group!($v, crate::repository::settings::badge::BadgeSettings, $($name),*);
+        crate::repository::handler::repository_config_group!($v, crate::repository::settings::frontend::Frontend, $($name),*);
+
         #[async_trait::async_trait]
         impl<'a, StorageType: Storage> crate::repository::nitro::nitro_repository::NitroRepositoryHandler<StorageType>
             for $v<StorageType>
         {
             fn parse_project_to_directory<S: Into<String>>(_value: S) -> String {
-                panic!("Parse Should be implemented in the Dynamic Nitro Repository Handler");
+                unsafe{ std::hint::unreachable_unchecked() }
             }
+            #[inline(always)]
             fn supports_nitro(&self) -> bool {
                 match self {
                     $($v::$name(handler) => handler.supports_nitro(),)*
@@ -24,7 +29,6 @@ macro_rules! nitro_repo_handler {
                 match self {
                     $($v::$name(handler) => handler.get_versions(project).await,)*
                     _ => unsafe{ std::hint::unreachable_unchecked() },
-
                 }
             }
 
@@ -83,3 +87,15 @@ macro_rules! nitro_repo_handler {
     };
 }
 pub(crate) use nitro_repo_handler;
+
+macro_rules! main_nitro_handler {
+    ($v:ident, $($name: ident, $ty:tt),*) => {
+        crate::repository::nitro::dynamic::nitro_repo_handler!($v, $($name, $ty),*);
+        pub mod nitro_configs{
+            crate::repository::web::multi::configs::define_repository_config_handlers_group!("badge", crate::repository::settings::badge::BadgeSettings, $($name),*);
+            crate::repository::web::multi::configs::define_repository_config_handlers_group!("frontend", crate::repository::settings::frontend::Frontend, $($name),*);
+        }
+
+    };
+}
+pub(crate) use main_nitro_handler;

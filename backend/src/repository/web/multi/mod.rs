@@ -30,14 +30,3 @@ pub fn init_admin(cfg: &mut web::ServiceConfig) {
         .service(admin::delete_repository);
     cfg.configure(admin::register_core_updates);
 }
-
-pub mod configs_impls {
-
-    //    define_repository_config_handlers_group!(
-    //       "badge",
-    //      BadgeSettings,
-    //     "frontend",
-    //      Frontend,
-    //        RepositoryPage
-    // );
-}

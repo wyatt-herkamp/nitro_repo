@@ -19,9 +19,11 @@ use crate::system::user::UserModel;
 
 #[async_trait]
 pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> {
+    #[inline(always)]
     fn supports_nitro(&self) -> bool {
         true
     }
+    #[inline(always)]
     fn parse_project_to_directory<S: Into<String>>(value: S) -> String;
     /// Handles a List of versions request
     async fn get_versions(

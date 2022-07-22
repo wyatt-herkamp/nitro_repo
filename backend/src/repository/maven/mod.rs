@@ -41,7 +41,7 @@ repository_handler!(
     StagingRepository
 );
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler,);
+crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository);
 
 impl<S: Storage> MavenHandler<S> {
     pub async fn create(
@@ -101,5 +101,3 @@ impl<S: Storage> MavenHandler<S> {
 
 repository_config_group!(MavenHandler, MavenStagingConfig, Staging);
 repository_config_group!(MavenHandler, MavenProxySettings, Proxy);
-repository_config_group!(MavenHandler, BadgeSettings, Hosted, Proxy);
-repository_config_group!(MavenHandler, Frontend, Hosted, Proxy);

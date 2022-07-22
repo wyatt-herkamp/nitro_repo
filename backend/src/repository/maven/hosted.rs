@@ -14,8 +14,10 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use async_trait::async_trait;
 
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
+use actix_web::Error;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -80,7 +82,10 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
     fn get_storage(&self) -> &S {
         self.storage.as_ref()
     }
-
+    #[inline(always)]
+    fn features(&self) -> Vec<&'static str> {
+        vec!["badge", "frontend", "hosted"]
+    }
     async fn handle_get(
         &self,
         path: &str,
@@ -172,5 +177,11 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
                 path
             ),
         ))
+    }
+}
+impl<S: Storage> NitroRepositoryHandler<S> for HostedMavenRepository<S> {
+    #[inline(always)]
+    fn parse_project_to_directory<V: Into<String>>(value: V) -> String {
+        value.into().replace('.', "/").replace(':', "/")
     }
 }
