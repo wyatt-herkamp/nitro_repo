@@ -64,7 +64,11 @@ pub struct RepositoryConfig {
     /// When it was created
     pub created: i64,
 }
-
+impl AsRef<str> for RepositoryConfig {
+    fn as_ref(&self) -> &str {
+        &self.name
+    }
+}
 impl RepositoryConfig {
     /// Gets the Config File
     /// # Arguments

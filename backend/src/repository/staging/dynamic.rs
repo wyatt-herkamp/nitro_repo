@@ -23,10 +23,11 @@ macro_rules! gen_dynamic_stage {
         &self,
         directory: String,
         storages: Arc<crate::storage::multi::MultiStorageController<crate::storage::DynamicStorage>>,
+        user: crate::system::user::UserModel,
     ) -> Result<(), InternalError>{
         match self {
             $(
-                $v::$name(handler) => handler.push(directory, storages).await,
+                $v::$name(handler) => handler.push(directory, storages, user).await,
             )*
             _ => unsafe{ std::hint::unreachable_unchecked() },
         }

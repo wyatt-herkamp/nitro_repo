@@ -14,6 +14,7 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 
+use crate::storage::path::{StoragePath, SystemStorageFile};
 use crate::storage::DynamicStorage;
 use crate::storage::StorageSaver;
 
@@ -158,4 +159,10 @@ pub trait Storage: Send + Sync {
         repository: &RepositoryConfig,
         config_name: &str,
     ) -> Result<Option<ConfigType>, StorageError>;
+
+    async fn list_files<S: AsRef<str> + Send, SP: Into<StoragePath> + Send>(
+        &self,
+        repository: S,
+        path: SP,
+    ) -> Result<Vec<SystemStorageFile>, StorageError>;
 }

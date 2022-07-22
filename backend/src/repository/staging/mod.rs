@@ -9,6 +9,7 @@ use crate::storage::DynamicStorage;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+use crate::system::user::UserModel;
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -34,5 +35,6 @@ pub trait StageHandler<S: Storage> {
         &self,
         directory: String,
         storages: Arc<MultiStorageController<DynamicStorage>>,
+        user: UserModel,
     ) -> Result<(), InternalError>;
 }

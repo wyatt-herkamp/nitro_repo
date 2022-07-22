@@ -24,6 +24,7 @@ use crate::storage::error::StorageError;
 use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
 
 use crate::storage::models::{Storage, StorageStatus};
+use crate::storage::path::{StoragePath, SystemStorageFile};
 use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG};
 
 #[derive(Debug)]
@@ -372,5 +373,30 @@ impl Storage for LocalStorage {
                 .map_err(StorageError::JSONError)
                 .map(Some)
         }
+    }
+
+    async fn list_files<S: AsRef<str> + Send, SP: Into<StoragePath> + Send>(
+        &self,
+        repository: S,
+        path: SP,
+    ) -> Result<Vec<SystemStorageFile>, StorageError> {
+        let path = path.into();
+        let system_path = path
+            .clone()
+            .join_system(self.get_repository_folder(repository.as_ref()));
+        let dir = std::fs::read_dir(&system_path)?;
+        let mut files = Vec::new();
+        for value in dir {
+            let entry = value?;
+
+            files.push(SystemStorageFile {
+                name: entry
+                    .file_name()
+                    .into_string()
+                    .expect("Failed to get file name"),
+                is_dir: entry.path().is_dir(),
+            });
+        }
+        Ok(files)
     }
 }

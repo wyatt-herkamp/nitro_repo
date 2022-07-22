@@ -18,6 +18,9 @@ pub mod file;
 pub mod local_storage;
 pub mod models;
 pub mod multi;
+pub mod path;
+use path::StoragePath;
+use path::SystemStorageFile;
 pub static STORAGES_CONFIG: &str = "storages.nitro_repo";
 pub static STORAGE_CONFIG: &str = "storage.nitro_repo";
 use crate::repository::handler::DynamicRepositoryHandler;
@@ -179,6 +182,17 @@ impl Storage for DynamicStorage{
     ) -> Result<Option<ConfigType>, StorageError> {
         match self {
             $(DynamicStorage::$name(storage) => storage.get_repository_config(repository, config_name).await,)*
+            _ => unsafe{ unreachable_unchecked() }
+        }
+    }
+
+    async fn list_files<S: AsRef<str>+ Send, SP: Into<StoragePath>+ Send>(
+        &self,
+        repository: S,
+        path: SP,
+    ) -> Result<Vec<SystemStorageFile>, StorageError>{
+        match self {
+            $(DynamicStorage::$name(storage) => storage.list_files(repository, path).await,)*
             _ => unsafe{ unreachable_unchecked() }
         }
     }
