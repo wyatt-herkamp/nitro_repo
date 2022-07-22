@@ -1,3 +1,5 @@
+use crate::repository::nitro::VersionData;
+use crate::utils::get_current_time;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -39,7 +41,7 @@ pub struct Pom {
     pub url: Option<String>,
     pub scm: Option<Scm>,
 }
-/*
+
 impl Into<VersionData> for Pom {
     fn into(self) -> VersionData {
         VersionData {
@@ -52,4 +54,3 @@ impl Into<VersionData> for Pom {
         }
     }
 }
-*/

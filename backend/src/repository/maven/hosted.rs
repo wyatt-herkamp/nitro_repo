@@ -14,10 +14,12 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use async_trait::async_trait;
 
+use crate::repository::maven::models::Pom;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 use actix_web::Error;
+use log::error;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -106,10 +108,9 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(_list) => {
-                /*                let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
-                panic!("Not implemented")
+            StorageFileResponse::List(list) => {
+                let files = self.process_storage_files(list, path).await?;
+                Ok(RepoResponse::try_from((files, StatusCode::OK))?)
             }
             value => Ok(RepoResponse::FileResponse(value)),
         }
@@ -153,7 +154,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
             .map_err(InternalError::from)?;
 
         //  Post Deploy Handler
-        /*        if path.ends_with(".pom") {
+        if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec).map_err(APIError::bad_request)?;
             let pom: Pom = serde_xml_rs::from_str(&result).map_err(APIError::bad_request)?;
@@ -166,7 +167,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
             {
                 error!("Unable to complete post processing Tasks {}", error);
             }
-        }*/
+        }
         // Everything was ok
         Ok(RepoResponse::PUTResponse(
             exists,

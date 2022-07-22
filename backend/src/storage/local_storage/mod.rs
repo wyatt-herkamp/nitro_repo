@@ -277,7 +277,11 @@ impl Storage for LocalStorage {
         repository: &RepositoryConfig,
         location: &str,
     ) -> Result<StorageFileResponse, StorageError> {
-        let file_location = self.get_repository_folder(&repository.name).join(location);
+        let file_location = self
+            .get_repository_folder(&repository.name)
+            .join(location)
+            .canonicalize()?;
+        trace!("Getting File {}", &file_location.display());
         if !file_location.exists() {
             return Ok(StorageFileResponse::NotFound);
         }
@@ -295,7 +299,9 @@ impl Storage for LocalStorage {
             trace!("Directory Listing at {:?}", &path);
             let directory = StorageFile::create(&path, &file_location).await?;
             //Using STD because Into Iterator is missing
+            trace!("Meta Data {:?}", &directory);
             let dir = std::fs::read_dir(&file_location)?;
+            trace!("Dir Read {:?}", &dir);
             let mut files = Vec::new();
             for x in dir {
                 let entry = x?;

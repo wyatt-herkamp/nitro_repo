@@ -14,15 +14,18 @@ use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
 
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 use crate::storage::DynamicStorage;
+use actix_web::http::StatusCode;
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
 #[derive(Debug)]
 pub struct ProxyMavenRepository<S: Storage> {
     pub config: RepositoryConfig,
@@ -104,10 +107,9 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(_list) => {
-                /*                let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
-                panic!("Not implemented")
+            StorageFileResponse::List(list) => {
+                let files = self.process_storage_files(list, path).await?;
+                Ok(RepoResponse::try_from((files, StatusCode::OK))?)
             }
 
             StorageFileResponse::NotFound => {
@@ -146,5 +148,11 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
             }
             v => Ok(RepoResponse::FileResponse(v)),
         }
+    }
+}
+impl<S: Storage> NitroRepositoryHandler<S> for ProxyMavenRepository<S> {
+    #[inline(always)]
+    fn parse_project_to_directory<V: Into<String>>(value: V) -> String {
+        value.into().replace('.', "/").replace(':', "/")
     }
 }

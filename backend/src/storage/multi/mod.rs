@@ -104,8 +104,8 @@ impl MultiStorageController<DynamicStorage> {
                         let handler =
                             DynamicRepositoryHandler::new_dyn_storage(storage.clone(), repository)
                                 .await
-                                .map_err(|_error| {
-                                    error!("Error loading repository {}", name);
+                                .map_err(|error| {
+                                    error!("Error loading repository {}. Error {}", name, error);
                                 });
                         if let Ok(handler) = handler {
                             storage.add_repo_loaded(handler)?;
@@ -149,7 +149,7 @@ impl MultiStorageController<DynamicStorage> {
                 directory: true,
                 file_size: 0,
                 modified: 0,
-                created: create as u128,
+                created: create as u64,
             });
         }
         Ok(files)

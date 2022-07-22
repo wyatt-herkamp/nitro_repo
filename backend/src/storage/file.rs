@@ -7,9 +7,9 @@ use actix_web::body::BoxBody;
 use actix_web::http::header::ACCEPT;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError};
-use log::{as_error, error};
+use log::{as_error, error, trace};
 use serde::Serialize;
-use tokio::fs::OpenOptions;
+use tokio::fs::{metadata, OpenOptions};
 
 use crate::error::api_error::APIError;
 use crate::storage::error::StorageError;
@@ -22,12 +22,12 @@ pub struct StorageFile {
     pub mime: String,
     pub directory: bool,
     pub file_size: u64,
-    pub modified: u128,
-    pub created: u128,
+    pub modified: u64,
+    pub created: u64,
 }
 
 impl StorageFile {
-    fn meta_data(metadata: Metadata) -> (u128, u128, u64, bool) {
+    fn meta_data(metadata: Metadata) -> (u64, u64, u64, bool) {
         let created = metadata
             .created()
             .unwrap_or_else(|error| {
@@ -48,7 +48,7 @@ impl StorageFile {
         };
         let directory = metadata.file_type().is_dir();
         let size = metadata.len();
-        (created, modified, size, directory)
+        (created as u64, modified as u64, size, directory)
     }
     pub async fn create_from_entry<S: Into<String>>(
         relative_path: S,
@@ -76,8 +76,8 @@ impl StorageFile {
         relative_path: S,
         file_location: &PathBuf,
     ) -> Result<Self, StorageError> {
-        let file = OpenOptions::new().read(true).open(&file_location).await?;
-        let metadata = file.metadata().await?;
+        let metadata = metadata(file_location).await?;
+        trace!("Parsing MetaData");
         let (created, modified, file_size, directory) = Self::meta_data(metadata);
 
         let mime = mime_guess::from_path(file_location)
