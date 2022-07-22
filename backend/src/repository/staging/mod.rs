@@ -33,7 +33,6 @@ pub trait StageHandler<S: Storage> {
     async fn push(
         &self,
         directory: String,
-        process: ProcessingStage,
         storages: Arc<MultiStorageController<DynamicStorage>>,
     ) -> Result<(), InternalError>;
 }

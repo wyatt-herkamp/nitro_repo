@@ -8,42 +8,30 @@ use crate::storage::DynamicStorage;
 use std::sync::Arc;
 
 macro_rules! gen_dynamic_stage {
-    ($($name: ident, $ty:tt),*) => {
-
-        pub enum DynamicStageHandler<StorageType: Storage> {
-            $(
-                $name($ty<StorageType>),
-            )*
-        }
-        #[inline]
-        pub async fn get_stage_handler<StorageType: Storage>(
-            _storage: Arc<StorageType>,
-            _repository_config: RepositoryConfig,
-        ) -> Result<StageHandlerResult<StorageType>, InternalError> {
-            panic!("Not implemented");
-        }
+    ($v:ident,$($name:ident),*) => {
         #[async_trait::async_trait]
-        impl<StorageType: Storage> StageHandler<StorageType>
-            for DynamicStageHandler<StorageType>{
+        impl<StorageType: Storage> crate::repository::staging::StageHandler<StorageType> for $v<StorageType>{
+            fn staging_repository(&self) -> bool {
+                match self {
+                    $(
+                        $v::$name(handler) => handler.staging_repository(),
+                    )*
+                    _ => false,
+                }
+            }
     async fn push(
         &self,
         directory: String,
-        process: ProcessingStage,
-        storages: Arc<MultiStorageController<DynamicStorage>>,
+        storages: Arc<crate::storage::multi::MultiStorageController<crate::storage::DynamicStorage>>,
     ) -> Result<(), InternalError>{
         match self {
             $(
-                DynamicStageHandler::$name(handler) => handler.push(directory, process, storages).await,
+                $v::$name(handler) => handler.push(directory, storages).await,
             )*
+            _ => unsafe{ std::hint::unreachable_unchecked() },
         }
     }
         }
     };
 }
-pub enum StageHandlerResult<StorageType: Storage> {
-    Supported(DynamicStageHandler<StorageType>),
-    /// it is a teapot! [Teapot](https://http.cat/418)
-    Unsupported(RepositoryConfig),
-}
-
-gen_dynamic_stage!(Maven, StagingRepository);
+pub(crate) use gen_dynamic_stage;

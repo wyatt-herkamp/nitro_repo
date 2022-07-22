@@ -42,6 +42,7 @@ repository_handler!(
 );
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository);
+crate::repository::staging::dynamic::gen_dynamic_stage!(MavenHandler, Staging);
 
 impl<S: Storage> MavenHandler<S> {
     pub async fn create(

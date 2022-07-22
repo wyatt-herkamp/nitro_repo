@@ -372,3 +372,5 @@ crate::repository::nitro::dynamic::main_nitro_handler!(
     Maven,
     MavenHandler
 );
+
+crate::repository::staging::dynamic::gen_dynamic_stage!(DynamicRepositoryHandler, Maven);

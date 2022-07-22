@@ -2,6 +2,8 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
+use std::path::Path;
+use std::{fs, io};
 
 use crate::repository::maven::settings::{MavenSettings, MavenType, ProxySettings};
 use crate::repository::response::RepoResponse;
@@ -24,7 +26,13 @@ use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
+use git2::PushOptions;
+use log::trace;
 use std::sync::Arc;
+use tempfile::tempdir;
+use tokio::fs::create_dir_all;
+use tokio::process::Command;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MavenStagingConfig {
     /// This is a parent that nothing is actually pushed it. It just allows for data retrieval.
@@ -75,12 +83,116 @@ crate::repository::settings::define_config_handler!(
 impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
     async fn push(
         &self,
-        _directory: String,
-        _process: ProcessingStage,
-        _storages: Arc<MultiStorageController<DynamicStorage>>,
+        directory: String,
+        storages: Arc<MultiStorageController<DynamicStorage>>,
     ) -> Result<(), InternalError> {
-        todo!()
+        for stage in self.stage_settings.stage_to.iter() {
+            match stage {
+                StageSettings::InternalRepository { .. } => {}
+                StageSettings::GitPush {
+                    git_branch,
+                    git_url,
+                    git_password,
+                    git_username,
+                } => {
+                    // Clone all data
+                    let branch = git_branch.clone();
+                    let url = git_url.clone();
+                    let password = git_password.clone();
+                    let username = git_username.clone();
+                    let repository = self.get_repository().clone();
+                    let storage = storages
+                        .get_storage_by_name(&self.config.storage)
+                        .await
+                        .unwrap()
+                        .unwrap();
+                    let directory = directory.clone();
+                    actix_web::rt::spawn(async move {
+                        stage_to_git(
+                            username, password, url, branch, directory, storage, repository,
+                        )
+                        .await;
+                    });
+                }
+                StageSettings::ExternalRepository { .. } => {}
+            }
+        }
+        Ok(())
     }
+}
+
+pub async fn stage_to_git(
+    username: String,
+    password: String,
+    url: String,
+    branch: String,
+    directory: String,
+    storage: Arc<DynamicStorage>,
+    repository: RepositoryConfig,
+) {
+    let dir = tempdir().unwrap();
+    trace!("Cloning {} to {}", url, dir.path().display());
+    let git = git2::Repository::clone(&url, dir.path()).unwrap();
+    match storage.as_ref() {
+        DynamicStorage::LocalStorage(local) => {
+            let buf = local
+                .get_repository_folder(&repository.name)
+                .join(&directory);
+            let x = git.workdir().unwrap().join(&directory);
+            fs::create_dir_all(&x).unwrap();
+            copy_dir_all(&buf, &x).unwrap();
+        }
+        _ => {
+            todo!("Support other storage types");
+        }
+    }
+    Command::new("git")
+        .arg("add")
+        .arg("*")
+        .current_dir(dir.path())
+        .status()
+        .await;
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("Staging")
+        .current_dir(dir.path())
+        .status()
+        .await;
+    let mut options = PushOptions::new();
+    let mut callbacks = git2::RemoteCallbacks::new();
+    callbacks.credentials(|_, _, _| {
+        let user = username.clone();
+        let pass = password.clone();
+        git2::Cred::userpass_plaintext(&user, &pass)
+    });
+    options.remote_callbacks(callbacks);
+
+    git.find_remote("origin")
+        .unwrap()
+        .push(&["refs/heads/main"], Some(&mut options))
+        .unwrap();
+}
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    trace!(
+        "Copying {} to {}",
+        src.as_ref().display(),
+        dst.as_ref().display()
+    );
+    fs::create_dir_all(&dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            let tof = dst.as_ref().join(entry.file_name());
+            let srcf = entry.path();
+            trace!("Copying {} to {}", srcf.display(), tof.display());
+            fs::copy(srcf, tof)?;
+        }
+    }
+    Ok(())
 }
 
 impl<S: Storage> Clone for StagingRepository<S> {
@@ -127,12 +239,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(_list) => {
-                /*
-                let files = self.process_storage_files(list, path).await?;
-                Ok(RepoResponse::try_from((files, StatusCode::OK))?)*/
-                panic!("Not implemented")
-            }
+            StorageFileResponse::List(list) => Ok(RepoResponse::try_from((list, StatusCode::OK))?),
 
             StorageFileResponse::NotFound => {
                 let builder = reqwest::ClientBuilder::new()

@@ -20,6 +20,10 @@ pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
         .route(web::head().to(repository_handler::head_repository))
         .route(web::patch().to(repository_handler::patch_repository))
         .route(web::post().to(repository_handler::post_repository)),
+    )
+    .service(
+        web::resource("/stage/repositories/{storage}/{repository}/{file:.*}")
+            .route(web::put().to(repository_handler::stage_repository)),
     );
 }
 

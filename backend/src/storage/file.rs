@@ -101,6 +101,7 @@ impl StorageFile {
         Ok(file)
     }
 }
+#[derive(Serialize, Clone, Debug)]
 pub struct StorageDirectoryResponse {
     pub files: Vec<StorageFile>,
     pub directory: StorageFile,
