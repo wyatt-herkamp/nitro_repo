@@ -18,7 +18,7 @@ use api::storage::local_storage::LocalConfig;
 use api::storage::multi::MultiStorageController;
 use api::storage::{GeneralConfig, StorageConfig, StorageSaver, StorageType};
 use api::utils::load_logger;
-use api::{frontend, repository, storage, system, NitroRepo};
+use api::{authentication, frontend, repository, storage, system, NitroRepo};
 use log::info;
 use semver::Version;
 use tokio::fs::read_to_string;
@@ -109,6 +109,7 @@ async fn main() -> std::io::Result<()> {
                     .wrap(DefaultHeaders::new().add(("Content-Type", "application/json")))
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)
+                    .configure(authentication::auth_token::web::authentication_router)
                     .service(
                         web::scope("/admin")
                             .configure(system::web::init_user_manager_routes)

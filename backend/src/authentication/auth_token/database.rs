@@ -64,7 +64,7 @@ impl sea_orm::sea_query::ValueType for TokenProperties {
 #[sea_orm(table_name = "auth_tokens")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: i64,
+    pub id: Uuid,
     pub token: String,
     pub expiration: i64,
     pub properties: TokenProperties,

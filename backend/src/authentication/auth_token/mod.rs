@@ -1,4 +1,5 @@
 pub mod database;
+pub mod web;
 
 use crate::authentication::auth_token::database::TokenProperties;
 use crate::error::internal_error::InternalError;

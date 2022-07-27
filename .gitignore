@@ -1,6 +1,8 @@
 backend/target
 backend/test
-test/
+nrc/target
+
+backend/test/
 *.iml
 .idea
 log
@@ -20,4 +22,4 @@ docs/docs/.vitepress/dist/
 *.log
 *.env*
 *.tar.gz
-test/
+backend/test/
