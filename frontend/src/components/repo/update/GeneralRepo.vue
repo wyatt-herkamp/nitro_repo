@@ -49,7 +49,7 @@
       <div class="settingBox">
         <label class="nitroLabel" for="grid-policy"> Repo Policy</label>
         <select
-          v-model="repository.settings.policy"
+          v-model="repository.policy"
           class="nitroSelectBox"
           @change="updatePolicy()"
         >
@@ -62,12 +62,30 @@
       <div class="settingBox">
         <label class="nitroLabel" for="grid-active">Repo Active</label>
         <select
-          v-model="repository.settings.active"
+          v-model="repository.active"
           class="nitroSelectBox"
           @change="updateActiveStatus()"
         >
           <option>true</option>
           <option>false</option>
+        </select>
+      </div>
+      <div class="settingBox">
+        <label for="grid-policy">Page Provider</label>
+        <select
+          v-model="repository.visibility"
+          @change="
+            this.$notify({
+              title: 'Page Provider',
+              message: 'Page Provider Updated. Not Implemented',
+              type: 'warn',
+            })
+          "
+          class="nitroTextInput"
+        >
+          <option value="Public">Public</option>
+          <option value="Private">Private</option>
+          <option value="Hidden">Hidden</option>
         </select>
       </div>
     </div>
@@ -102,12 +120,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import {
-  deleteRepository,
-  Repository,
-  setActiveStatus,
-  setPolicy,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   props: {
@@ -116,96 +129,23 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data(props) {
-    const token = inject("token") as string;
-    console.log(props.repository.repo_type);
-    return { token };
-  },
   setup(props) {
     const deleteOpen = ref(false);
     const deleteFiles = ref(false);
-    const repositoryType = Object.keys(props.repository.repo_type)[0];
+    const repositoryType = ref(props.repository.repository_type);
     const date = new Date(props.repository.created).toLocaleDateString("en-US");
     return { repositoryType, date, deleteOpen, deleteFiles };
   },
   methods: {
     async updateActiveStatus() {
-      if (this.repository == undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await setActiveStatus(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.active,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update active status
     },
 
     async deleteRepo() {
-      const response = await deleteRepository(
-        this.$props.repository.name,
-        this.$props.repository.storage,
-        this.deleteFiles,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Repository Deleted",
-          type: "success",
-        });
-        this.$router.push("/admin/storage/" + this.$props.repository.storage);
-      } else {
-        this.$notify({
-          title: "Unable to Delete Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO delete repo
     },
     async updatePolicy() {
-      if (this.repository == undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await setPolicy(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.policy,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update policy
     },
   },
   components: {},

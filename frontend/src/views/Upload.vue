@@ -5,37 +5,22 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, inject, ref } from "vue";
+import { defineComponent,  ref } from "vue";
 
 import MavenUpload from "@/components/upload/MavenUpload.vue";
 import { useRoute } from "vue-router";
-import {
-  getRepoByNameAndStorage,
-  Repository,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: { MavenUpload },
 
   setup() {
     const route = useRoute();
-    const token: string | undefined = inject("token");
 
     const storage = route.params.storage as string;
     const repositoryName = route.params.repo as string;
     const repository = ref<Repository | undefined>(undefined);
-    const getRepo = async () => {
-      try {
-        repository.value = await getRepoByNameAndStorage(
-          token,
-          storage,
-          repositoryName
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    };
-    getRepo();
+    // TODO get repository
     return { repository, storage };
   },
 });

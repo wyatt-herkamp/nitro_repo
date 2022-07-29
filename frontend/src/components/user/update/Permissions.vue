@@ -51,7 +51,7 @@
             </div>
             <PermissionList
               class="md:basis-3/4"
-              v-if="user.permissions.deployer !== undefined"
+              v-if="user.permissions.deployer != undefined"
               v-model="user.permissions.deployer"
             />
           </div>
@@ -66,7 +66,7 @@
             </div>
             <PermissionList
               class="md:basis-3/4"
-              v-if="user.permissions.viewer !== undefined"
+              v-if="user.permissions.viewer != undefined"
               v-model="user.permissions.viewer"
             />
           </div>
@@ -91,10 +91,9 @@
 }
 </style>
 <script lang="ts">
-import { computed, defineComponent, inject, ref, watch } from "vue";
-import { updatePermission, User } from "@nitro_repo/nitro_repo-api-wrapper";
-import { useRouter } from "vue-router";
+import { computed, defineComponent, ref, watch } from "vue";
 import PermissionList from "./PermissionList.vue";
+import { User } from "@/types/userTypes";
 
 export default defineComponent({
   props: {
@@ -105,15 +104,11 @@ export default defineComponent({
   },
   setup(props) {
     const permissions = ref(props.user.permissions);
-    const token: string | undefined = inject("token");
     const admin = computed(() => {
       return permissions.value.admin;
     });
     const deployer = ref(permissions.value.deployer != undefined);
     const viewer = ref(permissions.value.viewer != undefined);
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     watch(deployer, () => {
       if (deployer.value == true) {
         if (permissions.value.deployer == undefined) {
@@ -139,7 +134,6 @@ export default defineComponent({
     });
 
     return {
-      token: token as string,
       permissions,
       admin,
       deployer,
@@ -148,22 +142,7 @@ export default defineComponent({
   },
   methods: {
     async updatePermissions() {
-      const response = await updatePermission(
-        this.user.username,
-        this.permissions,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Permissions",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Permissions",
-          text: JSON.stringify(response.val.user_friendly_message),
-        });
-      }
+      // TODO update permissions
     },
   },
   components: { PermissionList },

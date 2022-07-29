@@ -1,25 +1,24 @@
 <template>
-  <div v-if="repository">
+  <Suspense>
     <ViewRepo :storage="storage" :repositoryName="repository" />
-  </div>
+
+    <template #fallback> Loading Repository </template>
+  </Suspense>
 </template>
 
 <script lang="ts">
-import ViewRepo from "@/components/repo/ViewRepo.vue";
 import { defineComponent } from "vue";
+
 import { useRoute } from "vue-router";
+import ViewRepo from "@/components/repo/ViewRepo.vue";
 
 export default defineComponent({
   components: { ViewRepo },
   setup() {
     const route = useRoute();
-
-    const storage = route.params.storage as string;
-    const repository = route.params.repo as string;
-
     return {
-      storage,
-      repository,
+      storage: route.params.storage as string,
+      repository: route.params.repository as string,
     };
   },
 });

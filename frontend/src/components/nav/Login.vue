@@ -8,7 +8,7 @@
         </h6>
       </div></template
     >
-    <template v-slot:content><LoginComp /> </template>
+    <template v-slot:content><LoginComp @login="login" /> </template>
   </NitroModal>
 </template>
 <style scoped>
@@ -21,6 +21,7 @@ import { defineComponent, ref, watch } from "vue";
 
 import LoginComp from "@/components//user/LoginComp.vue";
 import NitroModal from "@/components/common/model/NitroModal.vue";
+import { useUserStore } from "@/store/user";
 
 export default defineComponent({
   props: {
@@ -40,6 +41,13 @@ export default defineComponent({
       emit("update:modelValue", val);
     });
     return { showLogin };
+  },
+  methods: {
+    async login() {
+      this.showLogin = false;
+      let user = useUserStore();
+      await user.loadUser();
+    },
   },
   components: { LoginComp, NitroModal },
 });

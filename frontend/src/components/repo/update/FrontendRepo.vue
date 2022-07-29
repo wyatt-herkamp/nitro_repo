@@ -5,10 +5,10 @@
       <div class="settingSection">
         <div class="settingBox">
           <label for="grid-label-color">Label Color </label>
-          <div :style="{ background: repository.settings.badge.label_color }">
+          <div :style="{ background: badgeSettings.label_color }">
             <ColorPicker
               theme="dark"
-              :color="repository.settings.badge.label_color"
+              :color="badgeSettings.label_color"
               :sucker-hide="false"
               :sucker-canvas="labelSuckerCanvas"
               :sucker-area="labelSuckerArea"
@@ -18,10 +18,10 @@
         </div>
         <div class="settingBox">
           <label for="grid-color">Color</label>
-          <div :style="{ background: repository.settings.badge.color }">
+          <div :style="{ background: badgeSettings.color }">
             <ColorPicker
               theme="dark"
-              :color="repository.settings.badge.color"
+              :color="badgeSettings.color"
               :sucker-hide="false"
               :sucker-canvas="badgeSuckerCanvas"
               :sucker-area="badgeSuckerArea"
@@ -33,10 +33,7 @@
       <div class="settingSection">
         <div class="settingBox">
           <label for="grid-style">Badge Style</label>
-          <select
-            v-model="repository.settings.badge.style"
-            class="nitroTextInput"
-          >
+          <select v-model="badgeSettings.style" class="nitroTextInput">
             <option value="Flat">Flat</option>
             <option value="FlatSquare">Flat Square</option>
             <option value="Plastic">Platic</option>
@@ -54,10 +51,7 @@
     <div class="settingSection">
       <div class="settingBox">
         <label for="grid-policy">Page Provider</label>
-        <select
-          v-model="repository.settings.frontend.page_provider"
-          class="nitroTextInput"
-        >
+        <select v-model="frontendSettings.page_provider" class="nitroTextInput">
           <option>None</option>
           <option value="ReadmeSent">README Sent</option>
           <option value="ReadmeGit">README Git</option>
@@ -66,10 +60,7 @@
 
       <div class="settingBox">
         <label for="grid-active">Frontend Page Enabled</label>
-        <select
-          v-model="repository.settings.frontend.enabled"
-          class="nitroTextInput"
-        >
+        <select v-model="frontendSettings.enabled" class="nitroTextInput">
           <option>true</option>
           <option>false</option>
         </select>
@@ -84,11 +75,8 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject } from "vue";
-import {
-  Repository,
-  updateBadge,
-  updateFrontend,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { BadgeSettings, Frontend, Repository } from "@/types/repositoryTypes";
+
 import { ColorPicker } from "vue-color-kit";
 import "vue-color-kit/dist/vue-color-kit.css";
 
@@ -100,6 +88,14 @@ export default defineComponent({
     repository: {
       required: true,
       type: Object as () => Repository,
+    },
+    badgeSettings: {
+      required: true,
+      type: Object as () => BadgeSettings,
+    },
+    frontendSettings: {
+      required: true,
+      type: Object as () => Frontend,
     },
   },
   data() {
@@ -117,58 +113,17 @@ export default defineComponent({
     };
   },
   methods: {
-    changeLabelColor(color: any) {
+    changeLabelColor(color: { hex: string }) {
       this.repository.settings.badge.label_color = color.hex;
     },
-    changeBadgeColor(color: any) {
+    changeBadgeColor(color: { hex: string }) {
       this.repository.settings.badge.color = color.hex;
     },
     async submitBadge() {
-      const response = await updateBadge(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.badge.style,
-        this.repository.settings.badge.label_color,
-        this.repository.settings.badge.color,
-        this.token
-      );
-      if (response.ok) {
-        console.log(response.val.security.visibility);
-        this.$notify({
-          title: "Updated Badge",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO submit badge settings
     },
     async submitFrontend() {
-      const response = await updateFrontend(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.frontend.enabled,
-        this.repository.settings.frontend.page_provider,
-        this.token
-      );
-      if (response.ok) {
-        this.$cookie.getCookie("token");
-
-        console.log(response.val.security.visibility);
-        this.$notify({
-          title: "Updated Frontend",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO submit frontend settings
     },
   },
 });

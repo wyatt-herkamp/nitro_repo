@@ -22,13 +22,11 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
-import {
-  getRepositoriesByStorage,
-  Storage,
-} from "@nitro_repo/nitro_repo-api-wrapper";
 
 import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";
+import httpCommon from "@/http-common";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: { CreateRepo },
@@ -39,24 +37,18 @@ export default defineComponent({
     },
   },
   async setup(props) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      await useRouter().push("login");
-    }
     const list = ref<ListItem[]>([]);
     const openModel = ref(false);
-
-    const value = await getRepositoriesByStorage(
-      token as string,
-      props.storage.name
-    );
-
-    value.repositories.forEach((repository) => {
-      list.value.push({
-        name: repository.name,
-        goTo: "/admin/repository/" + repository.storage + "/" + repository.name,
+    await httpCommon.apiClient
+      .get<Array<Repository>>(`api/admin/repositories/${props.storage.name}`)
+      .then((response) => {
+        response.data.forEach((repo) => {
+          list.value.push({
+            name: repo.name,
+            goTo: `/admin/repository/${repo.storage}/${repo.name}`,
+          });
+        });
       });
-    });
 
     return {
       list,

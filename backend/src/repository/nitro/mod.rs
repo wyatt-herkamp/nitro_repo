@@ -1,23 +1,40 @@
-use crate::repository::models::RepositorySummary;
-use crate::repository::types::Project;
-use crate::storage::StorageFile;
 use serde::{Deserialize, Serialize};
 
+use crate::repository::response::Project;
+use crate::storage::file::StorageFile;
 use crate::utils::get_current_time;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+pub mod dynamic;
+pub mod nitro_repository;
+pub mod utils;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRequest {
+    pub storage: String,
+    pub repository: String,
+    pub project_name: String,
+    pub version: Option<String>,
+}
+impl ProjectRequest {
+    pub fn into_inner(self) -> (String, String, String, Option<String>) {
+        (
+            self.storage,
+            self.repository,
+            self.project_name,
+            self.version,
+        )
+    }
+}
+#[derive(Serialize, Clone, Debug)]
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,
-    pub response_type: ResponseType,
+    pub response_type: NitroFileResponseType,
     pub active_dir: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum ResponseType {
-    Project(Option<Project>),
-    Version(VersionBrowseResponse),
-    Repository(RepositorySummary),
-    Storage,
+pub enum NitroFileResponseType {
+    Project(Project),
     Other,
 }
 
@@ -27,9 +44,9 @@ pub struct VersionBrowseResponse {
     pub version: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct NitroFile {
-    pub response_type: ResponseType,
+    pub response_type: NitroFileResponseType,
     #[serde(flatten)]
     pub file: StorageFile,
 }
@@ -72,7 +89,15 @@ pub struct ProjectData {
     #[serde(default = "crate::utils::get_current_time")]
     pub updated: i64,
 }
-
+impl Default for ProjectData {
+    fn default() -> Self {
+        ProjectData {
+            versions: Default::default(),
+            created: get_current_time(),
+            updated: get_current_time(),
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectSource {
     pub name: String,
@@ -120,7 +145,8 @@ impl From<String> for NitroVersion {
 }
 
 impl NitroRepoVersions {
-    pub fn update_version(&mut self, version: String) {
+    pub fn update_version<S: Into<String>>(&mut self, version: S) {
+        let version = version.into();
         for v in self.versions.iter_mut() {
             if v.version.eq(&version) {
                 if !v.snapshot {

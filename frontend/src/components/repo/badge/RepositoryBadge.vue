@@ -28,10 +28,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import {
-  PublicRepositoryInfo,
-  Repository,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+
 import { apiURL } from "@/http-common";
 import { createBadgeSnippets } from "@/api/repository/BadgeGen";
 import CodeMenu from "@/components/common/code/CodeMenu.vue";
@@ -41,7 +38,7 @@ export default defineComponent({
   props: {
     repository: {
       required: true,
-      type: Object as () => Repository | PublicRepositoryInfo,
+      type: Object as () => { name: string; storage: string },
     },
   },
   setup(props) {

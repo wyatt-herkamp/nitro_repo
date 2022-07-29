@@ -44,11 +44,11 @@
   </div>
 </template>
 <script lang="ts">
-import { getStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
-import { useRouter } from "vue-router";
 import Repositories from "./Repositories.vue";
+import httpCommon from "@/http-common";
+import { Storage } from "@/types/storageTypes";
 
 export default defineComponent({
   props: {
@@ -60,26 +60,19 @@ export default defineComponent({
   async setup(props) {
     const storage = ref<Storage | undefined>(undefined);
     const date = ref<string | undefined>(undefined);
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      await useRouter().push("login");
-    }
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
     const storageTab = ref("General");
-    try {
-      const value = (await getStorage(
-        token as string,
-        props.storageId
-      )) as Storage;
-      storage.value = value;
-      date.value = new Date(storage.value.created).toLocaleDateString("en-US");
-      meta.title = value.name;
-    } catch (e) {
-      console.log(e);
-    }
-
+    await httpCommon.apiClient
+      .get<Storage>(`api/admin/storage/${props.storageId}`)
+      .then((res) => {
+        if (res.status == 200) {
+          storage.value = res.data;
+          date.value = new Date(res.data.created).toLocaleString();
+          meta.title = `Nitro Repo - ${res.data.public_name}`;
+        }
+      });
     return {
       date,
       storage,

@@ -41,19 +41,15 @@
 </template>
 
 <script lang="ts">
-import { createNewStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
-import { defineComponent, inject, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { defineComponent, ref, watch } from "vue";
+import "@/styles/sideCreate.css";
+import httpCommon from "@/http-common";
 export default defineComponent({
   props: {
     modelValue: Boolean,
   },
   setup(props, { emit }) {
     const showModel = ref(props.modelValue);
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     watch(
       () => props.modelValue,
       (val) => {
@@ -69,29 +65,38 @@ export default defineComponent({
       public_name: "",
       error: "",
     });
-    return { form, showModel, close, token: token as string };
+    return { form, showModel, close };
   },
   methods: {
     async onSubmit() {
-      const response = await createNewStorage(
-        this.form.name,
-        this.form.public_name,
-        this.token
-      );
-      if (response.ok) {
-        const data = response.val as Storage;
-        this.$notify({
-          title: "Storage Created",
-          type: "success",
+      await httpCommon.apiClient
+        .post("api/admin/storage/new", {
+          storage_type: "LocalStorage",
+          name: this.form.name,
+          public_name: this.form.public_name,
+          handler_config: {
+            location: `./${this.form.name}`,
+          },
+        })
+        .then((res) => {
+          if (res.status == 200) {
+            this.$notify({
+              title: "Created Storage",
+              type: "success",
+            });
+          } else if (res.status == 409) {
+            this.$notify({
+              title: "Storage Already Exists",
+              type: "error",
+            });
+          } else {
+            this.$notify({
+              title: "Error Creating Storage",
+              text: res.data,
+              type: "error",
+            });
+          }
         });
-        this.$router.push("/admin/storage/" + data.name);
-      } else {
-        this.$notify({
-          title: "Unable to Create Storage",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
     },
   },
 });

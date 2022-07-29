@@ -24,7 +24,8 @@
   ],
   "loggers": [
     {
-      "module": "nitro_repo",
+      "module": "api",
+      "always_execute": true,
       "levels": [
         "TRACE",
         "DEBUG",
@@ -47,7 +48,7 @@
       ]
     },
     {
-      "module": "nitro_repo",
+      "module": "api",
       "levels": [
         "TRACE",
         "DEBUG",
