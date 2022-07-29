@@ -9,10 +9,10 @@ use std::sync::Arc;
 use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
-
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
+use crate::system::user::database::UserSafeData;
 use serde::{Deserialize, Serialize};
 #[async_trait]
 pub trait Repository<S: Storage>: Send + Sync + Clone {

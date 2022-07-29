@@ -33,7 +33,7 @@ pub async fn get_project(
         .visibility
         .eq(&Visibility::Public)
     {
-        let caller: UserModel = authentication.get_user(database.as_ref()).await??;
+        let caller = authentication.get_user(database.as_ref()).await??;
         if let Some(value) = caller.can_read_from(repository.get_repository())? {
             return Err(value.into());
         }

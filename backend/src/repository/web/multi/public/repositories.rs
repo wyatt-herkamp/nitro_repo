@@ -14,6 +14,7 @@ use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
+use crate::system::user::database::UserSafeData;
 use crate::system::user::UserModel;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -31,7 +32,7 @@ pub async fn get_repositories(
     let storage_name = path.into_inner();
     let value = crate::helpers::get_storage!(storage_handler, storage_name);
 
-    let caller: Option<UserModel> = authentication.get_user(database.as_ref()).await?.ok();
+    let caller: Option<UserSafeData> = authentication.get_user(database.as_ref()).await?.ok();
     let vec: Vec<PublicRepositoryResponse> = value
         .get_repository_list()
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -77,7 +78,7 @@ pub async fn get_repository(
         .visibility
         .eq(&Visibility::Public)
     {
-        let caller: UserModel = authentication.get_user(database.as_ref()).await??;
+        let caller = authentication.get_user(database.as_ref()).await??;
         if let Some(value) = caller.can_read_from(repository.get_repository())? {
             return Err(value.into());
         }

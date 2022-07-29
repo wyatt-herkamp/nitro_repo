@@ -1,7 +1,7 @@
 use crate::repository::maven::models::Pom;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::DynamicStorage;
-use crate::system::user::database::Model as UserModel;
+use crate::system::user::database::{Model as UserModel, UserSafeData};
 use git2::PushOptions;
 use log::{error, trace};
 use std::path::Path;
@@ -17,7 +17,7 @@ pub async fn stage_to_git(
     directory: String,
     storage: Arc<DynamicStorage>,
     repository: RepositoryConfig,
-    model: UserModel,
+    model: UserSafeData,
 ) -> anyhow::Result<()> {
     let dir = tempdir()?;
     trace!("Cloning {} to {}", url, dir.path().display());

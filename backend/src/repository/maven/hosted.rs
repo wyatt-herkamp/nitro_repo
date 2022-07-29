@@ -96,7 +96,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
         if self.config.visibility == Visibility::Private {
-            let caller: UserModel = authentication.get_user(conn).await??;
+            let caller = authentication.get_user(conn).await??;
             if let Some(value) = caller.can_read_from(&self.config)? {
                 return Err(value.into());
             }
@@ -124,7 +124,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        let caller: UserModel = authentication.get_user(conn).await??;
+        let caller = authentication.get_user(conn).await??;
         if let Some(_value) = caller.can_deploy_to(&self.config)? {}
         match self.config.policy {
             Policy::Release => {

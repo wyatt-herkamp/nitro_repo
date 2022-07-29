@@ -1,6 +1,7 @@
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use crate::storage::DynamicStorage;
+use crate::system::user::database::UserSafeData;
 use crate::system::user::UserModel;
 use log::{trace, warn};
 use reqwest::header::{HeaderMap, USER_AGENT};
@@ -14,7 +15,7 @@ pub async fn stage_to_external(
     directory: String,
     storage: Arc<DynamicStorage>,
     repository: RepositoryConfig,
-    model: UserModel,
+    model: UserSafeData,
 ) -> anyhow::Result<()> {
     let string = base64::encode(format!("{}:{}", username, password));
     let mut map = HeaderMap::new();

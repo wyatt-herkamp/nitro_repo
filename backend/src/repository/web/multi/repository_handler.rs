@@ -68,7 +68,7 @@ pub async fn stage_repository(
     if !repository.staging_repository() {
         return Ok(HttpResponse::BadRequest().finish().into());
     }
-    let caller: UserModel = authentication.get_user(pool.as_ref()).await??;
+    let caller = authentication.get_user(pool.as_ref()).await??;
     if let Some(_value) = caller.can_deploy_to(&repository.get_repository())? {}
     repository.push(file, storages.into_inner(), caller).await?;
     Ok(HttpResponse::NoContent().finish().into())

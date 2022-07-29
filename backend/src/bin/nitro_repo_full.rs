@@ -20,11 +20,13 @@ use api::storage::{GeneralConfig, StorageConfig, StorageSaver, StorageType};
 use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo};
 use log::info;
+use sea_orm::sea_query::MysqlQueryBuilder;
+use sea_orm::{DatabaseBackend, Schema};
 use semver::Version;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
 
-#[main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let test = StorageSaver {
         storage_type: StorageType::LocalStorage,

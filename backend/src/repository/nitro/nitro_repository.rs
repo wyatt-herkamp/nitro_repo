@@ -15,7 +15,7 @@ use crate::repository::response::Project;
 
 use crate::storage::file::StorageDirectoryResponse;
 use crate::storage::models::Storage;
-use crate::system::user::UserModel;
+use crate::system::user::database::UserSafeData;
 
 #[async_trait]
 pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> {
@@ -173,7 +173,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
         &self,
         project_folder: String,
         version_folder: String,
-        _: UserModel,
+        _: UserSafeData,
         version_data: VersionData,
     ) -> Result<(), InternalError> {
         let project_file = format!("{}/{}", &project_folder, PROJECT_FILE);

@@ -74,7 +74,7 @@ macro_rules! nitro_repo_handler {
                 &self,
                 project_folder: String,
                 version_folder: String,
-                model: crate::system::user::database::Model,
+                model: crate::system::user::database::UserSafeData,
                 version_data: crate::repository::nitro::VersionData,
             ) -> Result<(), InternalError> {
                 match self {

@@ -18,7 +18,7 @@ pub async fn get_storages(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
 
     Ok(HttpResponse::Ok().json(storage_handler.storage_savers().await))
@@ -32,7 +32,7 @@ pub async fn new_storage(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     if let Err(error) = storage_handler.create_storage(new_storage.0).await {
         match error {
@@ -56,7 +56,7 @@ pub async fn delete_storage(
     auth: Authentication,
     name: web::Path<String>,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     if storage_handler
         .delete_storage(&name.into_inner())
@@ -76,7 +76,7 @@ pub async fn get_storage(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let storage = crate::helpers::get_storage!(storage_handler, name);
     Ok(HttpResponse::Ok().json(storage.storage_config()))

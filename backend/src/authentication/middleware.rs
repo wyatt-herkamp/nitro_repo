@@ -1,6 +1,7 @@
 use std::fmt;
 use std::future::{ready, Ready};
 use std::rc::Rc;
+use std::str::FromStr;
 
 use actix_web::cookie::{Cookie, Expiration, SameSite};
 use actix_web::http::header::{HeaderValue, AUTHORIZATION, ORIGIN, SET_COOKIE};
@@ -94,7 +95,7 @@ where
                             let session = session_manager.create_session().await.unwrap();
                             (Authentication::Session(session.clone()), Some(session))
                         } else {
-                            (Authentication::NoIdentification, Option::None)
+                            (Authentication::NoIdentification, None)
                         }
                     } else if let Some(mut session) = session {
                         if session.expiration <= get_current_time() as u64 {
@@ -103,9 +104,9 @@ where
                                 .await
                                 .unwrap();
                         }
-                        (Authentication::Session(session.clone()), Option::None)
+                        (Authentication::Session(session.clone()), None)
                     } else {
-                        (Authentication::NoIdentification, Option::None)
+                        (Authentication::NoIdentification, None)
                     }
                 } else if let Some(header) = req.headers().get(AUTHORIZATION) {
                     //If it is an Authorization Header pull Database from App Data
@@ -118,7 +119,7 @@ where
                     if split.len() != 2 {
                         debug!("Invalid Authorization Header!");
                         // If the length is not correct. It is an invalid authorization. But let request continue
-                        (Authentication::NoIdentification, Option::None)
+                        (Authentication::NoIdentification, None)
                     } else {
                         let value = split.get(1).unwrap();
                         let auth_type = split.get(0).unwrap();
@@ -126,14 +127,14 @@ where
                         if auth_type.eq(&"Bearer") {
                             trace!("Authorization Bearer (token)");
 
-                            let auth_token = auth_token::get_by_token(value, database)
+                            let auth_token = auth_token::get_token(0, value, database)
                                 .await
                                 .map_err(internal_server_error)?;
 
                             if let Some(token) = auth_token {
-                                (Authentication::AuthToken(token), Option::None)
+                                (Authentication::AuthToken(token), None)
                             } else {
-                                (Authentication::NoIdentification, Option::None)
+                                (Authentication::NoIdentification, None)
                             }
                         } else if auth_type.eq(&"Basic") {
                             //If its a Basic header. Parse from base64
@@ -143,22 +144,27 @@ where
 
                             if split.len() != 2 {
                                 debug!("Invalid Authorization Basic Header!");
-                                (Authentication::NoIdentification, Option::None)
+                                (Authentication::NoIdentification, None)
                             } else {
-                                let username = split.get(0).unwrap().to_string();
-                                let password = split.get(1).unwrap().to_string();
+                                let (username, password) = unsafe {
+                                    (
+                                        split.get(0).unwrap_unchecked(),
+                                        split.get(1).unwrap_unchecked(),
+                                    )
+                                };
+
                                 // Maven will pass everything as a Basic. Setting the username as Token lets you use the token system
-                                if username.eq("token") {
-                                    trace!("Authorization Basic token:(token)");
+                                if let Ok(v) = i64::from_str(*username) {
+                                    trace!("Authorization Basic user_id:(token)");
 
                                     // Treat the password as a token
-                                    let auth_token = auth_token::get_by_token(&password, database)
+                                    let auth_token = auth_token::get_token(v, password, database)
                                         .await
                                         .map_err(internal_server_error)?;
                                     if let Some(token) = auth_token {
-                                        (Authentication::AuthToken(token), Option::None)
+                                        (Authentication::AuthToken(token), None)
                                     } else {
-                                        (Authentication::NoIdentification, Option::None)
+                                        (Authentication::NoIdentification, None)
                                     }
                                 } else {
                                     // Treat authorization as normal login
@@ -195,10 +201,10 @@ where
                         (Authentication::Session(session.clone()), Some(session))
                     } else {
                         warn!("A Not Origin Not Authorized Request was made");
-                        (Authentication::NoIdentification, Option::None)
+                        (Authentication::NoIdentification, None)
                     }
                 } else {
-                    (Authentication::NoIdentification, Option::None)
+                    (Authentication::NoIdentification, None)
                 };
             // Add the authentication Information for the data
             req.extensions_mut().insert(authentication);

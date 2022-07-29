@@ -41,6 +41,7 @@ repository_handler!(
     StagingRepository
 );
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
+use crate::system::user::database::UserSafeData;
 crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository);
 crate::repository::staging::dynamic::gen_dynamic_stage!(MavenHandler, Staging);
 

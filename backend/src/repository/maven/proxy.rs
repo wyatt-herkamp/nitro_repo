@@ -95,7 +95,7 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
         authentication: Authentication,
     ) -> Result<RepoResponse, Error> {
         if self.config.visibility == Visibility::Private {
-            let caller: UserModel = authentication.get_user(conn).await??;
+            let caller = authentication.get_user(conn).await??;
             if let Some(value) = caller.can_read_from(&self.config)? {
                 return Err(value.into());
             }

@@ -27,6 +27,7 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::maven::models::Pom;
+use crate::system::user::database::UserSafeData;
 use git2::PushOptions;
 use log::{error, info, trace};
 use std::sync::Arc;
@@ -89,7 +90,7 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
         &self,
         directory: String,
         storages: Arc<MultiStorageController<DynamicStorage>>,
-        model: UserModel,
+        model: UserSafeData,
     ) -> Result<(), InternalError> {
         for stage in self.stage_settings.stage_to.iter() {
             match stage {
@@ -195,7 +196,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         authentication: Authentication,
     ) -> Result<RepoResponse, Error> {
         if self.config.visibility == Visibility::Private {
-            let caller: UserModel = authentication.get_user(conn).await??;
+            let caller = authentication.get_user(conn).await??;
             if let Some(value) = caller.can_read_from(&self.config)? {
                 return Err(value.into());
             }
@@ -239,7 +240,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        let caller: UserModel = authentication.get_user(conn).await??;
+        let caller = authentication.get_user(conn).await??;
         if let Some(_value) = caller.can_deploy_to(&self.config)? {}
         match self.config.policy {
             Policy::Release => {

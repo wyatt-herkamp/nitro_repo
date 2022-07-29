@@ -1,5 +1,6 @@
 use crate::system::permissions::UserPermissions;
-use sea_orm::{DbErr, JsonValue};
+use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveValue, DbErr, IntoActiveValue, JsonValue};
 
 impl From<UserPermissions> for JsonValue {
     fn from(auth: UserPermissions) -> Self {
@@ -43,5 +44,10 @@ impl sea_orm::sea_query::ValueType for UserPermissions {
 
     fn column_type() -> sea_orm::sea_query::ColumnType {
         sea_orm::sea_query::ColumnType::Json
+    }
+}
+impl IntoActiveValue<UserPermissions> for UserPermissions {
+    fn into_active_value(self) -> ActiveValue<UserPermissions> {
+        Set(self)
     }
 }

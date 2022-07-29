@@ -8,6 +8,7 @@ use sea_orm::entity::prelude::*;
 use sea_orm::JsonValue;
 use serde::{Deserialize, Serialize};
 
+use crate::system::user::database::UserSafeData;
 use crate::system::user::{UserEntity, UserModel};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -63,21 +64,24 @@ impl sea_orm::sea_query::ValueType for TokenProperties {
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "auth_tokens")]
 pub struct Model {
-    #[sea_orm(primary_key)]
+    #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
-    pub token: String,
-    pub expiration: i64,
+    pub token_hash: String,
+    pub token_last_eight: String,
     pub properties: TokenProperties,
-    pub created: i64,
     pub user_id: i64,
+    pub created: i64,
 }
 
 impl Model {
     pub async fn get_user(
         &self,
         database: &DatabaseConnection,
-    ) -> Result<Option<UserModel>, DbErr> {
-        UserEntity::find_by_id(self.user_id).one(database).await
+    ) -> Result<Option<UserSafeData>, DbErr> {
+        UserEntity::find_by_id(self.user_id)
+            .into_model()
+            .one(database)
+            .await
     }
 }
 

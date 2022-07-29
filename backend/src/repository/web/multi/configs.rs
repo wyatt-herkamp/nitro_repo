@@ -9,7 +9,7 @@ macro_rules! define_repository_config_get {
         ) -> actix_web::Result<actix_web::HttpResponse> {
             use crate::storage::models::Storage;
             use crate::system::permissions::options::CanIDo;
-            let user: crate::system::user::UserModel = auth.get_user(&database).await??;
+            let user = auth.get_user(&database).await??;
             user.can_i_edit_repos()?;
             let (storage_name, repository_name) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -41,7 +41,7 @@ macro_rules! define_repository_config_set {
             ) -> actix_web::Result<actix_web::HttpResponse> {
                 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
-        let user: crate::system::user::UserModel = auth.get_user(&database).await??;
+        let user = auth.get_user(&database).await??;
         user.can_i_edit_repos()?;
         let (storage_name, repository_name) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);

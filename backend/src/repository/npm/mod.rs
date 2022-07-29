@@ -74,7 +74,7 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
-        let caller: UserModel = authentication.get_user(conn).await??;
+        let caller = authentication.get_user(conn).await??;
         if let Some(value) = caller.can_read_from(&self.config)? {
             return Err(value.into());
         }
@@ -150,7 +150,7 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
             return Ok(RepoResponse::Json(created_response, StatusCode::CREATED));
         }
         //Handle Normal Request
-        let caller: UserModel = authentication.get_user(conn).await??;
+        let caller = authentication.get_user(conn).await??;
         if let Some(value) = caller.can_deploy_to(&self.config)? {
             return Err(value.into());
         }

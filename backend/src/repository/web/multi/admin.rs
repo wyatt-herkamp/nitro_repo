@@ -1,6 +1,4 @@
-
 use std::sync::Arc;
-
 
 use actix_web::{delete, get, post, web, HttpResponse};
 use lockfree::map::Removed;
@@ -12,7 +10,7 @@ use crate::authentication::Authentication;
 
 use crate::error::internal_error::InternalError;
 
-use crate::repository::handler::{Repository};
+use crate::repository::handler::Repository;
 
 use crate::repository::settings::{Policy, Visibility};
 
@@ -26,7 +24,6 @@ use crate::system::user::UserModel;
 use paste::paste;
 use serde_json::Value;
 
-
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
 pub async fn get_repositories(
@@ -35,7 +32,7 @@ pub async fn get_repositories(
     auth: Authentication,
     storage_name: web::Path<String>,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
 
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -52,7 +49,7 @@ pub async fn create_repository(
     query_params: web::Path<(String, String, RepositoryType)>,
     _inner_config: web::Json<Option<Value>>,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, _repository_name, _repository_type) = query_params.into_inner();
 
@@ -76,7 +73,7 @@ pub async fn get_repository(
     path_params: web::Path<(String, String)>,
     _query_params: web::Query<GetRepositoryQuery>,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -99,7 +96,7 @@ pub async fn delete_repository(
     path_params: web::Path<(String, String)>,
     query_params: web::Query<DeleteRepositoryQuery>,
 ) -> actix_web::Result<HttpResponse> {
-    let user: UserModel = auth.get_user(&database).await??;
+    let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -121,7 +118,7 @@ macro_rules! update_repository_core_prop {
             auth: Authentication,
             path_params: web::Path<(String, String, $value_type)>,
         ) -> actix_web::Result<HttpResponse> {
-            let user: UserModel = auth.get_user(&database).await??;
+            let user = auth.get_user(&database).await??;
             user.can_i_edit_repos()?;
             let (storage_name, repository_name, value) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);

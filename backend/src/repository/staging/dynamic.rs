@@ -23,7 +23,7 @@ macro_rules! gen_dynamic_stage {
         &self,
         directory: String,
         storages: Arc<crate::storage::multi::MultiStorageController<crate::storage::DynamicStorage>>,
-        user: crate::system::user::UserModel,
+        user: UserSafeData,
     ) -> Result<(), InternalError>{
         match self {
             $(
