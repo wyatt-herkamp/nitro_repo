@@ -18,7 +18,6 @@ pub struct AddInstance {
 pub struct NewTokenResponse {
     pub token: String,
     pub token_id: Uuid,
-    pub expiration: i64,
 }
 
 impl AddInstance {
@@ -61,7 +60,6 @@ impl AddInstance {
                 token: response.token.clone(),
                 name: self.name.clone(),
                 token_uuid: response.token_id,
-                expiration: response.expiration,
             };
             user_config.repositories.insert(self.name, repository);
             save_user_config(&user_config)?;

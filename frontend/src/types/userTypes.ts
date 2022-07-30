@@ -17,8 +17,8 @@ export interface UserPermissions {
   admin: boolean;
   user_manager: boolean;
   repository_manager: boolean;
-  deployer?: RepositoryPermissions;
-  viewer?: RepositoryPermissions;
+  deployer: RepositoryPermissions;
+  viewer: RepositoryPermissions;
 }
 
 export interface RepositoryPermissions {
@@ -30,9 +30,7 @@ export interface UserList {
 }
 
 export interface AuthToken {
-  id: number;
-  user: number;
-  token: string;
-  expiration: number;
+  id: string;
+  properties: { description?: string };
   created: number;
 }

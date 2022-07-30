@@ -30,6 +30,7 @@ export default defineComponent({
     },
   },
   slots: ["icon", "default"],
+  emits: ["click"],
   setup(props, { emit }) {
     const tab: TabData | undefined = inject("tabData");
 

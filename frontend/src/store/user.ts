@@ -1,7 +1,7 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { User } from "@/types/user";
 import httpCommon from "@/http-common";
 import { useCookies } from "vue3-cookies";
+import { User } from "@/types/userTypes";
 
 export const useUserStore = defineStore({
   id: "user",

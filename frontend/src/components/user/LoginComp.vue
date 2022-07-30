@@ -33,7 +33,7 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import httpCommon from "@/http-common";
-
+import "@/styles/forms.css";
 export default defineComponent({
   emits: ["login"],
   setup() {

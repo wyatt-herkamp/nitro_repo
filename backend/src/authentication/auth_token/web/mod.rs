@@ -13,14 +13,16 @@ use actix_web::{delete, get, post, HttpRequest, HttpResponse};
 use chrono::Duration;
 use log::error;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, FromQueryResult, QueryFilter};
 use sea_orm::{DatabaseConnection, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use uuid::Uuid;
 
 pub fn authentication_router(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_token);
+    cfg.service(create_token)
+        .service(list_tokens)
+        .service(delete_token);
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -28,18 +30,25 @@ pub struct NewTokenResponse {
     pub token: String,
     pub token_id: Uuid,
 }
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, FromQueryResult, Clone, Debug)]
 pub struct TokenResponse {
-    pub expiration: i64,
+    pub id: Uuid,
     pub properties: TokenProperties,
     pub created: i64,
 }
 #[get("/token/list")]
 pub async fn list_tokens(
     database: web::Data<DatabaseConnection>,
-    login: web::Json<SecureAction<()>>,
+    authentication: Authentication,
 ) -> actix_web::Result<HttpResponse> {
-    Ok(HttpResponse::NoContent().finish())
+    let login = authentication.get_user(database.as_ref()).await??;
+    let tokens = AuthTokenEntity::find()
+        .filter(super::database::Column::UserId.eq(login.id))
+        .into_model::<TokenResponse>()
+        .all(database.as_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+    Ok(HttpResponse::Ok().json(tokens))
 }
 
 #[post("/token/create")]
@@ -57,7 +66,9 @@ pub async fn create_token(
         id: Set(uuid.clone()),
         token_hash: Set(hash),
         properties: Set(TokenProperties {
-            description: login.into_inner(),
+            description: login
+                .into_inner()
+                .and_then(|x| if x.is_empty() { None } else { Some(x) }),
         }),
         token_last_eight: Set(token_last_eight),
         user_id: Set(user.id),
@@ -71,14 +82,28 @@ pub async fn create_token(
         token: token,
         token_id: uuid,
     };
-    Ok(HttpResponse::Ok().json(response))
+    Ok(HttpResponse::Created().json(response))
 }
 
 #[delete("/token/{id}")]
 pub async fn delete_token(
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    delete_token: web::Path<Uuid>,
+    authentication: Authentication,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
-    Ok(HttpResponse::NoContent().finish())
+    let user = authentication.get_user(database.get_ref()).await??;
+    let result = AuthTokenEntity::delete_many()
+        .filter(
+            super::database::Column::Id
+                .eq(delete_token.into_inner())
+                .and(super::database::Column::UserId.eq(user.id)),
+        )
+        .exec(database.as_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+    if result.rows_affected == 0 {
+        Ok(HttpResponse::NotFound().finish())
+    } else {
+        Ok(HttpResponse::NoContent().finish())
+    }
 }

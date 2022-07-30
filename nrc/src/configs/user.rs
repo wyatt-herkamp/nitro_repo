@@ -15,7 +15,6 @@ pub struct RepositoryInstance {
     pub token: String,
     pub name: String,
     pub token_uuid: Uuid,
-    pub expiration: i64,
 }
 impl Auth for RepositoryInstance {
     fn get_as_header(&self) -> HeaderValue {

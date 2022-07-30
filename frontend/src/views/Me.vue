@@ -1,56 +1,35 @@
 <template>
-  <div class="flex flex-wrap flex-row">
-    <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
-      <form class="settingContent" @submit.prevent>
-        <h2 class="settingHeader">User General</h2>
-        <div class="settingBox">
-          <label class="nitroLabel" for="grid-name"> Name </label>
-          <input
-            class="nitroTextInput"
-            id="grid-name"
-            type="text"
-            disabled
-            v-model="user.name"
-          />
-          <label class="nitroLabel" for="grid-name"> Email </label>
-          <input
-            class="nitroTextInput"
-            id="grid-name"
-            type="text"
-            disabled
-            v-model="user.email"
-          />
-        </div>
-      </form>
+  <Tabs v-model="tab">
+    <Tab name="general">General</Tab>
+    <Tab name="password">Change Password</Tab>
+    <Tab name="permissions">View Permissions</Tab>
+    <Tab name="api_keys">API Keys</Tab>
+  </Tabs>
+  <div v-if="user !== undefined">
+    <div v-if="tab === 'general'">
+      <div>Welcome, {{ user.username }}!</div>
     </div>
-    <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
-      <form class="settingContent" @submit.prevent="updatePassword()">
-        <h2 class="settingHeader">Update Password</h2>
-
-        <div class="settingContent">
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-name"> Password </label>
+    <div v-if="tab === 'password'">
+      <div>
+        <h1>Change Password</h1>
+        <PasswordBox v-model="password.newPassword">
+          <div class="formGroup">
+            <label class="formLabel" for="grid-password"> Password </label>
             <input
-              class="nitroTextInput"
-              id="grid-name"
+              class="formInput"
+              id="grid-password"
               type="password"
-              v-model="password.password"
-            />
-            <label class="nitroLabel" for="grid-name"> Confirm Password </label>
-            <input
-              class="nitroTextInput"
-              id="grid-name"
-              type="password"
-              v-model="password.confirm"
+              v-model="password.oldPassword"
             />
           </div>
-        </div>
-        <div class="settingBox">
-          <button :disabled="!canSubmitPassword" class="nitroButton">
-            Update Password
-          </button>
-        </div>
-      </form>
+        </PasswordBox>
+      </div>
+    </div>
+    <div v-else-if="tab === 'permissions'">
+      <Permissions :disabled="true" v-model="user.permissions"></Permissions>
+    </div>
+    <div v-else-if="tab === 'api_keys'">
+        <MyAPIKeys />
     </div>
   </div>
 </template>
@@ -58,9 +37,14 @@
 <script lang="ts">
 import { useUserStore } from "@/store/user";
 import { computed, defineComponent, ref } from "vue";
+import PasswordBox from "@/components/user/PasswordBox.vue";
+import httpCommon from "@/http-common";
+import Permissions from "@/components/user/update/Permissions.vue";
 
 export default defineComponent({
+  components: { Permissions, PasswordBox },
   setup() {
+    const tab = ref("general");
     const userStore = useUserStore();
     const user = computed(() => {
       return userStore.$state.user;
@@ -69,23 +53,30 @@ export default defineComponent({
       return userStore.$state.date;
     });
     const password = ref({
-      password: "",
-      confirm: "",
+      oldPassword: "",
+      newPassword: "",
     });
     const canSubmitPassword = computed(() => {
-      if (password.value.password.length >= 1) {
-        if (password.value.password === password.value.confirm) {
-          return true;
-        }
-      }
-      return false;
+      return (
+        password.value.newPassword.length >= 1 &&
+        password.value.newPassword !== "" &&
+        password.value.oldPassword !== ""
+      );
     });
 
-    return { user, date, canSubmitPassword, password };
+    return { user, date, canSubmitPassword, password, tab };
   },
   methods: {
     async updatePassword() {
-      // TODO: update password
+      if (this.user == undefined) {
+        console.error("User is undefined");
+        return;
+      }
+      await httpCommon.apiClient.put("api/me/password", {
+        username: this.user.username,
+        password: this.password.oldPassword,
+        secure_data: this.password.newPassword,
+      });
     },
   },
 });

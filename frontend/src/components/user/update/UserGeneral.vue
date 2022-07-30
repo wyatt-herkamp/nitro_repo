@@ -1,5 +1,12 @@
 <template>
-  <div class="flex flex-wrap flex-row">
+  <Tabs>
+    <Tabs v-model="tab">
+      <Tab name="general">General</Tab>
+      <Tab name="permissions">View Permissions</Tab>
+      <Tab name="api_keys">API Keys</Tab>
+    </Tabs>
+  </Tabs>
+  <div v-if="tab === 'general'" class="flex flex-wrap flex-row">
     <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
       <form class="settingContent" @submit.prevent="onSettingSubmit()">
         <h2 class="settingHeader">User General</h2>
@@ -53,14 +60,9 @@
         </div>
       </form>
     </div>
-    <div class="flex-grow lg:m-5 border-slate-500 border-2 rounded-lg">
-      <h1
-        class="text-left ml-2 md:text-4xl text-3xl border-b-2 border-slate-500 p-2"
-      >
-        Permissions
-      </h1>
-      <Permissions :user="user" />
-    </div>
+  </div>
+  <div v-else-if="tab === 'permissions'">
+    <Permissions v-model="user.permissions" />
   </div>
 </template>
 
@@ -79,6 +81,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const tab = ref("general");
     const password = ref({
       password: "",
       confirm: "",
@@ -92,7 +95,7 @@ export default defineComponent({
       return false;
     });
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date, password, canSubmitPassword };
+    return { tab, date, password, canSubmitPassword };
   },
   methods: {
     async onSettingSubmit() {

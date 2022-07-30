@@ -11,8 +11,8 @@ import { defineComponent, inject, ref } from "vue";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
 import { useRouter } from "vue-router";
-import { User } from "@/types/user";
 import httpCommon from "@/http-common";
+import { User } from "@/types/userTypes";
 
 export default defineComponent({
   props: {

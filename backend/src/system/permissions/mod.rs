@@ -33,13 +33,22 @@ pub struct UserPermissions {
     pub admin: bool,
     pub user_manager: bool,
     pub repository_manager: bool,
-    pub deployer: Option<RepositoryPermission>,
-    pub viewer: Option<RepositoryPermission>,
+    #[serde(default)]
+    pub deployer: RepositoryPermission,
+    #[serde(default)]
+    pub viewer: RepositoryPermission,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RepositoryPermission {
     pub permissions: Vec<String>,
+}
+impl Default for RepositoryPermission {
+    fn default() -> Self {
+        RepositoryPermission {
+            permissions: vec!["*".to_string()],
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -60,8 +69,8 @@ pub fn can_deploy(
         return Ok(true);
     }
 
-    if let Some(perms) = &user_perms.deployer {
-        return can(repo, perms);
+    if !user_perms.deployer.permissions.is_empty() {
+        return can(repo, &user_perms.deployer);
     }
     Ok(false)
 }
@@ -80,8 +89,8 @@ pub fn can_read(
     match repo.visibility {
         Visibility::Public => Ok(true),
         Visibility::Private => {
-            if let Some(perms) = &user_perms.viewer {
-                if can(repo, perms)? {
+            if !user_perms.viewer.permissions.is_empty() {
+                if can(repo, &user_perms.viewer)? {
                     return Ok(true);
                 }
             }
