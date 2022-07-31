@@ -23,7 +23,17 @@
       </div>
     </div>
     <div class="lg:basis-1/4">
-      <div class="grid grid-row-2 gap-4">
+      <div class="grid grid-rows-3 gap-4">
+        <div class="m-2 bg-slate-800">
+          <h1 class="text-white mt-5 ml-5 font-bold">Project Info</h1>
+          <div class="text-white mt-5 ml-5">
+            <span
+              >Last Updated On {{ last_updated_date }} at
+              {{ last_updated_time }}</span
+            >
+          </div>
+        </div>
+
         <ProjectBadge
           class="m-2"
           :project="{
@@ -74,21 +84,39 @@ export default defineComponent({
     useMeta({
       title: props.version,
     });
-    const project = ref<Project | undefined>(undefined);
-    await httpCommon.apiClient
+    const project: Project = await httpCommon.apiClient
       .get(
         `api/projects/${props.storage}/${props.repositoryName}/${props.projectName}`
       )
       .then((response) => {
-        if (response.status == 200) {
-          project.value = response.data;
-        } else {
-          //TODO handle 404
-          console.error("Error fetching repository ");
-        }
+        return response.data;
+      })
+      .catch((error) => {
+        console.error(error);
+        return {
+          repo_summary: {
+            name: "",
+            storage: "",
+            page_provider: "",
+            repo_type: "",
+            visibility: "",
+          },
+          frontend_response: "",
+          backend_response: "",
+          version: "",
+          last_updated: 0,
+        };
       });
+    const last_updated_date = new Date(
+      project.version.created
+    ).toLocaleDateString("en-US");
+    const last_updated_time = new Date(
+      project.version.created
+    ).toLocaleTimeString("en-US");
     return {
       project,
+      last_updated_date,
+      last_updated_time,
     };
   },
 });

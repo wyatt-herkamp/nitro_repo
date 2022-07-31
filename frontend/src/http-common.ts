@@ -1,4 +1,5 @@
 import axios from "axios";
+import router from "@/router";
 
 export const apiURL =
   import.meta.env.VITE_API_URL === undefined

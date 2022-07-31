@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use log::{debug, error, trace};
 
-use crate::constants::{PROJECT_FILE, VERSION_DATA};
+use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 use crate::repository::nitro::utils::{
@@ -9,7 +9,7 @@ use crate::repository::nitro::utils::{
 };
 use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
-    VersionData,
+    RepositoryListing, VersionData,
 };
 use crate::repository::response::Project;
 
@@ -37,6 +37,17 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
             )
             .await?,
         ))
+    }
+    async fn get_repository_listing(&self) -> Result<Option<RepositoryListing>, InternalError> {
+        let option = self
+            .get_storage()
+            .get_file(self.get_repository(), PROJECTS_FILE)
+            .await?;
+        if let Some(data) = option {
+            Ok(Some(serde_json::from_slice(data.as_slice())?))
+        } else {
+            Ok(None)
+        }
     }
     async fn get_project_specific_version(
         &self,

@@ -21,7 +21,12 @@ macro_rules! nitro_repo_handler {
                     _ => false,
                 }
             }
-
+            async fn get_repository_listing(&self) -> Result<Option<crate::repository::nitro::RepositoryListing>, InternalError> {
+                match self {
+                    $($v::$name(handler) => handler.get_repository_listing().await,)*
+                    _ => unsafe{ std::hint::unreachable_unchecked() },
+                }
+            }
             async fn get_versions(
                 &self,
                 project: &str,

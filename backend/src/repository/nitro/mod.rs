@@ -53,17 +53,18 @@ pub struct NitroFile {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RepositoryListing {
-    pub values: Vec<String>,
+    pub projects: Vec<String>,
+    pub last_updated: i64,
 }
 
 impl RepositoryListing {
     pub fn add_value(&mut self, project: String) -> bool {
-        for v in &self.values {
+        for v in &self.projects {
             if v.eq(&project) {
                 return false;
             }
         }
-        self.values.push(project);
+        self.projects.push(project);
         true
     }
 }

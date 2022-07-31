@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::authentication::Authentication;
 
 use crate::repository::handler::Repository;
+use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
 use crate::repository::settings::repository_page::{PageType, RepositoryPage};
 use crate::repository::settings::{RepositoryType, Visibility};
@@ -62,6 +63,7 @@ pub struct RepositoryPageResponse {
     pub name: String,
     pub repository_type: RepositoryType,
     pub page_content: String,
+    pub last_updated: i64,
 }
 #[get("repositories/{storage_name}/{repository_name}")]
 pub async fn get_repository(
@@ -102,10 +104,20 @@ pub async fn get_repository(
     } else {
         String::new()
     };
+    let v = if repository.supports_nitro() {
+        if let Some(v) = repository.get_repository_listing().await? {
+            v.last_updated
+        } else {
+            0
+        }
+    } else {
+        0
+    };
     let value = RepositoryPageResponse {
         name: repository.get_repository().name.clone(),
         repository_type: repository.get_repository().repository_type.clone(),
         page_content,
+        last_updated: v,
     };
 
     Ok(HttpResponse::Ok().json(value))

@@ -23,7 +23,16 @@
       </div>
     </div>
     <div class="lg:basis-1/4">
-      <div class="grid grid-row-2 gap-4">
+      <div class="grid grid-rows-3 gap-4">
+        <div class="m-2 bg-slate-800">
+          <h1 class="text-white mt-5 ml-5 font-bold">Repository Info</h1>
+          <div class="text-white mt-5 ml-5">
+            <span
+              >Last Updated On {{ last_updated_date }} at
+              {{ last_updated_time }}</span
+            >
+          </div>
+        </div>
         <div class="m-2">
           <RepositoryBadge
             :repository="{ name: repositoryName, storage: storage }"
@@ -59,25 +68,39 @@ export default defineComponent({
     },
   },
   async setup(props) {
-    const repository = ref<
-      | { repository_type: string; page_content: string; name: string }
-      | undefined
-    >(undefined);
     useMeta({
       title: `${props.repositoryName} - Nitro Repo`,
     });
-    await httpCommon.apiClient
+    const repository: {
+      repository_type: string;
+      page_content: string;
+      name: string;
+      last_updated: number;
+    } = await httpCommon.apiClient
       .get(`api/repositories/${props.storage}/${props.repositoryName}`)
       .then((response) => {
-        if (response.status == 200) {
-          repository.value = response.data;
-        } else {
-          //TODO handle 404
-          console.error("Error fetching repository ");
-        }
+        return response.data;
+      })
+      .catch((error) => {
+        console.error(error);
+        return {
+          repository_type: "",
+          page_content: "",
+          name: "",
+          last_updated: 0,
+        };
       });
+    const last_updated_date = new Date(
+      repository.last_updated
+    ).toLocaleDateString("en-US");
+    const last_updated_time = new Date(
+      repository.last_updated
+    ).toLocaleTimeString("en-US");
+
     return {
       repository,
+      last_updated_date,
+      last_updated_time,
     };
   },
 });

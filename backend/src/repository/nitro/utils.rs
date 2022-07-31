@@ -9,6 +9,7 @@ use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing
 use crate::repository::response::VersionResponse;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
+use crate::utils::get_current_time;
 
 pub async fn get_version<StorageType: Storage>(
     storage: &StorageType,
@@ -46,9 +47,12 @@ pub async fn update_project_in_repositories<StorageType: Storage>(
         storage.delete_file(repository, PROJECTS_FILE).await?;
         serde_json::from_str(&data)?
     } else {
-        RepositoryListing { values: vec![] }
+        RepositoryListing {
+            projects: vec![],
+            last_updated: get_current_time(),
+        }
     };
-
+    repo_listing.last_updated = get_current_time();
     repo_listing.add_value(project);
     let string = serde_json::to_string_pretty(&repo_listing)?;
     storage
