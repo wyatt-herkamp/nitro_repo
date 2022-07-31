@@ -179,7 +179,9 @@ impl Responder for StorageFileResponse {
                 Ok(response) => response,
                 Err(response) => response.error_response(),
             },
-            StorageFileResponse::NotFound => APIError::not_found().error_response(),
+            StorageFileResponse::NotFound => {
+                HttpResponse::new(StatusCode::NOT_FOUND).respond_to(req)
+            }
         }
     }
 }

@@ -95,12 +95,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
-        if self.config.visibility == Visibility::Private {
-            let caller = authentication.get_user(conn).await??;
-            if let Some(value) = caller.can_read_from(&self.config)? {
-                return Err(value.into());
-            }
-        }
+        crate::helpers::read_check!(authentication, conn, self.config);
 
         match self
             .storage
@@ -124,28 +119,10 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        let caller = authentication.get_user(conn).await??;
-        if let Some(_value) = caller.can_deploy_to(&self.config)? {}
-        match self.config.policy {
-            Policy::Release => {
-                if path.contains("-SNAPSHOT") {
-                    return Err(APIError::from((
-                        "SNAPSHOT in release only",
-                        StatusCode::BAD_REQUEST,
-                    ))
-                    .into());
-                }
-            }
-            Policy::Snapshot => {
-                if !path.contains("-SNAPSHOT") {
-                    return Err(APIError::from((
-                        "Release in a snapshot only",
-                        StatusCode::BAD_REQUEST,
-                    ))
-                    .into());
-                }
-            }
-            Policy::Mixed => {}
+        let caller = crate::helpers::write_check!(authentication, conn, self.config);
+
+        if let Some(v) = self.validate_policy(path) {
+            return Ok(v);
         }
         let exists = self
             .storage

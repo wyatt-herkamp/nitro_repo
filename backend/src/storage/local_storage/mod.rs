@@ -320,10 +320,7 @@ impl Storage for LocalStorage {
         repository: &RepositoryConfig,
         location: &str,
     ) -> Result<StorageFileResponse, StorageError> {
-        let file_location = self
-            .get_repository_folder(&repository.name)
-            .join(location)
-            .canonicalize()?;
+        let file_location = self.get_repository_folder(&repository.name).join(location);
         trace!("Getting File {}", &file_location.display());
         if !file_location.exists() {
             return Ok(StorageFileResponse::NotFound);

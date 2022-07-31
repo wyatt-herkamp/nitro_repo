@@ -94,12 +94,7 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, Error> {
-        if self.config.visibility == Visibility::Private {
-            let caller = authentication.get_user(conn).await??;
-            if let Some(value) = caller.can_read_from(&self.config)? {
-                return Err(value.into());
-            }
-        }
+        crate::helpers::read_check!(authentication, conn, self.config);
 
         match self
             .storage

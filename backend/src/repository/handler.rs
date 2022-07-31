@@ -10,7 +10,7 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::{Policy, RepositoryConfig};
 use crate::storage::models::Storage;
 use crate::system::user::database::UserSafeData;
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,28 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
     fn features(&self) -> Vec<&'static str> {
         vec![]
     }
-
+    fn validate_policy(&self, version: impl AsRef<str>) -> Option<RepoResponse> {
+        match self.get_repository().policy {
+            Policy::Release => {
+                if version.as_ref().contains("-SNAPSHOT") {
+                    return Some(
+                        APIError::from(("Release in a snapshot only", StatusCode::BAD_REQUEST))
+                            .into(),
+                    );
+                }
+            }
+            Policy::Snapshot => {
+                if !version.as_ref().contains("-SNAPSHOT") {
+                    return Some(
+                        APIError::from(("Snapshot in a release only", StatusCode::BAD_REQUEST))
+                            .into(),
+                    );
+                }
+            }
+            _ => {}
+        }
+        None
+    }
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,

@@ -61,6 +61,8 @@ pub struct RepositoryConfig {
     ///The versioning policy for the Repository
     #[serde(default)]
     pub policy: Policy,
+    #[serde(default)]
+    pub require_token_over_basic: bool,
     /// When it was created
     pub created: i64,
 }

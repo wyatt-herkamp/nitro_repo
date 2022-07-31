@@ -195,12 +195,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, Error> {
-        if self.config.visibility == Visibility::Private {
-            let caller = authentication.get_user(conn).await??;
-            if let Some(value) = caller.can_read_from(&self.config)? {
-                return Err(value.into());
-            }
-        }
+        crate::helpers::read_check!(authentication, conn, self.config);
 
         match self
             .storage
@@ -240,8 +235,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         authentication: Authentication,
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        let caller = authentication.get_user(conn).await??;
-        if let Some(_value) = caller.can_deploy_to(&self.config)? {}
+        crate::helpers::write_check!(authentication, conn, self.config);
         match self.config.policy {
             Policy::Release => {
                 if path.contains("-SNAPSHOT") {

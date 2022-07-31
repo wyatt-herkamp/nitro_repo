@@ -74,10 +74,8 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
-        let caller = authentication.get_user(conn).await??;
-        if let Some(value) = caller.can_read_from(&self.config)? {
-            return Err(value.into());
-        }
+        crate::helpers::read_check!(authentication, conn, self.config);
+
         if headers.get("npm-command").is_some() {
             if path.contains(".tgz") {
                 let split: Vec<&str> = path.split("/-/").collect();

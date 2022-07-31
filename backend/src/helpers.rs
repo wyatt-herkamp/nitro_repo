@@ -57,6 +57,36 @@ macro_rules! take_repository {
         }
     };
 }
+
+macro_rules! read_check {
+    ($auth:ident, $conn:ident, $config:expr) => {
+        if $config.visibility == crate::repository::settings::Visibility::Private {
+            let caller = $auth.get_user($conn).await??;
+            if let Some(value) = caller.can_read_from(&$config)? {
+                return Err(value.into());
+            }
+        }
+    };
+}
+macro_rules! write_check {
+    ($auth:ident, $conn:ident, $config:expr) => {{
+        if $config.require_token_over_basic {
+            if let crate::authentication::Authentication::AuthToken(_, caller) = $auth {
+                caller
+            } else {
+                return Ok(actix_web::HttpResponse::Unauthorized().finish().into());
+            }
+        } else {
+            let caller = $auth.get_user($conn).await??;
+            if let Some(value) = caller.can_deploy_to(&$config)? {
+                return Err(value.into());
+            }
+            caller
+        }
+    }};
+}
 pub(crate) use get_repository;
 pub(crate) use get_storage;
+pub(crate) use read_check;
 pub(crate) use take_repository;
+pub(crate) use write_check;

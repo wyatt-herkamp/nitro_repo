@@ -1,3 +1,5 @@
+pub mod admin;
+
 use crate::authentication::auth_token::database::TokenProperties;
 use crate::authentication::auth_token::utils::hash_token;
 use crate::authentication::auth_token::{
@@ -10,6 +12,7 @@ use crate::utils::get_current_time;
 use actix_web::error::ErrorInternalServerError;
 use actix_web::http::StatusCode;
 use actix_web::web;
+use actix_web::web::scope;
 use actix_web::{delete, get, post, HttpRequest, HttpResponse};
 use chrono::Duration;
 use log::error;
@@ -23,9 +26,13 @@ use sha2::{Digest, Sha512};
 use uuid::Uuid;
 
 pub fn authentication_router(cfg: &mut web::ServiceConfig) {
-    cfg.service(create_token)
-        .service(list_tokens)
-        .service(delete_token);
+    cfg.service(
+        scope("/token")
+            .service(create_token)
+            .service(list_tokens)
+            .service(delete_token)
+            .service(scope("admin").service(admin::delete_token_system)),
+    );
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -39,7 +46,7 @@ pub struct TokenResponse {
     pub properties: TokenProperties,
     pub created: i64,
 }
-#[get("/token/list")]
+#[get("/list")]
 pub async fn list_tokens(
     database: web::Data<DatabaseConnection>,
     authentication: Authentication,
@@ -54,7 +61,7 @@ pub async fn list_tokens(
     Ok(HttpResponse::Ok().json(tokens))
 }
 
-#[post("/token/create")]
+#[post("/create")]
 pub async fn create_token(
     connection: web::Data<DatabaseConnection>,
     login: web::Json<SecureAction<Option<String>>>,
@@ -86,7 +93,7 @@ pub async fn create_token(
     Ok(HttpResponse::Created().json(response))
 }
 
-#[delete("/token/{id}")]
+#[delete("/{id}")]
 pub async fn delete_token(
     database: web::Data<DatabaseConnection>,
     delete_token: web::Path<Uuid>,
