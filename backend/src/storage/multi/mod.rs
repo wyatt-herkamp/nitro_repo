@@ -1,4 +1,4 @@
-use lockfree::map::Map;
+use lockfree::map::{Map, Removed};
 
 use std::mem;
 use std::path::{Path, PathBuf};
@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::repository::handler::DynamicRepositoryHandler;
 use log::{error, info};
+use serde::Deserialize;
 use tokio::fs;
 use tokio::fs::{read_to_string, OpenOptions};
 use tokio::io::AsyncWriteExt;
@@ -14,6 +15,7 @@ use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
 use crate::storage::file::StorageFile;
 
+use crate::storage::error::StorageError::StorageCreateError;
 use crate::storage::models::{Storage, STORAGE_FILE, STORAGE_FILE_BAK};
 use crate::storage::{DynamicStorage, StorageSaver};
 
@@ -39,7 +41,7 @@ async fn load_storages(
     Ok(values)
 }
 
-pub async fn save_storages(storages: &Vec<StorageSaver>) -> Result<(), StorageError> {
+pub async fn save_storages(storages: Vec<StorageSaver>) -> Result<(), StorageError> {
     let result = serde_json::to_string(&storages)?;
     let path = Path::new(STORAGE_FILE);
     let bak = Path::new(STORAGE_FILE_BAK);
@@ -62,7 +64,12 @@ pub struct MultiStorageController<S: Storage> {
     pub storages: Map<String, Arc<S>>,
     pub unloaded_storages: Map<String, Arc<S>>,
 }
-
+#[derive(Debug, Deserialize)]
+pub enum PurgeLevel {
+    All,
+    Configs,
+    RemoveFromList,
+}
 impl MultiStorageController<DynamicStorage> {
     pub async fn init(
         storages_file: PathBuf,
@@ -121,15 +128,128 @@ impl MultiStorageController<DynamicStorage> {
         Ok(())
     }
 
-    pub async fn create_storage<'a>(&self, _storage: StorageSaver) -> Result<(), StorageError> {
-        todo!()
+    /// Starts by checking all the storages to see if the name already exists
+    /// Collects all the StorageSavers into an Array.
+    /// Checks to ensure the storage will load correctly. If it will not it will error our
+    /// Saves the new storage config
+    /// Adds the storages to the main Storage map without loading repositories. Because its a new storage
+    pub async fn create_storage<'a>(&self, storage: StorageSaver) -> Result<(), StorageError> {
+        let name = storage.generic_config.id.clone();
+        // Check if the storage already exists then collect all Vec<StorageSaver> and add the new one
+        let mut storages = Vec::new();
+        for storages_file in self.storages.iter() {
+            if storages_file.key().eq(&name) {
+                return Err(StorageCreateError("Storage already exists".to_string()));
+            }
+
+            storages.push(storages_file.val().storage_config().clone());
+        }
+        let storage = DynamicStorage::create_new(storage)
+            .await
+            .map_err(|(error, v)| {
+                error!("Error creating storage {:?}.", v);
+                StorageCreateError(error.to_string())
+            })?;
+        storages.push(storage.storage_config().clone());
+        save_storages(storages).await?;
+
+        self.storages.insert(name, Arc::new(storage));
+        Ok(())
     }
 
-    pub async fn delete_storage(&self, _storage: &str) -> Result<bool, StorageError> {
-        todo!()
+    /// Follows the same steps as create_storage but will treat the new storage as something that has data in it.
+    pub async fn recover_storage(&self, storage: StorageSaver) -> Result<(), StorageError> {
+        let name = storage.generic_config.id.clone();
+        // Check if the storage already exists then collect all Vec<StorageSaver> and add the new one
+        let mut storages = Vec::new();
+        for storages_file in self.storages.iter() {
+            if storages_file.key().eq(&name) {
+                return Err(StorageCreateError("Storage already exists".to_string()));
+            }
+
+            storages.push(storages_file.val().storage_config().clone());
+        }
+        let storage = DynamicStorage::create_new(storage)
+            .await
+            .map_err(|(error, v)| {
+                error!("Error creating storage {:?}.", v);
+                StorageCreateError(error.to_string())
+            })
+            .map(|v| Arc::new(v))?;
+        let repositories = storage.get_repos_to_load().await?;
+        for (name, repository) in repositories.into_iter() {
+            info!("Loading repository {} From Recovery", name);
+            let handler = DynamicRepositoryHandler::new_dyn_storage(storage.clone(), repository)
+                .await
+                .map_err(|error| {
+                    error!("Error loading repository {}. Error {}", name, error);
+                });
+            if let Ok(handler) = handler {
+                storage.add_repo_loaded(handler)?;
+            }
+        }
+
+        storages.push(storage.storage_config().clone());
+        save_storages(storages).await?;
+
+        self.storages.insert(name, storage);
+        Ok(())
     }
+
+    pub async fn delete_storage(
+        &self,
+        storage: impl AsRef<str>,
+        purge_level: PurgeLevel,
+    ) -> Result<(), StorageError> {
+        let option =
+            self.storages
+                .remove(storage.as_ref())
+                .ok_or(StorageError::StorageDeleteError(
+                    "Storage does not exist".to_string(),
+                ))?;
+        save_storages(self.storage_savers().await).await?;
+
+        match purge_level {
+            PurgeLevel::All => {
+                let x = option.val().get_repository_list()?;
+                for repository in x.into_iter() {
+                    if let Err(error) = option.val().delete_repository(&repository.name, true).await
+                    {
+                        error!(
+                            "Error deleting repository {}. Error {}",
+                            repository.name, error
+                        );
+                    }
+                }
+            }
+            PurgeLevel::Configs => {
+                let x = option.val().get_repository_list()?;
+                for repository in x.into_iter() {
+                    if let Err(error) = option
+                        .val()
+                        .delete_repository(&repository.name, false)
+                        .await
+                    {
+                        error!(
+                            "Error deleting repository {}. Error {}",
+                            repository.name, error
+                        );
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
     pub async fn storage_savers(&self) -> Vec<StorageSaver> {
-        todo!()
+        let mut result = Vec::new();
+        for x in self.storages.iter() {
+            let saver = x.val().storage_config().clone();
+            result.push(saver);
+        }
+        result
     }
     pub async fn names(&self) -> Vec<String> {
         self.storages

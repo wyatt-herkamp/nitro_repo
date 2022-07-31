@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::hint::unreachable_unchecked;
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::repository::handler::{DynamicRepositoryHandler, Repository};
@@ -12,7 +13,7 @@ use log::{debug, trace};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use tokio::fs::{create_dir_all, read_to_string, remove_file, OpenOptions};
+use tokio::fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use tokio_stream::StreamExt;
@@ -30,6 +31,7 @@ use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG
 #[derive(Debug)]
 pub struct LocalStorage {
     pub config: LocalConfig,
+    pub path: PathBuf,
     pub storage_config: StorageSaver,
     pub status: StorageStatus,
     pub repositories: Map<String, Arc<DynamicRepositoryHandler<DynamicStorage>>>,
@@ -37,7 +39,7 @@ pub struct LocalStorage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalConfig {
-    pub location: PathBuf,
+    pub location: String,
 }
 
 pub struct LocalFile {
@@ -45,8 +47,8 @@ pub struct LocalFile {
 }
 
 impl LocalStorage {
-    pub fn get_storage_folder(&self) -> PathBuf {
-        self.config.location.clone()
+    pub fn get_storage_folder(&self) -> &PathBuf {
+        &self.path
     }
     pub fn get_repository_folder(&self, repository: &str) -> PathBuf {
         self.get_storage_folder().join(repository)
@@ -96,29 +98,52 @@ impl LocalStorage {
         Ok(())
     }
 }
-
+macro_rules! unsafe_into_config {
+    ($value:ident) => {
+        if let StorageConfig::LocalStorage(local) = &$value.handler_config {
+            local
+        } else {
+            unsafe { unreachable_unchecked() }
+        };
+    };
+}
 #[async_trait]
 impl Storage for LocalStorage {
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
-    async fn create_new(_config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
+    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
     {
-        todo!()
+        let mut local_config = unsafe_into_config!(config).clone();
+        if local_config.location.contains("{local_storage_folder}") {
+            unsafe {
+                let result = std::env::var("STORAGE_LOCATION").unwrap_unchecked();
+                local_config.location = local_config
+                    .location
+                    .replace("{local_storage_folder}", &result);
+            }
+        }
+        let buf = PathBuf::from_str(local_config.location.as_ref()).unwrap();
+        let storage = LocalStorage {
+            config: local_config,
+            path: buf,
+            storage_config: config,
+            status: StorageStatus::Loaded,
+            repositories: Map::new(),
+        };
+        Ok(storage)
     }
 
     async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
     {
-        let v = if let StorageConfig::LocalStorage(local) = config.handler_config.clone() {
-            local
-        } else {
-            unsafe { unreachable_unchecked() }
-        };
+        let v = unsafe_into_config!(config).clone();
+        let buf = PathBuf::from_str(v.location.as_ref()).unwrap();
         let storage = LocalStorage {
             config: v,
+            path: buf,
             storage_config: config,
             status: StorageStatus::Unloaded,
             repositories: Map::new(),
@@ -163,14 +188,31 @@ impl Storage for LocalStorage {
 
     async fn delete_repository<S: AsRef<str> + Send>(
         &self,
-        _repository: S,
-        _delete_files: bool,
+        repository: S,
+        delete_files: bool,
     ) -> Result<(), StorageError> {
-        todo!()
+        let _ = self
+            .repositories
+            .remove(repository.as_ref())
+            .ok_or(StorageError::RepositoryMissing)?;
+        self.save_repositories().await?;
+
+        if delete_files {
+            let path = self.get_repository_folder(&repository.as_ref());
+            remove_dir_all(path).await?;
+        } else {
+            let path = self.get_repository_folder(&repository.as_ref());
+            remove_dir_all(path.join(".config.nitro_repo")).await?;
+        }
+        Ok(())
     }
 
     fn get_repository_list(&self) -> Result<Vec<RepositoryConfig>, StorageError> {
-        todo!()
+        Ok(self
+            .repositories
+            .iter()
+            .map(|v| v.val().get_repository().clone())
+            .collect())
     }
 
     fn get_repository<S: AsRef<str>>(

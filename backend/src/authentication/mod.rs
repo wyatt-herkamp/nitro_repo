@@ -53,7 +53,7 @@ pub enum Authentication {
     /// Might deny these requests in the future on API routes
     NoIdentification,
     /// An Auth Token was passed under the Authorization Header
-    AuthToken(AuthTokenModel),
+    AuthToken(AuthTokenModel, UserSafeData),
     /// Session Value from Cookie
     Session(Session),
     /// If the Authorization Header could not be parsed. Give them the value
@@ -77,14 +77,7 @@ impl Authentication {
         database: &DatabaseConnection,
     ) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
         match self {
-            Authentication::AuthToken(auth) => {
-                let option = auth.get_user(database).await?;
-                if let Some(user) = option {
-                    Ok(Ok(user))
-                } else {
-                    Ok(Err(NotAuthenticated))
-                }
-            }
+            Authentication::AuthToken(_, user) => Ok(Ok(user)),
             Authentication::Session(session) => {
                 if let Some(user) = session.user {
                     let option = UserEntity::find_by_id(user)

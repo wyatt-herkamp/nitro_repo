@@ -67,7 +67,6 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub token_hash: String,
-    pub token_last_eight: String,
     pub properties: TokenProperties,
     pub user_id: i64,
     pub created: i64,

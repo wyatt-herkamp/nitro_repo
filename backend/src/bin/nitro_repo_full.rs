@@ -12,6 +12,7 @@ use api::authentication::middleware::HandleSession;
 use api::authentication::session::SessionManager;
 use api::cli::handle_cli;
 
+use api::authentication::auth_token::{AuthTokenEntity, AuthTokenModel};
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
 use api::storage::local_storage::LocalConfig;
@@ -21,6 +22,7 @@ use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo};
 use log::info;
 use sea_orm::sea_query::MysqlQueryBuilder;
+use sea_orm::DatabaseBackend::MySql;
 use sea_orm::{DatabaseBackend, Schema};
 use semver::Version;
 use tokio::fs::read_to_string;
@@ -28,17 +30,6 @@ use tokio::sync::RwLock;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let test = StorageSaver {
-        storage_type: StorageType::LocalStorage,
-        generic_config: GeneralConfig {
-            id: "public".to_string(),
-            created: 0,
-        },
-        handler_config: StorageConfig::LocalStorage(LocalConfig {
-            location: Default::default(),
-        }),
-    };
-    println!("{}", serde_json::to_string_pretty(&test).unwrap());
     if handle_cli().await.map_err(convert_error)? {
         return Ok(());
     }

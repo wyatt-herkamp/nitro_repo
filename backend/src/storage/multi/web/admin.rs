@@ -7,7 +7,7 @@ use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::storage::error::StorageError;
 use crate::storage::models::Storage;
-use crate::storage::multi::MultiStorageController;
+use crate::storage::multi::{MultiStorageController, PurgeLevel};
 use crate::storage::{DynamicStorage, StorageSaver};
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::UserModel;
@@ -49,24 +49,21 @@ pub async fn new_storage(
 }
 
 /// Delete the storage based on the name
-#[delete("/storage/{name}")]
+#[delete("/storage/{name}/{level}")]
 pub async fn delete_storage(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
-    name: web::Path<String>,
+    request: web::Path<(String, PurgeLevel)>,
 ) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
-    if storage_handler
-        .delete_storage(&name.into_inner())
+    let (name, level) = request.into_inner();
+    storage_handler
+        .delete_storage(&name, level)
         .await
-        .map_err(InternalError::from)?
-    {
-        Ok(HttpResponse::Ok().finish())
-    } else {
-        Ok(APIError::from(("Storage does not exist", StatusCode::NOT_FOUND)).error_response())
-    }
+        .map_err(InternalError::from)?;
+    Ok(HttpResponse::NoContent().finish())
 }
 
 #[get("/storage/{name}")]

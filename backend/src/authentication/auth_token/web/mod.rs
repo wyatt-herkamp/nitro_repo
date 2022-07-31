@@ -1,4 +1,5 @@
 use crate::authentication::auth_token::database::TokenProperties;
+use crate::authentication::auth_token::utils::hash_token;
 use crate::authentication::auth_token::{
     generate_token, token_expiration, ActiveAuthTokenModel, AuthTokenEntity, AuthTokenModel,
 };
@@ -17,6 +18,8 @@ use sea_orm::{ColumnTrait, EntityTrait, FromQueryResult, QueryFilter};
 use sea_orm::{DatabaseConnection, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sha2::digest::FixedOutput;
+use sha2::{Digest, Sha512};
 use uuid::Uuid;
 
 pub fn authentication_router(cfg: &mut web::ServiceConfig) {
@@ -59,8 +62,7 @@ pub async fn create_token(
     let login = login.into_inner();
     let user = login.verify(connection.get_ref()).await??;
     let token = generate_token();
-    let hash = hash(&token)?;
-    let token_last_eight = token.split_at(token.len() - 8).1.to_string();
+    let hash = hash_token(&token);
     let uuid = Uuid::new_v4();
     let value = ActiveAuthTokenModel {
         id: Set(uuid.clone()),
@@ -70,7 +72,6 @@ pub async fn create_token(
                 .into_inner()
                 .and_then(|x| if x.is_empty() { None } else { Some(x) }),
         }),
-        token_last_eight: Set(token_last_eight),
         user_id: Set(user.id),
         created: Set(get_current_time()),
     };

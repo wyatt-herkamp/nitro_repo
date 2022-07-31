@@ -127,12 +127,12 @@ where
                         if auth_type.eq(&"Bearer") {
                             trace!("Authorization Bearer (token)");
 
-                            let auth_token = auth_token::get_token(0, value, database)
+                            let auth_token = auth_token::get_token(value, database)
                                 .await
                                 .map_err(internal_server_error)?;
 
-                            if let Some(token) = auth_token {
-                                (Authentication::AuthToken(token), None)
+                            if let Some((token, data)) = auth_token {
+                                (Authentication::AuthToken(token, data), None)
                             } else {
                                 (Authentication::NoIdentification, None)
                             }
@@ -158,11 +158,15 @@ where
                                     trace!("Authorization Basic user_id:(token)");
 
                                     // Treat the password as a token
-                                    let auth_token = auth_token::get_token(v, password, database)
+                                    let auth_token = auth_token::get_token(password, database)
                                         .await
                                         .map_err(internal_server_error)?;
-                                    if let Some(token) = auth_token {
-                                        (Authentication::AuthToken(token), None)
+                                    if let Some((token, data)) = auth_token {
+                                        if data.id == v {
+                                            (Authentication::AuthToken(token, data), None)
+                                        } else {
+                                            (Authentication::NoIdentification, None)
+                                        }
                                     } else {
                                         (Authentication::NoIdentification, None)
                                     }

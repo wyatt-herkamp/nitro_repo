@@ -1,13 +1,19 @@
 pub mod database;
+pub mod utils;
 pub mod web;
 
 use crate::authentication::auth_token::database::TokenProperties;
+use crate::authentication::auth_token::utils::hash_token;
 use crate::error::internal_error::InternalError;
+use crate::settings::models::Database;
+use crate::system::user::database::{Model, UserSafeData};
+use crate::system::user::{UserEntity, UserModel};
 use crate::utils::get_current_time;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 pub use database::ActiveModel as ActiveAuthTokenModel;
 pub use database::Entity as AuthTokenEntity;
 pub use database::Model as AuthTokenModel;
+use futures_util::TryStreamExt;
 use log::error;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -34,37 +40,27 @@ pub async fn get_tokens_by_user(
         .await
         .map_err(InternalError::DBError)
 }
-/// 0 = no user. i64 is cheaper than Option<i64>
 pub async fn get_token(
-    user_id: i64,
     token: impl AsRef<str>,
     connection: &DatabaseConnection,
-) -> Result<Option<database::Model>, InternalError> {
-    let (_, end) = token.as_ref().split_at(token.as_ref().len() - 8);
-    let mut expr = database::Column::TokenLastEight.eq(end);
-    if user_id != 0 {
-        expr = expr.and(database::Column::UserId.eq(user_id))
-    }
-    let result = database::Entity::find()
-        .filter(expr)
-        .all(connection)
+) -> Result<Option<(database::Model, UserSafeData)>, InternalError> {
+    let string = hash_token(token);
+    // Look for all data that matches the filter.
+    let result: Option<(database::Model, Option<UserModel>)> = database::Entity::find()
+        .filter(database::Column::TokenHash.eq(string))
+        .find_also_related(UserEntity)
+        .one(connection)
         .await?;
-    let option = result.into_iter().find(|v| {
-        let argon2 = Argon2::default();
-        if let Ok(hash) = PasswordHash::new(v.token_hash.as_str()) {
-            if argon2
-                .verify_password(token.as_ref().as_bytes(), &hash)
-                .is_err()
-            {
-                return false;
+    match result {
+        Some((model, user)) => {
+            if let Some(user) = user {
+                Ok(Some((model, user.into())))
             } else {
-                true
+                Err(InternalError::Error("No user found".to_string()))
             }
-        } else {
-            false
         }
-    });
-    Ok(option)
+        None => Ok(None),
+    }
 }
 
 pub fn generate_token() -> String {

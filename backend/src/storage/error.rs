@@ -22,6 +22,8 @@ pub enum StorageError {
     ParentIssue,
     #[error("Internal Error: {0}")]
     InternalError(String),
+    #[error("Storage Delete Error: {0}")]
+    StorageDeleteError(String),
 }
 
 impl From<std::io::Error> for StorageError {
