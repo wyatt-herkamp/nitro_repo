@@ -9,6 +9,7 @@ export default function createProjectGen(
     {
       name: "Maven",
       lang: "xml",
+      grammar: "xml",
       snippet: `
 <dependency>
     <groupId>${groupID}</groupId>
@@ -19,11 +20,13 @@ export default function createProjectGen(
     {
       name: "Gradle",
       lang: "groovy",
+      grammar: "groovy",
       snippet: `implementation("${groupID}:${artifactID}:${version}")`,
     },
     {
       name: "Gradle.kts",
       lang: "kotlin",
+      grammar: "kotlin",
       snippet: `implementation("${groupID}:${artifactID}:${version}")`,
     },
   ];

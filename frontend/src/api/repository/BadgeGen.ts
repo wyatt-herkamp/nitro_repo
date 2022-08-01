@@ -12,11 +12,13 @@ export function createBadgeSnippets(
   return [
     {
       name: "Markdown",
+      grammar: "markdown",
       lang: "markdown",
       snippet: `[![${text}](${badgeURL})](${appURL})`,
     },
     {
       name: "html",
+      grammar: "html",
       lang: "html",
       snippet: `<a href=${appURL}>
       <img alt="${text}" src="${badgeURL}"/>
@@ -24,6 +26,7 @@ export function createBadgeSnippets(
     },
   ];
 }
+
 export function createProjectSnippet(
   storage: string,
   repository: string,
@@ -38,11 +41,13 @@ export function createProjectSnippet(
     {
       name: "Markdown",
       lang: "markdown",
+      grammar: "markdown",
       snippet: `[![${text}](${badgeURL})](${appURL})`,
     },
     {
       name: "html",
       lang: "html",
+      grammar: "html",
       snippet: `<a href=${appURL}><img alt="${text}" src="${badgeURL}"/></a>`,
     },
   ];

@@ -12,11 +12,12 @@
 import { computed, defineComponent } from "vue";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css";
+import "@/prismjs/themes/prism-material-light.css";
 import prism from "prismjs";
-
 import { SnippetInfo } from "@/api/CodeGenGeneral";
-
-import "@/styles/prism-atom-dark.css";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-groovy";
+import "prismjs/components/prism-kotlin";
 
 export default defineComponent({
   components: { PrismEditor },
@@ -31,7 +32,7 @@ export default defineComponent({
       highlighter: (code: string) =>
         prism.highlight(
           code,
-          prism.languages[props.snippetInfo.lang] ?? prism.languages.js,
+          prism.languages[props.snippetInfo.grammar] ?? prism.languages.js,
           props.snippetInfo.lang
         ),
       ...props.snippetInfo,
@@ -40,3 +41,10 @@ export default defineComponent({
   },
 });
 </script>
+<style>
+.nitroEditor {
+  font-family: "Fira Code", monospace;
+  font-size: 16px;
+  @apply text-white;
+}
+</style>
