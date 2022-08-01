@@ -22,7 +22,6 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
 
 pub mod error;
 pub mod models;
@@ -79,7 +78,7 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
         if headers.get("npm-command").is_some() {
             if path.contains(".tgz") {
                 let split: Vec<&str> = path.split("/-/").collect();
-                let package = split.get(0).unwrap().to_string();
+                let package = split.first().unwrap().to_string();
                 let file = split.get(1).unwrap().to_string();
                 let version = file
                     .replace(format!("{}-", &package).as_str(), "")

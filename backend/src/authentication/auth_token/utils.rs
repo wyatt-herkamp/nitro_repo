@@ -1,4 +1,3 @@
-use serde::de::Unexpected::Str;
 use sha2::digest::FixedOutput;
 use sha2::{Digest, Sha512};
 

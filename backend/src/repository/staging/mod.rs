@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use crate::system::user::database::UserSafeData;
-use crate::system::user::UserModel;
+
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

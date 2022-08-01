@@ -10,7 +10,6 @@ use crate::storage::models::Storage;
 use crate::storage::multi::{MultiStorageController, PurgeLevel};
 use crate::storage::{DynamicStorage, StorageSaver};
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
 
 #[get("/storages")]
 pub async fn get_storages(

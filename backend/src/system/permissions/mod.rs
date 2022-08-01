@@ -27,7 +27,7 @@ impl From<serde_json::Error> for PermissionError {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Default)]
 pub struct UserPermissions {
     pub disabled: bool,
     pub admin: bool,
@@ -39,7 +39,7 @@ pub struct UserPermissions {
     pub viewer: RepositoryPermission,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct RepositoryPermission {
     pub permissions: Vec<String>,
 }
@@ -89,10 +89,8 @@ pub fn can_read(
     match repo.visibility {
         Visibility::Public => Ok(true),
         Visibility::Private => {
-            if !user_perms.viewer.permissions.is_empty() {
-                if can(repo, &user_perms.viewer)? {
-                    return Ok(true);
-                }
+            if !user_perms.viewer.permissions.is_empty() && can(repo, &user_perms.viewer)? {
+                return Ok(true);
             }
             can_deploy(user_perms, repo)
         }
@@ -109,7 +107,7 @@ pub fn can(repo: &RepositoryConfig, perms: &RepositoryPermission) -> Result<bool
     let storage = repo.storage.clone();
     for perm_string in perms.permissions.iter() {
         let split = perm_string.split('/').collect::<Vec<&str>>();
-        let storage_perm = split.get(0).ok_or(StorageClassifier)?.to_string();
+        let storage_perm = split.first().ok_or(StorageClassifier)?.to_string();
         if !storage_perm.eq("*") && !storage_perm.eq_ignore_ascii_case(&storage) {
             continue;
         }

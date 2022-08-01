@@ -12,7 +12,7 @@ use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
+
 #[derive(Deserialize, Clone)]
 pub struct GetPath {
     pub storage: String,
@@ -69,7 +69,7 @@ pub async fn stage_repository(
         return Ok(HttpResponse::BadRequest().finish().into());
     }
     let caller = authentication.get_user(pool.as_ref()).await??;
-    if let Some(_value) = caller.can_deploy_to(&repository.get_repository())? {}
+    if let Some(_value) = caller.can_deploy_to(repository.get_repository())? {}
     repository.push(file, storages.into_inner(), caller).await?;
     Ok(HttpResponse::NoContent().finish().into())
 }

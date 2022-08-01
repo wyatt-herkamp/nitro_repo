@@ -3,10 +3,7 @@ pub mod database;
 use crate::system::user::database::UserSafeData;
 pub use database::Entity as UserEntity;
 pub use database::Model as UserModel;
-use sea_orm::{
-    ColumnTrait, DatabaseConnection, DbErr, EntityTrait, FromQueryResult, QueryFilter, Statement,
-};
-use serde::Deserialize;
+use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 pub async fn get_by_username(
     username: &str,

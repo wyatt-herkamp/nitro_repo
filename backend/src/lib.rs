@@ -1,5 +1,5 @@
 #![allow(clippy::from_over_into)]
-
+#![allow(irrefutable_let_patterns)]
 use actix_web::web::Data;
 use tokio::sync::RwLock;
 

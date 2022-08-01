@@ -2,7 +2,7 @@ use crate::error::internal_error::InternalError;
 use crate::generators::GeneratorCache;
 use comrak::{parse_document, Arena, ComrakExtensionOptions, ComrakOptions, ComrakRenderOptions};
 use log::error;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 pub fn parse_to_html(

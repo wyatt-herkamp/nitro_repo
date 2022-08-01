@@ -2,27 +2,21 @@ pub mod admin;
 
 use crate::authentication::auth_token::database::TokenProperties;
 use crate::authentication::auth_token::utils::hash_token;
-use crate::authentication::auth_token::{
-    generate_token, token_expiration, ActiveAuthTokenModel, AuthTokenEntity, AuthTokenModel,
-};
-use crate::authentication::{verify_login, Authentication, SecureAction};
-use crate::system::hash;
-use crate::system::user::UserModel;
+use crate::authentication::auth_token::{generate_token, ActiveAuthTokenModel, AuthTokenEntity};
+use crate::authentication::{Authentication, SecureAction};
+
 use crate::utils::get_current_time;
 use actix_web::error::ErrorInternalServerError;
-use actix_web::http::StatusCode;
+
 use actix_web::web;
 use actix_web::web::scope;
-use actix_web::{delete, get, post, HttpRequest, HttpResponse};
-use chrono::Duration;
-use log::error;
+use actix_web::{delete, get, post, HttpResponse};
+
 use sea_orm::ActiveValue::Set;
+use sea_orm::DatabaseConnection;
 use sea_orm::{ColumnTrait, EntityTrait, FromQueryResult, QueryFilter};
-use sea_orm::{DatabaseConnection, IntoActiveModel};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use sha2::digest::FixedOutput;
-use sha2::{Digest, Sha512};
+
 use uuid::Uuid;
 
 pub fn authentication_router(cfg: &mut web::ServiceConfig) {
@@ -72,7 +66,7 @@ pub async fn create_token(
     let hash = hash_token(&token);
     let uuid = Uuid::new_v4();
     let value = ActiveAuthTokenModel {
-        id: Set(uuid.clone()),
+        id: Set(uuid),
         token_hash: Set(hash),
         properties: Set(TokenProperties {
             description: login
@@ -82,12 +76,12 @@ pub async fn create_token(
         user_id: Set(user.id),
         created: Set(get_current_time()),
     };
-    let result = AuthTokenEntity::insert(value)
+    let _result = AuthTokenEntity::insert(value)
         .exec(connection.as_ref())
         .await
         .map_err(ErrorInternalServerError)?;
     let response = NewTokenResponse {
-        token: token,
+        token,
         token_id: uuid,
     };
     Ok(HttpResponse::Created().json(response))

@@ -2,19 +2,17 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use std::path::Path;
-use std::{fs, io};
 
-use crate::repository::maven::settings::{MavenSettings, MavenType, ProxySettings};
+use crate::repository::maven::settings::ProxySettings;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType, Visibility};
-use crate::repository::staging::{ProcessingStage, StageHandler};
+use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
+use crate::repository::staging::StageHandler;
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
+
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
@@ -26,14 +24,10 @@ use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::repository::maven::models::Pom;
 use crate::system::user::database::UserSafeData;
-use git2::PushOptions;
-use log::{error, info, trace};
+
+use log::{error, info};
 use std::sync::Arc;
-use tempfile::tempdir;
-use tokio::fs::create_dir_all;
-use tokio::process::Command;
 
 mod external;
 mod git;
@@ -133,7 +127,7 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                     password,
                 } => {
                     let url = repository.clone();
-                    let repository = repository.clone();
+                    let _repository = repository.clone();
                     let username = username.clone();
                     let password = password.clone();
                     let repository = self.get_repository().clone();

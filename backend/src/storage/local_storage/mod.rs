@@ -104,7 +104,7 @@ macro_rules! unsafe_into_config {
             local
         } else {
             unsafe { unreachable_unchecked() }
-        };
+        }
     };
 }
 #[async_trait]
@@ -198,10 +198,10 @@ impl Storage for LocalStorage {
         self.save_repositories().await?;
 
         if delete_files {
-            let path = self.get_repository_folder(&repository.as_ref());
+            let path = self.get_repository_folder(repository.as_ref());
             remove_dir_all(path).await?;
         } else {
-            let path = self.get_repository_folder(&repository.as_ref());
+            let path = self.get_repository_folder(repository.as_ref());
             remove_dir_all(path.join(".config.nitro_repo")).await?;
         }
         Ok(())
@@ -222,7 +222,7 @@ impl Storage for LocalStorage {
         let option = self
             .repositories
             .get(repository.as_ref())
-            .and_then(|v| Some(v.val().clone()));
+            .map(|v| v.val().clone());
         Ok(option)
     }
 
@@ -420,9 +420,7 @@ impl Storage for LocalStorage {
         path: SP,
     ) -> Result<Vec<SystemStorageFile>, StorageError> {
         let path = path.into();
-        let system_path = path
-            .clone()
-            .join_system(self.get_repository_folder(repository.as_ref()));
+        let system_path = path.join_system(self.get_repository_folder(repository.as_ref()));
         let dir = std::fs::read_dir(&system_path)?;
         let mut files = Vec::new();
         for value in dir {

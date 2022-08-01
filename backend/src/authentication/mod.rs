@@ -7,7 +7,6 @@ use actix_web::{FromRequest, HttpMessage, HttpRequest, ResponseError};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use futures_util::future::{ready, Ready};
 use log::trace;
-use regex::internal::Input;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::Deserialize;
 use serde_json::json;
@@ -15,7 +14,7 @@ use serde_json::json;
 use crate::authentication::auth_token::AuthTokenModel;
 use crate::authentication::session::Session;
 use crate::error::internal_error::InternalError;
-use crate::system::user;
+
 use crate::system::user::database::Column::Username;
 use crate::system::user::database::UserSafeData;
 use crate::system::user::{UserEntity, UserModel};

@@ -1,6 +1,6 @@
-use argon2::password_hash::{Salt, SaltString};
+use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
-use clap::arg;
+
 use rand::rngs::OsRng;
 
 use crate::error::internal_error::InternalError;

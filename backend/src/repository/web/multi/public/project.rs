@@ -1,4 +1,3 @@
-use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
 
 use sea_orm::DatabaseConnection;
@@ -13,7 +12,6 @@ use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
 
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::nitro::ProjectRequest;

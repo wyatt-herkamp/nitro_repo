@@ -14,7 +14,6 @@ use crate::repository::nitro::{
     RepositoryListing, VersionData,
 };
 use crate::repository::response::Project;
-use crate::repository::settings::frontend::{Frontend, PageProvider};
 
 use crate::storage::file::StorageDirectoryResponse;
 use crate::storage::models::Storage;

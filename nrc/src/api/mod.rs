@@ -31,7 +31,7 @@ impl User {
         }
     }
 }
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Default)]
 pub struct UserPermissions {
     pub disabled: bool,
     pub admin: bool,
@@ -41,7 +41,7 @@ pub struct UserPermissions {
     pub viewer: Option<RepositoryPermission>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct RepositoryPermission {
     pub permissions: Vec<String>,
 }

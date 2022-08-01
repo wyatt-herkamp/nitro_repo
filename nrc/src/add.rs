@@ -1,11 +1,11 @@
 use crate::configs::user::RepositoryInstance;
 use crate::configs::{get_user_config, save_user_config};
 use crate::Parser;
-use inquire::{error::InquireResult, min_length, Confirm, MultiSelect, Password, Select, Text};
-use serde::{Deserialize, Serialize};
+use inquire::{Text};
+use serde::{Deserialize};
 use serde_json::json;
 use style_term::DefaultColor::{Green, Red};
-use style_term::{Color, EightBitColor, StyleString};
+use style_term::{StyleString};
 use uuid::Uuid;
 
 #[derive(Debug, Parser)]
@@ -32,8 +32,8 @@ impl AddInstance {
             "username": username,
             "password": password,
         });
-        let url = if self.url.ends_with("/") {
-            self.url.trim_end_matches("/").to_string()
+        let url = if self.url.ends_with('/') {
+            self.url.trim_end_matches('/').to_string()
         } else {
             self.url
         };

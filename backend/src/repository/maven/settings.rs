@@ -1,4 +1,3 @@
-use crate::repository::maven::staging::{DeployRequirement, StageSettings};
 use crate::repository::settings::RepositoryConfigType;
 use serde::{Deserialize, Serialize};
 

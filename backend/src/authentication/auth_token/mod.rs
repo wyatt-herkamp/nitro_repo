@@ -5,16 +5,15 @@ pub mod web;
 use crate::authentication::auth_token::database::TokenProperties;
 use crate::authentication::auth_token::utils::hash_token;
 use crate::error::internal_error::InternalError;
-use crate::settings::models::Database;
-use crate::system::user::database::{Model, UserSafeData};
+
+use crate::system::user::database::UserSafeData;
 use crate::system::user::{UserEntity, UserModel};
 use crate::utils::get_current_time;
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
+
 pub use database::ActiveModel as ActiveAuthTokenModel;
 pub use database::Entity as AuthTokenEntity;
 pub use database::Model as AuthTokenModel;
-use futures_util::TryStreamExt;
-use log::error;
+
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use sea_orm::FromQueryResult;

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::repository::settings::RepositoryConfigType;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum PageProvider {
     // Do not create a page for this projects in this repository
     #[default]

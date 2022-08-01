@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct StoragePath {
     segments: Vec<String>,
 }
@@ -17,7 +17,7 @@ impl StoragePath {
         path.join(s);
         path
     }
-    pub fn join_system<P: Into<PathBuf>>(mut self, path: P) -> PathBuf {
+    pub fn join_system<P: Into<PathBuf>>(self, path: P) -> PathBuf {
         let mut path: PathBuf = path.into();
         for x in self.segments {
             path = path.join(x.as_str())
@@ -28,7 +28,7 @@ impl StoragePath {
 impl From<String> for StoragePath {
     fn from(v: String) -> Self {
         Self {
-            segments: v.split("/").map(|s| s.to_string()).collect(),
+            segments: v.split('/').map(|s| s.to_string()).collect(),
         }
     }
 }
@@ -37,7 +37,7 @@ impl FromStr for StoragePath {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            segments: s.split("/").map(|s| s.to_string()).collect(),
+            segments: s.split('/').map(|s| s.to_string()).collect(),
         })
     }
 }

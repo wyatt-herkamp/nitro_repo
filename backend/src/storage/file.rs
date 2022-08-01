@@ -6,10 +6,10 @@ use actix_files::NamedFile;
 use actix_web::body::BoxBody;
 use actix_web::http::header::ACCEPT;
 use actix_web::http::{Method, StatusCode};
-use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use log::{as_error, error, trace};
 use serde::Serialize;
-use tokio::fs::{metadata, OpenOptions};
+use tokio::fs::metadata;
 
 use crate::error::api_error::APIError;
 use crate::storage::error::StorageError;

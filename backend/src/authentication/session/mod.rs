@@ -11,7 +11,7 @@ pub enum SessionManager {
     RedisSessionManager(RedisSessionManager),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Session {
     pub token: String,
     pub user: Option<i64>,

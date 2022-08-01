@@ -1,4 +1,3 @@
-use chrono::format::Fixed::Internal;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -72,8 +71,8 @@ pub async fn get_readme<StorageType: Storage>(
     generator: Arc<GeneratorCache>,
 ) -> Result<String, InternalError> {
     let data = repo.get_config::<Frontend, StorageType>(storage).await?;
-    return if let Some(data) = data {
-        return if PageProvider::None == data.page_provider {
+    if let Some(data) = data {
+        if PageProvider::None == data.page_provider {
             Ok(String::new())
         } else {
             let cache_name = format!("{}/README.html", path.as_ref());
@@ -91,10 +90,10 @@ pub async fn get_readme<StorageType: Storage>(
                     Ok(String::new())
                 };
             }
-        };
+        }
     } else {
         Ok(String::new())
-    };
+    }
 }
 
 pub async fn get_versions<StorageType: Storage>(

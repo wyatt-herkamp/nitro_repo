@@ -1,7 +1,7 @@
 use crate::repository::maven::models::Pom;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::DynamicStorage;
-use crate::system::user::database::{Model as UserModel, UserSafeData};
+use crate::system::user::database::UserSafeData;
 use git2::PushOptions;
 use log::{error, trace};
 use std::path::Path;

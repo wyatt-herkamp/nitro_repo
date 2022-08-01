@@ -1,4 +1,4 @@
-use lockfree::map::{Map, Removed};
+use lockfree::map::Map;
 
 use std::mem;
 use std::path::{Path, PathBuf};
@@ -175,7 +175,7 @@ impl MultiStorageController<DynamicStorage> {
                 error!("Error creating storage {:?}.", v);
                 StorageCreateError(error.to_string())
             })
-            .map(|v| Arc::new(v))?;
+            .map(Arc::new)?;
         let repositories = storage.get_repos_to_load().await?;
         for (name, repository) in repositories.into_iter() {
             info!("Loading repository {} From Recovery", name);
@@ -201,12 +201,9 @@ impl MultiStorageController<DynamicStorage> {
         storage: impl AsRef<str>,
         purge_level: PurgeLevel,
     ) -> Result<(), StorageError> {
-        let option =
-            self.storages
-                .remove(storage.as_ref())
-                .ok_or(StorageError::StorageDeleteError(
-                    "Storage does not exist".to_string(),
-                ))?;
+        let option = self.storages.remove(storage.as_ref()).ok_or_else(|| {
+            StorageError::StorageDeleteError("Storage does not exist".to_string())
+        })?;
         save_storages(self.storage_savers().await).await?;
 
         match purge_level {

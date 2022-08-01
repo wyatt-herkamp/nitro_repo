@@ -15,11 +15,10 @@ use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::{repository_config_group, repository_handler, Repository};
 use crate::repository::maven::proxy::MavenProxySettings;
-use crate::repository::maven::settings::ProxySettings;
-use crate::repository::maven::staging::{MavenStagingConfig, StageSettings};
+
+use crate::repository::maven::staging::MavenStagingConfig;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
+
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 

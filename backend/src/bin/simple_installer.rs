@@ -1,5 +1,5 @@
 use api::settings::models::{Database, GeneralSettings, MysqlSettings, SqliteSettings};
-use api::system::permissions::UserPermissions;
+use api::system::permissions::{RepositoryPermission, UserPermissions};
 use api::system::user::database::ActiveModel;
 use api::system::user::UserEntity;
 use api::system::{hash, user};
@@ -93,8 +93,8 @@ async fn main() {
             admin: true,
             user_manager: true,
             repository_manager: true,
-            deployer: None,
-            viewer: None,
+            deployer: RepositoryPermission::default(),
+            viewer: RepositoryPermission::default(),
         }),
         created: Set(get_current_time()),
     };

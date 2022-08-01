@@ -12,7 +12,7 @@ pub mod frontend;
 pub mod post_deploy;
 pub mod repository_page;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, strum_macros::EnumString)]
 pub enum Visibility {
     Public,
     Private,
@@ -25,7 +25,7 @@ impl Default for Visibility {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, strum_macros::EnumString)]
 pub enum Policy {
     Release,
     Snapshot,
@@ -146,7 +146,7 @@ macro_rules! define_config_handler {
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
             for $handler
         {
-            fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
+            fn update(&mut self, config: $config) -> Result<(), InternalError> {
                 self.$name = config;
                 Ok(())
             }

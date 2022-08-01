@@ -1,5 +1,5 @@
 use actix_web::{get, web, HttpResponse};
-use comrak::Arena;
+
 use log::warn;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
@@ -21,7 +21,7 @@ use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 use crate::system::user::database::UserSafeData;
-use crate::system::user::UserModel;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
     pub name: String,
@@ -124,8 +124,8 @@ pub async fn get_readme<StorageType: Storage>(
     let data = repo
         .get_config::<RepositoryPage, StorageType>(storage)
         .await?;
-    return if let Some(data) = data {
-        return if PageType::None == data.page_type {
+    if let Some(data) = data {
+        if PageType::None == data.page_type {
             Ok(String::new())
         } else {
             let cache_name = ".config.nitro_repo/README.html";
@@ -143,8 +143,8 @@ pub async fn get_readme<StorageType: Storage>(
                     Ok(String::new())
                 }
             };
-        };
+        }
     } else {
         Ok(String::new())
-    };
+    }
 }

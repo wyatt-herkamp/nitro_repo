@@ -4,9 +4,9 @@ use actix_web::{web, HttpResponse};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{DatabaseConnection, IntoActiveModel};
 
-use crate::authentication::{verify_login, Authentication, SecureAction};
+use crate::authentication::{Authentication, SecureAction};
 use crate::system::hash;
-use crate::system::user::{UserEntity, UserModel};
+use crate::system::user::UserEntity;
 use sea_orm::EntityTrait;
 #[get("/me")]
 pub async fn me(
@@ -20,7 +20,7 @@ pub async fn me(
 #[put("/me/password")]
 pub async fn update_password(
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    _auth: Authentication,
     nc: web::Json<SecureAction<String>>,
 ) -> actix_web::Result<HttpResponse> {
     let secure_action: SecureAction<String> = nc.into_inner();

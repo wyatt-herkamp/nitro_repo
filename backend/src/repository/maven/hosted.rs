@@ -4,11 +4,11 @@ use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType, Visibility};
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
+
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
@@ -18,7 +18,7 @@ use crate::repository::maven::models::Pom;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
-use actix_web::Error;
+
 use log::error;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};

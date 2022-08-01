@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use actix_web::{delete, get, post, web, HttpResponse};
-use lockfree::map::Removed;
 
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
@@ -20,7 +17,7 @@ use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
+
 use paste::paste;
 use serde_json::Value;
 

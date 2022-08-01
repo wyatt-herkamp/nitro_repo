@@ -9,9 +9,9 @@ use sea_orm::JsonValue;
 use serde::{Deserialize, Serialize};
 
 use crate::system::user::database::UserSafeData;
-use crate::system::user::{UserEntity, UserModel};
+use crate::system::user::UserEntity;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TokenProperties {
     pub description: Option<String>,
 }
@@ -61,7 +61,7 @@ impl sea_orm::sea_query::ValueType for TokenProperties {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "auth_tokens")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]

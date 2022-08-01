@@ -4,7 +4,7 @@ use std::io::ErrorKind;
 use std::process::exit;
 
 use actix_cors::Cors;
-use actix_web::main;
+
 use actix_web::middleware::DefaultHeaders;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
@@ -12,19 +12,16 @@ use api::authentication::middleware::HandleSession;
 use api::authentication::session::SessionManager;
 use api::cli::handle_cli;
 
-use api::authentication::auth_token::{AuthTokenEntity, AuthTokenModel};
 use api::generators::GeneratorCache;
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
-use api::storage::local_storage::LocalConfig;
+
 use api::storage::multi::MultiStorageController;
-use api::storage::{GeneralConfig, StorageConfig, StorageSaver, StorageType};
+
 use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo};
 use log::info;
-use sea_orm::sea_query::MysqlQueryBuilder;
-use sea_orm::DatabaseBackend::MySql;
-use sea_orm::{DatabaseBackend, Schema};
+
 use semver::Version;
 use tempfile::tempdir;
 use tokio::fs::read_to_string;
@@ -144,7 +141,7 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    return server.bind(address)?.run().await;
+    server.bind(address)?.run().await
 }
 fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error {
     std::io::Error::new(ErrorKind::Other, e)

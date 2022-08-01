@@ -1,13 +1,13 @@
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::maven::settings::{LoginSettings, ProxySettings};
+use crate::repository::maven::settings::ProxySettings;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigType, Visibility};
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
-use crate::system::user::UserModel;
+
 use actix_web::http::header::HeaderMap;
 
 use actix_web::web::Bytes;
@@ -17,7 +17,7 @@ use async_trait::async_trait;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
-use crate::storage::DynamicStorage;
+
 use actix_web::http::StatusCode;
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;

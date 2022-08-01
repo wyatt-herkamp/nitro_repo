@@ -352,7 +352,7 @@ macro_rules! repository_config_group {
                     _ => false,
                 }
             }
-            fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
+            fn update(&mut self, config: $config) -> Result<(), InternalError> {
                 match self {
                     $(
                         $handler::$repository(handler) => crate::repository::settings::RepositoryConfigHandler::<$config>::update(handler, config),

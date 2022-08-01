@@ -122,7 +122,7 @@ where
                         (Authentication::NoIdentification, None)
                     } else {
                         let value = split.get(1).unwrap();
-                        let auth_type = split.get(0).unwrap();
+                        let auth_type = split.first().unwrap();
                         // If its a Bearer use the token System
                         if auth_type.eq(&"Bearer") {
                             trace!("Authorization Bearer (token)");
@@ -148,7 +148,7 @@ where
                             } else {
                                 let (username, password) = unsafe {
                                     (
-                                        split.get(0).unwrap_unchecked(),
+                                        split.first().unwrap_unchecked(),
                                         split.get(1).unwrap_unchecked(),
                                     )
                                 };
