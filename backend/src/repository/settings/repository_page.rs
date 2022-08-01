@@ -1,12 +1,11 @@
 use crate::repository::settings::RepositoryConfigType;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(tag = "page_type", content = "content")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub enum PageType {
     #[default]
     None,
-    Markdown(String),
+    Markdown,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

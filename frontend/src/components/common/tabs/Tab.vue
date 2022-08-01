@@ -2,6 +2,7 @@
   <li
     @click="handleChange"
     class="flex flex-row items-center mx-auto h-12 tab min-w-fit"
+    v-bind="$attrs"
   >
     <span
       v-show="$slots.icon"

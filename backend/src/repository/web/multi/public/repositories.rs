@@ -3,14 +3,19 @@ use comrak::Arena;
 use log::warn;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::authentication::Authentication;
+use crate::error::internal_error::InternalError;
+use crate::generators::markdown::parse_to_html;
+use crate::generators::GeneratorCache;
 
 use crate::repository::handler::Repository;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 
 use crate::repository::settings::repository_page::{PageType, RepositoryPage};
-use crate::repository::settings::{RepositoryType, Visibility};
+use crate::repository::settings::{RepositoryConfig, RepositoryType, Visibility};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
@@ -71,6 +76,7 @@ pub async fn get_repository(
     database: web::Data<DatabaseConnection>,
     authentication: Authentication,
     path: web::Path<(String, String)>,
+    generator: web::Data<GeneratorCache>,
 ) -> actix_web::Result<HttpResponse> {
     let (storage_name, repository_name) = path.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -85,25 +91,12 @@ pub async fn get_repository(
             return Err(value.into());
         }
     }
-    let repository_page: Option<RepositoryPage> = repository
-        .get_repository()
-        .get_config::<RepositoryPage, DynamicStorage>(&storage)
-        .await?;
-    let page_content = if let Some(value) = repository_page {
-        match value.page_type {
-            PageType::None => String::new(),
-            PageType::Markdown(markdown) => {
-                let arena = Arena::new();
-                let html =
-                    comrak::parse_document(&arena, &markdown, &comrak::ComrakOptions::default());
-                let mut content = vec![];
-                comrak::format_html(html, &comrak::ComrakOptions::default(), &mut content);
-                String::from_utf8(content).unwrap()
-            }
-        }
-    } else {
-        String::new()
-    };
+    let page_content = get_readme::<DynamicStorage>(
+        storage.as_ref(),
+        repository.get_repository(),
+        generator.into_inner(),
+    )
+    .await?;
     let v = if repository.supports_nitro() {
         if let Some(v) = repository.get_repository_listing().await? {
             v.last_updated
@@ -121,4 +114,37 @@ pub async fn get_repository(
     };
 
     Ok(HttpResponse::Ok().json(value))
+}
+
+pub async fn get_readme<StorageType: Storage>(
+    storage: &StorageType,
+    repo: &RepositoryConfig,
+    generator: Arc<GeneratorCache>,
+) -> Result<String, InternalError> {
+    let data = repo
+        .get_config::<RepositoryPage, StorageType>(storage)
+        .await?;
+    return if let Some(data) = data {
+        return if PageType::None == data.page_type {
+            Ok(String::new())
+        } else {
+            let cache_name = ".config.nitro_repo/README.html";
+            return if let Some(data) = generator.get_as_string(&cache_name).await? {
+                Ok(data)
+            } else {
+                let option = storage
+                    .get_file(repo, ".config.nitro_repo/README.md")
+                    .await?;
+                if let Some(data) = option {
+                    let result = String::from_utf8(data.as_slice().to_vec())
+                        .map_err(|e| InternalError::Error(e.to_string()))?;
+                    parse_to_html(result, PathBuf::from(cache_name), generator)
+                } else {
+                    Ok(String::new())
+                }
+            };
+        };
+    } else {
+        Ok(String::new())
+    };
 }

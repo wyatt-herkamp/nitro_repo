@@ -30,7 +30,7 @@ pub fn parse_to_html(
     let content = string.clone().into_bytes();
     tokio::spawn(async move {
         if let Err(error) = cache.push_to_cache(path, content).await {
-            error!("Failed to push to cache. The rest of the stages do continue to matter. ");
+            error!("Failed to push to cache. {:?}", error);
         }
     });
     Ok(string)

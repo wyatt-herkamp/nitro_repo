@@ -1,7 +1,7 @@
 use crate::error::internal_error::InternalError;
 use regex::internal::Input;
 use std::path::{Path, PathBuf};
-use tokio::fs::{remove_file, File};
+use tokio::fs::{create_dir_all, remove_file, File};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub mod markdown;
@@ -44,6 +44,11 @@ impl GeneratorCache {
         let path = self.local_path.join(file.as_ref());
         if path.exists() {
             remove_file(&path).await?;
+        } else {
+            let x = path
+                .parent()
+                .ok_or(InternalError::Error("Failed to get parent".to_string()))?;
+            create_dir_all(x).await?;
         }
         let mut file = File::create(path).await?;
         file.write_all(contents.as_ref()).await?;

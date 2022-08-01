@@ -6,7 +6,8 @@
         <div
           v-for="code in codes"
           :key="code.name"
-          :class="currentTab === code.name ? 'active item' : 'item'"
+          class="item"
+          :class="currentTab === code.name ? 'active' : ''"
           @click="currentTab = code.name"
         >
           {{ code.name }}
@@ -63,7 +64,6 @@ export default defineComponent({
 .codeMenu {
   @apply bg-slate-800;
 }
-
 
 .codeBlock {
   @apply pl-2;
