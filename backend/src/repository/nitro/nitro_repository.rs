@@ -1,17 +1,20 @@
 use async_trait::async_trait;
 use log::{debug, error, trace};
+use std::sync::Arc;
 
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
+use crate::generators::GeneratorCache;
 use crate::repository::handler::Repository;
 use crate::repository::nitro::utils::{
-    get_project_data, get_version_data, get_versions, update_project_in_repositories,
+    get_project_data, get_readme, get_version_data, get_versions, update_project_in_repositories,
 };
 use crate::repository::nitro::{
     NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
     RepositoryListing, VersionData,
 };
 use crate::repository::response::Project;
+use crate::repository::settings::frontend::{Frontend, PageProvider};
 
 use crate::storage::file::StorageDirectoryResponse;
 use crate::storage::models::Storage;
@@ -53,6 +56,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
         &self,
         project: &str,
         version: &str,
+        generator_cache: Arc<GeneratorCache>,
     ) -> Result<Option<Project>, InternalError> {
         let project_dir = Self::parse_project_to_directory(project);
 
@@ -63,41 +67,51 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
         )
         .await?;
         if let Some(project_data) = project_data {
-            let version_data = get_version_data(
+            let path = format!("{}/{}", project_dir, &version);
+            let version_data =
+                get_version_data(self.get_storage(), self.get_repository(), &path).await?;
+            let readme = get_readme(
+                path,
                 self.get_storage(),
                 self.get_repository(),
-                &format!("{}/{}", project_dir, &version),
+                generator_cache,
             )
             .await?;
-
             let project = Project {
                 repo_summary: self.get_repository().clone(),
                 project: project_data,
                 version: version_data,
-                frontend_response: String::new(),
+                frontend_response: readme,
             };
             return Ok(Some(project));
         }
         return Ok(None);
     }
-    async fn get_project_latest(&self, project: &str) -> Result<Option<Project>, InternalError> {
+    async fn get_project_latest(
+        &self,
+        project: &str,
+        generator_cache: Arc<GeneratorCache>,
+    ) -> Result<Option<Project>, InternalError> {
         let project_dir = Self::parse_project_to_directory(project);
 
         let project_data =
             get_project_data(self.get_storage(), self.get_repository(), &project_dir).await?;
         if let Some(project_data) = project_data {
-            let version_data = get_version_data(
+            let path = format!("{}/{}", &project_dir, &project_data.versions.latest_version);
+            let version_data =
+                get_version_data(self.get_storage(), self.get_repository(), &path).await?;
+            let readme = get_readme(
+                path,
                 self.get_storage(),
                 self.get_repository(),
-                &format!("{}/{}", &project_dir, &project_data.versions.latest_version),
+                generator_cache,
             )
             .await?;
-
             let project = Project {
                 repo_summary: self.get_repository().clone(),
                 project: project_data,
                 version: version_data,
-                frontend_response: String::new(),
+                frontend_response: readme,
             };
             return Ok(Some(project));
         }

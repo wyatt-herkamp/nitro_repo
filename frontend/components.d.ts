@@ -32,7 +32,6 @@ declare module '@vue/runtime-core' {
     MenuButton: typeof import('./src/components/nav/MenuButton.vue')['default']
     MyAPIKeys: typeof import('./src/components/user/keys/MyAPIKeys.vue')['default']
     Navbar: typeof import('./src/components/nav/Navbar.vue')['default']
-    NewToken: typeof import('./src/components/user/keys/NewToken.vue')['default']
     NitroModal: typeof import('./src/components/common/model/NitroModal.vue')['default']
     NPMSettings: typeof import('./src/components/repo/types/npm/NPMSettings.vue')['default']
     PasswordBox: typeof import('./src/components/user/PasswordBox.vue')['default']

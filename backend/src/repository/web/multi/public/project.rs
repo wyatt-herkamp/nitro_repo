@@ -1,8 +1,10 @@
+use actix_web::web::Data;
 use actix_web::{web, HttpResponse};
 
 use sea_orm::DatabaseConnection;
 
 use crate::authentication::Authentication;
+use crate::generators::GeneratorCache;
 
 use crate::repository::handler::Repository;
 
@@ -21,6 +23,7 @@ pub async fn get_project(
     database: web::Data<DatabaseConnection>,
     authentication: Authentication,
     path: web::Path<ProjectRequest>,
+    cache: web::Data<GeneratorCache>,
 ) -> actix_web::Result<HttpResponse> {
     let (storage_name, repository_name, project, version) = path.into_inner().into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -40,10 +43,12 @@ pub async fn get_project(
     }
     let value = if let Some(version) = version {
         repository
-            .get_project_specific_version(project.as_str(), version.as_ref())
+            .get_project_specific_version(project.as_str(), version.as_ref(), cache.into_inner())
             .await?
     } else {
-        repository.get_project_latest(project.as_str()).await?
+        repository
+            .get_project_latest(project.as_str(), cache.into_inner())
+            .await?
     };
     if let Some(value) = value {
         Ok(HttpResponse::Ok().json(value))

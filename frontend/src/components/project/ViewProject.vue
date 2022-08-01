@@ -56,13 +56,17 @@
 <style scoped></style>
 <script lang="ts">
 import MavenProjectInfo from "@/components/project/types/maven/MavenProjectInfo.vue";
-import { defineComponent, ref } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import { useMeta } from "vue-meta";
 import ProjectBadge from "./badge/ProjectBadge.vue";
 import { Project } from "@/types/repositoryTypes";
 import httpCommon from "@/http-common";
 import DynamicIcon from "@/components/repo/DynamicIcon.vue";
-
+import hljs from "highlight.js/lib/core";
+import xml from "highlight.js/lib/languages/xml";
+import java from "highlight.js/lib/languages/java";
+import groovy from "highlight.js/lib/languages/groovy";
+import "highlight.js/styles/atom-one-dark.css";
 export default defineComponent({
   components: { MavenProjectInfo, ProjectBadge, DynamicIcon },
   props: {
@@ -81,6 +85,12 @@ export default defineComponent({
     },
   },
   async setup(props) {
+    onMounted(() => {
+      hljs.registerLanguage("xml", xml);
+      hljs.registerLanguage("java", java);
+      hljs.registerLanguage("groovy", groovy);
+      hljs.highlightAll();
+    });
     useMeta({
       title: props.version,
     });
@@ -107,6 +117,7 @@ export default defineComponent({
           last_updated: 0,
         };
       });
+
     const last_updated_date = new Date(
       project.version.created
     ).toLocaleDateString("en-US");

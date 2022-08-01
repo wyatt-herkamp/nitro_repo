@@ -13,6 +13,7 @@ use api::authentication::session::SessionManager;
 use api::cli::handle_cli;
 
 use api::authentication::auth_token::{AuthTokenEntity, AuthTokenModel};
+use api::generators::GeneratorCache;
 use api::settings::load_configs;
 use api::settings::models::GeneralSettings;
 use api::storage::local_storage::LocalConfig;
@@ -25,6 +26,7 @@ use sea_orm::sea_query::MysqlQueryBuilder;
 use sea_orm::DatabaseBackend::MySql;
 use sea_orm::{DatabaseBackend, Schema};
 use semver::Version;
+use tempfile::tempdir;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
 
@@ -74,13 +76,17 @@ async fn main() -> std::io::Result<()> {
     set_var("STORAGE_LOCATION", &application.storage_location);
     let max_upload =
         Data::new(PayloadConfig::default().limit(application.max_upload * 1024 * 1024));
+    let dir = tempdir()?;
+    let cache = GeneratorCache {
+        local_path: dir.into_path(),
+    };
 
     let address = application.address.clone();
     let storages_data = Data::new(storages);
     let site_state = Data::new(nitro_repo);
     let database_data = Data::new(connection);
     let session_data = Data::new(session_manager);
-
+    let cache = Data::new(cache);
     let server = HttpServer::new(move || {
         App::new()
             .app_data(storages_data.clone())
@@ -88,6 +94,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(database_data.clone())
             .app_data(session_data.clone())
             .app_data(max_upload.clone())
+            .app_data(cache.clone())
             .wrap(DefaultHeaders::new().add(("X-Powered-By", "Nitro Repo powered by Actix.rs")))
             .wrap(
                 Cors::default()

@@ -1,5 +1,5 @@
 import { apiURL } from "@/http-common";
-import { SnippetInfo } from "../CodeGenGeneral";
+import { escape, SnippetInfo } from "../CodeGenGeneral";
 
 export function createBadgeSnippets(
   storage: string,
@@ -20,9 +20,9 @@ export function createBadgeSnippets(
       name: "html",
       grammar: "html",
       lang: "html",
-      snippet: `<a href=${appURL}>
+      snippet: escape(`<a href=${appURL}>
       <img alt="${text}" src="${badgeURL}"/>
-</a>`,
+</a>`),
     },
   ];
 }

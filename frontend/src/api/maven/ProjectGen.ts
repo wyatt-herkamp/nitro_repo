@@ -1,4 +1,4 @@
-import { SnippetInfo } from "../CodeGenGeneral";
+import { escape, SnippetInfo } from "../CodeGenGeneral";
 
 export default function createProjectGen(
   groupID: string,
@@ -15,7 +15,7 @@ export default function createProjectGen(
     <groupId>${groupID}</groupId>
     <artifactId>${artifactID}</artifactId>
     <version>${version}</version>
-</dependency>`.trim(),
+</dependency>`,
     },
     {
       name: "Gradle",

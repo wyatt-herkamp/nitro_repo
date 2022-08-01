@@ -40,19 +40,21 @@ macro_rules! nitro_repo_handler {
             async fn get_project_specific_version(
                 &self,
                 project: &str,
-                version: &str,
+                version: &str,        generator_cache: Arc<crate::generators::GeneratorCache>,
+
             ) -> Result<Option<crate::repository::response::Project>, InternalError> {
                 match self {
-                    $($v::$name(handler) => handler.get_project_specific_version(project, version).await,)*
+                    $($v::$name(handler) => handler.get_project_specific_version(project, version, generator_cache).await,)*
                     _ => unsafe{ std::hint::unreachable_unchecked() },
                 }
             }
             async fn get_project_latest(
                 &self,
-                project: &str,
+                project: &str,        generator_cache: Arc<crate::generators::GeneratorCache>,
+
             ) -> Result<Option<crate::repository::response::Project>, InternalError> {
                 match self {
-                    $($v::$name(handler) => handler.get_project_latest(project).await,)*
+                    $($v::$name(handler) => handler.get_project_latest(project, generator_cache).await,)*
                     _ => unsafe{ std::hint::unreachable_unchecked() },
 
                 }

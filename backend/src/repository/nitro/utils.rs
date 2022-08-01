@@ -1,12 +1,17 @@
+use chrono::format::Fixed::Internal;
 use std::fs::read_to_string;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use log::debug;
 
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
+use crate::generators::markdown::parse_to_html;
+use crate::generators::GeneratorCache;
 use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing, VersionData};
 use crate::repository::response::VersionResponse;
+use crate::repository::settings::frontend::{Frontend, PageProvider};
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use crate::utils::get_current_time;
@@ -59,6 +64,37 @@ pub async fn update_project_in_repositories<StorageType: Storage>(
         .save_file(repository, string.as_bytes(), PROJECTS_FILE)
         .await?;
     Ok(())
+}
+pub async fn get_readme<StorageType: Storage>(
+    path: impl AsRef<str>,
+    storage: &StorageType,
+    repo: &RepositoryConfig,
+    generator: Arc<GeneratorCache>,
+) -> Result<String, InternalError> {
+    let data = repo.get_config::<Frontend, StorageType>(storage).await?;
+    return if let Some(data) = data {
+        return if PageProvider::None == data.page_provider {
+            Ok(String::new())
+        } else {
+            let cache_name = format!("{}/README.html", path.as_ref());
+            if let Some(data) = generator.get_as_string(&cache_name).await? {
+                return Ok(data);
+            } else {
+                let option = storage
+                    .get_file(repo, &format!("{}/README.md", path.as_ref()))
+                    .await?;
+                return if let Some(data) = option {
+                    let result = String::from_utf8(data.as_slice().to_vec())
+                        .map_err(|e| InternalError::Error(e.to_string()))?;
+                    parse_to_html(result, PathBuf::from(cache_name), generator)
+                } else {
+                    Ok(String::new())
+                };
+            }
+        };
+    } else {
+        Ok(String::new())
+    };
 }
 
 pub async fn get_versions<StorageType: Storage>(
