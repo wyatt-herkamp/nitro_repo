@@ -21,24 +21,3 @@ fn get_artifacts(path: &Path) -> Vec<String> {
     }
     values
 }
-
-#[allow(dead_code)]
-pub fn parse_maven_date_time(path: &str) -> Result<NaiveDateTime, InternalError> {
-    let result = NaiveDateTime::parse_from_str(path, "%Y%m%d%H%M%S")?;
-    Ok(result)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::repository::maven::utils::parse_maven_date_time;
-
-    #[test]
-    fn parse_maven_date_time_test() {
-        println!(
-            "{}",
-            parse_maven_date_time("20211201213303")
-                .unwrap()
-                .format("%Y-%m-%dT%H:%M:%S.%3fZ")
-        );
-    }
-}

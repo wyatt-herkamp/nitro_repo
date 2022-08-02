@@ -51,13 +51,6 @@ impl Default for RepositoryPermission {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct RepositoryPermissionValue {
-    pub policy: Option<Policy>,
-    #[serde(rename = "type")]
-    pub repo_type: Option<String>,
-}
-
 pub fn can_deploy(
     user_perms: &UserPermissions,
     repo: &RepositoryConfig,
@@ -103,31 +96,18 @@ pub fn can(repo: &RepositoryConfig, perms: &RepositoryPermission) -> Result<bool
         // If nothing is set. It is a all view type of scenario
         return Ok(true);
     }
-    let repository = repo.name.clone();
-    let storage = repo.storage.clone();
+
     for perm_string in perms.permissions.iter() {
-        let split = perm_string.split('/').collect::<Vec<&str>>();
-        let storage_perm = split.first().ok_or(StorageClassifier)?.to_string();
-        if !storage_perm.eq("*") && !storage_perm.eq_ignore_ascii_case(&storage) {
-            continue;
-        }
-        drop(storage_perm);
-        let repository_perm = split.get(1).ok_or(RepositoryClassifier)?.to_string();
-        if repository_perm.eq("*") || repository_perm.eq(&repository) {
+        if perm_string.eq("*") {
             return Ok(true);
         }
-        if repository_perm.starts_with('{') && repository_perm.ends_with('}') {
-            let permission: RepositoryPermissionValue = serde_json::from_str(&repository_perm)?;
-            if let Some(policy) = &permission.policy {
-                if !policy.eq(&repo.policy) {
-                    return Ok(false);
-                }
-            }
-            if let Some(repo_type) = &permission.repo_type {
-                if !repo_type.eq(&repo.repository_type.to_string()) {
-                    return Ok(false);
-                }
-            }
+        let split = perm_string.split('/').collect::<Vec<&str>>();
+        let storage_perm = split.first().ok_or(StorageClassifier)?;
+        if !(*storage_perm).eq("*") && !storage_perm.eq_ignore_ascii_case(&repo.storage) {
+            continue;
+        }
+        let repository_perm = split.get(1).ok_or(RepositoryClassifier)?;
+        if (*repository_perm).eq("*") || repository_perm.eq(&repo.name) {
             return Ok(true);
         }
     }

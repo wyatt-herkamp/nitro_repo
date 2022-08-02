@@ -1,9 +1,9 @@
 <template>
   <code
-    style="white-space: pre-line"
-    :class="'nitroEditor language-' + snippetInfo.lang"
+    class="nitroEditor"
+    :class="'language-' + snippetInfo.lang"
+    v-html="highlight"
   >
-    {{ snippetInfo.snippet }}
   </code>
 </template>
 
@@ -15,6 +15,7 @@ import xml from "highlight.js/lib/languages/xml";
 import java from "highlight.js/lib/languages/java";
 import groovy from "highlight.js/lib/languages/groovy";
 import kotlin from "highlight.js/lib/languages/kotlin";
+import markdown from "highlight.js/lib/languages/markdown";
 import "highlight.js/styles/atom-one-dark.css";
 export default defineComponent({
   props: {
@@ -23,21 +24,22 @@ export default defineComponent({
       type: Object as () => SnippetInfo,
     },
   },
-  setup() {
-    onMounted(() => {
-      hljs.registerLanguage("xml", xml);
-      hljs.registerLanguage("kotlin", kotlin);
-      hljs.registerLanguage("java", java);
-      hljs.registerLanguage("groovy", groovy);
-      hljs.highlightAll();
+  setup(props) {
+    hljs.registerLanguage("xml", xml);
+    hljs.registerLanguage("kotlin", kotlin);
+    hljs.registerLanguage("java", java);
+    hljs.registerLanguage("groovy", groovy);
+    hljs.registerLanguage("markdown", markdown);
+    const highlight = computed((): string => {
+      return hljs.highlight(props.snippetInfo.snippet, {
+        language: props.snippetInfo.lang,
+        ignoreIllegals: true,
+      }).value;
     });
+    return {
+      highlight,
+    };
   },
 });
 </script>
-<style>
-.nitroEditor {
-  font-family: "Fira Code", monospace;
-  font-size: 16px;
-  @apply text-white;
-}
-</style>
+<style></style>

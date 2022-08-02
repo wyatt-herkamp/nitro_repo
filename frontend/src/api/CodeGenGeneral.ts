@@ -5,11 +5,11 @@ export interface SnippetInfo {
   snippet: string;
 }
 
-export function escape(htmlStr: string): string {
-  return htmlStr
+export function escapeHtml(value: string): string {
+  return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/'/g, "&#x27;");
 }

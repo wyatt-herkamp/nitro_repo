@@ -1,4 +1,4 @@
-import { escape, SnippetInfo } from "../CodeGenGeneral";
+import { escapeHtml, SnippetInfo } from "../CodeGenGeneral";
 
 export default function createRepositoryInfo(
   url: string,

@@ -1,9 +1,10 @@
-use crate::repository::maven::models::Pom;
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::DynamicStorage;
 use crate::system::user::database::UserSafeData;
 use git2::PushOptions;
 use log::{error, trace};
+use maven_rs::pom::Pom;
+use maven_rs::serde_xml_rs;
 use std::path::Path;
 use std::sync::Arc;
 use std::{fs, io};

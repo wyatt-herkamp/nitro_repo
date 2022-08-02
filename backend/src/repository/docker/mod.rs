@@ -26,6 +26,7 @@ impl<StorageType: Storage> Clone for DockerHandler<StorageType> {
         }
     }
 }
+crate::repository::settings::define_configs_on_handler!(DockerHandler<StorageType>);
 
 #[async_trait]
 impl<StorageType: Storage> Repository<StorageType> for DockerHandler<StorageType> {

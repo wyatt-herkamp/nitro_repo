@@ -25,6 +25,8 @@ impl<S: Storage> Clone for RawHandler<S> {
         }
     }
 }
+crate::repository::settings::define_configs_on_handler!(RawHandler<StorageType>);
+
 #[async_trait]
 impl<StorageType: Storage> Repository<StorageType> for RawHandler<StorageType> {
     fn get_repository(&self) -> &RepositoryConfig {

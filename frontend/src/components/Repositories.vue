@@ -40,7 +40,7 @@ export default defineComponent({
     const list = ref<ListItem[]>([]);
     const openModel = ref(false);
     await httpCommon.apiClient
-      .get<Array<Repository>>(`api/admin/repositories/${props.storage.name}`)
+      .get<Array<Repository>>(`api/admin/repositories/${props.storage.id}`)
       .then((response) => {
         response.data.forEach((repo) => {
           list.value.push({

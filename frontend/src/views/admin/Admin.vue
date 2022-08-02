@@ -1,14 +1,14 @@
 <template>
   <div class="w-full">
     <SimpleTabs :defaultTab="page" @tabChange="onTabChange">
-      <SimpleTab name="General" icon="tachometer">
+      <SimpleTab name="General">
         <h1>General</h1>
         <h3>Coming Soon</h3>
       </SimpleTab>
-      <SimpleTab name="Users" icon="user">
+      <SimpleTab name="Users">
         <Users />
       </SimpleTab>
-      <SimpleTab name="Storages" icon="box">
+      <SimpleTab name="Storages">
         <Storages />
       </SimpleTab>
     </SimpleTabs>

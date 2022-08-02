@@ -1,3 +1,6 @@
+use schemars::schema::RootSchema;
+use schemars::JsonSchema;
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;
@@ -9,35 +12,22 @@ use crate::storage::models::Storage;
 
 pub mod badge;
 pub mod frontend;
-pub mod post_deploy;
 pub mod repository_page;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum Visibility {
+    #[default]
     Public,
     Private,
     Hidden,
 }
-
-impl Default for Visibility {
-    fn default() -> Self {
-        Visibility::Public
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, strum_macros::EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema)]
 pub enum Policy {
+    #[default]
     Release,
     Snapshot,
     Mixed,
 }
-
-impl Default for Policy {
-    fn default() -> Self {
-        Policy::Mixed
-    }
-}
-
 fn default() -> bool {
     true
 }
@@ -58,9 +48,6 @@ pub struct RepositoryConfig {
     /// Rather or not the Repository is active. Meaning it can be pulled or pushed
     #[serde(default = "default")]
     pub active: bool,
-    ///The versioning policy for the Repository
-    #[serde(default)]
-    pub policy: Policy,
     #[serde(default)]
     pub require_token_over_basic: bool,
     /// When it was created
@@ -113,6 +100,10 @@ pub trait RepositoryConfigType: Send + Sync + Clone + Debug + Serialize + Deseri
     }
 }
 
+pub trait RepositoryConfigLayout {
+    fn get_config_layout(&self) -> Vec<(&'static str, RootSchema)>;
+}
+
 pub trait RepositoryConfigHandler<Config: RepositoryConfigType> {
     #[inline(always)]
     fn supports_config(&self) -> bool {
@@ -159,4 +150,38 @@ macro_rules! define_config_handler {
         }
     };
 }
+macro_rules! define_config_layout {
+    ($handler:ty, $($name:ident, $config:ident),*) => {
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $handler {
+            fn get_config_layout(&self) -> Vec<(&'static str, schemars::schema::RootSchema)> {
+                let mut layout = Vec::new();
+                $(
+                    layout.push((stringify!($name), schemars::schema_for!($config)));
+                )*
+                layout
+            }
+        }
+    };
+    ($handler:ty)=>{
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $handler {
+            fn get_config_layout(&self) -> Vec<(&'static str, schemars::schema::RootSchema)> {
+                return Vec::new();
+            }
+        }
+    }
+}
+macro_rules! define_configs_on_handler {
+    ($handler:ty) => {
+        crate::repository::settings::define_config_layout!($handler);
+    };
+    ($handler:ty, $($name:ident, $config:ident),*) => {
+        $(
+            crate::repository::settings::define_config_handler!($name, $handler, $config);
+        )*
+        crate::repository::settings::define_config_layout!($handler, $($name, $config),*);
+    };
+}
+
 pub(crate) use define_config_handler;
+pub(crate) use define_config_layout;
+pub(crate) use define_configs_on_handler;

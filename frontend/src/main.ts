@@ -6,8 +6,6 @@ import Notifications from "@kyvg/vue3-notification";
 import { createMetaManager } from "vue-meta";
 import "@/styles/app.css";
 import "@/styles/form.css";
-import "boxicons/css/boxicons.min.css";
-import "boxicons/dist/boxicons.js";
 import vfmPlugin from "vue-final-modal";
 import { createPinia } from "pinia";
 

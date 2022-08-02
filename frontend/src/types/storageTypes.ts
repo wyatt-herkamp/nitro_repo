@@ -1,6 +1,5 @@
 export interface Storage {
-  name: string;
-  public_name: string;
+  id: string;
   created: number;
 }
 

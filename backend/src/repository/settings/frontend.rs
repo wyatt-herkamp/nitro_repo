@@ -1,8 +1,9 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::settings::RepositoryConfigType;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema)]
 pub enum PageProvider {
     // Do not create a page for this projects in this repository
     #[default]
@@ -14,7 +15,7 @@ pub enum PageProvider {
 }
 
 /// Frontend Settings
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, JsonSchema)]
 pub struct Frontend {
     #[serde(default)]
     pub page_provider: PageProvider,

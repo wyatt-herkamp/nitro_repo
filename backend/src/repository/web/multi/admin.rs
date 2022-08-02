@@ -9,7 +9,7 @@ use crate::error::internal_error::InternalError;
 
 use crate::repository::handler::Repository;
 
-use crate::repository::settings::{Policy, Visibility};
+use crate::repository::settings::{Policy, RepositoryConfigLayout, Visibility};
 
 use crate::repository::RepositoryType;
 
@@ -105,6 +105,22 @@ pub async fn delete_repository(
     Ok(HttpResponse::NoContent().finish())
 }
 
+#[get("/repositories/{storage_name}/{repository_name}/layout")]
+pub async fn get_config_layout(
+    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
+    database: web::Data<DatabaseConnection>,
+    auth: Authentication,
+    path_params: web::Path<(String, String)>,
+    query_params: web::Query<DeleteRepositoryQuery>,
+) -> actix_web::Result<HttpResponse> {
+    //let user = auth.get_user(&database).await??;
+    //user.can_i_edit_repos()?;
+    let (storage_name, repository_name) = path_params.into_inner();
+    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let repository = crate::helpers::get_repository!(storage, repository_name);
+    let vec = repository.get_config_layout();
+    Ok(HttpResponse::Ok().json(vec))
+}
 macro_rules! update_repository_core_prop {
     ($($name:ident,$value_type:tt),*) => {
         $(
@@ -137,4 +153,4 @@ macro_rules! update_repository_core_prop {
         }
     };
 }
-update_repository_core_prop!(visibility, Visibility, active, bool, policy, Policy);
+update_repository_core_prop!(visibility, Visibility, active, bool);

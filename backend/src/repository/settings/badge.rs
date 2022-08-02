@@ -1,9 +1,10 @@
 use badge_maker::Style;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::repository::settings::RepositoryConfigType;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct BadgeSettings {
     #[serde(default = "BadgeStyle::default")]
     pub style: BadgeStyle,
@@ -37,7 +38,7 @@ fn default_label_color() -> String {
     "#555".to_string()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub enum BadgeStyle {
     Flat,
     FlatSquare,

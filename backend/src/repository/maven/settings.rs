@@ -1,9 +1,12 @@
-use crate::repository::settings::RepositoryConfigType;
+use crate::repository::settings::{Policy, RepositoryConfigType};
+use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub struct MavenSettings {
     pub repository_type: MavenType,
+    #[serde(default)]
+    pub policy: Policy,
 }
 impl RepositoryConfigType for MavenSettings {
     fn config_name() -> &'static str {
@@ -11,7 +14,7 @@ impl RepositoryConfigType for MavenSettings {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub enum MavenType {
     #[default]
     /// Hosted on the Storage Only
@@ -23,13 +26,13 @@ pub enum MavenType {
     Proxy,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub struct ProxySettings {
     pub proxy_url: String,
     pub login: Option<LoginSettings>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub struct LoginSettings {
     pub username: String,
     pub password: String,

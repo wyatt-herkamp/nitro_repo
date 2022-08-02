@@ -39,6 +39,8 @@ impl<S: Storage> Clone for NPMHandler<S> {
         }
     }
 }
+crate::repository::settings::define_configs_on_handler!(NPMHandler<StorageType>);
+
 impl<StorageType: Storage> NPMHandler<StorageType> {
     pub async fn create(
         repository: RepositoryConfig,

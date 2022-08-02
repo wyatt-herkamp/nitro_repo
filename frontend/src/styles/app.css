@@ -3,7 +3,7 @@
 @tailwind utilities;
 @font-face {
   font-family: "Fira Code";
-  src: url("@/prismjs/fonts/static/FiraCode-Regular.ttf") format("truetype");
+  src: url("/fonts/static/FiraCode-Regular.ttf") format("truetype");
 }
 html,
 body {

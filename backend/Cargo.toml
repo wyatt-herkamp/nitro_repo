@@ -33,7 +33,6 @@ sqlx = "0.6"
 serde = { version = "1.0.139", features = ["derive"] }
 serde_json = "1.0.82"
 futures = "0.3.21"
-serde-xml-rs = "0.5.1"
 toml = "0.5.9"
 # utils
 rand = "0.8.5"
@@ -73,8 +72,11 @@ semver = "1.0.12"
 redis = "0.21.5"
 comrak = "0.14"
 # Staging
-tempfile="3.3.0"
-git2 = "0.14.4"
+tempfile = "3.3.0"
+git2 = "0.15"
+schemars = "0.8.10"
+# Maven Stuff
+maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 [build-dependencies]
 vergen = "7.0.0"
 [features]

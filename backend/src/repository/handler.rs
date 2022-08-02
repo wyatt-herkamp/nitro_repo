@@ -23,28 +23,7 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
     fn features(&self) -> Vec<&'static str> {
         vec![]
     }
-    fn validate_policy(&self, version: impl AsRef<str>) -> Option<RepoResponse> {
-        match self.get_repository().policy {
-            Policy::Release => {
-                if version.as_ref().contains("-SNAPSHOT") {
-                    return Some(
-                        APIError::from(("Release in a snapshot only", StatusCode::BAD_REQUEST))
-                            .into(),
-                    );
-                }
-            }
-            Policy::Snapshot => {
-                if !version.as_ref().contains("-SNAPSHOT") {
-                    return Some(
-                        APIError::from(("Snapshot in a release only", StatusCode::BAD_REQUEST))
-                            .into(),
-                    );
-                }
-            }
-            _ => {}
-        }
-        None
-    }
+
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,
@@ -127,6 +106,16 @@ macro_rules! repository_handler {
             $(
                 $repository_type($repository_tt<StorageType>),
             )*
+        }
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $name<StorageType> {
+            fn get_config_layout(&self) -> Vec<(&'static str, schemars::schema::RootSchema)> {
+                use crate::repository::settings::RepositoryConfigLayout;
+                match self {
+                    $(
+                        $name::$repository_type(repo) => repo.get_config_layout(),
+                    )*
+                }
+            }
         }
         impl< StorageType: Storage> Clone for $name<StorageType> {
             fn clone(&self) -> Self {

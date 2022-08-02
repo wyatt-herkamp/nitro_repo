@@ -41,8 +41,8 @@ export default defineComponent({
         .then((response) => {
           response.data.forEach((storage) => {
             list.value.push({
-              name: storage.public_name,
-              goTo: "/admin/storage/" + storage.name,
+              name: storage.id,
+              goTo: "/admin/storage/" + storage.id,
             });
           });
         });

@@ -7,7 +7,6 @@
       @click="handleClick(tab.name)"
     >
       <template v-slot:icon>
-        <box-icon v-show="tab.icon" :name="tab.icon"></box-icon>
       </template>
       {{ tab.name }}
     </Tab>

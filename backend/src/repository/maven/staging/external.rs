@@ -41,12 +41,9 @@ pub async fn stage_to_external(
             result.put(&full_url).body(v).send().await?;
         }
     }
-    let mut v = directory
-        .split('/')
-        .map(|v| v.to_string())
-        .collect::<Vec<_>>();
+    let mut v = directory.split('/').collect::<Vec<_>>();
     v.pop();
-    v.push("maven-metadata.xml".to_string());
+    v.push("maven-metadata.xml");
     let path = v.join("/");
     let full_url = format!("{}/{}", url, path);
     let data = storage.get_file(&repository, &path).await?;

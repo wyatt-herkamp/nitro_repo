@@ -23,8 +23,8 @@
       </div>
     </div>
     <div class="lg:basis-1/4">
-      <div class="grid grid-rows-3 gap-4">
-        <div class="m-2 bg-slate-800">
+      <div class="flex flex-col">
+        <div class="m-2 bg-slate-800 pb-5">
           <h1 class="text-white mt-5 ml-5 font-bold">Repository Info</h1>
           <div class="text-white mt-5 ml-5">
             <span
@@ -33,7 +33,7 @@
             >
           </div>
         </div>
-        <div class="m-2">
+        <div class="m-2 my-10">
           <RepositoryBadge
             :repository="{ name: repositoryName, storage: storage }"
           />

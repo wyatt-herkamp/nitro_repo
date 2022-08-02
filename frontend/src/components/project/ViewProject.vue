@@ -92,7 +92,7 @@ export default defineComponent({
       hljs.highlightAll();
     });
     useMeta({
-      title: props.version,
+      title: `${props.projectName} - Nitro Repo`,
     });
     const project: Project = await httpCommon.apiClient
       .get(

@@ -3,7 +3,7 @@ use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
-use crate::repository::maven::settings::ProxySettings;
+use crate::repository::maven::settings::{MavenSettings, ProxySettings};
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
 use crate::repository::staging::StageHandler;
@@ -18,6 +18,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
+use schemars::{schema_for, JsonSchema};
 
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
@@ -26,18 +27,21 @@ use serde::{Deserialize, Serialize};
 
 use crate::system::user::database::UserSafeData;
 
+use crate::repository::maven::validate_policy;
 use log::{error, info};
 use std::sync::Arc;
 
 mod external;
 mod git;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 pub struct MavenStagingConfig {
     /// This is a parent that nothing is actually pushed it. It just allows for data retrieval.
     parent: ProxySettings,
     stage_to: Vec<StageSettings>,
     pre_stage_requirements: Vec<DeployRequirement>,
+    #[serde(default)]
+    policy: Policy,
 }
 
 impl RepositoryConfigType for MavenStagingConfig {
@@ -46,7 +50,7 @@ impl RepositoryConfigType for MavenStagingConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 pub enum StageSettings {
     InternalRepository {
         storage: String,
@@ -65,7 +69,7 @@ pub enum StageSettings {
         password: String,
     },
 }
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 pub enum DeployRequirement {}
 #[derive(Debug)]
 pub struct StagingRepository<S: Storage> {
@@ -73,11 +77,12 @@ pub struct StagingRepository<S: Storage> {
     pub storage: Arc<S>,
     pub stage_settings: MavenStagingConfig,
 }
-crate::repository::settings::define_config_handler!(
-    stage_settings,
+crate::repository::settings::define_configs_on_handler!(
     StagingRepository<StorageType>,
+    stage_settings,
     MavenStagingConfig
 );
+
 #[async_trait]
 impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
     async fn push(
@@ -230,26 +235,8 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
         crate::helpers::write_check!(authentication, conn, self.config);
-        match self.config.policy {
-            Policy::Release => {
-                if path.contains("-SNAPSHOT") {
-                    return Err(APIError::from((
-                        "SNAPSHOT in release only",
-                        StatusCode::BAD_REQUEST,
-                    ))
-                    .into());
-                }
-            }
-            Policy::Snapshot => {
-                if !path.contains("-SNAPSHOT") {
-                    return Err(APIError::from((
-                        "Release in a snapshot only",
-                        StatusCode::BAD_REQUEST,
-                    ))
-                    .into());
-                }
-            }
-            Policy::Mixed => {}
+        if let Some(v) = validate_policy(&self.stage_settings.policy, path) {
+            return Ok(v);
         }
         let exists = self
             .storage

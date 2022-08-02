@@ -1,7 +1,7 @@
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::maven::settings::ProxySettings;
+use crate::repository::maven::settings::{MavenSettings, ProxySettings};
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
@@ -22,6 +22,7 @@ use actix_web::http::StatusCode;
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
+use schemars::{schema_for, JsonSchema};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -47,7 +48,7 @@ impl<S: Storage> Clone for ProxyMavenRepository<S> {
         }
     }
 }
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 pub struct MavenProxySettings {
     proxies: Vec<ProxySettings>,
 }
@@ -56,23 +57,15 @@ impl RepositoryConfigType for MavenProxySettings {
         "maven_proxy.json"
     }
 }
-crate::repository::settings::define_config_handler!(
-    proxy,
+crate::repository::settings::define_configs_on_handler!(
     ProxyMavenRepository<StorageType>,
+    badge,
+    BadgeSettings,
+    frontend,
+    Frontend,
+    proxy,
     MavenProxySettings
 );
-
-crate::repository::settings::define_config_handler!(
-    badge,
-    ProxyMavenRepository<StorageType>,
-    BadgeSettings
-);
-crate::repository::settings::define_config_handler!(
-    frontend,
-    ProxyMavenRepository<StorageType>,
-    Frontend
-);
-
 #[async_trait]
 impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {

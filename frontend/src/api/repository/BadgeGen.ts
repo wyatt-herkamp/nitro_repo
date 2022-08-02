@@ -1,5 +1,5 @@
 import { apiURL } from "@/http-common";
-import { escape, SnippetInfo } from "../CodeGenGeneral";
+import { escapeHtml, SnippetInfo } from "../CodeGenGeneral";
 
 export function createBadgeSnippets(
   storage: string,
@@ -20,9 +20,9 @@ export function createBadgeSnippets(
       name: "html",
       grammar: "html",
       lang: "html",
-      snippet: escape(`<a href=${appURL}>
+      snippet: `<a href="${appURL}">
       <img alt="${text}" src="${badgeURL}"/>
-</a>`),
+</a>`,
     },
   ];
 }
@@ -48,7 +48,9 @@ export function createProjectSnippet(
       name: "html",
       lang: "html",
       grammar: "html",
-      snippet: `<a href=${appURL}><img alt="${text}" src="${badgeURL}"/></a>`,
+      snippet: `<a href=${appURL}>
+  <img alt="${text}" src="${badgeURL}"/>
+</a>`,
     },
   ];
 }

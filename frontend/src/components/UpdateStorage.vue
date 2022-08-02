@@ -9,19 +9,7 @@
               class="nitroTextInput"
               id="grid-name"
               type="text"
-              v-model="storage.name"
-              disabled
-            />
-          </div>
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-public-name">
-              Public Name
-            </label>
-            <input
-              class="nitroTextInput"
-              id="grid-public-name"
-              type="text"
-              v-model="storage.public_name"
+              v-model="storage.id"
               disabled
             />
           </div>
@@ -70,7 +58,7 @@ export default defineComponent({
         if (res.status == 200) {
           storage.value = res.data;
           date.value = new Date(res.data.created).toLocaleString();
-          meta.title = `Nitro Repo - ${res.data.public_name}`;
+          meta.title = `Nitro Repo - ${res.data.id}`;
         }
       });
     return {

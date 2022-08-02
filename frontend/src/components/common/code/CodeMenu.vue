@@ -7,17 +7,15 @@
           v-for="code in codes"
           :key="code.name"
           class="item"
-          :class="currentTab === code.name ? 'active' : ''"
-          @click="currentTab = code.name"
+          :class="currentTab.name === code.name ? 'active' : ''"
+          @click="currentTab = code"
         >
           {{ code.name }}
         </div>
       </nav>
     </div>
-    <div class="codeBox">
-      <div class="codeBlock" v-for="entry in codes" :key="entry.name">
-        <CodeCard v-if="entry.name === currentTab" :snippetInfo="entry" />
-      </div>
+    <div class="codeBlock">
+      <CodeCard :snippetInfo="currentTab" />
     </div>
   </div>
 </template>
@@ -38,7 +36,7 @@ export default defineComponent({
   },
   setup(props) {
     const url = httpCommon.apiURL;
-    const currentTab = ref(props.codes[0].name);
+    const currentTab = ref<SnippetInfo>(props.codes[0]);
 
     return { url, currentTab };
   },
@@ -63,10 +61,19 @@ export default defineComponent({
 }
 .codeMenu {
   @apply bg-slate-800;
+  @apply lg:max-w-md;
+  @apply h-56;
 }
 
 .codeBlock {
   @apply pl-2;
   @apply my-auto;
+  font-family: "Fira Code", monospace;
+  font-size: 14px;
+  @apply text-white;
+  @apply lg:whitespace-pre;
+  @apply overflow-x-auto;
+  @apply h-1/2;
+  @apply select-all;
 }
 </style>
