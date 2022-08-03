@@ -58,7 +58,7 @@ tui = "0.18.0"
 crossterm = "0.24.0"
 clap = { version = "3.2.12", features = ["derive"] }
 unicode-width = "0.1.9"
-
+this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
 [build-dependencies]
 vergen = "7.1.0"
 [features]
