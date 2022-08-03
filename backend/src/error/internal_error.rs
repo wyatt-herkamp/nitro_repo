@@ -3,17 +3,15 @@ use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 use std::time::SystemTimeError;
 
-use crate::storage::error::StorageError;
-
-use crate::system::permissions::PermissionError;
-
-use actix_web::ResponseError;
+use actix_web::http::StatusCode;
+use actix_web::HttpResponse;
 use base64::DecodeError;
 use thiserror::Error;
+use crate::system::permissions::PermissionError;
 
 /// Errors that happen internally to the system.
 /// Not as a direct result of a Request
-#[derive(Error, Debug)]
+#[derive(Error, Debug, ActixError)]
 pub enum InternalError {
     #[error("JSON error {0}")]
     JSONError(serde_json::Error),
@@ -28,6 +26,11 @@ pub enum InternalError {
     #[error("UTF Decode Error")]
     UTF8Error(FromUtf8Error),
     #[error("SMTP Error")]
+    SMTPTransportError(#[from]lettre::transport::smtp::Error),
+    #[error("Missing Argument {0}")]
+    MissingArgument(String),
+    #[error("Not Found")]
+    NotFound,
     SMTPTransportError(lettre::transport::smtp::Error),
     #[error("Internal Error {0}")]
     Error(String),
@@ -37,11 +40,28 @@ pub enum InternalError {
     StorageError(StorageError),
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
+    #[error("Permission Error: {0}")]
+    PermissionError(crate::system::permissions::PermissionError),
+    #[error("THE INTERNAL WEBSITE HAS BROKEN DOWN. PLEASE REPORT to https://github.com/wherkamp/nitro_repo and restart application")]
+    DeadSite,
 }
 impl ResponseError for InternalError {}
 impl From<StorageError> for InternalError {
     fn from(storage_error: StorageError) -> Self {
         InternalError::StorageError(storage_error)
+    }
+}
+
+impl actix_web::error::ResponseError for InternalError {
+    fn error_response(&self) -> HttpResponse {
+        self.json_error()
+    }
+}
+
+//from<Error>
+impl From<PermissionError> for InternalError {
+    fn from(err: PermissionError) -> InternalError {
+        InternalError::PermissionError(err)
     }
 }
 
@@ -57,18 +77,6 @@ impl From<chrono::ParseError> for InternalError {
     }
 }
 
-impl From<std::io::Error> for InternalError {
-    fn from(err: std::io::Error) -> InternalError {
-        InternalError::IOError(err)
-    }
-}
-
-impl From<serde_json::Error> for InternalError {
-    fn from(err: serde_json::Error) -> InternalError {
-        InternalError::JSONError(err)
-    }
-}
-
 impl From<FromUtf8Error> for InternalError {
     fn from(err: FromUtf8Error) -> InternalError {
         InternalError::UTF8Error(err)
@@ -81,9 +89,15 @@ impl From<Box<dyn Error>> for InternalError {
     }
 }
 
-impl From<sea_orm::DbErr> for InternalError {
-    fn from(err: sea_orm::DbErr) -> InternalError {
+impl From<diesel::result::Error> for InternalError {
+    fn from(err: diesel::result::Error) -> InternalError {
         InternalError::DBError(err)
+    }
+}
+
+impl From<r2d2::Error> for InternalError {
+    fn from(err: r2d2::Error) -> InternalError {
+        InternalError::R2D2Error(err)
     }
 }
 
@@ -99,9 +113,27 @@ impl From<handlebars::RenderError> for InternalError {
     }
 }
 
+impl From<serde_json::Error> for InternalError {
+    fn from(err: serde_json::Error) -> InternalError {
+        InternalError::JSONError(err)
+    }
+}
+
+impl From<actix_web::Error> for InternalError {
+    fn from(err: actix_web::Error) -> InternalError {
+        InternalError::ActixWebError(err)
+    }
+}
+
 impl From<SystemTimeError> for InternalError {
     fn from(err: SystemTimeError) -> InternalError {
         InternalError::Error(err.to_string())
+    }
+}
+
+impl From<std::io::Error> for InternalError {
+    fn from(err: std::io::Error) -> InternalError {
+        InternalError::IOError(err)
     }
 }
 
@@ -116,8 +148,9 @@ impl From<ParseBoolError> for InternalError {
         InternalError::BooleanParseError(err)
     }
 }
-impl From<PermissionError> for InternalError {
-    fn from(err: PermissionError) -> InternalError {
-        InternalError::ConfigError(err.to_string())
+
+impl From<&str> for InternalError {
+    fn from(error: &str) -> Self {
+        InternalError::Error(error.to_string())
     }
 }
