@@ -13,7 +13,9 @@ use log::{debug, trace};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use tokio::fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions};
+use tokio::fs::{
+    create_dir, create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions,
+};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use tokio_stream::StreamExt;
@@ -111,7 +113,7 @@ macro_rules! unsafe_into_config {
 impl Storage for LocalStorage {
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
-    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
+    async fn create_new(mut config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
     {
@@ -124,7 +126,14 @@ impl Storage for LocalStorage {
                     .replace("{local_storage_folder}", &result);
             }
         }
+        if local_config.location.contains("{storage_id}") {
+            local_config.location = local_config
+                .location
+                .replace("{storage_id}", &config.generic_config.id);
+        }
+        config.handler_config = StorageConfig::LocalStorage(local_config.clone());
         let buf = PathBuf::from_str(local_config.location.as_ref()).unwrap();
+
         let storage = LocalStorage {
             config: local_config,
             path: buf,
@@ -181,9 +190,24 @@ impl Storage for LocalStorage {
 
     async fn create_repository<R: Into<Self::Repository> + Send>(
         &self,
-        _repository: R,
+        repository: R,
     ) -> Result<(), StorageError> {
-        todo!()
+        let repository = repository.into();
+        if self
+            .repositories
+            .get(repository.get_repository().name.as_str())
+            .is_some()
+        {
+            return Err(StorageError::RepositoryAlreadyExists);
+        }
+        let path = self.get_repository_folder(&repository.get_repository().name);
+        if !path.exists() {
+            create_dir(&path).await?;
+        }
+        let name = repository.get_repository().name.clone();
+        self.repositories.insert(name, Arc::new(repository));
+
+        Ok(())
     }
 
     async fn delete_repository<S: AsRef<str> + Send>(

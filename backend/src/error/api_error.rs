@@ -6,13 +6,13 @@ use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use serde_json::json;
-
+#[deprecated]
 #[derive(Debug)]
 pub struct APIError<'a> {
     pub message: Option<Cow<'a, str>>,
     pub status_code: StatusCode,
 }
-
+#[allow(deprecated)]
 impl<'a> APIError<'a> {
     pub fn bad_request<E: Error>(error: E) -> APIError<'a> {
         APIError {

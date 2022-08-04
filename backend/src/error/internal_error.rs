@@ -1,7 +1,5 @@
-use std::error::Error;
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
-use std::time::SystemTimeError;
 
 use crate::storage::error::StorageError;
 use crate::system::permissions::PermissionError;
@@ -36,7 +34,7 @@ pub enum InternalError {
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
     #[error("Permission Error: {0}")]
-    PermissionError(#[from] crate::system::permissions::PermissionError),
+    PermissionError(#[from] PermissionError),
 }
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {

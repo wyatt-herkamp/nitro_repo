@@ -3,7 +3,6 @@ use actix_web::{delete, get, post, web, HttpResponse, ResponseError};
 use sea_orm::DatabaseConnection;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::storage::error::StorageError;
 use crate::storage::models::Storage;
@@ -35,11 +34,7 @@ pub async fn new_storage(
     user.can_i_edit_repos()?;
     if let Err(error) = storage_handler.create_storage(new_storage.0).await {
         match error {
-            StorageError::StorageAlreadyExist => Ok(APIError::from((
-                "Storage already exist",
-                StatusCode::CONFLICT,
-            ))
-            .error_response()),
+            StorageError::StorageAlreadyExist => Ok(HttpResponse::Conflict().finish()),
             _ => Err(InternalError::from(error).into()),
         }
     } else {

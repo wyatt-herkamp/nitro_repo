@@ -1,25 +1,14 @@
-use std::error::Error;
+use crate::repository::settings::Policy;
 use std::fmt::{Display, Formatter};
+use this_actix_error::ActixError;
+use thiserror::Error;
 
-#[derive(Debug)]
-pub struct MavenError(String);
-
-impl Display for MavenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for MavenError {}
-
-impl From<&str> for MavenError {
-    fn from(err: &str) -> MavenError {
-        MavenError(err.to_string())
-    }
-}
-
-impl From<String> for MavenError {
-    fn from(err: String) -> MavenError {
-        MavenError(err)
-    }
+#[derive(Debug, Error, ActixError)]
+pub enum MavenError {
+    #[status_code(400)]
+    #[error("{0} Only Repository")]
+    PolicyError(Policy),
+    #[status_code(400)]
+    #[error("Unable to Parse Pom File")]
+    PomError,
 }

@@ -31,10 +31,6 @@ use std::hint::unreachable_unchecked;
 macro_rules! storages {
     ($($name:ident, $ty:tt, $config:tt),*) => {
         #[derive(Debug, Clone, Serialize, Deserialize)]
-        pub enum StorageType{
-            $($name,)*
-        }
-        #[derive(Debug, Clone, Serialize, Deserialize)]
         pub enum StorageConfig {
             $($name($config),)*
         }
@@ -48,8 +44,8 @@ impl Storage for DynamicStorage{
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
     async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)> where Self: Sized {
-        match config.storage_type.clone() {
-            $(StorageType::$name => {
+        match config.handler_config {
+            $(StorageConfig::$name(_) => {
                 let _factory = config.clone();
                 $ty::create_new(config).await.map(|storage| DynamicStorage::$name(storage))
             })*
@@ -57,8 +53,8 @@ impl Storage for DynamicStorage{
     }
 
     async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)> where Self: Sized {
-        match config.storage_type.clone() {
-            $(StorageType::$name => {
+        match config.handler_config {
+            $(StorageConfig::$name(_) => {
                 let _factory = config.clone();
                 $ty::new(config).await.map(|storage| DynamicStorage::$name(storage))
             })*
@@ -204,8 +200,6 @@ storages!(LocalStorage, LocalStorage, LocalConfig);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageSaver {
-    /// The Type of the Storage
-    pub storage_type: StorageType,
     /// The Storage Config
     #[serde(flatten)]
     pub generic_config: GeneralConfig,

@@ -43,7 +43,16 @@ pub struct MavenStagingConfig {
     #[serde(default)]
     policy: Policy,
 }
-
+impl Default for MavenStagingConfig {
+    fn default() -> Self {
+        Self {
+            parent: ProxySettings::default(),
+            stage_to: vec![],
+            pre_stage_requirements: vec![],
+            policy: Policy::default(),
+        }
+    }
+}
 impl RepositoryConfigType for MavenStagingConfig {
     fn config_name() -> &'static str {
         "maven_staging.json"
@@ -235,9 +244,8 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
         crate::helpers::write_check!(authentication, conn, self.config);
-        if let Some(v) = validate_policy(&self.stage_settings.policy, path) {
-            return Ok(v);
-        }
+        validate_policy(&self.stage_settings.policy, path)?;
+
         let exists = self
             .storage
             .save_file(&self.config, bytes.as_ref(), path)
@@ -254,4 +262,11 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
             ),
         ))
     }
+}
+pub mod multi_web {
+    crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
+        super::MavenStagingConfig,
+        maven_staging,
+        Staging
+    );
 }

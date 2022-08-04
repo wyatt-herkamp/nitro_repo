@@ -6,8 +6,6 @@
       :name="tab.name"
       @click="handleClick(tab.name)"
     >
-      <template v-slot:icon>
-      </template>
       {{ tab.name }}
     </Tab>
   </Tabs>

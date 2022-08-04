@@ -20,3 +20,13 @@ impl RepositoryConfigType for RepositoryPage {
         "page.json"
     }
 }
+
+pub mod multi_web {
+    use crate::repository;
+    use crate::repository::settings;
+    //repository::web::multi::settings::define_repository_config_handlers_group!(
+    //    settings::repository_page::RepositoryPage,
+    //    page,
+    //     Maven
+    //);
+}

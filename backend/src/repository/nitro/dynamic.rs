@@ -87,7 +87,6 @@ macro_rules! nitro_repo_handler {
                 match self {
                     $($v::$name(handler) => handler.post_deploy(project_folder, version_folder, model, version_data).await,)*
                     _ => unsafe{ std::hint::unreachable_unchecked() },
-
                 }
             }
         }
@@ -98,11 +97,6 @@ pub(crate) use nitro_repo_handler;
 macro_rules! main_nitro_handler {
     ($v:ident, $($name: ident, $ty:tt),*) => {
         crate::repository::nitro::dynamic::nitro_repo_handler!($v, $($name, $ty),*);
-        pub mod nitro_configs{
-            crate::repository::web::multi::configs::define_repository_config_handlers_group!("badge", crate::repository::settings::badge::BadgeSettings, $($name),*);
-            crate::repository::web::multi::configs::define_repository_config_handlers_group!("frontend", crate::repository::settings::frontend::Frontend, $($name),*);
-        }
-
     };
 }
 pub(crate) use main_nitro_handler;

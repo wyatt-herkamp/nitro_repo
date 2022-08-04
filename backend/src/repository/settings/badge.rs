@@ -60,3 +60,13 @@ impl BadgeStyle {
         }
     }
 }
+
+pub mod multi_web {
+    use crate::repository;
+    use crate::repository::settings;
+    repository::web::multi::settings::define_repository_config_handlers_group!(
+        settings::badge::BadgeSettings,
+        badge,
+        Maven
+    );
+}

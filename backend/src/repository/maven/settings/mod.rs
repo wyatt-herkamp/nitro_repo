@@ -1,3 +1,5 @@
+pub mod macros;
+
 use crate::repository::settings::{Policy, RepositoryConfigType};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
@@ -5,8 +7,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub struct MavenSettings {
     pub repository_type: MavenType,
-    #[serde(default)]
-    pub policy: Policy,
 }
 impl RepositoryConfigType for MavenSettings {
     fn config_name() -> &'static str {

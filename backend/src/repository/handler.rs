@@ -1,7 +1,7 @@
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
-use actix_web::Error;
+use actix_web::{Error, ResponseError};
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
@@ -10,7 +10,7 @@ use crate::authentication::Authentication;
 use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig};
+use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
 use crate::storage::models::Storage;
 use crate::system::user::database::UserSafeData;
 use serde::{Deserialize, Serialize};
@@ -99,6 +99,17 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
     }
 }
 
+pub trait CreateRepository<StorageType: Storage>: Repository<StorageType> {
+    type Config: RepositoryConfigType;
+    type Error: ResponseError + Send + Sync + 'static;
+    fn create_repository(
+        config: Self::Config,
+        name: impl Into<String>,
+        storage: Arc<StorageType>,
+    ) -> Result<Self, Self::Error>
+    where
+        Self: Sized;
+}
 macro_rules! repository_handler {
     ($name:ident, $($repository_type:ident,$repository_tt:tt),*) => {
         #[derive(Debug)]

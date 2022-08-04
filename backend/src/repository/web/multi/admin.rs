@@ -37,22 +37,49 @@ pub async fn get_repositories(
     Ok(HttpResponse::Ok().json(storage.get_repository_list().map_err(InternalError::from)?))
 }
 
-/// Create a new repository
-#[post("/repositories/{storage_name}/new/{repository_name}/{repository_type}")]
-pub async fn create_repository(
-    storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
-    database: web::Data<DatabaseConnection>,
-    auth: Authentication,
-    query_params: web::Path<(String, String, RepositoryType)>,
-    _inner_config: web::Json<Option<Value>>,
-) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
-    user.can_i_edit_repos()?;
-    let (storage_name, _repository_name, _repository_type) = query_params.into_inner();
+macro_rules! create_repository {
+    ($($repository:ident,$repository_type:path, $repository_config:path),*) => {
+            $(
+        paste! {
+        pub async fn [<create_repository_ $repository>](
+            storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
+            database: web::Data<DatabaseConnection>,
+            auth: Authentication,
+            path_params: web::Path<(String, String)>,
+            inner_config: web::Json<$repository_config>,
+        ) -> actix_web::Result<HttpResponse> {
+            let user = auth.get_user(&database).await??;
+            user.can_i_edit_repos()?;
+            let (storage_name, repository_name) = path_params.into_inner();
+            let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+            use crate::repository::handler::CreateRepository;
+            let new = $repository_type::create_repository(
+                inner_config.into_inner(),
+                repository_name,
+                storage.clone()
+            )?;
+            storage.create_repository(new).await.map_err(InternalError::from)?;
+            Ok(HttpResponse::NoContent().finish())
+        }
+        }
+            )*
 
-    let _storage = crate::helpers::get_storage!(storage_handler, storage_name);
-    todo!("Create Repository");
+
+        pub fn register_new_repos(cfg: &mut actix_web::web::ServiceConfig){
+            $(
+            paste! {
+            cfg.service(actix_web::web::resource([concat!("/repositories/new/", stringify!($repository),"/{storage_name}/{repository_name}")])
+                .route(actix_web::web::post().to([<create_repository_ $repository>])));
+            }
+            )*
+        }
+    };
 }
+create_repository!(
+    maven,
+    crate::repository::maven::MavenHandler,
+    crate::repository::maven::settings::MavenSettings
+);
 
 #[derive(Deserialize)]
 pub struct GetRepositoryQuery {

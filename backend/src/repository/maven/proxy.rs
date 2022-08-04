@@ -22,6 +22,7 @@ use actix_web::http::StatusCode;
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
+use log::error;
 use schemars::{schema_for, JsonSchema};
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
@@ -48,7 +49,7 @@ impl<S: Storage> Clone for ProxyMavenRepository<S> {
         }
     }
 }
-#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema, Default)]
 pub struct MavenProxySettings {
     proxies: Vec<ProxySettings>,
 }
@@ -122,9 +123,12 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
                                     }
                                 }
                             });
-                            self.storage
-                                .write_file_stream(&self.config, file_client, path)
-                                .expect("Failed to write file stream");
+                            if let Err(error) =
+                                self.storage
+                                    .write_file_stream(&self.config, file_client, path)
+                            {
+                                error!("Unable to save data: {}", error);
+                            }
 
                             return Ok(RepoResponse::HttpResponse(
                                 HttpResponse::Ok().streaming(client),
@@ -143,4 +147,12 @@ impl<S: Storage> NitroRepositoryHandler<S> for ProxyMavenRepository<S> {
     fn parse_project_to_directory<V: Into<String>>(value: V) -> String {
         value.into().replace('.', "/").replace(':', "/")
     }
+}
+
+pub mod multi_web {
+    crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
+        super::MavenProxySettings,
+        maven_proxy,
+        Proxy
+    );
 }

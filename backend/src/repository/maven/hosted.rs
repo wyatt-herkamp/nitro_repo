@@ -1,5 +1,4 @@
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
@@ -18,6 +17,7 @@ use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 
+use crate::repository::maven::error::MavenError;
 use crate::repository::maven::settings::MavenSettings;
 use crate::repository::maven::validate_policy;
 use log::error;
@@ -129,9 +129,8 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
     ) -> Result<RepoResponse, actix_web::Error> {
         let caller = crate::helpers::write_check!(authentication, conn, self.config);
 
-        if let Some(v) = validate_policy(&self.hosted.policy, path) {
-            return Ok(v);
-        }
+        validate_policy(&self.hosted.policy, path)?;
+
         let exists = self
             .storage
             .save_file(&self.config, bytes.as_ref(), path)
@@ -141,9 +140,9 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         //  Post Deploy Handler
         if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
-            let result = String::from_utf8(vec).map_err(APIError::bad_request)?;
+            let result = String::from_utf8(vec).map_err(|_| MavenError::PomError)?;
             let pom: Pom =
-                maven_rs::serde_xml_rs::from_str(&result).map_err(APIError::bad_request)?;
+                maven_rs::serde_xml_rs::from_str(&result).map_err(|_| MavenError::PomError)?;
 
             let project_folder = format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
             let version_folder = format!("{}/{}", &project_folder, &pom.version);
@@ -171,4 +170,11 @@ impl<S: Storage> NitroRepositoryHandler<S> for HostedMavenRepository<S> {
     fn parse_project_to_directory<V: Into<String>>(value: V) -> String {
         value.into().replace('.', "/").replace(':', "/")
     }
+}
+pub mod multi_web {
+    crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
+        super::MavenHosted,
+        maven_hosted,
+        Hosted
+    );
 }

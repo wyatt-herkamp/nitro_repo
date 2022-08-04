@@ -38,7 +38,7 @@ toml = "0.5.9"
 rand = "0.8.5"
 rust-embed = { version = "6.4.0", features = ["interpolate-folder-path"] }
 argon2 = "0.4.1"
-chrono = "0.4.19"
+chrono = "0.4"
 regex = "1.6.0"
 futures-util = "0.3.21"
 base64 = "0.13.0"

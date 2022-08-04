@@ -21,7 +21,9 @@ pub enum Visibility {
     Private,
     Hidden,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema, strum_macros::Display,
+)]
 pub enum Policy {
     #[default]
     Release,

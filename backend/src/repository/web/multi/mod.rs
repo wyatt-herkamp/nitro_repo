@@ -1,9 +1,10 @@
 use actix_web::web;
 
 pub mod admin;
-pub mod configs;
 pub mod public;
 pub mod repository_handler;
+pub mod settings;
+use crate::repository;
 
 pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -30,8 +31,13 @@ pub fn init_repository_handlers(cfg: &mut web::ServiceConfig) {
 pub fn init_admin(cfg: &mut web::ServiceConfig) {
     cfg.service(admin::get_repository)
         .service(admin::get_repositories)
-        .service(admin::create_repository)
         .service(admin::delete_repository)
         .service(admin::get_config_layout);
-    cfg.configure(admin::register_core_updates);
+    cfg.configure(admin::register_new_repos);
+    cfg.configure(admin::register_core_updates)
+        .configure(repository::settings::frontend::multi_web::init)
+        .configure(repository::settings::badge::multi_web::init)
+        .configure(repository::maven::staging::multi_web::init)
+        .configure(repository::maven::proxy::multi_web::init)
+        .configure(repository::maven::hosted::multi_web::init);
 }
