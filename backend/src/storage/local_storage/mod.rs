@@ -20,7 +20,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use tokio_stream::StreamExt;
 
-use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 
 use crate::storage::error::StorageError;
 
@@ -174,6 +174,7 @@ impl Storage for LocalStorage {
         let repo = repo.into();
         self.repositories
             .insert(repo.get_repository().name.clone(), Arc::new(repo));
+
         Ok(())
     }
 
@@ -191,7 +192,7 @@ impl Storage for LocalStorage {
     async fn create_repository<R: Into<Self::Repository> + Send>(
         &self,
         repository: R,
-    ) -> Result<(), StorageError> {
+    ) -> Result<Arc<Self::Repository>, StorageError> {
         let repository = repository.into();
         if self
             .repositories
@@ -205,9 +206,9 @@ impl Storage for LocalStorage {
             create_dir(&path).await?;
         }
         let name = repository.get_repository().name.clone();
-        self.repositories.insert(name, Arc::new(repository));
+        self.repositories.insert(name.clone(), Arc::new(repository));
 
-        Ok(())
+        Ok(self.repositories.get(name.as_str()).unwrap().val().clone())
     }
 
     async fn delete_repository<S: AsRef<str> + Send>(
@@ -257,12 +258,16 @@ impl Storage for LocalStorage {
         self.repositories.remove(repository.as_ref())
     }
 
-    fn add_repository_for_updating(
+    async fn add_repository_for_updating(
         &self,
         name: String,
         repository_arc: Self::Repository,
+        save: bool,
     ) -> Result<(), StorageError> {
         self.repositories.insert(name, Arc::new(repository_arc));
+        if save {
+            self.save_repositories().await?;
+        }
         Ok(())
     }
 
@@ -436,6 +441,25 @@ impl Storage for LocalStorage {
                 .map_err(StorageError::JSONError)
                 .map(Some)
         }
+    }
+
+    async fn save_repository_config<ConfigType: RepositoryConfigType>(
+        &self,
+        repository: &RepositoryConfig,
+        config: &ConfigType,
+    ) -> Result<(), StorageError> {
+        let buf = self
+            .get_repository_folder(repository.name.as_str())
+            .join(".config.nitro_repo")
+            .join(ConfigType::config_name());
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(buf)
+            .await?;
+        let string = serde_json::to_string_pretty(config).map_err(StorageError::JSONError)?;
+        file.write_all(string.as_bytes()).await?;
+        Ok(())
     }
 
     async fn list_files<S: AsRef<str> + Send, SP: Into<StoragePath> + Send>(

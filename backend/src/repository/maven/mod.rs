@@ -7,6 +7,7 @@ use actix_web::{Error, ResponseError};
 use async_trait::async_trait;
 use maven_rs::pom::Pom;
 use sea_orm::DatabaseConnection;
+use serde_json::Value;
 
 use hosted::HostedMavenRepository;
 use proxy::ProxyMavenRepository;
@@ -26,7 +27,7 @@ use crate::repository::maven::proxy::MavenProxySettings;
 use crate::repository::maven::staging::MavenStagingConfig;
 use crate::repository::response::RepoResponse;
 
-use crate::repository::settings::{Policy, RepositoryConfig};
+use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
 use crate::storage::models::Storage;
 
 pub mod error;
@@ -85,7 +86,7 @@ impl<S: Storage> MavenHandler<S> {
                 proxy: repository
                     .get_config::<MavenProxySettings, S>(storage.as_ref())
                     .await?
-                    .ok_or(InternalError::Error("Proxy settings not found".to_string()))?,
+                    .unwrap_or_default(),
                 badge: repository
                     .get_config(storage.as_ref())
                     .await?
@@ -103,7 +104,7 @@ impl<S: Storage> MavenHandler<S> {
                 let settings = repository
                     .get_config::<MavenStagingConfig, S>(storage.as_ref())
                     .await?
-                    .ok_or(InternalError::Error("Stage settings not found".to_string()))?;
+                    .unwrap_or_default();
                 let staging = StagingRepository {
                     config: repository,
                     storage,
@@ -154,7 +155,7 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
         config: MavenSettings,
         name: impl Into<String>,
         storage: Arc<S>,
-    ) -> Result<Self, Self::Error>
+    ) -> Result<(Self, MavenSettings), Self::Error>
     where
         Self: Sized,
     {
@@ -176,16 +177,15 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
                     config: repository_config,
                     storage,
                 };
-                Ok(hosted.into())
+                Ok((hosted.into(), config))
             }
             MavenType::Staging => {
-                let settings = MavenStagingConfig::default();
                 let staging = StagingRepository {
                     config: repository_config,
                     storage,
-                    stage_settings: settings,
+                    stage_settings: MavenStagingConfig::default(),
                 };
-                Ok(staging.into())
+                Ok((staging.into(), config))
             }
             MavenType::Proxy => {
                 let proxy = ProxyMavenRepository {
@@ -195,7 +195,7 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
                     config: repository_config,
                     storage,
                 };
-                Ok(proxy.into())
+                Ok((proxy.into(), config))
             }
         }
     }

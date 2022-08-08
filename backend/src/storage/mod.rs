@@ -67,7 +67,7 @@ impl Storage for DynamicStorage{
         }
     }
 
-    fn add_repo_loaded<R: Into<Self::Repository> + Send>(&self, repo: R) -> Result<(), StorageError>{
+     fn add_repo_loaded<R: Into<Self::Repository> + Send>(&self, repo: R) -> Result<(), StorageError>{
         match self {
             $(DynamicStorage::$name(storage) => storage.add_repo_loaded(repo),)*
             _ => unsafe{ unreachable_unchecked() }
@@ -88,7 +88,7 @@ impl Storage for DynamicStorage{
         }
     }
 
-    async fn create_repository<R: Into<Self::Repository> + Send>(&self, repository: R) -> Result<(), StorageError> {
+    async fn create_repository<R: Into<Self::Repository> + Send>(&self, repository: R) -> Result<Arc<Self::Repository>, StorageError> {
         match self {
             $(DynamicStorage::$name(storage) => storage.create_repository(repository).await,)*
             _ => unsafe{ unreachable_unchecked() }
@@ -123,9 +123,9 @@ impl Storage for DynamicStorage{
         }
     }
 
-     fn add_repository_for_updating(&self,name: String, repository_arc: Self::Repository) -> Result<(), StorageError> {
+    async fn add_repository_for_updating(&self,name: String, repository_arc: Self::Repository, save: bool) -> Result<(), StorageError> {
         match self {
-            $(DynamicStorage::$name(storage) => storage.add_repository_for_updating(name, repository_arc),)*
+            $(DynamicStorage::$name(storage) => storage.add_repository_for_updating(name, repository_arc,save).await,)*
             _ => unsafe{ unreachable_unchecked() }
         }
     }
@@ -181,7 +181,16 @@ impl Storage for DynamicStorage{
             _ => unsafe{ unreachable_unchecked() }
         }
     }
-
+    async fn save_repository_config<ConfigType: crate::repository::settings::RepositoryConfigType>(
+        &self,
+        repository: &RepositoryConfig,
+        config: &ConfigType,
+    ) -> Result<(), StorageError> {
+        match self {
+            $(DynamicStorage::$name(storage) => storage.save_repository_config(repository, config).await,)*
+            _ => unsafe{ unreachable_unchecked() }
+        }
+    }
     async fn list_files<S: AsRef<str>+ Send, SP: Into<StoragePath>+ Send>(
         &self,
         repository: S,

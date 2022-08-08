@@ -4,7 +4,6 @@ export interface Repository {
   storage: string;
   visibility: string;
   active: boolean;
-  policy: Policy;
   created: number;
 }
 export interface ReportGeneration {

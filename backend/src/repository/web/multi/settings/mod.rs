@@ -42,6 +42,7 @@ macro_rules! define_repository_config_set {
                 body: actix_web::web::Json<$config>,
             ) -> actix_web::Result<actix_web::HttpResponse> {
                 use crate::storage::models::Storage;
+                 use crate::repository::handler::Repository;
                 use crate::system::permissions::options::CanIDo;
                 let user = auth.get_user(&database).await??;
                 user.can_i_edit_repos()?;
@@ -56,11 +57,12 @@ macro_rules! define_repository_config_set {
                     }
                 )*
                 repository => {
-                    storage.add_repository_for_updating(name, repository).expect("Failed to add repository for updating");
+                    storage.add_repository_for_updating(name,repository,false).await.expect("Failed to add repository for updating");
                     return Ok(actix_web::HttpResponse::BadRequest().body("Repository type not supported".to_string()));
                 }
                 };
-                storage.add_repository_for_updating(name, repository).expect("Failed to add repository for updating");
+                storage.save_repository_config(repository.get_repository(),  crate::repository::settings::RepositoryConfigHandler::<$config>::get(&repository)).await;
+                storage.add_repository_for_updating(name, repository,false).await.expect("Failed to add repository for updating");
                 result?;
                 Ok(actix_web::HttpResponse::NoContent().finish())
             }

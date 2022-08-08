@@ -1,7 +1,7 @@
 use actix_web::{delete, get, post, web, HttpResponse};
 
 use sea_orm::DatabaseConnection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::authentication::Authentication;
 
@@ -36,9 +36,20 @@ pub async fn get_repositories(
 
     Ok(HttpResponse::Ok().json(storage.get_repository_list().map_err(InternalError::from)?))
 }
-
 macro_rules! create_repository {
     ($($repository:ident,$repository_type:path, $repository_config:path),*) => {
+        pub async fn repository_layout(storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
+            database: web::Data<DatabaseConnection>,
+            auth: Authentication) -> actix_web::Result<HttpResponse> {
+                let user = auth.get_user(&database).await??;
+                user.can_i_edit_repos()?;
+
+                let layouts = vec![$(serde_json::json!({
+                    "name": stringify!($repository),
+                    "layout": schemars::schema_for!($repository_config),
+                }))*];
+                Ok(HttpResponse::Ok().json(layouts))
+        }
             $(
         paste! {
         pub async fn [<create_repository_ $repository>](
@@ -53,12 +64,13 @@ macro_rules! create_repository {
             let (storage_name, repository_name) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
             use crate::repository::handler::CreateRepository;
-            let new = $repository_type::create_repository(
+            let (repository,config) = $repository_type::create_repository(
                 inner_config.into_inner(),
                 repository_name,
                 storage.clone()
             )?;
-            storage.create_repository(new).await.map_err(InternalError::from)?;
+           let repository = storage.create_repository(repository).await.map_err(InternalError::from)?;
+            storage.save_repository_config(repository.get_repository(), &config).await.map_err(InternalError::from)?;
             Ok(HttpResponse::NoContent().finish())
         }
         }
@@ -72,6 +84,8 @@ macro_rules! create_repository {
                 .route(actix_web::web::post().to([<create_repository_ $repository>])));
             }
             )*
+            cfg.service(actix_web::web::resource("/tools/repositories/new/layout")
+                .route(actix_web::web::get().to(repository_layout)));
         }
     };
 }
@@ -138,7 +152,6 @@ pub async fn get_config_layout(
     database: web::Data<DatabaseConnection>,
     auth: Authentication,
     path_params: web::Path<(String, String)>,
-    query_params: web::Query<DeleteRepositoryQuery>,
 ) -> actix_web::Result<HttpResponse> {
     //let user = auth.get_user(&database).await??;
     //user.can_i_edit_repos()?;
@@ -164,7 +177,7 @@ macro_rules! update_repository_core_prop {
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
             let (name, mut repository) = crate::helpers::take_repository!(storage, repository_name);
             repository.get_mut_config().$name = value;
-            storage.add_repository_for_updating(name, repository).expect("Failed to add repository for updating");
+            storage.add_repository_for_updating(name, repository, true).await.expect("Failed to add repository for updating");
 
             Ok(HttpResponse::NoContent().finish())
         }

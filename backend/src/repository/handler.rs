@@ -14,11 +14,14 @@ use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType
 use crate::storage::models::Storage;
 use crate::system::user::database::UserSafeData;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
 #[async_trait]
 pub trait Repository<S: Storage>: Send + Sync + Clone {
     fn get_repository(&self) -> &RepositoryConfig;
     fn get_mut_config(&mut self) -> &mut RepositoryConfig;
     fn get_storage(&self) -> &S;
+
     #[inline(always)]
     fn features(&self) -> Vec<&'static str> {
         vec![]
@@ -32,11 +35,11 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
         _conn: &DatabaseConnection,
         _authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
-        Err(APIError::from((
+        Ok(RepoResponse::try_from((
             "Get is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
-        .into())
+        .unwrap())
     }
     /// Handles a Post Request to a Repo
     async fn handle_post(
@@ -47,10 +50,11 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
         _authentication: Authentication,
         _bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        Err(APIError::from((
+        Ok(RepoResponse::try_from((
             "POST is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
+        .unwrap()
         .into())
     }
     /// Handles a PUT Request to a Repo
@@ -62,10 +66,11 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
         _authentication: Authentication,
         _bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        Err(APIError::from((
+        Ok(RepoResponse::try_from((
             "PUT is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
+        .unwrap()
         .into())
     }
     /// Handles a PATCH Request to a Repo
@@ -77,10 +82,11 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
         _authentication: Authentication,
         _bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
-        Err(APIError::from((
+        Ok(RepoResponse::try_from((
             "Patch is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
+        .unwrap()
         .into())
     }
     /// Handles a HAPIResponseAD Request to a Repo
@@ -91,10 +97,11 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
         _conn: &DatabaseConnection,
         _authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
-        Err(APIError::from((
+        Ok(RepoResponse::try_from((
             "Head is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
+        .unwrap()
         .into())
     }
 }
@@ -106,7 +113,7 @@ pub trait CreateRepository<StorageType: Storage>: Repository<StorageType> {
         config: Self::Config,
         name: impl Into<String>,
         storage: Arc<StorageType>,
-    ) -> Result<Self, Self::Error>
+    ) -> Result<(Self, Self::Config), Self::Error>
     where
         Self: Sized;
 }
@@ -119,7 +126,7 @@ macro_rules! repository_handler {
             )*
         }
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $name<StorageType> {
-            fn get_config_layout(&self) -> Vec<(&'static str, schemars::schema::RootSchema)> {
+            fn get_config_layout(&self) -> Vec<crate::repository::settings::RepositoryLayoutValue> {
                 use crate::repository::settings::RepositoryConfigLayout;
                 match self {
                     $(

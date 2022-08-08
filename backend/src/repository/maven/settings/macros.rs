@@ -37,6 +37,7 @@ macro_rules! define_repository_config_set {
                 body: actix_web::web::Json<$config>,
             ) -> actix_web::Result<actix_web::HttpResponse> {
                 use crate::storage::models::Storage;
+                use crate::repository::handler::Repository;
                 use crate::system::permissions::options::CanIDo;
                 let user = auth.get_user(&database).await??;
                 user.can_i_edit_repos()?;
@@ -48,14 +49,18 @@ macro_rules! define_repository_config_set {
                 let result = if let  crate::repository::handler::DynamicRepositoryHandler::Maven(ref mut repository) = repository {
                     if let crate::repository::maven::MavenHandler::$maven_type(ref mut repository) = repository {
                         let value = crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository);
-                        crate::repository::settings::RepositoryConfigHandler::<$config>::update( repository, body).map(|_| true)
+                        let value = crate::repository::settings::RepositoryConfigHandler::<$config>::update( repository, body).map(|_| true);
+                        if let Err(e) = storage.save_repository_config(repository.get_repository(),  crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository)).await{
+                            log::error!("{}", e);
+                        }
+                        value
                     }else{
                         Ok(false)
                     }
                 }else {
                     Ok(false)
                 };
-                storage.add_repository_for_updating(name, repository).expect("Failed to add repository for updating");
+                storage.add_repository_for_updating(name, repository,false).await.expect("Failed to add repository for updating");
                 if result?{
                     Ok(actix_web::HttpResponse::NoContent().finish())
                 }else{

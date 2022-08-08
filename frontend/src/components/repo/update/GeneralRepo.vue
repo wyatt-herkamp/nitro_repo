@@ -47,19 +47,6 @@
     <h2 class="settingHeader">Repository General Properties</h2>
     <div class="flex flex-wrap mb-6">
       <div class="settingBox">
-        <label class="nitroLabel" for="grid-policy"> Repo Policy</label>
-        <select
-          v-model="repository.policy"
-          class="nitroSelectBox"
-          @change="updatePolicy()"
-        >
-          <option>Mixed</option>
-          <option>Release</option>
-          <option>Snapshot</option>
-        </select>
-      </div>
-
-      <div class="settingBox">
         <label class="nitroLabel" for="grid-active">Repo Active</label>
         <select
           v-model="repository.active"

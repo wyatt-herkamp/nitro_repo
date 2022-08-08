@@ -102,8 +102,15 @@ pub trait RepositoryConfigType: Send + Sync + Clone + Debug + Serialize + Deseri
     }
 }
 
+#[derive(Serialize, Debug)]
+pub struct RepositoryLayoutValue {
+    pub config_name: &'static str,
+    pub config_proper_name: &'static str,
+    pub schema_name: RootSchema,
+}
+
 pub trait RepositoryConfigLayout {
-    fn get_config_layout(&self) -> Vec<(&'static str, RootSchema)>;
+    fn get_config_layout(&self) -> Vec<RepositoryLayoutValue>;
 }
 
 pub trait RepositoryConfigHandler<Config: RepositoryConfigType> {
@@ -155,10 +162,29 @@ macro_rules! define_config_handler {
 macro_rules! define_config_layout {
     ($handler:ty, $($name:ident, $config:ident),*) => {
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $handler {
-            fn get_config_layout(&self) -> Vec<(&'static str, schemars::schema::RootSchema)> {
+            fn get_config_layout(&self) -> Vec<crate::repository::settings::RepositoryLayoutValue> {
                 let mut layout = Vec::new();
                 $(
-                    layout.push((stringify!($name), schemars::schema_for!($config)));
+                    layout.push(crate::repository::settings::RepositoryLayoutValue{
+                        config_name: stringify!($name),
+                        config_proper_name: stringify!($name),
+                        schema_name: schemars::schema_for!($config)
+                    });
+                )*
+                layout
+            }
+        }
+    };
+    ($handler:ty, $($name:ident, $proper_name:literal, $config:ident),*) => {
+        impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $handler {
+            fn get_config_layout(&self) -> Vec<crate::repository::settings::RepositoryLayoutValue> {
+                let mut layout = Vec::new();
+                $(
+                    layout.push(crate::repository::settings::RepositoryLayoutValue{
+                        config_name: stringify!($name),
+                        config_proper_name:  $proper_name,
+                        schema_name: schemars::schema_for!($config)
+                    });
                 )*
                 layout
             }
@@ -166,7 +192,7 @@ macro_rules! define_config_layout {
     };
     ($handler:ty)=>{
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $handler {
-            fn get_config_layout(&self) -> Vec<(&'static str, schemars::schema::RootSchema)> {
+            fn get_config_layout(&self) -> Vec<crate::repository::settings::RepositoryLayoutValue> {
                 return Vec::new();
             }
         }

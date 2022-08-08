@@ -9,7 +9,17 @@ use std::path::Path;
 use std::sync::Arc;
 use std::{fs, io};
 use tempfile::tempdir;
+use thiserror::Error;
 
+#[derive(Error, Debug)]
+pub enum GitStageError {
+    #[error("{0}")]
+    GitError(#[from] git2::Error),
+    #[error("{0}")]
+    IoError(#[from] io::Error),
+    #[error("{0}")]
+    SerdeError(#[from] serde_xml_rs::Error),
+}
 pub async fn stage_to_git(
     username: String,
     password: String,
@@ -19,7 +29,7 @@ pub async fn stage_to_git(
     storage: Arc<DynamicStorage>,
     repository: RepositoryConfig,
     model: UserSafeData,
-) -> anyhow::Result<()> {
+) -> Result<(), GitStageError> {
     let dir = tempdir()?;
     trace!("Cloning {} to {}", url, dir.path().display());
     let git = git2::Repository::clone(&url, dir.path())?;

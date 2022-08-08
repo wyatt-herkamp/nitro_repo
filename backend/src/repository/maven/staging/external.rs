@@ -2,12 +2,24 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
 use crate::storage::DynamicStorage;
 use crate::system::user::database::UserSafeData;
+use std::io;
 
 use log::{trace, warn};
 use reqwest::header::{HeaderMap, USER_AGENT};
 
+use crate::storage::error::StorageError;
 use std::sync::Arc;
+use thiserror::Error;
 
+#[derive(Error, Debug)]
+pub enum ExternalStageError {
+    #[error("{0}")]
+    IoError(#[from] io::Error),
+    #[error("{0}")]
+    ReqwestError(#[from] reqwest::Error),
+    #[error("{0}")]
+    StorageError(#[from] StorageError),
+}
 pub async fn stage_to_external(
     username: String,
     password: String,
@@ -16,14 +28,17 @@ pub async fn stage_to_external(
     storage: Arc<DynamicStorage>,
     repository: RepositoryConfig,
     _model: UserSafeData,
-) -> anyhow::Result<()> {
+) -> Result<(), ExternalStageError> {
     let string = base64::encode(format!("{}:{}", username, password));
     let mut map = HeaderMap::new();
     map.insert(
         "Authorization",
         format!("Basic {}", string).parse().unwrap(),
     );
-    map.insert(USER_AGENT, "Nitro Repository Staging Service".parse()?);
+    map.insert(
+        USER_AGENT,
+        "Nitro Repository Staging Service".parse().unwrap(),
+    );
     let result = reqwest::ClientBuilder::new().default_headers(map).build()?;
     for x in storage
         .list_files(&repository.name, directory.clone())

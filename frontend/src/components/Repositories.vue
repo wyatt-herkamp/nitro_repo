@@ -1,21 +1,21 @@
 <template>
-  <div :class="openModel ? 'flex w-full' : 'w-full lg:w-3/4  xl:mx-auto'">
-    <div
-      class="md:p-4"
-      :class="openModel ? 'hidden lg:block lg:grow ' : 'w-full'"
-    >
+  <div v-show="!create">
+    <div class="md:p-4">
       <SearchableList v-model="list">
         <template v-slot:title> Repositories </template>
         <template v-slot:createButton>
-          <button class="buttonOne" @click="openModel = true">
+          <button class="buttonOne" @click="create = true">
             Create Repository
           </button>
         </template>
       </SearchableList>
     </div>
-    <div v-if="openModel" class="mx-auto lg:w-1/4 lg:flex-row">
-      <CreateRepo v-model="openModel" :storage="storage" />
-    </div>
+  </div>
+  <div v-show="create" class="w-1/2 mx-auto">
+    <button class="buttonOne mt-2" @click="create = false">
+      View Repositories
+    </button>
+    <CreateRepo :storage="storage" />
   </div>
 </template>
 
@@ -24,10 +24,10 @@ import { defineComponent, inject, ref } from "vue";
 import CreateRepo from "@/components/CreateRepo.vue";
 
 import { ListItem } from "./common/list/ListTypes";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import httpCommon from "@/http-common";
 import { Repository } from "@/types/repositoryTypes";
-
+import { Storage } from "@/types/storageTypes";
 export default defineComponent({
   components: { CreateRepo },
   props: {
@@ -38,7 +38,8 @@ export default defineComponent({
   },
   async setup(props) {
     const list = ref<ListItem[]>([]);
-    const openModel = ref(false);
+    const create = ref(useRoute().query.create === "true");
+
     await httpCommon.apiClient
       .get<Array<Repository>>(`api/admin/repositories/${props.storage.id}`)
       .then((response) => {
@@ -52,7 +53,7 @@ export default defineComponent({
 
     return {
       list,
-      openModel,
+      create,
     };
   },
 });

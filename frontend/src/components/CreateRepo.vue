@@ -1,11 +1,8 @@
 <template>
-  <div class="sideCreate">
+  <div>
     <form @submit.prevent="onSubmit()">
       <div class="sideHeader">
         <p class="headerOne">Create User</p>
-        <button type="button" class="xButton" @click="showModel = false">
-          🗙
-        </button>
       </div>
 
       <div class="flex-row">
@@ -27,8 +24,13 @@
           <label class="nitroLabel" for="name"> Repository Type </label>
           <select id="type" v-model="form.type" required class="nitroSelectBox">
             <option disabled selected value="">Repository Type</option>
-            <option value="Maven">Maven</option>
-            <option value="NPM">NPM</option>
+            <option
+              v-for="v in repositoryTypes"
+              :value="v.name"
+              v-bind:key="v.name"
+            >
+              {{ v.name }}
+            </option>
           </select>
         </div>
       </div>
@@ -60,25 +62,23 @@ export default defineComponent({
       type: "",
       error: "",
     });
-    const showModel = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      (val) => {
-        showModel.value = val;
-        emit("update:modelValue", val);
-      }
-    );
-    watch(showModel, (val) => {
-      emit("update:modelValue", val);
-    });
+    const repositoryTypes = ref<Array<{ name: string; layout: unknown }>>();
+
+    httpCommon.apiClient
+      .get<Array<{ name: string; layout: unknown }>>(
+        "api/admin/tools/repositories/new/layout"
+      )
+      .then((res) => {
+        repositoryTypes.value = res.data;
+      });
     return {
       form,
-      showModel,
+      repositoryTypes,
     };
   },
   methods: {
     async onSubmit() {
-      const storageName = this.storage.name;
+      const storageName = this.storage.id;
       await httpCommon.apiClient
         .post(
           `/api/admin/repositories/${storageName}/new/${this.form.name}/${this.form.type}`,

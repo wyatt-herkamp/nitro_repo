@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 
 use tokio_stream::Stream;
 
-use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::error::StorageError;
 use crate::storage::file::{StorageFile, StorageFileResponse};
 
@@ -77,6 +77,7 @@ pub trait Storage: Send + Sync {
         &self,
         repo: R,
     ) -> Result<(), StorageError>;
+
     /// Unload the storage
     fn unload(&mut self) -> Result<(), StorageError>;
 
@@ -86,7 +87,7 @@ pub trait Storage: Send + Sync {
     async fn create_repository<R: Into<Self::Repository> + Send>(
         &self,
         repository: R,
-    ) -> Result<(), StorageError>;
+    ) -> Result<Arc<Self::Repository>, StorageError>;
     /// Deletes a Repository
     /// delete_files rather or not to clean out the Repository Data
     async fn delete_repository<S: AsRef<str> + Send>(
@@ -107,10 +108,11 @@ pub trait Storage: Send + Sync {
         repository: S,
     ) -> Option<Removed<String, Arc<Self::Repository>>>;
     /// Will update all configs for the Repository
-    fn add_repository_for_updating(
+    async fn add_repository_for_updating(
         &self,
         name: String,
         repository_arc: Self::Repository,
+        save: bool,
     ) -> Result<(), StorageError>;
     /// Saves a File to a location
     /// Will overwrite any data found
@@ -159,6 +161,12 @@ pub trait Storage: Send + Sync {
         repository: &RepositoryConfig,
         config_name: &str,
     ) -> Result<Option<ConfigType>, StorageError>;
+
+    async fn save_repository_config<ConfigType: RepositoryConfigType>(
+        &self,
+        repository: &RepositoryConfig,
+        config: &ConfigType,
+    ) -> Result<(), StorageError>;
 
     async fn list_files<S: AsRef<str> + Send, SP: Into<StoragePath> + Send>(
         &self,

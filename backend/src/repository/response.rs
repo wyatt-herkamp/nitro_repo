@@ -38,6 +38,7 @@ pub enum RepoResponse {
     Json(Value, StatusCode),
     PUTResponse(bool, String),
 }
+
 impl From<HttpResponse> for RepoResponse {
     fn from(value: HttpResponse) -> Self {
         RepoResponse::HttpResponse(value)

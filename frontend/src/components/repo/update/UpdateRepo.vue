@@ -1,19 +1,20 @@
 <template>
   <Tabs v-model="view">
     <Tab name="General"> General </Tab>
-    <Tab name="Frontend"> Frontend </Tab>
-    <Tab name="artifact">
-      <template v-slot:icon>
-        <DynamicIcon :repositoryType="repositoryType" />
-      </template>
-      {{ repositoryType }}
-    </Tab>
-    <Tab>
+    <Tab
+      v-for="layout in repositoryLayout"
+      v-bind:key="layout.config_name"
+      :name="layout.config_name"
+      >{{ layout.config_proper_name }}</Tab
+    >
+    <Tab name="">
       <router-link
         :to="{
           name: 'ViewRepository',
-          storage: repository.storage,
-          repo: repository.name,
+          params: {
+            storage: repository.storage,
+            repository: repository.name,
+          },
         }"
       >
         Repository Page</router-link
@@ -21,31 +22,23 @@
     >
   </Tabs>
   <GeneralRepo v-if="view === 'General'" :repository="repository" />
-  <FrontendRepo
-    v-if="badgeSettings && frontendSettings"
-    v-show="view === 'Frontend'"
-    :frontendSettings="frontendSettings"
-    :badgeSettings="badgeSettings"
-    :repository="repository"
-  />
-  <ArtifactSettings v-show="view === 'artifact'" :repository="repository" />
 </template>
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
 import GeneralRepo from "@/components/repo/update/GeneralRepo.vue";
-import FrontendRepo from "@/components/repo/update/FrontendRepo.vue";
-import { apiURL } from "@/http-common";
-import ArtifactSettings from "@/components/repo/update/ArtifactSettings.vue";
+import httpCommon, { apiURL } from "@/http-common";
 import DynamicIcon from "@/components/repo/DynamicIcon.vue";
-import { Frontend, BadgeSettings, Repository } from "@/types/repositoryTypes";
+import { Repository } from "@/types/repositoryTypes";
+import Tabs from "@/components/common/tabs/Tabs.vue";
+import Tab from "@/components/common/tabs/Tab.vue";
 export default defineComponent({
   components: {
+    Tabs,
+    Tab,
     DynamicIcon,
-    ArtifactSettings,
     GeneralRepo,
-    FrontendRepo,
   },
   props: {
     repository: {
@@ -54,25 +47,33 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const repositoryType = Object.keys(props.repository.repository_type)[0];
-    const frontendSettings = ref<Frontend | undefined>(undefined);
-    const badgeSettings = ref<BadgeSettings | undefined>(undefined);
     const url = apiURL;
 
     const router = useRouter();
     const view = ref("General");
-
     useMeta({
       title: props.repository.name + " - " + view.value,
     });
+    const repositoryLayout = ref<
+      Array<{
+        config_name: string;
+        config_proper_name: string;
+        schema_name: Record<string, unknown>;
+      }>
+    >();
+    httpCommon.apiClient
+      .get(
+        `api/admin/repositories/${props.repository.storage}/${props.repository.name}/layout`
+      )
+      .then((response) => {
+        repositoryLayout.value = response.data;
+      });
 
     return {
-      repositoryType,
-      frontendSettings,
-      badgeSettings,
       router,
       view,
       url,
+      repositoryLayout,
     };
   },
 });
