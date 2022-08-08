@@ -3,8 +3,7 @@ use std::string::FromUtf8Error;
 
 use crate::storage::error::StorageError;
 use crate::system::permissions::PermissionError;
-use actix_web::http::StatusCode;
-use actix_web::HttpResponse;
+
 use base64::DecodeError;
 use this_actix_error::ActixError;
 use thiserror::Error;

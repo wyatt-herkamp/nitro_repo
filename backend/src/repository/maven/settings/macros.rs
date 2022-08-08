@@ -48,7 +48,7 @@ macro_rules! define_repository_config_set {
 
                 let result = if let  crate::repository::handler::DynamicRepositoryHandler::Maven(ref mut repository) = repository {
                     if let crate::repository::maven::MavenHandler::$maven_type(ref mut repository) = repository {
-                        let value = crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository);
+                        let _value = crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository);
                         let value = crate::repository::settings::RepositoryConfigHandler::<$config>::update( repository, body).map(|_| true);
                         if let Err(e) = storage.save_repository_config(repository.get_repository(),  crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository)).await{
                             log::error!("{}", e);

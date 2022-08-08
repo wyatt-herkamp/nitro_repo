@@ -18,7 +18,7 @@ use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 
 use crate::repository::maven::error::MavenError;
-use crate::repository::maven::settings::MavenSettings;
+
 use crate::repository::maven::validate_policy;
 use log::error;
 use maven_rs::pom::Pom;

@@ -1,6 +1,6 @@
 use schemars::schema::RootSchema;
 use schemars::JsonSchema;
-use std::collections::HashMap;
+
 use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;

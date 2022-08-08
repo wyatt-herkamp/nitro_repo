@@ -1,7 +1,7 @@
 pub mod macros;
 
-use crate::repository::settings::{Policy, RepositoryConfigType};
-use schemars::{schema_for, JsonSchema};
+use crate::repository::settings::RepositoryConfigType;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]

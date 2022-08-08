@@ -1,9 +1,9 @@
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
+
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
-use crate::repository::maven::settings::{MavenSettings, ProxySettings};
+use crate::repository::maven::settings::ProxySettings;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
 use crate::repository::staging::StageHandler;
@@ -18,10 +18,8 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{Error, HttpResponse};
 use async_trait::async_trait;
-use schemars::{schema_for, JsonSchema};
+use schemars::JsonSchema;
 
-use futures_util::stream::StreamExt;
-use futures_util::SinkExt;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 

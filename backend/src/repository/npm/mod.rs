@@ -1,19 +1,20 @@
-use std::collections::HashMap;
+use actix_web::error::ErrorBadRequest;
 use std::string::String;
 use std::sync::Arc;
 
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
+use actix_web::{HttpResponse, ResponseError};
 use async_trait::async_trait;
 use log::{debug, trace};
 use regex::Regex;
 use sea_orm::DatabaseConnection;
 
 use crate::authentication::{verify_login, Authentication};
-use crate::error::api_error::APIError;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
+use crate::repository::npm::error::NPMError;
 
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
 use crate::repository::npm::utils::generate_get_response;
@@ -22,7 +23,6 @@ use crate::repository::settings::RepositoryConfig;
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
-
 pub mod error;
 pub mod models;
 mod utils;
@@ -50,9 +50,6 @@ impl<StorageType: Storage> NPMHandler<StorageType> {
             config: repository,
             storage,
         })
-    }
-    fn bad_npm_command() -> actix_web::Error {
-        APIError::from(("Bad NPM Command", StatusCode::BAD_REQUEST)).into()
     }
 }
 
@@ -103,7 +100,7 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
                     .await
                     .unwrap();
             if get_response.is_none() {
-                return Err(APIError::not_found().into());
+                return Ok(HttpResponse::NotFound().finish().into());
             }
             let string =
                 serde_json::to_value(&get_response.unwrap()).map_err(InternalError::from)?;
@@ -158,25 +155,16 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
             trace!("NPM {} Command {}", &path, &npm_command);
             if npm_command.eq("publish") {
                 let publish_request: PublishRequest =
-                    serde_json::from_slice(bytes.as_ref()).map_err(APIError::bad_request)?;
+                    serde_json::from_slice(bytes.as_ref()).map_err(ErrorBadRequest)?;
 
-                let attachments: HashMap<String, Result<Attachment, APIError>> = publish_request
-                    ._attachments
-                    .iter()
-                    .map(|(key, path)| {
-                        let attachment: Result<Attachment, APIError> =
-                            serde_json::from_value(path.clone()).map_err(APIError::bad_request);
-                        (key.clone(), attachment)
-                    })
-                    .collect();
                 let mut exists = false;
-                for (attachment_key, attachment) in attachments {
-                    let attachment = attachment?;
+                for (attachment_key, attachment) in publish_request._attachments.iter() {
+                    let attachment: Attachment = serde_json::from_value(attachment.clone())?;
                     let attachment_data =
-                        base64::decode(attachment.data).map_err(APIError::bad_request)?;
+                        base64::decode(attachment.data).map_err(ErrorBadRequest)?;
                     for (version, version_data) in publish_request.versions.iter() {
                         let version_data_string =
-                            serde_json::to_string(version_data).map_err(APIError::bad_request)?;
+                            serde_json::to_string(version_data).map_err(ErrorBadRequest)?;
                         trace!(
                             "Publishing {} Version: {} File:{} Data {}",
                             &publish_request.name,
@@ -242,9 +230,13 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
                     ),
                 ));
             }
-            Err(NPMHandler::<StorageType>::bad_npm_command())
+            Ok(NPMError::InvalidCommand(npm_command.to_string())
+                .error_response()
+                .into())
         } else {
-            Err(NPMHandler::<StorageType>::bad_npm_command())
+            Ok(NPMError::InvalidCommand(String::new())
+                .error_response()
+                .into())
         }
     }
 }

@@ -7,14 +7,13 @@ use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
+
 use crate::error::internal_error::InternalError;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::models::Storage;
 use crate::system::user::database::UserSafeData;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[async_trait]
 pub trait Repository<S: Storage>: Send + Sync + Clone {
@@ -54,8 +53,7 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
             "POST is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
-        .unwrap()
-        .into())
+        .unwrap())
     }
     /// Handles a PUT Request to a Repo
     async fn handle_put(
@@ -70,8 +68,7 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
             "PUT is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
-        .unwrap()
-        .into())
+        .unwrap())
     }
     /// Handles a PATCH Request to a Repo
     async fn handle_patch(
@@ -86,8 +83,7 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
             "Patch is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
-        .unwrap()
-        .into())
+        .unwrap())
     }
     /// Handles a HAPIResponseAD Request to a Repo
     async fn handle_head(
@@ -101,8 +97,7 @@ pub trait Repository<S: Storage>: Send + Sync + Clone {
             "Head is not implemented for this type",
             StatusCode::IM_A_TEAPOT,
         ))
-        .unwrap()
-        .into())
+        .unwrap())
     }
 }
 

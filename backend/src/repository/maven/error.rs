@@ -1,5 +1,5 @@
 use crate::repository::settings::Policy;
-use std::fmt::{Display, Formatter};
+
 use this_actix_error::ActixError;
 use thiserror::Error;
 

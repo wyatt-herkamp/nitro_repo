@@ -129,7 +129,7 @@ pub async fn get_readme<StorageType: Storage>(
             Ok(String::new())
         } else {
             let cache_name = ".config.nitro_repo/README.html";
-            return if let Some(data) = generator.get_as_string(&cache_name).await? {
+            if let Some(data) = generator.get_as_string(&cache_name).await? {
                 Ok(data)
             } else {
                 let option = storage
@@ -142,7 +142,7 @@ pub async fn get_readme<StorageType: Storage>(
                 } else {
                     Ok(String::new())
                 }
-            };
+            }
         }
     } else {
         Ok(String::new())

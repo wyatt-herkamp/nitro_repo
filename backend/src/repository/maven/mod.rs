@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
 use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
+
 use actix_web::web::Bytes;
-use actix_web::{Error, ResponseError};
+use actix_web::Error;
 use async_trait::async_trait;
 use maven_rs::pom::Pom;
 use sea_orm::DatabaseConnection;
-use serde_json::Value;
 
 use hosted::HostedMavenRepository;
 use proxy::ProxyMavenRepository;
@@ -15,7 +14,7 @@ use settings::{MavenSettings, MavenType};
 use staging::StagingRepository;
 
 use crate::authentication::Authentication;
-use crate::error::api_error::APIError;
+
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::{
     repository_config_group, repository_handler, CreateRepository, Repository, RepositoryType,
@@ -27,7 +26,7 @@ use crate::repository::maven::proxy::MavenProxySettings;
 use crate::repository::maven::staging::MavenStagingConfig;
 use crate::repository::response::RepoResponse;
 
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
+use crate::repository::settings::{Policy, RepositoryConfig};
 use crate::storage::models::Storage;
 
 pub mod error;

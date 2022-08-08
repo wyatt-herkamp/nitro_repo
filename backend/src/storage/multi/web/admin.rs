@@ -1,5 +1,4 @@
-use actix_web::http::StatusCode;
-use actix_web::{delete, get, post, web, HttpResponse, ResponseError};
+use actix_web::{delete, get, post, web, HttpResponse};
 use sea_orm::DatabaseConnection;
 
 use crate::authentication::Authentication;

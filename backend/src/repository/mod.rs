@@ -1,7 +1,3 @@
-use crate::repository::settings::RepositoryType;
-use schemars::schema::RootSchema;
-use serde::Serialize;
-
 pub mod ci;
 pub mod docker;
 pub mod frontend;

@@ -1,7 +1,7 @@
-use actix_web::{delete, get, post, web, HttpResponse};
+use actix_web::{delete, get, web, HttpResponse};
 
 use sea_orm::DatabaseConnection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::authentication::Authentication;
 
@@ -9,9 +9,7 @@ use crate::error::internal_error::InternalError;
 
 use crate::repository::handler::Repository;
 
-use crate::repository::settings::{Policy, RepositoryConfigLayout, Visibility};
-
-use crate::repository::RepositoryType;
+use crate::repository::settings::{RepositoryConfigLayout, Visibility};
 
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
@@ -19,7 +17,6 @@ use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 
 use paste::paste;
-use serde_json::Value;
 
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
@@ -38,7 +35,7 @@ pub async fn get_repositories(
 }
 macro_rules! create_repository {
     ($($repository:ident,$repository_type:path, $repository_config:path),*) => {
-        pub async fn repository_layout(storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
+        pub async fn repository_layout(_storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
             database: web::Data<DatabaseConnection>,
             auth: Authentication) -> actix_web::Result<HttpResponse> {
                 let user = auth.get_user(&database).await??;
@@ -149,8 +146,8 @@ pub async fn delete_repository(
 #[get("/repositories/{storage_name}/{repository_name}/layout")]
 pub async fn get_config_layout(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
-    database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    _database: web::Data<DatabaseConnection>,
+    _auth: Authentication,
     path_params: web::Path<(String, String)>,
 ) -> actix_web::Result<HttpResponse> {
     //let user = auth.get_user(&database).await??;

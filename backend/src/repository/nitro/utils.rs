@@ -77,18 +77,18 @@ pub async fn get_readme<StorageType: Storage>(
         } else {
             let cache_name = format!("{}/README.html", path.as_ref());
             if let Some(data) = generator.get_as_string(&cache_name).await? {
-                return Ok(data);
+                Ok(data)
             } else {
                 let option = storage
                     .get_file(repo, &format!("{}/README.md", path.as_ref()))
                     .await?;
-                return if let Some(data) = option {
+                if let Some(data) = option {
                     let result = String::from_utf8(data.as_slice().to_vec())
                         .map_err(|e| InternalError::Error(e.to_string()))?;
                     parse_to_html(result, PathBuf::from(cache_name), generator)
                 } else {
                     Ok(String::new())
-                };
+                }
             }
         }
     } else {

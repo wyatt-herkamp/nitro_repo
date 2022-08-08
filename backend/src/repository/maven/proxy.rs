@@ -1,7 +1,7 @@
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
-use crate::repository::maven::settings::{MavenSettings, ProxySettings};
+use crate::repository::maven::settings::ProxySettings;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
@@ -23,7 +23,7 @@ use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use log::error;
-use schemars::{schema_for, JsonSchema};
+use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

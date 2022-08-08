@@ -45,7 +45,7 @@ impl<'a> APIError<'a> {
         }
     }
 }
-
+#[allow(deprecated)]
 impl<'a> From<(&'a str, StatusCode)> for APIError<'a> {
     fn from((message, status): (&'a str, StatusCode)) -> Self {
         APIError {
@@ -54,7 +54,7 @@ impl<'a> From<(&'a str, StatusCode)> for APIError<'a> {
         }
     }
 }
-
+#[allow(deprecated)]
 impl<'a> Display for APIError<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(message) = &self.message {
@@ -64,7 +64,7 @@ impl<'a> Display for APIError<'a> {
         }
     }
 }
-
+#[allow(deprecated)]
 impl<'a> ResponseError for APIError<'a> {
     fn status_code(&self) -> StatusCode {
         self.status_code

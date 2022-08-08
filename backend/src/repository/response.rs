@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use crate::error::api_error::APIError;
 use actix_web::body::BoxBody;
 use actix_web::http::header::CONTENT_LOCATION;
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -44,12 +43,7 @@ impl From<HttpResponse> for RepoResponse {
         RepoResponse::HttpResponse(value)
     }
 }
-impl From<APIError<'_>> for RepoResponse {
-    fn from(v: APIError<'_>) -> Self {
-        let response: HttpResponse = v.error_response();
-        RepoResponse::HttpResponse(response)
-    }
-}
+
 impl<T: Serialize> TryFrom<(T, StatusCode)> for RepoResponse {
     type Error = InternalError;
 
