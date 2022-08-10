@@ -7,7 +7,7 @@ build = "build.rs"
 license-file = "../LICENSE"
 [dependencies]
 # Web
-actix-web = { version = "4.1", features = ["openssl"] }
+actix-web = { version = "4.1" }
 actix-cors = "0.6"
 actix-service = "2.0"
 openssl = { version = "0.10", features = ["v110"], optional = true }
