@@ -7,15 +7,6 @@ use crate::repository::nitro::VersionData;
 use crate::repository::settings::RepositoryConfigType;
 use crate::utils::get_current_time;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct NPMSettings {}
-
-impl RepositoryConfigType for NPMSettings {
-    fn config_name() -> &'static str {
-        "npm.json"
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     pub password: String,

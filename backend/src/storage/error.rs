@@ -1,8 +1,9 @@
 use std::time::SystemTimeError;
+use this_actix_error::ActixError;
 
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, ActixError)]
 pub enum StorageError {
     #[error("{0}")]
     LoadFailure(String),
@@ -15,8 +16,10 @@ pub enum StorageError {
     #[error("Unable to create a new storage {0}")]
     StorageCreateError(String),
     #[error("Repository Already Exists")]
+    #[status_code(CONFLICT)]
     RepositoryAlreadyExists,
     #[error("Missing Repository")]
+    #[status_code(NOT_FOUND)]
     RepositoryMissing,
     #[error("Unable to find Parent Directory")]
     ParentIssue,

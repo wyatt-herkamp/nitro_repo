@@ -18,6 +18,7 @@ pub struct Session {
     pub user: Option<i64>,
     pub expiration: u64,
 }
+
 #[derive(Error, Debug)]
 pub enum SessionError {
     #[error("As of Now. This can not happen")]
@@ -25,6 +26,7 @@ pub enum SessionError {
     #[error("Error with the Redis Session Manager. {0}")]
     RedisError(redis::RedisError),
 }
+
 #[async_trait]
 pub trait SessionManagerType {
     type Error;
@@ -33,6 +35,8 @@ pub trait SessionManagerType {
     async fn retrieve_session(&self, token: &str) -> Result<Option<Session>, Self::Error>;
     async fn re_create_session(&self, token: &str) -> Result<Session, Self::Error>;
     async fn set_user(&self, token: &str, user: i64) -> Result<(), Self::Error>;
+
+    async fn push_session(&self, session: Session) -> Result<(), Self::Error>;
 }
 
 #[async_trait]
@@ -101,6 +105,19 @@ impl SessionManagerType for SessionManager {
                 .map_err(|_| SessionError::BasicError),
             SessionManager::RedisSessionManager(basic) => basic
                 .set_user(token, user)
+                .await
+                .map_err(SessionError::RedisError),
+        };
+    }
+
+    async fn push_session(&self, session: Session) -> Result<(), Self::Error> {
+        return match self {
+            SessionManager::BasicSessionManager(basic) => basic
+                .push_session(session)
+                .await
+                .map_err(|_| SessionError::BasicError),
+            SessionManager::RedisSessionManager(basic) => basic
+                .push_session(session)
                 .await
                 .map_err(SessionError::RedisError),
         };

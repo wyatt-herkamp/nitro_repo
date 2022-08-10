@@ -40,8 +40,7 @@ pub async fn get_repositories(
 
     let caller: Option<UserSafeData> = authentication.get_user(database.as_ref()).await?.ok();
     let vec: Vec<PublicRepositoryResponse> = value
-        .get_repository_list()
-        .map_err(actix_web::error::ErrorInternalServerError)?
+        .get_repository_list()?
         .into_iter()
         .filter(|repo| {
             if !repo.visibility.eq(&Visibility::Public) {
@@ -81,16 +80,12 @@ pub async fn get_repository(
     let (storage_name, repository_name) = path.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
     let repository = crate::helpers::get_repository!(storage, repository_name);
-    if !repository
-        .get_repository()
-        .visibility
-        .eq(&Visibility::Public)
-    {
-        let caller = authentication.get_user(database.as_ref()).await??;
-        if let Some(value) = caller.can_read_from(repository.get_repository())? {
-            return Err(value.into());
-        }
-    }
+    crate::helpers::read_check!(
+        authentication,
+        database.as_ref(),
+        repository.get_repository()
+    );
+
     let page_content = get_readme::<DynamicStorage>(
         storage.as_ref(),
         repository.get_repository(),

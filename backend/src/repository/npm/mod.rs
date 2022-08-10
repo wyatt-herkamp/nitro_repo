@@ -9,37 +9,92 @@ use actix_web::{HttpResponse, ResponseError};
 use async_trait::async_trait;
 use log::{debug, trace};
 use regex::Regex;
+use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
+use serde::{Deserialize, Serialize};
 
 use crate::authentication::{verify_login, Authentication};
 use crate::error::internal_error::InternalError;
-use crate::repository::handler::Repository;
+use crate::repository::handler::{CreateRepository, Repository, RepositoryType};
 use crate::repository::npm::error::NPMError;
 
 use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
 use crate::repository::npm::utils::generate_get_response;
 use crate::repository::response::RepoResponse;
-use crate::repository::settings::RepositoryConfig;
+use crate::repository::settings::badge::BadgeSettings;
+use crate::repository::settings::frontend::Frontend;
+use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::options::CanIDo;
+use crate::utils::get_current_time;
 pub mod error;
 pub mod models;
 mod utils;
+#[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
+pub struct NPMSettings {}
+
+impl RepositoryConfigType for NPMSettings {
+    fn config_name() -> &'static str {
+        "npm.json"
+    }
+}
 #[derive(Debug)]
 pub struct NPMHandler<StorageType: Storage> {
     config: RepositoryConfig,
     storage: Arc<StorageType>,
+    badge: BadgeSettings,
+    frontend: Frontend,
 }
 impl<S: Storage> Clone for NPMHandler<S> {
     fn clone(&self) -> Self {
         NPMHandler {
             config: self.config.clone(),
             storage: self.storage.clone(),
+            badge: self.badge.clone(),
+            frontend: self.frontend.clone(),
         }
     }
 }
-crate::repository::settings::define_configs_on_handler!(NPMHandler<StorageType>);
+impl<S: Storage> CreateRepository<S> for NPMHandler<S> {
+    type Config = NPMSettings;
+    type Error = NPMError;
+
+    fn create_repository(
+        config: Self::Config,
+        name: impl Into<String>,
+        storage: Arc<S>,
+    ) -> Result<(Self, Self::Config), Self::Error>
+    where
+        Self: Sized,
+    {
+        let repository_config = RepositoryConfig {
+            name: name.into(),
+            repository_type: RepositoryType::NPM,
+            storage: storage.storage_config().generic_config.id.clone(),
+            visibility: Default::default(),
+            active: true,
+            require_token_over_basic: false,
+            created: get_current_time(),
+        };
+        Ok((
+            NPMHandler {
+                config: repository_config,
+                storage,
+                badge: Default::default(),
+                frontend: Default::default(),
+            },
+            config,
+        ))
+    }
+}
+crate::repository::settings::define_configs_on_handler!(
+    NPMHandler<StorageType>,
+    badge,
+    BadgeSettings,
+    frontend,
+    Frontend
+);
 
 impl<StorageType: Storage> NPMHandler<StorageType> {
     pub async fn create(
@@ -49,6 +104,8 @@ impl<StorageType: Storage> NPMHandler<StorageType> {
         Ok(NPMHandler {
             config: repository,
             storage,
+            badge: Default::default(),
+            frontend: Default::default(),
         })
     }
 }

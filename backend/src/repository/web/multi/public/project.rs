@@ -18,7 +18,7 @@ use crate::repository::nitro::ProjectRequest;
 
 pub async fn get_project(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
-    database: web::Data<DatabaseConnection>,
+    conn: web::Data<DatabaseConnection>,
     authentication: Authentication,
     path: web::Path<ProjectRequest>,
     cache: web::Data<GeneratorCache>,
@@ -29,16 +29,8 @@ pub async fn get_project(
     if !repository.supports_nitro() {
         return Ok(HttpResponse::BadRequest().finish());
     }
-    if !repository
-        .get_repository()
-        .visibility
-        .eq(&Visibility::Public)
-    {
-        let caller = authentication.get_user(database.as_ref()).await??;
-        if let Some(value) = caller.can_read_from(repository.get_repository())? {
-            return Err(value.into());
-        }
-    }
+    crate::helpers::read_check!(authentication, conn.as_ref(), repository.get_repository());
+
     let value = if let Some(version) = version {
         repository
             .get_project_specific_version(project.as_str(), version.as_ref(), cache.into_inner())

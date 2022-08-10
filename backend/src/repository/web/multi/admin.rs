@@ -1,7 +1,7 @@
 use actix_web::{delete, get, web, HttpResponse};
 
 use sea_orm::DatabaseConnection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::authentication::Authentication;
 
@@ -17,6 +17,7 @@ use crate::storage::DynamicStorage;
 use crate::system::permissions::options::CanIDo;
 
 use paste::paste;
+use schemars::schema::RootSchema;
 
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
@@ -33,6 +34,11 @@ pub async fn get_repositories(
 
     Ok(HttpResponse::Ok().json(storage.get_repository_list().map_err(InternalError::from)?))
 }
+#[derive(Serialize, Debug)]
+pub struct CreateRepositoryLayout {
+    pub name: &'static str,
+    pub layout: RootSchema,
+}
 macro_rules! create_repository {
     ($($repository:ident,$repository_type:path, $repository_config:path),*) => {
         pub async fn repository_layout(_storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
@@ -41,10 +47,10 @@ macro_rules! create_repository {
                 let user = auth.get_user(&database).await??;
                 user.can_i_edit_repos()?;
 
-                let layouts = vec![$(serde_json::json!({
-                    "name": stringify!($repository),
-                    "layout": schemars::schema_for!($repository_config),
-                }))*];
+                let layouts = vec![$(CreateRepositoryLayout{
+                    name: stringify!($repository),
+                    layout: schemars::schema_for!($repository_config),
+                }),*];
                 Ok(HttpResponse::Ok().json(layouts))
         }
             $(
@@ -89,7 +95,16 @@ macro_rules! create_repository {
 create_repository!(
     maven,
     crate::repository::maven::MavenHandler,
-    crate::repository::maven::settings::MavenSettings
+    crate::repository::maven::settings::MavenSettings,
+    npm,
+    crate::repository::npm::NPMHandler,
+    crate::repository::npm::NPMSettings,
+    ci,
+    crate::repository::ci::CIHandler,
+    crate::repository::ci::CISettings,
+    raw,
+    crate::repository::raw::RawHandler,
+    crate::repository::raw::RawSettings
 );
 
 #[derive(Deserialize)]

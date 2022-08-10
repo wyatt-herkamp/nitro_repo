@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub struct MavenSettings {
+    /// The Type of the repository.
     pub repository_type: MavenType,
 }
 impl RepositoryConfigType for MavenSettings {

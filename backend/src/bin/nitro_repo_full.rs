@@ -1,15 +1,19 @@
 use std::env::{current_dir, set_var};
 use std::error::Error;
-use std::io::ErrorKind;
+use std::fs::OpenOptions;
+use std::io::{BufRead, BufReader, ErrorKind};
+use std::path::PathBuf;
 use std::process::exit;
+use std::str::FromStr;
 
 use actix_cors::Cors;
 
 use actix_web::middleware::DefaultHeaders;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
+use handlebars::template::Parameter::Path;
 use api::authentication::middleware::HandleSession;
-use api::authentication::session::SessionManager;
+use api::authentication::session::{Session, SessionManager, SessionManagerType};
 use api::cli::handle_cli;
 
 use api::generators::GeneratorCache;
@@ -20,7 +24,7 @@ use api::storage::multi::MultiStorageController;
 
 use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo};
-use log::info;
+use log::{debug, error, info, warn};
 
 use semver::Version;
 use tempfile::tempdir;
@@ -82,7 +86,38 @@ async fn main() -> std::io::Result<()> {
     let storages_data = Data::new(storages);
     let site_state = Data::new(nitro_repo);
     let database_data = Data::new(connection);
+    #[cfg(feature = "unsafe_cookies")]
+    {
+        #[cfg(not(debug_assertions))]
+        {
+            compile_error!("You are not in a development environment");
+        }
+        warn!("Using unsafe cookies");
+        warn!("This is not recommended. This is only for development purposes");
+        warn!("This is not secure");
+        warn!("You have been warned");
+        let cookies = load_unsafe_cookies();
+        match cookies {
+            Ok(ok) => {
+                for (key, value) in ok {
+                    debug!("Setting unsafe cookie: {key} to user {value}");
+                    let session = Session {
+                        token: key,
+                        user: i64::from_str(&value).ok(),
+                        expiration: u64::MAX,
+                    };
+                    if let Err(e) = session_manager.push_session(session).await {
+                        error!("Error setting unsafe cookie: {:?}", e);
+                    }
+                }
+            }
+            Err(err) => {
+                error!("{}", err);
+            }
+        }
+    }
     let session_data = Data::new(session_manager);
+
     let cache = Data::new(cache);
     let server = HttpServer::new(move || {
         App::new()
@@ -143,6 +178,28 @@ async fn main() -> std::io::Result<()> {
 
     server.bind(address)?.run().await
 }
+
 fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error {
     std::io::Error::new(ErrorKind::Other, e)
+}
+
+#[cfg(feature = "unsafe_cookies")]
+fn load_unsafe_cookies() -> Result<Vec<(String, String)>, std::io::Error> {
+    let buf = PathBuf::new().join("unsafe_cookies.txt");
+    if !buf.exists() {
+        warn!("Unsafe Cookies file not found");
+        return Ok(vec![]);
+    }
+    let file = OpenOptions::new().read(true).open(buf)?;
+    let mut lines = BufReader::new(file).lines();
+    let mut cookies = Vec::with_capacity(lines.size_hint().0);
+    for x in lines {
+        let line = x?;
+        let mut parts = line.split('=');
+        let key = parts.next().unwrap();
+        let value = parts.next().unwrap();
+        cookies.push((key.to_string(), value.to_string()));
+    }
+
+    return Ok(cookies);
 }

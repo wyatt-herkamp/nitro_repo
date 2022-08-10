@@ -82,6 +82,12 @@ impl SessionManagerType for BasicSessionManager {
         );
         return Ok(());
     }
+
+    async fn push_session(&self, session: Session) -> Result<(), Self::Error> {
+        let mut guard = self.sessions.write().await;
+        guard.insert(session.token.clone(), session);
+        return Ok(());
+    }
 }
 
 fn generate_token() -> String {

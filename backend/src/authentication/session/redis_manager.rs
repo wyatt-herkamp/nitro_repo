@@ -45,4 +45,8 @@ impl SessionManagerType for RedisSessionManager {
     async fn set_user(&self, _token: &str, _user: i64) -> Result<(), Self::Error> {
         todo!()
     }
+
+    async fn push_session(&self, session: Session) -> Result<(), Self::Error> {
+        todo!()
+    }
 }

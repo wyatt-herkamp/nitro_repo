@@ -59,7 +59,7 @@ macro_rules! take_repository {
 }
 
 macro_rules! read_check {
-    ($auth:ident, $conn:ident, $config:expr) => {
+    ($auth:ident, $conn:expr, $config:expr) => {
         if $config.visibility == crate::repository::settings::Visibility::Private {
             let caller = $auth.get_user($conn).await??;
             if let Some(value) = caller.can_read_from(&$config)? {

@@ -18,7 +18,7 @@ name = "simple_installer"
 
 [dependencies]
 # Web
-actix-web = { version = "4.1", features = ["openssl", "cookies"] }
+actix-web = { version = "4.1", features = ["cookies"] }
 actix-cors = "0.6"
 actix-service = "2.0"
 openssl = { version = "0.10", features = ["v110"], optional = true }
@@ -63,7 +63,7 @@ thiserror = "1"
 # Badge Stuff
 badge-maker = "0.3"
 # Webhook
-webhook = "2.0.0"
+webhook_sender = { git = "https://github.com/wyatt-herkamp/webhook_sender.git" }
 # Installer
 clap = { version = "3.2.12", features = ["derive"] }
 semver = "1.0.12"
@@ -84,8 +84,11 @@ vergen = "7.0.0"
 # The latest Updaters will always be under default features
 default = ["updater_one-one", "multi_storage"]
 ssl = ["openssl", "actix-web/openssl"]
-
 multi_storage = []
 # Updaters
 # Updater for 1.0.0 - 1.1.0
 updater_one-one = []
+
+# Development Tools
+## Allows you to add a file called unsafe_cookies.txt to the active directory. And contains KEY=VALUE(Value being the user id) for cookies/sessions to be added to the system upon start
+unsafe_cookies = []
