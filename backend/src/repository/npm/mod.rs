@@ -26,7 +26,7 @@ use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 use crate::utils::get_current_time;
 pub mod error;
 pub mod models;
@@ -35,6 +35,7 @@ mod utils;
 pub struct NPMSettings {}
 
 impl RepositoryConfigType for NPMSettings {
+
     fn config_name() -> &'static str {
         "npm.json"
     }

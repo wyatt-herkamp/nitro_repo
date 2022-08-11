@@ -14,7 +14,7 @@ use crate::repository::settings::{RepositoryConfigLayout, Visibility};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 
 use paste::paste;
 use schemars::schema::RootSchema;
@@ -161,12 +161,12 @@ pub async fn delete_repository(
 #[get("/repositories/{storage_name}/{repository_name}/layout")]
 pub async fn get_config_layout(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
-    _database: web::Data<DatabaseConnection>,
-    _auth: Authentication,
+    database: web::Data<DatabaseConnection>,
+    auth: Authentication,
     path_params: web::Path<(String, String)>,
 ) -> actix_web::Result<HttpResponse> {
-    //let user = auth.get_user(&database).await??;
-    //user.can_i_edit_repos()?;
+    let user = auth.get_user(&database).await??;
+    user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
     let repository = crate::helpers::get_repository!(storage, repository_name);

@@ -11,7 +11,7 @@ use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
@@ -28,6 +28,7 @@ use crate::system::user::database::UserSafeData;
 use crate::repository::maven::validate_policy;
 use log::{error, info};
 use std::sync::Arc;
+use crate::repository::settings::repository_page::RepositoryPage;
 
 mod external;
 mod git;
@@ -41,6 +42,7 @@ pub struct MavenStagingConfig {
     #[serde(default)]
     policy: Policy,
 }
+
 impl Default for MavenStagingConfig {
     fn default() -> Self {
         Self {
@@ -51,6 +53,7 @@ impl Default for MavenStagingConfig {
         }
     }
 }
+
 impl RepositoryConfigType for MavenStagingConfig {
     fn config_name() -> &'static str {
         "maven_staging.json"
@@ -76,18 +79,24 @@ pub enum StageSettings {
         password: String,
     },
 }
+
 #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 pub enum DeployRequirement {}
+
 #[derive(Debug)]
 pub struct StagingRepository<S: Storage> {
     pub config: RepositoryConfig,
     pub storage: Arc<S>,
     pub stage_settings: MavenStagingConfig,
+    pub repository_page: RepositoryPage,
+
 }
 crate::repository::settings::define_configs_on_handler!(
     StagingRepository<StorageType>,
     stage_settings,
-    MavenStagingConfig
+    MavenStagingConfig,
+    repository_page,
+    RepositoryPage
 );
 
 #[async_trait]
@@ -125,7 +134,7 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                         if let Err(error) = git::stage_to_git(
                             username, password, url, branch, directory, storage, repository, user,
                         )
-                        .await
+                            .await
                         {
                             error!("Failed to stage to git. The rest of the stages do continue to matter. ");
                             error!("{}", error);
@@ -156,7 +165,7 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                         if let Err(error) = external::stage_to_external(
                             username, password, url, directory, storage, repository, user,
                         )
-                        .await
+                            .await
                         {
                             error!("Failed to stage to external. The rest of the stages do continue to matter. ");
                             error!("{}", error);
@@ -176,6 +185,7 @@ impl<S: Storage> Clone for StagingRepository<S> {
             config: self.config.clone(),
             storage: self.storage.clone(),
             stage_settings: self.stage_settings.clone(),
+            repository_page: self.repository_page.clone(),
         }
     }
 }
@@ -261,6 +271,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
         ))
     }
 }
+
 pub mod multi_web {
     crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
         super::MavenStagingConfig,

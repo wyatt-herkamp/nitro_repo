@@ -22,6 +22,12 @@
     >
   </Tabs>
   <GeneralRepo v-if="view === 'General'" :repository="repository" />
+  <BadgeSettings v-else-if="view === 'badge'" :repository="repository" />
+  <RepositoryPage
+    v-else-if="view === 'repository_page'"
+    :repository="repository"
+  />
+  <FrontendSettings v-else-if="view === 'frontend'" :repository="repository" />
 </template>
 <script lang="ts">
 import { defineComponent, ref } from "vue";
@@ -33,8 +39,14 @@ import DynamicIcon from "@/components/repo/DynamicIcon.vue";
 import { Repository } from "@/types/repositoryTypes";
 import Tabs from "@/components/common/tabs/Tabs.vue";
 import Tab from "@/components/common/tabs/Tab.vue";
+import BadgeSettings from "@/components/repo/update/BadgeSettings.vue";
+import RepositoryPage from "@/components/repo/update/RepositoryPage.vue";
+import FrontendSettings from "@/components/repo/update/FrontendSettings.vue";
 export default defineComponent({
   components: {
+    FrontendSettings,
+    RepositoryPage,
+    BadgeSettings,
     Tabs,
     Tab,
     DynamicIcon,

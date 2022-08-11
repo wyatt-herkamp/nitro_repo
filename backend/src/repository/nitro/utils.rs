@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use log::debug;
+use semver::Op;
 
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
@@ -69,15 +70,15 @@ pub async fn get_readme<StorageType: Storage>(
     storage: &StorageType,
     repo: &RepositoryConfig,
     generator: Arc<GeneratorCache>,
-) -> Result<String, InternalError> {
+) -> Result<Option<Vec<u8>>, InternalError> {
     let data = repo.get_config::<Frontend, StorageType>(storage).await?;
     if let Some(data) = data {
         if PageProvider::None == data.page_provider {
-            Ok(String::new())
+            Ok(None)
         } else {
             let cache_name = format!("{}/README.html", path.as_ref());
-            if let Some(data) = generator.get_as_string(&cache_name).await? {
-                Ok(data)
+            if let Some(data) = generator.get_as_bytes(&cache_name).await? {
+                Ok(Some(data))
             } else {
                 let option = storage
                     .get_file(repo, &format!("{}/README.md", path.as_ref()))
@@ -85,14 +86,14 @@ pub async fn get_readme<StorageType: Storage>(
                 if let Some(data) = option {
                     let result = String::from_utf8(data.as_slice().to_vec())
                         .map_err(|e| InternalError::Error(e.to_string()))?;
-                    parse_to_html(result, PathBuf::from(cache_name), generator)
+                    parse_to_html(result, PathBuf::from(cache_name), generator).map(Some)
                 } else {
-                    Ok(String::new())
+                    Ok(None)
                 }
             }
         }
     } else {
-        Ok(String::new())
+        Ok(None)
     }
 }
 

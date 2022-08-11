@@ -342,7 +342,7 @@ dynamic_repository_handler!(
 );
 
 macro_rules! repository_config_group {
-    ($handler:tt,$config:path,$($repository:ident),*) => {
+    ($handler:ident,$config:path,$($repository:ident),*) => {
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
             for $handler<StorageType>
         {

@@ -205,9 +205,13 @@ impl Storage for LocalStorage {
         if !path.exists() {
             create_dir(&path).await?;
         }
+        let config_dir = path.join(".config.nitro_repo");
+        if !config_dir.exists() {
+            create_dir(&config_dir).await?;
+        }
         let name = repository.get_repository().name.clone();
         self.repositories.insert(name.clone(), Arc::new(repository));
-
+        self.save_repositories().await?;
         Ok(self.repositories.get(name.as_str()).unwrap().val().clone())
     }
 

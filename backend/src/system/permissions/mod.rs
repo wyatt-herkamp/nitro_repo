@@ -5,7 +5,7 @@ use crate::repository::settings::RepositoryConfig;
 use crate::repository::settings::Visibility;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 
-pub mod options;
+pub mod permissions_checker;
 pub mod orm;
 
 #[derive(Error, Debug)]

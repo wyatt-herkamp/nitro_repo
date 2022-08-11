@@ -34,6 +34,9 @@
           </select>
         </div>
       </div>
+      <div class="flex-row">
+        <MavenCreate v-if="form.type === 'maven'" v-model="innerForm" />
+      </div>
       <div class="flex flex-row h-12 mt-5">
         <button class="buttonOne">Create User</button>
       </div>
@@ -47,8 +50,10 @@ import httpCommon from "@/http-common";
 import { notify } from "@kyvg/vue3-notification";
 import { useRouter } from "vue-router";
 import { Storage } from "@/types/storageTypes";
+import MavenCreate from "@/components/repo/types/maven/MavenCreate.vue";
 
 export default defineComponent({
+  components: { MavenCreate },
   props: {
     storage: {
       type: Object as () => Storage,
@@ -62,6 +67,7 @@ export default defineComponent({
       type: "",
       error: "",
     });
+    const innerForm = ref<unknown>({});
     const repositoryTypes = ref<Array<{ name: string; layout: unknown }>>();
 
     httpCommon.apiClient
@@ -74,15 +80,23 @@ export default defineComponent({
     return {
       form,
       repositoryTypes,
+      innerForm,
     };
   },
   methods: {
     async onSubmit() {
       const storageName = this.storage.id;
+      const value = JSON.stringify(this.innerForm);
+      console.log(value);
       await httpCommon.apiClient
         .post(
-          `/api/admin/repositories/${storageName}/new/${this.form.name}/${this.form.type}`,
-          {}
+          `/api/admin/repositories/new/${this.form.type}/${storageName}/${this.form.name}`,
+          value,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         )
         .then((response) => {
           if (response.status == 200) {

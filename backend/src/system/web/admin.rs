@@ -1,5 +1,5 @@
 use crate::authentication::Authentication;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 use crate::system::user::UserModel;
 use actix_web::{get, web, HttpResponse};
 

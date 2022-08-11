@@ -15,6 +15,7 @@ pub struct BadgeSettings {
 }
 
 impl RepositoryConfigType for BadgeSettings {
+
     fn config_name() -> &'static str {
         "badge.json"
     }
@@ -52,7 +53,7 @@ impl Default for BadgeStyle {
 }
 
 impl BadgeStyle {
-    pub fn to_badge_maker_style(&self) -> badge_maker::Style {
+    pub fn to_badge_maker_style(&self) -> Style {
         match self {
             BadgeStyle::Flat => Style::Flat,
             BadgeStyle::FlatSquare => Style::FlatSquare,

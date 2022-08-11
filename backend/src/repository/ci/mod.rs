@@ -13,6 +13,7 @@ use std::sync::Arc;
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 pub struct CISettings {}
 impl RepositoryConfigType for CISettings {
+
     fn config_name() -> &'static str {
         "ci.json"
     }

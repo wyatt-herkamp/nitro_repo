@@ -11,7 +11,7 @@ use crate::repository::settings::Visibility;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::nitro::ProjectRequest;

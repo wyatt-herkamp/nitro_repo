@@ -22,6 +22,7 @@ pub struct Frontend {
 }
 
 impl RepositoryConfigType for Frontend {
+
     fn config_name() -> &'static str {
         "frontend.json"
     }

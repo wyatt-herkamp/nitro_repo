@@ -22,6 +22,7 @@ pub struct ProjectsToStage {
     pub projects: Vec<String>,
 }
 impl RepositoryConfigType for ProcessingStage {
+
     fn config_name() -> &'static str {
         "to_stage.json"
     }

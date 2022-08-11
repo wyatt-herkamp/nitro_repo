@@ -164,7 +164,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
                 repo_summary: self.get_repository().clone(),
                 project: project_data,
                 version: version_data,
-                frontend_response: String::new(),
+                frontend_response: None,
             };
             NitroFileResponseType::Project(project)
         } else if let Some(version) =
@@ -179,7 +179,7 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
                 repo_summary: self.get_repository().clone(),
                 project,
                 version: Some(version),
-                frontend_response: String::new(),
+                frontend_response: None,
             };
             NitroFileResponseType::Project(project)
         } else {

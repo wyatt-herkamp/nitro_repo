@@ -11,7 +11,7 @@ use crate::repository::staging::StageHandler;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 
 #[derive(Deserialize, Clone)]
 pub struct GetPath {

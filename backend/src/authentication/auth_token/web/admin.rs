@@ -1,6 +1,6 @@
 use crate::authentication::auth_token::AuthTokenEntity;
 use crate::authentication::Authentication;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 use actix_web::error::ErrorInternalServerError;
 use actix_web::{delete, web, HttpResponse};
 use sea_orm::DatabaseConnection;

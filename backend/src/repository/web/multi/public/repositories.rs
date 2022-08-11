@@ -19,7 +19,7 @@ use crate::repository::settings::{RepositoryConfig, RepositoryType, Visibility};
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 use crate::system::user::database::UserSafeData;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,13 +62,15 @@ pub async fn get_repositories(
         .collect();
     Ok(HttpResponse::Ok().json(vec))
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RepositoryPageResponse {
-    pub name: String,
-    pub repository_type: RepositoryType,
-    pub page_content: String,
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RepositoryPageResponse<'v> {
+    pub name: &'v str,
+    pub repository_type: &'v RepositoryType,
+    pub page_content: Option<Vec<u8>>,
     pub last_updated: i64,
 }
+
 #[get("repositories/{storage_name}/{repository_name}")]
 pub async fn get_repository(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
@@ -91,7 +93,7 @@ pub async fn get_repository(
         repository.get_repository(),
         generator.into_inner(),
     )
-    .await?;
+        .await?;
     let v = if repository.supports_nitro() {
         if let Some(v) = repository.get_repository_listing().await? {
             v.last_updated
@@ -102,9 +104,9 @@ pub async fn get_repository(
         0
     };
     let value = RepositoryPageResponse {
-        name: repository.get_repository().name.clone(),
-        repository_type: repository.get_repository().repository_type.clone(),
-        page_content,
+        name: repository.get_repository().name.as_str(),
+        repository_type: &repository.get_repository().repository_type,
+        page_content: page_content,
         last_updated: v,
     };
 
@@ -115,17 +117,17 @@ pub async fn get_readme<StorageType: Storage>(
     storage: &StorageType,
     repo: &RepositoryConfig,
     generator: Arc<GeneratorCache>,
-) -> Result<String, InternalError> {
+) -> Result<Option<Vec<u8>>, InternalError> {
     let data = repo
         .get_config::<RepositoryPage, StorageType>(storage)
         .await?;
     if let Some(data) = data {
         if PageType::None == data.page_type {
-            Ok(String::new())
+            Ok(None)
         } else {
-            let cache_name = ".config.nitro_repo/README.html";
-            if let Some(data) = generator.get_as_string(&cache_name).await? {
-                Ok(data)
+            let cache_name = format!("{}/{}/.config.nitro_repo/README.html", repo.storage, repo.name);
+            if let Some(data) = generator.get_as_bytes(&cache_name).await? {
+                Ok(Some(data))
             } else {
                 let option = storage
                     .get_file(repo, ".config.nitro_repo/README.md")
@@ -133,13 +135,13 @@ pub async fn get_readme<StorageType: Storage>(
                 if let Some(data) = option {
                     let result = String::from_utf8(data.as_slice().to_vec())
                         .map_err(|e| InternalError::Error(e.to_string()))?;
-                    parse_to_html(result, PathBuf::from(cache_name), generator)
+                    parse_to_html(result, PathBuf::from(cache_name), generator).map(Some)
                 } else {
-                    Ok(String::new())
+                    Ok(None)
                 }
             }
         }
     } else {
-        Ok(String::new())
+        Ok(None)
     }
 }

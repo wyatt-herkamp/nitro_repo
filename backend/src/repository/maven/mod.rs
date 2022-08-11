@@ -48,6 +48,7 @@ use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::nitro::VersionData;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
+use crate::repository::settings::repository_page::RepositoryPage;
 use crate::system::user::database::UserSafeData;
 use crate::utils::get_current_time;
 crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository);
@@ -77,10 +78,14 @@ impl<S: Storage> MavenHandler<S> {
                     .get_config(storage.as_ref())
                     .await?
                     .unwrap_or_default(),
+                repository_page: repository
+                    .get_config(storage.as_ref())
+                    .await?
+                    .unwrap_or_default(),
                 config: repository,
                 storage,
             }
-            .into()),
+                .into()),
             MavenType::Proxy => Ok(ProxyMavenRepository {
                 proxy: repository
                     .get_config::<MavenProxySettings, S>(storage.as_ref())
@@ -94,17 +99,26 @@ impl<S: Storage> MavenHandler<S> {
                     .get_config(storage.as_ref())
                     .await?
                     .unwrap_or_default(),
+                repository_page: repository
+                    .get_config(storage.as_ref())
+                    .await?
+                    .unwrap_or_default(),
                 config: repository,
 
                 storage,
+
             }
-            .into()),
+                .into()),
             MavenType::Staging => {
                 let settings = repository
                     .get_config::<MavenStagingConfig, S>(storage.as_ref())
                     .await?
                     .unwrap_or_default();
                 let staging = StagingRepository {
+                    repository_page: repository
+                        .get_config(storage.as_ref())
+                        .await?
+                        .unwrap_or_default(),
                     config: repository,
                     storage,
                     stage_settings: settings,
@@ -115,8 +129,8 @@ impl<S: Storage> MavenHandler<S> {
     }
 }
 
-repository_config_group!(MavenHandler, MavenStagingConfig, Staging);
-repository_config_group!(MavenHandler, MavenProxySettings, Proxy);
+crate::repository::handler::repository_config_group!(MavenHandler, RepositoryPage, Staging,Proxy,Hosted);
+
 impl From<Pom> for VersionData {
     fn from(pom: Pom) -> Self {
         VersionData {
@@ -146,6 +160,7 @@ pub fn validate_policy(policy: &Policy, version: impl AsRef<str>) -> Result<(), 
     }
     Ok(())
 }
+
 impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
     type Config = MavenSettings;
     type Error = InternalError;
@@ -155,8 +170,8 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
         name: impl Into<String>,
         storage: Arc<S>,
     ) -> Result<(Self, MavenSettings), Self::Error>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         let repository_config = RepositoryConfig {
             name: name.into(),
@@ -175,6 +190,7 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
                     hosted: MavenHosted::default(),
                     config: repository_config,
                     storage,
+                    repository_page: RepositoryPage::default(),
                 };
                 Ok((hosted.into(), config))
             }
@@ -183,6 +199,7 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
                     config: repository_config,
                     storage,
                     stage_settings: MavenStagingConfig::default(),
+                    repository_page: RepositoryPage::default(),
                 };
                 Ok((staging.into(), config))
             }
@@ -193,6 +210,7 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
                     frontend: Frontend::default(),
                     config: repository_config,
                     storage,
+                    repository_page: RepositoryPage::default(),
                 };
                 Ok((proxy.into(), config))
             }

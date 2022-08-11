@@ -9,7 +9,7 @@ macro_rules! define_repository_config_get {
             path_params: actix_web::web::Path<(String, String)>,
         ) -> actix_web::Result<actix_web::HttpResponse> {
             use crate::storage::models::Storage;
-            use crate::system::permissions::options::CanIDo;
+            use crate::system::permissions::permissions_checker::CanIDo;
             let user = auth.get_user(&database).await??;
             user.can_i_edit_repos()?;
             let (storage_name, repository_name) = path_params.into_inner();
@@ -43,7 +43,7 @@ macro_rules! define_repository_config_set {
             ) -> actix_web::Result<actix_web::HttpResponse> {
                 use crate::storage::models::Storage;
                  use crate::repository::handler::Repository;
-                use crate::system::permissions::options::CanIDo;
+                use crate::system::permissions::permissions_checker::CanIDo;
                 let user = auth.get_user(&database).await??;
                 user.can_i_edit_repos()?;
                 let (storage_name, repository_name) = path_params.into_inner();
@@ -53,7 +53,12 @@ macro_rules! define_repository_config_set {
                 let result = match repository {
                 $(
                     crate::repository::handler::DynamicRepositoryHandler::$repository(ref mut repository) => {
-                        crate::repository::settings::RepositoryConfigHandler::<$config>::update( repository, body)
+                        let value = crate::repository::settings::RepositoryConfigHandler::<$config>::update( repository, body);
+                        if value.is_ok(){
+                            let config = crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository);
+                            storage.save_repository_config(repository.get_repository(),  config).await;
+                        }
+                        value
                     }
                 )*
                 repository => {
@@ -61,7 +66,6 @@ macro_rules! define_repository_config_set {
                     return Ok(actix_web::HttpResponse::BadRequest().body("Repository type not supported".to_string()));
                 }
                 };
-                storage.save_repository_config(repository.get_repository(),  crate::repository::settings::RepositoryConfigHandler::<$config>::get(&repository)).await;
                 storage.add_repository_for_updating(name, repository,false).await.expect("Failed to add repository for updating");
                 result?;
                 Ok(actix_web::HttpResponse::NoContent().finish())
@@ -71,18 +75,23 @@ macro_rules! define_repository_config_set {
 }
 pub(crate) use define_repository_config_get;
 pub(crate) use define_repository_config_set;
-
+macro_rules! define_init {
+    ($fun_name:ident, $config_name:ident, $get:ident,$put:ident) => {
+        pub fn $fun_name(cfg: &mut actix_web::web::ServiceConfig) {
+            cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", stringify!($config_name))])
+                .route(actix_web::web::get().to($get))
+                .route(actix_web::web::put().to($put)));
+        }
+    };
+}
+pub(crate) use define_init;
 macro_rules! define_repository_config_handlers_group {
     ($config:path, $config_name:ident,$($repository:ident),*) => {
         paste::paste! {
             crate::repository::web::multi::settings::define_repository_config_get!($config, $config_name, $($repository),*);
             crate::repository::web::multi::settings::define_repository_config_set!($config, $config_name, $($repository),*);
-            pub fn init(cfg: &mut actix_web::web::ServiceConfig) {
-                cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", stringify!($config_name))])
-                .route(actix_web::web::get().to([<get_ $config_name>]))
-                .route(actix_web::web::put().to([<set_ $config_name>])));
-            }
-            }
+            crate::repository::web::multi::settings::define_init!(init,  $config_name,[<get_ $config_name>],[<set_ $config_name>]);
+        }
     };
 }
 

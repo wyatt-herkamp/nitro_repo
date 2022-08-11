@@ -6,7 +6,7 @@ use crate::repository::response::RepoResponse;
 use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 
 use actix_web::http::header::HeaderMap;
 
@@ -27,6 +27,7 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use crate::repository::settings::repository_page::RepositoryPage;
 
 #[derive(Debug)]
 pub struct ProxyMavenRepository<S: Storage> {
@@ -34,7 +35,7 @@ pub struct ProxyMavenRepository<S: Storage> {
     pub proxy: MavenProxySettings,
     pub badge: BadgeSettings,
     pub frontend: Frontend,
-
+    pub repository_page: RepositoryPage,
     pub storage: Arc<S>,
 }
 
@@ -46,13 +47,16 @@ impl<S: Storage> Clone for ProxyMavenRepository<S> {
             proxy: self.proxy.clone(),
             badge: self.badge.clone(),
             frontend: self.frontend.clone(),
+            repository_page: self.repository_page.clone(),
         }
     }
 }
+
 #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema, Default)]
 pub struct MavenProxySettings {
     proxies: Vec<ProxySettings>,
 }
+
 impl RepositoryConfigType for MavenProxySettings {
     fn config_name() -> &'static str {
         "maven_proxy.json"
@@ -65,7 +69,9 @@ crate::repository::settings::define_configs_on_handler!(
     frontend,
     Frontend,
     proxy,
-    MavenProxySettings
+    MavenProxySettings,
+    repository_page,
+    RepositoryPage
 );
 #[async_trait]
 impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
@@ -124,8 +130,8 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
                                 }
                             });
                             if let Err(error) =
-                                self.storage
-                                    .write_file_stream(&self.config, file_client, path)
+                            self.storage
+                                .write_file_stream(&self.config, file_client, path)
                             {
                                 error!("Unable to save data: {}", error);
                             }
@@ -142,6 +148,7 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
         }
     }
 }
+
 impl<S: Storage> NitroRepositoryHandler<S> for ProxyMavenRepository<S> {
     #[inline(always)]
     fn parse_project_to_directory<V: Into<String>>(value: V) -> String {

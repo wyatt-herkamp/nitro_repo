@@ -37,6 +37,7 @@ pub fn init_admin(cfg: &mut web::ServiceConfig) {
     cfg.configure(admin::register_core_updates)
         .configure(repository::settings::frontend::multi_web::init)
         .configure(repository::settings::badge::multi_web::init)
+        .configure(repository::settings::repository_page::multi_web::init)
         .configure(repository::maven::staging::multi_web::init)
         .configure(repository::maven::proxy::multi_web::init)
         .configure(repository::maven::hosted::multi_web::init);

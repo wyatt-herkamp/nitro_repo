@@ -21,8 +21,9 @@ pub enum Visibility {
     Private,
     Hidden,
 }
+
 #[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema, strum_macros::Display,
+Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema, strum_macros::Display,
 )]
 pub enum Policy {
     #[default]
@@ -30,6 +31,7 @@ pub enum Policy {
     Snapshot,
     Mixed,
 }
+
 fn default() -> bool {
     true
 }
@@ -55,11 +57,13 @@ pub struct RepositoryConfig {
     /// When it was created
     pub created: i64,
 }
+
 impl AsRef<str> for RepositoryConfig {
     fn as_ref(&self) -> &str {
         &self.name
     }
 }
+
 impl RepositoryConfig {
     /// Gets the Config File
     /// # Arguments
@@ -106,7 +110,7 @@ pub trait RepositoryConfigType: Send + Sync + Clone + Debug + Serialize + Deseri
 pub struct RepositoryLayoutValue {
     pub config_name: &'static str,
     pub config_proper_name: &'static str,
-    pub schema_name: RootSchema,
+    pub schema: RootSchema,
 }
 
 pub trait RepositoryConfigLayout {
@@ -126,13 +130,12 @@ pub trait RepositoryConfigHandler<Config: RepositoryConfigType> {
     fn get_mut(&mut self) -> &mut Config;
 }
 macro_rules! define_config_handler {
-    ($name:ident, $handler:ty, $config:ty, $check:ident) => {
+    ($name:ident, $handler:ty, $config:ty, $update:ident) => {
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigHandler<$config>
             for $handler
         {
             fn update(&mut self, mut config: $config) -> Result<(), InternalError> {
-                self.$name = $check(config)?;
-                Ok(())
+                self.$update()
             }
             fn get(&self) -> &$config {
                 &self.$name
@@ -168,7 +171,7 @@ macro_rules! define_config_layout {
                     layout.push(crate::repository::settings::RepositoryLayoutValue{
                         config_name: stringify!($name),
                         config_proper_name: stringify!($name),
-                        schema_name: schemars::schema_for!($config)
+                        schema: schemars::schema_for!($config)
                     });
                 )*
                 layout
@@ -183,7 +186,7 @@ macro_rules! define_config_layout {
                     layout.push(crate::repository::settings::RepositoryLayoutValue{
                         config_name: stringify!($name),
                         config_proper_name:  $proper_name,
-                        schema_name: schemars::schema_for!($config)
+                        schema: schemars::schema_for!($config)
                     });
                 )*
                 layout
@@ -213,3 +216,4 @@ macro_rules! define_configs_on_handler {
 pub(crate) use define_config_handler;
 pub(crate) use define_config_layout;
 pub(crate) use define_configs_on_handler;
+use crate::repository::handler::Repository;

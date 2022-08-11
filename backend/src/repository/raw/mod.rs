@@ -47,6 +47,7 @@ impl<StorageType: Storage> Repository<StorageType> for RawHandler<StorageType> {
 pub struct RawSettings {}
 
 impl RepositoryConfigType for RawSettings {
+
     fn config_name() -> &'static str {
         "raw.json"
     }

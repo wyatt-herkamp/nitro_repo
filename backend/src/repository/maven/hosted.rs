@@ -6,7 +6,7 @@ use crate::repository::response::RepoResponse;
 use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
-use crate::system::permissions::options::CanIDo;
+use crate::system::permissions::permissions_checker::CanIDo;
 
 use actix_web::http::header::HeaderMap;
 use actix_web::http::StatusCode;
@@ -26,6 +26,7 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use crate::repository::settings::repository_page::RepositoryPage;
 
 #[derive(Debug)]
 pub struct HostedMavenRepository<S: Storage> {
@@ -34,6 +35,8 @@ pub struct HostedMavenRepository<S: Storage> {
     pub badge: BadgeSettings,
     pub frontend: Frontend,
     pub hosted: MavenHosted,
+    pub repository_page: RepositoryPage,
+
 }
 
 crate::repository::settings::define_configs_on_handler!(
@@ -43,7 +46,9 @@ crate::repository::settings::define_configs_on_handler!(
     frontend,
     Frontend,
     hosted,
-    MavenHosted
+    MavenHosted,
+    repository_page,
+    RepositoryPage
 );
 
 impl<S: Storage> Clone for HostedMavenRepository<S> {
@@ -54,6 +59,7 @@ impl<S: Storage> Clone for HostedMavenRepository<S> {
             badge: self.badge.clone(),
             frontend: self.frontend.clone(),
             hosted: self.hosted.clone(),
+            repository_page: self.repository_page.clone()
         }
     }
 }
@@ -64,6 +70,7 @@ pub struct MavenHosted {
     #[serde(default)]
     policy: Policy,
 }
+
 impl RepositoryConfigType for MavenHosted {
     fn config_name() -> &'static str {
         "maven_hosted.json"
@@ -165,12 +172,14 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         ))
     }
 }
+
 impl<S: Storage> NitroRepositoryHandler<S> for HostedMavenRepository<S> {
     #[inline(always)]
     fn parse_project_to_directory<V: Into<String>>(value: V) -> String {
         value.into().replace('.', "/").replace(':', "/")
     }
 }
+
 pub mod multi_web {
     crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
         super::MavenHosted,

@@ -5,10 +5,12 @@ use tokio::fs::{create_dir_all, remove_file, File};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub mod markdown;
+
 #[derive(Clone, Debug)]
 pub struct GeneratorCache {
     pub local_path: PathBuf,
 }
+
 impl GeneratorCache {
     pub async fn get_as_string(
         &self,
@@ -52,6 +54,13 @@ impl GeneratorCache {
         }
         let mut file = File::create(path).await?;
         file.write_all(contents.as_ref()).await?;
+        Ok(())
+    }
+    pub async fn remove_from_cache(&self, file: impl AsRef<Path>) -> Result<(), InternalError> {
+        let path = self.local_path.join(file.as_ref());
+        if path.exists() {
+            remove_file(&path).await?;
+        }
         Ok(())
     }
 }
