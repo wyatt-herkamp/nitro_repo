@@ -23,10 +23,9 @@ use api::settings::models::GeneralSettings;
 use api::storage::multi::MultiStorageController;
 
 use api::utils::load_logger;
-use api::{authentication, frontend, repository, storage, system, NitroRepo};
+use api::{authentication, frontend, repository, storage, system, NitroRepo, Version};
 use log::{debug, error, info, warn};
 
-use semver::Version;
 use tempfile::tempdir;
 use tokio::fs::read_to_string;
 use tokio::sync::RwLock;
@@ -49,7 +48,7 @@ async fn main() -> std::io::Result<()> {
 
     let init_settings: GeneralSettings =
         toml::from_str(&read_to_string(&main_config).await?).map_err(convert_error)?;
-    let version = Version::parse(&init_settings.internal.version).map_err(convert_error)?;
+    let version = semver::Version::parse(&init_settings.internal.version).map_err(convert_error)?;
     // Sets the Log Location
     set_var("LOG_LOCATION", &init_settings.application.log);
     load_logger(&init_settings.application.mode);
@@ -70,9 +69,9 @@ async fn main() -> std::io::Result<()> {
     let nitro_repo = NitroRepo {
         settings: RwLock::new(settings),
         core: init_settings,
-        current_version: version,
+        current_version: Version::new(version),
     };
-
+    info!("Version: {:?}", nitro_repo.current_version);
     let application = nitro_repo.core.application.clone();
     set_var("STORAGE_LOCATION", &application.storage_location);
     let max_upload =

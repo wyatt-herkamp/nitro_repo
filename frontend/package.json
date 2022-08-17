@@ -17,7 +17,7 @@
     "core-js": "^3.24.1",
     "fast-xml-parser": "^4.0.9",
     "highlight.js": "^11.6.0",
-    "pinia": "^2.0.17",
+    "pinia": "^2.0.18",
     "vite-plugin-ejs": "^1.5.0",
     "vue": "^3.2.37",
     "vue-class-component": "^8.0.0-0",
@@ -29,17 +29,17 @@
     "vue3-simple-icons": "^7.5.0-beta.1"
   },
   "devDependencies": {
-    "@types/webpack-env": "^1.17.0",
+    "@types/webpack-env": "^1.18.0",
     "@types/prismjs": "^1.26.0",
-    "@types/node": "^18.6.5",
-    "@typescript-eslint/eslint-plugin": "5.33.0",
-    "@typescript-eslint/parser": "5.33.0",
-    "@vitejs/plugin-vue": "^3.0.1",
+    "@types/node": "^18.7.6",
+    "@typescript-eslint/eslint-plugin": "5.33.1",
+    "@typescript-eslint/parser": "5.33.1",
+    "@vitejs/plugin-vue": "^3.0.3",
     "@vue/compiler-sfc": "^3.2.37",
     "@vue/eslint-config-prettier": "7.0.0",
     "@vue/eslint-config-typescript": "11.0.0",
     "autoprefixer": "^10.4.8",
-    "eslint": "8.21.0",
+    "eslint": "8.22.0",
     "eslint-plugin-prettier": "4.2.1",
     "eslint-plugin-vue": "9.3.0",
     "prettier": "2.7.1",
@@ -47,6 +47,6 @@
     "tailwindcss": "^3.1.8",
     "typescript": "^4.7.4",
     "unplugin-vue-components": "^0.22.4",
-    "vite": "^3.0.5"
+    "vite": "^3.0.8"
   }
 }

@@ -1,5 +1,5 @@
 use actix_web::http::StatusCode;
-use actix_web::web;
+use actix_web::{get, web};
 use actix_web::{post, HttpRequest, HttpResponse};
 use log::error;
 use sea_orm::DatabaseConnection;
@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::authentication::session::SessionManager;
 use crate::authentication::session::SessionManagerType;
 use crate::authentication::verify_login;
+use crate::NitroRepoData;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
@@ -39,4 +40,10 @@ pub async fn login(
         log::warn!("No cookie found for {r:?}");
         Ok(HttpResponse::Ok().status(StatusCode::BAD_GATEWAY).finish())
     }
+}
+
+#[get("/version")]
+pub async fn get_version(
+    data: NitroRepoData) -> HttpResponse {
+    HttpResponse::Ok().json(&data.current_version)
 }

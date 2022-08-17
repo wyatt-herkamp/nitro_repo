@@ -59,7 +59,7 @@ The Authentication follows the same as the API and web interface.
 We follow a process similar to the one found in Maven
 
 ```
-PUT /repository/storage/repository/{project}/{job_name}/{branch}/{build}/{artifact_name}
+PUT /repository/storage/repository/{project}/{job_name}/{build}/{artifact_name}
 ```
 
 ### Pushing a Directory
@@ -67,8 +67,9 @@ PUT /repository/storage/repository/{project}/{job_name}/{branch}/{build}/{artifa
 You can push a directory by compressing it into a ZIP or tar.gz
 
 ```
-PUT /repository/storage/repository/{project}/{job_name}/{branch}/{build}?Directory=true
+PUT /repository/storage/repository/{project}/{job_name}/{build}/{optional_artifact_name}
 ```
+Header: Directory (true)
 
 This will cause on PUT to decompress the directory. In the same layout within the archive
 
@@ -76,24 +77,27 @@ This will cause on PUT to decompress the directory. In the same layout within th
 
 ```
 // Return a list of builds. Will just be a JSON array of build numbers
-GET /repository/storage/repository/{project}/{job_name}/{branch}/
+GET /repository/storage/repository/{project}/{job_name}/
 // Return a list of Artifacts. A JSON array of file names and their sizes. Also the time of publish
-GET /repository/storage/repository/{project}/{job_name}/{branch}/{build}/
+GET /repository/storage/repository/{project}/{job_name}/{build}/
 // Return the artifact. 
-GET /repository/storage/repository/{project}/{job_name}/{branch}/{build}/{artifact_name}
+GET /repository/storage/repository/{project}/{job_name}/{build}/{artifact_name}
 ```
 
 ### Deleting Artifacts
 
 ```
 // Deletes a build
-DELETE /repository/storage/repository/{project}/{job_name}/{branch}/{build}
+DELETE /repository/storage/repository/{project}/{job_name}/{build}
 // Delete the artifact. 
-Delete /repository/storage/repository/{project}/{job_name}/{branch}/{build}/{artifact_name}
+Delete /repository/storage/repository/{project}/{job_name}/{build}/{artifact_name}
 ```
 
+## Project ID
+
+The project ID is "{project}-{job_name}".
 ## Version ID
 
-The VERSION ID is a string that looks like "{JobName}:{BranchName}:{BuildNumber}"
+The VERSION ID is a string that looks like "{BuildNumber}"
 
 This is more used internally and for the web interface.

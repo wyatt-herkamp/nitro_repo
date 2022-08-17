@@ -58,6 +58,20 @@ pub struct RepositoryConfig {
     pub created: i64,
 }
 
+impl RepositoryConfig {
+    pub fn new(name: impl Into<String>, repository_type: RepositoryType, storage: String) -> Self {
+        RepositoryConfig {
+            name: name.into(),
+            repository_type,
+            storage,
+            visibility: Visibility::default(),
+            active: true,
+            require_token_over_basic: false,
+            created: get_current_time(),
+        }
+    }
+}
+
 impl AsRef<str> for RepositoryConfig {
     fn as_ref(&self) -> &str {
         &self.name
@@ -217,3 +231,4 @@ pub(crate) use define_config_handler;
 pub(crate) use define_config_layout;
 pub(crate) use define_configs_on_handler;
 use crate::repository::handler::Repository;
+use crate::utils::get_current_time;

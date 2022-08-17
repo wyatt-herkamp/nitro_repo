@@ -5,7 +5,7 @@ pub mod public;
 pub mod user;
 
 pub fn init_public_routes(cfg: &mut ServiceConfig) {
-    cfg.service(public::login);
+    cfg.service(public::login).service(public::get_version);
 }
 
 pub fn user_routes(cfg: &mut ServiceConfig) {

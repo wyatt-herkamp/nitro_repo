@@ -66,7 +66,7 @@ badge-maker = "0.3"
 webhook_sender = { git = "https://github.com/wyatt-herkamp/webhook_sender.git" }
 # Installer
 clap = { version = "3.2.12", features = ["derive"] }
-semver = "1.0.12"
+semver = { version = "1", features = ["std", "serde"] }
 # Cache
 redis = "0.21.5"
 comrak = "0.14"
@@ -79,7 +79,7 @@ maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
 
 [build-dependencies]
-vergen = "7.0.0"
+vergen = { version = "7.0.0" }
 [features]
 # The latest Updaters will always be under default features
 default = ["updater_one-one", "multi_storage"]

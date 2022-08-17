@@ -2,27 +2,33 @@
   <div>
     <SimpleTabs>
       <SimpleTab name="General">
-        <div class="settingContent">
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-name"> name </label>
-            <input
-              class="nitroTextInput"
-              id="grid-name"
-              type="text"
-              v-model="storage.id"
-              disabled
-            />
-          </div>
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-created"> Date Created </label>
-            <input
-              class="nitroTextInput"
-              id="grid-created"
-              type="text"
-              v-model="date"
-              disabled
-            />
-          </div>
+        <div class="w-1/2 mx-auto bg-tertiary mt-5 rounded-l">
+          <h1 class="text-quaternary text-2xl mx-2 mt-4 border-b-2 w-fit px-2">
+            Storage Configuration
+          </h1>
+          <table class="table-auto text-quaternary">
+            <tbody>
+              <tr>
+                <th scope="row">ID/Name</th>
+                <td>{{ storage.id }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Created</th>
+                <td>{{ date }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Type</th>
+                <td>{{ storageType }}</td>
+              </tr>
+              <tr
+                v-for="(value, key) in storage.handler_config[storageType]"
+                v-bind:key="key"
+              >
+                <th scope="row">{{ key }}</th>
+                <td>{{ value }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </SimpleTab>
       <SimpleTab name="Repositories">
@@ -48,6 +54,8 @@ export default defineComponent({
   async setup(props) {
     const storage = ref<Storage | undefined>(undefined);
     const date = ref<string | undefined>(undefined);
+    const storageType = ref("");
+
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
@@ -57,6 +65,7 @@ export default defineComponent({
       .then((res) => {
         if (res.status == 200) {
           storage.value = res.data;
+          storageType.value = Object.keys(res.data.handler_config)[0];
           date.value = new Date(res.data.created).toLocaleString();
           meta.title = `Nitro Repo - ${res.data.id}`;
         }
@@ -65,6 +74,7 @@ export default defineComponent({
       date,
       storage,
       storageTab,
+      storageType,
     };
   },
   methods: {
