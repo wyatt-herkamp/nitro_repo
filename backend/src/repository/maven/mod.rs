@@ -5,6 +5,7 @@ use actix_web::http::header::HeaderMap;
 use actix_web::web::Bytes;
 use actix_web::Error;
 use async_trait::async_trait;
+use log::debug;
 use maven_rs::pom::Pom;
 use sea_orm::DatabaseConnection;
 
@@ -45,13 +46,13 @@ repository_handler!(
     StagingRepository
 );
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-use crate::repository::nitro::VersionData;
+use crate::repository::nitro::{ProjectSource, VersionData};
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::repository_page::RepositoryPage;
 use crate::system::user::database::UserSafeData;
 use crate::utils::get_current_time;
-crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository);
+crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository, Proxy, ProxyMavenRepository);
 crate::repository::staging::dynamic::gen_dynamic_stage!(MavenHandler, Staging);
 
 impl<S: Storage> MavenHandler<S> {
@@ -133,10 +134,25 @@ crate::repository::handler::repository_config_group!(MavenHandler, RepositoryPag
 
 impl From<Pom> for VersionData {
     fn from(pom: Pom) -> Self {
+        let source = pom.scm.and_then(|v| {
+            if let Some(ty) = v.connection {
+                if ty.starts_with("scm::git:") {
+                    let string = ty.replace("scm::git:", "");
+                    Some(ProjectSource::Git {
+                        url: string.to_string()
+                    })
+                } else {
+                    debug!("Unknown scm type: {}", ty);
+                    None
+                }
+            } else {
+                None
+            }
+        });
         VersionData {
             name: format!("{}:{}", &pom.group_id, &pom.artifact_id),
             description: pom.description.unwrap_or_default(),
-            source: None,
+            source,
             licence: None,
             version: pom.version,
             created: get_current_time(),

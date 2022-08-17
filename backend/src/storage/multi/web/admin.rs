@@ -68,6 +68,7 @@ pub async fn get_storage(
 ) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
-    let storage = crate::helpers::get_storage!(storage_handler, name);
+    let storage = name.into_inner();
+    let storage = crate::helpers::get_storage!(storage_handler, storage);
     Ok(HttpResponse::Ok().json(storage.storage_config()))
 }

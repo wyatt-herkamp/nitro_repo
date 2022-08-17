@@ -159,7 +159,7 @@ impl<S: Storage> NitroRepositoryHandler<S> for ProxyMavenRepository<S> {
 pub mod multi_web {
     crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
         super::MavenProxySettings,
-        maven_proxy,
+        proxy,
         Proxy
     );
 }

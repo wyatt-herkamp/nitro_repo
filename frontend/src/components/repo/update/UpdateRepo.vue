@@ -27,7 +27,13 @@
     v-else-if="view === 'repository_page'"
     :repository="repository"
   />
-  <FrontendSettings v-else-if="view === 'frontend'" :repository="repository" />
+  <UndefinedSettingConfig
+    v-bind:key="view"
+    v-else
+    :repository="repository"
+    :settingName="view"
+    :schema="getSchema()"
+  />
 </template>
 <script lang="ts">
 import { defineComponent, ref } from "vue";
@@ -42,9 +48,11 @@ import Tab from "@/components/common/tabs/Tab.vue";
 import BadgeSettings from "@/components/repo/update/BadgeSettings.vue";
 import RepositoryPage from "@/components/repo/update/RepositoryPage.vue";
 import FrontendSettings from "@/components/repo/update/FrontendSettings.vue";
+import UndefinedSettingConfig from "@/components/repo/update/UndefinedSettingConfig.vue";
+import { JSONData } from "vanilla-jsoneditor";
 export default defineComponent({
   components: {
-    FrontendSettings,
+    UndefinedSettingConfig,
     RepositoryPage,
     BadgeSettings,
     Tabs,
@@ -56,6 +64,13 @@ export default defineComponent({
     repository: {
       type: Object as () => Repository,
       required: true,
+    },
+  },
+  methods: {
+    getSchema(): JSONData {
+      return this.repositoryLayout.filter((layout) => {
+        return layout.config_name === this.view;
+      })[0].schema;
     },
   },
   setup(props) {
@@ -70,7 +85,7 @@ export default defineComponent({
       Array<{
         config_name: string;
         config_proper_name: string;
-        schema_name: Record<string, unknown>;
+        schema: JSONData;
       }>
     >();
     httpCommon.apiClient

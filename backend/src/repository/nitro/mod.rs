@@ -15,6 +15,7 @@ pub struct ProjectRequest {
     pub project_name: String,
     pub version: Option<String>,
 }
+
 impl ProjectRequest {
     pub fn into_inner(self) -> (String, String, String, Option<String>) {
         (
@@ -25,6 +26,7 @@ impl ProjectRequest {
         )
     }
 }
+
 #[derive(Serialize, Clone, Debug)]
 pub struct NitroFileResponse {
     pub files: Vec<NitroFile>,
@@ -90,6 +92,7 @@ pub struct ProjectData {
     #[serde(default = "crate::utils::get_current_time")]
     pub updated: i64,
 }
+
 impl Default for ProjectData {
     fn default() -> Self {
         ProjectData {
@@ -99,10 +102,12 @@ impl Default for ProjectData {
         }
     }
 }
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ProjectSource {
-    pub name: String,
-    pub url: String,
+pub enum ProjectSource {
+    Git {
+        url: String,
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

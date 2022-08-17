@@ -29,11 +29,12 @@ pub async fn get_repositories(
 ) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
-
-    let storage = crate::helpers::get_storage!(storage_handler, storage_name);
+    let storage = storage_name.into_inner();
+    let storage = crate::helpers::get_storage!(storage_handler,storage);
 
     Ok(HttpResponse::Ok().json(storage.get_repository_list().map_err(InternalError::from)?))
 }
+
 #[derive(Serialize, Debug)]
 pub struct CreateRepositoryLayout {
     pub name: &'static str,
@@ -198,11 +199,11 @@ macro_rules! update_repository_core_prop {
         pub fn register_core_updates(cfg: &mut actix_web::web::ServiceConfig){
             $(
             paste! {
-            cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", stringify!($name), "{value}")])
+            cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", stringify!($name), "/{value}")])
                 .route(actix_web::web::put().to([<update_repository_ $name>])));
             }
             )*
         }
     };
 }
-update_repository_core_prop!(visibility, Visibility, active, bool);
+update_repository_core_prop!(visibility, Visibility, active, bool, require_token_over_basic,bool);

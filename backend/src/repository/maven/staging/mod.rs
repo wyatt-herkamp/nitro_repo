@@ -81,7 +81,9 @@ pub enum StageSettings {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
-pub enum DeployRequirement {}
+pub enum DeployRequirement {
+    Placeholder
+}
 
 #[derive(Debug)]
 pub struct StagingRepository<S: Storage> {
@@ -275,7 +277,7 @@ impl<S: Storage> Repository<S> for StagingRepository<S> {
 pub mod multi_web {
     crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
         super::MavenStagingConfig,
-        maven_staging,
+        stage_settings,
         Staging
     );
 }

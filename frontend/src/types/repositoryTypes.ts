@@ -5,6 +5,7 @@ export interface Repository {
   visibility: string;
   active: boolean;
   created: number;
+  require_token_over_basic: boolean;
 }
 export interface ReportGeneration {
   active: boolean;

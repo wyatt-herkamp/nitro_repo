@@ -2,79 +2,67 @@
   <div class="settingContent">
     <h2 class="settingHeader">Repository Rules</h2>
 
-    <div class="flex flex-wrap mb-6 justify-center">
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-name"> name </label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-name"
-          type="text"
-          v-model="repository.name"
-          disabled
-        />
-      </div>
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-Storage"> Storage </label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-Storage"
-          type="text"
-          v-model="repository.storage"
-          disabled
-        />
-      </div>
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-created"> Date Created </label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-created"
-          type="text"
-          v-model="date"
-          disabled
-        />
-      </div>
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-type"> Repo Type</label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-type"
-          type="text"
-          v-model="repositoryType"
-          disabled
-        />
-      </div>
-    </div>
-    <h2 class="settingHeader">Repository General Properties</h2>
-    <div class="flex flex-wrap mb-6">
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-active">Repo Active</label>
-        <select
-          v-model="repository.active"
-          class="nitroSelectBox"
-          @change="updateActiveStatus()"
-        >
-          <option>true</option>
-          <option>false</option>
-        </select>
-      </div>
-      <div class="settingBox">
-        <label for="grid-policy">Page Provider</label>
-        <select
-          v-model="repository.visibility"
-          @change="
-            this.$notify({
-              title: 'Page Provider',
-              message: 'Page Provider Updated. Not Implemented',
-              type: 'warn',
-            })
-          "
-          class="nitroTextInput"
-        >
-          <option value="Public">Public</option>
-          <option value="Private">Private</option>
-          <option value="Hidden">Hidden</option>
-        </select>
-      </div>
+    <div class="flex flex-wrap mb-6 justify-center bg-tertiary/25 shadow-sm">
+      <table class="table-auto text-quaternary">
+        <tbody>
+          <tr>
+            <th scope="row">Name</th>
+            <td>{{ repository.name }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Created</th>
+            <td>{{ date }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Type</th>
+            <td>{{ repositoryType }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Storage</th>
+            <td>{{ repository.storage }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Active</th>
+            <td>
+              <select
+                :value="repository.active"
+                class="tableSelectBox"
+                @change="updateActiveStatus($event)"
+              >
+                <option>true</option>
+                <option>false</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Require Auth Token</th>
+            <td>
+              <select
+                :value="repository.require_token_over_basic"
+                class="tableSelectBox"
+                @change="updateRequireAuth($event)"
+              >
+                <option>true</option>
+                <option>false</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Visibility</th>
+            <td>
+              <select
+                :value="repository.visibility"
+                class="tableSelectBox"
+                @change="updateVisibility($event)"
+              >
+                <option value="Public">Public</option>
+                <option value="Private">Private</option>
+                <option value="Hidden">Hidden</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <h2 class="settingHeader">Danger Area</h2>
     <div class="settingContent">
@@ -108,6 +96,7 @@
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
 import { Repository } from "@/types/repositoryTypes";
+import httpCommon from "@/http-common";
 
 export default defineComponent({
   props: {
@@ -124,17 +113,107 @@ export default defineComponent({
     return { repositoryType, date, deleteOpen, deleteFiles };
   },
   methods: {
-    async updateActiveStatus() {
-      // TODO update active status
+    async updateActiveStatus(event: { target: { value: string } }) {
+      await httpCommon.apiClient
+        .put(
+          `api/admin/repositories/${this.repository.storage}/${this.repository.name}/config/active/${event.target.value}`
+        )
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              title: "Repository active status updated",
+            });
+          } else {
+            this.$notify({
+              type: "error",
+              title: "Error",
+              text: "Repository active status update failed",
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: "Repository active status update failed",
+          });
+        });
+    },
+    async updateRequireAuth(event: { target: { value: string } }) {
+      await httpCommon.apiClient
+        .put(
+          `api/admin/repositories/${this.repository.storage}/${this.repository.name}/config/require_token_over_basic/${event.target.value}`
+        )
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              title: "Repository Require Auth Token updated",
+            });
+          } else {
+            this.$notify({
+              type: "error",
+              title: "Error",
+              text: "Repository Require Auth Token failed",
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: "Repository Require Auth Token failed",
+          });
+        });
+    },
+    async updateVisibility(event: { target: { value: string } }) {
+      await httpCommon.apiClient
+        .put(
+          `api/admin/repositories/${this.repository.storage}/${this.repository.name}/config/visibility/${event.target.value}`
+        )
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              title: "Repository visibility updated",
+            });
+          } else {
+            console.log(response);
+            this.$notify({
+              type: "error",
+              title: "Repository visibility update failed",
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$notify({
+            type: "error",
+            title: "Repository visibility update failed",
+          });
+        });
     },
 
     async deleteRepo() {
       // TODO delete repo
     },
-    async updatePolicy() {
-      // TODO update policy
-    },
   },
   components: {},
 });
 </script>
+<style>
+.tableSelectBox {
+  @apply block;
+  @apply w-full;
+  @apply bg-tertiary;
+  @apply text-quaternary;
+  @apply border;
+  @apply border-quaternary;
+  @apply py-1;
+  @apply px-1;
+  @apply w-1/2;
+}
+</style>

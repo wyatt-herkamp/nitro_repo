@@ -8,8 +8,6 @@ pub enum PageProvider {
     // Do not create a page for this projects in this repository
     #[default]
     None,
-    /// The README is pulled from Github
-    ReadmeGit,
     /// The README is sent to the repository
     ReadmeSent,
 }
@@ -22,11 +20,11 @@ pub struct Frontend {
 }
 
 impl RepositoryConfigType for Frontend {
-
     fn config_name() -> &'static str {
         "frontend.json"
     }
 }
+
 pub mod multi_web {
     use crate::repository;
     use crate::repository::settings;

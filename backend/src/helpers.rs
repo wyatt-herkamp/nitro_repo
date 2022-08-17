@@ -18,7 +18,7 @@ macro_rules! get_storage {
         {
             value
         } else {
-            return Ok(actix_web::HttpResponse::NotFound().finish().into());
+            return Err(crate::error::simple_response::SimpleResponse::BadStorageName($storage_name.into()).into());
         }
     };
 }
@@ -30,7 +30,7 @@ macro_rules! get_repository {
         {
             value
         } else {
-            return Ok(actix_web::HttpResponse::NotFound().finish().into());
+            return Err(crate::error::simple_response::SimpleResponse::BadRepositoryName($repository.into()).into());
         }
     };
 }

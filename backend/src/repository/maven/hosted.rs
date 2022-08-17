@@ -183,7 +183,7 @@ impl<S: Storage> NitroRepositoryHandler<S> for HostedMavenRepository<S> {
 pub mod multi_web {
     crate::repository::maven::settings::macros::define_repository_config_handlers_group!(
         super::MavenHosted,
-        maven_hosted,
+        hosted,
         Hosted
     );
 }

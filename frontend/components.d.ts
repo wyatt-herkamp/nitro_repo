@@ -57,6 +57,7 @@ declare module '@vue/runtime-core' {
     Tab: typeof import('./src/components/common/tabs/Tab.vue')['default']
     Tabs: typeof import('./src/components/common/tabs/Tabs.vue')['default']
     Token: typeof import('./src/components/user/keys/Token.vue')['default']
+    UndefinedSettingConfig: typeof import('./src/components/repo/update/UndefinedSettingConfig.vue')['default']
     UpdatePassword: typeof import('./src/components/user/UpdatePassword.vue')['default']
     UpdateRepo: typeof import('./src/components/repo/update/UpdateRepo.vue')['default']
     UpdateStorage: typeof import('./src/components/UpdateStorage.vue')['default']
