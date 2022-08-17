@@ -67,7 +67,7 @@ pub async fn get_repositories(
 pub struct RepositoryPageResponse<'v> {
     pub name: &'v str,
     pub repository_type: &'v RepositoryType,
-    pub page_content: Option<Vec<u8>>,
+    pub page_content: Option<String>,
     pub last_updated: i64,
 }
 
@@ -117,7 +117,7 @@ pub async fn get_readme<StorageType: Storage>(
     storage: &StorageType,
     repo: &RepositoryConfig,
     generator: Arc<GeneratorCache>,
-) -> Result<Option<Vec<u8>>, InternalError> {
+) -> Result<Option<String>, InternalError> {
     let data = repo
         .get_config::<RepositoryPage, StorageType>(storage)
         .await?;
@@ -126,7 +126,7 @@ pub async fn get_readme<StorageType: Storage>(
             Ok(None)
         } else {
             let cache_name = format!("{}/{}/.config.nitro_repo/README.html", repo.storage, repo.name);
-            if let Some(data) = generator.get_as_bytes(&cache_name).await? {
+            if let Some(data) = generator.get_as_string(&cache_name).await? {
                 Ok(Some(data))
             } else {
                 let option = storage
@@ -135,7 +135,7 @@ pub async fn get_readme<StorageType: Storage>(
                 if let Some(data) = option {
                     let result = String::from_utf8(data.as_slice().to_vec())
                         .map_err(|e| InternalError::Error(e.to_string()))?;
-                    parse_to_html(result, PathBuf::from(cache_name), generator).map(Some)
+                    parse_to_html(result, PathBuf::from(cache_name), generator).map(|v| String::from_utf8(v).ok())
                 } else {
                     Ok(None)
                 }

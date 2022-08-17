@@ -18,7 +18,7 @@ pub struct RepositoryPage {
     pub page_type: PageType,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, JsonSchema, Debug)]
 pub struct UpdateRepositoryPage {
     pub settings: RepositoryPage,
     pub page: Option<String>,
@@ -35,7 +35,7 @@ pub mod multi_web {
     use std::sync::Arc;
     use actix_web::{get, HttpResponse};
     use actix_web::web::{Data, Path};
-    use log::error;
+    use log::{error, trace};
     use crate::generators::GeneratorCache;
     use crate::repository;
     use crate::repository::handler::{DynamicRepositoryHandler, Repository};
@@ -98,10 +98,15 @@ pub mod multi_web {
         let body = body.into_inner();
 
         let result = match repository {
+
             DynamicRepositoryHandler::Maven(ref mut repository) => {
+                trace!("Updating repository page: {:?}", &body);
+
                 let value = crate::repository::settings::RepositoryConfigHandler::<RepositoryPage>::update(repository, body.settings);
                 if value.is_ok() {
-                    save_config(generator, &storage, body.page, repository).await
+                    save_config(generator, &storage, body.page, repository).await;
+                }else{
+                    error!("Error saving config {:?}", value);
                 }
                 value
             }
@@ -115,10 +120,10 @@ pub mod multi_web {
     }
 
     async fn save_config<S: Storage, R>(generator: Data<GeneratorCache>, storage: &Arc<DynamicStorage>, body: Option<String>, repository: &mut R) where R: Repository<S> + RepositoryConfigHandler<RepositoryPage> {
+
         let config = RepositoryConfigHandler::<RepositoryPage>::get(repository);
         if let Err(error) = storage.save_repository_config(repository.get_repository(), config).await {
             error!("Failed to save repository config: {}", error);
-        } else {
             return;
         }
 
@@ -127,7 +132,7 @@ pub mod multi_web {
         if let Err(error) = generator.remove_from_cache(&cache_name).await {
             error!("{}", error);
         }
-        if let Err(error) = storage.save_file(repository.get_repository(), page.as_bytes(), ".config.nitro_repo/README.html").await {
+        if let Err(error) = storage.save_file(repository.get_repository(), page.as_bytes(), ".config.nitro_repo/README.md").await {
             error!("{}", error);
         }
     }

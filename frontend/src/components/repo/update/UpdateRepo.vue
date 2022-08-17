@@ -47,7 +47,6 @@ import Tabs from "@/components/common/tabs/Tabs.vue";
 import Tab from "@/components/common/tabs/Tab.vue";
 import BadgeSettings from "@/components/repo/update/BadgeSettings.vue";
 import RepositoryPage from "@/components/repo/update/RepositoryPage.vue";
-import FrontendSettings from "@/components/repo/update/FrontendSettings.vue";
 import UndefinedSettingConfig from "@/components/repo/update/UndefinedSettingConfig.vue";
 import { JSONData } from "vanilla-jsoneditor";
 export default defineComponent({

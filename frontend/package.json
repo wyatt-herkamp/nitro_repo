@@ -11,6 +11,13 @@
   },
   "dependencies": {
     "@kyvg/vue3-notification": "^2.3.6",
+    "@milkdown/core": "^6.3.2",
+    "@milkdown/plugin-listener": "^6.3.2",
+    "@milkdown/plugin-menu": "^6.3.2",
+    "@milkdown/preset-commonmark": "^6.3.2",
+    "@milkdown/prose": "^6.3.2",
+    "@milkdown/theme-nord": "^6.3.2",
+    "@milkdown/vue": "^6.3.2",
     "@uppy/drag-drop": "^2.1.1",
     "@uppy/vue": "^0.4.8",
     "axios": "^0.27.2",

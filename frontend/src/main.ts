@@ -16,4 +16,5 @@ app.use(vfmPlugin);
 app.use(createMetaManager());
 app.use(createPinia());
 
+
 app.mount("#app");

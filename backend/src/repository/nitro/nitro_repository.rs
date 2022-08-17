@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use log::{debug, error, trace};
 use std::sync::Arc;
+use futures_util::TryFutureExt;
 
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;
@@ -74,8 +75,9 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
                 self.get_storage(),
                 self.get_repository(),
                 generator_cache,
-            )
-            .await?;
+            ).await?.and_then(|readme| {
+                String::from_utf8(readme).ok()
+            });
             let project = Project {
                 repo_summary: self.get_repository().clone(),
                 project: project_data,
@@ -105,7 +107,9 @@ pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> 
                 self.get_repository(),
                 generator_cache,
             )
-            .await?;
+            .await?.and_then(|readme| {
+                String::from_utf8(readme).ok()
+            });
             let project = Project {
                 repo_summary: self.get_repository().clone(),
                 project: project_data,
