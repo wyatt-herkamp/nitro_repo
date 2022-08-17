@@ -25,7 +25,7 @@
     </router-link>
     <a
       class="link"
-      :href="url + 'storages/' + file.full_path"
+      :href="url + '/repositories/' + file.full_path"
       v-if="!file.directory"
     >
       <div>

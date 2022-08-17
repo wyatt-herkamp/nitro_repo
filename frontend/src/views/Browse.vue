@@ -21,59 +21,24 @@
             </router-link>
           </div>
         </div>
-        <ul v-if="tableData !== undefined" class="w-full text-left p-3">
-          <BrowseBox
-            v-for="value in tableData"
-            :key="value.name"
-            :file="value"
+        <Suspense fallback="Loading...">
+          <ListInsideRepository
+            v-if="storage !== '' && repository !== ''"
+            :storage="storage"
+            :repository="repository"
+            :catchAll="catchAll"
+            v-model="pathSplit"
           />
-        </ul>
+          <ListRepositories
+            v-else-if="storage !== ''"
+            :storage="storage"
+            v-model="pathSplit"
+          />
+          <ListStorages v-else v-model="pathSplit" />
+        </Suspense>
       </div>
     </div>
     <!-- Optional Extra Info -->
-    <div
-      class="hidden basis-1/2 md:flex m-2 rounded-md bg-slate-900 grow-0 shrink-0"
-      v-if="activeResponse !== undefined"
-    >
-      <div v-if="activeResponse.Project !== undefined">
-        <router-link
-          :to="{
-            name: 'Project',
-            params: {
-              storage: activeResponse.Project.repo_summary.storage,
-              repo: activeResponse.Project.repo_summary.name,
-              id: activeResponse.Project.version.name,
-            },
-          }"
-          >Project Page</router-link
-        >
-        <ViewProject :project="activeResponse.Project" />
-      </div>
-
-      <div v-if="activeResponse.Repository !== undefined">
-        <router-link
-          :to="{
-            name: 'ViewRepository',
-            params: {
-              storage: activeResponse.Repository.storage,
-              repo: activeResponse.Repository.name,
-            },
-          }"
-          >Repository Page</router-link
-        >
-        <div>
-          <div class="m-2">
-            <RepositoryBadge :repository="activeResponse.Repository" />
-          </div>
-          <div class="m-2">
-            <MavenRepoInfo
-              v-if="activeResponse.Repository.repo_type === 'Maven'"
-              :repository="activeResponse.Repository"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 <style scoped>
@@ -90,66 +55,37 @@
 </style>
 <script lang="ts">
 import httpCommon, { apiURL } from "@/http-common";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { BrowsePath } from "@/api/Browse";
-import ViewProject from "@/components/project/ViewProject.vue";
-import BrowseBox from "@/components/browse/BrowseBox.vue";
-import {
-  BrowseResponse,
-  FileResponse,
-  ResponseType,
-} from "@/types/repositoryTypes";
+import { ResponseType } from "@/types/repositoryTypes";
+import ListInsideRepository from "@/components/browse/ListInsideRepository.vue";
+import ListRepositories from "@/components/browse/ListRepositories.vue";
+import ListStorages from "@/components/browse/ListStorages.vue";
 
 export default defineComponent({
   setup() {
     const url = apiURL;
     const route = useRoute();
     const pathSplit = ref<BrowsePath[]>([]);
-    const tableData = ref<FileResponse[] | undefined>();
     const activeResponse = ref<ResponseType | undefined>();
+    const storage = ref<string | undefined>(route.params.storage as string);
+    const repository = ref<string | undefined>(route.params.repo as string);
     const catchAll = ref(route.params.catchAll as string);
-    const path = ref("");
 
-    const up = ref("");
-    const getFiles = async () => {
-      path.value = route.fullPath;
-      catchAll.value = route.params.catchAll as string;
-
-      const upperPath = path.value.split("/");
-
-      if (upperPath.length > 0) {
-        upperPath.splice(upperPath.length - 1);
-      }
-      up.value = upperPath.join("/");
-      await httpCommon.apiClient
-        .get<BrowseResponse>(`/storages/${catchAll.value}/`)
-        .then((response) => {
-          const fileResponse = response.data as BrowseResponse;
-          let url = "";
-          fileResponse.active_dir.split("/").forEach((element: string) => {
-            url = url + "/" + element;
-            pathSplit.value.push({ name: element, path: url });
-          });
-
-          if (typeof fileResponse.response_type != "string") {
-            activeResponse.value = fileResponse.response_type as ResponseType;
-          }
-          tableData.value = fileResponse.files;
-        });
-    };
-
-    getFiles();
     return {
-      path,
-      tableData,
+      storage,
+      repository,
       catchAll,
       pathSplit,
       url,
-      up,
       activeResponse,
     };
   },
-  components: { ViewProject, BrowseBox },
+  components: {
+    ListStorages,
+    ListRepositories,
+    ListInsideRepository,
+  },
 });
 </script>

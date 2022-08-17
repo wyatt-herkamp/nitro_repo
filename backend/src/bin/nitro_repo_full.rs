@@ -141,14 +141,14 @@ async fn main() -> std::io::Result<()> {
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)
                     .configure(authentication::auth_token::web::authentication_router)
+                    .configure(storage::multi::web::init_public_routes)
+                    .configure(repository::web::multi::public::init_public)
                     .service(
                         web::scope("/admin")
                             .configure(system::web::init_user_manager_routes)
                             .configure(storage::multi::web::init_admin_routes)
                             .configure(repository::web::multi::init_admin),
                     )
-                    .configure(storage::multi::web::init_public_routes)
-                    .configure(repository::web::multi::public::init_public),
             )
             .service(
                 web::scope("")
