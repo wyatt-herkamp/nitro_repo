@@ -1,4 +1,4 @@
-use api::settings::models::{Database, GeneralSettings, MysqlSettings, SqliteSettings};
+use api::settings::models::{Application, Database, GeneralSettings, MysqlSettings, SqliteSettings};
 use api::system::permissions::{RepositoryPermission, UserPermissions};
 use api::system::user::database::ActiveModel;
 use api::system::user::UserEntity;
@@ -10,7 +10,8 @@ use sea_orm::{ConnectOptions, EntityTrait};
 
 use std::env;
 use std::fs::OpenOptions;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::exit;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -18,9 +19,13 @@ struct InstallCommand {
     #[clap(subcommand)]
     database_type: DatabaseTypes,
     #[clap(long)]
-    admin_username: String,
+    admin_username: Option<String>,
     #[clap(long)]
-    admin_password: String,
+    admin_password: Option<String>,
+    #[clap(long)]
+    frontend_path: String,
+    #[clap(long)]
+    storage_path: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -28,6 +33,7 @@ enum DatabaseTypes {
     Mysql(MysqlInstall),
     Sqlite(SqliteInstall),
 }
+
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct SqliteInstall {
@@ -47,9 +53,10 @@ struct MysqlInstall {
     #[clap(long)]
     pub database: String,
 }
+
 #[tokio::main]
 async fn main() {
-    let install_command = InstallCommand::parse();
+    let install_command: InstallCommand = InstallCommand::parse();
     let config = match install_command.database_type {
         DatabaseTypes::Mysql(mysql) => {
             let mysql_settings = MysqlSettings {
@@ -81,13 +88,15 @@ async fn main() {
     api::utils::run_database_setup(&mut database_conn)
         .await
         .expect("Failed to run database setup");
+    let option = install_command.admin_username.unwrap_or_else(|| whoami::username());
+    let password: &str = install_command.admin_password.as_ref().and_then(|v| Some(v.as_str())).unwrap_or("password");
     let user: user::database::ActiveModel = ActiveModel {
         id: Default::default(),
-        name: Set(install_command.admin_username.clone()),
-        username: Set(install_command.admin_username),
+        name: Set(option.clone()),
+        username: Set(option),
 
         email: Set("admin@nitro_repo.dev".to_string()),
-        password: Set(hash(install_command.admin_password).unwrap()),
+        password: Set(hash(password).unwrap()),
         permissions: Set(UserPermissions {
             disabled: false,
             admin: true,
@@ -105,7 +114,13 @@ async fn main() {
         .expect("Failed to insert user");
     let general = GeneralSettings {
         database: config,
-        application: Default::default(),
+        application: Application {
+            frontend: install_command.frontend_path,
+            storage_location: install_command.storage_path.and_then(|v| Some(PathBuf::from(v))).unwrap_or_else(|| {
+                env::current_dir().unwrap().join("storages")
+            }),
+            ..Application::default()
+        },
         internal: Default::default(),
         session: Default::default(),
     };
