@@ -31,20 +31,14 @@ pub struct Settings {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Internal {
     pub installed: bool,
-    pub version: String,
-}
-
-impl Internal {
-    pub fn parse_version(&self) -> Result<Version, Error> {
-        semver::Version::parse(&self.version)
-    }
+    pub version: Version,
 }
 
 impl Default for Internal {
     fn default() -> Self {
         Self {
             installed: true,
-            version: env!("CARGO_PKG_VERSION").to_string(),
+            version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
         }
     }
 }
@@ -55,6 +49,7 @@ pub enum Database {
     Mysql(MysqlSettings),
     Sqlite(SqliteSettings),
 }
+
 #[allow(clippy::from_over_into)]
 impl Into<sea_orm::ConnectOptions> for Database {
     fn into(self) -> ConnectOptions {
@@ -84,18 +79,22 @@ pub struct MysqlSettings {
     pub host: String,
     pub database: String,
 }
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SqliteSettings {
     pub database_file: PathBuf,
 }
+
 impl Display for SqliteSettings {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "sqlite:{}", self.database_file.display())
     }
 }
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Application {
     pub log: String,
+    pub frontend: String,
     pub address: String,
     pub app_url: String,
     pub max_upload: usize,
@@ -111,6 +110,7 @@ impl Default for Application {
         create_dir_all(&buf).unwrap();
         Self {
             log: "./".to_string(),
+            frontend: "frontend".to_string(),
             address: "0.0.0.0:6742".to_string(),
             app_url: "http://127.0.0.1:6742".to_string(),
             max_upload: 1024,
@@ -121,6 +121,7 @@ impl Default for Application {
         }
     }
 }
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
     pub database: Database,

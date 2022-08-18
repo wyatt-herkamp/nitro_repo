@@ -10,7 +10,6 @@ use tokio::sync::RwLock;
 use crate::settings::models::{GeneralSettings, Settings};
 
 pub mod authentication;
-pub mod cli;
 pub mod constants;
 pub mod error;
 pub mod frontend;
@@ -21,6 +20,7 @@ pub mod repository;
 pub mod settings;
 pub mod storage;
 pub mod system;
+#[cfg(feature = "updater")]
 pub mod updater;
 pub mod utils;
 
@@ -36,7 +36,7 @@ pub struct Version {
     /// What the local config says the version is
     pub installed: semver::Version,
     /// The Cargo Build Version
-    pub cargo_version: &'static str,
+    pub cargo_version: semver::Version,
     pub git_branch: &'static str,
     pub git_commit: &'static str,
     /// The channel rust is in
@@ -53,7 +53,7 @@ impl Version {
     pub fn new(installed: semver::Version) -> Version {
         Version {
             installed,
-            cargo_version: env!("VERGEN_BUILD_SEMVER"),
+            cargo_version: semver::Version::parse(env!("VERGEN_BUILD_SEMVER")).unwrap(),
             git_branch: env!("VERGEN_GIT_BRANCH"),
             git_commit: env!("VERGEN_GIT_SHA"),
             mode: env!("VERGEN_RUSTC_CHANNEL"),

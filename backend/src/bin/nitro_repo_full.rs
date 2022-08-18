@@ -14,7 +14,6 @@ use actix_web::{web, App, HttpServer};
 use handlebars::template::Parameter::Path;
 use api::authentication::middleware::HandleSession;
 use api::authentication::session::{Session, SessionManager, SessionManagerType};
-use api::cli::handle_cli;
 
 use api::generators::GeneratorCache;
 use api::settings::load_configs;
@@ -32,9 +31,6 @@ use tokio::sync::RwLock;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    if handle_cli().await.map_err(convert_error)? {
-        return Ok(());
-    }
     let current_dir = current_dir()?;
     let configs = current_dir.join("cfg");
     let main_config = current_dir.join("nitro_repo.toml");
@@ -48,9 +44,19 @@ async fn main() -> std::io::Result<()> {
 
     let init_settings: GeneralSettings =
         toml::from_str(&read_to_string(&main_config).await?).map_err(convert_error)?;
-    let version = semver::Version::parse(&init_settings.internal.version).map_err(convert_error)?;
+    let version = Version::new(init_settings.internal.version.clone());
+    if init_settings.internal.version.major != version.cargo_version.major && init_settings.internal.version.minor != version.cargo_version.minor {
+        eprintln!(
+            "Version mismatch. Expected {:?} but found {:?}",
+            version.cargo_version,
+            init_settings.internal.version
+        );
+        exit(1)
+    }
+
     // Sets the Log Location
     set_var("LOG_LOCATION", &init_settings.application.log);
+    set_var("FRONTEND", &init_settings.application.frontend);
     load_logger(&init_settings.application.mode);
     info!("Initializing Database Connection");
     let connection = sea_orm::Database::connect(init_settings.database.clone())
@@ -69,7 +75,7 @@ async fn main() -> std::io::Result<()> {
     let nitro_repo = NitroRepo {
         settings: RwLock::new(settings),
         core: init_settings,
-        current_version: Version::new(version),
+        current_version: version,
     };
     info!("Version: {:?}", nitro_repo.current_version);
     let application = nitro_repo.core.application.clone();
@@ -89,7 +95,7 @@ async fn main() -> std::io::Result<()> {
     {
         #[cfg(not(debug_assertions))]
         {
-            compile_error!("You are not in a development environment");
+            //compile_error!("You are not in a development environment");
         }
         warn!("Using unsafe cookies");
         warn!("This is not recommended. This is only for development purposes");
@@ -153,9 +159,9 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("")
                     .wrap(HandleSession(false))
-                    .configure(repository::web::multi::init_repository_handlers),
+                    .configure(repository::web::multi::init_repository_handlers)
+                    .configure(frontend::init),
             )
-            .configure(frontend::init)
     });
 
     #[cfg(feature = "ssl")]
