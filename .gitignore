@@ -23,3 +23,5 @@ docs/docs/.vitepress/dist/
 *.env*
 *.tar.gz
 backend/test/
+frontend.zip
+.vs
