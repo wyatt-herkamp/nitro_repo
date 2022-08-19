@@ -2,39 +2,33 @@
   <div>
     <SimpleTabs>
       <SimpleTab name="General">
-        <div class="settingContent">
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-name"> name </label>
-            <input
-              class="nitroTextInput"
-              id="grid-name"
-              type="text"
-              v-model="storage.name"
-              disabled
-            />
-          </div>
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-public-name">
-              Public Name
-            </label>
-            <input
-              class="nitroTextInput"
-              id="grid-public-name"
-              type="text"
-              v-model="storage.public_name"
-              disabled
-            />
-          </div>
-          <div class="settingBox">
-            <label class="nitroLabel" for="grid-created"> Date Created </label>
-            <input
-              class="nitroTextInput"
-              id="grid-created"
-              type="text"
-              v-model="date"
-              disabled
-            />
-          </div>
+        <div class="w-1/2 mx-auto bg-tertiary mt-5 rounded-l">
+          <h1 class="text-quaternary text-2xl mx-2 mt-4 border-b-2 w-fit px-2">
+            Storage Configuration
+          </h1>
+          <table class="table-auto text-quaternary">
+            <tbody>
+              <tr>
+                <th scope="row">ID/Name</th>
+                <td>{{ storage.id }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Created</th>
+                <td>{{ date }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Type</th>
+                <td>{{ storageType }}</td>
+              </tr>
+              <tr
+                v-for="(value, key) in storage.handler_config[storageType]"
+                v-bind:key="key"
+              >
+                <th scope="row">{{ key }}</th>
+                <td>{{ value }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </SimpleTab>
       <SimpleTab name="Repositories">
@@ -44,11 +38,11 @@
   </div>
 </template>
 <script lang="ts">
-import { getStorage, Storage } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 import { useMeta } from "vue-meta";
-import { useRouter } from "vue-router";
 import Repositories from "./Repositories.vue";
+import httpCommon from "@/http-common";
+import { Storage } from "@/types/storageTypes";
 
 export default defineComponent({
   props: {
@@ -60,30 +54,27 @@ export default defineComponent({
   async setup(props) {
     const storage = ref<Storage | undefined>(undefined);
     const date = ref<string | undefined>(undefined);
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      await useRouter().push("login");
-    }
+    const storageType = ref("");
+
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
     const storageTab = ref("General");
-    try {
-      const value = (await getStorage(
-        token as string,
-        props.storageId
-      )) as Storage;
-      storage.value = value;
-      date.value = new Date(storage.value.created).toLocaleDateString("en-US");
-      meta.title = value.name;
-    } catch (e) {
-      console.log(e);
-    }
-
+    await httpCommon.apiClient
+      .get<Storage>(`api/admin/storage/${props.storageId}`)
+      .then((res) => {
+        if (res.status == 200) {
+          storage.value = res.data;
+          storageType.value = Object.keys(res.data.handler_config)[0];
+          date.value = new Date(res.data.created).toLocaleString();
+          meta.title = `Nitro Repo - ${res.data.id}`;
+        }
+      });
     return {
       date,
       storage,
       storageTab,
+      storageType,
     };
   },
   methods: {

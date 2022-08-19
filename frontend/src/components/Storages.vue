@@ -1,64 +1,61 @@
 <template>
-  <div :class="openModel ? 'flex w-full' : 'w-full lg:w-3/4  xl:mx-auto'">
-    <div
-      class="md:p-4"
-      :class="openModel ? 'hidden lg:block lg:grow ' : 'w-full'"
-    >
+  <div v-show="!create" class="w-full lg:w-3/4 xl:mx-auto">
+    <div class="md:p-4 w-full">
       <SearchableList v-model="list">
         <template v-slot:title> Storages </template>
         <template v-slot:createButton>
-          <button class="buttonOne" @click="openModel = true">
+          <button class="buttonOne" @click="create = true">
             Create Storage
           </button>
         </template>
       </SearchableList>
     </div>
-    <div v-if="openModel" class="mx-auto lg:w-1/4 lg:flex-row">
-      <CreateStorage v-model="openModel" />
+  </div>
+  <div v-show="create" class="w-full lg:w-3/4 xl:mx-auto">
+    <div class="md:p-4 w-full">
+      <CreateStorage :storagesThatExist="storages" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, inject, ref } from "vue";
+import { computed, defineComponent, inject, ref } from "vue";
 import CreateStorage from "@/components/CreateStorage.vue";
-import { getStorages } from "@nitro_repo/nitro_repo-api-wrapper";
 import SearchableList from "./common/list/SearchableList.vue";
 import { ListItem } from "./common/list/ListTypes";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import httpCommon from "@/http-common";
+import { Storage } from "@/types/storageTypes";
 
 export default defineComponent({
   components: { CreateStorage, SearchableList },
 
   setup() {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
-    const list = ref<ListItem[]>([]);
-    const openModel = ref(false);
+    const storages = ref<Storage[]>([]);
+    const list = computed(() => {
+      return storages.value.map((storage) => {
+        return {
+          name: storage.id,
+          goTo: "/admin/storage/" + storage.id,
+        };
+      });
+    });
+    const router = useRoute();
+    const create = ref(router.query.create === "true");
 
     const getStorage = async () => {
-      try {
-        const value = await getStorages(token as string);
-        if (value == undefined) {
-          return;
-        }
-        value.forEach((storage) => {
-          list.value.push({
-            name: storage.public_name,
-            goTo: "/admin/storage/" + storage.name,
-          });
+      await httpCommon.apiClient
+        .get<Array<Storage>>("api/admin/storages")
+        .then((response) => {
+          storages.value = response.data;
         });
-      } catch (e) {
-        console.error(e);
-      }
     };
     getStorage();
     return {
       getStorage,
       list,
-      openModel,
+      create,
+      storages,
     };
   },
 });

@@ -13,7 +13,7 @@ else
 fi
 mkdir -p build/frontend
 cp -R frontend/dist/* build/frontend
-cp backend/target/release/nitro_repo build
+cp backend/target/release/nitro_repo_full build
 cp -R other build
 cp -R LICENSE build
 (

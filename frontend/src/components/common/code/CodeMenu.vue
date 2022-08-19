@@ -6,24 +6,23 @@
         <div
           v-for="code in codes"
           :key="code.name"
-          :class="currentTab === code.name ? 'active item' : 'item'"
-          @click="currentTab = code.name"
+          class="item"
+          :class="currentTab.name === code.name ? 'active' : ''"
+          @click="currentTab = code"
         >
           {{ code.name }}
         </div>
       </nav>
     </div>
-    <div class="codeBox">
-      <div class="codeBlock" v-for="entry in codes" :key="entry.name">
-        <CodeCard v-if="entry.name === currentTab" :snippetInfo="entry" />
-      </div>
+    <div class="codeBlock">
+      <CodeCard :snippetInfo="currentTab" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { apiURL } from "@/http-common";
+import httpCommon from "@/http-common";
 import CodeCard from "@/components/common/code/CodeCard.vue";
 import { SnippetInfo } from "@/api/CodeGenGeneral";
 
@@ -36,8 +35,8 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const url = apiURL;
-    const currentTab = ref(props.codes[0].name);
+    const url = httpCommon.apiURL;
+    const currentTab = ref<SnippetInfo>(props.codes[0]);
 
     return { url, currentTab };
   },
@@ -62,19 +61,19 @@ export default defineComponent({
 }
 .codeMenu {
   @apply bg-slate-800;
+  @apply lg:max-w-md;
+  @apply h-56;
 }
-.codeBox {
-  @apply relative;
-  min-height: 8rem;
-  @apply overflow-hidden;
-}
+
 .codeBlock {
   @apply pl-2;
   @apply my-auto;
-}
-.nitroEditor {
-}
-.prism-editor__textarea:focus {
-  outline: none;
+  font-family: "Fira Code", monospace;
+  font-size: 14px;
+  @apply text-white;
+  @apply lg:whitespace-pre;
+  @apply overflow-x-auto;
+  @apply h-1/2;
+  @apply select-all;
 }
 </style>

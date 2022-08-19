@@ -2,74 +2,67 @@
   <div class="settingContent">
     <h2 class="settingHeader">Repository Rules</h2>
 
-    <div class="flex flex-wrap mb-6 justify-center">
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-name"> name </label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-name"
-          type="text"
-          v-model="repository.name"
-          disabled
-        />
-      </div>
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-Storage"> Storage </label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-Storage"
-          type="text"
-          v-model="repository.storage"
-          disabled
-        />
-      </div>
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-created"> Date Created </label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-created"
-          type="text"
-          v-model="date"
-          disabled
-        />
-      </div>
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-type"> Repo Type</label>
-        <input
-          class="disabled nitroTextInput"
-          id="grid-type"
-          type="text"
-          v-model="repositoryType"
-          disabled
-        />
-      </div>
-    </div>
-    <h2 class="settingHeader">Repository General Properties</h2>
-    <div class="flex flex-wrap mb-6">
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-policy"> Repo Policy</label>
-        <select
-          v-model="repository.settings.policy"
-          class="nitroSelectBox"
-          @change="updatePolicy()"
-        >
-          <option>Mixed</option>
-          <option>Release</option>
-          <option>Snapshot</option>
-        </select>
-      </div>
-
-      <div class="settingBox">
-        <label class="nitroLabel" for="grid-active">Repo Active</label>
-        <select
-          v-model="repository.settings.active"
-          class="nitroSelectBox"
-          @change="updateActiveStatus()"
-        >
-          <option>true</option>
-          <option>false</option>
-        </select>
-      </div>
+    <div class="flex flex-wrap mb-6 justify-center bg-tertiary/25 shadow-sm">
+      <table class="table-auto text-quaternary">
+        <tbody>
+          <tr>
+            <th scope="row">Name</th>
+            <td>{{ repository.name }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Created</th>
+            <td>{{ date }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Type</th>
+            <td>{{ repositoryType }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Storage</th>
+            <td>{{ repository.storage }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Active</th>
+            <td>
+              <select
+                :value="repository.active"
+                class="tableSelectBox"
+                @change="updateActiveStatus($event)"
+              >
+                <option>true</option>
+                <option>false</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Require Auth Token</th>
+            <td>
+              <select
+                :value="repository.require_token_over_basic"
+                class="tableSelectBox"
+                @change="updateRequireAuth($event)"
+              >
+                <option>true</option>
+                <option>false</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Visibility</th>
+            <td>
+              <select
+                :value="repository.visibility"
+                class="tableSelectBox"
+                @change="updateVisibility($event)"
+              >
+                <option value="Public">Public</option>
+                <option value="Private">Private</option>
+                <option value="Hidden">Hidden</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <h2 class="settingHeader">Danger Area</h2>
     <div class="settingContent">
@@ -102,12 +95,8 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
-import {
-  deleteRepository,
-  Repository,
-  setActiveStatus,
-  setPolicy,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+import { Repository } from "@/types/repositoryTypes";
+import httpCommon from "@/http-common";
 
 export default defineComponent({
   props: {
@@ -116,98 +105,115 @@ export default defineComponent({
       type: Object as () => Repository,
     },
   },
-  data(props) {
-    const token = inject("token") as string;
-    console.log(props.repository.repo_type);
-    return { token };
-  },
   setup(props) {
     const deleteOpen = ref(false);
     const deleteFiles = ref(false);
-    const repositoryType = Object.keys(props.repository.repo_type)[0];
+    const repositoryType = ref(props.repository.repository_type);
     const date = new Date(props.repository.created).toLocaleDateString("en-US");
     return { repositoryType, date, deleteOpen, deleteFiles };
   },
   methods: {
-    async updateActiveStatus() {
-      if (this.repository == undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
+    async updateActiveStatus(event: { target: { value: string } }) {
+      await httpCommon.apiClient
+        .put(
+          `api/admin/repositories/${this.repository.storage}/${this.repository.name}/config/active/${event.target.value}`
+        )
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              title: "Repository active status updated",
+            });
+          } else {
+            this.$notify({
+              type: "error",
+              title: "Error",
+              text: "Repository active status update failed",
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: "Repository active status update failed",
+          });
         });
-        return;
-      }
-      const response = await setActiveStatus(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.active,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
+    },
+    async updateRequireAuth(event: { target: { value: string } }) {
+      await httpCommon.apiClient
+        .put(
+          `api/admin/repositories/${this.repository.storage}/${this.repository.name}/config/require_token_over_basic/${event.target.value}`
+        )
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              title: "Repository Require Auth Token updated",
+            });
+          } else {
+            this.$notify({
+              type: "error",
+              title: "Error",
+              text: "Repository Require Auth Token failed",
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: "Repository Require Auth Token failed",
+          });
         });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
+    },
+    async updateVisibility(event: { target: { value: string } }) {
+      await httpCommon.apiClient
+        .put(
+          `api/admin/repositories/${this.repository.storage}/${this.repository.name}/config/visibility/${event.target.value}`
+        )
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              title: "Repository visibility updated",
+            });
+          } else {
+            console.log(response);
+            this.$notify({
+              type: "error",
+              title: "Repository visibility update failed",
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$notify({
+            type: "error",
+            title: "Repository visibility update failed",
+          });
         });
-      }
     },
 
     async deleteRepo() {
-      const response = await deleteRepository(
-        this.$props.repository.name,
-        this.$props.repository.storage,
-        this.deleteFiles,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Repository Deleted",
-          type: "success",
-        });
-        this.$router.push("/admin/storage/" + this.$props.repository.storage);
-      } else {
-        this.$notify({
-          title: "Unable to Delete Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
-    },
-    async updatePolicy() {
-      if (this.repository == undefined) {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: "Repository is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await setPolicy(
-        this.repository.storage,
-        this.repository.name,
-        this.repository.settings.policy,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "Updated Repository",
-          type: "info",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO delete repo
     },
   },
   components: {},
 });
 </script>
+<style>
+.tableSelectBox {
+  @apply block;
+  @apply w-full;
+  @apply bg-tertiary;
+  @apply text-quaternary;
+  @apply border;
+  @apply border-quaternary;
+  @apply py-1;
+  @apply px-1;
+  @apply w-1/2;
+}
+</style>

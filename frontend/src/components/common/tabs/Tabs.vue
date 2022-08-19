@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-secondary md:mt-1 rounded-lg xl:w-1/2 xl:mx-auto">
-    <ul class="tabs">
+  <div class="bg-secondary md:mt-1 rounded-lg xl:w-1/2 mx-auto sm:px-3 xl:px-0">
+    <ul class="tabs" v-bind="$attrs">
       <slot />
     </ul>
   </div>

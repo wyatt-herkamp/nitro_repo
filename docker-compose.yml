@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  nitro_repo:
+    image: nitro_repo:1.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - nitro_repo-data:/app/data
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+volumes:
+  nitro_repo-data: { }

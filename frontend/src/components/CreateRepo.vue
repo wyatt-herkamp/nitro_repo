@@ -1,11 +1,8 @@
 <template>
-  <div class="sideCreate">
+  <div>
     <form @submit.prevent="onSubmit()">
       <div class="sideHeader">
         <p class="headerOne">Create User</p>
-        <button type="button" class="xButton" @click="showModel = false">
-          🗙
-        </button>
       </div>
 
       <div class="flex-row">
@@ -27,10 +24,18 @@
           <label class="nitroLabel" for="name"> Repository Type </label>
           <select id="type" v-model="form.type" required class="nitroSelectBox">
             <option disabled selected value="">Repository Type</option>
-            <option value="Maven">Maven</option>
-            <option value="NPM">NPM</option>
+            <option
+              v-for="v in repositoryTypes"
+              :value="v.name"
+              v-bind:key="v.name"
+            >
+              {{ v.name }}
+            </option>
           </select>
         </div>
+      </div>
+      <div class="flex-row">
+        <MavenCreate v-if="form.type === 'maven'" v-model="innerForm" />
       </div>
       <div class="flex flex-row h-12 mt-5">
         <button class="buttonOne">Create User</button>
@@ -40,15 +45,15 @@
 </template>
 <style scoped></style>
 <script lang="ts">
-import {
-  createNewRepository,
-  Repository,
-  Storage,
-} from "@nitro_repo/nitro_repo-api-wrapper";
-import { defineComponent, inject, ref, watch } from "vue";
+import { defineComponent, ref, watch } from "vue";
+import httpCommon from "@/http-common";
+import { notify } from "@kyvg/vue3-notification";
 import { useRouter } from "vue-router";
+import { Storage } from "@/types/storageTypes";
+import MavenCreate from "@/components/repo/types/maven/MavenCreate.vue";
 
 export default defineComponent({
+  components: { MavenCreate },
   props: {
     storage: {
       type: Object as () => Storage,
@@ -57,63 +62,63 @@ export default defineComponent({
     modelValue: Boolean,
   },
   setup(props, { emit }) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
     const form = ref({
       name: "",
       type: "",
       error: "",
     });
-    const showModel = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      (val) => {
-        showModel.value = val;
-        emit("update:modelValue", val);
-      }
-    );
-    watch(showModel, (val) => {
-      emit("update:modelValue", val);
-    });
+    const innerForm = ref<unknown>({});
+    const repositoryTypes = ref<Array<{ name: string; layout: unknown }>>();
+
+    httpCommon.apiClient
+      .get<Array<{ name: string; layout: unknown }>>(
+        "api/admin/tools/repositories/new/layout"
+      )
+      .then((res) => {
+        repositoryTypes.value = res.data;
+      });
     return {
       form,
-      showModel,
-      token: token as string,
+      repositoryTypes,
+      innerForm,
     };
   },
   methods: {
     async onSubmit() {
-      if (this.form.type === "") {
-        this.$notify({
-          title: "Please Specify a Repository Type",
-          type: "warn",
+      const storageName = this.storage.id;
+      const value = JSON.stringify(this.innerForm);
+      console.log(value);
+      await httpCommon.apiClient
+        .post(
+          `/api/admin/repositories/new/${this.form.type}/${storageName}/${this.form.name}`,
+          value,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        )
+        .then((response) => {
+          if (response.status == 200) {
+            notify({
+              title: "Success",
+              type: "success",
+            });
+
+            useRouter().push({
+              name: "AdminRepoView",
+              params: {
+                storage: storageName,
+                repo: this.form.name,
+              },
+            });
+          } else if (response.status == 409) {
+            this.$notify({
+              title: "Repository already exists",
+              type: "error",
+            });
+          }
         });
-        return;
-      }
-      const response = await createNewRepository(
-        this.form.name,
-        this.$props.storage.name,
-        this.form.type,
-        this.token
-      );
-      if (response.ok) {
-        const data = response.val as Repository;
-        this.$notify({
-          title: "Repository Created",
-          type: "success",
-        });
-        this.$router.push(
-          "/admin/repository/" + data.storage + "/" + data.name
-        );
-      } else {
-        this.$notify({
-          title: "Unable to Create Repository",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
     },
   },
 });

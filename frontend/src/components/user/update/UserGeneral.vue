@@ -1,5 +1,13 @@
 <template>
-  <div class="flex flex-wrap flex-row">
+  <Tabs>
+    <Tabs v-model="tab">
+      <Tab name="general">General</Tab>
+      <Tab name="permissions">View Permissions</Tab>
+      <Tab name="api_keys">API Keys</Tab>
+      <Tab name="delete_user" @click="deleteUser = true">Delete User</Tab>
+    </Tabs>
+  </Tabs>
+  <div v-if="tab === 'general'" class="flex flex-wrap flex-row">
     <div class="lg:basis-1/2 flex flex-wrap settingContent mb-4">
       <form class="settingContent" @submit.prevent="onSettingSubmit()">
         <h2 class="settingHeader">User General</h2>
@@ -53,26 +61,50 @@
         </div>
       </form>
     </div>
-    <div class="flex-grow lg:m-5 border-slate-500 border-2 rounded-lg">
-      <h1
-        class="text-left ml-2 md:text-4xl text-3xl border-b-2 border-slate-500 p-2"
-      >
-        Permissions
-      </h1>
-      <Permissions :user="user" />
-    </div>
   </div>
+  <div v-else-if="tab === 'permissions'">
+    <Permissions v-model="user.permissions" />
+  </div>
+  <vue-final-modal
+    v-model="deleteUser"
+    classes="flex justify-center items-center"
+    @click-outside="deleteUser = false"
+  >
+    <div class="modal">
+      <div class="header">
+        <h1>Delete User</h1>
+        <button @click="deleteUser = false">🗙</button>
+      </div>
+      <div class="content">
+        <p class="text-quaternary">
+          Are you sure you want to delete this user?
+        </p>
+        <button
+          class="nitroButton bg-red-500 mx-5 px-5"
+          @click="deleteUser = false"
+        >
+          Cancel
+        </button>
+        <button
+          class="nitroButton bg-green-500 mx-5 px-5 mb-0"
+          @click="deleteTheUser()"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </vue-final-modal>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, inject, ref } from "vue";
-import {
-  updateNameAndEmail,
-  updateOtherPassword,
-  User,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+
 import { useRouter } from "vue-router";
 import Permissions from "./Permissions.vue";
+import { User } from "@/types/userTypes";
+import Tabs from "@/components/common/tabs/Tabs.vue";
+import Tab from "@/components/common/tabs/Tab.vue";
+import httpCommon from "@/http-common";
 
 export default defineComponent({
   props: {
@@ -82,10 +114,8 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      useRouter().push("login");
-    }
+    const tab = ref("general");
+    const deleteUser = ref(false);
     const password = ref({
       password: "",
       confirm: "",
@@ -99,66 +129,30 @@ export default defineComponent({
       return false;
     });
     const date = new Date(props.user.created).toLocaleDateString("en-US");
-    return { date, token: token as string, password, canSubmitPassword };
+    return { tab, date, password, canSubmitPassword, deleteUser };
   },
   methods: {
+    async deleteTheUser() {
+      await httpCommon.apiClient
+        .delete("api/admin/user/" + this.user.id)
+        .then(() => {
+          this.$router.push("/admin/Users");
+        })
+        .catch((err) => {
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: err.response.data,
+          });
+        });
+    },
     async onSettingSubmit() {
-      if (this.user == undefined) {
-        this.$notify({
-          title: "Unable Update Name and Email",
-          text: "User is still undefined",
-          type: "error",
-        });
-        return;
-      }
-      const response = await updateNameAndEmail(
-        this.user.username,
-        this.user.name,
-        this.user.email,
-        this.token
-      );
-      if (response.ok) {
-        this.$notify({
-          title: "User Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update User",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update user
     },
     async updatePassword() {
-      if (!this.canSubmitPassword) {
-        this.$notify({
-          title: "Passwords do not match",
-          type: "error",
-        });
-        return;
-      }
-      const response = await updateOtherPassword(
-        this.user.username,
-        this.password.password,
-        this.token
-      );
-      this.password.password = "";
-      this.password.confirm = "";
-      if (response.ok) {
-        this.$notify({
-          title: "Password Updated",
-          type: "success",
-        });
-      } else {
-        this.$notify({
-          title: "Unable Update Password",
-          text: JSON.stringify(response.val.user_friendly_message),
-          type: "error",
-        });
-      }
+      // TODO update password
     },
   },
-  components: { Permissions },
+  components: { Permissions, Tab, Tabs },
 });
 </script>

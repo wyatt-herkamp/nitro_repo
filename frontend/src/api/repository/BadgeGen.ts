@@ -1,5 +1,5 @@
 import { apiURL } from "@/http-common";
-import { SnippetInfo } from "../CodeGenGeneral";
+import { escapeHtml, SnippetInfo } from "../CodeGenGeneral";
 
 export function createBadgeSnippets(
   storage: string,
@@ -20,7 +20,7 @@ export function createBadgeSnippets(
       name: "html",
       grammar: "html",
       lang: "html",
-      snippet: `<a href=${appURL}>
+      snippet: `<a href="${appURL}">
       <img alt="${text}" src="${badgeURL}"/>
 </a>`,
     },
@@ -34,8 +34,8 @@ export function createProjectSnippet(
   projectName: string
 ): SnippetInfo[] {
   const url = apiURL;
-  const badgeURL = `${url}badge/${storage}/${repository}/${project}/badge`;
-  const appURL = `${url}project/${storage}/${repository}/${projectName}`;
+  const badgeURL = `${url}/badge/repositories/${storage}/${repository}/${project}`;
+  const appURL = `${url}/project/${storage}/${repository}/${project}`;
   const text = `${repository} Repository`;
   return [
     {
@@ -48,7 +48,9 @@ export function createProjectSnippet(
       name: "html",
       lang: "html",
       grammar: "html",
-      snippet: `<a href=${appURL}><img alt="${text}" src="${badgeURL}"/></a>`,
+      snippet: `<a href=${appURL}>
+  <img alt="${text}" src="${badgeURL}"/>
+</a>`,
     },
   ];
 }

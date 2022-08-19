@@ -7,11 +7,12 @@
 </template>
 
 <script lang="ts">
-import { getUserByID, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, inject, ref } from "vue";
 
 import UserGeneral from "./user/update/UserGeneral.vue";
 import { useRouter } from "vue-router";
+import httpCommon from "@/http-common";
+import { User } from "@/types/userTypes";
 
 export default defineComponent({
   props: {
@@ -21,13 +22,12 @@ export default defineComponent({
     },
   },
   async setup(props) {
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      await useRouter().push("login");
-    }
     const user = ref<User | undefined>();
-    const value = (await getUserByID(token as string, props.userID)) as User;
-    user.value = value as User;
+    await httpCommon.apiClient
+      .get<User>(`api/admin/user/${props.userID}`)
+      .then((response) => {
+        user.value = response.data;
+      });
 
     return { user };
   },

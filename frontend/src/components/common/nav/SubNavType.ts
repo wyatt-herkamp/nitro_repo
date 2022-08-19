@@ -2,6 +2,7 @@ export interface MenuItemType {
   index: string;
   active: boolean;
 }
+
 export interface MenuProvider {
   items: Record<string, MenuItemType>;
   activeIndex?: string;

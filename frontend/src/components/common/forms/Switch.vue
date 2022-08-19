@@ -1,5 +1,9 @@
 <template>
-  <label :for="id" class="flex items-center cursor-pointer h-min m-1 w-fit">
+  <label
+    :for="id"
+    class="flex items-center h-min m-1 w-fit"
+    :class="disabled ? '' : 'cursor-pointer'"
+  >
     <div class="relative">
       <input
         ref="input"
@@ -33,6 +37,10 @@ export default defineComponent({
   props: {
     modelValue: Boolean,
     id: String,
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   setup(props, { emit }) {
     const input = ref<HTMLInputElement>();
@@ -42,6 +50,9 @@ export default defineComponent({
       setBackgroundColor();
     });
     const handleChange = (): void => {
+      if (props.disabled) {
+        return;
+      }
       const value = !props.modelValue;
       checked.value = value;
       emit("update:modelValue", value);

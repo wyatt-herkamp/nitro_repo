@@ -23,7 +23,7 @@ export default defineComponent({
         this.$route.query.redirect
           ? this.$router.resolve(this.$route.query.redirect as string)
           : this.$router.resolve("/");
-      } else if (status === "failure") {
+      } else if (status === "fail") {
         this.$notify({
           title: "Login Failed",
           type: "warn",

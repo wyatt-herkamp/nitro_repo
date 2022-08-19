@@ -1,7 +1,12 @@
-use crate::error::internal_error::InternalError;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::fs::create_dir_all;
+use std::path::PathBuf;
+
+use sea_orm::ConnectOptions;
+use semver::{Error, Version};
+use serde::{Deserialize, Serialize};
+use toml::Value;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -26,28 +31,36 @@ pub struct Settings {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Internal {
     pub installed: bool,
-    pub version: String,
+    pub version: Version,
 }
 
 impl Default for Internal {
     fn default() -> Self {
         Self {
             installed: true,
-            version: env!("CARGO_PKG_VERSION").to_string(),
+            version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
         }
     }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Database<T> {
-    #[serde(rename = "type")]
-    pub db_type: String,
-    #[serde(flatten)]
-    pub settings: T,
+#[serde(tag = "type", content = "settings")]
+pub enum Database {
+    Mysql(MysqlSettings),
+    Sqlite(SqliteSettings),
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<sea_orm::ConnectOptions> for Database {
+    fn into(self) -> ConnectOptions {
+        match self {
+            Database::Mysql(mysql) => ConnectOptions::new(mysql.to_string()),
+            Database::Sqlite(database) => ConnectOptions::new(database.to_string()),
+        }
+    }
 }
 
 pub type StringMap = HashMap<String, String>;
-pub type GenericDatabase = Database<StringMap>;
 
 impl Display for MysqlSettings {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -56,31 +69,6 @@ impl Display for MysqlSettings {
             "mysql://{}:{}@{}/{}",
             self.user, self.password, self.host, self.database
         )
-    }
-}
-
-impl TryFrom<StringMap> for MysqlSettings {
-    type Error = InternalError;
-
-    fn try_from(mut value: StringMap) -> Result<Self, Self::Error> {
-        let user = value
-            .remove("user")
-            .ok_or_else(|| InternalError::ConfigError("database.user".to_string()))?;
-        let password = value
-            .remove("password")
-            .ok_or_else(|| InternalError::ConfigError("database.password".to_string()))?;
-        let host = value
-            .remove("host")
-            .ok_or_else(|| InternalError::ConfigError("database.host".to_string()))?;
-        let database = value
-            .remove("database")
-            .ok_or_else(|| InternalError::ConfigError("database.database".to_string()))?;
-        Ok(MysqlSettings {
-            user,
-            password,
-            host,
-            database,
-        })
     }
 }
 
@@ -93,29 +81,66 @@ pub struct MysqlSettings {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SqliteSettings {
+    pub database_file: PathBuf,
+}
+
+impl Display for SqliteSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "sqlite:{}", self.database_file.display())
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Application {
     pub log: String,
+    pub frontend: String,
     pub address: String,
     pub app_url: String,
     pub max_upload: usize,
     pub mode: Mode,
+    pub storage_location: PathBuf,
     pub ssl_private_key: Option<String>,
     pub ssl_cert_key: Option<String>,
 }
 
+impl Default for Application {
+    fn default() -> Self {
+        let buf = PathBuf::from("storage");
+        create_dir_all(&buf).unwrap();
+        Self {
+            log: "./".to_string(),
+            frontend: "frontend".to_string(),
+            address: "0.0.0.0:6742".to_string(),
+            app_url: "http://127.0.0.1:6742".to_string(),
+            max_upload: 1024,
+            mode: Mode::Release,
+            storage_location: buf.canonicalize().unwrap(),
+            ssl_private_key: None,
+            ssl_cert_key: None,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
-    pub database: Database<StringMap>,
+    pub database: Database,
     pub application: Application,
     pub internal: Internal,
     #[serde(default)]
-    pub env: HashMap<String, String>
+    pub session: SessionSettings,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SiteSetting {
     pub name: String,
     pub description: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SessionSettings {
+    pub manager: String,
+    pub value: Option<Value>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -130,6 +155,7 @@ pub struct EmailSetting {
     pub from: String,
     pub port: u16,
 }
+
 #[allow(clippy::derivable_impls)]
 impl Default for SecuritySettings {
     fn default() -> Self {
@@ -155,6 +181,15 @@ impl Default for EmailSetting {
             encryption: "TLS".to_string(),
             from: "no-reply@example.com".to_string(),
             port: 587,
+        }
+    }
+}
+
+impl Default for SessionSettings {
+    fn default() -> Self {
+        SessionSettings {
+            manager: "BasicSessionManager".to_string(),
+            value: None,
         }
     }
 }

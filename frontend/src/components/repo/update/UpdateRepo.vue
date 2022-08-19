@@ -1,21 +1,20 @@
 <template>
   <Tabs v-model="view">
     <Tab name="General"> General </Tab>
-    <Tab name="Frontend"> Frontend </Tab>
-    <Tab name="Security"> Security </Tab>
-    <Tab name="DeploySettings"> Deploy Settings </Tab>
-    <Tab name="artifact">
-      <template v-slot:icon>
-        <DynamicIcon :repositoryType="repositoryType" />
-      </template>
-      {{ repositoryType }}
-    </Tab>
-    <Tab>
+    <Tab
+      v-for="layout in repositoryLayout"
+      v-bind:key="layout.config_name"
+      :name="layout.config_name"
+      >{{ layout.config_proper_name }}</Tab
+    >
+    <Tab name="">
       <router-link
         :to="{
           name: 'ViewRepository',
-          storage: repository.storage,
-          repo: repository.name,
+          params: {
+            storage: repository.storage,
+            repository: repository.name,
+          },
         }"
       >
         Repository Page</router-link
@@ -23,31 +22,42 @@
     >
   </Tabs>
   <GeneralRepo v-if="view === 'General'" :repository="repository" />
-  <SecurityRepo v-show="view === 'Security'" :repository="repository" />
-  <FrontendRepo v-show="view === 'Frontend'" :repository="repository" />
-  <DeployRepo v-show="view === 'DeploySettings'" :repository="repository" />
-  <ArtifactSettings v-show="view === 'artifact'" :repository="repository" />
+  <BadgeSettings v-else-if="view === 'badge'" :repository="repository" />
+  <RepositoryPage
+    v-else-if="view === 'repository_page'"
+    :repository="repository"
+  />
+  <UndefinedSettingConfig
+    v-bind:key="view"
+    v-else
+    :repository="repository"
+    :settingName="view"
+    :schema="getSchema()"
+  />
 </template>
 <script lang="ts">
-import { Repository } from "@nitro_repo/nitro_repo-api-wrapper";
 import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";
 import { useRouter } from "vue-router";
 import GeneralRepo from "@/components/repo/update/GeneralRepo.vue";
-import FrontendRepo from "@/components/repo/update/FrontendRepo.vue";
-import DeployRepo from "@/components/repo/update/DeployRepo.vue";
-import SecurityRepo from "@/components/repo/update/SecurityRepo.vue";
-import { apiURL } from "@/http-common";
-import ArtifactSettings from "@/components/repo/update/ArtifactSettings.vue";
+import httpCommon, { apiURL } from "@/http-common";
 import DynamicIcon from "@/components/repo/DynamicIcon.vue";
+import { Repository } from "@/types/repositoryTypes";
+import Tabs from "@/components/common/tabs/Tabs.vue";
+import Tab from "@/components/common/tabs/Tab.vue";
+import BadgeSettings from "@/components/repo/update/BadgeSettings.vue";
+import RepositoryPage from "@/components/repo/update/RepositoryPage.vue";
+import UndefinedSettingConfig from "@/components/repo/update/UndefinedSettingConfig.vue";
+import { JSONData } from "vanilla-jsoneditor";
 export default defineComponent({
   components: {
+    UndefinedSettingConfig,
+    RepositoryPage,
+    BadgeSettings,
+    Tabs,
+    Tab,
     DynamicIcon,
-    ArtifactSettings,
     GeneralRepo,
-    FrontendRepo,
-    DeployRepo,
-    SecurityRepo,
   },
   props: {
     repository: {
@@ -55,23 +65,41 @@ export default defineComponent({
       required: true,
     },
   },
+  methods: {
+    getSchema(): JSONData {
+      return this.repositoryLayout.filter((layout) => {
+        return layout.config_name === this.view;
+      })[0].schema;
+    },
+  },
   setup(props) {
-    const repositoryType = Object.keys(props.repository.repo_type)[0];
-
     const url = apiURL;
 
     const router = useRouter();
     const view = ref("General");
-
     useMeta({
       title: props.repository.name + " - " + view.value,
     });
+    const repositoryLayout = ref<
+      Array<{
+        config_name: string;
+        config_proper_name: string;
+        schema: JSONData;
+      }>
+    >();
+    httpCommon.apiClient
+      .get(
+        `api/admin/repositories/${props.repository.storage}/${props.repository.name}/layout`
+      )
+      .then((response) => {
+        repositoryLayout.value = response.data;
+      });
 
     return {
-      repositoryType,
       router,
       view,
       url,
+      repositoryLayout,
     };
   },
 });

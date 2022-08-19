@@ -1,0 +1,9 @@
+backend/target
+backend/test/
+nrc/
+docs/
+.idea
+
+log
+frontend/node_modules
+frontend/dist

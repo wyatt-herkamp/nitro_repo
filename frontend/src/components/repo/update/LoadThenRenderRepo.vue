@@ -4,14 +4,11 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  getRepoByNameAndStorage,
-  Repository,
-} from "@nitro_repo/nitro_repo-api-wrapper";
-import { defineComponent, inject, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import { useRouter } from "vue-router";
 import UpdateRepo from "@/components/repo/update/UpdateRepo.vue";
-import { apiURL } from "@/http-common";
+import httpCommon, { apiURL } from "@/http-common";
+import { Repository } from "@/types/repositoryTypes";
 
 export default defineComponent({
   components: {
@@ -34,16 +31,14 @@ export default defineComponent({
     const view = ref("General");
 
     const repository = ref<Repository | undefined>(undefined);
-    const token: string | undefined = inject("token");
-    if (token == undefined) {
-      await useRouter().push("login");
-    }
 
-    repository.value = (await getRepoByNameAndStorage(
-      token as string,
-      props.storageId,
-      props.repositoryId
-    )) as Repository;
+    await httpCommon.apiClient
+      .get<Repository>(
+        `api/admin/repositories/${props.storageId}/${props.repositoryId}`
+      )
+      .then((response) => {
+        repository.value = response.data;
+      });
 
     return {
       repository,

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import Home from "../views/Home.vue";
 import Admin from "../views/admin/Admin.vue";
 import ViewRepository from "../views/admin/ViewRepository.vue";
 import ViewStorage from "../views/admin/ViewStorage.vue";
@@ -10,20 +9,21 @@ import Project from "../views/Project.vue";
 import Repository from "../views/Repository.vue";
 import Me from "../views/Me.vue";
 import Login from "../views/Login.vue";
+import Index from "../views/Index.vue";
 import { useCookies } from "vue3-cookies";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    name: "Home",
-    component: Home,
+    name: "Index",
+    component: Index,
   },
   {
     path: "/me",
     name: "Me",
     component: Me,
-    beforeEnter(to, from) {
-      return requireAuth(to, from);
+    beforeEnter(to) {
+      return requireAuth(to);
     },
   },
   {
@@ -36,70 +36,69 @@ const routes: Array<RouteRecordRaw> = [
     path: "/admin/:page?",
     name: "Admin",
     component: Admin,
-    beforeEnter(to, from) {
-      return requireAuth(to, from);
+    beforeEnter(to) {
+      return requireAuth(to);
     },
   },
   {
     path: "/admin/repository/:storage/:repo",
     name: "AdminRepoView",
     component: ViewRepository,
-    beforeEnter(to, from) {
-      return requireAuth(to, from);
+    beforeEnter(to) {
+      return requireAuth(to);
     },
   },
   {
     path: "/admin/storage/:storage",
     name: "AdminStorageView",
     component: ViewStorage,
-    beforeEnter(to, from) {
-      return requireAuth(to, from);
+    beforeEnter(to) {
+      return requireAuth(to);
     },
   },
   {
     path: "/admin/user/:user",
     name: "AdminUserView",
     component: ViewUser,
-    beforeEnter(to, from) {
-      return requireAuth(to, from);
+    beforeEnter(to) {
+      return requireAuth(to);
     },
   },
   {
     path: "/upload/:storage/:repo",
     name: "Upload",
     component: Upload,
-    beforeEnter(to, from) {
-      return requireAuth(to, from);
+    beforeEnter(to) {
+      return requireAuth(to);
     },
   },
 
   {
-    path: "/browse/:catchAll(.*)?",
+    path: "/browse/:storage?/:repo?/:catchAll(.*)?",
     name: "Browse",
     component: Browse,
   },
   {
-    path: "/repository/:storage/:repo",
+    path: "/repository/:storage/:repository",
     name: "ViewRepository",
     component: Repository,
   },
 
   {
-    path: "/project/:storage/:repo/:id/:version?",
+    path: "/project/:storage/:repository/:project/:version?",
     name: "Project",
     component: Project,
   },
 ];
-
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
-});
-function requireAuth(to: any, from: any) {
+function requireAuth(to: { fullPath: string }) {
   const { cookies } = useCookies();
-  if (cookies.get("token") == undefined) {
+  if (cookies.get("logged_in") === undefined) {
     return `login?return=${to.fullPath}`;
   }
   return true;
 }
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes,
+});
 export default router;

@@ -1,30 +1,64 @@
-use std::fs::read;
+use std::borrow::Cow;
+use std::fs::OpenOptions;
+use std::io::Read;
 use std::ops::Add;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
+use crate::authentication;
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, Local};
+use nitro_log::config::Config;
+use nitro_log::{LoggerBuilders, NitroLogger};
 use rust_embed::RustEmbed;
-use serde::{Deserialize, Serialize};
+use sea_orm::{DatabaseConnection, DbErr, Schema};
 
 use crate::error::internal_error::InternalError;
-
+use crate::settings::models::Mode;
+use crate::system::user::UserEntity;
+use sea_orm::ConnectionTrait;
+pub async fn run_database_setup(database: &mut DatabaseConnection) -> Result<(), DbErr> {
+    let schema = Schema::new(database.get_database_backend());
+    let users = schema.create_table_from_entity(UserEntity);
+    database
+        .execute(database.get_database_backend().build(&users))
+        .await?;
+    let tokens = schema.create_table_from_entity(authentication::auth_token::AuthTokenEntity);
+    database
+        .execute(database.get_database_backend().build(&tokens))
+        .await?;
+    Ok(())
+}
+pub fn load_logger<T: AsRef<Mode>>(logger: T) {
+    let file = match logger.as_ref() {
+        Mode::Debug => "log-debug.json",
+        Mode::Release => "log-release.json",
+        Mode::Install => "log-install.json",
+    };
+    let config: Config = serde_json::from_slice(
+        Resources::file_get(file)
+            .as_ref()
+            .expect("Unable to load the logger!"),
+    )
+    .unwrap();
+    NitroLogger::load(config, LoggerBuilders::default()).unwrap();
+}
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
 pub struct Resources;
 
 impl Resources {
-    pub fn file_get(file: &str) -> Vec<u8> {
+    pub fn file_get<'a>(file: &str) -> Result<Cow<'a, [u8]>, InternalError> {
         let buf = Path::new("resources").join(file);
         if buf.exists() {
-            read(buf).unwrap()
+            let mut buffer = Vec::new();
+            OpenOptions::new()
+                .read(true)
+                .open(buf)?
+                .read_to_end(&mut buffer)?;
+            Ok(Cow::Owned(buffer))
         } else {
-            Resources::get(file).unwrap().data.to_vec()
+            Ok(Resources::get(file).unwrap().data)
         }
-    }
-    pub fn file_get_string(file: &str) -> String {
-        let vec = Resources::file_get(file);
-        String::from_utf8(vec).unwrap()
     }
 }
 
@@ -43,16 +77,6 @@ pub fn default_expiration() -> i64 {
     time.add(Duration::days(30)).timestamp_millis()
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EmailChangeRequest {
-    pub email_username: Option<String>,
-    pub email_password: Option<String>,
-    pub email_host: Option<String>,
-    pub encryption: Option<String>,
-    pub from: Option<String>,
-    pub port: Option<i64>,
-}
-
 pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
     let option = header_map.get("accept");
     if option.is_none() {
@@ -62,8 +86,4 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
     if x.is_err() {}
     let header = x.unwrap().to_string();
     Ok(Some(header))
-}
-
-pub fn get_storage_location() -> PathBuf {
-    PathBuf::from("./")
 }

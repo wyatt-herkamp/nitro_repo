@@ -1,4 +1,4 @@
-import { SnippetInfo } from "../CodeGenGeneral";
+import { escapeHtml, SnippetInfo } from "../CodeGenGeneral";
 
 export default function createRepositoryInfo(
   url: string,
@@ -10,8 +10,8 @@ export default function createRepositoryInfo(
       lang: "xml",
       grammar: "xml",
       snippet: `<repository>
-    <id>${name}</id>
-    <url>${url}</url>
+      <id>${name}</id>
+      <url>${url}</url>
 </repository>`,
     },
     {

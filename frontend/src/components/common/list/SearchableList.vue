@@ -7,9 +7,7 @@
       <div class="flex flex-row">
         <div class="md:w-3/4 inline-block">
           <div class="searchSection">
-            <div class="pl-2 pt-2">
-              <box-icon name="search-alt-2"></box-icon>
-            </div>
+            <div class="pl-2 pt-2"></div>
             <input id="search" placeholder="Search Here" type="text" />
           </div>
         </div>

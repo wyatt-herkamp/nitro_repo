@@ -2,6 +2,7 @@
   <li
     @click="handleChange"
     class="flex flex-row items-center mx-auto h-12 tab min-w-fit"
+    v-bind="$attrs"
   >
     <span
       v-show="$slots.icon"
@@ -30,6 +31,7 @@ export default defineComponent({
     },
   },
   slots: ["icon", "default"],
+  emits: ["click"],
   setup(props, { emit }) {
     const tab: TabData | undefined = inject("tabData");
 

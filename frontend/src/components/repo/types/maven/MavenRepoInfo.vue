@@ -12,10 +12,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import {
-  PublicRepositoryInfo,
-  Repository,
-} from "@nitro_repo/nitro_repo-api-wrapper";
+
 import { apiURL } from "@/http-common";
 import createRepositoryInfo from "@/api/maven/CodeGen";
 
@@ -24,14 +21,14 @@ export default defineComponent({
   props: {
     repository: {
       required: true,
-      type: Object as () => Repository | PublicRepositoryInfo,
+      type: Object as () => { name: string; storage: string },
     },
   },
   setup(props) {
     const url = apiURL;
     const repoURL =
       url +
-      "storages/" +
+      "/repositories/" +
       props.repository.storage +
       "/" +
       props.repository.name;

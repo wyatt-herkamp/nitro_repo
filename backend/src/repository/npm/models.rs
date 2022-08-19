@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-#[derive(Debug, Serialize, Deserialize, Clone,Default)]
-pub  struct NPMSettings{
 
-}
+use crate::repository::nitro::VersionData;
+use crate::repository::settings::RepositoryConfigType;
+use crate::utils::get_current_time;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginRequest {
     pub password: String,
@@ -40,11 +41,24 @@ pub struct Dist {
 pub struct Version {
     pub version: String,
     pub name: String,
+    #[serde(default)]
+    pub description: String,
     pub dist: Dist,
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
-
+impl Into<VersionData> for Version {
+    fn into(self) -> VersionData {
+        VersionData {
+            name: self.name,
+            description: self.description,
+            source: None,
+            licence: None,
+            version: self.version,
+            created: get_current_time(),
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DistTags {
     pub latest: String,

@@ -1,6 +1,7 @@
-import { getUser, User } from "@nitro_repo/nitro_repo-api-wrapper";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { inject } from "vue";
+import httpCommon from "@/http-common";
+import { useCookies } from "vue3-cookies";
+import { User } from "@/types/userTypes";
 
 export const useUserStore = defineStore({
   id: "user",
@@ -15,16 +16,18 @@ export const useUserStore = defineStore({
     },
 
     async loadUser() {
-      const token: string | undefined = inject("token");
-      if (token == undefined) {
-        return;
-      }
-
-      const user = await getUser(token);
-      if (user.err) return;
-      this.$patch({
-        user: user.val,
-        date: new Date(user.val.created).toLocaleDateString("en-US"),
+      await httpCommon.apiClient.get<User>("api/me").then((result) => {
+        if (result.status == 200) {
+          this.$patch({
+            user: result.data,
+            date: new Date(result.data.created).toLocaleDateString("en-US"),
+          });
+          const cookies = useCookies();
+          // This only exists for quick route guard checking. This does not hurt security because the backend will deny any unauthorized access.
+          if (cookies.cookies.get("logged_in") !== "true") {
+            cookies.cookies.set("logged_in", "true");
+          }
+        }
       });
     },
   },
