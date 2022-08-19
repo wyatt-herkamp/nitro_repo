@@ -26,6 +26,11 @@ struct InstallCommand {
     frontend_path: String,
     #[clap(long)]
     storage_path: Option<String>,
+    #[clap(long)]
+    ignore_if_installed: Option<bool>,
+    #[clap(long)]
+    log_dir: Option<String>,
+
 }
 
 #[derive(Subcommand, Debug)]
@@ -57,6 +62,15 @@ struct MysqlInstall {
 #[tokio::main]
 async fn main() {
     let install_command: InstallCommand = InstallCommand::parse();
+
+    let working_directory = env::current_dir().unwrap();
+    if working_directory.join("nitro_repo.toml").exists() {
+        if install_command.ignore_if_installed.unwrap_or(true) {
+            return;
+        } else {
+            exit(1);
+        }
+    }
     let config = match install_command.database_type {
         DatabaseTypes::Mysql(mysql) => {
             let mysql_settings = MysqlSettings {
@@ -115,6 +129,7 @@ async fn main() {
     let general = GeneralSettings {
         database: config,
         application: Application {
+            log: install_command.log_dir.unwrap_or("./logs".to_string()).to_string(),
             frontend: install_command.frontend_path,
             storage_location: install_command.storage_path.and_then(|v| Some(PathBuf::from(v))).unwrap_or_else(|| {
                 env::current_dir().unwrap().join("storages")
@@ -124,6 +139,6 @@ async fn main() {
         internal: Default::default(),
         session: Default::default(),
     };
-    api::install::install_data(env::current_dir().unwrap(), general)
+    api::install::install_data(working_directory, general)
         .expect("Failed to install data");
 }

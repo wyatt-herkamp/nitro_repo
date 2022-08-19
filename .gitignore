@@ -24,4 +24,4 @@ docs/docs/.vitepress/dist/
 *.tar.gz
 backend/test/
 frontend.zip
-.vs
+backend/src/authentication/.vs
