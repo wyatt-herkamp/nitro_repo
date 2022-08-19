@@ -40,7 +40,6 @@
             storage: storage,
             repository: repositoryName,
             project: projectName,
-            version: version,
           }"
         />
 

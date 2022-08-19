@@ -12,11 +12,11 @@
             class="object-none my-5"
             :src="
               url +
-              'badge/' +
+              '/badge/repositories/' +
               repository.storage +
               '/' +
               repository.name +
-              '/nitro_repo_info/badge'
+              '/nitro_repo_badge'
             "
             :alt="repository.storage + '/' + repository.name"
           />

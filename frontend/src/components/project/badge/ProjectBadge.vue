@@ -12,13 +12,12 @@
             class="object-none my-5"
             :src="
               url +
-              '/badge/' +
+              '/badge/repositories/' +
               project.storage +
               '/' +
               project.repository +
               '/' +
-              projectPath +
-              '/badge'
+              project.project
             "
           />
         </div>
@@ -47,17 +46,14 @@ export default defineComponent({
   },
   setup(props) {
     const url = apiURL;
-    const projectPath = props.project.version
-      .replace(":", "/")
-      .replace(".", "/");
     const snippets = createProjectSnippet(
       props.project.storage,
       props.project.repository,
-      projectPath,
+      props.project.project,
       props.project.version
     );
     const page = ref(snippets[0].name);
-    return { url, page, snippets, projectPath };
+    return { url, page, snippets };
   },
 
   methods: {

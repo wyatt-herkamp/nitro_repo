@@ -28,7 +28,7 @@ export default defineComponent({
     const url = apiURL;
     const repoURL =
       url +
-      "storages/" +
+      "/repositories/" +
       props.repository.storage +
       "/" +
       props.repository.name;
