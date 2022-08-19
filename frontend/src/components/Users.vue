@@ -1,9 +1,6 @@
 <template>
-  <div :class="createUser ? 'flex w-full' : 'w-full lg:w-3/4  xl:mx-auto'">
-    <div
-      class="md:p-4"
-      :class="createUser ? 'hidden lg:block lg:grow ' : 'w-full'"
-    >
+  <div v-show="!createUser" class="lg:w-1/2 mx-auto">
+    <div class="md:p-4">
       <SearchableList v-model="list">
         <template v-slot:title> Users </template>
         <template v-slot:createButton>
@@ -13,15 +10,12 @@
         </template>
       </SearchableList>
     </div>
-    <div
-      v-if="createUser"
-      :class="createUser ? 'flex   mx-auto' : 'lg:w-1/4 flex-row '"
-    >
-      <CreateUser v-model="createUser" />
-    </div>
+  </div>
+  <div v-if="createUser" class="w-fit mx-auto">
+    <CreateUser @close="close" v-model="createUser" />
   </div>
 </template>
-
+/
 <style scoped></style>
 <script lang="ts">
 import { defineComponent, inject, ref } from "vue";
@@ -44,15 +38,21 @@ export default defineComponent({
         .then((response) => {
           response.data.forEach((user) => {
             list.value.push({
-              name: user.name,
+              name: `${user.username}`,
               goTo: "/admin/user/" + user.id,
             });
           });
         });
     };
+    const close = async () => {
+      list.value = [];
+      await getUser();
+      createUser.value = false;
+    };
     getUser();
     return {
       list,
+      close,
       getUser,
       createUser,
     };

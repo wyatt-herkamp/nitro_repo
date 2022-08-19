@@ -18,14 +18,14 @@
     "@milkdown/prose": "^6.3.2",
     "@milkdown/theme-nord": "^6.3.2",
     "@milkdown/vue": "^6.3.2",
-    "@uppy/drag-drop": "^2.1.1",
-    "@uppy/vue": "^0.4.8",
+    "@uppy/drag-drop": "^2.1.2",
+    "@uppy/vue": "^0.4.9",
     "axios": "^0.27.2",
     "core-js": "^3.24.1",
     "fast-xml-parser": "^4.0.9",
     "highlight.js": "^11.6.0",
     "json-editor-vue": "^0.4.13",
-    "pinia": "^2.0.18",
+    "pinia": "^2.0.19",
     "vanilla-jsoneditor": "^0.6.3",
     "vite-plugin-ejs": "^1.5.0",
     "vue": "^3.2.37",
@@ -56,6 +56,6 @@
     "tailwindcss": "^3.1.8",
     "typescript": "^4.7.4",
     "unplugin-vue-components": "^0.22.4",
-    "vite": "^3.0.8"
+    "vite": "^3.0.9"
   }
 }

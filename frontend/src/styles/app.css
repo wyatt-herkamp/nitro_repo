@@ -15,3 +15,29 @@ body {
   min-height: 100%;
   @apply bg-primary;
 }
+.modal > .header {
+  @apply flex;
+  @apply flex-row;
+  @apply w-full;
+  @apply mb-5;
+}
+.modal > .header > button {
+  @apply text-quaternary;
+}
+.modal > .header > h1 {
+  @apply text-xl;
+  @apply text-quaternary;
+  @apply text-left;
+  @apply flex-grow;
+}
+.modal {
+  @apply border;
+  @apply bg-primary;
+  @apply border-primary/90;
+  @apply pt-5;
+  @apply px-5;
+  @apply rounded-2xl;
+  @apply shadow-xl;
+  @apply text-center;
+  @apply w-full;
+}
