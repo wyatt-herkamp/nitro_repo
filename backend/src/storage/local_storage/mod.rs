@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
 use lockfree::map::{Map, Removed};
-use log::{debug, trace};
+use log::{debug, error, trace};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -65,11 +65,20 @@ impl LocalStorage {
         if !path.exists() {
             return Ok(HashMap::new());
         }
-        let string = read_to_string(&path).await?;
-        let result: Vec<RepositoryConfig> = serde_json::from_str(&string)?;
+        let string = read_to_string(path.join(STORAGE_CONFIG)).await?;
+        let result: Vec<String> = serde_json::from_str(&string)?;
         let mut values = HashMap::new();
         for x in result {
-            values.insert(x.name.clone(), x);
+            let buf = path.join(x.as_str()).join(".config.nitro_repo").join("config.json");
+            let result: Result<RepositoryConfig, _> = serde_json::from_reader(std::fs::OpenOptions::new().read(true).open(buf)?);
+            match result {
+                Ok(result) => {
+                    values.insert(x, result);
+                }
+                Err(error) => {
+                    error!("Unable to load {x}. Error {error:?}")
+                }
+            }
         }
         Ok(values)
     }
@@ -90,10 +99,10 @@ impl LocalStorage {
             .write(true)
             .open(conf)
             .await?;
-        let values: Vec<RepositoryConfig> = self
+        let values: Vec<String> = self
             .repositories
             .iter()
-            .map(|v| v.val().get_repository().clone())
+            .map(|v| v.key().clone())
             .collect();
         let string = serde_json::to_string_pretty(&values)?;
         file.write_all(string.as_bytes()).await?;
@@ -114,8 +123,8 @@ impl Storage for LocalStorage {
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
     async fn create_new(mut config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         let mut local_config = unsafe_into_config!(config).clone();
         if local_config.location.contains("{local_storage_folder}") {
@@ -145,8 +154,8 @@ impl Storage for LocalStorage {
     }
 
     async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         let v = unsafe_into_config!(config).clone();
         let buf = PathBuf::from_str(v.location.as_ref()).unwrap();
@@ -162,7 +171,7 @@ impl Storage for LocalStorage {
 
     async fn get_repos_to_load(&self) -> Result<HashMap<String, RepositoryConfig>, StorageError> {
         let repositories =
-            Self::load_repositories(PathBuf::from(&self.config.location).join(STORAGE_CONFIG))
+            Self::load_repositories(PathBuf::from(&self.config.location))
                 .await?;
         Ok(repositories)
     }
@@ -209,6 +218,10 @@ impl Storage for LocalStorage {
         if !config_dir.exists() {
             create_dir(&config_dir).await?;
         }
+        let mut buf = OpenOptions::new().create(true).write(true).open(config_dir.join("config.json")).await?;
+        let result = serde_json::to_string_pretty(repository.get_repository())?;
+        buf.write_all(result.as_bytes()).await?;
+        drop(buf);
         let name = repository.get_repository().name.clone();
         self.repositories.insert(name.clone(), Arc::new(repository));
         self.save_repositories().await?;
@@ -301,7 +314,7 @@ impl Storage for LocalStorage {
         Ok(exists)
     }
 
-    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
+    fn write_file_stream<S: Stream<Item=Bytes> + Unpin + Send + Sync + 'static>(
         &self,
         repository: &RepositoryConfig,
         s: S,

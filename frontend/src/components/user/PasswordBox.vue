@@ -10,17 +10,33 @@
         v-model="password"
       />
       <label class="nitroLabel" for="grid-password-c"> Confirm Password </label>
-      <input
-        class="nitroTextInput"
-        id="grid-password-c"
-        type="password"
-        v-model="confirm"
-      />
+      <div>
+        <input
+          class="nitroTextInput"
+          id="grid-password-c"
+          type="password"
+          v-model="confirm"
+          ref="confirmBox"
+        />
+
+        <font-awesome-icon
+          v-if="confirmIcon === 'password'"
+          class="icon"
+          icon="fa-solid fa-eye-slash"
+          @click="switchType()"
+        />
+        <font-awesome-icon
+          v-else-if="confirmIcon === 'text'"
+          class="icon"
+          icon="fa-solid fa-eye"
+          @click="switchType()"
+        />
+      </div>
     </div>
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { computed, defineComponent, ref, watch } from "vue";
 
 export default defineComponent({
   name: "PasswordBox",
@@ -40,7 +56,29 @@ export default defineComponent({
         emit("update:modelValue", "");
       }
     });
-    return { password, confirm };
+    const confirmBox = ref<HTMLInputElement>();
+    const confirmIcon = ref("password");
+
+    return { password, confirm, confirmBox, confirmIcon };
+  },
+  methods: {
+    switchType() {
+      if (this.confirmBox?.type == "password") {
+        this.confirmBox?.setAttribute("type", "text");
+        this.confirmIcon = "text";
+      } else {
+        this.confirmBox?.setAttribute("type", "password");
+        this.confirmIcon = "password";
+      }
+    },
   },
 });
 </script>
+
+<style>
+.icon {
+  margin-left: -30px;
+  @apply cursor-pointer;
+  @apply mt-2;
+}
+</style>

@@ -7,7 +7,6 @@ use crate::generators::GeneratorCache;
 
 use crate::repository::handler::Repository;
 
-use crate::repository::settings::Visibility;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;
 use crate::storage::DynamicStorage;

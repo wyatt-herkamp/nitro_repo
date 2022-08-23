@@ -18,7 +18,7 @@ use crate::authentication::Authentication;
 
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::{
-    repository_config_group, repository_handler, CreateRepository, Repository, RepositoryType,
+    repository_handler, CreateRepository, Repository, RepositoryType,
 };
 use crate::repository::maven::error::MavenError;
 use crate::repository::maven::hosted::MavenHosted;

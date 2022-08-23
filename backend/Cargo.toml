@@ -14,12 +14,8 @@ path = "src/lib.rs"
 name = "nitro_repo_full"
 required-features = ["multi_storage"]
 [[bin]]
-name = "simple_installer"
+name = "nitro_utils"
 required-features = ["clap", "whoami"]
-[[bin]]
-name = "updator"
-required-features = ["clap"]
-
 [dependencies]
 # Web
 actix-web = { version = "4.1", features = ["cookies"] }

@@ -1,5 +1,3 @@
-pub mod ci;
-pub mod docker;
 pub mod frontend;
 pub mod handler;
 pub mod maven;

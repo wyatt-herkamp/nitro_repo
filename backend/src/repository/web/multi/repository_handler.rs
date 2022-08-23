@@ -11,7 +11,7 @@ use crate::repository::handler::Repository;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::response::RepoResponse;
 use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigHandler};
+use crate::repository::settings::{RepositoryConfigHandler};
 use crate::repository::staging::StageHandler;
 use crate::storage::models::Storage;
 use crate::storage::multi::MultiStorageController;

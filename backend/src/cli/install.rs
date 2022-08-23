@@ -12,10 +12,17 @@ use std::env;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+use crate::GeneralSettings;
+use crate::settings::models::{Application, Database, MysqlSettings, SqliteSettings};
+use crate::system::{hash, user};
+use crate::system::permissions::{RepositoryPermission, UserPermissions};
+use crate::system::user::database::ActiveModel;
+use crate::system::user::UserEntity;
+use crate::utils::get_current_time;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
-struct InstallCommand {
+pub struct InstallCommand {
     #[clap(subcommand)]
     database_type: DatabaseTypes,
     #[clap(long)]
@@ -59,9 +66,7 @@ struct MysqlInstall {
     pub database: String,
 }
 
-#[tokio::main]
-async fn main() {
-    let install_command: InstallCommand = InstallCommand::parse();
+pub async fn install_task(install_command: InstallCommand) {
 
     let working_directory = env::current_dir().unwrap();
     if working_directory.join("nitro_repo.toml").exists() {
@@ -104,7 +109,7 @@ async fn main() {
         .expect("Failed to run database setup");
     let option = install_command.admin_username.unwrap_or_else(|| whoami::username());
     let password: &str = install_command.admin_password.as_ref().and_then(|v| Some(v.as_str())).unwrap_or("password");
-    let user: user::database::ActiveModel = ActiveModel {
+    let user: ActiveModel = ActiveModel {
         id: Default::default(),
         name: Set(option.clone()),
         username: Set(option),

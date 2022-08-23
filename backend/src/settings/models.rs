@@ -4,7 +4,7 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 
 use sea_orm::ConnectOptions;
-use semver::{Error, Version};
+use semver::{ Version};
 use serde::{Deserialize, Serialize};
 use toml::Value;
 

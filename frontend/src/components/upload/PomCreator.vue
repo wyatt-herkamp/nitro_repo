@@ -89,7 +89,7 @@ import Uppy from "@uppy/core";
 import SubNavBar from "../common/nav/SubNavBar.vue";
 import SubNavItem from "../common/nav/SubNavItem.vue";
 import { XMLParser } from "fast-xml-parser";
-import { Pom, xmlOptions } from "../../api/PomCreator";
+import { Pom, xmlOptions } from "@/api/maven/pom";
 
 export default defineComponent({
   props: {

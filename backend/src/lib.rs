@@ -3,7 +3,6 @@
 #![deny(deprecated)]
 
 use actix_web::web::Data;
-use schemars::JsonSchema;
 use serde::Serialize;
 use tokio::sync::RwLock;
 
@@ -20,9 +19,9 @@ pub mod repository;
 pub mod settings;
 pub mod storage;
 pub mod system;
-#[cfg(feature = "updater")]
-pub mod updater;
 pub mod utils;
+#[cfg(feature = "clap")]
+pub mod cli;
 
 #[derive(Debug)]
 pub struct NitroRepo {

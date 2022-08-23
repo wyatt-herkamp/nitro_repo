@@ -1,8 +1,6 @@
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigHandler, RepositoryConfigType};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::Repository;
+use crate::repository::settings::RepositoryConfigType;
 use crate::storage::models::Storage;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
@@ -33,7 +31,7 @@ impl RepositoryConfigType for RepositoryPage {
 
 pub mod multi_web {
     use std::sync::Arc;
-    use actix_web::{get, HttpResponse};
+    use actix_web::{HttpResponse};
     use actix_web::web::{Data, Path};
     use log::{error, trace};
     use crate::generators::GeneratorCache;
@@ -50,7 +48,6 @@ pub mod multi_web {
         auth: crate::authentication::Authentication,
         path_params: Path<(String, String)>,
     ) -> actix_web::Result<actix_web::HttpResponse> {
-        use crate::storage::models::Storage;
         use crate::system::permissions::permissions_checker::CanIDo;
         let user = auth.get_user(&database).await??;
         user.can_i_edit_repos()?;
@@ -69,7 +66,7 @@ pub mod multi_web {
                 };
 
 
-                Ok(HttpResponse::Ok().json(UpdateRepositoryPage{
+                Ok(HttpResponse::Ok().json(UpdateRepositoryPage {
                     settings: value,
                     page: Some(page),
                 }))
@@ -88,7 +85,6 @@ pub mod multi_web {
         body: actix_web::web::Json<UpdateRepositoryPage>,
         generator: Data<GeneratorCache>,
     ) -> actix_web::Result<actix_web::HttpResponse> {
-        use crate::storage::models::Storage;
         use crate::system::permissions::permissions_checker::CanIDo;
         let user = auth.get_user(&database).await??;
         user.can_i_edit_repos()?;
@@ -98,14 +94,13 @@ pub mod multi_web {
         let body = body.into_inner();
 
         let result = match repository {
-
             DynamicRepositoryHandler::Maven(ref mut repository) => {
                 trace!("Updating repository page: {:?}", &body);
 
                 let value = crate::repository::settings::RepositoryConfigHandler::<RepositoryPage>::update(repository, body.settings);
                 if value.is_ok() {
                     save_config(generator, &storage, body.page, repository).await;
-                }else{
+                } else {
                     error!("Error saving config {:?}", value);
                 }
                 value
@@ -120,7 +115,6 @@ pub mod multi_web {
     }
 
     async fn save_config<S: Storage, R>(generator: Data<GeneratorCache>, storage: &Arc<DynamicStorage>, body: Option<String>, repository: &mut R) where R: Repository<S> + RepositoryConfigHandler<RepositoryPage> {
-
         let config = RepositoryConfigHandler::<RepositoryPage>::get(repository);
         if let Err(error) = storage.save_repository_config(repository.get_repository(), config).await {
             error!("Failed to save repository config: {}", error);

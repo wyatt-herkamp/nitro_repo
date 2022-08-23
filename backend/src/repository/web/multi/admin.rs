@@ -100,9 +100,6 @@ create_repository!(
     npm,
     crate::repository::npm::NPMHandler,
     crate::repository::npm::NPMSettings,
-    ci,
-    crate::repository::ci::CIHandler,
-    crate::repository::ci::CISettings,
     raw,
     crate::repository::raw::RawHandler,
     crate::repository::raw::RawSettings

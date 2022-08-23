@@ -323,8 +323,6 @@ macro_rules! dynamic_repository_handler {
 
     };
 }
-use crate::repository::ci::CIHandler;
-use crate::repository::docker::DockerHandler;
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
 use crate::repository::raw::RawHandler;
@@ -333,10 +331,6 @@ dynamic_repository_handler!(
     MavenHandler,
     NPM,
     NPMHandler,
-    Docker,
-    DockerHandler,
-    CI,
-    CIHandler,
     Raw,
     RawHandler
 );

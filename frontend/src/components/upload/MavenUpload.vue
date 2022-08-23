@@ -71,10 +71,8 @@ import Uppy from "@uppy/core";
 import PomCreator from "./PomCreator.vue";
 import { apiURL } from "@/http-common";
 import { XMLBuilder } from "fast-xml-parser";
-import { xmlOptions } from "@/api/PomCreator";
-import { useRouter } from "vue-router";
 import httpCommon from "@/http-common";
-import { Repository } from "@/types/repositoryTypes";
+import { Pom, xmlOptions } from "@/api/maven/pom";
 
 /**
  * How does the manual upload work?
@@ -85,7 +83,7 @@ export default defineComponent({
   props: {
     repo: {
       required: true,
-      type: Object as () => Repository,
+      type: Object as () => { storage: string; name: string },
     },
   },
   computed: {
@@ -103,7 +101,7 @@ export default defineComponent({
     this.uppy.close();
   },
   setup() {
-    const pom = ref<Object | undefined>(undefined);
+    const pom = ref<Pom | undefined>(undefined);
     //This exists to trigger a rerender on Vue.
     const files = ref<number>(0);
     watch(pom, () => {
@@ -125,13 +123,10 @@ export default defineComponent({
       const groupIdFormatted = this.pom.project.groupId.replace(".", "/");
       const path = `${groupIdFormatted}/${this.pom.project.artifactId}/${this.pom.project.version}`;
       const baseURL = `${url}/storages/${repo.storage}/${repo.name}/${path}`;
-      console.log(groupIdFormatted);
-      console.log(path);
-      console.log(baseURL);
-      this.uppy.getFiles().forEach(async (file) => {
-        this.uploadFile(`${baseURL}/${file.name}`, file.data);
+      for (const file of this.uppy.getFiles()) {
+        await this.uploadFile(`${baseURL}/${file.name}`, file.data);
         this.uppy.removeFile(file.id, undefined);
-      });
+      }
       const ser = new XMLBuilder(xmlOptions);
       const pom = ser.build(this.pom);
       const textEncoder = new TextEncoder();

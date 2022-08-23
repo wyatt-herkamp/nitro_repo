@@ -32,7 +32,6 @@
 }
 .nitroTextInput {
   @apply appearance-none;
-  @apply block;
   @apply w-full;
   @apply bg-gray-200;
   @apply text-gray-700;
