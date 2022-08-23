@@ -45,7 +45,6 @@ repository_handler!(
     Staging,
     StagingRepository
 );
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::nitro::{ProjectSource, VersionData};
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;

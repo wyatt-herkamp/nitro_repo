@@ -19,10 +19,14 @@ pub mod local_storage;
 pub mod models;
 pub mod multi;
 pub mod path;
+
 use path::StoragePath;
 use path::SystemStorageFile;
-pub static STORAGES_CONFIG: &str = "storages.json";
-pub static STORAGE_CONFIG: &str = "storage.json";
+
+pub const STORAGES_CONFIG: &'static str = "storages.json";
+pub const STORAGE_CONFIG: &'static str = "storage.json";
+pub const REPOSITORY_FOLDER: &'static str = ".config.nitro_repo";
+
 use crate::repository::handler::DynamicRepositoryHandler;
 use bad_storage::BadStorage;
 use local_storage::{LocalConfig, LocalStorage};

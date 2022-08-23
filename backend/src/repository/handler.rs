@@ -120,6 +120,7 @@ macro_rules! repository_handler {
                 $repository_type($repository_tt<StorageType>),
             )*
         }
+        #[allow(unused_imports)]
         impl<StorageType: Storage> crate::repository::settings::RepositoryConfigLayout for $name<StorageType> {
             fn get_config_layout(&self) -> Vec<crate::repository::settings::RepositoryLayoutValue> {
                 use crate::repository::settings::RepositoryConfigLayout;
@@ -383,7 +384,6 @@ macro_rules! repository_config_group {
 }
 pub(crate) use repository_config_group;
 
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 crate::repository::nitro::dynamic::main_nitro_handler!(
     DynamicRepositoryHandler,
     Maven,

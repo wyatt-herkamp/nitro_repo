@@ -1,15 +1,12 @@
 pub mod basic;
-pub mod redis_manager;
 
 use crate::authentication::session::basic::BasicSessionManager;
-use crate::authentication::session::redis_manager::RedisSessionManager;
 use crate::settings::models::SessionSettings;
 use async_trait::async_trait;
 use thiserror::Error;
 
 pub enum SessionManager {
     BasicSessionManager(BasicSessionManager),
-    RedisSessionManager(RedisSessionManager),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -23,8 +20,6 @@ pub struct Session {
 pub enum SessionError {
     #[error("As of Now. This can not happen")]
     BasicError,
-    #[error("Error with the Redis Session Manager. {0}")]
-    RedisError(redis::RedisError),
 }
 
 #[async_trait]
@@ -48,11 +43,7 @@ impl SessionManagerType for SessionManager {
             SessionManager::BasicSessionManager(basic) => basic
                 .delete_session(token)
                 .await
-                .map_err(|_| SessionError::BasicError),
-            SessionManager::RedisSessionManager(basic) => basic
-                .delete_session(token)
-                .await
-                .map_err(SessionError::RedisError),
+                .map_err(|_| SessionError::BasicError)
         };
     }
 
@@ -62,10 +53,6 @@ impl SessionManagerType for SessionManager {
                 .create_session()
                 .await
                 .map_err(|_| SessionError::BasicError),
-            SessionManager::RedisSessionManager(basic) => basic
-                .create_session()
-                .await
-                .map_err(SessionError::RedisError),
         };
     }
 
@@ -75,11 +62,6 @@ impl SessionManagerType for SessionManager {
                 .retrieve_session(token)
                 .await
                 .map_err(|_| SessionError::BasicError),
-
-            SessionManager::RedisSessionManager(basic) => basic
-                .retrieve_session(token)
-                .await
-                .map_err(SessionError::RedisError),
         };
     }
 
@@ -89,11 +71,6 @@ impl SessionManagerType for SessionManager {
                 .re_create_session(token)
                 .await
                 .map_err(|_| SessionError::BasicError),
-
-            SessionManager::RedisSessionManager(basic) => basic
-                .re_create_session(token)
-                .await
-                .map_err(SessionError::RedisError),
         };
     }
 
@@ -103,10 +80,6 @@ impl SessionManagerType for SessionManager {
                 .set_user(token, user)
                 .await
                 .map_err(|_| SessionError::BasicError),
-            SessionManager::RedisSessionManager(basic) => basic
-                .set_user(token, user)
-                .await
-                .map_err(SessionError::RedisError),
         };
     }
 
@@ -116,10 +89,6 @@ impl SessionManagerType for SessionManager {
                 .push_session(session)
                 .await
                 .map_err(|_| SessionError::BasicError),
-            SessionManager::RedisSessionManager(basic) => basic
-                .push_session(session)
-                .await
-                .map_err(SessionError::RedisError),
         };
     }
 }

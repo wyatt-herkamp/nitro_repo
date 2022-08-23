@@ -28,7 +28,7 @@ use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileRes
 
 use crate::storage::models::{Storage, StorageStatus};
 use crate::storage::path::{StoragePath, SystemStorageFile};
-use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG};
+use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG, REPOSITORY_FOLDER};
 
 #[derive(Debug)]
 pub struct LocalStorage {
@@ -69,7 +69,7 @@ impl LocalStorage {
         let result: Vec<String> = serde_json::from_str(&string)?;
         let mut values = HashMap::new();
         for x in result {
-            let buf = path.join(x.as_str()).join(".config.nitro_repo").join("config.json");
+            let buf = path.join(x.as_str()).join(REPOSITORY_FOLDER).join(RepositoryConfig::config_name());
             let result: Result<RepositoryConfig, _> = serde_json::from_reader(std::fs::OpenOptions::new().read(true).open(buf)?);
             match result {
                 Ok(result) => {
@@ -81,15 +81,6 @@ impl LocalStorage {
             }
         }
         Ok(values)
-    }
-    async fn number_of_repos(path: PathBuf) -> Result<usize, StorageError> {
-        trace!("Loading repositories from {}", path.display());
-        if !path.exists() {
-            return Ok(0);
-        }
-        let string = read_to_string(&path).await?;
-        let result: Vec<RepositoryConfig> = serde_json::from_str(&string)?;
-        Ok(result.len())
     }
     async fn save_repositories(&self) -> Result<(), StorageError> {
         let conf = self.get_storage_folder().join(STORAGE_CONFIG);
@@ -214,11 +205,11 @@ impl Storage for LocalStorage {
         if !path.exists() {
             create_dir(&path).await?;
         }
-        let config_dir = path.join(".config.nitro_repo");
+        let config_dir = path.join(REPOSITORY_FOLDER);
         if !config_dir.exists() {
             create_dir(&config_dir).await?;
         }
-        let mut buf = OpenOptions::new().create(true).write(true).open(config_dir.join("config.json")).await?;
+        let mut buf = OpenOptions::new().create(true).write(true).open(config_dir.join(RepositoryConfig::config_name())).await?;
         let result = serde_json::to_string_pretty(repository.get_repository())?;
         buf.write_all(result.as_bytes()).await?;
         drop(buf);

@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use log::{debug, error, trace};
 use std::sync::Arc;
-use futures_util::TryFutureExt;
 
 use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
 use crate::error::internal_error::InternalError;

@@ -56,7 +56,9 @@ macro_rules! define_repository_config_set {
                         let value = crate::repository::settings::RepositoryConfigHandler::<$config>::update( repository, body);
                         if value.is_ok(){
                             let config = crate::repository::settings::RepositoryConfigHandler::<$config>::get(repository);
-                            storage.save_repository_config(repository.get_repository(),  config).await;
+                            if let Err(e) = storage.save_repository_config(repository.get_repository(),  config).await {
+                                log::error!("Unable to save data {:?}", e);
+                            }
                         }
                         value
                     }

@@ -58,6 +58,12 @@ pub struct RepositoryConfig {
     pub created: i64,
 }
 
+impl RepositoryConfigType for RepositoryConfig {
+    fn config_name() -> &'static str {
+        "config.json"
+    }
+}
+
 impl RepositoryConfig {
     pub fn new(name: impl Into<String>, repository_type: RepositoryType, storage: String) -> Self {
         RepositoryConfig {

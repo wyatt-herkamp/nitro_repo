@@ -11,7 +11,6 @@ use actix_cors::Cors;
 use actix_web::middleware::DefaultHeaders;
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
-use handlebars::template::Parameter::Path;
 use api::authentication::middleware::HandleSession;
 use api::authentication::session::{Session, SessionManager, SessionManagerType};
 
@@ -95,7 +94,7 @@ async fn main() -> std::io::Result<()> {
     {
         #[cfg(not(debug_assertions))]
         {
-            //compile_error!("You are not in a development environment");
+            compile_error!("You are not in a development environment");
         }
         warn!("Using unsafe cookies");
         warn!("This is not recommended. This is only for development purposes");
@@ -196,7 +195,7 @@ fn load_unsafe_cookies() -> Result<Vec<(String, String)>, std::io::Error> {
         return Ok(vec![]);
     }
     let file = OpenOptions::new().read(true).open(buf)?;
-    let mut lines = BufReader::new(file).lines();
+    let lines = BufReader::new(file).lines();
     let mut cookies = Vec::with_capacity(lines.size_hint().0);
     for x in lines {
         let line = x?;

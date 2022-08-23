@@ -1,6 +1,8 @@
 #![allow(clippy::from_over_into)]
 #![allow(irrefutable_let_patterns)]
 #![deny(deprecated)]
+// A lot of macros add catch all patterns
+#![allow(unreachable_patterns)]
 
 use actix_web::web::Data;
 use serde::Serialize;
