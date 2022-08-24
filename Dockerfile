@@ -20,14 +20,17 @@ RUN npm install
 RUN npm run build
 
 # The Final Image
-FROM alpine:latest
-
+FROM debian:bullseye-slim
+RUN apt-get install libssl1.1
 RUN mkdir -p /app/data/storages && mkdir -p /var/log/nitro_repo
 VOLUME /app/data
 WORKDIR /app
-COPY --from=build /home/build/nitro_repo/backend/target/release/nitro_repo_full nitro_repo_full
-COPY --from=build /home/build/nitro_repo/backend/target/release/simple_installer simple_installer
-COPY --from=build /home/build/nitro_repo/frontend/dist frontend
-COPY --from=build /home/build/nitro_repo/entrypoint.sh entrypoint.sh
+COPY --from=build /home/build/backend/target/release/nitro_repo_full nitro_repo_full
+COPY --from=build /home/build/backend/target/release/nitro_utils nitro_utils
+COPY --from=build /home/build/frontend/dist frontend
+COPY --from=build /home/build/entrypoint.sh entrypoint.sh
+RUN addgroup nitro_repo &&  adduser --system --ingroup nitro_repo --shell /bin/sh nitro_repo
+
 ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
 CMD []

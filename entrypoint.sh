@@ -1,7 +1,10 @@
+#!/bin/bash
+nitro_repo
 chown -R nitro_repo:nitro_repo /app
 chown -R nitro_repo:nitro_repo /var/log/nitro_repo
-
-cd data
 # shellcheck disable=SC2093
-exec runuser -u nitro_repo -- ../simple_installer --log-dir /var/log/nitro_repo  --storage-path /app/data/storages --frontend-path /app/frontend sqlite --database-file /app/data/database.db
-exec runuser -u nitro_repo -- ../nitro_repo_full
+chmod +x ./nitro_utils
+chmod +x ./nitro_repo_full
+
+./nitro_utils install --log-dir /var/log/nitro_repo  --storage-path /app/data/storages --frontend-path /app/frontend sqlite --database-file /app/data/database.db
+exec ./nitro_repo_full
