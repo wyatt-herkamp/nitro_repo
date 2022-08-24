@@ -1,9 +1,9 @@
-use api::settings::models::{Application, Database, GeneralSettings, MysqlSettings, SqliteSettings};
-use api::system::permissions::{RepositoryPermission, UserPermissions};
-use api::system::user::database::ActiveModel;
-use api::system::user::UserEntity;
-use api::system::{hash, user};
-use api::utils::get_current_time;
+use crate::settings::models::{Application, Database, GeneralSettings, MysqlSettings, SqliteSettings};
+use crate::system::permissions::{RepositoryPermission, UserPermissions};
+use crate::system::user::database::ActiveModel;
+use crate::system::user::UserEntity;
+use crate::system::{hash};
+use crate::utils::get_current_time;
 use clap::{Parser, Subcommand};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ConnectOptions, EntityTrait};
@@ -12,13 +12,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::process::exit;
-use crate::GeneralSettings;
-use crate::settings::models::{Application, Database, MysqlSettings, SqliteSettings};
-use crate::system::{hash, user};
-use crate::system::permissions::{RepositoryPermission, UserPermissions};
-use crate::system::user::database::ActiveModel;
-use crate::system::user::UserEntity;
-use crate::utils::get_current_time;
+
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -67,7 +61,6 @@ struct MysqlInstall {
 }
 
 pub async fn install_task(install_command: InstallCommand) {
-
     let working_directory = env::current_dir().unwrap();
     if working_directory.join("nitro_repo.toml").exists() {
         if install_command.ignore_if_installed.unwrap_or(true) {
@@ -84,12 +77,12 @@ pub async fn install_task(install_command: InstallCommand) {
                 host: mysql.db_host,
                 database: mysql.database,
             };
-            api::settings::models::Database::Mysql(mysql_settings)
+            crate::settings::models::Database::Mysql(mysql_settings)
         }
         DatabaseTypes::Sqlite(sqlite) => {
             let buf = Path::new(&sqlite.database_file).to_path_buf();
             let sqlite_settings = SqliteSettings { database_file: buf };
-            api::settings::models::Database::Sqlite(sqlite_settings)
+            crate::settings::models::Database::Sqlite(sqlite_settings)
         }
     };
     if let Database::Sqlite(sql) = &config {
@@ -104,7 +97,7 @@ pub async fn install_task(install_command: InstallCommand) {
     let mut database_conn = sea_orm::Database::connect(options)
         .await
         .expect("Failed to connect to database");
-    api::utils::run_database_setup(&mut database_conn)
+    crate::utils::run_database_setup(&mut database_conn)
         .await
         .expect("Failed to run database setup");
     let option = install_command.admin_username.unwrap_or_else(|| whoami::username());
@@ -144,6 +137,6 @@ pub async fn install_task(install_command: InstallCommand) {
         internal: Default::default(),
         session: Default::default(),
     };
-    api::install::install_data(working_directory, general)
+    crate::install::install_data(working_directory, general)
         .expect("Failed to install data");
 }

@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
 use crate::cli;
 
-pub mod updater;
 pub mod install;
 
 #[derive(Parser, Debug)]
