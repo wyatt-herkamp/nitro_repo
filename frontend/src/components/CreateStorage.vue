@@ -63,7 +63,6 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from "vue";
-import "@/styles/sideCreate.css";
 import httpCommon from "@/http-common";
 import { Storage } from "@/types/storageTypes";
 export default defineComponent({
