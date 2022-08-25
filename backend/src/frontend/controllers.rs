@@ -1,15 +1,16 @@
+use std::borrow::Cow;
 use std::fs::{create_dir_all, File, read_to_string};
 use std::path::{Path, PathBuf};
 
 use actix_files::Files;
-use actix_web::error::ErrorInternalServerError;
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::web::Data;
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, HttpRequest};
 use handlebars::Handlebars;
 use log::{debug, error, info, trace, warn};
 use serde_json::json;
 
-use crate::NitroRepoData;
+use crate::{NitroRepoData, Serialize};
 
 pub fn init(cfg: &mut web::ServiceConfig) {
     debug!("Loading Frontend!");
@@ -55,15 +56,38 @@ pub fn init(cfg: &mut web::ServiceConfig) {
         .service(Files::new("/", frontend_path).show_files_listing());
 }
 
+#[derive(Serialize, Debug)]
+struct FrontendData<'a> {
+    base_url: Cow<'a, str>,
+    title: &'a str,
+    description: &'a str,
+}
+
 pub async fn frontend_handler(
-    hb: web::Data<Handlebars<'_>>,
+    req: HttpRequest,
+    hb: Data<Handlebars<'_>>,
     site: NitroRepoData,
 ) -> Result<HttpResponse, actix_web::Error> {
     let guard = site.settings.read().await;
-
-    let value = json!({"base_url":     site.core.application.app_url, "title": guard.site.name,"description": guard.site.description});
+    let mut data = FrontendData {
+        base_url: Default::default(),
+        title: guard.site.name.as_str(),
+        description: guard.site.description.as_str(),
+    };
+    if let Some(value) = site.core.application.app_url.as_ref() {
+        data.base_url = value.as_str().into();
+    } else {
+        let host = if let Some(v) = req.headers().get("host") {
+            v.to_str().map_err(|_| ErrorBadRequest("Invalid Host Header"))?
+        } else {
+            return Err(ErrorBadRequest("No Host Header Found"));
+        };
+        let schema = req.uri().scheme_str().unwrap_or("http");
+        data.base_url = format!("{schema}://{host}").into();
+    }
+    trace!("Frontend Data: {data:?}");
     let content = hb
-        .render("index", &value)
+        .render("index", &data)
         .map_err(ErrorInternalServerError)?;
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }

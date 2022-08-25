@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
 use lockfree::map::{Map, Removed};
-use log::{debug, error, trace};
+use log::{debug, error, trace, warn};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -63,9 +63,16 @@ impl LocalStorage {
     ) -> Result<HashMap<String, RepositoryConfig>, StorageError> {
         trace!("Loading repositories from {}", path.display());
         if !path.exists() {
+            create_dir_all(&path).await?;
+            warn!("Repositories folder does not exist");
             return Ok(HashMap::new());
         }
-        let string = read_to_string(path.join(STORAGE_CONFIG)).await?;
+        let storage_conf = path.join(STORAGE_CONFIG);
+        if !storage_conf.exists() {
+            warn!("Repositories file exist {storage_conf:?}");
+            return Ok(HashMap::new());
+        }
+        let string = read_to_string(storage_conf).await?;
         let result: Vec<String> = serde_json::from_str(&string)?;
         let mut values = HashMap::new();
         for x in result {
@@ -202,12 +209,9 @@ impl Storage for LocalStorage {
             return Err(StorageError::RepositoryAlreadyExists);
         }
         let path = self.get_repository_folder(&repository.get_repository().name);
-        if !path.exists() {
-            create_dir(&path).await?;
-        }
         let config_dir = path.join(REPOSITORY_FOLDER);
         if !config_dir.exists() {
-            create_dir(&config_dir).await?;
+            create_dir_all(&config_dir).await?;
         }
         let mut buf = OpenOptions::new().create(true).write(true).open(config_dir.join(RepositoryConfig::config_name())).await?;
         let result = serde_json::to_string_pretty(repository.get_repository())?;

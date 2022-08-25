@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - ${PORT}:${PORT}
+      - "6742:6742"
     volumes:
       - nitro_repo-data:/app/data
     restart: unless-stopped

@@ -96,7 +96,7 @@ pub struct Application {
     pub log: String,
     pub frontend: String,
     pub address: String,
-    pub app_url: String,
+    pub app_url: Option<String>,
     pub max_upload: usize,
     pub mode: Mode,
     pub storage_location: PathBuf,
@@ -106,13 +106,13 @@ pub struct Application {
 
 impl Default for Application {
     fn default() -> Self {
-        let buf = PathBuf::from("storage");
+        let buf = PathBuf::from("storages");
         create_dir_all(&buf).unwrap();
         Self {
             log: "./".to_string(),
             frontend: "frontend".to_string(),
             address: "0.0.0.0:6742".to_string(),
-            app_url: "http://127.0.0.1:6742".to_string(),
+            app_url: None,
             max_upload: 1024,
             mode: Mode::Release,
             storage_location: buf.canonicalize().unwrap(),

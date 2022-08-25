@@ -24,7 +24,7 @@ pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
 /// Storage Status
 #[derive(Debug)]
 pub enum StorageStatus {
-    /// The storage is unloaded.
+    /// The storages is unloaded.
     Unloaded,
     /// Storage has successfully loaded
     Loaded,
@@ -78,7 +78,7 @@ pub trait Storage: Send + Sync {
         repo: R,
     ) -> Result<(), StorageError>;
 
-    /// Unload the storage
+    /// Unload the storages
     fn unload(&mut self) -> Result<(), StorageError>;
 
     fn storage_config(&self) -> &StorageSaver;

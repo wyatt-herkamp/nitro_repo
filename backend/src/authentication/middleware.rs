@@ -98,6 +98,7 @@ where
                             (Authentication::NoIdentification, None)
                         }
                     } else if let Some(mut session) = session {
+                        trace!("Cookie {session:?} found. Validating");
                         if session.expiration <= get_current_time() as u64 {
                             session = session_manager
                                 .re_create_session(&session.token)

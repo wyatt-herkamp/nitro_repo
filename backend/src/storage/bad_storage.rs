@@ -3,7 +3,7 @@ use crate::storage::error::StorageError;
 use crate::storage::models::StorageStatus;
 use crate::storage::StorageSaver;
 
-/// This is a storage that is here to represent a storage that failed to load from the config stage
+/// This is a storages that is here to represent a storages that failed to load from the config stage
 #[derive(Debug)]
 pub struct BadStorage {
     pub factory: StorageSaver,

@@ -45,6 +45,9 @@ enum DatabaseTypes {
 struct SqliteInstall {
     #[clap(long)]
     database_file: String,
+    #[clap(long)]
+    skip_if_file_exists: Option<bool>,
+
 }
 
 #[derive(Parser, Debug)]
@@ -69,7 +72,7 @@ pub async fn install_task(install_command: InstallCommand) {
             exit(1);
         }
     }
-    let config = match install_command.database_type {
+    let (config, skip_if_exists) = match install_command.database_type {
         DatabaseTypes::Mysql(mysql) => {
             let mysql_settings = MysqlSettings {
                 user: mysql.db_user,
@@ -77,35 +80,68 @@ pub async fn install_task(install_command: InstallCommand) {
                 host: mysql.db_host,
                 database: mysql.database,
             };
-            crate::settings::models::Database::Mysql(mysql_settings)
+            (crate::settings::models::Database::Mysql(mysql_settings), false)
         }
         DatabaseTypes::Sqlite(sqlite) => {
             let buf = Path::new(&sqlite.database_file).to_path_buf();
             let sqlite_settings = SqliteSettings { database_file: buf };
-            crate::settings::models::Database::Sqlite(sqlite_settings)
+            (crate::settings::models::Database::Sqlite(sqlite_settings), sqlite.skip_if_file_exists.unwrap_or(false))
         }
     };
-    if let Database::Sqlite(sql) = &config {
-        println!("{}", sql);
-        OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(&sql.database_file)
-            .expect("Failed to open file");
+    match &config {
+        Database::Sqlite(ref settings) => {
+            if settings.database_file.exists() {
+                if !skip_if_exists {
+                    seed_data(config.clone(), install_command.admin_username, install_command.admin_password).await;
+                }else{
+                    println!("Skipping seed data because file exists");
+                }
+            } else {
+                OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .open(&settings.database_file)
+                    .expect("Failed to open file");
+                seed_data(config.clone(), install_command.admin_username, install_command.admin_password).await;
+            }
+        }
+        Database::Mysql(ref v) => {
+            seed_data(config.clone(), install_command.admin_username, install_command.admin_password).await;
+        }
     }
-    let options: ConnectOptions = config.clone().into();
+
+
+    let general = GeneralSettings {
+        database: config,
+        application: Application {
+            log: install_command.log_dir.unwrap_or("./logs".to_string()).to_string(),
+            frontend: install_command.frontend_path,
+            storage_location: install_command.storage_path.and_then(|v| Some(PathBuf::from(v))).unwrap_or_else(|| {
+                env::current_dir().unwrap().join("storages")
+            }),
+            ..Application::default()
+        },
+        internal: Default::default(),
+        session: Default::default(),
+    };
+    crate::install::install_data(working_directory, general)
+        .expect("Failed to install data");
+}
+
+async fn seed_data(config: impl Into<ConnectOptions>, username: Option<String>, password: Option<String>) {
+    let options: ConnectOptions = config.into();
     let mut database_conn = sea_orm::Database::connect(options)
         .await
         .expect("Failed to connect to database");
     crate::utils::run_database_setup(&mut database_conn)
         .await
         .expect("Failed to run database setup");
-    let option = install_command.admin_username.unwrap_or_else(|| whoami::username());
-    let password: &str = install_command.admin_password.as_ref().and_then(|v| Some(v.as_str())).unwrap_or("password");
+    let option = username.as_ref().and_then(|v| Some(v.as_str())).unwrap_or_else(|| "admin");
+    let password: &str = username.as_ref().and_then(|v| Some(v.as_str())).unwrap_or("password");
     let user: ActiveModel = ActiveModel {
         id: Default::default(),
-        name: Set(option.clone()),
-        username: Set(option),
+        name: Set(option.to_string()),
+        username: Set(option.to_string()),
 
         email: Set("admin@nitro_repo.dev".to_string()),
         password: Set(hash(password).unwrap()),
@@ -124,19 +160,4 @@ pub async fn install_task(install_command: InstallCommand) {
         .exec(&database_conn)
         .await
         .expect("Failed to insert user");
-    let general = GeneralSettings {
-        database: config,
-        application: Application {
-            log: install_command.log_dir.unwrap_or("./logs".to_string()).to_string(),
-            frontend: install_command.frontend_path,
-            storage_location: install_command.storage_path.and_then(|v| Some(PathBuf::from(v))).unwrap_or_else(|| {
-                env::current_dir().unwrap().join("storages")
-            }),
-            ..Application::default()
-        },
-        internal: Default::default(),
-        session: Default::default(),
-    };
-    crate::install::install_data(working_directory, general)
-        .expect("Failed to install data");
 }

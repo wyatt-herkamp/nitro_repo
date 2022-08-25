@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use actix_cors::Cors;
 
-use actix_web::middleware::DefaultHeaders;
+use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
 use api::authentication::middleware::HandleSession;
@@ -22,7 +22,7 @@ use api::storage::multi::MultiStorageController;
 
 use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo, Version};
-use log::{debug, error, info, warn};
+use log::{debug, error, info, trace, warn};
 
 use tempfile::tempdir;
 use tokio::fs::read_to_string;
@@ -55,8 +55,14 @@ async fn main() -> std::io::Result<()> {
 
     // Sets the Log Location
     set_var("LOG_LOCATION", &init_settings.application.log);
-    set_var("FRONTEND", &init_settings.application.frontend);
     load_logger(&init_settings.application.mode);
+
+
+    set_var("FRONTEND", &init_settings.application.frontend);
+    trace!("Frontend {:?}", init_settings.application.frontend);
+    set_var("STORAGE_LOCATION", &init_settings.application.storage_location);
+    trace!("Storage Location {:?}", init_settings.application.storage_location);
+
     info!("Initializing Database Connection");
     let connection = sea_orm::Database::connect(init_settings.database.clone())
         .await
@@ -66,10 +72,12 @@ async fn main() -> std::io::Result<()> {
     info!("Initializing State");
     let settings = load_configs(configs).await.map_err(convert_error)?;
 
-    let storages = current_dir.join("storages.json");
+    let storages = init_settings.application.storage_location.join("storages.json");
+    trace!("Loading Storages from {storages:?}");
     let storages = MultiStorageController::init(storages)
         .await
         .map_err(convert_error)?;
+
 
     let nitro_repo = NitroRepo {
         settings: RwLock::new(settings),
@@ -78,7 +86,6 @@ async fn main() -> std::io::Result<()> {
     };
     info!("Version: {:?}", nitro_repo.current_version);
     let application = nitro_repo.core.application.clone();
-    set_var("STORAGE_LOCATION", &application.storage_location);
     let max_upload =
         Data::new(PayloadConfig::default().limit(application.max_upload * 1024 * 1024));
     let dir = tempdir()?;
@@ -139,6 +146,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_origin()
                     .supports_credentials(),
             )
+            .wrap(Logger::default())
             .service(
                 web::scope("/api")
                     .wrap(HandleSession(true))
@@ -154,12 +162,12 @@ async fn main() -> std::io::Result<()> {
                             .configure(storage::multi::web::init_admin_routes)
                             .configure(repository::web::multi::init_admin),
                     )
+                    .configure(frontend::init)
             )
             .service(
                 web::scope("")
                     .wrap(HandleSession(false))
-                    .configure(repository::web::multi::init_repository_handlers)
-                    .configure(frontend::init),
+                    .configure(repository::web::multi::init_repository_handlers),
             )
     });
 

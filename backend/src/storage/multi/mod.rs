@@ -22,7 +22,7 @@ use crate::storage::{DynamicStorage, StorageSaver};
 pub mod web;
 
 async fn load_storages(
-    storages_file: PathBuf,
+    storages_file: &PathBuf,
 ) -> Result<Map<String, Arc<DynamicStorage>>, StorageError> {
     if !storages_file.exists() {
         return Ok(Map::new());
@@ -41,20 +41,13 @@ async fn load_storages(
     Ok(values)
 }
 
-pub async fn save_storages(storages: Vec<StorageSaver>) -> Result<(), StorageError> {
+pub async fn save_storages(storages: Vec<StorageSaver>, storages_file: &PathBuf) -> Result<(), StorageError> {
     let result = serde_json::to_string(&storages)?;
-    let path = Path::new(STORAGE_FILE);
-    let bak = Path::new(STORAGE_FILE_BAK);
-    if bak.exists() {
-        fs::remove_file(bak).await?;
-    }
-    if path.exists() {
-        fs::rename(path, bak).await?;
-    }
     let mut file = OpenOptions::new()
         .write(true)
+        .append(false)
         .create(true)
-        .open(path)
+        .open(storages_file)
         .await?;
     file.write_all(result.as_bytes()).await?;
     Ok(())
@@ -63,6 +56,7 @@ pub async fn save_storages(storages: Vec<StorageSaver>) -> Result<(), StorageErr
 pub struct MultiStorageController<S: Storage> {
     pub storages: Map<String, Arc<S>>,
     pub unloaded_storages: Map<String, Arc<S>>,
+    pub storage_file: PathBuf,
 }
 #[derive(Debug, Deserialize)]
 pub enum PurgeLevel {
@@ -75,10 +69,11 @@ impl MultiStorageController<DynamicStorage> {
         storages_file: PathBuf,
     ) -> Result<MultiStorageController<DynamicStorage>, StorageError> {
         info!("Loading Storages");
-        let result = load_storages(storages_file).await?;
+        let result = load_storages(&storages_file).await?;
         let mut controller = MultiStorageController {
             storages: Map::new(),
             unloaded_storages: result,
+            storage_file: storages_file
         };
         controller.load_unloaded_storages().await?;
         Ok(controller)
@@ -99,7 +94,7 @@ impl MultiStorageController<DynamicStorage> {
         Ok(storages.is_some())
     }
 
-    /// Attempts to run the storage load on any storages that are unloaded.
+    /// Attempts to run the storages load on any storages that are unloaded.
     /// This will include the Error storages
     pub async fn load_unloaded_storages<'a>(&mut self) -> Result<(), StorageError> {
         let unloaded = mem::take(&mut self.unloaded_storages);
@@ -120,7 +115,7 @@ impl MultiStorageController<DynamicStorage> {
                     }
                 }
                 Err(error) => {
-                    error!("Error loading storage {}: {}", name, error);
+                    error!("Error loading storages {}: {}", name, error);
                 }
             }
             self.storages.insert(name, storage);
@@ -130,12 +125,12 @@ impl MultiStorageController<DynamicStorage> {
 
     /// Starts by checking all the storages to see if the name already exists
     /// Collects all the StorageSavers into an Array.
-    /// Checks to ensure the storage will load correctly. If it will not it will error our
-    /// Saves the new storage config
-    /// Adds the storages to the main Storage map without loading repositories. Because its a new storage
+    /// Checks to ensure the storages will load correctly. If it will not it will error our
+    /// Saves the new storages config
+    /// Adds the storages to the main Storage map without loading repositories. Because its a new storages
     pub async fn create_storage<'a>(&self, storage: StorageSaver) -> Result<(), StorageError> {
         let name = storage.generic_config.id.clone();
-        // Check if the storage already exists then collect all Vec<StorageSaver> and add the new one
+        // Check if the storages already exists then collect all Vec<StorageSaver> and add the new one
         let mut storages = Vec::new();
         for storages_file in self.storages.iter() {
             if storages_file.key().eq(&name) {
@@ -147,20 +142,20 @@ impl MultiStorageController<DynamicStorage> {
         let storage = DynamicStorage::create_new(storage)
             .await
             .map_err(|(error, v)| {
-                error!("Error creating storage {:?}.", v);
+                error!("Error creating storages {:?}.", v);
                 StorageCreateError(error.to_string())
             })?;
         storages.push(storage.storage_config().clone());
-        save_storages(storages).await?;
+        save_storages(storages,&self.storage_file).await?;
 
         self.storages.insert(name, Arc::new(storage));
         Ok(())
     }
 
-    /// Follows the same steps as create_storage but will treat the new storage as something that has data in it.
+    /// Follows the same steps as create_storage but will treat the new storages as something that has data in it.
     pub async fn recover_storage(&self, storage: StorageSaver) -> Result<(), StorageError> {
         let name = storage.generic_config.id.clone();
-        // Check if the storage already exists then collect all Vec<StorageSaver> and add the new one
+        // Check if the storages already exists then collect all Vec<StorageSaver> and add the new one
         let mut storages = Vec::new();
         for storages_file in self.storages.iter() {
             if storages_file.key().eq(&name) {
@@ -172,7 +167,7 @@ impl MultiStorageController<DynamicStorage> {
         let storage = DynamicStorage::create_new(storage)
             .await
             .map_err(|(error, v)| {
-                error!("Error creating storage {:?}.", v);
+                error!("Error creating storages {:?}.", v);
                 StorageCreateError(error.to_string())
             })
             .map(Arc::new)?;
@@ -190,7 +185,7 @@ impl MultiStorageController<DynamicStorage> {
         }
 
         storages.push(storage.storage_config().clone());
-        save_storages(storages).await?;
+        save_storages(storages,&self.storage_file).await?;
 
         self.storages.insert(name, storage);
         Ok(())
@@ -204,7 +199,7 @@ impl MultiStorageController<DynamicStorage> {
         let option = self.storages.remove(storage.as_ref()).ok_or_else(|| {
             StorageError::StorageDeleteError("Storage does not exist".to_string())
         })?;
-        save_storages(self.storage_savers().await).await?;
+        save_storages(self.storage_savers().await,&self.storage_file).await?;
 
         match purge_level {
             PurgeLevel::All => {

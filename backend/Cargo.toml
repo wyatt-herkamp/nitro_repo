@@ -15,7 +15,7 @@ name = "nitro_repo_full"
 required-features = ["multi_storage"]
 [[bin]]
 name = "nitro_utils"
-required-features = ["clap", "whoami"]
+required-features = ["clap"]
 [dependencies]
 # Web
 actix-web = { version = "4.1", features = ["cookies"] }
@@ -67,7 +67,6 @@ webhook_sender = { git = "https://github.com/wyatt-herkamp/webhook_sender.git" }
 # Installer
 clap = { version = "3.2.12", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
-whoami = { version = "1.2", optional = true }
 # Cache
 comrak = "0.14"
 # Staging

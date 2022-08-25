@@ -223,7 +223,7 @@ pub struct StorageSaver {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneralConfig {
     pub id: String,
-    /// This is created internally by the storage. No need to set this.
+    /// This is created internally by the storages. No need to set this.
     #[serde(default = "crate::utils::get_current_time")]
     pub created: i64,
 }

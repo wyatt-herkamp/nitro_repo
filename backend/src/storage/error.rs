@@ -13,7 +13,7 @@ pub enum StorageError {
     JSONError(serde_json::Error),
     #[error("Storage Already Exists!")]
     StorageAlreadyExist,
-    #[error("Unable to create a new storage {0}")]
+    #[error("Unable to create a new storages {0}")]
     StorageCreateError(String),
     #[error("Repository Already Exists")]
     #[status_code(CONFLICT)]

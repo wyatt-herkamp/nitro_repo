@@ -5,7 +5,7 @@
         "WARN",
         "ERROR"
       ],
-      "format": "[{{module({})}}] {{level({\"colored\":true})}}: {{message({})}}",
+      "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
       "targets": [
         {
           "type": "console"
@@ -15,8 +15,9 @@
   ],
   "loggers": [
     {
-      "module": "nitro_repo",
+      "module": "api",
       "levels": [
+        "DEBUG",
         "INFO",
         "WARN",
         "ERROR"
@@ -29,45 +30,15 @@
       ]
     },
     {
-      "module": "nitro_repo",
-      "levels": [
-        "INFO",
-        "WARN",
-        "ERROR"
-      ],
-      "format": "[{{module({})}}] {{level({})}}: {{message({})}}",
-      "targets": [
-        {
-          "type": "file_logger",
-          "properties": {
-            "file": {
-              "format": "{{env(LOG_LOCATION)}}/{{module({})}}.log",
-              "placeholders": {
-                "LOG_LOCATION": {
-                  "key": "LOG_LOCATION",
-                  "save": true
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
       "module": "actix_web::middleware::logger",
       "levels": [
+        "DEBUG",
         "INFO",
         "WARN",
         "ERROR"
       ],
-      "format": {
-        "format": "[{{chrono(DATE_TIME)}}] {{level({})}}: {{message({})}}",
-        "placeholders": {
-          "DATE_TIME": {
-            "format": "%Y-%m-%d %H:%M:%S"
-          }
-        }
-      },
+      "format": "[Request] {{level({})}}: {{message({})}}",
+
       "targets": [
         {
           "type": "file_logger",
