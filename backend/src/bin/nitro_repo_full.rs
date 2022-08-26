@@ -162,12 +162,12 @@ async fn main() -> std::io::Result<()> {
                             .configure(storage::multi::web::init_admin_routes)
                             .configure(repository::web::multi::init_admin),
                     )
-                    .configure(frontend::init)
             )
             .service(
                 web::scope("")
                     .wrap(HandleSession(false))
-                    .configure(repository::web::multi::init_repository_handlers),
+                    .configure(repository::web::multi::init_repository_handlers).configure(frontend::init)
+                ,
             )
     });
 
