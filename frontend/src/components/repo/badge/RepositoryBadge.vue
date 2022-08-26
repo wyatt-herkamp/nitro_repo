@@ -11,12 +11,13 @@
           <img
             class="object-none my-5"
             :src="
-              url +
-              '/badge/repositories/' +
-              repository.storage +
-              '/' +
-              repository.name +
-              '/nitro_repo_badge'
+              makeURL(
+                '/badge/repositories/' +
+                  repository.storage +
+                  '/' +
+                  repository.name +
+                  '/nitro_repo_badge'
+              )
             "
             :alt="repository.storage + '/' + repository.name"
           />
@@ -29,7 +30,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 
-import { apiURL } from "@/http-common";
+import { makeURL } from "@/http-common";
 import { createBadgeSnippets } from "@/api/repository/BadgeGen";
 import CodeMenu from "@/components/common/code/CodeMenu.vue";
 
@@ -42,12 +43,11 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const url = apiURL;
     const snippets = createBadgeSnippets(
       props.repository.storage,
       props.repository.name
     );
-    return { url, snippets };
+    return { makeURL, snippets };
   },
 });
 </script>

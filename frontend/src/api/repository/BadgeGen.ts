@@ -1,4 +1,4 @@
-import { apiURL } from "@/http-common";
+import { apiURL, makeURL } from "@/http-common";
 import { escapeHtml, SnippetInfo } from "../CodeGenGeneral";
 
 export function createBadgeSnippets(
@@ -33,9 +33,10 @@ export function createProjectSnippet(
   project: string,
   projectName: string
 ): SnippetInfo[] {
-  const url = apiURL;
-  const badgeURL = `${url}/badge/repositories/${storage}/${repository}/${project}`;
-  const appURL = `${url}/project/${storage}/${repository}/${project}`;
+  const badgeURL = makeURL(
+    `badge/repositories/${storage}/${repository}/${project}`
+  );
+  const appURL = makeURL(`project/${storage}/${repository}/${project}`);
   const text = `${repository} Repository`;
   return [
     {

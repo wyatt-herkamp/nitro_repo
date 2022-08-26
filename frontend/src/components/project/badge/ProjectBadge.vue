@@ -11,13 +11,14 @@
           <img
             class="object-none my-5"
             :src="
-              url +
-              '/badge/repositories/' +
-              project.storage +
-              '/' +
-              project.repository +
-              '/' +
-              project.project
+              makeURL(
+                '/badge/repositories/' +
+                  project.storage +
+                  '/' +
+                  project.repository +
+                  '/' +
+                  project.project
+              )
             "
           />
         </div>
@@ -28,7 +29,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import { apiURL } from "@/http-common";
+import { makeURL } from "@/http-common";
 import { createProjectSnippet } from "@/api/repository/BadgeGen";
 
 export default defineComponent({
@@ -45,7 +46,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const url = apiURL;
     const snippets = createProjectSnippet(
       props.project.storage,
       props.project.repository,
@@ -53,7 +53,7 @@ export default defineComponent({
       props.project.version
     );
     const page = ref(snippets[0].name);
-    return { url, page, snippets };
+    return { makeURL, page, snippets };
   },
 
   methods: {

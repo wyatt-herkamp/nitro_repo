@@ -13,11 +13,12 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 
-import { apiURL } from "@/http-common";
+import { makeURL } from "@/http-common";
 import createRepositoryInfo from "@/api/maven/CodeGen";
+import CodeMenu from "@/components/common/code/CodeMenu.vue";
 
 export default defineComponent({
-  components: {},
+  components: { CodeMenu },
   props: {
     repository: {
       required: true,
@@ -25,16 +26,14 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const url = apiURL;
-    const repoURL =
-      url +
-      "/repositories/" +
-      props.repository.storage +
-      "/" +
-      props.repository.name;
-    const snippets = createRepositoryInfo(repoURL, props.repository.name);
+    const snippets = createRepositoryInfo(
+      makeURL(
+        `/repositories/${props.repository.storage}/${props.repository.name}`
+      ),
+      props.repository.name
+    );
     const page = ref(snippets[0].name);
-    return { url, page, snippets };
+    return { page, snippets };
   },
 
   methods: {

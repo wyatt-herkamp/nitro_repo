@@ -29,6 +29,7 @@ export default defineComponent({
     const value = ref({
       repository_type: "Hosted",
     });
+    emit("update:modelValue", value.value);
     watch(value.value, (value) => {
       emit("update:modelValue", value);
       console.log(props.modelValue);
