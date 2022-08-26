@@ -8,6 +8,14 @@
             <div class="ml-1 text-quaternary">Admin</div>
           </Switch>
         </div>
+        <div class="basis-1/2">
+          <button
+            @click="updatePermissions"
+            class="nitroButton bg-green-600 block float-right mt-10"
+          >
+            Update
+          </button>
+        </div>
       </div>
       <div class="settingBox" v-show="!admin">
         <h3 class="settingHeader">Normal Permissions</h3>
@@ -60,12 +68,19 @@
 import { computed, defineComponent, ref, watch } from "vue";
 import PermissionList from "./PermissionList.vue";
 import { UserPermissions } from "@/types/userTypes";
+import Switch from "@/components/common/forms/Switch.vue";
+import httpCommon from "@/http-common";
 
 export default defineComponent({
   props: {
     modelValue: {
       required: true,
       type: Object as () => UserPermissions,
+    },
+    userID: {
+      required: false,
+      type: Number,
+      default: 0,
     },
     disabled: {
       type: Boolean,
@@ -82,7 +97,31 @@ export default defineComponent({
     });
     return { admin, permissions };
   },
-  methods: {},
-  components: { PermissionList },
+  methods: {
+    async updatePermissions() {
+      if (this.disabled) {
+        console.log("disabled");
+        return;
+      }
+      await httpCommon.apiClient
+        .put(`api/admin/user/${this.userID}/permissions`, this.permissions)
+        .then((response) => {
+          if (response.status === 204) {
+            this.$notify({
+              type: "success",
+              text: "Permissions updated",
+            });
+          }
+        })
+        .catch((error) => {
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: error.response.data.message,
+          });
+        });
+    },
+  },
+  components: { Switch, PermissionList },
 });
 </script>

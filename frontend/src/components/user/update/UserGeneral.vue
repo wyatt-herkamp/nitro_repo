@@ -63,7 +63,11 @@
     </div>
   </div>
   <div v-else-if="tab === 'permissions'">
-    <Permissions v-model="user.permissions" />
+    <Permissions
+      v-model="user.permissions"
+      :userID="user.id"
+      :disabled="false"
+    />
   </div>
   <vue-final-modal
     v-model="deleteUser"
@@ -147,10 +151,57 @@ export default defineComponent({
         });
     },
     async onSettingSubmit() {
-      // TODO update user
+      await httpCommon.apiClient
+        .put(`api/admin/user/${this.user.id}/data`, {
+          name: this.user.name,
+          email: this.user.email,
+        })
+        .then(() => {
+          this.$notify({
+            type: "success",
+            title: "Success",
+            text: "User updated successfully",
+          });
+        })
+        .catch((err) => {
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: err.response.data,
+          });
+        });
     },
     async updatePassword() {
-      // TODO update password
+      if (!this.canSubmitPassword) {
+        this.$notify({
+          type: "warn",
+          title: "Error",
+          text: "Passwords do not match",
+        });
+        return;
+      }
+      await httpCommon.apiClient
+        .put(`api/admin/user/${this.user.id}/password`, {
+          password: this.password.password,
+        })
+        .then(() => {
+          this.$notify({
+            type: "success",
+            title: "Success",
+            text: "Password updated",
+          });
+        })
+        .catch((err) => {
+          this.$notify({
+            type: "error",
+            title: "Error",
+            text: err.response.data,
+          });
+        })
+        .finally(() => {
+          this.password.password = "";
+          this.password.confirm = "";
+        });
     },
   },
   components: { Permissions, Tab, Tabs },
