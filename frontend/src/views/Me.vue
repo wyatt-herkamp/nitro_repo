@@ -29,7 +29,7 @@
       <Permissions :disabled="true" v-model="user.permissions"></Permissions>
     </div>
     <div v-else-if="tab === 'api_keys'">
-        <MyAPIKeys />
+      <MyAPIKeys />
     </div>
   </div>
 </template>

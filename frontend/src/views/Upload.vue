@@ -25,9 +25,11 @@ export default defineComponent({
     const repositoryType = ref<string>("");
 
     httpCommon.apiClient
-      .get<{ repository_type: string }>(`api/repositories/${storage}/${repositoryName}`)
+      .get<{ repository_type: string }>(
+        `api/repositories/${storage}/${repositoryName}`
+      )
       .then((response) => {
-        console.log(response.data)
+        console.log(response.data);
         repositoryType.value = response.data.repository_type;
       })
       .catch((error) => {

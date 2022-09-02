@@ -105,7 +105,7 @@ export default defineComponent({
               type: "success",
             });
 
-            useRouter().push({
+            this.$router.push({
               name: "AdminRepoView",
               params: {
                 storage: storageName,
