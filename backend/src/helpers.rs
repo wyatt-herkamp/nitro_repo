@@ -57,13 +57,32 @@ macro_rules! take_repository {
         }
     };
 }
-
-macro_rules! read_check {
+macro_rules! read_check_web {
     ($auth:ident, $conn:expr, $config:expr) => {
         if $config.visibility == crate::repository::settings::Visibility::Private {
             let caller = $auth.get_user($conn).await??;
             if let Some(value) = caller.can_read_from(&$config)? {
                 return Err(value.into());
+            }
+        }
+    };
+}
+macro_rules! read_check {
+    ($auth:ident, $conn:expr, $config:expr) => {
+        if ($config).visibility == crate::repository::settings::Visibility::Private {
+            let caller = $auth.get_user($conn).await?;
+            match caller {
+                Ok(caller) => {
+                    if let Some(value) = caller.can_read_from(&$config)? {
+                        return Err(value.into());
+                    }
+                }
+                Err(_) => {
+                    return Ok(actix_web::HttpResponse::Unauthorized().append_header((
+                        "WWW-Authenticate",
+                        "Basic")
+                    ).finish().into());
+                }
             }
         }
     };
@@ -88,5 +107,6 @@ macro_rules! write_check {
 pub(crate) use get_repository;
 pub(crate) use get_storage;
 pub(crate) use read_check;
+pub(crate) use read_check_web;
 pub(crate) use take_repository;
 pub(crate) use write_check;

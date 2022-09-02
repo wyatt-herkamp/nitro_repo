@@ -28,7 +28,7 @@ pub async fn get_project(
     if !repository.supports_nitro() {
         return Ok(HttpResponse::BadRequest().finish());
     }
-    crate::helpers::read_check!(authentication, conn.as_ref(), repository.get_repository());
+    crate::helpers::read_check_web!(authentication, conn.as_ref(), repository.get_repository());
 
     let value = if let Some(version) = version {
         repository

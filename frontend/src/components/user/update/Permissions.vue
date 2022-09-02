@@ -8,7 +8,7 @@
             <div class="ml-1 text-quaternary">Admin</div>
           </Switch>
         </div>
-        <div class="basis-1/2">
+        <div v-show="!disabled" class="basis-1/2">
           <button
             @click="updatePermissions"
             class="nitroButton bg-green-600 block float-right mt-10"

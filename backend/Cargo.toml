@@ -42,7 +42,7 @@ chrono = "0.4"
 regex = "1.6.0"
 futures-util = "0.3.21"
 base64 = "0.13.0"
-tokio = { version = "1.20.0", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
 style-term = "1.0.0"
 mime_guess = "2.0.4"

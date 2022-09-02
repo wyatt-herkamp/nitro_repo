@@ -9,7 +9,7 @@
         placeholder="storage: public; repository: maven; groupID: me.kingtux"
         required
       />
-      <button type="submit" disabled hov title="Currently Not Implemented">
+      <button type="submit" disabled title="Currently Not Implemented">
         Search
       </button>
     </div>

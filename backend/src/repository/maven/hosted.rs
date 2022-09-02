@@ -1,4 +1,4 @@
-use crate::authentication::Authentication;
+use crate::authentication::{Authentication, NotAuthenticated};
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
@@ -26,7 +26,9 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use actix_web::HttpResponse;
 use crate::repository::settings::repository_page::RepositoryPage;
+use crate::system::user::database::UserSafeData;
 
 #[derive(Debug)]
 pub struct HostedMavenRepository<S: Storage> {
@@ -59,7 +61,7 @@ impl<S: Storage> Clone for HostedMavenRepository<S> {
             badge: self.badge.clone(),
             frontend: self.frontend.clone(),
             hosted: self.hosted.clone(),
-            repository_page: self.repository_page.clone()
+            repository_page: self.repository_page.clone(),
         }
     }
 }

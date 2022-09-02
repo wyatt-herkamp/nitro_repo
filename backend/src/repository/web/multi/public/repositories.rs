@@ -82,7 +82,7 @@ pub async fn get_repository(
     let (storage_name, repository_name) = path.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
     let repository = crate::helpers::get_repository!(storage, repository_name);
-    crate::helpers::read_check!(
+    crate::helpers::read_check_web!(
         authentication,
         database.as_ref(),
         repository.get_repository()
