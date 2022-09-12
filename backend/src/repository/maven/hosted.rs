@@ -151,8 +151,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec).map_err(|_| MavenError::PomError)?;
             let pom: Pom =
-                maven_rs::serde_xml_rs::from_str(&result).map_err(|_| MavenError::PomError)?;
-
+                maven_rs::quick_xml::de::from_str(result.as_str()).map_err(|_| MavenError::PomError)?;
             let project_folder = format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
             let version_folder = format!("{}/{}", &project_folder, &pom.version);
             if let Err(error) = self
