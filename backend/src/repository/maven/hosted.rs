@@ -26,6 +26,7 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use actix_files::NamedFile;
 use actix_web::HttpResponse;
 use crate::repository::settings::repository_page::RepositoryPage;
 use crate::system::user::database::UserSafeData;
@@ -171,6 +172,36 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
                 path
             ),
         ))
+    }
+    async fn handle_head(
+        &self,
+        path: &str,
+        http: &HeaderMap,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
+    ) -> Result<RepoResponse, actix_web::Error> {
+        crate::helpers::read_check!(authentication, conn, self.config);
+
+
+        match self
+            .storage
+            .get_file_as_response(&self.config, path)
+            .await
+            .map_err(InternalError::from)?
+        {
+            StorageFileResponse::List(list) => {
+                //TODO: Implement
+                Ok(RepoResponse::HttpResponse(HttpResponse::NoContent().finish()))
+            },
+            StorageFileResponse::NotFound => {
+                Ok(RepoResponse::HttpResponse(HttpResponse::NotFound().finish()))
+            },
+            StorageFileResponse::File(file) => {
+                let mut response = HttpResponse::Ok();
+                response.append_header(("Content-Length", file.metadata()?.len()));
+                Ok(RepoResponse::HttpResponse(response.finish()))
+            }
+        }
     }
 }
 
