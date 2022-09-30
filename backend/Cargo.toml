@@ -63,7 +63,7 @@ thiserror = "1"
 badge-maker = "0.3"
 
 # Installer
-clap = { version = "3.2.20", features = ["derive"], optional = true }
+clap = { version = "4.0.4", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
 # Cache
 comrak = "0.14"
