@@ -1,4 +1,3 @@
-use clap::SubCommand;
 use api::cli::{UtilCommand, UtilCommands};
 use api::cli::install::install_task;
 use clap::Parser;
