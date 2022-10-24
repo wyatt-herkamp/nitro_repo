@@ -26,7 +26,7 @@ actix-files = "0.6"
 # Partly Web
 handlebars = "4.3"
 # Database
-sea-orm = { version = "0.9", features = ["sqlx-mysql", "sqlx-sqlite", "runtime-actix-native-tls", "macros"] }
+sea-orm = { version = "0.10", features = ["sqlx-mysql", "sqlx-sqlite", "runtime-actix-native-tls", "macros"] }
 sqlx = "0.6"
 # Serde
 serde = { version = "1", features = ["derive"] }
