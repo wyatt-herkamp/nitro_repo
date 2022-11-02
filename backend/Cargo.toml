@@ -74,7 +74,7 @@ schemars = "0.8.10"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
-zip = { git="https://github.com/wyatt-herkamp/zip.git" }
+zip = { git="https://github.com/zip-rs/zip.git" }
 
 [build-dependencies]
 vergen = { version = "7.0.0" }
