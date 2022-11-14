@@ -66,7 +66,7 @@ badge-maker = "0.3"
 clap = { version = "4", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
 # Cache
-comrak = "0.14"
+comrak = "0.15"
 # Staging
 tempfile = "3.3.0"
 git2 = "0.15"
