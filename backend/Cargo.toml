@@ -26,7 +26,7 @@ actix-files = "0.6"
 # Partly Web
 handlebars = "4.3"
 # Database
-sea-orm = { version = "0.9", features = ["sqlx-mysql", "sqlx-sqlite", "runtime-actix-native-tls", "macros"] }
+sea-orm = { version = "0.10", features = ["sqlx-mysql", "sqlx-sqlite", "runtime-actix-native-tls", "macros"] }
 sqlx = "0.6"
 # Serde
 serde = { version = "1", features = ["derive"] }
@@ -66,7 +66,7 @@ badge-maker = "0.3"
 clap = { version = "4", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
 # Cache
-comrak = "0.14"
+comrak = "0.15"
 # Staging
 tempfile = "3.3.0"
 git2 = "0.15"

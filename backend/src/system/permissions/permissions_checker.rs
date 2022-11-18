@@ -25,7 +25,7 @@ impl Display for MissingPermission {
         let result = serde_json::to_string(&json!({
             "error": format!("Missing Permission {}", &self.0),
         }))
-            .map_err(|_| fmt::Error)?;
+        .map_err(|_| fmt::Error)?;
         write!(f, "{}", result)
     }
 }
@@ -85,11 +85,17 @@ impl<E: HasPermissions> CanIDo for E {
         self.permissions().can_i_admin()
     }
 
-    fn can_deploy_to(&self, repo: &RepositoryConfig) -> Result<Option<MissingPermission>, InternalError> {
+    fn can_deploy_to(
+        &self,
+        repo: &RepositoryConfig,
+    ) -> Result<Option<MissingPermission>, InternalError> {
         self.permissions().can_deploy_to(repo)
     }
 
-    fn can_read_from(&self, repo: &RepositoryConfig) -> Result<Option<MissingPermission>, InternalError> {
+    fn can_read_from(
+        &self,
+        repo: &RepositoryConfig,
+    ) -> Result<Option<MissingPermission>, InternalError> {
         self.permissions().can_read_from(repo)
     }
 }
@@ -189,5 +195,3 @@ impl CanIDo for UserPermissions {
         }
     }
 }
-
-

@@ -1,18 +1,18 @@
+use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::{CreateRepository, Repository, RepositoryType};
+use crate::repository::response::RepoResponse;
 use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::models::Storage;
+use crate::system::permissions::permissions_checker::CanIDo;
+use actix_web::http::header::HeaderMap;
+use actix_web::Error;
 use async_trait::async_trait;
+use bytes::Bytes;
 use schemars::JsonSchema;
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use actix_web::Error;
-use actix_web::http::header::HeaderMap;
-use bytes::Bytes;
-use sea_orm::DatabaseConnection;
-use crate::authentication::Authentication;
-use crate::repository::response::RepoResponse;
-use crate::system::permissions::permissions_checker::CanIDo;
 #[derive(Debug)]
 pub struct RawHandler<StorageType: Storage> {
     config: RepositoryConfig,
@@ -50,7 +50,13 @@ impl<StorageType: Storage> Repository<StorageType> for RawHandler<StorageType> {
         &self.storage
     }
 
-    async fn handle_get(&self, path: &str, _: &HeaderMap, conn: &DatabaseConnection, authentication: Authentication) -> Result<RepoResponse, Error> {
+    async fn handle_get(
+        &self,
+        path: &str,
+        _: &HeaderMap,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
+    ) -> Result<RepoResponse, Error> {
         crate::helpers::read_check!(authentication, conn, self.config);
 
         let response = self
@@ -60,7 +66,14 @@ impl<StorageType: Storage> Repository<StorageType> for RawHandler<StorageType> {
             .map_err(InternalError::from)?;
         Ok(RepoResponse::FileResponse(response))
     }
-    async fn handle_put(&self, path: &str, _: &HeaderMap, conn: &DatabaseConnection, authentication: Authentication, bytes: Bytes) -> Result<RepoResponse, Error> {
+    async fn handle_put(
+        &self,
+        path: &str,
+        _: &HeaderMap,
+        conn: &DatabaseConnection,
+        authentication: Authentication,
+        bytes: Bytes,
+    ) -> Result<RepoResponse, Error> {
         let _ = crate::helpers::write_check!(authentication, conn, self.config);
         let exists = self
             .storage
@@ -98,8 +111,8 @@ impl<S: Storage> CreateRepository<S> for RawHandler<S> {
         name: impl Into<String>,
         storage: Arc<S>,
     ) -> Result<(Self, Self::Config), Self::Error>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let repository_config = RepositoryConfig::new(
             name.into(),

@@ -26,9 +26,9 @@ use serde::{Deserialize, Serialize};
 use crate::system::user::database::UserSafeData;
 
 use crate::repository::maven::validate_policy;
+use crate::repository::settings::repository_page::RepositoryPage;
 use log::{error, info};
 use std::sync::Arc;
-use crate::repository::settings::repository_page::RepositoryPage;
 
 mod external;
 mod git;
@@ -82,7 +82,7 @@ pub enum StageSettings {
 
 #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 pub enum DeployRequirement {
-    Placeholder
+    Placeholder,
 }
 
 #[derive(Debug)]
@@ -91,7 +91,6 @@ pub struct StagingRepository<S: Storage> {
     pub storage: Arc<S>,
     pub stage_settings: MavenStagingConfig,
     pub repository_page: RepositoryPage,
-
 }
 crate::repository::settings::define_configs_on_handler!(
     StagingRepository<StorageType>,
@@ -136,7 +135,7 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                         if let Err(error) = git::stage_to_git(
                             username, password, url, branch, directory, storage, repository, user,
                         )
-                            .await
+                        .await
                         {
                             error!("Failed to stage to git. The rest of the stages do continue to matter. ");
                             error!("{}", error);
@@ -167,7 +166,7 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                         if let Err(error) = external::stage_to_external(
                             username, password, url, directory, storage, repository, user,
                         )
-                            .await
+                        .await
                         {
                             error!("Failed to stage to external. The rest of the stages do continue to matter. ");
                             error!("{}", error);

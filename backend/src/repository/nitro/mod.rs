@@ -105,9 +105,7 @@ impl Default for ProjectData {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum ProjectSource {
-    Git {
-        url: String,
-    }
+    Git { url: String },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

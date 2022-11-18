@@ -5,6 +5,7 @@ use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::{ready, Ready};
 
 use sea_orm::entity::prelude::*;
+use sea_orm::sea_query::ArrayType;
 use sea_orm::JsonValue;
 use serde::{Deserialize, Serialize};
 
@@ -54,6 +55,10 @@ impl sea_orm::sea_query::ValueType for TokenProperties {
 
     fn type_name() -> String {
         stringify!(AuthProperties).to_owned()
+    }
+
+    fn array_type() -> ArrayType {
+        ArrayType::Json
     }
 
     fn column_type() -> sea_orm::sea_query::ColumnType {

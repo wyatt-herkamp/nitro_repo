@@ -20,16 +20,16 @@ use crate::repository::settings::frontend::Frontend;
 use crate::repository::maven::error::MavenError;
 
 use crate::repository::maven::validate_policy;
+use crate::repository::settings::repository_page::RepositoryPage;
+use crate::system::user::database::UserSafeData;
+use actix_files::NamedFile;
+use actix_web::HttpResponse;
 use log::error;
 use maven_rs::pom::Pom;
 use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use actix_files::NamedFile;
-use actix_web::HttpResponse;
-use crate::repository::settings::repository_page::RepositoryPage;
-use crate::system::user::database::UserSafeData;
 
 #[derive(Debug)]
 pub struct HostedMavenRepository<S: Storage> {
@@ -39,7 +39,6 @@ pub struct HostedMavenRepository<S: Storage> {
     pub frontend: Frontend,
     pub hosted: MavenHosted,
     pub repository_page: RepositoryPage,
-
 }
 
 crate::repository::settings::define_configs_on_handler!(
@@ -151,8 +150,8 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         if path.ends_with(".pom") {
             let vec = bytes.as_ref().to_vec();
             let result = String::from_utf8(vec).map_err(|_| MavenError::PomError)?;
-            let pom: Pom =
-                maven_rs::quick_xml::de::from_str(result.as_str()).map_err(|_| MavenError::PomError)?;
+            let pom: Pom = maven_rs::quick_xml::de::from_str(result.as_str())
+                .map_err(|_| MavenError::PomError)?;
             let project_folder = format!("{}/{}", pom.group_id.replace('.', "/"), pom.artifact_id);
             let version_folder = format!("{}/{}", &project_folder, &pom.version);
             if let Err(error) = self
@@ -182,7 +181,6 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
     ) -> Result<RepoResponse, actix_web::Error> {
         crate::helpers::read_check!(authentication, conn, self.config);
 
-
         match self
             .storage
             .get_file_as_response(&self.config, path)
@@ -191,11 +189,13 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
         {
             StorageFileResponse::List(list) => {
                 //TODO: Implement
-                Ok(RepoResponse::HttpResponse(HttpResponse::NoContent().finish()))
-            },
-            StorageFileResponse::NotFound => {
-                Ok(RepoResponse::HttpResponse(HttpResponse::NotFound().finish()))
-            },
+                Ok(RepoResponse::HttpResponse(
+                    HttpResponse::NoContent().finish(),
+                ))
+            }
+            StorageFileResponse::NotFound => Ok(RepoResponse::HttpResponse(
+                HttpResponse::NotFound().finish(),
+            )),
             StorageFileResponse::File(file) => {
                 let mut response = HttpResponse::Ok();
                 response.append_header(("Content-Length", file.metadata()?.len()));

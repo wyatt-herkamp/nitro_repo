@@ -35,7 +35,6 @@ mod utils;
 pub struct NPMSettings {}
 
 impl RepositoryConfigType for NPMSettings {
-
     fn config_name() -> &'static str {
         "npm.json"
     }

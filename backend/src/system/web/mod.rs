@@ -13,5 +13,11 @@ pub fn user_routes(cfg: &mut ServiceConfig) {
 }
 
 pub fn init_user_manager_routes(cfg: &mut ServiceConfig) {
-    cfg.service(admin::list_users).service(admin::get_user).service(admin::create_user).service(admin::delete_user).service(admin::update_permissions).service(admin::update_data).service(admin::update_password);
+    cfg.service(admin::list_users)
+        .service(admin::get_user)
+        .service(admin::create_user)
+        .service(admin::delete_user)
+        .service(admin::update_permissions)
+        .service(admin::update_data)
+        .service(admin::update_password);
 }

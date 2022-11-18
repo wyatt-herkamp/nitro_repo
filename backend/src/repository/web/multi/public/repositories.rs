@@ -93,7 +93,7 @@ pub async fn get_repository(
         repository.get_repository(),
         generator.into_inner(),
     )
-        .await?;
+    .await?;
     let v = if repository.supports_nitro() {
         if let Some(v) = repository.get_repository_listing().await? {
             v.last_updated
@@ -125,7 +125,10 @@ pub async fn get_readme<StorageType: Storage>(
         if PageType::None == data.page_type {
             Ok(None)
         } else {
-            let cache_name = format!("{}/{}/.config.nitro_repo/README.html", repo.storage, repo.name);
+            let cache_name = format!(
+                "{}/{}/.config.nitro_repo/README.html",
+                repo.storage, repo.name
+            );
             if let Some(data) = generator.get_as_string(&cache_name).await? {
                 Ok(Some(data))
             } else {
@@ -135,7 +138,8 @@ pub async fn get_readme<StorageType: Storage>(
                 if let Some(data) = option {
                     let result = String::from_utf8(data.as_slice().to_vec())
                         .map_err(|e| InternalError::Error(e.to_string()))?;
-                    parse_to_html(result, PathBuf::from(cache_name), generator).map(|v| String::from_utf8(v).ok())
+                    parse_to_html(result, PathBuf::from(cache_name), generator)
+                        .map(|v| String::from_utf8(v).ok())
                 } else {
                     Ok(None)
                 }

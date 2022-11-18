@@ -43,7 +43,6 @@ pub async fn login(
 }
 
 #[get("/version")]
-pub async fn get_version(
-    data: NitroRepoData) -> HttpResponse {
+pub async fn get_version(data: NitroRepoData) -> HttpResponse {
     HttpResponse::Ok().json(&data.current_version)
 }

@@ -9,5 +9,4 @@ pub enum SimpleResponse {
     #[status_code(NOT_FOUND)]
     #[error("Not Found `{0}`")]
     BadRepositoryName(String),
-
 }

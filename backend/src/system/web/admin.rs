@@ -1,22 +1,22 @@
 use crate::authentication::Authentication;
 use crate::system::permissions::permissions_checker::CanIDo;
 use crate::system::user::UserModel;
-use actix_web::{get, post, delete, put, web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 
-use sea_orm::{ColumnTrait, DatabaseConnection, IntoActiveModel, QueryFilter};
-use sea_orm::ActiveValue::Set;
-use serde::{Deserialize, Serialize};
-use this_actix_error::ActixError;
-use thiserror::Error;
-use sea_orm::EntityTrait;
+use super::super::user::database::ActiveModel;
+use super::super::user::database::*;
 use crate::helpers::unwrap_or_not_found;
 use crate::system::hash;
 use crate::system::permissions::UserPermissions;
 use crate::system::user::database::UserSafeData;
 use crate::utils::get_current_time;
-use super::super::user::database::ActiveModel;
-use super::super::user::database::*;
 use sea_orm::ActiveModelTrait;
+use sea_orm::ActiveValue::Set;
+use sea_orm::EntityTrait;
+use sea_orm::{ColumnTrait, DatabaseConnection, IntoActiveModel, QueryFilter};
+use serde::{Deserialize, Serialize};
+use this_actix_error::ActixError;
+use thiserror::Error;
 
 // struct that derives Serialize and Deserialize contains the number of active storages, number of active repositories, and the number of active users.
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -82,14 +82,22 @@ pub async fn create_user(
     let user = auth.get_user(&database).await??;
     user.can_i_edit_users()?;
     let user = value.into_inner();
-    if Entity::find().filter(Column::Username.eq(user.username.as_str())).one(database.as_ref())
+    if Entity::find()
+        .filter(Column::Username.eq(user.username.as_str()))
+        .one(database.as_ref())
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?.is_some() {
+        .map_err(actix_web::error::ErrorInternalServerError)?
+        .is_some()
+    {
         return Err(NewUserResponse::UsernameAlreadyExists.into());
     }
-    if Entity::find().filter(Column::Email.eq(user.email.as_str())).one(database.as_ref())
+    if Entity::find()
+        .filter(Column::Email.eq(user.email.as_str()))
+        .one(database.as_ref())
         .await
-        .map_err(actix_web::error::ErrorInternalServerError)?.is_some() {
+        .map_err(actix_web::error::ErrorInternalServerError)?
+        .is_some()
+    {
         return Err(NewUserResponse::EmailAlreadyExists.into());
     }
     let user: ActiveModel = ActiveModel {
@@ -101,23 +109,32 @@ pub async fn create_user(
         permissions: Set(UserPermissions::default()),
         created: Set(get_current_time()),
     };
-    user.insert(database.as_ref()).await.map_err(actix_web::error::ErrorInternalServerError)?;
+    user.insert(database.as_ref())
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::Created().finish())
 }
 
 #[put("/user/{id}/permissions")]
-pub async fn update_permissions(auth: Authentication,
-                                database: web::Data<DatabaseConnection>,
-                                id: web::Path<i64>, permissions: web::Json<UserPermissions>) -> actix_web::Result<HttpResponse> {
+pub async fn update_permissions(
+    auth: Authentication,
+    database: web::Data<DatabaseConnection>,
+    id: web::Path<i64>,
+    permissions: web::Json<UserPermissions>,
+) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_users()?;
 
-    let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find().filter(Column::Id.eq(id.into_inner())).one(database.as_ref())
+    let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find()
+        .filter(Column::Id.eq(id.into_inner()))
+        .one(database.as_ref())
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?);
     let mut user: ActiveModel = user.into_active_model();
     user.permissions = Set(permissions.into_inner());
-    user.update(database.as_ref()).await.map_err(actix_web::error::ErrorInternalServerError)?;
+    user.update(database.as_ref())
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::NoContent().finish())
 }
 
@@ -127,18 +144,25 @@ pub struct UpdatePassword {
 }
 
 #[put("/user/{id}/password")]
-pub async fn update_password(auth: Authentication,
-                             database: web::Data<DatabaseConnection>,
-                             id: web::Path<i64>, password: web::Json<UpdatePassword>) -> actix_web::Result<HttpResponse> {
+pub async fn update_password(
+    auth: Authentication,
+    database: web::Data<DatabaseConnection>,
+    id: web::Path<i64>,
+    password: web::Json<UpdatePassword>,
+) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_users()?;
 
-    let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find().filter(Column::Id.eq(id.into_inner())).one(database.as_ref())
+    let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find()
+        .filter(Column::Id.eq(id.into_inner()))
+        .one(database.as_ref())
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?);
     let mut user: ActiveModel = user.into_active_model();
     user.password = Set(hash(&password.password)?);
-    user.update(database.as_ref()).await.map_err(actix_web::error::ErrorInternalServerError)?;
+    user.update(database.as_ref())
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::NoContent().finish())
 }
 
@@ -149,20 +173,27 @@ pub struct UpdateUser {
 }
 
 #[put("/user/{id}/data")]
-pub async fn update_data(auth: Authentication,
-                         database: web::Data<DatabaseConnection>,
-                         id: web::Path<i64>, data: web::Json<UpdateUser>) -> actix_web::Result<HttpResponse> {
+pub async fn update_data(
+    auth: Authentication,
+    database: web::Data<DatabaseConnection>,
+    id: web::Path<i64>,
+    data: web::Json<UpdateUser>,
+) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_users()?;
 
-    let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find().filter(Column::Id.eq(id.into_inner())).one(database.as_ref())
+    let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find()
+        .filter(Column::Id.eq(id.into_inner()))
+        .one(database.as_ref())
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?);
     let mut user: ActiveModel = user.into_active_model();
     let data = data.into_inner();
     user.name = Set(data.name);
     user.email = Set(data.email);
-    user.update(database.as_ref()).await.map_err(actix_web::error::ErrorInternalServerError)?;
+    user.update(database.as_ref())
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::NoContent().finish())
 }
 
@@ -174,9 +205,14 @@ pub async fn delete_user(
 ) -> actix_web::Result<HttpResponse> {
     let user = auth.get_user(&database).await??;
     user.can_i_edit_users()?;
-    let user: Model = unwrap_or_not_found!(Entity::find().filter(Column::Id.eq(id.into_inner())).one(database.as_ref()).await
+    let user: Model = unwrap_or_not_found!(Entity::find()
+        .filter(Column::Id.eq(id.into_inner()))
+        .one(database.as_ref())
+        .await
         .map_err(actix_web::error::ErrorInternalServerError)?);
-    Entity::delete(user.into_active_model()).exec(database.as_ref()).await
+    Entity::delete(user.into_active_model())
+        .exec(database.as_ref())
+        .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::Ok().finish())
 }

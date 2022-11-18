@@ -1,4 +1,5 @@
 use crate::system::permissions::UserPermissions;
+use sea_orm::sea_query::ArrayType;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveValue, DbErr, IntoActiveValue, JsonValue};
 
@@ -40,6 +41,10 @@ impl sea_orm::sea_query::ValueType for UserPermissions {
 
     fn type_name() -> String {
         stringify!(UserPermissions).to_owned()
+    }
+
+    fn array_type() -> ArrayType {
+        ArrayType::Json
     }
 
     fn column_type() -> sea_orm::sea_query::ColumnType {

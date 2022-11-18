@@ -41,7 +41,10 @@ async fn load_storages(
     Ok(values)
 }
 
-pub async fn save_storages(storages: Vec<StorageSaver>, storages_file: &PathBuf) -> Result<(), StorageError> {
+pub async fn save_storages(
+    storages: Vec<StorageSaver>,
+    storages_file: &PathBuf,
+) -> Result<(), StorageError> {
     let result = serde_json::to_string(&storages)?;
     let mut file = OpenOptions::new()
         .write(true)
@@ -73,7 +76,7 @@ impl MultiStorageController<DynamicStorage> {
         let mut controller = MultiStorageController {
             storages: Map::new(),
             unloaded_storages: result,
-            storage_file: storages_file
+            storage_file: storages_file,
         };
         controller.load_unloaded_storages().await?;
         Ok(controller)
@@ -146,7 +149,7 @@ impl MultiStorageController<DynamicStorage> {
                 StorageCreateError(error.to_string())
             })?;
         storages.push(storage.storage_config().clone());
-        save_storages(storages,&self.storage_file).await?;
+        save_storages(storages, &self.storage_file).await?;
 
         self.storages.insert(name, Arc::new(storage));
         Ok(())
@@ -185,7 +188,7 @@ impl MultiStorageController<DynamicStorage> {
         }
 
         storages.push(storage.storage_config().clone());
-        save_storages(storages,&self.storage_file).await?;
+        save_storages(storages, &self.storage_file).await?;
 
         self.storages.insert(name, storage);
         Ok(())
@@ -199,7 +202,7 @@ impl MultiStorageController<DynamicStorage> {
         let option = self.storages.remove(storage.as_ref()).ok_or_else(|| {
             StorageError::StorageDeleteError("Storage does not exist".to_string())
         })?;
-        save_storages(self.storage_savers().await,&self.storage_file).await?;
+        save_storages(self.storage_savers().await, &self.storage_file).await?;
 
         match purge_level {
             PurgeLevel::All => {

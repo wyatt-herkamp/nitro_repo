@@ -327,14 +327,7 @@ macro_rules! dynamic_repository_handler {
 use crate::repository::maven::MavenHandler;
 use crate::repository::npm::NPMHandler;
 use crate::repository::raw::RawHandler;
-dynamic_repository_handler!(
-    Maven,
-    MavenHandler,
-    NPM,
-    NPMHandler,
-    Raw,
-    RawHandler
-);
+dynamic_repository_handler!(Maven, MavenHandler, NPM, NPMHandler, Raw, RawHandler);
 
 macro_rules! repository_config_group {
     ($handler:ident,$config:path,$($repository:ident),*) => {

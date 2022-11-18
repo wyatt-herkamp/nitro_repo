@@ -11,6 +11,8 @@ use tokio::sync::RwLock;
 use crate::settings::models::{GeneralSettings, Settings};
 
 pub mod authentication;
+#[cfg(feature = "clap")]
+pub mod cli;
 pub mod constants;
 pub mod error;
 pub mod frontend;
@@ -22,8 +24,6 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod utils;
-#[cfg(feature = "clap")]
-pub mod cli;
 
 #[derive(Debug)]
 pub struct NitroRepo {

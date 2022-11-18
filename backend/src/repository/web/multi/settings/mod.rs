@@ -80,9 +80,14 @@ pub(crate) use define_repository_config_set;
 macro_rules! define_init {
     ($fun_name:ident, $config_name:ident, $get:ident,$put:ident) => {
         pub fn $fun_name(cfg: &mut actix_web::web::ServiceConfig) {
-            cfg.service(actix_web::web::resource([concat!("/repositories/{storage}/{repository}/config/", stringify!($config_name))])
+            cfg.service(
+                actix_web::web::resource([concat!(
+                    "/repositories/{storage}/{repository}/config/",
+                    stringify!($config_name)
+                )])
                 .route(actix_web::web::get().to($get))
-                .route(actix_web::web::put().to($put)));
+                .route(actix_web::web::put().to($put)),
+            );
         }
     };
 }

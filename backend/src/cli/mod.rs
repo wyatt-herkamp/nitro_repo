@@ -1,5 +1,5 @@
-use clap::{Parser, Subcommand};
 use crate::cli;
+use clap::{Parser, Subcommand};
 
 pub mod install;
 

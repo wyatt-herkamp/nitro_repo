@@ -5,8 +5,8 @@ use crate::repository::settings::RepositoryConfig;
 use crate::repository::settings::Visibility;
 use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
 
-pub mod permissions_checker;
 pub mod orm;
+pub mod permissions_checker;
 
 #[derive(Error, Debug)]
 pub enum PermissionError {

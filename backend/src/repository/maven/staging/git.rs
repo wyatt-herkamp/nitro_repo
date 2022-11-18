@@ -4,11 +4,11 @@ use crate::system::user::database::UserSafeData;
 use git2::PushOptions;
 use log::{error, trace};
 use maven_rs::pom::Pom;
+use maven_rs::quick_xml;
+use std::io::BufReader;
 use std::path::Path;
 use std::sync::Arc;
 use std::{fs, io};
-use std::io::BufReader;
-use maven_rs::quick_xml;
 use tempfile::tempdir;
 use thiserror::Error;
 
@@ -73,8 +73,9 @@ pub async fn stage_to_git(
     for entry in fs::read_dir(working_directory).expect("Failed to read dir") {
         let entry = entry.expect("Failed to get entry");
         if entry.file_name().to_str().unwrap().ends_with("pom") {
-            let pom: Result<Pom, quick_xml::de::DeError> =
-                quick_xml::de::from_reader(BufReader::new(fs::OpenOptions::new().read(true).open(entry.path())?));
+            let pom: Result<Pom, quick_xml::de::DeError> = quick_xml::de::from_reader(
+                BufReader::new(fs::OpenOptions::new().read(true).open(entry.path())?),
+            );
             match pom {
                 Ok(ok) => {
                     commit_name = format!("{} {} - Nitro Repo", ok.artifact_id, ok.version);

@@ -18,6 +18,7 @@ use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
 use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 
+use crate::repository::settings::repository_page::RepositoryPage;
 use actix_web::http::StatusCode;
 use futures::channel::mpsc::unbounded;
 use futures_util::stream::StreamExt;
@@ -27,7 +28,6 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use crate::repository::settings::repository_page::RepositoryPage;
 
 #[derive(Debug)]
 pub struct ProxyMavenRepository<S: Storage> {
@@ -130,8 +130,8 @@ impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
                                 }
                             });
                             if let Err(error) =
-                            self.storage
-                                .write_file_stream(&self.config, file_client, path)
+                                self.storage
+                                    .write_file_stream(&self.config, file_client, path)
                             {
                                 error!("Unable to save data: {}", error);
                             }

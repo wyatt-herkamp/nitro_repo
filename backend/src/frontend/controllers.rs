@@ -1,11 +1,11 @@
 use std::borrow::Cow;
-use std::fs::{create_dir_all, File, read_to_string};
+use std::fs::{create_dir_all, read_to_string, File};
 use std::path::{Path, PathBuf};
 
 use actix_files::Files;
 use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::web::Data;
-use actix_web::{web, HttpResponse, HttpRequest};
+use actix_web::{web, HttpRequest, HttpResponse};
 use handlebars::Handlebars;
 use log::{debug, error, info, trace, warn};
 use serde_json::json;
@@ -22,7 +22,7 @@ pub fn init(cfg: &mut web::ServiceConfig) {
             create_dir_all(zip_to).unwrap();
             let zip_path = Path::new(&frontend_string);
             if let Err(error) = extract(zip_to, zip_path) {
-                error!("Error extracting frontend: {}",error);
+                error!("Error extracting frontend: {}", error);
             }
             zip_to.to_path_buf()
         } else {
@@ -78,7 +78,8 @@ pub async fn frontend_handler(
         data.base_url = value.as_str().into();
     } else {
         let host = if let Some(v) = req.headers().get("host") {
-            v.to_str().map_err(|_| ErrorBadRequest("Invalid Host Header"))?
+            v.to_str()
+                .map_err(|_| ErrorBadRequest("Invalid Host Header"))?
         } else {
             return Err(ErrorBadRequest("No Host Header Found"));
         };
@@ -92,11 +93,7 @@ pub async fn frontend_handler(
     return Ok(HttpResponse::Ok().content_type("text/html").body(content));
 }
 
-fn extract(
-    extract_to: impl AsRef<Path>,
-    archive: impl AsRef<Path>,
-) -> Result<(), std::io::Error>
-{
+fn extract(extract_to: impl AsRef<Path>, archive: impl AsRef<Path>) -> Result<(), std::io::Error> {
     let file = File::open(&archive)?;
 
     let mut archive = zip::ZipArchive::new(file)?;
@@ -106,9 +103,9 @@ fn extract(
         let outpath = match file.enclosed_name() {
             Some(path) => {
                 let components = path.components();
-                let buf = components.skip(1).fold(PathBuf::default(), |buf, component| {
-                    buf.join(component)
-                });
+                let buf = components
+                    .skip(1)
+                    .fold(PathBuf::default(), |buf, component| buf.join(component));
                 extract_to.as_ref().join(buf)
             }
             None => continue,

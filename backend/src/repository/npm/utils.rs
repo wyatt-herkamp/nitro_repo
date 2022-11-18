@@ -13,7 +13,7 @@ use crate::storage::models::Storage;
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
 
 pub fn format_time(time: i64) -> String {
-    let naive = NaiveDateTime::from_timestamp(time, 0);
+    let naive = NaiveDateTime::from_timestamp_opt(time, 0).unwrap();
     let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
     date_time.format(NPM_TIME_FORMAT).to_string()
 }
@@ -22,7 +22,7 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     fn from(value: NitroRepoVersions) -> Self {
         let mut map = HashMap::new();
         for x in value.versions {
-            let naive = NaiveDateTime::from_timestamp(x.time, 0);
+            let naive = NaiveDateTime::from_timestamp_opt(x.time, 0).unwrap();
             let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
             let format = date_time.format(NPM_TIME_FORMAT).to_string();
             map.insert(x.version, format);

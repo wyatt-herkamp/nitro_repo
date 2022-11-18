@@ -23,7 +23,7 @@ pub enum Visibility {
 }
 
 #[derive(
-Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema, strum_macros::Display,
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, JsonSchema, strum_macros::Display,
 )]
 pub enum Policy {
     #[default]
@@ -233,7 +233,7 @@ macro_rules! define_configs_on_handler {
     };
 }
 
+use crate::utils::get_current_time;
 pub(crate) use define_config_handler;
 pub(crate) use define_config_layout;
 pub(crate) use define_configs_on_handler;
-use crate::utils::get_current_time;

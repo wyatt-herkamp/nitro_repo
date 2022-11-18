@@ -28,7 +28,9 @@ use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileRes
 
 use crate::storage::models::{Storage, StorageStatus};
 use crate::storage::path::{StoragePath, SystemStorageFile};
-use crate::storage::{DynamicStorage, StorageConfig, StorageSaver, STORAGE_CONFIG, REPOSITORY_FOLDER};
+use crate::storage::{
+    DynamicStorage, StorageConfig, StorageSaver, REPOSITORY_FOLDER, STORAGE_CONFIG,
+};
 
 #[derive(Debug)]
 pub struct LocalStorage {
@@ -76,8 +78,12 @@ impl LocalStorage {
         let result: Vec<String> = serde_json::from_str(&string)?;
         let mut values = HashMap::new();
         for x in result {
-            let buf = path.join(x.as_str()).join(REPOSITORY_FOLDER).join(RepositoryConfig::config_name());
-            let result: Result<RepositoryConfig, _> = serde_json::from_reader(std::fs::OpenOptions::new().read(true).open(buf)?);
+            let buf = path
+                .join(x.as_str())
+                .join(REPOSITORY_FOLDER)
+                .join(RepositoryConfig::config_name());
+            let result: Result<RepositoryConfig, _> =
+                serde_json::from_reader(std::fs::OpenOptions::new().read(true).open(buf)?);
             match result {
                 Ok(result) => {
                     values.insert(x, result);
@@ -97,11 +103,7 @@ impl LocalStorage {
             .write(true)
             .open(conf)
             .await?;
-        let values: Vec<String> = self
-            .repositories
-            .iter()
-            .map(|v| v.key().clone())
-            .collect();
+        let values: Vec<String> = self.repositories.iter().map(|v| v.key().clone()).collect();
         let string = serde_json::to_string_pretty(&values)?;
         file.write_all(string.as_bytes()).await?;
         Ok(())
@@ -121,8 +123,8 @@ impl Storage for LocalStorage {
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
     async fn create_new(mut config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let mut local_config = unsafe_into_config!(config).clone();
         if local_config.location.contains("{local_storage_folder}") {
@@ -152,8 +154,8 @@ impl Storage for LocalStorage {
     }
 
     async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let v = unsafe_into_config!(config).clone();
         let buf = PathBuf::from_str(v.location.as_ref()).unwrap();
@@ -168,9 +170,7 @@ impl Storage for LocalStorage {
     }
 
     async fn get_repos_to_load(&self) -> Result<HashMap<String, RepositoryConfig>, StorageError> {
-        let repositories =
-            Self::load_repositories(PathBuf::from(&self.config.location))
-                .await?;
+        let repositories = Self::load_repositories(PathBuf::from(&self.config.location)).await?;
         Ok(repositories)
     }
 
@@ -213,7 +213,11 @@ impl Storage for LocalStorage {
         if !config_dir.exists() {
             create_dir_all(&config_dir).await?;
         }
-        let mut buf = OpenOptions::new().create(true).write(true).open(config_dir.join(RepositoryConfig::config_name())).await?;
+        let mut buf = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .open(config_dir.join(RepositoryConfig::config_name()))
+            .await?;
         let result = serde_json::to_string_pretty(repository.get_repository())?;
         buf.write_all(result.as_bytes()).await?;
         drop(buf);
@@ -309,7 +313,7 @@ impl Storage for LocalStorage {
         Ok(exists)
     }
 
-    fn write_file_stream<S: Stream<Item=Bytes> + Unpin + Send + Sync + 'static>(
+    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
         &self,
         repository: &RepositoryConfig,
         s: S,

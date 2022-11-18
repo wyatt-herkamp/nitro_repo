@@ -15,7 +15,6 @@ pub struct BadgeSettings {
 }
 
 impl RepositoryConfigType for BadgeSettings {
-
     fn config_name() -> &'static str {
         "badge.json"
     }

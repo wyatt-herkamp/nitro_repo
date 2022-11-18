@@ -43,7 +43,7 @@ impl SessionManagerType for SessionManager {
             SessionManager::BasicSessionManager(basic) => basic
                 .delete_session(token)
                 .await
-                .map_err(|_| SessionError::BasicError)
+                .map_err(|_| SessionError::BasicError),
         };
     }
 

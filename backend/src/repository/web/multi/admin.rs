@@ -30,7 +30,7 @@ pub async fn get_repositories(
     let user = auth.get_user(&database).await??;
     user.can_i_edit_repos()?;
     let storage = storage_name.into_inner();
-    let storage = crate::helpers::get_storage!(storage_handler,storage);
+    let storage = crate::helpers::get_storage!(storage_handler, storage);
 
     Ok(HttpResponse::Ok().json(storage.get_repository_list().map_err(InternalError::from)?))
 }
@@ -203,4 +203,11 @@ macro_rules! update_repository_core_prop {
         }
     };
 }
-update_repository_core_prop!(visibility, Visibility, active, bool, require_token_over_basic,bool);
+update_repository_core_prop!(
+    visibility,
+    Visibility,
+    active,
+    bool,
+    require_token_over_basic,
+    bool
+);

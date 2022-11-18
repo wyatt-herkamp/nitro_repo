@@ -51,7 +51,13 @@ use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::repository_page::RepositoryPage;
 use crate::system::user::database::UserSafeData;
 use crate::utils::get_current_time;
-crate::repository::nitro::dynamic::nitro_repo_handler!(MavenHandler, Hosted, HostedMavenRepository, Proxy, ProxyMavenRepository);
+crate::repository::nitro::dynamic::nitro_repo_handler!(
+    MavenHandler,
+    Hosted,
+    HostedMavenRepository,
+    Proxy,
+    ProxyMavenRepository
+);
 crate::repository::staging::dynamic::gen_dynamic_stage!(MavenHandler, Staging);
 
 impl<S: Storage> MavenHandler<S> {
@@ -85,7 +91,7 @@ impl<S: Storage> MavenHandler<S> {
                 config: repository,
                 storage,
             }
-                .into()),
+            .into()),
             MavenType::Proxy => Ok(ProxyMavenRepository {
                 proxy: repository
                     .get_config::<MavenProxySettings, S>(storage.as_ref())
@@ -106,9 +112,8 @@ impl<S: Storage> MavenHandler<S> {
                 config: repository,
 
                 storage,
-
             }
-                .into()),
+            .into()),
             MavenType::Staging => {
                 let settings = repository
                     .get_config::<MavenStagingConfig, S>(storage.as_ref())
@@ -129,7 +134,13 @@ impl<S: Storage> MavenHandler<S> {
     }
 }
 
-crate::repository::handler::repository_config_group!(MavenHandler, RepositoryPage, Staging,Proxy,Hosted);
+crate::repository::handler::repository_config_group!(
+    MavenHandler,
+    RepositoryPage,
+    Staging,
+    Proxy,
+    Hosted
+);
 
 impl From<Pom> for VersionData {
     fn from(pom: Pom) -> Self {
@@ -138,7 +149,7 @@ impl From<Pom> for VersionData {
                 if ty.starts_with("scm::git:") {
                     let string = ty.replace("scm::git:", "");
                     Some(ProjectSource::Git {
-                        url: string.to_string()
+                        url: string.to_string(),
                     })
                 } else {
                     debug!("Unknown scm type: {}", ty);
@@ -185,8 +196,8 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
         name: impl Into<String>,
         storage: Arc<S>,
     ) -> Result<(Self, MavenSettings), Self::Error>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let repository_config = RepositoryConfig {
             name: name.into(),

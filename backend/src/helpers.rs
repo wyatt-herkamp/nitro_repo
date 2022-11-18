@@ -18,7 +18,10 @@ macro_rules! get_storage {
         {
             value
         } else {
-            return Err(crate::error::simple_response::SimpleResponse::BadStorageName($storage_name.into()).into());
+            return Err(
+                crate::error::simple_response::SimpleResponse::BadStorageName($storage_name.into())
+                    .into(),
+            );
         }
     };
 }
@@ -30,7 +33,12 @@ macro_rules! get_repository {
         {
             value
         } else {
-            return Err(crate::error::simple_response::SimpleResponse::BadRepositoryName($repository.into()).into());
+            return Err(
+                crate::error::simple_response::SimpleResponse::BadRepositoryName(
+                    $repository.into(),
+                )
+                .into(),
+            );
         }
     };
 }
@@ -78,10 +86,10 @@ macro_rules! read_check {
                     }
                 }
                 Err(_) => {
-                    return Ok(actix_web::HttpResponse::Unauthorized().append_header((
-                        "WWW-Authenticate",
-                        "Basic")
-                    ).finish().into());
+                    return Ok(actix_web::HttpResponse::Unauthorized()
+                        .append_header(("WWW-Authenticate", "Basic"))
+                        .finish()
+                        .into());
                 }
             }
         }

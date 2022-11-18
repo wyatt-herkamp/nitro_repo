@@ -44,11 +44,12 @@ async fn main() -> std::io::Result<()> {
     let init_settings: GeneralSettings =
         toml::from_str(&read_to_string(&main_config).await?).map_err(convert_error)?;
     let version = Version::new(init_settings.internal.version.clone());
-    if init_settings.internal.version.major != version.cargo_version.major && init_settings.internal.version.minor != version.cargo_version.minor {
+    if init_settings.internal.version.major != version.cargo_version.major
+        && init_settings.internal.version.minor != version.cargo_version.minor
+    {
         eprintln!(
             "Version mismatch. Expected {:?} but found {:?}",
-            version.cargo_version,
-            init_settings.internal.version
+            version.cargo_version, init_settings.internal.version
         );
         exit(1)
     }
@@ -57,11 +58,16 @@ async fn main() -> std::io::Result<()> {
     set_var("LOG_LOCATION", &init_settings.application.log);
     load_logger(&init_settings.application.mode);
 
-
     set_var("FRONTEND", &init_settings.application.frontend);
     trace!("Frontend {:?}", init_settings.application.frontend);
-    set_var("STORAGE_LOCATION", &init_settings.application.storage_location);
-    trace!("Storage Location {:?}", init_settings.application.storage_location);
+    set_var(
+        "STORAGE_LOCATION",
+        &init_settings.application.storage_location,
+    );
+    trace!(
+        "Storage Location {:?}",
+        init_settings.application.storage_location
+    );
 
     info!("Initializing Database Connection");
     let connection = sea_orm::Database::connect(init_settings.database.clone())
@@ -72,12 +78,14 @@ async fn main() -> std::io::Result<()> {
     info!("Initializing State");
     let settings = load_configs(configs).await.map_err(convert_error)?;
 
-    let storages = init_settings.application.storage_location.join("storages.json");
+    let storages = init_settings
+        .application
+        .storage_location
+        .join("storages.json");
     trace!("Loading Storages from {storages:?}");
     let storages = MultiStorageController::init(storages)
         .await
         .map_err(convert_error)?;
-
 
     let nitro_repo = NitroRepo {
         settings: RwLock::new(settings),
@@ -161,13 +169,13 @@ async fn main() -> std::io::Result<()> {
                             .configure(system::web::init_user_manager_routes)
                             .configure(storage::multi::web::init_admin_routes)
                             .configure(repository::web::multi::init_admin),
-                    )
+                    ),
             )
             .service(
                 web::scope("")
                     .wrap(HandleSession(false))
-                    .configure(repository::web::multi::init_repository_handlers).configure(frontend::init)
-                ,
+                    .configure(repository::web::multi::init_repository_handlers)
+                    .configure(frontend::init),
             )
     });
 
