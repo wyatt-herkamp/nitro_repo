@@ -1,4 +1,4 @@
- use crate::error::internal_error::InternalError;
+use crate::error::internal_error::InternalError;
 use crate::generators::GeneratorCache;
 use comrak::{parse_document, Arena, ComrakExtensionOptions, ComrakOptions, ComrakRenderOptions};
 use log::error;
