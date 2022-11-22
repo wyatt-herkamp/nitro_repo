@@ -11,19 +11,21 @@ use actix_web::{HttpRequest, HttpResponse, Responder};
 use log::{as_error, error, trace};
 use serde::Serialize;
 use tokio::fs::metadata;
+use typeshare::typeshare;
 
 use crate::storage::error::StorageError;
 
 ///Storage Files are just a data container holding the file name, directory relative to the root of nitro_repo and if its a directory
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize,Clone, Debug)]
+#[typeshare]
 pub struct StorageFile {
     pub name: String,
     pub full_path: String,
     pub mime: String,
     pub directory: bool,
-    pub file_size: u64,
-    pub modified: u64,
-    pub created: u64,
+    pub file_size: u32,
+    pub modified: u32,
+    pub created: u32,
 }
 
 impl StorageFile {
@@ -66,9 +68,9 @@ impl StorageFile {
             full_path: relative_path.into(),
             mime,
             directory,
-            file_size,
-            modified,
-            created,
+            file_size: file_size as u32,
+            modified: modified as u32,
+            created: created as u32,
         };
         Ok(file)
     }
@@ -94,9 +96,9 @@ impl StorageFile {
             full_path: relative_path.into(),
             mime,
             directory,
-            file_size,
-            modified,
-            created,
+            file_size: file_size as u32,
+            modified: modified as u32,
+            created: created as u32,
         };
         Ok(file)
     }

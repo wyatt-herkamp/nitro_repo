@@ -264,7 +264,7 @@ impl MultiStorageController<DynamicStorage> {
                 directory: true,
                 file_size: 0,
                 modified: 0,
-                created: create as u64,
+                created: create as u32,
             });
         }
         Ok(files)
