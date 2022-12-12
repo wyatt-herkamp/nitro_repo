@@ -6,8 +6,8 @@
         <h6 class="text-sm text-quaternary/50">
           Login to your Nitro Repo Account
         </h6>
-      </div></template
-    >
+      </div>
+    </template>
     <template v-slot:content><LoginComp @login="login" /> </template>
   </NitroModal>
 </template>

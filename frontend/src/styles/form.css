@@ -105,7 +105,7 @@
   @apply text-quaternary;
   @apply font-bold;
   @apply w-1/4;
-
+  @apply float-right;
 }
 .nitroForm {
   @apply appearance-none;

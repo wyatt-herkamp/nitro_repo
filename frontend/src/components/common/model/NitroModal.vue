@@ -6,15 +6,10 @@
   >
     <div class="modal">
       <p class="header"><slot name="header"> </slot></p>
-      <button class="xButton" @click="handleChange()">🗙</button>
-
       <slot name="content"></slot>
     </div>
   </vue-final-modal>
 </template>
-<style scoped>
-
-</style>
 <script lang="ts">
 import { defineComponent, onMounted, ref, watch } from "vue";
 

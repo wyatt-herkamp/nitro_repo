@@ -24,7 +24,7 @@
         />
       </div>
       <div class="formGroup flex flex-row-reverse">
-        <button class="loginButton">Sign in</button>
+        <button class="nitroButton p-2 m-0">Sign in</button>
       </div>
     </form>
   </div>
@@ -65,9 +65,3 @@ export default defineComponent({
   },
 });
 </script>
-<style>
-.loginButton:hover {
-  @apply bg-slate-900;
-  transition: background-color 0.5s;
-}
-</style>

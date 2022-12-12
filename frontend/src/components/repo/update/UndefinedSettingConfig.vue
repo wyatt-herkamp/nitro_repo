@@ -14,7 +14,7 @@ import { defineComponent, ref } from "vue";
 import httpCommon from "@/http-common";
 import JsonEditorVue from "json-editor-vue";
 import "vanilla-jsoneditor/themes/jse-theme-dark.css";
-import { createAjvValidator, JSONData } from "vanilla-jsoneditor";
+import { createAjvValidator, JSONValue } from "vanilla-jsoneditor";
 
 export default defineComponent({
   name: "UndefinedSettingConfig",
@@ -31,13 +31,15 @@ export default defineComponent({
       required: true,
     },
     schema: {
-      type: Object as () => JSONData,
+      type: Object as () => JSONValue,
       required: true,
     },
   },
   setup(props) {
     const settings = ref<unknown | undefined>(undefined);
-    const validator = createAjvValidator(props.schema);
+    const validator = createAjvValidator({
+      schema: props.schema,
+    });
     httpCommon.apiClient
       .get(
         `api/admin/repositories/${props.repository.storage}/${props.repository.name}/config/${props.settingName}`
