@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use chrono::Local;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -54,7 +55,7 @@ impl Into<VersionData> for Version {
             source: None,
             licence: None,
             version: self.version,
-            created: get_current_time(),
+            created: Local::now().into(),
         }
     }
 }

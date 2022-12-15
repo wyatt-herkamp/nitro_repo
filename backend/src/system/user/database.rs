@@ -15,7 +15,7 @@ pub struct Model {
     pub password: String,
     #[sea_orm(column_type = "Json")]
     pub permissions: UserPermissions,
-    pub created: i64,
+    pub created: DateTimeWithTimeZone,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, DeriveIntoActiveModel)]
@@ -32,7 +32,7 @@ pub struct UserSafeData {
     pub email: String,
     #[sea_orm(column_type = "Json")]
     pub permissions: UserPermissions,
-    pub created: i64,
+    pub created: DateTimeWithTimeZone,
 }
 impl From<Model> for UserSafeData {
     fn from(v: Model) -> Self {

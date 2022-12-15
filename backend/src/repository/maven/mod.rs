@@ -5,6 +5,7 @@ use actix_web::http::header::HeaderMap;
 use actix_web::web::Bytes;
 use actix_web::Error;
 use async_trait::async_trait;
+use chrono::Local;
 use log::debug;
 use maven_rs::pom::Pom;
 use sea_orm::DatabaseConnection;
@@ -165,7 +166,7 @@ impl From<Pom> for VersionData {
             source,
             licence: None,
             version: pom.version,
-            created: get_current_time(),
+            created: Local::now().into(),
         }
     }
 }

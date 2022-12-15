@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
 use log::warn;
 
 use crate::error::internal_error::InternalError;
@@ -17,7 +17,9 @@ pub fn format_time(time: i64) -> String {
     let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
     date_time.format(NPM_TIME_FORMAT).to_string()
 }
-
+pub fn format_time_chrono(time: DateTime<FixedOffset>)->String{
+    time.format(NPM_TIME_FORMAT).to_string()
+}
 impl From<NitroRepoVersions> for HashMap<String, String> {
     fn from(value: NitroRepoVersions) -> Self {
         let mut map = HashMap::new();
@@ -38,8 +40,8 @@ pub async fn get_version_data<StorageType: Storage>(
     project: &ProjectData,
 ) -> Result<(NPMTimes, DistTags, NPMVersions), InternalError> {
     let mut times = NPMTimes {
-        created: format_time(project.created),
-        modified: format_time(project.updated),
+        created: format_time_chrono(project.created),
+        modified: format_time_chrono(project.updated),
         times: Default::default(),
     };
     let dist_tags = DistTags {

@@ -1,6 +1,7 @@
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use chrono::Local;
 
 use log::debug;
 
@@ -53,10 +54,10 @@ pub async fn update_project_in_repositories<StorageType: Storage>(
     } else {
         RepositoryListing {
             projects: vec![],
-            last_updated: get_current_time(),
+            last_updated: Local::now().into(),
         }
     };
-    repo_listing.last_updated = get_current_time();
+    repo_listing.last_updated = Local::now().into();
     repo_listing.add_value(project);
     let string = serde_json::to_string_pretty(&repo_listing)?;
     storage

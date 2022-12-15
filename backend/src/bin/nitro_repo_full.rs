@@ -30,9 +30,13 @@ use tokio::sync::RwLock;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let current_dir = current_dir()?;
-    let configs = current_dir.join("cfg");
-    let main_config = current_dir.join("nitro_repo.toml");
+    let config_dir = std::env::var("NITRO_CONFIG_DIR").map(|x|{
+        PathBuf::from(x)
+    }).unwrap_or_else(|_|{
+        current_dir().unwrap()
+    });
+    let configs = config_dir.join("cfg");
+    let main_config = config_dir.join("nitro_repo.toml");
     if !main_config.exists() {
         eprintln!(
             "Config not found. Should be at {:?}",

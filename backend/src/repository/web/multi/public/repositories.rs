@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use actix_web::{get, web, HttpResponse};
 
 use log::warn;
@@ -5,6 +6,7 @@ use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
+use chrono::{DateTime, FixedOffset, Local};
 
 use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
@@ -68,7 +70,7 @@ pub struct RepositoryPageResponse<'v> {
     pub name: &'v str,
     pub repository_type: &'v RepositoryType,
     pub page_content: Option<String>,
-    pub last_updated: i64,
+    pub last_updated:  DateTime<FixedOffset>,
 }
 
 #[get("repositories/{storage_name}/{repository_name}")]
@@ -98,10 +100,10 @@ pub async fn get_repository(
         if let Some(v) = repository.get_repository_listing().await? {
             v.last_updated
         } else {
-            0
+            Local::now().into()
         }
     } else {
-        0
+        Local::now().into()
     };
     let value = RepositoryPageResponse {
         name: repository.get_repository().name.as_str(),

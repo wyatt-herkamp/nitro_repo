@@ -46,16 +46,27 @@ impl Default for Internal {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "type", content = "settings")]
 pub enum Database {
+    #[cfg(feature="mysql")]
     Mysql(MysqlSettings),
+    #[cfg(feature="sqlite")]
     Sqlite(SqliteSettings),
+    #[cfg(feature="postgres")]
+    Postgres(PostgresSettings),
 }
 
 #[allow(clippy::from_over_into)]
 impl Into<sea_orm::ConnectOptions> for Database {
     fn into(self) -> ConnectOptions {
         match self {
+            #[cfg(feature="mysql")]
             Database::Mysql(mysql) => ConnectOptions::new(mysql.to_string()),
+            #[cfg(feature="sqlite")]
             Database::Sqlite(database) => ConnectOptions::new(database.to_string()),
+            #[cfg(feature="postgres")]
+            Database::Postgres(postgres) => {
+                ConnectOptions::new(postgres.to_string())
+            }
+
         }
     }
 }
@@ -79,7 +90,22 @@ pub struct MysqlSettings {
     pub host: String,
     pub database: String,
 }
-
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PostgresSettings {
+    pub user: String,
+    pub password: String,
+    pub host: String,
+    pub database: String,
+}
+impl Display for PostgresSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "postgres://{}:{}@{}/{}",
+            self.user, self.password, self.host, self.database
+        )
+    }
+}
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SqliteSettings {
     pub database_file: PathBuf,

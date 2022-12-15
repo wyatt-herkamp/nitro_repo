@@ -24,7 +24,7 @@ pub fn parse_to_html(
     };
     let arena = Arena::new();
     let html = parse_document(&arena, markdown.as_ref(), &options);
-    let mut content = vec![];
+    let mut content = Vec::with_capacity(markdown.as_ref().len());
     comrak::format_html(html, &options, &mut content)?;
     let clone = content.clone();
     tokio::spawn(async move {

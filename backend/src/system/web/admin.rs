@@ -2,6 +2,7 @@ use crate::authentication::Authentication;
 use crate::system::permissions::permissions_checker::CanIDo;
 use crate::system::user::UserModel;
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use chrono::{ Local};
 
 use super::super::user::database::ActiveModel;
 use super::super::user::database::*;
@@ -9,7 +10,6 @@ use crate::helpers::unwrap_or_not_found;
 use crate::system::hash;
 use crate::system::permissions::UserPermissions;
 use crate::system::user::database::UserSafeData;
-use crate::utils::get_current_time;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use sea_orm::EntityTrait;
@@ -107,7 +107,7 @@ pub async fn create_user(
         email: Set(user.email),
         password: Set(hash(user.password).unwrap()),
         permissions: Set(UserPermissions::default()),
-        created: Set(get_current_time()),
+        created: Set(Local::now().into()),
     };
     user.insert(database.as_ref())
         .await

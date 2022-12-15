@@ -1,3 +1,4 @@
+use chrono::{DateTime, FixedOffset, Local};
 use serde::{Deserialize, Serialize};
 
 use crate::repository::response::Project;
@@ -56,7 +57,8 @@ pub struct NitroFile {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RepositoryListing {
     pub projects: Vec<String>,
-    pub last_updated: i64,
+    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    pub last_updated: DateTime<FixedOffset>,
 }
 
 impl RepositoryListing {
@@ -79,26 +81,26 @@ pub struct VersionData {
     pub source: Option<ProjectSource>,
     pub licence: Option<Licence>,
     pub version: String,
-    #[serde(default = "crate::utils::get_current_time")]
-    pub created: i64,
+    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    pub created: DateTime<FixedOffset>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProjectData {
     #[serde(default)]
     pub versions: NitroRepoVersions,
-    #[serde(default = "crate::utils::get_current_time")]
-    pub created: i64,
-    #[serde(default = "crate::utils::get_current_time")]
-    pub updated: i64,
+    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    pub created: DateTime<FixedOffset>,
+    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    pub updated: DateTime<FixedOffset>,
 }
 
 impl Default for ProjectData {
     fn default() -> Self {
         ProjectData {
             versions: Default::default(),
-            created: get_current_time(),
-            updated: get_current_time(),
+            created: Local::now().into(),
+            updated: Local::now().into(),
         }
     }
 }

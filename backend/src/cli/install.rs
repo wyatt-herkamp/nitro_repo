@@ -11,6 +11,7 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::{ConnectOptions, EntityTrait};
 
 use std::env;
+use std::env::current_dir;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::process::exit;
@@ -63,7 +64,11 @@ struct MysqlInstall {
 }
 
 pub async fn install_task(install_command: InstallCommand) {
-    let working_directory = env::current_dir().unwrap();
+    let working_directory = std::env::var("NITRO_CONFIG_DIR").map(|x|{
+        PathBuf::from(x)
+    }).unwrap_or_else(|_|{
+        current_dir().unwrap()
+    });
     if working_directory.join("nitro_repo.toml").exists() {
         if install_command.ignore_if_installed.unwrap_or(true) {
             return;
