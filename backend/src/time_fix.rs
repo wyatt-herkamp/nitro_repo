@@ -1,5 +1,5 @@
 use std::fmt::Formatter;
-use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
+use chrono::{DateTime, FixedOffset, NaiveDateTime};
 use serde::de::{Error, Visitor};
 use serde::Deserializer;
 pub struct DateTimeVisitor;
@@ -20,7 +20,7 @@ impl<'de> Visitor<'de> for DateTimeVisitor{
     }
     #[inline]
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E> where E: Error {
-        NaiveDateTime::from_timestamp_millis(v as i64).map(|v| {
+        NaiveDateTime::from_timestamp_millis(v).map(|v| {
             DateTime::<FixedOffset>::from_utc(v, FixedOffset::east_opt(0).unwrap())
         }).ok_or_else(||Error::custom("invalid timestamp"))
     }

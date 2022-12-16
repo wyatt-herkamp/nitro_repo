@@ -187,6 +187,8 @@ macro_rules! update_repository_core_prop {
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
             let (name, mut repository) = crate::helpers::take_repository!(storage, repository_name);
             repository.get_mut_config().$name = value;
+            storage.save_repository_config(repository.get_repository(), repository.get_repository()).await.map_err(InternalError::from)?;
+
             storage.add_repository_for_updating(name, repository, true).await.expect("Failed to add repository for updating");
 
             Ok(HttpResponse::NoContent().finish())

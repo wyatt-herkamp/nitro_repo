@@ -51,7 +51,6 @@ use crate::repository::settings::badge::BadgeSettings;
 use crate::repository::settings::frontend::Frontend;
 use crate::repository::settings::repository_page::RepositoryPage;
 use crate::system::user::database::UserSafeData;
-use crate::utils::get_current_time;
 crate::repository::nitro::dynamic::nitro_repo_handler!(
     MavenHandler,
     Hosted,
@@ -203,10 +202,10 @@ impl<S: Storage> CreateRepository<S> for MavenHandler<S> {
         let repository_config = RepositoryConfig {
             name: name.into(),
             visibility: Default::default(),
-            active: false,
+            active: true,
             require_token_over_basic: false,
             repository_type: RepositoryType::Maven,
-            created: get_current_time(),
+            created: Local::now().into(),
             storage: storage.storage_config().generic_config.id.clone(),
         };
         match config.repository_type {

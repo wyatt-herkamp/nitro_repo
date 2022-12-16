@@ -14,7 +14,7 @@ use crate::repository::response::VersionResponse;
 use crate::repository::settings::frontend::{Frontend, PageProvider};
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
-use crate::utils::get_current_time;
+
 
 pub async fn get_version<StorageType: Storage>(
     storage: &StorageType,

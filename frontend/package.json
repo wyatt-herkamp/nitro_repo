@@ -32,7 +32,7 @@
     "highlight.js": "^11.7.0",
     "json-editor-vue": "^0.10.2",
     "pinia": "^2.0.28",
-    "vanilla-jsoneditor": "^0.11.2",
+    "vanilla-jsoneditor": "^0.11.4",
     "vite-plugin-ejs": "^1.6.4",
     "vue": "^3.2.45",
     "vue-class-component": "^8.0.0-0",
@@ -44,7 +44,7 @@
     "vue3-simple-icons": "^7.18.0"
   },
   "devDependencies": {
-    "@types/node": "^18.11.13",
+    "@types/node": "^18.11.15",
     "@types/prismjs": "^1.26.0",
     "@types/webpack-env": "^1.18.0",
     "@typescript-eslint/eslint-plugin": "^5.46.1",
@@ -55,7 +55,7 @@
     "@vue/eslint-config-typescript": "11.0.2",
     "autoprefixer": "^10.4.13",
     "eslint": "8.29.0",
-    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-config-standard-with-typescript": "^24.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.6.0",
     "eslint-plugin-prettier": "4.2.1",

@@ -2,6 +2,7 @@ use schemars::schema::RootSchema;
 use schemars::JsonSchema;
 
 use std::fmt::Debug;
+use chrono::{DateTime, FixedOffset, Local};
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -32,9 +33,7 @@ pub enum Policy {
     Mixed,
 }
 
-fn default() -> bool {
-    true
-}
+
 
 /// The Basic Repository Config
 /// These values are core to the existence of the Repository
@@ -50,12 +49,12 @@ pub struct RepositoryConfig {
     #[serde(default)]
     pub visibility: Visibility,
     /// Rather or not the Repository is active. Meaning it can be pulled or pushed
-    #[serde(default = "default")]
     pub active: bool,
     #[serde(default)]
     pub require_token_over_basic: bool,
-    /// When it was created
-    pub created: i64,
+
+    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    pub created: DateTime<FixedOffset>,
 }
 
 impl RepositoryConfigType for RepositoryConfig {
@@ -73,7 +72,7 @@ impl RepositoryConfig {
             visibility: Visibility::default(),
             active: true,
             require_token_over_basic: false,
-            created: get_current_time(),
+            created: Local::now().into(),
         }
     }
 }

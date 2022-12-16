@@ -1,4 +1,4 @@
-use crate::authentication::{Authentication, NotAuthenticated};
+use crate::authentication::{Authentication};
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
@@ -21,8 +21,8 @@ use crate::repository::maven::error::MavenError;
 
 use crate::repository::maven::validate_policy;
 use crate::repository::settings::repository_page::RepositoryPage;
-use crate::system::user::database::UserSafeData;
-use actix_files::NamedFile;
+
+
 use actix_web::HttpResponse;
 use log::error;
 use maven_rs::pom::Pom;
@@ -175,7 +175,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
     async fn handle_head(
         &self,
         path: &str,
-        http: &HeaderMap,
+        _http: &HeaderMap,
         conn: &DatabaseConnection,
         authentication: Authentication,
     ) -> Result<RepoResponse, actix_web::Error> {
@@ -187,7 +187,7 @@ impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
             .await
             .map_err(InternalError::from)?
         {
-            StorageFileResponse::List(list) => {
+            StorageFileResponse::List(_list) => {
                 //TODO: Implement
                 Ok(RepoResponse::HttpResponse(
                     HttpResponse::NoContent().finish(),

@@ -7,6 +7,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Bytes;
 use actix_web::{HttpResponse, ResponseError};
 use async_trait::async_trait;
+use chrono::Local;
 use log::{debug, trace};
 use regex::Regex;
 use schemars::JsonSchema;
@@ -27,7 +28,6 @@ use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::permissions_checker::CanIDo;
-use crate::utils::get_current_time;
 pub mod error;
 pub mod models;
 mod utils;
@@ -75,7 +75,7 @@ impl<S: Storage> CreateRepository<S> for NPMHandler<S> {
             visibility: Default::default(),
             active: true,
             require_token_over_basic: false,
-            created: get_current_time(),
+            created: Local::now().into(),
         };
         Ok((
             NPMHandler {

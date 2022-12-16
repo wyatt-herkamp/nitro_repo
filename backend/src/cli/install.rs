@@ -1,11 +1,8 @@
-use crate::settings::models::{
-    Application, Database, GeneralSettings, MysqlSettings, SqliteSettings,
-};
+use crate::settings::models::{Application, Database, GeneralSettings, MysqlSettings, PostgresSettings, SqliteSettings};
 use crate::system::hash;
 use crate::system::permissions::{RepositoryPermission, UserPermissions};
 use crate::system::user::database::ActiveModel;
 use crate::system::user::UserEntity;
-use crate::utils::get_current_time;
 use clap::{Parser, Subcommand};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ConnectOptions, EntityTrait};
@@ -15,6 +12,8 @@ use std::env::current_dir;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+use chrono::Local;
+use tokio::fs::create_dir_all;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -26,9 +25,9 @@ pub struct InstallCommand {
     #[clap(long)]
     admin_password: Option<String>,
     #[clap(long)]
-    frontend_path: String,
+    frontend_path: PathBuf,
     #[clap(long)]
-    storage_path: Option<String>,
+    storage_path: Option<PathBuf>,
     #[clap(long)]
     ignore_if_installed: Option<bool>,
     #[clap(long)]
@@ -39,6 +38,7 @@ pub struct InstallCommand {
 enum DatabaseTypes {
     Mysql(MysqlInstall),
     Sqlite(SqliteInstall),
+    Postgres(PostgresInstall),
 }
 
 #[derive(Parser, Debug)]
@@ -62,14 +62,29 @@ struct MysqlInstall {
     #[clap(long)]
     pub database: String,
 }
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct PostgresInstall {
+    #[clap(long)]
+    pub db_user: String,
+    #[clap(long)]
+    pub db_password: String,
+    #[clap(long)]
+    pub db_host: String,
+    #[clap(long)]
+    pub database: String,
+}
 
 pub async fn install_task(install_command: InstallCommand) {
-    let working_directory = std::env::var("NITRO_CONFIG_DIR").map(|x|{
+    let config_dir = env::var("NITRO_CONFIG_DIR").map(|x|{
         PathBuf::from(x)
     }).unwrap_or_else(|_|{
         current_dir().unwrap()
     });
-    if working_directory.join("nitro_repo.toml").exists() {
+    if !config_dir.exists(){
+        create_dir_all(&config_dir).await.unwrap();
+    }
+    if config_dir.join("nitro_repo.toml").exists() {
         if install_command.ignore_if_installed.unwrap_or(true) {
             return;
         } else {
@@ -97,8 +112,31 @@ pub async fn install_task(install_command: InstallCommand) {
                 sqlite.skip_if_file_exists.unwrap_or(false),
             )
         }
+        DatabaseTypes::Postgres(data) => {
+            let postgres_settings = PostgresSettings {
+                user: data.db_user,
+                password: data.db_password,
+                host: data.db_host,
+                database: data.database,
+            };
+            (
+                crate::settings::models::Database::Postgres(postgres_settings),
+                false,
+            )
+        }
     };
+    let frontend_path = install_command.frontend_path.canonicalize().expect("Failed to canonicalize path").to_str().unwrap().to_string();
+    let log_path = install_command
+        .log_dir
+        .unwrap_or("./logs".to_string())
+        .to_string();
+    let storage_location = install_command
+        .storage_path
+        .and_then(|v| Some(PathBuf::from(v)))
+        .unwrap_or_else(|| env::current_dir().unwrap().join("storages"));
+
     match &config {
+        #[cfg(feature = "sqlite")]
         Database::Sqlite(ref settings) => {
             if settings.database_file.exists() {
                 if !skip_if_exists {
@@ -125,34 +163,27 @@ pub async fn install_task(install_command: InstallCommand) {
                 .await;
             }
         }
-        Database::Mysql(ref v) => {
+        v => {
             seed_data(
-                config.clone(),
+                v.clone(),
                 install_command.admin_username,
                 install_command.admin_password,
             )
             .await;
         }
     }
-
     let general = GeneralSettings {
         database: config,
         application: Application {
-            log: install_command
-                .log_dir
-                .unwrap_or("./logs".to_string())
-                .to_string(),
-            frontend: install_command.frontend_path,
-            storage_location: install_command
-                .storage_path
-                .and_then(|v| Some(PathBuf::from(v)))
-                .unwrap_or_else(|| env::current_dir().unwrap().join("storages")),
+            log: log_path,
+            frontend: frontend_path,
+            storage_location,
             ..Application::default()
         },
         internal: Default::default(),
         session: Default::default(),
     };
-    crate::install::install_data(working_directory, general).expect("Failed to install data");
+    crate::install::install_data(config_dir, general).expect("Failed to install data");
 }
 
 async fn seed_data(
@@ -171,7 +202,7 @@ async fn seed_data(
         .as_ref()
         .and_then(|v| Some(v.as_str()))
         .unwrap_or_else(|| "admin");
-    let password: &str = username
+    let password: &str = password
         .as_ref()
         .and_then(|v| Some(v.as_str()))
         .unwrap_or("password");
@@ -190,7 +221,7 @@ async fn seed_data(
             deployer: RepositoryPermission::default(),
             viewer: RepositoryPermission::default(),
         }),
-        created: Set(get_current_time()),
+        created: Set(Local::now().into()),
     };
 
     UserEntity::insert(user)

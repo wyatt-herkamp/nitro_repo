@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+
 use actix_web::{get, web, HttpResponse};
 
 use log::warn;

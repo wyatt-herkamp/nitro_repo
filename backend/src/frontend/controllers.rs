@@ -8,7 +8,7 @@ use actix_web::web::Data;
 use actix_web::{web, HttpRequest, HttpResponse};
 use handlebars::Handlebars;
 use log::{debug, error, info, trace, warn};
-use serde_json::json;
+
 
 use crate::{NitroRepoData, Serialize};
 
