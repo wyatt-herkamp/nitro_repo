@@ -1,4 +1,4 @@
-use crate::authentication::{Authentication};
+use crate::authentication::Authentication;
 use crate::error::internal_error::InternalError;
 use crate::repository::handler::Repository;
 
@@ -21,7 +21,6 @@ use crate::repository::maven::error::MavenError;
 
 use crate::repository::maven::validate_policy;
 use crate::repository::settings::repository_page::RepositoryPage;
-
 
 use actix_web::HttpResponse;
 use log::error;

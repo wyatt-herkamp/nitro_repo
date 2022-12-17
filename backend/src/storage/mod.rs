@@ -29,6 +29,7 @@ pub const REPOSITORY_FOLDER: &'static str = ".config.nitro_repo";
 
 use crate::repository::handler::DynamicRepositoryHandler;
 use bad_storage::BadStorage;
+use chrono::{DateTime, FixedOffset};
 use local_storage::{LocalConfig, LocalStorage};
 use std::collections::HashMap;
 use std::hint::unreachable_unchecked;
@@ -224,6 +225,6 @@ pub struct StorageSaver {
 pub struct GeneralConfig {
     pub id: String,
     /// This is created internally by the storages. No need to set this.
-    #[serde(default = "crate::utils::get_current_time")]
-    pub created: i64,
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
+    pub created: DateTime<FixedOffset>,
 }

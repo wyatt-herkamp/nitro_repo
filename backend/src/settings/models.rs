@@ -46,11 +46,11 @@ impl Default for Internal {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(tag = "type", content = "settings")]
 pub enum Database {
-    #[cfg(feature="mysql")]
+    #[cfg(feature = "mysql")]
     Mysql(MysqlSettings),
-    #[cfg(feature="sqlite")]
+    #[cfg(feature = "sqlite")]
     Sqlite(SqliteSettings),
-    #[cfg(feature="postgres")]
+    #[cfg(feature = "postgres")]
     Postgres(PostgresSettings),
 }
 
@@ -58,15 +58,12 @@ pub enum Database {
 impl Into<sea_orm::ConnectOptions> for Database {
     fn into(self) -> ConnectOptions {
         match self {
-            #[cfg(feature="mysql")]
+            #[cfg(feature = "mysql")]
             Database::Mysql(mysql) => ConnectOptions::new(mysql.to_string()),
-            #[cfg(feature="sqlite")]
+            #[cfg(feature = "sqlite")]
             Database::Sqlite(database) => ConnectOptions::new(database.to_string()),
-            #[cfg(feature="postgres")]
-            Database::Postgres(postgres) => {
-                ConnectOptions::new(postgres.to_string())
-            }
-
+            #[cfg(feature = "postgres")]
+            Database::Postgres(postgres) => ConnectOptions::new(postgres.to_string()),
         }
     }
 }

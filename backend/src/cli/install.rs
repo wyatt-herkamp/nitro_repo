@@ -1,4 +1,6 @@
-use crate::settings::models::{Application, Database, GeneralSettings, MysqlSettings, PostgresSettings, SqliteSettings};
+use crate::settings::models::{
+    Application, Database, GeneralSettings, MysqlSettings, PostgresSettings, SqliteSettings,
+};
 use crate::system::hash;
 use crate::system::permissions::{RepositoryPermission, UserPermissions};
 use crate::system::user::database::ActiveModel;
@@ -7,12 +9,12 @@ use clap::{Parser, Subcommand};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ConnectOptions, EntityTrait};
 
+use chrono::Local;
 use std::env;
 use std::env::current_dir;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 use std::process::exit;
-use chrono::Local;
 use tokio::fs::create_dir_all;
 
 #[derive(Parser, Debug)]
@@ -76,12 +78,10 @@ struct PostgresInstall {
 }
 
 pub async fn install_task(install_command: InstallCommand) {
-    let config_dir = env::var("NITRO_CONFIG_DIR").map(|x|{
-        PathBuf::from(x)
-    }).unwrap_or_else(|_|{
-        current_dir().unwrap()
-    });
-    if !config_dir.exists(){
+    let config_dir = env::var("NITRO_CONFIG_DIR")
+        .map(|x| PathBuf::from(x))
+        .unwrap_or_else(|_| current_dir().unwrap());
+    if !config_dir.exists() {
         create_dir_all(&config_dir).await.unwrap();
     }
     if config_dir.join("nitro_repo.toml").exists() {
@@ -125,7 +125,13 @@ pub async fn install_task(install_command: InstallCommand) {
             )
         }
     };
-    let frontend_path = install_command.frontend_path.canonicalize().expect("Failed to canonicalize path").to_str().unwrap().to_string();
+    let frontend_path = install_command
+        .frontend_path
+        .canonicalize()
+        .expect("Failed to canonicalize path")
+        .to_str()
+        .unwrap()
+        .to_string();
     let log_path = install_command
         .log_dir
         .unwrap_or("./logs".to_string())

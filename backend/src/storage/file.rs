@@ -8,47 +8,57 @@ use actix_web::error::ErrorBadRequest;
 use actix_web::http::header::ACCEPT;
 use actix_web::http::{Method, StatusCode};
 use actix_web::{HttpRequest, HttpResponse, Responder};
+use chrono::{DateTime, FixedOffset, Local, NaiveDateTime};
 use log::{as_error, error, trace};
 use serde::Serialize;
 use tokio::fs::metadata;
+use typeshare::typeshare;
 
 use crate::storage::error::StorageError;
 
 ///Storage Files are just a data container holding the file name, directory relative to the root of nitro_repo and if its a directory
 #[derive(Serialize, Clone, Debug)]
+#[typeshare]
 pub struct StorageFile {
     pub name: String,
     pub full_path: String,
     pub mime: String,
     pub directory: bool,
-    pub file_size: u64,
-    pub modified: u64,
-    pub created: u64,
+    pub file_size: u32,
+    pub modified: Option<DateTime<FixedOffset>>,
+    pub created: DateTime<FixedOffset>,
 }
 
 impl StorageFile {
-    fn meta_data(metadata: Metadata) -> (u64, u64, u64, bool) {
-        let created = metadata
-            .created()
-            .unwrap_or_else(|error| {
-                error!(error = as_error!(error); "Error getting created time");
-                SystemTime::now()
-            })
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_micros();
-
-        let modified = if let Ok(modified) = metadata.modified() {
-            modified
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_micros()
+    /// Gets the Creation Date of the file, if available the modified date, current size, and is a directory
+    fn meta_data(
+        metadata: Metadata,
+    ) -> (
+        DateTime<FixedOffset>,
+        Option<DateTime<FixedOffset>>,
+        u64,
+        bool,
+    ) {
+        // TODO Fix Timezones
+        let created: DateTime<FixedOffset> = match metadata.created() {
+            Ok(ok) => DateTime::<Local>::from(ok)
+                .with_timezone(&FixedOffset::east_opt(0).expect("Error creating FixedOffset")),
+            Err(err) => {
+                error!("Error getting created time: {}", err);
+                Local::now().into()
+            }
+        };
+        let modified = if let Ok(ok) = metadata.modified() {
+            Some(
+                DateTime::<Local>::from(ok)
+                    .with_timezone(&FixedOffset::east_opt(0).expect("Error creating FixedOffset")),
+            )
         } else {
-            created
+            None
         };
         let directory = metadata.file_type().is_dir();
         let size = metadata.len();
-        (created as u64, modified as u64, size, directory)
+        (created, modified, size, directory)
     }
     pub async fn create_from_entry<S: Into<String>>(
         relative_path: S,
@@ -66,8 +76,9 @@ impl StorageFile {
             full_path: relative_path.into(),
             mime,
             directory,
-            file_size,
+            file_size: file_size as u32,
             modified,
+
             created,
         };
         Ok(file)
@@ -94,7 +105,7 @@ impl StorageFile {
             full_path: relative_path.into(),
             mime,
             directory,
-            file_size,
+            file_size: file_size as u32,
             modified,
             created,
         };

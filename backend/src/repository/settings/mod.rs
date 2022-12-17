@@ -1,8 +1,8 @@
 use schemars::schema::RootSchema;
 use schemars::JsonSchema;
 
-use std::fmt::Debug;
 use chrono::{DateTime, FixedOffset, Local};
+use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -33,8 +33,6 @@ pub enum Policy {
     Mixed,
 }
 
-
-
 /// The Basic Repository Config
 /// These values are core to the existence of the Repository
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,7 +51,7 @@ pub struct RepositoryConfig {
     #[serde(default)]
     pub require_token_over_basic: bool,
 
-    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
     pub created: DateTime<FixedOffset>,
 }
 

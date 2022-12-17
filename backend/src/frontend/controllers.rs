@@ -9,7 +9,6 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use handlebars::Handlebars;
 use log::{debug, error, info, trace, warn};
 
-
 use crate::{NitroRepoData, Serialize};
 
 pub fn init(cfg: &mut web::ServiceConfig) {

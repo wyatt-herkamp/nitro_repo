@@ -23,8 +23,8 @@ pub mod repository;
 pub mod settings;
 pub mod storage;
 pub mod system;
-pub mod utils;
 pub mod time_fix;
+pub mod utils;
 
 #[derive(Debug)]
 pub struct NitroRepo {

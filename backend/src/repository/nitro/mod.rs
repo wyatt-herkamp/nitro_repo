@@ -57,7 +57,7 @@ pub struct NitroFile {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RepositoryListing {
     pub projects: Vec<String>,
-    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
     pub last_updated: DateTime<FixedOffset>,
 }
 
@@ -81,7 +81,7 @@ pub struct VersionData {
     pub source: Option<ProjectSource>,
     pub licence: Option<Licence>,
     pub version: String,
-    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
     pub created: DateTime<FixedOffset>,
 }
 
@@ -89,9 +89,9 @@ pub struct VersionData {
 pub struct ProjectData {
     #[serde(default)]
     pub versions: NitroRepoVersions,
-    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
     pub created: DateTime<FixedOffset>,
-    #[serde(deserialize_with  = "crate::time_fix::read_time")]
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
     pub updated: DateTime<FixedOffset>,
 }
 

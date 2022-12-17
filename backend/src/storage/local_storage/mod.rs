@@ -13,9 +13,7 @@ use log::{debug, error, trace, warn};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use tokio::fs::{
-    create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions,
-};
+use tokio::fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use tokio_stream::StreamExt;

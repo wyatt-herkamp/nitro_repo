@@ -1,7 +1,8 @@
 use lockfree::map::Map;
 
+use chrono::Local;
 use std::mem;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::repository::handler::DynamicRepositoryHandler;
@@ -16,7 +17,7 @@ use crate::storage::error::StorageError;
 use crate::storage::file::StorageFile;
 
 use crate::storage::error::StorageError::StorageCreateError;
-use crate::storage::models::{Storage};
+use crate::storage::models::Storage;
 use crate::storage::{DynamicStorage, StorageSaver};
 
 pub mod web;
@@ -263,8 +264,8 @@ impl MultiStorageController<DynamicStorage> {
                 mime: "text/directory".to_string(),
                 directory: true,
                 file_size: 0,
-                modified: 0,
-                created: create as u64,
+                modified: None,
+                created: create,
             });
         }
         Ok(files)

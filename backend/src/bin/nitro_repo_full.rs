@@ -6,14 +6,13 @@ use std::io::{BufRead, BufReader, ErrorKind};
 use std::path::PathBuf;
 use std::process::exit;
 
-
 use actix_cors::Cors;
 
 use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
 use api::authentication::middleware::HandleSession;
-use api::authentication::session::{SessionManager};
+use api::authentication::session::SessionManager;
 
 use api::generators::GeneratorCache;
 use api::settings::load_configs;
@@ -31,11 +30,9 @@ use tokio::sync::RwLock;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let config_dir = std::env::var("NITRO_CONFIG_DIR").map(|x|{
-        PathBuf::from(x)
-    }).unwrap_or_else(|_|{
-        current_dir().unwrap()
-    });
+    let config_dir = std::env::var("NITRO_CONFIG_DIR")
+        .map(|x| PathBuf::from(x))
+        .unwrap_or_else(|_| current_dir().unwrap());
     let configs = config_dir.join("cfg");
     let main_config = config_dir.join("nitro_repo.toml");
     if !main_config.exists() {
@@ -116,9 +113,9 @@ async fn main() -> std::io::Result<()> {
         {
             compile_error!("You are not in a development environment");
         }
-        use log::{warn, debug, error};
-        use core::str::FromStr;
         use api::authentication::session::SessionManagerType;
+        use core::str::FromStr;
+        use log::{debug, error, warn};
         warn!("Using unsafe cookies");
         warn!("This is not recommended. This is only for development purposes");
         warn!("This is not secure");

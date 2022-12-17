@@ -1,7 +1,7 @@
+use chrono::Local;
 use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use chrono::Local;
 
 use log::debug;
 
@@ -14,7 +14,6 @@ use crate::repository::response::VersionResponse;
 use crate::repository::settings::frontend::{Frontend, PageProvider};
 use crate::repository::settings::RepositoryConfig;
 use crate::storage::models::Storage;
-
 
 pub async fn get_version<StorageType: Storage>(
     storage: &StorageType,

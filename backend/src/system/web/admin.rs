@@ -2,7 +2,7 @@ use crate::authentication::Authentication;
 use crate::system::permissions::permissions_checker::CanIDo;
 use crate::system::user::UserModel;
 use actix_web::{delete, get, post, put, web, HttpResponse};
-use chrono::{ Local};
+use chrono::Local;
 
 use super::super::user::database::ActiveModel;
 use super::super::user::database::*;

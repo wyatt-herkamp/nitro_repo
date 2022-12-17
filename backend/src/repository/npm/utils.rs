@@ -17,7 +17,7 @@ pub fn format_time(time: i64) -> String {
     let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
     date_time.format(NPM_TIME_FORMAT).to_string()
 }
-pub fn format_time_chrono(time: DateTime<FixedOffset>)->String{
+pub fn format_time_chrono(time: DateTime<FixedOffset>) -> String {
     time.format(NPM_TIME_FORMAT).to_string()
 }
 impl From<NitroRepoVersions> for HashMap<String, String> {
