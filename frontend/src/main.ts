@@ -19,7 +19,7 @@ import {
   faEye,
   faEyeSlash,
   faUserSecret,
-  faFolder
+  faFolder, faFileArrowDown
 } from "@fortawesome/free-solid-svg-icons";
 
 /* add icons to the library */
@@ -27,6 +27,7 @@ library.add(faEyeSlash);
 library.add(faEye);
 library.add(faUserSecret);
 library.add(faFolder);
+library.add(faFileArrowDown);
 const app = createApp(App);
 app.use(Notifications);
 app.use(router);

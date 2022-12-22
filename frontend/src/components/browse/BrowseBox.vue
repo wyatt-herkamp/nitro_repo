@@ -10,6 +10,12 @@
         {{ file.name }}
       </div>
     </router-link>
+    <a class="link" :href="url + '/repositories/' + file.full_path" v-else>
+      <div>
+        <font-awesome-icon icon="fa-file-arrow-down" />
+        {{ file.name }}
+      </div>
+    </a>
   </li>
 </template>
 <script lang="ts">
