@@ -1,23 +1,20 @@
-import path from "path";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
-import Components from "unplugin-vue-components/vite";
-import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 import { ViteEjsPlugin } from "vite-plugin-ejs";
+import { fileURLToPath, URL } from "node:url";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   resolve: {
     alias: {
-      "~/": `${path.resolve(__dirname, "src")}/`,
-      "@/": `${path.resolve(__dirname, "src")}/`,
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use "~/styles/element/index.scss" as *;`,
+        additionalData: `@import "@/styles/variables.scss";`,
       },
     },
   },
@@ -28,13 +25,5 @@ export default defineConfig({
       },
     }),
     ViteEjsPlugin(),
-
-    Components({
-      resolvers: [
-        ElementPlusResolver({
-          importStyle: "sass",
-        }),
-      ],
-    }),
   ],
 });

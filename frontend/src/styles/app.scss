@@ -1,3 +1,5 @@
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,7 +14,8 @@ body {
   --color-tertiary: 205, 20%, 19%;
   --color-quaternary: 11, 88%, 96%;
   --color-accent: 2, 83%, 43%;
-  min-height: 100%;
+  padding: 0;
+  margin: 0;
   @apply bg-primary;
 }
 .modal > .header {

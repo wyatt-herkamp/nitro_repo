@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-row">
+  <div id="browseBox">
     <div
       :class="[activeResponse !== undefined ? 'lg:basis-1/2' : 'flex-grow']"
       class="m-2 rounded-md bg-gray-900"
@@ -41,27 +41,17 @@
     <!-- Optional Extra Info -->
   </div>
 </template>
-<style scoped>
-.backLink {
-  @apply md:py-3;
-  @apply md:my-1;
-  @apply min-w-max;
 
-  @apply hover:text-slate-300;
-  @apply transition;
-  @apply ease-in-out;
-  @apply duration-100;
-}
-</style>
 <script lang="ts">
-import httpCommon, { apiURL } from "@/http-common";
-import { defineComponent, ref, watch } from "vue";
+import { apiURL } from "@/http-common";
+import { defineComponent, ref } from "vue";
 import { useRoute } from "vue-router";
 import { BrowsePath } from "@/api/Browse";
 import { ResponseType } from "@/types/repositoryTypes";
 import ListInsideRepository from "@/components/browse/ListInsideRepository.vue";
 import ListRepositories from "@/components/browse/ListRepositories.vue";
 import ListStorages from "@/components/browse/ListStorages.vue";
+import "@/styles/browse.scss";
 
 export default defineComponent({
   setup() {

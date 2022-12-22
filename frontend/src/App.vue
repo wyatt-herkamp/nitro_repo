@@ -1,13 +1,17 @@
 <template>
   <metainfo> </metainfo>
-  <div class="flex flex-col min-h-screen">
+  <div id="container">
     <Navbar :user="user" />
     <router-view :key="$route.fullPath" />
   </div>
 
   <notifications position="bottom right" />
 </template>
-
+<style scoped>
+#container {
+  height: 100vh;
+}
+</style>
 <script lang="ts">
 import { useUserStore } from "@/store/user";
 import Navbar from "@/components/nav/Navbar.vue";

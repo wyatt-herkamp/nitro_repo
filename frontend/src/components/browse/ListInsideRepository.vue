@@ -1,5 +1,5 @@
 <template>
-  <ul class="w-full text-left p-3">
+  <ul class="listOfItems">
     <BrowseBox v-for="value in files" :key="value" :file="value" />
   </ul>
 </template>

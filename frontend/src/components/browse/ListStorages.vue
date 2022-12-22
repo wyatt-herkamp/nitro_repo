@@ -1,5 +1,5 @@
 <template>
-  <ul v-if="storages" class="w-full text-left p-3">
+  <ul v-if="storages" class="listOfItems">
     <BrowseBox
       v-for="value in storages.storages"
       :key="value"
@@ -20,7 +20,6 @@ import { defineComponent } from "vue";
 import httpCommon from "@/http-common";
 import { BrowsePath } from "@/api/Browse";
 import BrowseBox from "@/components/browse/BrowseBox.vue";
-
 export default defineComponent({
   name: "ListStorages",
   components: { BrowseBox },
@@ -38,4 +37,3 @@ export default defineComponent({
 });
 </script>
 
-<style scoped></style>

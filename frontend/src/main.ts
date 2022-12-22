@@ -4,7 +4,7 @@ import App from "./App.vue";
 import router from "./router";
 import Notifications from "@kyvg/vue3-notification";
 import { createMetaManager } from "vue-meta";
-import "@/styles/app.css";
+import "@/styles/app.scss";
 import "@/styles/form.css";
 import vfmPlugin from "vue-final-modal";
 import { createPinia } from "pinia";
@@ -19,11 +19,14 @@ import {
   faEye,
   faEyeSlash,
   faUserSecret,
+  faFolder
 } from "@fortawesome/free-solid-svg-icons";
 
 /* add icons to the library */
 library.add(faEyeSlash);
 library.add(faEye);
+library.add(faUserSecret);
+library.add(faFolder);
 const app = createApp(App);
 app.use(Notifications);
 app.use(router);
