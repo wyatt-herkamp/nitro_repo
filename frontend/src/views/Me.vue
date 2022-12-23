@@ -40,9 +40,12 @@ import { computed, defineComponent, ref } from "vue";
 import PasswordBox from "@/components/user/PasswordBox.vue";
 import httpCommon from "@/http-common";
 import Permissions from "@/components/user/update/Permissions.vue";
+import Tabs from "@/components/common/tabs/Tabs.vue";
+import Tab from "@/components/common/tabs/Tab.vue";
+import MyAPIKeys from "@/components/user/keys/MyAPIKeys.vue";
 
 export default defineComponent({
-  components: { Permissions, PasswordBox },
+  components: {MyAPIKeys, Tab, Tabs, Permissions, PasswordBox },
   setup() {
     const tab = ref("general");
     const userStore = useUserStore();

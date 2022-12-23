@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, ref } from "vue";
 import { BrowsePath } from "@/api/Browse";
 import httpCommon from "@/http-common";
 import BrowseBox from "@/components/browse/BrowseBox.vue";

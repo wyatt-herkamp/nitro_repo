@@ -14,10 +14,13 @@
 
 <script lang="js">
 import { defineComponent, provide, ref } from "vue";
+import Tabs from "@/components/common/tabs/Tabs.vue";
+import Tab from "@/components/common/tabs/Tab.vue";
 
 
 export default defineComponent({
   name: "SimpleTabs",
+  components: {Tab, Tabs},
   props: {
 
     defaultTab: {

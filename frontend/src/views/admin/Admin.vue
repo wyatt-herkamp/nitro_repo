@@ -35,9 +35,13 @@ import { useRoute } from "vue-router";
 import { useUserStore } from "@/store/user";
 import { useMeta } from "vue-meta";
 import { useSystemStore } from "@/store/system";
+import SimpleTab from "@/components/common/simple_tabs/SimpleTab.vue";
+import SimpleTabs from "@/components/common/simple_tabs/SimpleTabs.vue";
 
 export default defineComponent({
   components: {
+    SimpleTabs,
+    SimpleTab,
     Storages,
     Users,
   },

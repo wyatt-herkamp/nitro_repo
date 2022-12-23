@@ -12,7 +12,8 @@ use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
 use api::authentication::middleware::HandleSession;
-use api::authentication::session::SessionManager;
+use api::authentication::session::{session_cleaner, SessionManager, SessionManagerType};
+use chrono::{Duration, Local};
 
 use api::generators::GeneratorCache;
 use api::settings::load_configs;
@@ -22,7 +23,7 @@ use api::storage::multi::MultiStorageController;
 
 use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo, Version};
-use log::{info, trace};
+use log::{error, info, trace};
 
 use tempfile::tempdir;
 use tokio::fs::read_to_string;
@@ -128,7 +129,7 @@ async fn main() -> std::io::Result<()> {
                     let session = api::authentication::session::Session {
                         token: key,
                         user: i64::from_str(&value).ok(),
-                        expiration: u64::MAX,
+                        expiration: Local::now() + Duration::days(1),
                     };
                     if let Err(e) = session_manager.push_session(session).await {
                         error!("Error setting unsafe cookie: {:?}", e);
@@ -142,6 +143,7 @@ async fn main() -> std::io::Result<()> {
     }
     let session_data = Data::new(session_manager);
 
+    actix_web::rt::spawn(session_cleaner(session_data.clone().into_inner()));
     let cache = Data::new(cache);
     let server = HttpServer::new(move || {
         App::new()

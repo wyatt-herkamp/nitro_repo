@@ -22,8 +22,10 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { AuthToken } from "@/types/userTypes";
+import Token from "@/components/user/keys/Token.vue";
 
 export default defineComponent({
+  components: { Token },
   props: {
     modelValue: Object as () => Array<AuthToken>,
   },

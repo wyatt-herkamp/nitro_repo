@@ -28,8 +28,9 @@ import { useRoute, useRouter } from "vue-router";
 import httpCommon from "@/http-common";
 import { Repository } from "@/types/repositoryTypes";
 import { Storage } from "@/types/storageTypes";
+import SearchableList from "@/components/common/list/SearchableList.vue";
 export default defineComponent({
-  components: { CreateRepo },
+  components: {SearchableList, CreateRepo },
   props: {
     storage: {
       type: Object as () => Storage,

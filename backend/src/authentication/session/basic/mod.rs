@@ -1,7 +1,8 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use chrono::Duration;
+use chrono::{DateTime, Duration, Local};
 use log::trace;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -88,6 +89,21 @@ impl SessionManagerType for BasicSessionManager {
         guard.insert(session.token.clone(), session);
         return Ok(());
     }
+
+    async fn clean_sessions(&self) -> Result<(), Self::Error> {
+        let mut guard = self.sessions.write().await;
+        let local: DateTime<Local> = Local::now();
+        let mut to_remove = Vec::new();
+        for (token, session) in guard.iter() {
+            if session.expiration < local {
+                to_remove.push(token.clone());
+            }
+        }
+        for token in to_remove {
+            guard.remove(&token);
+        }
+        return Ok(());
+    }
 }
 
 fn generate_token() -> String {
@@ -98,7 +114,7 @@ fn generate_token() -> String {
         .collect();
     format!("nrs_{}", token)
 }
-
-pub fn token_expiration() -> u64 {
-    (Duration::days(1).num_milliseconds() + get_current_time()) as u64
+#[inline(always)]
+pub fn token_expiration() -> DateTime<Local> {
+    Local::now() + Duration::days(1)
 }

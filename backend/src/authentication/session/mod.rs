@@ -3,6 +3,10 @@ pub mod basic;
 use crate::authentication::session::basic::BasicSessionManager;
 use crate::settings::models::SessionSettings;
 use async_trait::async_trait;
+use chrono::{DateTime, Duration, Local};
+use log::error;
+use std::borrow::Cow;
+use std::sync::Arc;
 use thiserror::Error;
 
 pub enum SessionManager {
@@ -13,7 +17,7 @@ pub enum SessionManager {
 pub struct Session {
     pub token: String,
     pub user: Option<i64>,
-    pub expiration: u64,
+    pub expiration: DateTime<Local>,
 }
 
 #[derive(Error, Debug)]
@@ -32,8 +36,19 @@ pub trait SessionManagerType {
     async fn set_user(&self, token: &str, user: i64) -> Result<(), Self::Error>;
 
     async fn push_session(&self, session: Session) -> Result<(), Self::Error>;
-}
 
+    async fn clean_sessions(&self) -> Result<(), Self::Error>;
+}
+pub async fn session_cleaner(session_data: Arc<SessionManager>) {
+    let mut interval =
+        tokio::time::interval(Duration::hours(1).to_std().expect("Invalid Duration"));
+    loop {
+        interval.tick().await;
+        if let Err(e) = session_data.clean_sessions().await {
+            error!("Error cleaning sessions: {:?}", e);
+        }
+    }
+}
 #[async_trait]
 impl SessionManagerType for SessionManager {
     type Error = SessionError;
@@ -87,6 +102,15 @@ impl SessionManagerType for SessionManager {
         return match self {
             SessionManager::BasicSessionManager(basic) => basic
                 .push_session(session)
+                .await
+                .map_err(|_| SessionError::BasicError),
+        };
+    }
+
+    async fn clean_sessions(&self) -> Result<(), Self::Error> {
+        return match self {
+            SessionManager::BasicSessionManager(basic) => basic
+                .clean_sessions()
                 .await
                 .map_err(|_| SessionError::BasicError),
         };

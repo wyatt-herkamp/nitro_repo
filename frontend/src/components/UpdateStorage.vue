@@ -38,11 +38,13 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, inject, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import { useMeta } from "vue-meta";
 import Repositories from "./Repositories.vue";
 import httpCommon from "@/http-common";
 import { Storage } from "@/types/storageTypes";
+import SimpleTab from "@/components/common/simple_tabs/SimpleTab.vue";
+import SimpleTabs from "@/components/common/simple_tabs/SimpleTabs.vue";
 
 export default defineComponent({
   props: {
@@ -82,6 +84,6 @@ export default defineComponent({
       console.log("TODO");
     },
   },
-  components: { Repositories },
+  components: { SimpleTabs, SimpleTab, Repositories },
 });
 </script>

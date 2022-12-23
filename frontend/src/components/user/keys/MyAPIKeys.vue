@@ -69,9 +69,12 @@ import httpCommon from "@/http-common";
 import { AuthToken } from "@/types/userTypes";
 import "@/styles/form.css";
 import { useUserStore } from "@/store/user";
+import APIKeys from "@/components/user/keys/APIKeys.vue";
+
 
 export default defineComponent({
   name: "MyAPIKeys",
+  components: { APIKeys },
   setup() {
     const newToken = ref(false);
     const data = ref<Array<AuthToken>>([]);

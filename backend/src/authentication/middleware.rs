@@ -10,6 +10,7 @@ use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     web, Error, HttpMessage,
 };
+use chrono::Local;
 use futures_util::future::LocalBoxFuture;
 use log::{debug, trace, warn};
 use sea_orm::DatabaseConnection;
@@ -99,7 +100,7 @@ where
                         }
                     } else if let Some(mut session) = session {
                         trace!("Cookie {session:?} found. Validating");
-                        if session.expiration <= get_current_time() as u64 {
+                        if session.expiration <= Local::now() {
                             session = session_manager
                                 .re_create_session(&session.token)
                                 .await

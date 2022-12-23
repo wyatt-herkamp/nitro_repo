@@ -24,9 +24,10 @@ import { ListItem } from "./common/list/ListTypes";
 import { useRouter } from "vue-router";
 import httpCommon from "@/http-common";
 import { User } from "@/types/userTypes";
+import SearchableList from "@/components/common/list/SearchableList.vue";
 
 export default defineComponent({
-  components: { CreateUser },
+  components: { SearchableList, CreateUser },
 
   setup() {
     const createUser = ref(false);
