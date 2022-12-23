@@ -97,6 +97,8 @@
 import { defineComponent, inject, ref } from "vue";
 import { Repository } from "@/types/repositoryTypes";
 import httpCommon from "@/http-common";
+import NitroModal from "@/components/common/model/NitroModal.vue";
+import Switch from "@/components/common/forms/Switch.vue";
 
 export default defineComponent({
   props: {
@@ -201,7 +203,7 @@ export default defineComponent({
       // TODO delete repo
     },
   },
-  components: {},
+  components: { Switch, NitroModal },
 });
 </script>
 <style>

@@ -36,6 +36,7 @@ use std::hint::unreachable_unchecked;
 macro_rules! storages {
     ($($name:ident, $ty:tt, $config:tt),*) => {
         #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[serde(tag = "storage_type", content = "settings")]
         pub enum StorageConfig {
             $($name($config),)*
         }

@@ -14,14 +14,14 @@
               </tr>
               <tr>
                 <th scope="row">Created</th>
-                <td>{{ date }}</td>
+                <td>{{ storage.created.toLocaleString() }}</td>
               </tr>
               <tr>
                 <th scope="row">Type</th>
-                <td>{{ storageType }}</td>
+                <td>{{ storage.handler_config.storage_type }}</td>
               </tr>
               <tr
-                v-for="(value, key) in storage.handler_config[storageType]"
+                v-for="(value, key) in storage.handler_config.settings"
                 v-bind:key="key"
               >
                 <th scope="row">{{ key }}</th>
@@ -38,7 +38,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, Ref, ref } from "vue";
 import { useMeta } from "vue-meta";
 import Repositories from "./Repositories.vue";
 import httpCommon from "@/http-common";
@@ -54,29 +54,23 @@ export default defineComponent({
     },
   },
   async setup(props) {
-    const storage = ref<Storage | undefined>(undefined);
-    const date = ref<string | undefined>(undefined);
-    const storageType = ref("");
-
     const { meta } = useMeta({
       title: "Nitro Repo",
     });
     const storageTab = ref("General");
-    await httpCommon.apiClient
+    const storage: Ref<Storage> = await httpCommon.apiClient
       .get<Storage>(`api/admin/storage/${props.storageId}`)
       .then((res) => {
         if (res.status == 200) {
-          storage.value = res.data;
-          storageType.value = Object.keys(res.data.handler_config)[0];
-          date.value = new Date(res.data.created).toLocaleString();
           meta.title = `Nitro Repo - ${res.data.id}`;
+          return ref(res.data);
+        } else {
+          return ref({} as Storage);
         }
       });
     return {
-      date,
       storage,
       storageTab,
-      storageType,
     };
   },
   methods: {
