@@ -5,10 +5,10 @@ pub mod web;
 use crate::authentication::auth_token::database::TokenProperties;
 use crate::authentication::auth_token::utils::hash_token;
 use crate::error::internal_error::InternalError;
+use chrono::{DateTime, FixedOffset};
 
 use crate::system::user::database::UserSafeData;
 use crate::system::user::{UserEntity, UserModel};
-use crate::utils::get_current_time;
 
 pub use database::ActiveModel as ActiveAuthTokenModel;
 pub use database::Entity as AuthTokenEntity;
@@ -25,7 +25,7 @@ pub struct TokenResponse {
     pub id: i64,
     pub properties: TokenProperties,
     pub user_id: i64,
-    pub created: i64,
+    pub created: DateTime<FixedOffset>,
 }
 
 pub async fn get_tokens_by_user(
@@ -69,8 +69,4 @@ pub fn generate_token() -> String {
         .map(char::from)
         .collect();
     token
-}
-
-pub fn token_expiration(add: i64) -> i64 {
-    get_current_time() + add
 }

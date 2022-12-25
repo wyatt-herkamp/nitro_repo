@@ -19,7 +19,6 @@ use crate::authentication::session::SessionManagerType;
 use crate::authentication::{
     auth_token, session::Session, session::SessionManager, verify_login, Authentication,
 };
-use crate::utils::get_current_time;
 
 pub struct HandleSession(pub bool);
 

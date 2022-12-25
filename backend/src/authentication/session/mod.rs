@@ -5,7 +5,7 @@ use crate::settings::models::SessionSettings;
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, Local};
 use log::error;
-use std::borrow::Cow;
+
 use std::sync::Arc;
 use thiserror::Error;
 

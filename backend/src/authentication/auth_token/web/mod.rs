@@ -5,12 +5,12 @@ use crate::authentication::auth_token::utils::hash_token;
 use crate::authentication::auth_token::{generate_token, ActiveAuthTokenModel, AuthTokenEntity};
 use crate::authentication::{Authentication, SecureAction};
 
-use crate::utils::get_current_time;
 use actix_web::error::ErrorInternalServerError;
 
 use actix_web::web;
 use actix_web::web::scope;
 use actix_web::{delete, get, post, HttpResponse};
+use chrono::Local;
 
 use sea_orm::ActiveValue::Set;
 use sea_orm::DatabaseConnection;
@@ -74,7 +74,7 @@ pub async fn create_token(
                 .and_then(|x| if x.is_empty() { None } else { Some(x) }),
         }),
         user_id: Set(user.id),
-        created: Set(get_current_time()),
+        created: Set(Local::now().into()),
     };
     let _result = AuthTokenEntity::insert(value)
         .exec(connection.as_ref())

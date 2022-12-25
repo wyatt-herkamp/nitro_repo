@@ -62,10 +62,6 @@ impl Resources {
     }
 }
 
-pub fn get_current_time() -> i64 {
-    Local::now().timestamp_millis()
-}
-
 pub fn get_current_date_time() -> String {
     let local: DateTime<Local> = Local::now();
     let format = local.format("%B %d %Y %H:%M");

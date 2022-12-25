@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::repository::response::Project;
 use crate::storage::file::StorageFile;
-use crate::utils::get_current_time;
 
 pub mod dynamic;
 pub mod nitro_repository;
@@ -135,7 +134,7 @@ impl Default for NitroRepoVersions {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NitroVersion {
     pub version: String,
-    pub time: i64,
+    pub time: DateTime<FixedOffset>,
     pub snapshot: bool,
 }
 
@@ -144,7 +143,7 @@ impl From<String> for NitroVersion {
         let x = value.contains("-SNAPSHOT");
         NitroVersion {
             version: value,
-            time: 0,
+            time: Local::now().into(),
             snapshot: x,
         }
     }
@@ -156,7 +155,7 @@ impl NitroRepoVersions {
         for v in self.versions.iter_mut() {
             if v.version.eq(&version) {
                 if !v.snapshot {
-                    v.time = get_current_time();
+                    v.time = Local::now().into();
                 }
                 return;
             }
@@ -171,7 +170,7 @@ impl NitroRepoVersions {
         }
         self.versions.push(NitroVersion {
             version,
-            time: get_current_time(),
+            time: Local::now().into(),
             snapshot,
         })
     }

@@ -1,8 +1,8 @@
 use std::env::{current_dir, set_var};
 use std::error::Error;
-use std::fs::OpenOptions;
 
-use std::io::{BufRead, BufReader, ErrorKind};
+
+use std::io::{ErrorKind};
 use std::path::PathBuf;
 use std::process::exit;
 
@@ -12,8 +12,8 @@ use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
 use api::authentication::middleware::HandleSession;
-use api::authentication::session::{session_cleaner, SessionManager, SessionManagerType};
-use chrono::{Duration, Local};
+use api::authentication::session::{session_cleaner, SessionManager};
+
 
 use api::generators::GeneratorCache;
 use api::settings::load_configs;
@@ -23,7 +23,7 @@ use api::storage::multi::MultiStorageController;
 
 use api::utils::load_logger;
 use api::{authentication, frontend, repository, storage, system, NitroRepo, Version};
-use log::{error, info, trace};
+use log::{info, trace};
 
 use tempfile::tempdir;
 use tokio::fs::read_to_string;
@@ -117,6 +117,8 @@ async fn main() -> std::io::Result<()> {
         use api::authentication::session::SessionManagerType;
         use core::str::FromStr;
         use log::{debug, error, warn};
+        use chrono::{Local, Duration};
+
         warn!("Using unsafe cookies");
         warn!("This is not recommended. This is only for development purposes");
         warn!("This is not secure");
@@ -212,6 +214,8 @@ fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error 
 
 #[cfg(feature = "unsafe_cookies")]
 fn load_unsafe_cookies() -> Result<Vec<(String, String)>, std::io::Error> {
+    use std::fs::OpenOptions;use std::io::BufReader;
+    use std::io::BufRead;
     let buf = PathBuf::new().join("unsafe_cookies.txt");
     if !buf.exists() {
         log::warn!("Unsafe Cookies file not found");

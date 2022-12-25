@@ -5,6 +5,8 @@
 #![allow(unreachable_patterns)]
 
 use actix_web::web::Data;
+use log::error;
+
 use serde::Serialize;
 use tokio::sync::RwLock;
 
@@ -53,9 +55,16 @@ pub struct Version {
 
 impl Version {
     pub fn new(installed: semver::Version) -> Version {
+        let version = match semver::Version::parse(env!("VERGEN_BUILD_SEMVER")) {
+            Ok(ok) => ok,
+            Err(e) => {
+                error!("Failed to parse version: {}", e);
+                semver::Version::new(0, 0, 0)
+            }
+        };
         Version {
             installed,
-            cargo_version: semver::Version::parse(env!("VERGEN_BUILD_SEMVER")).unwrap(),
+            cargo_version: version,
             git_branch: env!("VERGEN_GIT_BRANCH"),
             git_commit: env!("VERGEN_GIT_SHA"),
             mode: env!("VERGEN_RUSTC_CHANNEL"),

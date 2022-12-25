@@ -1,6 +1,5 @@
 use lockfree::map::Map;
 
-use chrono::Local;
 use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;

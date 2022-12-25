@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
+use chrono::{DateTime, FixedOffset};
 use log::warn;
 
 use crate::error::internal_error::InternalError;
@@ -12,11 +12,6 @@ use crate::storage::models::Storage;
 
 static NPM_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.%3fZ";
 
-pub fn format_time(time: i64) -> String {
-    let naive = NaiveDateTime::from_timestamp_opt(time, 0).unwrap();
-    let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
-    date_time.format(NPM_TIME_FORMAT).to_string()
-}
 pub fn format_time_chrono(time: DateTime<FixedOffset>) -> String {
     time.format(NPM_TIME_FORMAT).to_string()
 }
@@ -24,9 +19,7 @@ impl From<NitroRepoVersions> for HashMap<String, String> {
     fn from(value: NitroRepoVersions) -> Self {
         let mut map = HashMap::new();
         for x in value.versions {
-            let naive = NaiveDateTime::from_timestamp_opt(x.time, 0).unwrap();
-            let date_time: DateTime<Utc> = DateTime::from_utc(naive, Utc);
-            let format = date_time.format(NPM_TIME_FORMAT).to_string();
+            let format = x.time.format(NPM_TIME_FORMAT).to_string();
             map.insert(x.version, format);
         }
         map
@@ -52,7 +45,7 @@ pub async fn get_version_data<StorageType: Storage>(
     for version in &project.versions.versions {
         times
             .times
-            .insert(version.version.clone(), format_time(version.time));
+            .insert(version.version.clone(), format_time_chrono(version.time));
         let version_path = format!("{}/{}/package.json", project_folder, &version.version);
         let result = storage.get_file(repository, &version_path).await?;
         if result.is_none() {

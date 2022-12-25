@@ -42,9 +42,9 @@ impl sea_orm::TryGetable for TokenProperties {
 }
 
 impl sea_orm::sea_query::ValueType for TokenProperties {
-    fn try_from(v: sea_orm::Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
+    fn try_from(v: Value) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
         match v {
-            sea_orm::Value::Json(Some(x)) => {
+            Value::Json(Some(x)) => {
                 let auth_properties: TokenProperties = serde_json::from_value(*x)
                     .map_err(|_error| sea_orm::sea_query::ValueTypeErr)?;
                 Ok(auth_properties)
@@ -74,7 +74,7 @@ pub struct Model {
     pub token_hash: String,
     pub properties: TokenProperties,
     pub user_id: i64,
-    pub created: i64,
+    pub created: DateTimeWithTimeZone,
 }
 
 impl Model {
