@@ -10,6 +10,7 @@ use reqwest::header::{HeaderMap, USER_AGENT};
 use crate::storage::error::StorageError;
 use std::sync::Arc;
 use thiserror::Error;
+use crate::utils::base64_utils;
 
 #[derive(Error, Debug)]
 pub enum ExternalStageError {
@@ -29,7 +30,7 @@ pub async fn stage_to_external(
     repository: RepositoryConfig,
     _model: UserSafeData,
 ) -> Result<(), ExternalStageError> {
-    let string = base64::encode(format!("{}:{}", username, password));
+    let string = base64_utils::encode(format!("{}:{}", username, password));
     let mut map = HeaderMap::new();
     map.insert(
         "Authorization",

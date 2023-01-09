@@ -83,3 +83,22 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
     let header = x.unwrap().to_string();
     Ok(Some(header))
 }
+
+pub mod base64_utils{
+    use base64::{DecodeError, Engine};
+    use base64::engine::general_purpose::STANDARD;
+
+    pub fn decode(input: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError>{
+        STANDARD.decode(input)
+    }
+    pub fn decode_as_string(input: impl AsRef<[u8]>) ->Result<String, actix_web::Error>{
+        let decoded = decode(input).map_err(|e| actix_web::error::ErrorBadRequest(e))?;
+        String::from_utf8(decoded).map_err(|x| actix_web::error::ErrorBadRequest(x))
+    }
+    pub fn encode(input: impl AsRef<[u8]>) -> String{
+        STANDARD.encode(input)
+    }
+    pub fn encode_basic_header(username: impl AsRef<str>, password: impl AsRef<str>)->String{
+        STANDARD.encode(format!("{}:{}", username.as_ref(), password.as_ref()))
+    }
+}

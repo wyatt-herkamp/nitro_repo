@@ -1,8 +1,7 @@
 use std::env::{current_dir, set_var};
 use std::error::Error;
 
-
-use std::io::{ErrorKind};
+use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::exit;
 
@@ -13,7 +12,6 @@ use actix_web::web::{Data, PayloadConfig};
 use actix_web::{web, App, HttpServer};
 use api::authentication::middleware::HandleSession;
 use api::authentication::session::{session_cleaner, SessionManager};
-
 
 use api::generators::GeneratorCache;
 use api::settings::load_configs;
@@ -115,9 +113,9 @@ async fn main() -> std::io::Result<()> {
             compile_error!("You are not in a development environment");
         }
         use api::authentication::session::SessionManagerType;
+        use chrono::{Duration, Local};
         use core::str::FromStr;
         use log::{debug, error, warn};
-        use chrono::{Local, Duration};
 
         warn!("Using unsafe cookies");
         warn!("This is not recommended. This is only for development purposes");
@@ -128,7 +126,7 @@ async fn main() -> std::io::Result<()> {
             Ok(ok) => {
                 for (key, value) in ok {
                     debug!("Setting unsafe cookie: {key} to user {value}");
-                    let session = api::authentication::session::Session {
+                    let session = authentication::session::Session {
                         token: key,
                         user: i64::from_str(&value).ok(),
                         expiration: Local::now() + Duration::days(1),
@@ -214,8 +212,9 @@ fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error 
 
 #[cfg(feature = "unsafe_cookies")]
 fn load_unsafe_cookies() -> Result<Vec<(String, String)>, std::io::Error> {
-    use std::fs::OpenOptions;use std::io::BufReader;
+    use std::fs::OpenOptions;
     use std::io::BufRead;
+    use std::io::BufReader;
     let buf = PathBuf::new().join("unsafe_cookies.txt");
     if !buf.exists() {
         log::warn!("Unsafe Cookies file not found");
@@ -226,7 +225,7 @@ fn load_unsafe_cookies() -> Result<Vec<(String, String)>, std::io::Error> {
     let mut cookies = Vec::with_capacity(lines.size_hint().0);
     for x in lines {
         let line = x?;
-        let mut parts = line.split('=');
+        let mut parts = line.splitn(2, '=');
         let key = parts.next().unwrap();
         let value = parts.next().unwrap();
         cookies.push((key.to_string(), value.to_string()));

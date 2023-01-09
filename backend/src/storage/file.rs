@@ -1,7 +1,6 @@
 use std::fs::{DirEntry, Metadata};
 use std::path::PathBuf;
 
-
 use actix_files::NamedFile;
 use actix_web::body::BoxBody;
 use actix_web::error::ErrorBadRequest;

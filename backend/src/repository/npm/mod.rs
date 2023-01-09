@@ -28,6 +28,8 @@ use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
 use crate::storage::file::StorageFileResponse;
 use crate::storage::models::Storage;
 use crate::system::permissions::permissions_checker::CanIDo;
+use crate::utils::base64_utils;
+
 pub mod error;
 pub mod models;
 mod utils;
@@ -218,7 +220,7 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
                 for (attachment_key, attachment) in publish_request._attachments.iter() {
                     let attachment: Attachment = serde_json::from_value(attachment.clone())?;
                     let attachment_data =
-                        base64::decode(attachment.data).map_err(ErrorBadRequest)?;
+                        base64_utils::decode(attachment.data).map_err(ErrorBadRequest)?;
                     for (version, version_data) in publish_request.versions.iter() {
                         let version_data_string =
                             serde_json::to_string(version_data).map_err(ErrorBadRequest)?;

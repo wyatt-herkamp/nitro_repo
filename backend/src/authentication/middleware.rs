@@ -19,6 +19,7 @@ use crate::authentication::session::SessionManagerType;
 use crate::authentication::{
     auth_token, session::Session, session::SessionManager, verify_login, Authentication,
 };
+use crate::utils::base64_utils;
 
 pub struct HandleSession(pub bool);
 
@@ -139,9 +140,8 @@ where
                             }
                         } else if auth_type.eq(&"Basic") {
                             //If its a Basic header. Parse from base64
-                            let base64 = base64::decode(value).map_err(request_error)?;
-                            let string = String::from_utf8(base64).map_err(request_error)?;
-                            let split = string.split(':').collect::<Vec<&str>>();
+                            let base64 = base64_utils::decode_as_string(value).map_err(internal_server_error)?;
+                            let split = base64.split(':').collect::<Vec<&str>>();
 
                             if split.len() != 2 {
                                 debug!("Invalid Authorization Basic Header!");
