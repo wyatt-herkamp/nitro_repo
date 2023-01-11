@@ -69,7 +69,7 @@ semver = { version = "1", features = ["std", "serde"] }
 comrak = "0.15"
 # Staging
 tempfile = "3.3.0"
-git2 = "0.15"
+git2 = "0.16"
 schemars = "0.8.10"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
