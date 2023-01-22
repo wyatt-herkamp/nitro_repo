@@ -126,7 +126,6 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                     let storage = storages
                         .get_storage_by_name(&self.config.storage)
                         .await
-                        .unwrap()
                         .unwrap();
                     let directory = directory.clone();
                     let user = model.clone();
@@ -156,7 +155,6 @@ impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
                     let storage = storages
                         .get_storage_by_name(&self.config.storage)
                         .await
-                        .unwrap()
                         .unwrap();
                     let directory = directory.clone();
                     let user = model.clone();

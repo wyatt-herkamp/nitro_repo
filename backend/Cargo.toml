@@ -18,13 +18,13 @@ name = "nitro_utils"
 required-features = ["clap"]
 [dependencies]
 # Web
-actix-web = { version = "4.2", features = ["cookies"] }
+actix-web = { version = "4.3", features = ["cookies"] }
 actix-cors = "0.6"
-actix-service = "2.0"
+actix-service = "2"
 openssl = { version = "0.10", features = ["v110"], optional = true }
 actix-files = "0.6"
 # Partly Web
-handlebars = "4.3"
+handlebars = "4"
 # Database
 sea-orm = { version = "0.10", features = ["runtime-actix-native-tls", "macros"] }
 sqlx = "0.6"
@@ -51,6 +51,7 @@ bytes = "1.2.0"
 tokio-stream = "0.1.9"
 lockfree = { package = "tux_lockfree", git = "https://github.com/wyatt-herkamp/tux_lockfree.git" }
 sha2 = "0.10.2"
+ahash="0.8"
 # Log
 nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = { version = "0.4.17", features = ["kv_unstable", "kv_unstable_std", "kv_unstable_serde"] }
@@ -69,7 +70,7 @@ semver = { version = "1", features = ["std", "serde"] }
 comrak = "0.15"
 # Staging
 tempfile = "3.3.0"
-git2 = "0.15"
+git2 = "0.16.0"
 schemars = "0.8.10"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }

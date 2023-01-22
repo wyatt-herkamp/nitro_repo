@@ -1,5 +1,6 @@
 use lockfree::map::Map;
 
+use ahash::AHashMap;
 use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -10,6 +11,7 @@ use serde::Deserialize;
 
 use tokio::fs::{read_to_string, OpenOptions};
 use tokio::io::AsyncWriteExt;
+use tokio::sync::RwLock;
 
 use crate::storage::bad_storage::BadStorage;
 use crate::storage::error::StorageError;
@@ -23,13 +25,13 @@ pub mod web;
 
 async fn load_storages(
     storages_file: &PathBuf,
-) -> Result<Map<String, Arc<DynamicStorage>>, StorageError> {
+) -> Result<AHashMap<String, Arc<DynamicStorage>>, StorageError> {
     if !storages_file.exists() {
-        return Ok(Map::new());
+        return Ok(AHashMap::default());
     }
     let string = read_to_string(&storages_file).await?;
     let result: Vec<StorageSaver> = serde_json::from_str(&string)?;
-    let values: Map<String, Arc<DynamicStorage>> = Map::new();
+    let mut values: AHashMap<String, Arc<DynamicStorage>> = AHashMap::new();
     for factory in result {
         let name = factory.generic_config.id.clone();
         let storage = match DynamicStorage::new(factory).await {
@@ -55,10 +57,11 @@ pub async fn save_storages(
     file.write_all(result.as_bytes()).await?;
     Ok(())
 }
+type Storages<S> = RwLock<AHashMap<String, Arc<S>>>;
 #[derive(Debug)]
 pub struct MultiStorageController<S: Storage> {
-    pub storages: Map<String, Arc<S>>,
-    pub unloaded_storages: Map<String, Arc<S>>,
+    pub storages: Storages<S>,
+    pub unloaded_storages: Storages<S>,
     pub storage_file: PathBuf,
 }
 #[derive(Debug, Deserialize)]
@@ -74,33 +77,24 @@ impl MultiStorageController<DynamicStorage> {
         info!("Loading Storages");
         let result = load_storages(&storages_file).await?;
         let mut controller = MultiStorageController {
-            storages: Map::new(),
-            unloaded_storages: result,
+            storages: RwLock::new(AHashMap::new()),
+            unloaded_storages: RwLock::new(result),
             storage_file: storages_file,
         };
         controller.load_unloaded_storages().await?;
         Ok(controller)
     }
-    pub async fn get_storage_by_name(
-        &self,
-        name: &str,
-    ) -> Result<Option<Arc<DynamicStorage>>, StorageError> {
-        let storages = self.storages.get(name);
-        if let Some(storage) = storages {
-            Ok(Some(storage.as_ref().1.clone()))
-        } else {
-            Ok(None)
-        }
+    pub async fn get_storage_by_name(&self, name: &str) -> Option<Arc<DynamicStorage>> {
+        self.storages.read().await.get(name).map(|x| x.clone())
     }
-    pub fn does_storage_exist(&self, name: &str) -> Result<bool, StorageError> {
-        let storages = self.storages.get(name);
-        Ok(storages.is_some())
+    pub async fn does_storage_exist(&self, name: &str) -> Result<bool, StorageError> {
+        Ok(self.storages.read().await.contains_key(name))
     }
 
     /// Attempts to run the storages load on any storages that are unloaded.
     /// This will include the Error storages
     pub async fn load_unloaded_storages<'a>(&mut self) -> Result<(), StorageError> {
-        let unloaded = mem::take(&mut self.unloaded_storages);
+        let unloaded = mem::take(self.unloaded_storages.get_mut());
         for (name, storage) in unloaded.into_iter() {
             match storage.get_repos_to_load().await {
                 Ok(repositories) => {
@@ -121,7 +115,7 @@ impl MultiStorageController<DynamicStorage> {
                     error!("Error loading storages {}: {}", name, error);
                 }
             }
-            self.storages.insert(name, storage);
+            self.storages.get_mut().insert(name, storage);
         }
         Ok(())
     }
@@ -135,12 +129,13 @@ impl MultiStorageController<DynamicStorage> {
         let name = storage.generic_config.id.clone();
         // Check if the storages already exists then collect all Vec<StorageSaver> and add the new one
         let mut storages = Vec::new();
-        for storages_file in self.storages.iter() {
-            if storages_file.key().eq(&name) {
+        let storage_ref = self.storages.read().await;
+        for (storage_name, value) in storage_ref.iter() {
+            if storage_name.eq(&name) {
                 return Err(StorageCreateError("Storage already exists".to_string()));
             }
 
-            storages.push(storages_file.val().storage_config().clone());
+            storages.push(value.storage_config().clone());
         }
         let storage = DynamicStorage::create_new(storage)
             .await
@@ -151,7 +146,7 @@ impl MultiStorageController<DynamicStorage> {
         storages.push(storage.storage_config().clone());
         save_storages(storages, &self.storage_file).await?;
 
-        self.storages.insert(name, Arc::new(storage));
+        self.storages.write().await.insert(name, Arc::new(storage));
         Ok(())
     }
 
@@ -159,13 +154,14 @@ impl MultiStorageController<DynamicStorage> {
     pub async fn recover_storage(&self, storage: StorageSaver) -> Result<(), StorageError> {
         let name = storage.generic_config.id.clone();
         // Check if the storages already exists then collect all Vec<StorageSaver> and add the new one
-        let mut storages = Vec::new();
-        for storages_file in self.storages.iter() {
-            if storages_file.key().eq(&name) {
+
+        let storages_ref = self.storages.read().await;
+        let mut storages = Vec::with_capacity(storages_ref.len() + 1);
+        for (storage_name, storage) in storages_ref.iter() {
+            if storage_name.eq(&name) {
                 return Err(StorageCreateError("Storage already exists".to_string()));
             }
-
-            storages.push(storages_file.val().storage_config().clone());
+            storages.push(storage.storage_config().clone());
         }
         let storage = DynamicStorage::create_new(storage)
             .await
@@ -190,7 +186,7 @@ impl MultiStorageController<DynamicStorage> {
         storages.push(storage.storage_config().clone());
         save_storages(storages, &self.storage_file).await?;
 
-        self.storages.insert(name, storage);
+        self.storages.write().await.insert(name, storage);
         Ok(())
     }
 
@@ -199,17 +195,21 @@ impl MultiStorageController<DynamicStorage> {
         storage: impl AsRef<str>,
         purge_level: PurgeLevel,
     ) -> Result<(), StorageError> {
-        let option = self.storages.remove(storage.as_ref()).ok_or_else(|| {
-            StorageError::StorageDeleteError("Storage does not exist".to_string())
-        })?;
+        let option = self
+            .storages
+            .write()
+            .await
+            .remove(storage.as_ref())
+            .ok_or_else(|| {
+                StorageError::StorageDeleteError("Storage does not exist".to_string())
+            })?;
         save_storages(self.storage_savers().await, &self.storage_file).await?;
 
         match purge_level {
             PurgeLevel::All => {
-                let x = option.val().get_repository_list()?;
+                let x = option.get_repository_list()?;
                 for repository in x.into_iter() {
-                    if let Err(error) = option.val().delete_repository(&repository.name, true).await
-                    {
+                    if let Err(error) = option.delete_repository(&repository.name, true).await {
                         error!(
                             "Error deleting repository {}. Error {}",
                             repository.name, error
@@ -218,13 +218,9 @@ impl MultiStorageController<DynamicStorage> {
                 }
             }
             PurgeLevel::Configs => {
-                let x = option.val().get_repository_list()?;
+                let x = option.get_repository_list()?;
                 for repository in x.into_iter() {
-                    if let Err(error) = option
-                        .val()
-                        .delete_repository(&repository.name, false)
-                        .await
-                    {
+                    if let Err(error) = option.delete_repository(&repository.name, false).await {
                         error!(
                             "Error deleting repository {}. Error {}",
                             repository.name, error
@@ -240,23 +236,22 @@ impl MultiStorageController<DynamicStorage> {
 
     pub async fn storage_savers(&self) -> Vec<StorageSaver> {
         let mut result = Vec::new();
-        for x in self.storages.iter() {
-            let saver = x.val().storage_config().clone();
+        let storage_ref = self.storages.read().await;
+        for val in storage_ref.values() {
+            let saver = val.storage_config().clone();
             result.push(saver);
         }
         result
     }
     pub async fn names(&self) -> Vec<String> {
-        self.storages
-            .iter()
-            .map(|v| v.key().clone())
-            .collect::<Vec<_>>()
+        self.storages.read().await.keys().cloned().collect()
     }
     pub async fn storages_as_file_list(&self) -> Result<Vec<StorageFile>, StorageError> {
-        let mut files = Vec::new();
-        for v in self.storages.iter() {
-            let name = v.0.clone();
-            let create = v.1.as_ref().storage_config().generic_config.created;
+        let storages_ref = self.storages.read().await;
+        let mut files = Vec::with_capacity(storages_ref.len());
+        for (key, value) in storages_ref.iter() {
+            let name = key.clone();
+            let create = value.storage_config().generic_config.created;
             files.push(StorageFile {
                 name: name.clone(),
                 full_path: name.clone(),

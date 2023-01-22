@@ -11,11 +11,7 @@ pub(crate) use unwrap_or_not_found;
 
 macro_rules! get_storage {
     ($storage_handler:ident, $storage_name:ident) => {
-        if let Some(value) = $storage_handler
-            .get_storage_by_name(&$storage_name)
-            .await
-            .map_err(actix_web::error::ErrorInternalServerError)?
-        {
+        if let Some(value) = $storage_handler.get_storage_by_name(&$storage_name).await {
             value
         } else {
             return Err(
