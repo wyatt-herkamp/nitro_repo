@@ -6,7 +6,7 @@ use futures_util::future::{ready, Ready};
 
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::ArrayType;
-use sea_orm::JsonValue;
+use sea_orm::{ColIdx, JsonValue, TryGetError};
 use serde::{Deserialize, Serialize};
 
 use crate::system::user::database::UserSafeData;
@@ -30,14 +30,9 @@ impl From<TokenProperties> for sea_orm::Value {
 }
 
 impl sea_orm::TryGetable for TokenProperties {
-    fn try_get(
-        res: &sea_orm::QueryResult,
-        pre: &str,
-        col: &str,
-    ) -> Result<Self, sea_orm::TryGetError> {
-        let val: JsonValue = res.try_get(pre, col).map_err(sea_orm::TryGetError::DbErr)?;
-        serde_json::from_value(val)
-            .map_err(|e| sea_orm::TryGetError::DbErr(DbErr::Json(e.to_string())))
+    fn try_get_by<I: ColIdx>(res: &QueryResult, index: I) -> Result<Self, TryGetError> {
+        let val: JsonValue = res.try_get_by(index).map_err(TryGetError::DbErr)?;
+        serde_json::from_value(val).map_err(|e| TryGetError::DbErr(DbErr::Json(e.to_string())))
     }
 }
 
