@@ -36,7 +36,7 @@ toml = "0.5"
 # utils
 rand = "0.8.5"
 rust-embed = { version = "6.4.0", features = ["interpolate-folder-path"] }
-argon2 = "0.4.1"
+argon2 = "0.5.0"
 chrono = { version = "0.4" , default-features = false, features = ["serde","std","clock"] }
 regex = "1.6.0"
 futures-util = "0.3.21"
