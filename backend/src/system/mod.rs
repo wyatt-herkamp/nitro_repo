@@ -13,7 +13,7 @@ pub fn hash(password: impl AsRef<str>) -> Result<String, InternalError> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let password_hash = argon2
-        .hash_password(password.as_ref().as_bytes(), salt.as_ref())?
+        .hash_password(password.as_ref().as_bytes(), &salt)?
         .to_string();
     Ok(password_hash)
 }

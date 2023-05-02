@@ -5,6 +5,7 @@
 #![allow(unreachable_patterns)]
 
 use actix_web::web::Data;
+use current_semver::current_semver;
 use log::error;
 
 use serde::Serialize;
@@ -55,7 +56,7 @@ pub struct Version {
 
 impl Version {
     pub fn new(installed: semver::Version) -> Version {
-        let version = match semver::Version::parse(env!("VERGEN_BUILD_SEMVER")) {
+        let version = match semver::Version::parse(env!("CARGO_PKG_VERSION")) {
             Ok(ok) => ok,
             Err(e) => {
                 error!("Failed to parse version: {}", e);
@@ -77,7 +78,8 @@ impl Version {
 
 impl Default for Version {
     fn default() -> Self {
-        Version::new(semver::Version::parse(env!("VERGEN_BUILD_SEMVER")).unwrap())
+        let version = current_semver!();
+        Self::new(version)
     }
 }
 

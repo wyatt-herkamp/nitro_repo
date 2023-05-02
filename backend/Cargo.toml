@@ -36,7 +36,7 @@ toml = "0.7"
 # utils
 rand = "0.8.5"
 rust-embed = { version = "6.4.0", features = ["interpolate-folder-path"] }
-argon2 = "0.4.1"
+argon2 = "0.5.0"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1.6.0"
 futures-util = "0.3.21"
@@ -67,18 +67,19 @@ badge-maker = "0.3"
 clap = { version = "4", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
 # Cache
-comrak = "0.16.0"
+comrak = "0.18.0"
 # Staging
 tempfile = "3.3.0"
-git2 = "0.16.0"
+git2 = "0.17.0"
 schemars = "0.8.10"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
 zip = { git="https://github.com/zip-rs/zip.git" }
 typeshare = "1.0.0"
+current_semver = {git="https://github.com/wyatt-herkamp/current_semver.git"}
 [build-dependencies]
-vergen = { version = "7.0.0" }
+vergen = { version = "8.1.1",features = ["build", "cargo", "git", "gitcl", "rustc", "si"] }
 [features]
 # The latest Updaters will always be under default features
 default = ["multi_storage", "postgres", "sqlite", "mysql"]

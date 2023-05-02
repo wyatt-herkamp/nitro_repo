@@ -1,5 +1,14 @@
-use vergen::{vergen, Config};
+use vergen::EmitBuilder;
 
 fn main() {
-    vergen(Config::default()).unwrap();
+    if let Err(error) = EmitBuilder::builder()
+        .all_build()
+        .all_git()
+        .all_cargo()
+        .all_rustc()
+        .all_sysinfo()
+        .emit()
+    {
+        println!("Error: {error:?}");
+    }
 }
