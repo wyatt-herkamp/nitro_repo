@@ -56,13 +56,7 @@ pub struct Version {
 
 impl Version {
     pub fn new(installed: semver::Version) -> Version {
-        let version = match semver::Version::parse(env!("CARGO_PKG_VERSION")) {
-            Ok(ok) => ok,
-            Err(e) => {
-                error!("Failed to parse version: {}", e);
-                semver::Version::new(0, 0, 0)
-            }
-        };
+        let version = current_semver!();
         Version {
             installed,
             cargo_version: version,

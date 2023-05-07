@@ -50,10 +50,10 @@ impl Display for StorageStatus {
                 write!(f, "Loaded")
             }
             StorageStatus::Error(error) => {
-                write!(f, "{}", error)
+                write!(f, "Error while loading: {}", error)
             }
             StorageStatus::CreateError(error) => {
-                write!(f, "{}", error)
+                write!(f, "Error While Creating: {}", error)
             }
         }
     }

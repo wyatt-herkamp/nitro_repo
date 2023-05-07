@@ -6,7 +6,8 @@ use std::path::Path;
 
 use crate::authentication;
 use actix_web::http::header::HeaderMap;
-use chrono::{DateTime, Duration, Local};
+use chrono::{DateTime, Duration, FixedOffset, Local};
+use log::error;
 use nitro_log::config::Config;
 use nitro_log::{LoggerBuilders, NitroLogger};
 use rust_embed::RustEmbed;
@@ -47,21 +48,43 @@ pub fn load_logger<T: AsRef<Mode>>(logger: T) {
 pub struct Resources;
 
 impl Resources {
-    pub fn file_get<'a>(file: &str) -> Result<Cow<'a, [u8]>, InternalError> {
+    ///  Gets the file from the resources file if it exists or defaults to the embedded file.
+    ///
+    /// # Arguments
+    ///
+    /// * `file`: Relative path to the file.
+    ///
+    /// returns: Result<Cow<[u8]>, InternalError>
+    /// Errors are returned if the IO operation fails.
+    /// # Panics
+    /// If the embedded resource is not found.
+    /// This should never happen.
+    /// If it does, it is a bug.
+    /// Please report it.
+    pub fn file_get(file: &str) -> Result<Cow<'_, [u8]>, InternalError> {
         let buf = Path::new("resources").join(file);
         if buf.exists() {
-            let mut buffer = Vec::new();
-            OpenOptions::new()
-                .read(true)
-                .open(buf)?
-                .read_to_end(&mut buffer)?;
+            let mut file = match OpenOptions::new().read(true).open(buf) {
+                Ok(ok) => ok,
+                Err(err) => {
+                    error!("Unable to open the {file:?}: {}", err);
+                    return Err(InternalError::from(err));
+                }
+            };
+            let mut buffer = Vec::with_capacity(file.metadata()?.len() as usize);
+            file.read_to_end(&mut buffer)?;
             Ok(Cow::Owned(buffer))
         } else {
-            Ok(Resources::get(file).unwrap().data)
+            Ok(Resources::get(file)
+                .expect("Embedded Resource was not found")
+                .data)
         }
     }
 }
-
+pub fn get_current_date_time_struct() -> DateTime<FixedOffset> {
+    let local: DateTime<Local> = Local::now();
+    local.with_timezone(local.offset())
+}
 pub fn get_current_date_time() -> String {
     let local: DateTime<Local> = Local::now();
     let format = local.format("%B %d %Y %H:%M");
@@ -84,21 +107,21 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
     Ok(Some(header))
 }
 
-pub mod base64_utils{
-    use base64::{DecodeError, Engine};
+pub mod base64_utils {
     use base64::engine::general_purpose::STANDARD;
+    use base64::{DecodeError, Engine};
 
-    pub fn decode(input: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError>{
+    pub fn decode(input: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
         STANDARD.decode(input)
     }
-    pub fn decode_as_string(input: impl AsRef<[u8]>) ->Result<String, actix_web::Error>{
+    pub fn decode_as_string(input: impl AsRef<[u8]>) -> Result<String, actix_web::Error> {
         let decoded = decode(input).map_err(|e| actix_web::error::ErrorBadRequest(e))?;
         String::from_utf8(decoded).map_err(|x| actix_web::error::ErrorBadRequest(x))
     }
-    pub fn encode(input: impl AsRef<[u8]>) -> String{
+    pub fn encode(input: impl AsRef<[u8]>) -> String {
         STANDARD.encode(input)
     }
-    pub fn encode_basic_header(username: impl AsRef<str>, password: impl AsRef<str>)->String{
+    pub fn encode_basic_header(username: impl AsRef<str>, password: impl AsRef<str>) -> String {
         STANDARD.encode(format!("{}:{}", username.as_ref(), password.as_ref()))
     }
 }

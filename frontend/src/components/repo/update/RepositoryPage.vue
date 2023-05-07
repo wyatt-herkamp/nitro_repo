@@ -26,7 +26,6 @@ import httpCommon from "@/http-common";
 import { defaultValueCtx, Editor, rootCtx } from "@milkdown/core";
 import { nord } from "@milkdown/theme-nord";
 import { commonmark } from "@milkdown/preset-commonmark";
-import { menu } from "@milkdown/plugin-menu";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 export default defineComponent({
   name: "RepositoryPage",
@@ -48,9 +47,8 @@ export default defineComponent({
         console.log(settings.value);
 
         Editor.make()
-          .use(nord)
+          .config(nord)
           .use(commonmark)
-          .use(menu)
           .use(listener)
           .config((ctx) => {
             ctx.set(rootCtx, document.querySelector("#editor"));

@@ -125,7 +125,8 @@ impl MultiStorageController<DynamicStorage> {
     /// Checks to ensure the storages will load correctly. If it will not it will error our
     /// Saves the new storages config
     /// Adds the storages to the main Storage map without loading repositories. Because its a new storages
-    pub async fn create_storage<'a>(&self, storage: StorageSaver) -> Result<(), StorageError> {
+    pub async fn create_storage<'a>(&self, mut storage: StorageSaver) -> Result<(), StorageError> {
+        storage.generic_config.id = storage.generic_config.id.to_lowercase();
         let name = storage.generic_config.id.clone();
         // Check if the storages already exists then collect all Vec<StorageSaver> and add the new one
         let mut storages = Vec::new();
@@ -134,7 +135,6 @@ impl MultiStorageController<DynamicStorage> {
             if storage_name.eq(&name) {
                 return Err(StorageCreateError("Storage already exists".to_string()));
             }
-
             storages.push(value.storage_config().clone());
         }
         let storage = DynamicStorage::create_new(storage)
@@ -143,10 +143,13 @@ impl MultiStorageController<DynamicStorage> {
                 error!("Error creating storages {:?}.", v);
                 StorageCreateError(error.to_string())
             })?;
+        drop(storage_ref);
         storages.push(storage.storage_config().clone());
         save_storages(storages, &self.storage_file).await?;
-
+        info!("Created storage {}", name);
+        info!("Loading storage {:?}", storage);
         self.storages.write().await.insert(name, Arc::new(storage));
+        info!("Loaded storage");
         Ok(())
     }
 

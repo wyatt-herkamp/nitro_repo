@@ -226,6 +226,9 @@ pub struct StorageSaver {
 pub struct GeneralConfig {
     pub id: String,
     /// This is created internally by the storages. No need to set this.
-    #[serde(deserialize_with = "crate::time_fix::read_time")]
+    #[serde(
+        deserialize_with = "crate::time_fix::read_time",
+        default = "crate::utils::get_current_date_time_struct"
+    )]
     pub created: DateTime<FixedOffset>,
 }

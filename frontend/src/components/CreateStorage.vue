@@ -116,7 +116,8 @@ export default defineComponent({
         .post("api/admin/storage/new", {
           id: this.form.id,
           handler_config: {
-            [this.form.type]: this.localStorageConf,
+            storage_type: this.form.type,
+            settings: this.localStorageConf,
           },
         })
         .then((res) => {
