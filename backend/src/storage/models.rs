@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::repository::handler::Repository;
 use async_trait::async_trait;
 use bytes::Bytes;
-use lockfree::map::Removed;
+use lock_freedom::map::Removed;
 use serde::de::DeserializeOwned;
 
 use tokio_stream::Stream;

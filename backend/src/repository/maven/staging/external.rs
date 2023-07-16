@@ -8,9 +8,9 @@ use log::{trace, warn};
 use reqwest::header::{HeaderMap, USER_AGENT};
 
 use crate::storage::error::StorageError;
+use crate::utils::base64_utils;
 use std::sync::Arc;
 use thiserror::Error;
-use crate::utils::base64_utils;
 
 #[derive(Error, Debug)]
 pub enum ExternalStageError {

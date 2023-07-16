@@ -140,7 +140,8 @@ where
                             }
                         } else if auth_type.eq(&"Basic") {
                             //If its a Basic header. Parse from base64
-                            let base64 = base64_utils::decode_as_string(value).map_err(internal_server_error)?;
+                            let base64 = base64_utils::decode_as_string(value)
+                                .map_err(internal_server_error)?;
                             let split = base64.split(':').collect::<Vec<&str>>();
 
                             if split.len() != 2 {

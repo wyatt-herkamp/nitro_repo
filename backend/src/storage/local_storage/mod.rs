@@ -8,7 +8,7 @@ use crate::repository::handler::{DynamicRepositoryHandler, Repository};
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
-use lockfree::map::{Map, Removed};
+use lock_freedom::map::{Map, Removed};
 use log::{debug, error, trace, warn};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};

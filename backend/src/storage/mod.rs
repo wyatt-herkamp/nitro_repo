@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
-use lockfree::map::Removed;
+use lock_freedom::map::Removed;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 

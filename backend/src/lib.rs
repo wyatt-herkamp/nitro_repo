@@ -6,7 +6,6 @@
 
 use actix_web::web::Data;
 use current_semver::current_semver;
-use log::error;
 
 use serde::Serialize;
 use tokio::sync::RwLock;

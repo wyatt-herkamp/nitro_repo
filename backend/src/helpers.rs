@@ -42,7 +42,7 @@ macro_rules! get_repository {
 macro_rules! take_repository {
     ($storage:ident, $repository:ident) => {
         if let Some(repository) = $storage.remove_repository_for_updating($repository) {
-            match lockfree::map::Removed::try_into(repository) {
+            match lock_freedom::map::Removed::try_into(repository) {
                 Ok((name, arc)) => match std::sync::Arc::try_unwrap(arc) {
                     Ok(ok) => (name, ok),
                     Err(v) => {
