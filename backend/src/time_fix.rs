@@ -39,7 +39,12 @@ impl<'de> Visitor<'de> for DateTimeVisitor {
         E: Error,
     {
         Ok(NaiveDateTime::from_timestamp_millis(v)
-            .map(|v| DateTime::<FixedOffset>::from_utc(v, FixedOffset::east_opt(0).unwrap()))
+            .map(|v| {
+                DateTime::<FixedOffset>::from_naive_utc_and_offset(
+                    v,
+                    FixedOffset::east_opt(0).unwrap(),
+                )
+            })
             .unwrap_or_default())
     }
     #[inline]

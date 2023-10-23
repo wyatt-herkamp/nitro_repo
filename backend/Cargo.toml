@@ -21,21 +21,22 @@ required-features = ["clap"]
 actix-web = { version = "4.3", features = ["cookies"] }
 actix-cors = "0.6"
 actix-service = "2"
-openssl = { version = "0.10", features = ["v110"], optional = true }
+rustls = { version = "0.21.7" ,optional = true}
+rustls-pemfile = { version = "1" ,optional = true}
 actix-files = "0.6"
 # Partly Web
 handlebars = "4"
 # Database
-sea-orm = { version = "0.11", features = ["runtime-actix-native-tls", "macros"] }
-sqlx = "0.6"
+sea-orm = { version = "0.12.4", features = ["runtime-actix-rustls", "macros"] }
+sqlx = "0.7.2"
 # Serde
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 futures = "0.3"
-toml = "0.7"
+toml = "0.8.2"
 # utils
 rand = "0.8.5"
-rust-embed = { version = "6.4.0", features = ["interpolate-folder-path"] }
+rust-embed = { version = "8.0.0", features = ["interpolate-folder-path"] }
 argon2 = "0.5.0"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1.6.0"
@@ -57,8 +58,8 @@ parking_lot = { version = "0.12", features = [] }
 nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
 log = { version = "0.4.17", features = ["kv_unstable", "kv_unstable_std", "kv_unstable_serde"] }
 # Rust Internal
-strum = { version = "0.24", features = ["derive"] }
-strum_macros = "0.24"
+strum = { version = "0.25.0", features = ["derive"] }
+strum_macros = "0.25.3"
 async-trait = "0.1"
 thiserror = "1"
 # Badge Stuff
@@ -68,10 +69,10 @@ badge-maker = "0.3"
 clap = { version = "4", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
 # Cache
-comrak = "0.18.0"
+comrak = "0.19.0"
 # Staging
 tempfile = "3.3.0"
-git2 = "0.17.0"
+git2 = "0.18.1"
 schemars = "0.8.10"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
@@ -84,7 +85,7 @@ vergen = { version = "8.1.1",features = ["build", "cargo", "git", "gitcl", "rust
 [features]
 # The latest Updaters will always be under default features
 default = ["multi_storage", "postgres", "sqlite", "mysql"]
-ssl = ["openssl", "actix-web/openssl"]
+ssl = ["rustls","rustls-pemfile", "actix-web/rustls-0_21"]
 mysql = ["sea-orm/sqlx-mysql"]
 sqlite = ["sea-orm/sqlx-sqlite"]
 postgres = ["sea-orm/sqlx-postgres"]
