@@ -1,23 +1,61 @@
-use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
+use std::{
+    fmt,
+    fmt::{Debug, Display, Formatter},
+};
 
-use actix_web::dev::Payload;
-use actix_web::http::StatusCode;
-use actix_web::{FromRequest, HttpMessage, HttpRequest, ResponseError};
+use actix_web::{
+    dev::Payload, http::StatusCode, web::Data, FromRequest, HttpMessage, HttpRequest, ResponseError,
+};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use futures_util::future::{ready, Ready};
-use log::trace;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use futures_util::future::LocalBoxFuture;
+use log::warn;
+use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 use serde::Deserialize;
 use serde_json::json;
+use this_actix_error::ActixError;
+use thiserror::Error;
 
-use crate::authentication::auth_token::AuthTokenModel;
-use crate::authentication::session::Session;
-use crate::error::internal_error::InternalError;
-
-use crate::system::user::database::Column::Username;
-use crate::system::user::database::UserSafeData;
-use crate::system::user::{UserEntity, UserModel};
+use crate::{
+    authentication::{auth_token::AuthTokenModel, session::Session},
+    error::internal_error::InternalError,
+    system::user::{
+        database::{Column::Username, UserSafeData},
+        UserEntity, UserModel,
+    },
+};
+#[derive(Debug, Error, ActixError)]
+pub enum AuthenticationError {
+    #[status_code(UNAUTHORIZED)]
+    #[error("Unauthorized")]
+    NoAuthenticationProvided,
+    #[status_code(UNAUTHORIZED)]
+    #[error("Invalid API Key")]
+    InvalidAPIKey,
+    #[status_code(UNAUTHORIZED)]
+    #[error("Invalid Session")]
+    InvalidSession,
+    #[status_code(FORBIDDEN)]
+    #[error("Must be a session")]
+    MustBeSession,
+    #[status_code(BAD_REQUEST)]
+    #[error("Invalid Basic Auth Header")]
+    InvalidFormatBasicAuth,
+    #[status_code(UNAUTHORIZED)]
+    #[error("Invalid Login")]
+    InvalidLogin,
+    #[error("Database Error")]
+    #[status_code(INTERNAL_SERVER_ERROR)]
+    DatabaseError(#[from] DbErr),
+    #[error("Internal Error")]
+    #[status_code(INTERNAL_SERVER_ERROR)]
+    InternalError(#[from] InternalError),
+    #[error("No Authentication Provided")]
+    #[status_code(UNAUTHORIZED)]
+    NoAuthentication,
+    #[status_code(BAD_REQUEST)]
+    #[error("Invalid Authentication Format: {0}")]
+    InvalidAuthenticationFormat(String),
+}
 
 pub mod auth_token;
 pub mod middleware;
@@ -47,70 +85,161 @@ impl ResponseError for NotAuthenticated {
     }
 }
 #[derive(Clone, Debug, PartialEq)]
+pub enum RawAuthentication {
+    AuthToken(String),
+    Session(Session),
+    Basic(String),
+    AuthorizationHeaderUnknown(String, String),
+}
+/// Could be any type of authentication
+///
+/// Could be an unknown type of authentication. Not Secure to use use unless you call `authorized()` or get_user()`
+#[derive(Clone, Debug, PartialEq)]
 pub enum Authentication {
-    /// Neither a Session or Auth Token exist.
-    /// Might deny these requests in the future on API routes
-    NoIdentification,
     /// An Auth Token was passed under the Authorization Header
     AuthToken(AuthTokenModel, UserSafeData),
     /// Session Value from Cookie
-    Session(Session),
+    Session(Session, UserSafeData),
     /// If the Authorization Header could not be parsed. Give them the value
     AuthorizationHeaderUnknown(String, String),
     /// Authorization Basic Header
     Basic(UserSafeData),
+    /// No Authentication was provided
+    /// Could be a valid request, but not authenticated
+    NoAuthentication,
 }
 
+/// Is a known authentication type
+#[derive(Clone, Debug, PartialEq)]
+pub enum TrulyAuthenticated {
+    /// An Auth Token was passed under the Authorization Header
+    AuthToken(AuthTokenModel, UserSafeData),
+    /// Session Value from Cookie
+    Session(Session, UserSafeData),
+    /// Authorization Basic Header
+    Basic(UserSafeData),
+}
+impl TryFrom<Authentication> for TrulyAuthenticated {
+    type Error = AuthenticationError;
+
+    fn try_from(value: Authentication) -> Result<Self, Self::Error> {
+        match value {
+            Authentication::AuthToken(token, user) => {
+                Ok(TrulyAuthenticated::AuthToken(token, user))
+            }
+            Authentication::Session(session, user) => {
+                Ok(TrulyAuthenticated::Session(session, user))
+            }
+            Authentication::Basic(user) => Ok(TrulyAuthenticated::Basic(user)),
+            Authentication::AuthorizationHeaderUnknown(auth_type, _) => {
+                warn!("Unknown Auth Type: {}", auth_type);
+                Err(AuthenticationError::InvalidAuthenticationFormat(auth_type))
+            }
+            Authentication::NoAuthentication => Err(AuthenticationError::NoAuthentication),
+        }
+    }
+}
+impl TrulyAuthenticated {
+    pub fn into_authenticated(self) -> Authentication {
+        match self {
+            TrulyAuthenticated::AuthToken(token, user) => Authentication::AuthToken(token, user),
+            TrulyAuthenticated::Session(session, user) => Authentication::Session(session, user),
+            TrulyAuthenticated::Basic(user) => Authentication::Basic(user),
+        }
+    }
+
+    pub fn into_user(self) -> UserSafeData {
+        match self {
+            TrulyAuthenticated::AuthToken(_, user) => user,
+            TrulyAuthenticated::Session(_, user) => user,
+            TrulyAuthenticated::Basic(user) => user,
+        }
+    }
+    pub async fn new(
+        raw: RawAuthentication,
+        database: Data<DatabaseConnection>,
+    ) -> Result<Self, AuthenticationError> {
+        let authentication = Authentication::new(raw, database).await?;
+        let authentication = authentication.try_into()?;
+        Ok(authentication)
+    }
+}
 impl Authentication {
     pub fn authorized(&self) -> bool {
-        if let Authentication::NoIdentification = &self {
-            return false;
-        }
-        if let Authentication::Session(session) = &self {
-            return session.user.is_some();
-        }
-        true
+        !matches!(self, Authentication::AuthorizationHeaderUnknown(_, _))
     }
-    pub async fn get_user(
-        self,
-        database: &DatabaseConnection,
-    ) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
-        match self {
-            Authentication::AuthToken(_, user) => Ok(Ok(user)),
-            Authentication::Session(session) => {
-                if let Some(user) = session.user {
-                    let option = UserEntity::find_by_id(user)
-                        .into_model()
-                        .one(database)
-                        .await?;
-                    if let Some(user) = option {
-                        Ok(Ok(user))
-                    } else {
-                        Ok(Err(NotAuthenticated))
-                    }
-                } else {
-                    Ok(Err(NotAuthenticated))
-                }
+    pub async fn new(
+        raw: RawAuthentication,
+        database: Data<DatabaseConnection>,
+    ) -> Result<Self, AuthenticationError> {
+        match raw {
+            RawAuthentication::AuthToken(token) => {
+                let token = auth_token::get_token(token, &database).await?;
+                let (token, user) = token.ok_or(AuthenticationError::InvalidAPIKey)?;
+                Ok(Authentication::AuthToken(token, user))
             }
-            Authentication::Basic(user) => Ok(Ok(user)),
-            _ => Ok(Err(NotAuthenticated)),
+            RawAuthentication::Session(session) => {
+                let user = UserEntity::find_by_id(session.user_id)
+                    .one(database.as_ref())
+                    .await?
+                    .ok_or(AuthenticationError::InvalidSession)?;
+                Ok(Authentication::Session(session, user.into()))
+            }
+            RawAuthentication::Basic(basic) => {
+                let basic = utils::decode_base64_as_string(basic)?;
+                let split: Vec<&str> = basic.split(":").collect();
+                if split.len() != 2 {
+                    return Err(AuthenticationError::InvalidFormatBasicAuth);
+                }
+                let username = split[0];
+                let password = split[1];
+                verify_login(username, password, &database)
+                    .await?
+                    .map(Authentication::Basic)
+                    .ok_or(AuthenticationError::InvalidLogin)
+            }
+            RawAuthentication::AuthorizationHeaderUnknown(auth_type, value) => {
+                Ok(Authentication::AuthorizationHeaderUnknown(auth_type, value))
+            }
+        }
+    }
+    pub fn get_user(self) -> Option<UserSafeData> {
+        match self {
+            Authentication::AuthToken(_, user) => Some(user),
+            Authentication::Session(_, user) => Some(user),
+            Authentication::Basic(user) => Some(user),
+            _ => None,
         }
     }
 }
-
 impl FromRequest for Authentication {
-    type Error = InternalError;
-    type Future = Ready<Result<Authentication, Self::Error>>;
+    type Error = AuthenticationError;
+    type Future = LocalBoxFuture<'static, Result<Authentication, Self::Error>>;
 
     #[inline]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        let model = req.extensions_mut().get::<Authentication>().cloned();
-        if model.is_none() {
-            trace!("Missing Extension");
-            return ready(Ok(Authentication::NoIdentification));
+        let model = req.extensions_mut().get::<RawAuthentication>().cloned();
+        let database = req.app_data::<Data<DatabaseConnection>>().unwrap().clone();
+        if let Some(model) = model {
+            Box::pin(async move { Authentication::new(model, database).await })
+        } else {
+            Box::pin(async move { Ok(Authentication::NoAuthentication) })
         }
+    }
+}
+impl FromRequest for TrulyAuthenticated {
+    type Error = AuthenticationError;
+    type Future = LocalBoxFuture<'static, Result<TrulyAuthenticated, Self::Error>>;
 
-        ready(Ok(model.unwrap()))
+    #[inline]
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let model = req.extensions_mut().get::<RawAuthentication>().cloned();
+        let database = req.app_data::<Data<DatabaseConnection>>().unwrap().clone();
+        if let Some(model) = model {
+            Box::pin(async move { TrulyAuthenticated::new(model, database).await })
+        } else {
+            Box::pin(async move { Err(AuthenticationError::NoAuthenticationProvided) })
+        }
     }
 }
 
@@ -124,8 +253,11 @@ impl<T: Clone + Debug> SecureAction<T> {
     pub async fn verify(
         &self,
         database: &DatabaseConnection,
-    ) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
-        verify_login(&self.username, &self.password, database).await
+    ) -> Result<Option<UserSafeData>, AuthenticationError> {
+        let user = verify_login(&self.username, &self.password, database)
+            .await?
+            .ok_or(AuthenticationError::InvalidLogin)?;
+        Ok(Some(user))
     }
     pub fn into_inner(self) -> T {
         self.secure_data
@@ -136,22 +268,39 @@ pub async fn verify_login(
     username: impl AsRef<str>,
     password: impl AsRef<str>,
     database: &DatabaseConnection,
-) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
+) -> Result<Option<UserSafeData>, AuthenticationError> {
     let user_found: Option<UserModel> = UserEntity::find()
         .filter(Username.eq(username.as_ref()))
         .one(database)
         .await?;
     if user_found.is_none() {
-        return Ok(Err(NotAuthenticated));
+        return Ok(None);
     }
     let argon2 = Argon2::default();
     let user = user_found.unwrap();
-    let parsed_hash = PasswordHash::new(user.password.as_str())?;
+    let parsed_hash = PasswordHash::new(user.password.as_str()).map_err(|v| {
+        warn!("Error Parsing Password Hash: {:?}", v);
+        AuthenticationError::InternalError(InternalError::from(v))
+    })?;
     if argon2
         .verify_password(password.as_ref().as_bytes(), &parsed_hash)
         .is_err()
     {
-        return Ok(Err(NotAuthenticated));
+        return Ok(None);
     }
-    Ok(Ok(user.into()))
+    Ok(Some(user.into()))
+}
+mod utils {
+    use base64::{engine::general_purpose::STANDARD, DecodeError, Engine};
+
+    use super::AuthenticationError;
+
+    pub fn decode_base64(input: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
+        STANDARD.decode(input)
+    }
+    pub fn decode_base64_as_string(input: impl AsRef<[u8]>) -> Result<String, AuthenticationError> {
+        let decoded =
+            decode_base64(input).map_err(|_| AuthenticationError::InvalidFormatBasicAuth)?;
+        String::from_utf8(decoded).map_err(|_| AuthenticationError::InvalidFormatBasicAuth)
+    }
 }

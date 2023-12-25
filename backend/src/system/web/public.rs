@@ -1,14 +1,12 @@
-use actix_web::http::StatusCode;
-use actix_web::{get, web};
-use actix_web::{post, HttpRequest, HttpResponse};
+use actix_web::{get, http::StatusCode, post, web, HttpRequest, HttpResponse};
 use log::error;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::authentication::session::SessionManager;
-use crate::authentication::session::SessionManagerType;
-use crate::authentication::verify_login;
-use crate::NitroRepoData;
+use crate::{
+    authentication::{session::SessionManager, verify_login},
+    NitroRepoData,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Login {
@@ -23,23 +21,17 @@ pub async fn login(
     r: HttpRequest,
     nc: web::Json<Login>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = verify_login(nc.username.clone(), nc.password.clone(), &connection).await??;
-    let cookie = r.cookie("session");
-    if let Some(cookie) = cookie {
-        actix_web::rt::spawn(async move {
-            if (session_manager.set_user(cookie.value(), user.id).await).is_err() {
-                error!(
-                    "Unable to save user {} to cookie {}",
-                    user.id,
-                    cookie.value()
-                );
-            }
-        });
-        Ok(HttpResponse::Ok().json(user))
-    } else {
-        log::warn!("No cookie found for {r:?}");
-        Ok(HttpResponse::Ok().status(StatusCode::BAD_GATEWAY).finish())
-    }
+    let user = verify_login(nc.username.clone(), nc.password.clone(), &connection)
+        .await?
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Invalid login"))?;
+    let session = session_manager
+        .create_session_default(user.id)
+        .map_err(|e| {
+            error!("Failed to create session: {}", e);
+            actix_web::error::ErrorInternalServerError("Failed to create session")
+        })?;
+
+    Ok(HttpResponse::Ok().cookie(session.new_cookie()).finish())
 }
 
 #[get("/version")]

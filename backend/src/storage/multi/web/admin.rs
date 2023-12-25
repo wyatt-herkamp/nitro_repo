@@ -1,21 +1,25 @@
 use actix_web::{delete, get, post, web, HttpResponse};
 use sea_orm::DatabaseConnection;
 
-use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
-use crate::storage::error::StorageError;
-use crate::storage::models::Storage;
-use crate::storage::multi::{MultiStorageController, PurgeLevel};
-use crate::storage::{DynamicStorage, StorageSaver};
-use crate::system::permissions::permissions_checker::CanIDo;
+use crate::{
+    authentication::{Authentication, TrulyAuthenticated},
+    error::internal_error::InternalError,
+    storage::{
+        error::StorageError,
+        models::Storage,
+        multi::{MultiStorageController, PurgeLevel},
+        DynamicStorage, StorageSaver,
+    },
+    system::permissions::permissions_checker::CanIDo,
+};
 
 #[get("/storages")]
 pub async fn get_storages(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
 
     Ok(HttpResponse::Ok().json(storage_handler.storage_savers().await))
@@ -27,9 +31,9 @@ pub async fn new_storage(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     new_storage: web::Json<StorageSaver>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     if let Err(error) = storage_handler.create_storage(new_storage.0).await {
         match error {
@@ -46,10 +50,10 @@ pub async fn new_storage(
 pub async fn delete_storage(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     request: web::Path<(String, PurgeLevel)>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     let (name, level) = request.into_inner();
     storage_handler
@@ -64,9 +68,9 @@ pub async fn get_storage(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     name: web::Path<String>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     let storage = name.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage);

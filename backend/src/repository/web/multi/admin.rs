@@ -1,33 +1,29 @@
 use actix_web::{delete, get, web, HttpResponse};
-
+use paste::paste;
+use schemars::schema::RootSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::authentication::Authentication;
-
-use crate::error::internal_error::InternalError;
-
-use crate::repository::handler::Repository;
-
-use crate::repository::settings::{RepositoryConfigLayout, Visibility};
-
-use crate::storage::models::Storage;
-use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
-use crate::system::permissions::permissions_checker::CanIDo;
-
-use paste::paste;
-use schemars::schema::RootSchema;
+use crate::{
+    authentication::{Authentication, TrulyAuthenticated},
+    error::internal_error::InternalError,
+    repository::{
+        handler::Repository,
+        settings::{RepositoryConfigLayout, Visibility},
+    },
+    storage::{models::Storage, multi::MultiStorageController, DynamicStorage},
+    system::permissions::permissions_checker::CanIDo,
+};
 
 /// Get all repositories from the storage
 #[get("/repositories/{storage_name}")]
 pub async fn get_repositories(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     storage_name: web::Path<String>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     let storage = storage_name.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage);
@@ -44,8 +40,8 @@ macro_rules! create_repository {
     ($($repository:ident,$repository_type:path, $repository_config:path),*) => {
         pub async fn repository_layout(_storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
             database: web::Data<DatabaseConnection>,
-            auth: Authentication) -> actix_web::Result<HttpResponse> {
-                let user = auth.get_user(&database).await??;
+            auth: TrulyAuthenticated) -> actix_web::Result<HttpResponse> {
+                let user = auth.into_user();
                 user.can_i_edit_repos()?;
 
                 let layouts = vec![$(CreateRepositoryLayout{
@@ -59,11 +55,11 @@ macro_rules! create_repository {
         pub async fn [<create_repository_ $repository>](
             storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
             database: web::Data<DatabaseConnection>,
-            auth: Authentication,
+            auth: TrulyAuthenticated,
             path_params: web::Path<(String, String)>,
             inner_config: web::Json<$repository_config>,
         ) -> actix_web::Result<HttpResponse> {
-            let user = auth.get_user(&database).await??;
+            let user = auth.into_user();
             user.can_i_edit_repos()?;
             let (storage_name, repository_name) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -117,11 +113,11 @@ pub struct GetRepositoryQuery {
 pub async fn get_repository(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     path_params: web::Path<(String, String)>,
     _query_params: web::Query<GetRepositoryQuery>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -140,11 +136,11 @@ pub struct DeleteRepositoryQuery {
 pub async fn delete_repository(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     path_params: web::Path<(String, String)>,
     query_params: web::Query<DeleteRepositoryQuery>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -160,10 +156,10 @@ pub async fn delete_repository(
 pub async fn get_config_layout(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     path_params: web::Path<(String, String)>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_repos()?;
     let (storage_name, repository_name) = path_params.into_inner();
     let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -178,10 +174,10 @@ macro_rules! update_repository_core_prop {
         pub async fn [<update_repository_ $name>](
             storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
             database: web::Data<DatabaseConnection>,
-            auth: Authentication,
+            auth: TrulyAuthenticated,
             path_params: web::Path<(String, String, $value_type)>,
         ) -> actix_web::Result<HttpResponse> {
-            let user = auth.get_user(&database).await??;
+            let user = auth.into_user();
             user.can_i_edit_repos()?;
             let (storage_name, repository_name, value) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);

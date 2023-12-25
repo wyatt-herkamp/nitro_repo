@@ -1,6 +1,7 @@
-use crate::repository::settings::RepositoryConfigType;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use crate::repository::settings::RepositoryConfigType;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq, JsonSchema)]
 pub enum PageType {
@@ -28,17 +29,26 @@ impl RepositoryConfigType for RepositoryPage {
 }
 
 pub mod multi_web {
-    use crate::generators::GeneratorCache;
-    use crate::repository;
-    use crate::repository::handler::{DynamicRepositoryHandler, Repository};
-    use crate::repository::settings::repository_page::{RepositoryPage, UpdateRepositoryPage};
-    use crate::repository::settings::RepositoryConfigHandler;
-    use crate::storage::models::Storage;
-    use crate::storage::DynamicStorage;
-    use actix_web::web::{Data, Path};
-    use actix_web::HttpResponse;
-    use log::{error, trace};
     use std::sync::Arc;
+
+    use actix_web::{
+        web::{Data, Path},
+        HttpResponse,
+    };
+    use log::{error, trace};
+
+    use crate::{
+        generators::GeneratorCache,
+        repository,
+        repository::{
+            handler::{DynamicRepositoryHandler, Repository},
+            settings::{
+                repository_page::{RepositoryPage, UpdateRepositoryPage},
+                RepositoryConfigHandler,
+            },
+        },
+        storage::{models::Storage, DynamicStorage},
+    };
 
     pub async fn get_page(
         storage_handler: actix_web::web::Data<
@@ -49,7 +59,7 @@ pub mod multi_web {
         path_params: Path<(String, String)>,
     ) -> actix_web::Result<actix_web::HttpResponse> {
         use crate::system::permissions::permissions_checker::CanIDo;
-        let user = auth.get_user(&database).await??;
+        let user = auth.get_user();
         user.can_i_edit_repos()?;
         let (storage_name, repository_name) = path_params.into_inner();
         let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -87,13 +97,13 @@ pub mod multi_web {
             crate::storage::multi::MultiStorageController<crate::storage::DynamicStorage>,
         >,
         database: actix_web::web::Data<sea_orm::DatabaseConnection>,
-        auth: crate::authentication::Authentication,
+        auth: crate::authentication::TrulyAuthenticated,
         path_params: Path<(String, String)>,
         body: actix_web::web::Json<UpdateRepositoryPage>,
         generator: Data<GeneratorCache>,
     ) -> actix_web::Result<actix_web::HttpResponse> {
         use crate::system::permissions::permissions_checker::CanIDo;
-        let user = auth.get_user(&database).await??;
+        let user = auth.into_user();
         user.can_i_edit_repos()?;
         let (storage_name, repository_name) = path_params.into_inner();
         let storage = crate::helpers::get_storage!(storage_handler, storage_name);

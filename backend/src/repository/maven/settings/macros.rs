@@ -4,12 +4,12 @@ macro_rules! define_repository_config_get {
         pub async fn [<get_ $config_name>](
             storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController<crate::storage::DynamicStorage>>,
             database: actix_web::web::Data<sea_orm::DatabaseConnection>,
-            auth: crate::authentication::Authentication,
+            auth: crate::authentication::TrulyAuthenticated,
             path_params: actix_web::web::Path<(String, String)>,
         ) -> actix_web::Result<actix_web::HttpResponse> {
             use crate::storage::models::Storage;
             use crate::system::permissions::permissions_checker::CanIDo;
-            let user = auth.get_user(&database).await??;
+            let user = auth.into_user();
             user.can_i_edit_repos()?;
             let (storage_name, repository_name) = path_params.into_inner();
             let storage = crate::helpers::get_storage!(storage_handler, storage_name);
@@ -32,14 +32,14 @@ macro_rules! define_repository_config_set {
             pub async fn [<set_ $config_name>](
                 storage_handler: actix_web::web::Data<crate::storage::multi::MultiStorageController<crate::storage::DynamicStorage>>,
                 database: actix_web::web::Data<sea_orm::DatabaseConnection>,
-                auth: crate::authentication::Authentication,
+                auth: crate::authentication::TrulyAuthenticated,
                 path_params: actix_web::web::Path<(String, String)>,
                 body: actix_web::web::Json<$config>,
             ) -> actix_web::Result<actix_web::HttpResponse> {
                 use crate::storage::models::Storage;
                 use crate::repository::handler::Repository;
                 use crate::system::permissions::permissions_checker::CanIDo;
-                let user = auth.get_user(&database).await??;
+                let user = auth.into_user();
                 user.can_i_edit_repos()?;
                 let (storage_name, repository_name) = path_params.into_inner();
                 let storage = crate::helpers::get_storage!(storage_handler, storage_name);

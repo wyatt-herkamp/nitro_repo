@@ -1,22 +1,23 @@
-use crate::authentication::Authentication;
-use crate::system::permissions::permissions_checker::CanIDo;
-use crate::system::user::UserModel;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::Local;
-
-use super::super::user::database::ActiveModel;
-use super::super::user::database::*;
-use crate::helpers::unwrap_or_not_found;
-use crate::system::hash;
-use crate::system::permissions::UserPermissions;
-use crate::system::user::database::UserSafeData;
-use sea_orm::ActiveModelTrait;
-use sea_orm::ActiveValue::Set;
-use sea_orm::EntityTrait;
-use sea_orm::{ColumnTrait, DatabaseConnection, IntoActiveModel, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
+    IntoActiveModel, QueryFilter,
+};
 use serde::{Deserialize, Serialize};
 use this_actix_error::ActixError;
 use thiserror::Error;
+
+use super::super::user::database::{ActiveModel, *};
+use crate::{
+    authentication::{Authentication, TrulyAuthenticated},
+    helpers::unwrap_or_not_found,
+    system::{
+        hash,
+        permissions::{permissions_checker::CanIDo, UserPermissions},
+        user::{database::UserSafeData, UserModel},
+    },
+};
 
 // struct that derives Serialize and Deserialize contains the number of active storages, number of active repositories, and the number of active users.
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -28,10 +29,10 @@ pub struct SystemStatus {
 
 #[get("users/list")]
 pub async fn list_users(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
     let result: Vec<UserModel> = super::super::user::get_users(&database)
         .await
@@ -42,11 +43,11 @@ pub async fn list_users(
 
 #[get("user/{id}")]
 pub async fn get_user(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
     id: web::Path<i64>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
     let result: UserSafeData =
         unwrap_or_not_found!(super::super::user::get_by_id(id.into_inner(), &database)
@@ -75,11 +76,11 @@ pub enum NewUserResponse {
 
 #[post("/user")]
 pub async fn create_user(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
     value: web::Json<NewUser>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
     let user = value.into_inner();
     if Entity::find()
@@ -117,12 +118,12 @@ pub async fn create_user(
 
 #[put("/user/{id}/permissions")]
 pub async fn update_permissions(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
     id: web::Path<i64>,
     permissions: web::Json<UserPermissions>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
 
     let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find()
@@ -145,12 +146,12 @@ pub struct UpdatePassword {
 
 #[put("/user/{id}/password")]
 pub async fn update_password(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
     id: web::Path<i64>,
     password: web::Json<UpdatePassword>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
 
     let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find()
@@ -174,12 +175,12 @@ pub struct UpdateUser {
 
 #[put("/user/{id}/data")]
 pub async fn update_data(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
     id: web::Path<i64>,
     data: web::Json<UpdateUser>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
 
     let user: Model = crate::helpers::unwrap_or_not_found!(Entity::find()
@@ -199,11 +200,11 @@ pub async fn update_data(
 
 #[delete("user/{id}")]
 pub async fn delete_user(
-    auth: Authentication,
+    auth: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
     id: web::Path<i64>,
 ) -> actix_web::Result<HttpResponse> {
-    let user = auth.get_user(&database).await??;
+    let user = auth.into_user();
     user.can_i_edit_users()?;
     let user: Model = unwrap_or_not_found!(Entity::find()
         .filter(Column::Id.eq(id.into_inner()))

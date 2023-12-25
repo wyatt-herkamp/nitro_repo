@@ -1,12 +1,18 @@
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
-use std::fs::create_dir_all;
-use std::path::PathBuf;
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+    fs::create_dir_all,
+    path::PathBuf,
+};
 
+use chrono::Duration;
+use config_types::chrono_types::duration::{ConfigDuration, Unit};
 use sea_orm::ConnectOptions;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use toml::Value;
+
+use super::tracing::TracingConfiguration;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
@@ -123,8 +129,8 @@ pub struct Application {
     pub max_upload: usize,
     pub mode: Mode,
     pub storage_location: PathBuf,
-    pub ssl_private_key: Option<String>,
-    pub ssl_cert_key: Option<String>,
+    pub tls: Option<TlsConfig>,
+    pub logging: TracingConfiguration,
 }
 
 impl Default for Application {
@@ -139,12 +145,16 @@ impl Default for Application {
             max_upload: 1024,
             mode: Mode::Release,
             storage_location: buf.canonicalize().unwrap(),
-            ssl_private_key: None,
-            ssl_cert_key: None,
+            tls: None,
+            logging: TracingConfiguration::default(),
         }
     }
 }
-
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+pub struct TlsConfig {
+    pub private_key: PathBuf,
+    pub certificate_chain: PathBuf,
+}
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct GeneralSettings {
     pub database: Database,
@@ -160,11 +170,6 @@ pub struct SiteSetting {
     pub description: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct SessionSettings {
-    pub manager: String,
-    pub value: Option<Value>,
-}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SecuritySettings {}
@@ -208,11 +213,28 @@ impl Default for EmailSetting {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SessionSettings {
+    pub lifespan: ConfigDuration,
+    pub cleanup_interval: ConfigDuration,
+    pub dev: bool,
+    pub allow_in_header: bool,
+    pub database_location: PathBuf,
+}
 impl Default for SessionSettings {
     fn default() -> Self {
-        SessionSettings {
-            manager: "BasicSessionManager".to_string(),
-            value: None,
+        Self {
+            lifespan: ConfigDuration {
+                duration: Duration::days(1),
+                unit: Unit::Days,
+            },
+            cleanup_interval: ConfigDuration {
+                duration: Duration::hours(1),
+                unit: Unit::Minutes,
+            },
+            allow_in_header: false,
+            database_location: PathBuf::from("sessions.redb"),
+            dev: false,
         }
     }
 }

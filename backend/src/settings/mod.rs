@@ -7,7 +7,7 @@ use crate::settings::models::{EmailSetting, SecuritySettings, SiteSetting};
 use crate::Settings;
 
 pub mod models;
-
+pub mod tracing;
 pub async fn load_configs(configs: PathBuf) -> io::Result<Settings> {
     let security: SecuritySettings =
         toml::from_str(&read_to_string(configs.join("security.toml")).await?)

@@ -5,7 +5,7 @@ use badge_maker::{Badge, BadgeBuilder};
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 
-use crate::authentication::Authentication;
+use crate::authentication::{Authentication, TrulyAuthenticated};
 
 use crate::repository::handler::Repository;
 use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
@@ -111,7 +111,7 @@ pub async fn put_repository(
 pub async fn stage_repository(
     pool: web::Data<DatabaseConnection>,
     storages: web::Data<MultiStorageController<DynamicStorage>>,
-    authentication: Authentication,
+    authentication: TrulyAuthenticated,
     path: web::Path<GetPath>,
 ) -> actix_web::Result<RepoResponse> {
     let (storage_name, repository_name, file) = path.into_inner().into_inner();
@@ -120,7 +120,7 @@ pub async fn stage_repository(
     if !repository.staging_repository() {
         return Ok(HttpResponse::BadRequest().finish().into());
     }
-    let caller = authentication.get_user(pool.as_ref()).await??;
+    let caller = authentication.into_user();
     if let Some(_value) = caller.can_deploy_to(repository.get_repository())? {}
     repository.push(file, storages.into_inner(), caller).await?;
     Ok(HttpResponse::NoContent().finish().into())

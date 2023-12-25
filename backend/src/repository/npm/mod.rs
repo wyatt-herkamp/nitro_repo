@@ -1,11 +1,11 @@
-use actix_web::error::ErrorBadRequest;
-use std::string::String;
-use std::sync::Arc;
+use std::{string::String, sync::Arc};
 
-use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
-use actix_web::web::Bytes;
-use actix_web::{HttpResponse, ResponseError};
+use actix_web::{
+    error::ErrorBadRequest,
+    http::{header::HeaderMap, StatusCode},
+    web::Bytes,
+    HttpResponse, ResponseError,
+};
 use async_trait::async_trait;
 use chrono::Local;
 use log::{debug, trace};
@@ -14,21 +14,25 @@ use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::authentication::{verify_login, Authentication};
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::{CreateRepository, Repository, RepositoryType};
-use crate::repository::npm::error::NPMError;
-
-use crate::repository::npm::models::{Attachment, LoginRequest, LoginResponse, PublishRequest};
-use crate::repository::npm::utils::generate_get_response;
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
-use crate::storage::file::StorageFileResponse;
-use crate::storage::models::Storage;
-use crate::system::permissions::permissions_checker::CanIDo;
-use crate::utils::base64_utils;
+use crate::{
+    authentication::{verify_login, Authentication},
+    error::internal_error::InternalError,
+    repository::{
+        handler::{CreateRepository, Repository, RepositoryType},
+        npm::{
+            error::NPMError,
+            models::{Attachment, LoginRequest, LoginResponse, PublishRequest},
+            utils::generate_get_response,
+        },
+        response::RepoResponse,
+        settings::{
+            badge::BadgeSettings, frontend::Frontend, RepositoryConfig, RepositoryConfigType,
+        },
+    },
+    storage::{file::StorageFileResponse, models::Storage},
+    system::permissions::permissions_checker::CanIDo,
+    utils::base64_utils,
+};
 
 pub mod error;
 pub mod models;
@@ -197,7 +201,9 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
             let content = String::from_utf8(bytes.as_ref().to_vec()).unwrap();
             let json: LoginRequest = serde_json::from_str(content.as_str()).unwrap();
             let username = path.replace("-/user/org.couchdb.user:", "");
-            let user = verify_login(username, json.password, conn).await??;
+            let user = verify_login(username, json.password, conn)
+                .await?
+                .ok_or_else(|| actix_web::error::ErrorUnauthorized("Invalid login"))?;
             trace!("User Request for {} was authorized", &user.username);
             let message = format!("user '{}' created", user.username);
             let created_response = serde_json::to_value(&LoginResponse { ok: message })
@@ -205,7 +211,9 @@ impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
             return Ok(RepoResponse::Json(created_response, StatusCode::CREATED));
         }
         //Handle Normal Request
-        let caller = authentication.get_user(conn).await??;
+        let caller = authentication
+            .get_user()
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("Invalid login"))?;
         if let Some(value) = caller.can_deploy_to(&self.config)? {
             return Err(value.into());
         }

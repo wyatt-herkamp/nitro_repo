@@ -1,23 +1,22 @@
 pub mod admin;
 
-use crate::authentication::auth_token::database::TokenProperties;
-use crate::authentication::auth_token::utils::hash_token;
-use crate::authentication::auth_token::{generate_token, ActiveAuthTokenModel, AuthTokenEntity};
-use crate::authentication::{Authentication, SecureAction};
-
-use actix_web::error::ErrorInternalServerError;
-
-use actix_web::web;
-use actix_web::web::scope;
-use actix_web::{delete, get, post, HttpResponse};
+use actix_web::{
+    delete, error::ErrorInternalServerError, get, post, web, web::scope, HttpResponse,
+};
 use chrono::Local;
-
-use sea_orm::ActiveValue::Set;
-use sea_orm::DatabaseConnection;
-use sea_orm::{ColumnTrait, EntityTrait, FromQueryResult, QueryFilter};
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, QueryFilter,
+};
 use serde::{Deserialize, Serialize};
-
 use uuid::Uuid;
+
+use crate::authentication::{
+    auth_token::{
+        database::TokenProperties, generate_token, utils::hash_token, ActiveAuthTokenModel,
+        AuthTokenEntity,
+    },
+    Authentication, SecureAction, TrulyAuthenticated,
+};
 
 pub fn authentication_router(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -43,9 +42,9 @@ pub struct TokenResponse {
 #[get("/list")]
 pub async fn list_tokens(
     database: web::Data<DatabaseConnection>,
-    authentication: Authentication,
+    authentication: TrulyAuthenticated,
 ) -> actix_web::Result<HttpResponse> {
-    let login = authentication.get_user(database.as_ref()).await??;
+    let login = authentication.into_user();
     let tokens = AuthTokenEntity::find()
         .filter(super::database::Column::UserId.eq(login.id))
         .into_model::<TokenResponse>()
@@ -61,7 +60,10 @@ pub async fn create_token(
     login: web::Json<SecureAction<Option<String>>>,
 ) -> actix_web::Result<HttpResponse> {
     let login = login.into_inner();
-    let user = login.verify(connection.get_ref()).await??;
+    let user = login
+        .verify(connection.get_ref())
+        .await?
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Invalid login"))?;
     let token = generate_token();
     let hash = hash_token(&token);
     let uuid = Uuid::new_v4();
@@ -91,9 +93,9 @@ pub async fn create_token(
 pub async fn delete_token(
     database: web::Data<DatabaseConnection>,
     delete_token: web::Path<Uuid>,
-    authentication: Authentication,
+    authentication: TrulyAuthenticated,
 ) -> actix_web::Result<HttpResponse> {
-    let user = authentication.get_user(database.get_ref()).await??;
+    let user = authentication.into_user();
     let result = AuthTokenEntity::delete_many()
         .filter(
             super::database::Column::Id

@@ -64,7 +64,9 @@ macro_rules! take_repository {
 macro_rules! read_check_web {
     ($auth:ident, $conn:expr, $config:expr) => {
         if $config.visibility == crate::repository::settings::Visibility::Private {
-            let caller = $auth.get_user($conn).await??;
+            let caller = $auth
+                .get_user()
+                .ok_or_else(|| actix_web::error::ErrorUnauthorized("Invalid login"))?;
             if let Some(value) = caller.can_read_from(&$config)? {
                 return Err(value.into());
             }
@@ -74,14 +76,15 @@ macro_rules! read_check_web {
 macro_rules! read_check {
     ($auth:ident, $conn:expr, $config:expr) => {
         if ($config).visibility == crate::repository::settings::Visibility::Private {
-            let caller = $auth.get_user($conn).await?;
+            let caller = $auth.get_user();
+
             match caller {
-                Ok(caller) => {
+                Some(caller) => {
                     if let Some(value) = caller.can_read_from(&$config)? {
                         return Err(value.into());
                     }
                 }
-                Err(_) => {
+                None => {
                     return Ok(actix_web::HttpResponse::Unauthorized()
                         .append_header(("WWW-Authenticate", "Basic"))
                         .finish()
@@ -100,7 +103,9 @@ macro_rules! write_check {
                 return Ok(actix_web::HttpResponse::Unauthorized().finish().into());
             }
         } else {
-            let caller = $auth.get_user($conn).await??;
+            let caller = $auth
+                .get_user()
+                .ok_or_else(|| actix_web::error::ErrorUnauthorized("Invalid login"))?;
             if let Some(value) = caller.can_deploy_to(&$config)? {
                 return Err(value.into());
             }

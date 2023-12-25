@@ -1,7 +1,4 @@
-backend/target
-backend/test
-nrc/target
-
+target/
 backend/test/
 *.iml
 .idea
@@ -25,3 +22,4 @@ docs/docs/.vitepress/dist/
 backend/test/
 frontend.zip
 backend/src/authentication/.vs
+.vscode

@@ -26,8 +26,8 @@ pub mod settings;
 pub mod storage;
 pub mod system;
 pub mod time_fix;
+pub mod tracing_setup;
 pub mod utils;
-
 #[derive(Debug)]
 pub struct NitroRepo {
     pub settings: RwLock<Settings>,

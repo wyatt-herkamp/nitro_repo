@@ -1,31 +1,36 @@
-use std::env::{current_dir, set_var};
-use std::error::Error;
-
-use std::io::ErrorKind;
-use std::path::PathBuf;
-use std::process::exit;
+use std::{
+    env::{current_dir, set_var},
+    error::Error,
+    fs::File,
+    io::{BufReader, ErrorKind},
+    path::PathBuf,
+    process::exit,
+};
 
 use actix_cors::Cors;
-
-use actix_web::middleware::{DefaultHeaders, Logger};
-use actix_web::web::{Data, PayloadConfig};
-use actix_web::{web, App, HttpServer};
-use api::authentication::middleware::HandleSession;
-use api::authentication::session::{session_cleaner, SessionManager};
-
-use api::generators::GeneratorCache;
-use api::settings::load_configs;
-use api::settings::models::GeneralSettings;
-
-use api::storage::multi::MultiStorageController;
-
-use api::utils::load_logger;
-use api::{authentication, frontend, repository, storage, system, NitroRepo, Version};
+use actix_web::{
+    middleware::{DefaultHeaders, Logger},
+    web,
+    web::{Data, PayloadConfig},
+    App, HttpServer,
+};
+use api::{
+    authentication,
+    authentication::{middleware::HandleSession, session::SessionManager},
+    frontend,
+    generators::GeneratorCache,
+    repository,
+    settings::{load_configs, models::GeneralSettings},
+    storage,
+    storage::multi::MultiStorageController,
+    system, tracing_setup, NitroRepo, Version,
+};
 use log::{info, trace};
-
+use rustls::{Certificate, PrivateKey, ServerConfig as RustlsServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
 use tempfile::tempdir;
-use tokio::fs::read_to_string;
-use tokio::sync::RwLock;
+use tokio::{fs::read_to_string, sync::RwLock};
+use tracing_actix_web::TracingLogger;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -56,8 +61,8 @@ async fn main() -> std::io::Result<()> {
     }
 
     // Sets the Log Location
-    set_var("LOG_LOCATION", &init_settings.application.log);
-    load_logger(&init_settings.application.mode);
+    tracing_setup::setup(init_settings.application.logging.clone())
+        .expect("Failed to setup tracing");
 
     set_var("FRONTEND", &init_settings.application.frontend);
     trace!("Frontend {:?}", init_settings.application.frontend);
@@ -75,7 +80,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(convert_error)?;
     info!("Initializing Session and Authorization");
-    let session_manager = SessionManager::try_from(init_settings.session.clone()).unwrap();
+    let session_manager = SessionManager::new(init_settings.session.clone()).unwrap();
     info!("Initializing State");
     let settings = load_configs(configs).await.map_err(convert_error)?;
 
@@ -106,44 +111,9 @@ async fn main() -> std::io::Result<()> {
     let storages_data = Data::new(storages);
     let site_state = Data::new(nitro_repo);
     let database_data = Data::new(connection);
-    #[cfg(feature = "unsafe_cookies")]
-    {
-        #[cfg(not(debug_assertions))]
-        {
-            compile_error!("You are not in a development environment");
-        }
-        use api::authentication::session::SessionManagerType;
-        use chrono::{Duration, Local};
-        use core::str::FromStr;
-        use log::{debug, error, warn};
-
-        warn!("Using unsafe cookies");
-        warn!("This is not recommended. This is only for development purposes");
-        warn!("This is not secure");
-        warn!("You have been warned");
-        let cookies = load_unsafe_cookies();
-        match cookies {
-            Ok(ok) => {
-                for (key, value) in ok {
-                    debug!("Setting unsafe cookie: {key} to user {value}");
-                    let session = authentication::session::Session {
-                        token: key,
-                        user: i64::from_str(&value).ok(),
-                        expiration: Local::now() + Duration::days(1),
-                    };
-                    if let Err(e) = session_manager.push_session(session).await {
-                        error!("Error setting unsafe cookie: {:?}", e);
-                    }
-                }
-            }
-            Err(err) => {
-                error!("{}", err);
-            }
-        }
-    }
     let session_data = Data::new(session_manager);
 
-    actix_web::rt::spawn(session_cleaner(session_data.clone().into_inner()));
+    
     let cache = Data::new(cache);
     let server = HttpServer::new(move || {
         App::new()
@@ -153,6 +123,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(session_data.clone())
             .app_data(max_upload.clone())
             .app_data(cache.clone())
+            .wrap(TracingLogger::default())
             .wrap(DefaultHeaders::new().add(("X-Powered-By", "Nitro Repo powered by Actix.rs")))
             .wrap(
                 Cors::default()
@@ -164,7 +135,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .service(
                 web::scope("/api")
-                    .wrap(HandleSession(true))
+                    .wrap(HandleSession(session_data.clone().into_inner()))
                     .wrap(DefaultHeaders::new().add(("Content-Type", "application/json")))
                     .configure(system::web::init_public_routes)
                     .configure(system::web::user_routes)
@@ -180,56 +151,39 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("")
-                    .wrap(HandleSession(false))
+                    .wrap(HandleSession(session_data.clone().into_inner()))
                     .configure(repository::web::multi::init_repository_handlers)
                     .configure(frontend::init),
             )
     });
 
-    #[cfg(feature = "ssl")]
-    {
-        if let Some(private) = application.ssl_private_key {
-            let cert = application
-                .ssl_cert_key
-                .expect("If Private Key is set. CERT Should be set");
-            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+    let server = if let Some(tls) = application.tls {
+        let mut cert_file = BufReader::new(File::open(tls.certificate_chain)?);
+        let mut key_file = BufReader::new(File::open(tls.private_key)?);
 
-            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder
-                .set_private_key_file(private, SslFiletype::PEM)
-                .unwrap();
-            builder.set_certificate_chain_file(cert).unwrap();
-            return server.bind_openssl(address, builder)?.run().await;
-        }
-    }
+        let cert_chain = certs(&mut cert_file)
+            .expect("server certificate file error")
+            .into_iter()
+            .map(Certificate)
+            .collect();
+        let mut keys: Vec<PrivateKey> = pkcs8_private_keys(&mut key_file)
+            .expect("server private key file error")
+            .into_iter()
+            .map(PrivateKey)
+            .collect();
 
-    server.bind(address)?.run().await
+        let config = RustlsServerConfig::builder()
+            .with_safe_defaults()
+            .with_no_client_auth()
+            .with_single_cert(cert_chain, keys.remove(0))
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        server.bind_rustls_021(address, config)?
+    } else {
+        server.bind(address)?
+    };
+    server.run().await
 }
 
 fn convert_error<E: Into<Box<dyn Error + Send + Sync>>>(e: E) -> std::io::Error {
     std::io::Error::new(ErrorKind::Other, e)
-}
-
-#[cfg(feature = "unsafe_cookies")]
-fn load_unsafe_cookies() -> Result<Vec<(String, String)>, std::io::Error> {
-    use std::fs::OpenOptions;
-    use std::io::BufRead;
-    use std::io::BufReader;
-    let buf = PathBuf::new().join("unsafe_cookies.txt");
-    if !buf.exists() {
-        log::warn!("Unsafe Cookies file not found");
-        return Ok(vec![]);
-    }
-    let file = OpenOptions::new().read(true).open(buf)?;
-    let lines = BufReader::new(file).lines();
-    let mut cookies = Vec::with_capacity(lines.size_hint().0);
-    for x in lines {
-        let line = x?;
-        let mut parts = line.splitn(2, '=');
-        let key = parts.next().unwrap();
-        let value = parts.next().unwrap();
-        cookies.push((key.to_string(), value.to_string()));
-    }
-
-    return Ok(cookies);
 }

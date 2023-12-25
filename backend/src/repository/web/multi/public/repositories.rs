@@ -1,27 +1,26 @@
-use actix_web::{get, web, HttpResponse};
+use std::{path::PathBuf, sync::Arc};
 
+use actix_web::{get, web, HttpResponse};
 use chrono::{DateTime, FixedOffset, Local};
 use log::warn;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use std::sync::Arc;
 
-use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
-use crate::generators::markdown::parse_to_html;
-use crate::generators::GeneratorCache;
-
-use crate::repository::handler::Repository;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-
-use crate::repository::settings::repository_page::{PageType, RepositoryPage};
-use crate::repository::settings::{RepositoryConfig, RepositoryType, Visibility};
-use crate::storage::models::Storage;
-use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
-use crate::system::permissions::permissions_checker::CanIDo;
-use crate::system::user::database::UserSafeData;
+use crate::{
+    authentication::{Authentication, TrulyAuthenticated},
+    error::internal_error::InternalError,
+    generators::{markdown::parse_to_html, GeneratorCache},
+    repository::{
+        handler::Repository,
+        nitro::nitro_repository::NitroRepositoryHandler,
+        settings::{
+            repository_page::{PageType, RepositoryPage},
+            RepositoryConfig, RepositoryType, Visibility,
+        },
+    },
+    storage::{models::Storage, multi::MultiStorageController, DynamicStorage},
+    system::{permissions::permissions_checker::CanIDo, user::database::UserSafeData},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicRepositoryResponse {
@@ -33,13 +32,13 @@ pub struct PublicRepositoryResponse {
 pub async fn get_repositories(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,
     database: web::Data<DatabaseConnection>,
-    authentication: Authentication,
+    authentication: TrulyAuthenticated,
     path: web::Path<String>,
 ) -> actix_web::Result<HttpResponse> {
     let storage_name = path.into_inner();
     let value = crate::helpers::get_storage!(storage_handler, storage_name);
 
-    let caller: Option<UserSafeData> = authentication.get_user(database.as_ref()).await?.ok();
+    let caller: UserSafeData = authentication.into_user();
     let vec: Vec<PublicRepositoryResponse> = value
         .get_repository_list()?
         .into_iter()

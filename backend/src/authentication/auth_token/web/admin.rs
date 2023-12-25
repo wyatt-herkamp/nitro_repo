@@ -1,5 +1,5 @@
 use crate::authentication::auth_token::AuthTokenEntity;
-use crate::authentication::Authentication;
+use crate::authentication::{Authentication, TrulyAuthenticated};
 use crate::system::permissions::permissions_checker::CanIDo;
 use actix_web::error::ErrorInternalServerError;
 use actix_web::{delete, web, HttpResponse};
@@ -9,10 +9,10 @@ use sea_orm::PaginatorTrait;
 
 #[delete("token_system")]
 pub async fn delete_token_system(
-    authentication: Authentication,
+    authentication: TrulyAuthenticated,
     database: web::Data<DatabaseConnection>,
 ) -> actix_web::Result<HttpResponse> {
-    let login = authentication.get_user(database.as_ref()).await??;
+    let login = authentication.into_user();
     login.can_i_admin()?;
     AuthTokenEntity::delete_many()
         .exec(database.as_ref())

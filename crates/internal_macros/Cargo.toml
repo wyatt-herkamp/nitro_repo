@@ -1,0 +1,18 @@
+[package]
+name = "nitro_repo_internal_macros"
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+homepage.workspace = true
+description = "Internal macros for nitro-repo. They are not meant for public use. "
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+proc-macro2 = "1"
+syn = { version = "2", features = ["full", "extra-traits"] }

@@ -1,12 +1,10 @@
-use std::str::ParseBoolError;
-use std::string::FromUtf8Error;
-
-use crate::storage::error::StorageError;
-use crate::system::permissions::PermissionError;
+use std::{str::ParseBoolError, string::FromUtf8Error};
 
 use base64::DecodeError;
 use this_actix_error::ActixError;
 use thiserror::Error;
+
+use crate::{storage::error::StorageError, system::permissions::PermissionError};
 
 /// Errors that happen internally to the system.
 /// Not as a direct result of a Request
@@ -34,9 +32,13 @@ pub enum InternalError {
     InvalidRepositoryType(String),
     #[error("Permission Error: {0}")]
     PermissionError(#[from] PermissionError),
+    #[error("Header Error: {0}")]
+    ToStrError(#[from] actix_web::http::header::ToStrError),
+    #[error("Failed to Parse Internal Password Hash")]
+    PasswordHashError(argon2::password_hash::Error),
 }
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {
-        InternalError::Error(err.to_string())
+        InternalError::PasswordHashError(err)
     }
 }

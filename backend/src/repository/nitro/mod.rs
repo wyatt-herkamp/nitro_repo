@@ -134,6 +134,7 @@ impl Default for NitroRepoVersions {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NitroVersion {
     pub version: String,
+    #[serde(deserialize_with = "crate::time_fix::read_time")]
     pub time: DateTime<FixedOffset>,
     pub snapshot: bool,
 }

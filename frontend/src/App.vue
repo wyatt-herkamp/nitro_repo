@@ -12,27 +12,9 @@
   height: 100vh;
 }
 </style>
-<script lang="ts">
-import { useUserStore } from "@/store/user";
+<script setup lang="ts">
 import Navbar from "@/components/nav/Navbar.vue";
-import { computed, defineComponent, onMounted } from "vue";
-import { useSystemStore } from "@/store/system";
-
-export default defineComponent({
-  name: "App",
-  components: { Navbar },
-  setup() {
-    const systemStore = useSystemStore();
-    const userStore = useUserStore();
-    onMounted(userStore.loadUser);
-    onMounted(systemStore.load);
-    const user = computed(() => {
-      return userStore.$state.user;
-    });
-    const system = computed(() => {
-      return systemStore.$state;
-    });
-    return { user, system };
-  },
-});
+import { sessionStore } from "./store/session";
+const user = sessionStore().account;
 </script>
+
