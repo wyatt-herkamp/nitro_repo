@@ -1,6 +1,8 @@
-use actix_web::error::{ErrorBadRequest, JsonPayloadError};
-use actix_web::web::JsonConfig;
-use actix_web::HttpRequest;
+use actix_web::{
+    error::{ErrorBadRequest, JsonPayloadError},
+    web::JsonConfig,
+    HttpRequest,
+};
 use log::warn;
 
 pub fn json_config() -> JsonConfig {

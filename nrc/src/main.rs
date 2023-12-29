@@ -3,10 +3,11 @@ pub mod api;
 pub mod configs;
 pub mod instances;
 
-use crate::add::AddInstance;
-use crate::instances::Instances;
-use clap::{Parser, Subcommand};
 use std::ffi::OsString;
+
+use clap::{Parser, Subcommand};
+
+use crate::{add::AddInstance, instances::Instances};
 
 #[derive(Debug, Parser)]
 #[clap(name = "nrc")]

@@ -1,10 +1,16 @@
-use crate::settings::models::{EmailSetting, SecuritySettings, SiteSetting};
-use crate::GeneralSettings;
+use std::{
+    fs::{create_dir_all, OpenOptions},
+    io,
+    io::Write,
+    path::PathBuf,
+};
+
 use log::info;
-use std::fs::{create_dir_all, OpenOptions};
-use std::io;
-use std::io::Write;
-use std::path::PathBuf;
+
+use crate::{
+    settings::models::{EmailSetting, SecuritySettings, SiteSetting},
+    GeneralSettings,
+};
 
 pub fn install_data(working_dir: PathBuf, general: GeneralSettings) -> io::Result<()> {
     let configs = working_dir.join("cfg");

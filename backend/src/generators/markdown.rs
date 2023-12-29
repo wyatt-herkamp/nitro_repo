@@ -1,9 +1,9 @@
-use crate::error::internal_error::InternalError;
-use crate::generators::GeneratorCache;
+use std::{path::PathBuf, sync::Arc};
+
 use comrak::{parse_document, Arena};
 use log::error;
-use std::path::PathBuf;
-use std::sync::Arc;
+
+use crate::{error::internal_error::InternalError, generators::GeneratorCache};
 
 pub fn parse_to_html(
     markdown: impl AsRef<str>,

@@ -1,7 +1,7 @@
-use crate::repository::settings::Policy;
-
 use this_actix_error::ActixError;
 use thiserror::Error;
+
+use crate::repository::settings::Policy;
 
 #[derive(Debug, Error, ActixError)]
 pub enum MavenError {

@@ -1,16 +1,19 @@
-use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
+use std::{
+    fmt,
+    fmt::{Debug, Display, Formatter},
+};
 
-use actix_web::http::StatusCode;
-use actix_web::ResponseError;
+use actix_web::{http::StatusCode, ResponseError};
 use serde_json::json;
 
-use crate::error::internal_error::InternalError;
-use crate::repository::settings::RepositoryConfig;
-use crate::repository::settings::Visibility;
-use crate::system::permissions::{can_deploy, can_read, UserPermissions};
-use crate::system::user::database::UserSafeData;
-use crate::system::user::UserModel;
+use crate::{
+    error::internal_error::InternalError,
+    repository::settings::{RepositoryConfig, Visibility},
+    system::{
+        permissions::{can_deploy, can_read, UserPermissions},
+        user::{database::UserSafeData, UserModel},
+    },
+};
 
 pub struct MissingPermission(String);
 

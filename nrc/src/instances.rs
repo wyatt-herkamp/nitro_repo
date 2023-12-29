@@ -1,13 +1,9 @@
-use crate::api::User;
+use style_term::{
+    DefaultColor::{Green, Red},
+    StyleString,
+};
 
-use crate::configs::{get_user_config};
-use crate::Parser;
-
-
-
-use style_term::DefaultColor::{Green, Red};
-use style_term::{StyleString};
-
+use crate::{api::User, configs::get_user_config, Parser};
 
 #[derive(Debug, Parser)]
 pub struct Instances {

@@ -1,11 +1,16 @@
-use std::borrow::Cow;
-use std::fs::{create_dir_all, read_to_string, File};
-use std::path::{Path, PathBuf};
+use std::{
+    borrow::Cow,
+    fs::{create_dir_all, read_to_string, File},
+    path::{Path, PathBuf},
+};
 
 use actix_files::Files;
-use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
-use actix_web::web::Data;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{
+    error::{ErrorBadRequest, ErrorInternalServerError},
+    web,
+    web::Data,
+    HttpRequest, HttpResponse,
+};
 use handlebars::Handlebars;
 use log::{debug, error, info, trace, warn};
 

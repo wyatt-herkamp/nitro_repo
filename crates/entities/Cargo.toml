@@ -1,5 +1,5 @@
 [package]
-name = "entities"
+name = "nitro_repo_entities"
 version.workspace = true
 license.workspace = true
 authors.workspace = true

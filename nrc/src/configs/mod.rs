@@ -1,7 +1,9 @@
-use crate::configs::user::UserConfig;
-use std::fs::{read_to_string, OpenOptions};
-use std::io::Write;
+use std::{
+    fs::{read_to_string, OpenOptions},
+    io::Write,
+};
 
+use crate::configs::user::UserConfig;
 
 pub mod user;
 

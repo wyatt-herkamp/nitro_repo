@@ -1,10 +1,11 @@
-use std::io;
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 
 use tokio::fs::read_to_string;
 
-use crate::settings::models::{EmailSetting, SecuritySettings, SiteSetting};
-use crate::Settings;
+use crate::{
+    settings::models::{EmailSetting, SecuritySettings, SiteSetting},
+    Settings,
+};
 
 pub mod models;
 pub mod tracing;

@@ -1,7 +1,9 @@
+use sea_orm::{
+    sea_query::ArrayType, ActiveValue, ActiveValue::Set, ColIdx, DbErr, IntoActiveValue, JsonValue,
+    QueryResult, TryGetError,
+};
+
 use crate::system::permissions::UserPermissions;
-use sea_orm::sea_query::ArrayType;
-use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveValue, ColIdx, DbErr, IntoActiveValue, JsonValue, QueryResult, TryGetError};
 
 impl From<UserPermissions> for JsonValue {
     fn from(auth: UserPermissions) -> Self {

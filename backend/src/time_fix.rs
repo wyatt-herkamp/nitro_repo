@@ -1,7 +1,10 @@
-use chrono::{DateTime, FixedOffset, NaiveDateTime};
-use serde::de::{Error, Visitor};
-use serde::Deserializer;
 use std::fmt::Formatter;
+
+use chrono::{DateTime, FixedOffset, NaiveDateTime};
+use serde::{
+    de::{Error, Visitor},
+    Deserializer,
+};
 
 /// Nitro_Repo is going to to start using a rfc3339 for the date format. To prevent breaking changes this will read the old format.
 pub struct DateTimeVisitor;

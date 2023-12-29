@@ -1,18 +1,22 @@
-use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::{CreateRepository, Repository, RepositoryType};
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
-use crate::storage::models::Storage;
-use crate::system::permissions::permissions_checker::CanIDo;
-use actix_web::http::header::HeaderMap;
-use actix_web::Error;
-use async_trait::async_trait;
+use std::sync::Arc;
+
+use actix_web::{http::header::HeaderMap, Error};
 use bytes::Bytes;
 use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
+use crate::{
+    authentication::Authentication,
+    error::internal_error::InternalError,
+    repository::{
+        handler::{CreateRepository, Repository, RepositoryType},
+        response::RepoResponse,
+        settings::{RepositoryConfig, RepositoryConfigType},
+    },
+    storage::Storage,
+    system::permissions::permissions_checker::CanIDo,
+};
 #[derive(Debug)]
 pub struct RawHandler<StorageType: Storage> {
     config: RepositoryConfig,
@@ -38,7 +42,6 @@ impl<S: Storage> Clone for RawHandler<S> {
 }
 crate::repository::settings::define_configs_on_handler!(RawHandler<StorageType>);
 
-#[async_trait]
 impl<StorageType: Storage> Repository<StorageType> for RawHandler<StorageType> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config

@@ -1,22 +1,20 @@
-use actix_web::http::header::CONTENT_TYPE;
-use actix_web::web::Bytes;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{http::header::CONTENT_TYPE, web, web::Bytes, HttpRequest, HttpResponse};
 use badge_maker::{Badge, BadgeBuilder};
 use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 
-use crate::authentication::{Authentication, TrulyAuthenticated};
-
-use crate::repository::handler::Repository;
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::RepositoryConfigHandler;
-use crate::repository::staging::StageHandler;
-use crate::storage::models::Storage;
-use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
-use crate::system::permissions::permissions_checker::CanIDo;
+use crate::{
+    authentication::{Authentication, TrulyAuthenticated},
+    repository::{
+        handler::Repository,
+        nitro::nitro_repository::NitroRepositoryHandler,
+        response::RepoResponse,
+        settings::{badge::BadgeSettings, RepositoryConfigHandler},
+        staging::StageHandler,
+    },
+    storage::{multi::MultiStorageController, DynamicStorage, Storage},
+    system::permissions::permissions_checker::CanIDo,
+};
 
 #[derive(Deserialize, Clone)]
 pub struct GetPath {

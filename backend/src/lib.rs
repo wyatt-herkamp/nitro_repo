@@ -1,12 +1,12 @@
 #![allow(clippy::from_over_into)]
 #![allow(irrefutable_let_patterns)]
+#![allow(async_fn_in_trait)]
 #![deny(deprecated)]
 // A lot of macros add catch all patterns
 #![allow(unreachable_patterns)]
 
 use actix_web::web::Data;
 use current_semver::current_semver;
-
 use serde::Serialize;
 use tokio::sync::RwLock;
 

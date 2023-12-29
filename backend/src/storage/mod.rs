@@ -1,217 +1,204 @@
-use async_trait::async_trait;
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter},
+    sync::Arc,
+};
+
 use bytes::Bytes;
 use futures::Stream;
 use lock_freedom::map::Removed;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use nitro_repo_internal_macros::dynamic_storage;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use std::sync::Arc;
-
-use crate::repository::settings::RepositoryConfig;
-use crate::storage::error::StorageError;
-use crate::storage::file::{StorageFile, StorageFileResponse};
-use crate::storage::models::Storage;
-
+use crate::{
+    repository::{
+        handler::Repository,
+        settings::{RepositoryConfig, RepositoryConfigType},
+    },
+    storage::{
+        error::StorageError,
+        file::{StorageFile, StorageFileResponse},
+        path::{StoragePath, SystemStorageFile},
+    },
+};
 pub mod bad_storage;
 pub mod error;
 pub mod file;
 pub mod local_storage;
-pub mod models;
 pub mod multi;
 pub mod path;
 
-use path::StoragePath;
-use path::SystemStorageFile;
-
-pub const STORAGES_CONFIG: &'static str = "storages.json";
-pub const STORAGE_CONFIG: &'static str = "storage.json";
+pub const STORAGES_CONFIG: &'static str = "storages.nitro_repo";
+pub const STORAGE_CONFIG: &'static str = "storage.nitro_repo";
 pub const REPOSITORY_FOLDER: &'static str = ".config.nitro_repo";
 
-use crate::repository::handler::DynamicRepositoryHandler;
 use bad_storage::BadStorage;
 use chrono::{DateTime, FixedOffset};
 use local_storage::{LocalConfig, LocalStorage};
-use std::collections::HashMap;
-use std::hint::unreachable_unchecked;
-macro_rules! storages {
-    ($($name:ident, $ty:tt, $config:tt),*) => {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
-        #[serde(tag = "storage_type", content = "settings")]
-        pub enum StorageConfig {
-            $($name($config),)*
-        }
-        #[derive(Debug)]
-        pub enum DynamicStorage{
-            BadStorage(BadStorage),
-            $($name($ty),)*
-        }
-#[async_trait]
-impl Storage for DynamicStorage{
-    type Repository = DynamicRepositoryHandler<DynamicStorage>;
 
-    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)> where Self: Sized {
-        match config.handler_config {
-            $(StorageConfig::$name(_) => {
-                let _factory = config.clone();
-                $ty::create_new(config).await.map(|storage| DynamicStorage::$name(storage))
-            })*
-        }
-    }
+use crate::repository::handler::DynamicRepositoryHandler;
 
-    async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)> where Self: Sized {
-        match config.handler_config {
-            $(StorageConfig::$name(_) => {
-                let _factory = config.clone();
-                $ty::new(config).await.map(|storage| DynamicStorage::$name(storage))
-            })*
-        }
+pub static STORAGE_FILE: &str = "storages.json";
+pub static STORAGE_FILE_BAK: &str = "storages.json.bak";
+
+/// Storage Status
+#[derive(Debug)]
+pub enum StorageStatus {
+    /// The storages is unloaded.
+    Unloaded,
+    /// Storage has successfully loaded
+    Loaded,
+    /// Storage Errored out during loading
+    Error(StorageError),
+    /// Storage Errored out during creation. Usually meaning bad config
+    CreateError(StorageError),
+}
+
+impl PartialEq for StorageStatus {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_string() == other.to_string()
     }
-    async fn get_repos_to_load(&self) -> Result<HashMap<String, RepositoryConfig>, StorageError>{
+}
+
+impl Display for StorageStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            $(DynamicStorage::$name(storage) => storage.get_repos_to_load().await,)*
-            _ => unsafe{ unreachable_unchecked() }
+            StorageStatus::Unloaded => {
+                write!(f, "Unloaded")
+            }
+            StorageStatus::Loaded => {
+                write!(f, "Loaded")
+            }
+            StorageStatus::Error(error) => {
+                write!(f, "Error while loading: {}", error)
+            }
+            StorageStatus::CreateError(error) => {
+                write!(f, "Error While Creating: {}", error)
+            }
         }
     }
+}
+pub trait Storage: Send + Sync {
+    type Repository: Repository<DynamicStorage>;
+    /// Initialize the Storage at Storage start.
+    async fn create_new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
+    where
+        Self: Sized;
+    /// Initialize the Storage at Storage start.
+    async fn new(config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
+    where
+        Self: Sized;
+    // Attempts to Load the Storage
+    async fn get_repos_to_load(&self) -> Result<HashMap<String, RepositoryConfig>, StorageError>;
 
-     fn add_repo_loaded<R: Into<Self::Repository> + Send>(&self, repo: R) -> Result<(), StorageError>{
-        match self {
-            $(DynamicStorage::$name(storage) => storage.add_repo_loaded(repo),)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
+    fn add_repo_loaded<R: Into<Self::Repository> + Send>(
+        &self,
+        repo: R,
+    ) -> Result<(), StorageError>;
 
-    fn unload(&mut self) -> Result<(), StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.unload(),)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
+    /// Unload the storages
+    fn unload(&mut self) -> Result<(), StorageError>;
 
-    fn storage_config(&self) -> &StorageSaver {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.storage_config(),)*
-            DynamicStorage::BadStorage(storage) => &storage.factory,
-        }
-    }
+    fn storage_config(&self) -> &StorageSaver;
+    /// Creates a new Repository
+    /// Requires just the name and RepositoryType
+    async fn create_repository<R: Into<Self::Repository> + Send>(
+        &self,
+        repository: R,
+    ) -> Result<Arc<Self::Repository>, StorageError>;
+    /// Deletes a Repository
+    /// delete_files rather or not to clean out the Repository Data
+    async fn delete_repository<S: AsRef<str> + Send>(
+        &self,
+        repository: S,
+        delete_files: bool,
+    ) -> Result<(), StorageError>;
+    /// Gets a Owned Vec of Repositories
+    fn get_repository_list(&self) -> Result<Vec<RepositoryConfig>, StorageError>;
+    /// Returns a RwLockReadGuard of the RepositoryConfig
+    fn get_repository<S: AsRef<str>>(
+        &self,
+        repository: S,
+    ) -> Result<Option<Arc<Self::Repository>>, StorageError>;
 
-    async fn create_repository<R: Into<Self::Repository> + Send>(&self, repository: R) -> Result<Arc<Self::Repository>, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.create_repository(repository).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
+    fn remove_repository_for_updating(
+        &self,
+        repository: &str,
+    ) -> Option<Removed<String, Arc<Self::Repository>>>;
+    /// Will update all configs for the Repository
+    async fn add_repository_for_updating(
+        &self,
+        name: String,
+        repository_arc: Self::Repository,
+        save: bool,
+    ) -> Result<(), StorageError>;
+    /// Saves a File to a location
+    /// Will overwrite any data found
+    async fn save_file(
+        &self,
+        repository: &RepositoryConfig,
+        file: &[u8],
+        location: &str,
+    ) -> Result<bool, StorageError>;
+    fn write_file_stream<S: Stream<Item = Bytes> + Unpin + Send + Sync + 'static>(
+        &self,
+        repository: &RepositoryConfig,
+        s: S,
+        location: &str,
+    ) -> Result<bool, StorageError>;
 
-    async fn delete_repository<S: AsRef<str> + Send>(&self, repository: S, delete_files: bool) -> Result<(), StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.delete_repository(repository,delete_files).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    fn get_repository_list(&self) -> Result<Vec<RepositoryConfig>, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.get_repository_list(),)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    fn get_repository<S: AsRef<str>>(&self, repository: S) -> Result<Option<Arc<Self::Repository>>, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.get_repository(repository),)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    fn remove_repository_for_updating<S: AsRef<str>>(&self, repository: S) -> Option<Removed<String, Arc<Self::Repository>>> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.remove_repository_for_updating(repository),)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    async fn add_repository_for_updating(&self,name: String, repository_arc: Self::Repository, save: bool) -> Result<(), StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.add_repository_for_updating(name, repository_arc,save).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    async fn save_file(&self, repository: &RepositoryConfig, file: &[u8], location: &str) -> Result<bool, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.save_file(repository,file,location).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    fn write_file_stream<S: Stream<Item=Bytes> + Unpin + Send + Sync + 'static>(&self, repository: &RepositoryConfig, s: S, location: &str) -> Result<bool, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.write_file_stream(repository,s,location),)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    async fn delete_file(&self, repository: &RepositoryConfig, location: &str) -> Result<(), StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.delete_file(repository,location).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    async fn get_file_as_response(&self, repository: &RepositoryConfig, location: &str) -> Result<StorageFileResponse, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.get_file_as_response(repository,location).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    async fn get_file_information(&self, repository: &RepositoryConfig, location: &str) -> Result<Option<StorageFile>, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.get_file_information(repository,location).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-
-    async fn get_file(&self, repository: &RepositoryConfig, location: &str) -> Result<Option<Vec<u8>>, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.get_file(repository,location).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
+    /// Deletes a file at a given location
+    async fn delete_file(
+        &self,
+        repository: &RepositoryConfig,
+        location: &str,
+    ) -> Result<(), StorageError>;
+    /// Gets tje File as a StorageFileResponse
+    /// Can be converted for Web Responses
+    async fn get_file_as_response(
+        &self,
+        repository: &RepositoryConfig,
+        location: &str,
+    ) -> Result<StorageFileResponse, StorageError>;
+    /// Returns Information about the file
+    async fn get_file_information(
+        &self,
+        repository: &RepositoryConfig,
+        location: &str,
+    ) -> Result<Option<StorageFile>, StorageError>;
+    /// Gets the File as an Array of Bytes
+    /// Used for internal processing
+    async fn get_file(
+        &self,
+        repository: &RepositoryConfig,
+        location: &str,
+    ) -> Result<Option<Vec<u8>>, StorageError>;
+    /// Gets a Repository Config
     async fn get_repository_config<ConfigType: DeserializeOwned>(
         &self,
         repository: &RepositoryConfig,
         config_name: &str,
-    ) -> Result<Option<ConfigType>, StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.get_repository_config(repository, config_name).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-    async fn save_repository_config<ConfigType: crate::repository::settings::RepositoryConfigType>(
+    ) -> Result<Option<ConfigType>, StorageError>;
+
+    async fn save_repository_config<ConfigType: RepositoryConfigType>(
         &self,
         repository: &RepositoryConfig,
         config: &ConfigType,
-    ) -> Result<(), StorageError> {
-        match self {
-            $(DynamicStorage::$name(storage) => storage.save_repository_config(repository, config).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-    async fn list_files<S: AsRef<str>+ Send, SP: Into<StoragePath>+ Send>(
-        &self,
-        repository: S,
-        path: SP,
-    ) -> Result<Vec<SystemStorageFile>, StorageError>{
-        match self {
-            $(DynamicStorage::$name(storage) => storage.list_files(repository, path).await,)*
-            _ => unsafe{ unreachable_unchecked() }
-        }
-    }
-}
-    };
-}
+    ) -> Result<(), StorageError>;
 
-storages!(LocalStorage, LocalStorage, LocalConfig);
+    async fn list_files<SP: Into<StoragePath> + Send>(
+        &self,
+        repository: &str,
+        path: SP,
+    ) -> Result<Vec<SystemStorageFile>, StorageError>;
+}
+#[dynamic_storage]
+pub enum DynamicStorage {
+    LocalStorage {
+        storage: LocalStorage,
+        config: LocalConfig,
+    },
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageSaver {

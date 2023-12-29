@@ -1,12 +1,16 @@
-use crate::configs::user::RepositoryInstance;
-use crate::configs::{get_user_config, save_user_config};
-use crate::Parser;
-use inquire::{Text};
-use serde::{Deserialize};
+use inquire::Text;
+use serde::Deserialize;
 use serde_json::json;
-use style_term::DefaultColor::{Green, Red};
-use style_term::{StyleString};
+use style_term::{
+    DefaultColor::{Green, Red},
+    StyleString,
+};
 use uuid::Uuid;
+
+use crate::{
+    configs::{get_user_config, save_user_config, user::RepositoryInstance},
+    Parser,
+};
 
 #[derive(Debug, Parser)]
 pub struct AddInstance {

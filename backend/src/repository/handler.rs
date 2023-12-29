@@ -1,21 +1,24 @@
-use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
-use actix_web::web::Bytes;
-use actix_web::{Error, ResponseError};
-use async_trait::async_trait;
-use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 
-use crate::authentication::Authentication;
-
-use crate::error::internal_error::InternalError;
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
-use crate::storage::models::Storage;
-use crate::system::user::database::UserSafeData;
+use actix_web::{
+    http::{header::HeaderMap, StatusCode},
+    web::Bytes,
+    Error, ResponseError,
+};
+use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-#[async_trait]
+use crate::{
+    authentication::Authentication,
+    error::internal_error::InternalError,
+    repository::{
+        response::RepoResponse,
+        settings::{RepositoryConfig, RepositoryConfigType},
+    },
+    storage::Storage,
+    system::user::database::UserSafeData,
+};
+
 pub trait Repository<S: Storage>: Send + Sync + Clone {
     fn get_repository(&self) -> &RepositoryConfig;
     fn get_mut_config(&mut self) -> &mut RepositoryConfig;
@@ -148,7 +151,6 @@ macro_rules! repository_handler {
             }
         }
         )*
-        #[async_trait]
         impl<StorageType: Storage> Repository<StorageType>
             for $name<StorageType>
         {
@@ -324,9 +326,7 @@ macro_rules! dynamic_repository_handler {
 
     };
 }
-use crate::repository::maven::MavenHandler;
-use crate::repository::npm::NPMHandler;
-use crate::repository::raw::RawHandler;
+use crate::repository::{maven::MavenHandler, npm::NPMHandler, raw::RawHandler};
 dynamic_repository_handler!(Maven, MavenHandler, NPM, NPMHandler, Raw, RawHandler);
 
 macro_rules! repository_config_group {

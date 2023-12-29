@@ -1,5 +1,7 @@
-use reqwest::header::{HeaderValue, AUTHORIZATION};
-use reqwest::Client;
+use reqwest::{
+    header::{HeaderValue, AUTHORIZATION},
+    Client,
+};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {

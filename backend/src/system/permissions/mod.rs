@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::repository::settings::RepositoryConfig;
-use crate::repository::settings::Visibility;
-use crate::system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier};
+use crate::{
+    repository::settings::{RepositoryConfig, Visibility},
+    system::permissions::PermissionError::{RepositoryClassifier, StorageClassifier},
+};
 
 pub mod orm;
 pub mod permissions_checker;

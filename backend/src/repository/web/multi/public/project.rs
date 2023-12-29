@@ -1,19 +1,16 @@
 use actix_web::{web, HttpResponse};
-
 use sea_orm::DatabaseConnection;
 
-use crate::authentication::Authentication;
-use crate::generators::GeneratorCache;
-
-use crate::repository::handler::Repository;
-
-use crate::storage::models::Storage;
-use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
-use crate::system::permissions::permissions_checker::CanIDo;
-
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-use crate::repository::nitro::ProjectRequest;
+use crate::{
+    authentication::Authentication,
+    generators::GeneratorCache,
+    repository::{
+        handler::Repository,
+        nitro::{nitro_repository::NitroRepositoryHandler, ProjectRequest},
+    },
+    storage::{multi::MultiStorageController, DynamicStorage, Storage},
+    system::permissions::permissions_checker::CanIDo,
+};
 
 pub async fn get_project(
     storage_handler: web::Data<MultiStorageController<DynamicStorage>>,

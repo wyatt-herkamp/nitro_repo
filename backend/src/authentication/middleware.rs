@@ -134,16 +134,8 @@ where
             // Finish the request
             let fut = service.call(req);
             // Get the response
-            let mut res: Self::Response = fut.await?;
+            let res: Self::Response = fut.await?;
             Ok(res)
         })
     }
-}
-
-fn internal_server_error<E: fmt::Debug + fmt::Display + 'static>(err: E) -> Error {
-    actix_web::error::InternalError::from_response(
-        err,
-        actix_web::HttpResponse::InternalServerError().finish(),
-    )
-    .into()
 }

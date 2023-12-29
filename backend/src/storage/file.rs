@@ -1,12 +1,15 @@
-use std::fs::{DirEntry, Metadata};
-use std::path::PathBuf;
+use std::{
+    fs::{DirEntry, Metadata},
+    path::PathBuf,
+};
 
 use actix_files::NamedFile;
-use actix_web::body::BoxBody;
-use actix_web::error::ErrorBadRequest;
-use actix_web::http::header::ACCEPT;
-use actix_web::http::{Method, StatusCode};
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use actix_web::{
+    body::BoxBody,
+    error::ErrorBadRequest,
+    http::{header::ACCEPT, Method, StatusCode},
+    HttpRequest, HttpResponse, Responder,
+};
 use chrono::{DateTime, FixedOffset, Local};
 use log::{error, trace};
 use serde::Serialize;

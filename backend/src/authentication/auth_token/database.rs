@@ -1,16 +1,11 @@
 use std::convert::Infallible;
 
-use actix_web::dev::Payload;
-use actix_web::{FromRequest, HttpMessage, HttpRequest};
+use actix_web::{dev::Payload, FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::{ready, Ready};
-
-use sea_orm::entity::prelude::*;
-use sea_orm::sea_query::ArrayType;
-use sea_orm::{ColIdx, JsonValue, TryGetError};
+use sea_orm::{entity::prelude::*, sea_query::ArrayType, ColIdx, JsonValue, TryGetError};
 use serde::{Deserialize, Serialize};
 
-use crate::system::user::database::UserSafeData;
-use crate::system::user::UserEntity;
+use crate::system::user::{database::UserSafeData, UserEntity};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TokenProperties {

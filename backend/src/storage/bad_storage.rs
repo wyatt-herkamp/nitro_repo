@@ -1,7 +1,5 @@
-use crate::storage::error::StorageError;
-
-use crate::storage::models::StorageStatus;
-use crate::storage::StorageSaver;
+use super::StorageStatus;
+use crate::storage::{error::StorageError, StorageSaver};
 
 /// This is a storages that is here to represent a storages that failed to load from the config stage
 #[derive(Debug)]

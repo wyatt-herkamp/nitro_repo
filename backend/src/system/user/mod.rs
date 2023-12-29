@@ -1,9 +1,9 @@
 pub mod database;
 
-use crate::system::user::database::UserSafeData;
-pub use database::Entity as UserEntity;
-pub use database::Model as UserModel;
+pub use database::{Entity as UserEntity, Model as UserModel};
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+
+use crate::system::user::database::UserSafeData;
 
 pub async fn get_by_username(
     username: &str,

@@ -1,15 +1,11 @@
-use schemars::schema::RootSchema;
-use schemars::JsonSchema;
-
-use chrono::{DateTime, FixedOffset, Local};
 use std::fmt::Debug;
 
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use chrono::{DateTime, FixedOffset, Local};
+use schemars::{schema::RootSchema, JsonSchema};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::error::internal_error::InternalError;
 pub use crate::repository::handler::RepositoryType;
-use crate::storage::models::Storage;
+use crate::{error::internal_error::InternalError, storage::Storage};
 
 pub mod badge;
 pub mod frontend;

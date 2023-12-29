@@ -1,33 +1,30 @@
-use std::collections::HashMap;
-use std::hint::unreachable_unchecked;
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{
+    collections::HashMap, hint::unreachable_unchecked, path::PathBuf, str::FromStr, sync::Arc,
+};
 
-use crate::repository::handler::{DynamicRepositoryHandler, Repository};
-use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
 use lock_freedom::map::{Map, Removed};
 use log::{debug, error, trace, warn};
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
-
-use tokio::fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use tokio::{
+    fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, OpenOptions},
+    io::{AsyncReadExt, AsyncWriteExt},
+};
 use tokio_stream::StreamExt;
 
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
-
-use crate::storage::error::StorageError;
-
-use crate::storage::file::{StorageDirectoryResponse, StorageFile, StorageFileResponse};
-
-use crate::storage::models::{Storage, StorageStatus};
-use crate::storage::path::{StoragePath, SystemStorageFile};
-use crate::storage::{
-    DynamicStorage, StorageConfig, StorageSaver, REPOSITORY_FOLDER, STORAGE_CONFIG,
+use crate::{
+    repository::{
+        handler::{DynamicRepositoryHandler, Repository},
+        settings::{RepositoryConfig, RepositoryConfigType},
+    },
+    storage::{
+        error::StorageError,
+        file::{StorageDirectoryResponse, StorageFile, StorageFileResponse},
+        path::{StoragePath, SystemStorageFile},
+        DynamicStorage, Storage, StorageConfig, StorageSaver, StorageStatus, REPOSITORY_FOLDER,
+        STORAGE_CONFIG,
+    },
 };
 
 #[derive(Debug)]
@@ -116,10 +113,8 @@ macro_rules! unsafe_into_config {
         }
     };
 }
-#[async_trait]
 impl Storage for LocalStorage {
     type Repository = DynamicRepositoryHandler<DynamicStorage>;
-
     async fn create_new(mut config: StorageSaver) -> Result<Self, (StorageError, StorageSaver)>
     where
         Self: Sized,
@@ -265,11 +260,11 @@ impl Storage for LocalStorage {
         Ok(option)
     }
 
-    fn remove_repository_for_updating<S: AsRef<str>>(
+    fn remove_repository_for_updating(
         &self,
-        repository: S,
+        repository: &str,
     ) -> Option<Removed<String, Arc<Self::Repository>>> {
-        self.repositories.remove(repository.as_ref())
+        self.repositories.remove(repository)
     }
 
     async fn add_repository_for_updating(
@@ -476,9 +471,9 @@ impl Storage for LocalStorage {
         Ok(())
     }
 
-    async fn list_files<S: AsRef<str> + Send, SP: Into<StoragePath> + Send>(
+    async fn list_files<SP: Into<StoragePath> + Send>(
         &self,
-        repository: S,
+        repository: &str,
         path: SP,
     ) -> Result<Vec<SystemStorageFile>, StorageError> {
         let path = path.into();

@@ -1,34 +1,32 @@
-use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::Repository;
+use std::sync::Arc;
 
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
-use crate::storage::file::StorageFileResponse;
-use crate::storage::models::Storage;
-use crate::system::permissions::permissions_checker::CanIDo;
-
-use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
-use actix_web::web::Bytes;
-use async_trait::async_trait;
-
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
-
-use crate::repository::maven::error::MavenError;
-
-use crate::repository::maven::validate_policy;
-use crate::repository::settings::repository_page::RepositoryPage;
-
-use actix_web::HttpResponse;
+use actix_web::{
+    http::{header::HeaderMap, StatusCode},
+    web::Bytes,
+    HttpResponse,
+};
 use log::error;
 use maven_rs::pom::Pom;
 use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
+use crate::{
+    authentication::Authentication,
+    error::internal_error::InternalError,
+    repository::{
+        handler::Repository,
+        maven::{error::MavenError, validate_policy},
+        nitro::nitro_repository::NitroRepositoryHandler,
+        response::RepoResponse,
+        settings::{
+            badge::BadgeSettings, frontend::Frontend, repository_page::RepositoryPage, Policy,
+            RepositoryConfig, RepositoryConfigType,
+        },
+    },
+    storage::{file::StorageFileResponse, Storage},
+    system::permissions::permissions_checker::CanIDo,
+};
 
 #[derive(Debug)]
 pub struct HostedMavenRepository<S: Storage> {
@@ -87,7 +85,6 @@ impl Default for MavenHosted {
     }
 }
 
-#[async_trait]
 impl<S: Storage> Repository<S> for HostedMavenRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config

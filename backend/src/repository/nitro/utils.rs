@@ -1,19 +1,26 @@
-use chrono::Local;
-use std::fs::read_to_string;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::{
+    fs::read_to_string,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
+use chrono::Local;
 use log::debug;
 
-use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
-use crate::error::internal_error::InternalError;
-use crate::generators::markdown::parse_to_html;
-use crate::generators::GeneratorCache;
-use crate::repository::nitro::{NitroRepoVersions, ProjectData, RepositoryListing, VersionData};
-use crate::repository::response::VersionResponse;
-use crate::repository::settings::frontend::{Frontend, PageProvider};
-use crate::repository::settings::RepositoryConfig;
-use crate::storage::models::Storage;
+use crate::{
+    constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA},
+    error::internal_error::InternalError,
+    generators::{markdown::parse_to_html, GeneratorCache},
+    repository::{
+        nitro::{NitroRepoVersions, ProjectData, RepositoryListing, VersionData},
+        response::VersionResponse,
+        settings::{
+            frontend::{Frontend, PageProvider},
+            RepositoryConfig,
+        },
+    },
+    storage::Storage,
+};
 
 pub async fn get_version<StorageType: Storage>(
     storage: &StorageType,

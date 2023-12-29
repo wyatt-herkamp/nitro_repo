@@ -1,8 +1,7 @@
 use chrono::{DateTime, FixedOffset, Local};
 use serde::{Deserialize, Serialize};
 
-use crate::repository::response::Project;
-use crate::storage::file::StorageFile;
+use crate::{repository::response::Project, storage::file::StorageFile};
 
 pub mod dynamic;
 pub mod nitro_repository;

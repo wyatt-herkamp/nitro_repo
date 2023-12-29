@@ -1,34 +1,30 @@
-use crate::authentication::Authentication;
+use std::sync::Arc;
 
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::Repository;
-
-use crate::repository::maven::settings::ProxySettings;
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::{Policy, RepositoryConfig, RepositoryConfigType};
-use crate::repository::staging::StageHandler;
-use crate::storage::file::StorageFileResponse;
-use crate::storage::models::Storage;
-use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
-use crate::system::permissions::permissions_checker::CanIDo;
-
-use actix_web::http::header::HeaderMap;
-use actix_web::http::StatusCode;
-use actix_web::web::Bytes;
-use actix_web::{Error, HttpResponse};
-use async_trait::async_trait;
+use actix_web::{
+    http::{header::HeaderMap, StatusCode},
+    web::Bytes,
+    Error, HttpResponse,
+};
+use log::{error, info};
 use schemars::JsonSchema;
-
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 
-use crate::system::user::database::UserSafeData;
-
-use crate::repository::maven::validate_policy;
-use crate::repository::settings::repository_page::RepositoryPage;
-use log::{error, info};
-use std::sync::Arc;
+use crate::{
+    authentication::Authentication,
+    error::internal_error::InternalError,
+    repository::{
+        handler::Repository,
+        maven::{settings::ProxySettings, validate_policy},
+        response::RepoResponse,
+        settings::{
+            repository_page::RepositoryPage, Policy, RepositoryConfig, RepositoryConfigType,
+        },
+        staging::StageHandler,
+    },
+    storage::{file::StorageFileResponse, multi::MultiStorageController, DynamicStorage, Storage},
+    system::{permissions::permissions_checker::CanIDo, user::database::UserSafeData},
+};
 
 mod external;
 mod git;
@@ -100,8 +96,7 @@ crate::repository::settings::define_configs_on_handler!(
     RepositoryPage
 );
 
-#[async_trait]
-impl<'a, S: Storage> StageHandler<S> for StagingRepository<S> {
+impl<S: Storage> StageHandler<S> for StagingRepository<S> {
     async fn push(
         &self,
         directory: String,
@@ -189,7 +184,6 @@ impl<S: Storage> Clone for StagingRepository<S> {
     }
 }
 
-#[async_trait]
 impl<S: Storage> Repository<S> for StagingRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config

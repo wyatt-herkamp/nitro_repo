@@ -1,25 +1,27 @@
-use async_trait::async_trait;
-use log::{debug, error, trace};
 use std::sync::Arc;
 
-use crate::constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA};
-use crate::error::internal_error::InternalError;
-use crate::generators::GeneratorCache;
-use crate::repository::handler::Repository;
-use crate::repository::nitro::utils::{
-    get_project_data, get_readme, get_version_data, get_versions, update_project_in_repositories,
-};
-use crate::repository::nitro::{
-    NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
-    RepositoryListing, VersionData,
-};
-use crate::repository::response::Project;
+use log::{debug, error, trace};
 
-use crate::storage::file::StorageDirectoryResponse;
-use crate::storage::models::Storage;
-use crate::system::user::database::UserSafeData;
+use crate::{
+    constants::{PROJECTS_FILE, PROJECT_FILE, VERSION_DATA},
+    error::internal_error::InternalError,
+    generators::GeneratorCache,
+    repository::{
+        handler::Repository,
+        nitro::{
+            utils::{
+                get_project_data, get_readme, get_version_data, get_versions,
+                update_project_in_repositories,
+            },
+            NitroFile, NitroFileResponse, NitroFileResponseType, NitroRepoVersions, ProjectData,
+            RepositoryListing, VersionData,
+        },
+        response::Project,
+    },
+    storage::{file::StorageDirectoryResponse, Storage},
+    system::user::database::UserSafeData,
+};
 
-#[async_trait]
 pub trait NitroRepositoryHandler<StorageType: Storage>: Repository<StorageType> {
     #[inline(always)]
     fn supports_nitro(&self) -> bool {

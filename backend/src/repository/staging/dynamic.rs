@@ -1,6 +1,5 @@
 macro_rules! gen_dynamic_stage {
     ($v:ident,$($name:ident),*) => {
-        #[async_trait::async_trait]
         impl<StorageType: Storage> crate::repository::staging::StageHandler<StorageType> for $v<StorageType>{
             fn staging_repository(&self) -> bool {
                 match self {

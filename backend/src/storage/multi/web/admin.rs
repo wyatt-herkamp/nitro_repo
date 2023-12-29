@@ -6,9 +6,8 @@ use crate::{
     error::internal_error::InternalError,
     storage::{
         error::StorageError,
-        models::Storage,
         multi::{MultiStorageController, PurgeLevel},
-        DynamicStorage, StorageSaver,
+        DynamicStorage, Storage, StorageSaver,
     },
     system::permissions::permissions_checker::CanIDo,
 };

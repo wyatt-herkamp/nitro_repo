@@ -1,21 +1,26 @@
-use crate::settings::models::{
-    Application, Database, GeneralSettings, MysqlSettings, PostgresSettings, SqliteSettings,
+use std::{
+    env,
+    env::current_dir,
+    fs::OpenOptions,
+    path::{Path, PathBuf},
+    process::exit,
 };
-use crate::system::hash;
-use crate::system::permissions::{RepositoryPermission, UserPermissions};
-use crate::system::user::database::ActiveModel;
-use crate::system::user::UserEntity;
-use clap::{Parser, Subcommand};
-use sea_orm::ActiveValue::Set;
-use sea_orm::{ConnectOptions, EntityTrait};
 
 use chrono::Local;
-use std::env;
-use std::env::current_dir;
-use std::fs::OpenOptions;
-use std::path::{Path, PathBuf};
-use std::process::exit;
+use clap::{Parser, Subcommand};
+use sea_orm::{ActiveValue::Set, ConnectOptions, EntityTrait};
 use tokio::fs::create_dir_all;
+
+use crate::{
+    settings::models::{
+        Application, Database, GeneralSettings, MysqlSettings, PostgresSettings, SqliteSettings,
+    },
+    system::{
+        hash,
+        permissions::{RepositoryPermission, UserPermissions},
+        user::{database::ActiveModel, UserEntity},
+    },
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

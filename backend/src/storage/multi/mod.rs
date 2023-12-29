@@ -1,23 +1,24 @@
-use ahash::AHashMap;
-use std::mem;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{mem, path::PathBuf, sync::Arc};
 
-use crate::repository::handler::DynamicRepositoryHandler;
+use ahash::AHashMap;
 use log::{error, info};
 use parking_lot::RwLock;
 use serde::Deserialize;
+use tokio::{
+    fs::{read_to_string, OpenOptions},
+    io::AsyncWriteExt,
+};
 
-use tokio::fs::{read_to_string, OpenOptions};
-use tokio::io::AsyncWriteExt;
-
-use crate::storage::bad_storage::BadStorage;
-use crate::storage::error::StorageError;
-use crate::storage::file::StorageFile;
-
-use crate::storage::error::StorageError::StorageCreateError;
-use crate::storage::models::Storage;
-use crate::storage::{DynamicStorage, StorageSaver};
+use super::Storage;
+use crate::{
+    repository::handler::DynamicRepositoryHandler,
+    storage::{
+        bad_storage::BadStorage,
+        error::{StorageError, StorageError::StorageCreateError},
+        file::StorageFile,
+        DynamicStorage, StorageSaver,
+    },
+};
 
 pub mod web;
 

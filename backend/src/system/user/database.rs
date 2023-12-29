@@ -1,7 +1,7 @@
-use crate::system::permissions::UserPermissions;
-use sea_orm::entity::prelude::*;
-use sea_orm::FromQueryResult;
+use sea_orm::{entity::prelude::*, FromQueryResult};
 use serde::{Deserialize, Serialize};
+
+use crate::system::permissions::UserPermissions;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "users")]

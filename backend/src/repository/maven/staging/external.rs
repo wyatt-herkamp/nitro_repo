@@ -1,16 +1,15 @@
-use crate::repository::settings::RepositoryConfig;
-use crate::storage::models::Storage;
-use crate::storage::DynamicStorage;
-use crate::system::user::database::UserSafeData;
-use std::io;
+use std::{io, sync::Arc};
 
 use log::{trace, warn};
 use reqwest::header::{HeaderMap, USER_AGENT};
-
-use crate::storage::error::StorageError;
-use crate::utils::base64_utils;
-use std::sync::Arc;
 use thiserror::Error;
+
+use crate::{
+    repository::settings::RepositoryConfig,
+    storage::{error::StorageError, DynamicStorage, Storage},
+    system::user::database::UserSafeData,
+    utils::base64_utils,
+};
 
 #[derive(Error, Debug)]
 pub enum ExternalStageError {

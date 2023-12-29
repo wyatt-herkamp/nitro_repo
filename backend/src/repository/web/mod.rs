@@ -1,10 +1,10 @@
 use serde::Serialize;
 
-use crate::error::internal_error::InternalError;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
-use crate::repository::settings::RepositoryConfig;
-use crate::storage::models::Storage;
+use crate::{
+    error::internal_error::InternalError,
+    repository::settings::{badge::BadgeSettings, frontend::Frontend, RepositoryConfig},
+    storage::Storage,
+};
 
 pub mod multi;
 

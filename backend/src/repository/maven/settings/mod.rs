@@ -1,8 +1,9 @@
 pub mod macros;
 
-use crate::repository::settings::RepositoryConfigType;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use crate::repository::settings::RepositoryConfigType;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, JsonSchema)]
 pub struct MavenSettings {

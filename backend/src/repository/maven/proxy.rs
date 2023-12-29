@@ -1,33 +1,33 @@
-use crate::authentication::Authentication;
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::Repository;
-use crate::repository::maven::settings::ProxySettings;
-use crate::repository::response::RepoResponse;
-use crate::repository::settings::{RepositoryConfig, RepositoryConfigType};
-use crate::storage::file::StorageFileResponse;
-use crate::storage::models::Storage;
-use crate::system::permissions::permissions_checker::CanIDo;
+use std::sync::Arc;
 
-use actix_web::http::header::HeaderMap;
-
-use actix_web::web::Bytes;
-use actix_web::{Error, HttpResponse};
-use async_trait::async_trait;
-
-use crate::repository::nitro::nitro_repository::NitroRepositoryHandler;
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
-
-use crate::repository::settings::repository_page::RepositoryPage;
-use actix_web::http::StatusCode;
+use actix_web::{
+    http::{header::HeaderMap, StatusCode},
+    web::Bytes,
+    Error, HttpResponse,
+};
 use futures::channel::mpsc::unbounded;
-use futures_util::stream::StreamExt;
-use futures_util::SinkExt;
+use futures_util::{stream::StreamExt, SinkExt};
 use log::error;
 use schemars::JsonSchema;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
+use crate::{
+    authentication::Authentication,
+    error::internal_error::InternalError,
+    repository::{
+        handler::Repository,
+        maven::settings::ProxySettings,
+        nitro::nitro_repository::NitroRepositoryHandler,
+        response::RepoResponse,
+        settings::{
+            badge::BadgeSettings, frontend::Frontend, repository_page::RepositoryPage,
+            RepositoryConfig, RepositoryConfigType,
+        },
+    },
+    storage::{file::StorageFileResponse, Storage},
+    system::permissions::permissions_checker::CanIDo,
+};
 
 #[derive(Debug)]
 pub struct ProxyMavenRepository<S: Storage> {
@@ -73,7 +73,6 @@ crate::repository::settings::define_configs_on_handler!(
     repository_page,
     RepositoryPage
 );
-#[async_trait]
 impl<S: Storage> Repository<S> for ProxyMavenRepository<S> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config

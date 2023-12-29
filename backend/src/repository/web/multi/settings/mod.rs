@@ -8,7 +8,7 @@ macro_rules! define_repository_config_get {
             auth: crate::authentication::TrulyAuthenticated,
             path_params: actix_web::web::Path<(String, String)>,
         ) -> actix_web::Result<actix_web::HttpResponse> {
-            use crate::storage::models::Storage;
+            use crate::storage::Storage;
             use crate::system::permissions::permissions_checker::CanIDo;
             let user = auth.into_user();
             user.can_i_edit_repos()?;
@@ -41,7 +41,7 @@ macro_rules! define_repository_config_set {
                 path_params: actix_web::web::Path<(String, String)>,
                 body: actix_web::web::Json<$config>,
             ) -> actix_web::Result<actix_web::HttpResponse> {
-                use crate::storage::models::Storage;
+                use crate::storage::Storage;
                  use crate::repository::handler::Repository;
                 use crate::system::permissions::permissions_checker::CanIDo;
                 let user = auth.into_user();

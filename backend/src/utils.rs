@@ -1,14 +1,10 @@
 use std::ops::Add;
 
-use crate::authentication;
 use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, FixedOffset, Local};
+use sea_orm::{ConnectionTrait, DatabaseConnection, DbErr, Schema};
 
-use sea_orm::{DatabaseConnection, DbErr, Schema};
-
-use crate::error::internal_error::InternalError;
-use crate::system::user::UserEntity;
-use sea_orm::ConnectionTrait;
+use crate::{authentication, error::internal_error::InternalError, system::user::UserEntity};
 pub async fn run_database_setup(database: &mut DatabaseConnection) -> Result<(), DbErr> {
     let schema = Schema::new(database.get_database_backend());
     let users = schema.create_table_from_entity(UserEntity);
@@ -47,8 +43,7 @@ pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalErro
 }
 
 pub mod base64_utils {
-    use base64::engine::general_purpose::STANDARD;
-    use base64::{DecodeError, Engine};
+    use base64::{engine::general_purpose::STANDARD, DecodeError, Engine};
 
     pub fn decode(input: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
         STANDARD.decode(input)

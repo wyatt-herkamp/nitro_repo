@@ -1,5 +1,4 @@
-use api::cli::install::install_task;
-use api::cli::{UtilCommand, UtilCommands};
+use api::cli::{install::install_task, UtilCommand, UtilCommands};
 use clap::Parser;
 #[tokio::main]
 async fn main() {

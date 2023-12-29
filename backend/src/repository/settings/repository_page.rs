@@ -47,7 +47,7 @@ pub mod multi_web {
                 RepositoryConfigHandler,
             },
         },
-        storage::{models::Storage, DynamicStorage},
+        storage::{DynamicStorage, Storage},
     };
 
     pub async fn get_page(

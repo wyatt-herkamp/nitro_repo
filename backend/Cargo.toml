@@ -17,6 +17,7 @@ required-features = ["multi_storage"]
 name = "nitro_utils"
 required-features = ["clap"]
 [dependencies]
+nitro_repo_internal_macros = {path="../crates/internal_macros"}
 # Web
 actix-web = { version = "4.3", features = ["cookies", "rustls-0_21"] }
 actix-cors = "0.6"
@@ -73,7 +74,6 @@ tracing-opentelemetry = "0.22"
 # Rust Internal
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.3"
-async-trait = "0.1"
 thiserror = "1"
 anyhow = "1"
 # Badge Stuff

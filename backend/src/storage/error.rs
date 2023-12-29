@@ -1,6 +1,6 @@
 use std::time::SystemTimeError;
-use this_actix_error::ActixError;
 
+use this_actix_error::ActixError;
 use thiserror::Error;
 
 #[derive(Error, Debug, ActixError)]

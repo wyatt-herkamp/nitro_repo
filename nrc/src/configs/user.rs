@@ -1,8 +1,10 @@
-use crate::api::Auth;
+use std::collections::HashMap;
+
 use reqwest::header::HeaderValue;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use uuid::Uuid;
+
+use crate::api::Auth;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct UserConfig {

@@ -1,17 +1,22 @@
 use std::collections::HashMap;
 
-use actix_web::body::BoxBody;
-use actix_web::http::header::CONTENT_LOCATION;
-use actix_web::http::StatusCode;
-use actix_web::web::Json;
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use actix_web::{
+    body::BoxBody,
+    http::{header::CONTENT_LOCATION, StatusCode},
+    web::Json,
+    HttpRequest, HttpResponse, Responder,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::error::internal_error::InternalError;
-use crate::repository::nitro::{NitroVersion, ProjectData, VersionData};
-use crate::repository::settings::RepositoryConfig;
-use crate::storage::file::StorageFileResponse;
+use crate::{
+    error::internal_error::InternalError,
+    repository::{
+        nitro::{NitroVersion, ProjectData, VersionData},
+        settings::RepositoryConfig,
+    },
+    storage::file::StorageFileResponse,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RepositoryFile {

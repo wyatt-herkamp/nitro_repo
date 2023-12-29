@@ -7,8 +7,7 @@ macro_rules! nitro_repo_handler {
         crate::repository::handler::repository_config_group!($v, crate::repository::settings::badge::BadgeSettings, $($name),*);
         crate::repository::handler::repository_config_group!($v, crate::repository::settings::frontend::Frontend, $($name),*);
 
-        #[async_trait::async_trait]
-        impl<'a, StorageType: Storage> crate::repository::nitro::nitro_repository::NitroRepositoryHandler<StorageType>
+        impl<StorageType: Storage> crate::repository::nitro::nitro_repository::NitroRepositoryHandler<StorageType>
             for $v<StorageType>
         {
             fn parse_project_to_directory<S: Into<String>>(_value: S) -> String {

@@ -6,7 +6,6 @@ use actix_web::{
     web::Bytes,
     HttpResponse, ResponseError,
 };
-use async_trait::async_trait;
 use chrono::Local;
 use log::{debug, trace};
 use regex::Regex;
@@ -29,7 +28,7 @@ use crate::{
             badge::BadgeSettings, frontend::Frontend, RepositoryConfig, RepositoryConfigType,
         },
     },
-    storage::{file::StorageFileResponse, models::Storage},
+    storage::{file::StorageFileResponse, Storage},
     system::permissions::permissions_checker::CanIDo,
     utils::base64_utils,
 };
@@ -117,7 +116,6 @@ impl<StorageType: Storage> NPMHandler<StorageType> {
 }
 
 // name/version
-#[async_trait]
 impl<StorageType: Storage> Repository<StorageType> for NPMHandler<StorageType> {
     fn get_repository(&self) -> &RepositoryConfig {
         &self.config

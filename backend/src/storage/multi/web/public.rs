@@ -1,8 +1,7 @@
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-use crate::storage::multi::MultiStorageController;
-use crate::storage::DynamicStorage;
+use crate::storage::{multi::MultiStorageController, DynamicStorage};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicStorageResponse {

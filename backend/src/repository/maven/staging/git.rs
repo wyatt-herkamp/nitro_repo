@@ -1,16 +1,15 @@
-use crate::repository::settings::RepositoryConfig;
-use crate::storage::DynamicStorage;
-use crate::system::user::database::UserSafeData;
+use std::{fs, io, io::BufReader, path::Path, sync::Arc};
+
 use git2::PushOptions;
 use log::{error, trace};
-use maven_rs::pom::Pom;
-use maven_rs::quick_xml;
-use std::io::BufReader;
-use std::path::Path;
-use std::sync::Arc;
-use std::{fs, io};
+use maven_rs::{pom::Pom, quick_xml};
 use tempfile::tempdir;
 use thiserror::Error;
+
+use crate::{
+    repository::settings::RepositoryConfig, storage::DynamicStorage,
+    system::user::database::UserSafeData,
+};
 
 #[derive(Error, Debug)]
 pub enum GitStageError {

@@ -113,7 +113,6 @@ async fn main() -> std::io::Result<()> {
     let database_data = Data::new(connection);
     let session_data = Data::new(session_manager);
 
-    
     let cache = Data::new(cache);
     let server = HttpServer::new(move || {
         App::new()

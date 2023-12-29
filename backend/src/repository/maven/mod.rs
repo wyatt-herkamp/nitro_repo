@@ -1,35 +1,29 @@
 use std::sync::Arc;
 
-use actix_web::http::header::HeaderMap;
-
-use actix_web::web::Bytes;
-use actix_web::Error;
-use async_trait::async_trait;
+use actix_web::{http::header::HeaderMap, web::Bytes, Error};
 use chrono::Local;
+use hosted::HostedMavenRepository;
 use log::debug;
 use maven_rs::pom::Pom;
-use sea_orm::DatabaseConnection;
-
-use hosted::HostedMavenRepository;
 use proxy::ProxyMavenRepository;
+use sea_orm::DatabaseConnection;
 use settings::{MavenSettings, MavenType};
 use staging::StagingRepository;
 
-use crate::authentication::Authentication;
-
-use crate::error::internal_error::InternalError;
-use crate::repository::handler::{
-    repository_handler, CreateRepository, Repository, RepositoryType,
+use crate::{
+    authentication::Authentication,
+    error::internal_error::InternalError,
+    repository::{
+        handler::{repository_handler, CreateRepository, Repository, RepositoryType},
+        maven::{
+            error::MavenError, hosted::MavenHosted, proxy::MavenProxySettings,
+            staging::MavenStagingConfig,
+        },
+        response::RepoResponse,
+        settings::{Policy, RepositoryConfig},
+    },
+    storage::Storage,
 };
-use crate::repository::maven::error::MavenError;
-use crate::repository::maven::hosted::MavenHosted;
-use crate::repository::maven::proxy::MavenProxySettings;
-
-use crate::repository::maven::staging::MavenStagingConfig;
-use crate::repository::response::RepoResponse;
-
-use crate::repository::settings::{Policy, RepositoryConfig};
-use crate::storage::models::Storage;
 
 pub mod error;
 pub mod hosted;
@@ -46,11 +40,13 @@ repository_handler!(
     Staging,
     StagingRepository
 );
-use crate::repository::nitro::{ProjectSource, VersionData};
-use crate::repository::settings::badge::BadgeSettings;
-use crate::repository::settings::frontend::Frontend;
-use crate::repository::settings::repository_page::RepositoryPage;
-use crate::system::user::database::UserSafeData;
+use crate::{
+    repository::{
+        nitro::{ProjectSource, VersionData},
+        settings::{badge::BadgeSettings, frontend::Frontend, repository_page::RepositoryPage},
+    },
+    system::user::database::UserSafeData,
+};
 crate::repository::nitro::dynamic::nitro_repo_handler!(
     MavenHandler,
     Hosted,

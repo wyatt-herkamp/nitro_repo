@@ -170,7 +170,6 @@ pub struct SiteSetting {
     pub description: String,
 }
 
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SecuritySettings {}
 

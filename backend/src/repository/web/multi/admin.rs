@@ -11,7 +11,7 @@ use crate::{
         handler::Repository,
         settings::{RepositoryConfigLayout, Visibility},
     },
-    storage::{models::Storage, multi::MultiStorageController, DynamicStorage},
+    storage::{multi::MultiStorageController, DynamicStorage, Storage},
     system::permissions::permissions_checker::CanIDo,
 };
 

@@ -2,23 +2,19 @@ pub mod database;
 pub mod utils;
 pub mod web;
 
-use crate::authentication::auth_token::database::TokenProperties;
-use crate::authentication::auth_token::utils::hash_token;
-use crate::error::internal_error::InternalError;
 use chrono::{DateTime, FixedOffset};
-
-use crate::system::user::database::UserSafeData;
-use crate::system::user::{UserEntity, UserModel};
-
-pub use database::ActiveModel as ActiveAuthTokenModel;
-pub use database::Entity as AuthTokenEntity;
-pub use database::Model as AuthTokenModel;
-
-use rand::distributions::Alphanumeric;
-use rand::Rng;
-use sea_orm::FromQueryResult;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+pub use database::{
+    ActiveModel as ActiveAuthTokenModel, Entity as AuthTokenEntity, Model as AuthTokenModel,
+};
+use rand::{distributions::Alphanumeric, Rng};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, QueryFilter};
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    authentication::auth_token::{database::TokenProperties, utils::hash_token},
+    error::internal_error::InternalError,
+    system::user::{database::UserSafeData, UserEntity, UserModel},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromQueryResult)]
 pub struct TokenResponse {
