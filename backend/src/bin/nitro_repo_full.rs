@@ -189,17 +189,33 @@ async fn main() -> std::io::Result<()> {
     #[cfg(feature = "ssl")]
     {
         if let Some(private) = application.ssl_private_key {
-            let cert = application
-                .ssl_cert_key
-                .expect("If Private Key is set. CERT Should be set");
-            use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+            use rustls::ServerConfig as RustlsServerConfig;
+            use rustls_pemfile::{certs, pkcs8_private_keys};
+            use std::fs::File;
+            use std::io::BufReader;
+            let mut cert_file = BufReader::new(File::open(
+                application
+                    .ssl_cert_key
+                    .expect("Private key Provided but not public key"),
+            )?);
+            let mut key_file = BufReader::new(File::open(private)?);
 
-            let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-            builder
-                .set_private_key_file(private, SslFiletype::PEM)
+            let cert_chain = certs(&mut cert_file)
+                .collect::<Result<Vec<_>, _>>()
                 .unwrap();
-            builder.set_certificate_chain_file(cert).unwrap();
-            return server.bind_openssl(address, builder)?.run().await;
+            let mut keys = pkcs8_private_keys(&mut key_file)
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+
+            let config = RustlsServerConfig::builder()
+                .with_no_client_auth()
+                .with_single_cert(
+                    cert_chain,
+                    rustls::pki_types::PrivateKeyDer::Pkcs8(keys.remove(0)),
+                )
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            server.bind_rustls_0_22(address, config)?.run().await?;
+            return Ok(());
         }
     }
 

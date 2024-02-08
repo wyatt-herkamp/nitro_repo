@@ -18,22 +18,22 @@ name = "nitro_utils"
 required-features = ["clap"]
 [dependencies]
 # Web
-actix-web = { version = "4.3", features = ["cookies"] }
-actix-cors = "0.6"
+actix-web = { version = "4", features = ["cookies"] }
+actix-cors = "0.7"
 actix-service = "2"
-rustls = { version = "0.21.7" ,optional = true}
-rustls-pemfile = { version = "1" ,optional = true}
+rustls = { version = "0.22", optional = true }
+rustls-pemfile = { version = "2", optional = true }
 actix-files = "0.6"
 # Partly Web
-handlebars = "4"
+handlebars = "5"
 # Database
-sea-orm = { version = "0.12.4", features = ["runtime-actix-rustls", "macros"] }
-sqlx = "0.7.2"
+sea-orm = { version = "0.12", features = ["runtime-actix-rustls", "macros"] }
+sqlx = "0.7"
 # Serde
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 futures = "0.3"
-toml = "0.8.2"
+toml = "0.8"
 # utils
 rand = "0.8.5"
 rust-embed = { version = "8.0.0", features = ["interpolate-folder-path"] }
@@ -43,20 +43,27 @@ regex = "1.6.0"
 futures-util = "0.3.21"
 base64 = "0.21.0"
 tokio = { version = "1", features = ["full"] }
-uuid = { version = "1.1.2", features = ["serde", "v4"] }
+uuid = { version = "1", features = ["serde", "v4"] }
 style-term = "1.0.0"
 mime_guess = "2.0.4"
 paste = "1.0.7"
 reqwest = { version = "0.11.11", features = ["stream"] }
 bytes = "1.2.0"
 tokio-stream = "0.1.9"
-lock_freedom = {  git = "https://github.com/wyatt-herkamp/lock_freedom.git" }
+lock_freedom = { git = "https://github.com/wyatt-herkamp/lock_freedom.git" }
 sha2 = "0.10.2"
-ahash="0.8"
+ahash = "0.8"
 parking_lot = { version = "0.12", features = [] }
 # Log
-nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = ["chrono", "style-term"] }
-log = { version = "0.4.17", features = ["kv_unstable", "kv_unstable_std", "kv_unstable_serde"] }
+nitro_log = { git = "https://github.com/wyatt-herkamp/nitro_log", features = [
+    "chrono",
+    "style-term",
+] }
+log = { version = "0.4.17", features = [
+    "kv_unstable",
+    "kv_unstable_std",
+    "kv_unstable_serde",
+] }
 # Rust Internal
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.3"
@@ -69,7 +76,7 @@ badge-maker = "0.3"
 clap = { version = "4", features = ["derive"], optional = true }
 semver = { version = "1", features = ["std", "serde"] }
 # Cache
-comrak = "0.19.0"
+comrak = "0.21.0"
 # Staging
 tempfile = "3.3.0"
 git2 = "0.18.1"
@@ -77,15 +84,22 @@ schemars = "0.8.10"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
-zip = { git="https://github.com/zip-rs/zip.git" }
+zip = { git = "https://github.com/zip-rs/zip.git" }
 typeshare = "1.0.0"
-current_semver = {git="https://github.com/wyatt-herkamp/current_semver.git"}
+current_semver = { git = "https://github.com/wyatt-herkamp/current_semver.git" }
 [build-dependencies]
-vergen = { version = "8.1.1",features = ["build", "cargo", "git", "gitcl", "rustc", "si"] }
+vergen = { version = "8.1.1", features = [
+    "build",
+    "cargo",
+    "git",
+    "gitcl",
+    "rustc",
+    "si",
+] }
 [features]
 # The latest Updaters will always be under default features
 default = ["multi_storage", "postgres", "sqlite", "mysql"]
-ssl = ["rustls","rustls-pemfile", "actix-web/rustls-0_21"]
+ssl = ["rustls", "rustls-pemfile", "actix-web/rustls-0_22"]
 mysql = ["sea-orm/sqlx-mysql"]
 sqlite = ["sea-orm/sqlx-sqlite"]
 postgres = ["sea-orm/sqlx-postgres"]
