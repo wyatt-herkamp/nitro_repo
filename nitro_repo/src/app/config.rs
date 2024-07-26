@@ -1,0 +1,105 @@
+use std::env;
+use std::path::PathBuf;
+pub mod database;
+use config_types::size_config::{ConfigSize, Unit};
+use database::DatabaseConfig;
+use serde::{Deserialize, Serialize};
+
+use super::authentication::session::SessionManagerConfig;
+use super::email::EmailSetting;
+use super::logging::LoggingConfig;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum Mode {
+    Debug,
+    Release,
+}
+impl Default for Mode {
+    fn default() -> Self {
+        #[cfg(debug_assertions)]
+        return Mode::Debug;
+        #[cfg(not(debug_assertions))]
+        return Mode::Release;
+    }
+}
+pub fn get_current_directory() -> PathBuf {
+    env::current_dir().unwrap_or_else(|_| PathBuf::new())
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NitroRepoConfig {
+    pub database: DatabaseConfig,
+    pub log: LoggingConfig,
+    pub bind_address: String,
+    pub max_upload: ConfigSize,
+    pub mode: Mode,
+    pub sessions: SessionManagerConfig,
+    pub tls: Option<TlsConfig>,
+    pub email: EmailSetting,
+    pub site: SiteSetting,
+}
+impl NitroRepoConfig {
+    pub fn load(config_file: PathBuf, update_config: bool) -> anyhow::Result<Self> {
+        let app = if config_file.exists() {
+            let config = std::fs::read_to_string(&config_file)?;
+            let app: NitroRepoConfig = toml::from_str(&config)?;
+            if update_config {
+                let toml = toml::to_string_pretty(&app)?;
+                std::fs::write(&config_file, &toml)?;
+            }
+            app
+        } else {
+            let default = NitroRepoConfig::default();
+            let config = toml::to_string_pretty(&default)?;
+            std::fs::write(&config_file, &config)?;
+            default
+        };
+        Ok(app)
+    }
+}
+
+impl Default for NitroRepoConfig {
+    fn default() -> Self {
+        Self {
+            database: DatabaseConfig::default(),
+            log: LoggingConfig::default(),
+            bind_address: "0.0.0.0:6742".to_string(),
+            max_upload: ConfigSize {
+                size: 1024,
+                unit: Unit::Mebibytes,
+            },
+            mode: Mode::default(),
+            tls: None,
+            sessions: SessionManagerConfig::default(),
+            email: EmailSetting::default(),
+            site: SiteSetting::default(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct TlsConfig {
+    pub private_key: PathBuf,
+    pub certificate_chain: PathBuf,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(default)]
+pub struct SiteSetting {
+    /// If not set, the app will load the url from the request.
+    pub app_url: Option<String>,
+    pub name: String,
+    pub description: String,
+    pub is_https: bool,
+}
+
+impl Default for SiteSetting {
+    fn default() -> Self {
+        SiteSetting {
+            app_url: None,
+            name: "Nitro Repo".to_string(),
+            description: "An Open Source artifact manager.".to_string(),
+            is_https: false,
+        }
+    }
+}

@@ -1,0 +1,86 @@
+[package]
+name = "nitro_repo"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+build = "build.rs"
+license.workspace = true
+
+
+[dependencies]
+# Web
+actix-web = { version = "4", features = ["cookies", "rustls-0_23"] }
+actix-cors = "0.7"
+actix-rt = "2"
+actix-service = "2"
+rustls = { version = "0.23" }
+rustls-pemfile = { version = "2" }
+actix-files = "0.6"
+# Partly Web
+handlebars = "6"
+# Database
+sea-orm = { workspace = true, features = ["runtime-actix-rustls"] }
+sqlx.workspace = true
+# Serde
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+# utils
+futures.workspace = true
+rand = "0.8"
+rust-embed = { version = "8", features = ["interpolate-folder-path"] }
+argon2 = "0.5"
+chrono.workspace = true
+regex = "1"
+futures-util.workspace = true
+base64.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+sha2.workspace = true
+
+reqwest.workspace = true
+bytes = "1.2.0"
+lock_freedom = { git = "https://github.com/wyatt-herkamp/lock_freedom.git" }
+ahash.workspace = true
+parking_lot.workspace = true
+# Rust Internal
+strum.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+# Badge Stuff
+badge-maker = "0.3"
+
+# Installer
+clap = { version = "4", features = ["derive"] }
+semver = { version = "1", features = ["std", "serde"] }
+
+# Staging
+tempfile = "3.3.0"
+# Maven Stuff
+maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
+this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
+zip = { version = "2" }
+current_semver = { git = "https://github.com/wyatt-herkamp/current_semver.git" }
+nr-core.workspace = true
+nr-macros.workspace = true
+nr-entities.workspace = true
+redb = { version = "2.1" }
+config_types = { git = "https://github.com/wyatt-herkamp/config_types.git", features = [
+    "regex_types",
+    "strum",
+] }
+
+# Tracing
+tracing-actix-web = "0.7"
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+tracing-opentelemetry = "0.23"
+
+# OpenTelemetry - Tracing framework
+opentelemetry = { version = "0.22", features = [] }
+opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.15", default-features = true }
+
+[features]
+builtin_frontend = []

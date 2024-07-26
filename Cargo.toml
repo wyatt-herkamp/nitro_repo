@@ -1,3 +1,52 @@
 [workspace]
-members = ["backend", "nrc"]
+members = [ "crates/*", "nitro_repo"]
 resolver = "2"
+[workspace.package]
+version = "2.0.0-BETA"
+authors = ["Wyatt Jacob Herkamp <wherkamp@gmail.com>"]
+edition = "2021"
+license = "MIT"
+[workspace.dependencies]
+tokio = {version = "1", features = ["full"]}
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+sea-orm = { version = "1.0.0-rc", features = [
+    "runtime-actix-rustls",
+    "macros",
+    "sqlx-all",
+] }
+sqlx = "0.7"
+
+tracing = "0.1"
+tracing-subscriber = {version = "0.3", features = ["env-filter", "json"]}
+tracing-appender = "0.2"
+utoipa = { version = "4", features = ["chrono"] }
+
+nr-core = { path = "crates/core" }
+nr-macros = { path = "crates/macros" }
+nr-entities = { path = "crates/entities" }
+# Rust Utilities
+futures = "0.3"
+derive_more = {version="1.0.0-beta", features= ["deref", "from", "into"]}
+ahash = "0.8"
+parking_lot = { version = "0.12", features = [] }
+futures-util = "0.3.21"
+digestible = { version = "0.2", features = ["base64"]}
+uuid = { version = "1", features = ["v4", "v5"] }
+chrono = { version = "0.4", features = ["serde"] }
+strum = { version = "0.26", features = ["derive"] }
+mime_guess = "2"
+mime = "0.3"
+sha2 = "0.10"
+base64 = "0.22"
+# Error Handling
+thiserror = "1"
+anyhow = "1"
+
+reqwest = { version = "0.12", features = ["stream", "http2", "json", "rustls-tls" ] , default-features = false }
+[workspace.lints.rust]
+async_fn_in_trait = "allow"
+deprecated = "deny"

@@ -1,0 +1,11 @@
+[package]
+name = "nr-entities"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde.workspace = true
+sea-orm.workspace = true
+nr-core.workspace = true
+serde_json.workspace = true
+sea_orm_exports = { git = "https://github.com/wyatt-herkamp/sea_orm_exports.git" }

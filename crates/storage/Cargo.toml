@@ -1,0 +1,26 @@
+[package]
+name = "nr-storage"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+nr-core.workspace = true
+tracing.workspace = true
+tokio.workspace = true
+strum.workspace = true
+anyhow.workspace = true
+mime_guess.workspace = true
+mime.workspace = true
+derive_more.workspace = true
+sha2.workspace = true
+base64.workspace = true
+ahash.workspace = true
+[lints]
+workspace = true
