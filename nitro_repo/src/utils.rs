@@ -8,7 +8,6 @@ use actix_web::http::header::HeaderMap;
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use rust_embed::RustEmbed;
 use tracing::error;
-use tracing_subscriber::Layer;
 
 use crate::error::internal_error::InternalError;
 

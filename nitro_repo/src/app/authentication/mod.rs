@@ -1,155 +1,112 @@
-use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::Debug;
 
 use actix_web::dev::Payload;
-use actix_web::http::StatusCode;
-use actix_web::{FromRequest, HttpMessage, HttpRequest, ResponseError};
+use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use futures_util::future::{ready, Ready};
-use nr_entities::user::api_token::AuthTokenModel;
-use nr_entities::user::{UserColumn, UserEntity, UserModel, UserSafeData};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use serde::Deserialize;
-use serde_json::json;
-use session::Session;
-use tracing::trace;
+use futures::future::LocalBoxFuture;
 
-use crate::error::internal_error::InternalError;
+use nr_core::database::user::auth_token::AuthToken;
+use nr_core::database::user::{UserModel, UserSafeData, UserType};
+use session::Session;
+use sqlx::PgPool;
+use this_actix_error::ActixError;
+use thiserror::Error;
+use tracing::error;
+
+use super::DatabaseConnection;
 
 pub mod api_middleware;
 pub mod session;
 
-pub struct NotAuthenticated;
-
-impl Debug for NotAuthenticated {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Not Authenticated")
-    }
-}
-
-impl Display for NotAuthenticated {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let result = serde_json::to_string(&json!({
-            "error": "Not Authenticated",
-        }))
-        .map_err(|_| fmt::Error)?;
-        write!(f, "{}", result)
-    }
-}
-
-impl ResponseError for NotAuthenticated {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::UNAUTHORIZED
-    }
+#[derive(Error, Debug, ActixError)]
+pub enum AuthenticationError {
+    #[error("DB error {0}")]
+    #[status_code(500)]
+    DBError(#[from] sqlx::Error),
+    #[error("You are not logged in.")]
+    #[status_code(401)]
+    Unauthorized,
+    #[error("Password is not able to be verified.")]
+    #[status_code(401)]
+    PasswordVerificationError,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum Authentication {
-    /// Neither a Session or Auth Token exist.
-    /// Might deny these requests in the future on API routes
-    NoIdentification,
     /// An Auth Token was passed under the Authorization Header
-    AuthToken(AuthTokenModel, UserSafeData),
+    AuthToken(AuthToken, UserSafeData),
     /// Session Value from Cookie
-    Session(Session),
-    /// If the Authorization Header could not be parsed. Give them the value
-    AuthorizationHeaderUnknown(String, String),
+    Session(Session, UserSafeData),
     /// Authorization Basic Header
     Basic(UserSafeData),
 }
 
-impl Authentication {
-    pub fn authorized(&self) -> bool {
-        if let Authentication::NoIdentification = &self {
-            return false;
-        }
-        if let Authentication::Session(session) = &self {
-            return true;
-        }
-        true
-    }
-    pub async fn get_user(
-        self,
-        database: &DatabaseConnection,
-    ) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
-        match self {
-            Authentication::AuthToken(_, user) => Ok(Ok(user)),
-            Authentication::Session(session) => {
-                if let Some(user) = Some(session.user_id) {
-                    let option = UserEntity::find_by_id(user)
-                        .into_model()
-                        .one(database)
-                        .await?;
-                    if let Some(user) = option {
-                        Ok(Ok(user))
-                    } else {
-                        Ok(Err(NotAuthenticated))
-                    }
-                } else {
-                    Ok(Err(NotAuthenticated))
-                }
-            }
-            Authentication::Basic(user) => Ok(Ok(user)),
-            _ => Ok(Err(NotAuthenticated)),
-        }
-    }
-}
-
 impl FromRequest for Authentication {
-    type Error = InternalError;
-    type Future = Ready<Result<Authentication, Self::Error>>;
+    type Error = AuthenticationError;
+    type Future = LocalBoxFuture<'static, Result<Self, AuthenticationError>>;
 
     #[inline]
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        let model = req.extensions_mut().get::<Authentication>().cloned();
-        if model.is_none() {
-            trace!("Missing Extension");
-            return ready(Ok(Authentication::NoIdentification));
+        let model = req.extensions_mut().get::<AuthenticationRaw>().cloned();
+        if let Some(model) = model {
+            let database = req.app_data::<DatabaseConnection>().unwrap().clone();
+            return Box::pin(async move {
+                match model {
+                    AuthenticationRaw::Session(session) => {
+                        let user = UserSafeData::get_by_id(session.user_id, database.as_ref())
+                            .await?
+                            .ok_or(AuthenticationError::Unauthorized)?;
+                        Ok(Authentication::Session(session, user))
+                    }
+                    AuthenticationRaw::AuthToken(token) => {
+                        let (user, auth_token) =
+                            get_user_and_auth_token(&token, database.as_ref()).await?;
+                        Ok(Authentication::AuthToken(auth_token, user))
+                    }
+                    // TODO: Implement AuthToken, Basic
+                    _ => Err(AuthenticationError::Unauthorized),
+                }
+            });
         }
-
-        ready(Ok(model.unwrap()))
+        Box::pin(async move { Err(AuthenticationError::Unauthorized) })
     }
+}
+#[derive(Clone, Debug, PartialEq)]
+pub enum RepositoryAuthentication {
+    AuthToken(AuthToken, UserSafeData),
+    Session(Session, UserSafeData),
+    Basic(UserSafeData),
+    Other(String, String),
+    NoIdentification,
 }
 
-#[derive(Deserialize, Clone, Debug)]
-pub struct SecureAction<T: Clone + Debug> {
-    pub username: String,
-    pub password: String,
-    pub secure_data: T,
-}
-impl<T: Clone + Debug> SecureAction<T> {
-    pub async fn verify(
-        &self,
-        database: &DatabaseConnection,
-    ) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
-        verify_login(&self.username, &self.password, database).await
+impl FromRequest for RepositoryAuthentication {
+    type Error = AuthenticationError;
+    type Future = LocalBoxFuture<'static, Result<Self, AuthenticationError>>;
+
+    #[inline]
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let model = req.extensions_mut().get::<AuthenticationRaw>().cloned();
+        if let Some(model) = model {
+            let database = req.app_data::<DatabaseConnection>().unwrap().clone();
+            return Box::pin(async move {
+                match model {
+                    AuthenticationRaw::Session(session) => {
+                        let user = UserSafeData::get_by_id(session.user_id, database.as_ref())
+                            .await?
+                            .ok_or(AuthenticationError::Unauthorized)?;
+                        Ok(RepositoryAuthentication::Session(session, user))
+                    }
+                    AuthenticationRaw::AuthToken(token) => {
+                        let (user, auth_token) =
+                            get_user_and_auth_token(&token, database.as_ref()).await?;
+                        Ok(RepositoryAuthentication::AuthToken(auth_token, user))
+                    }
+                    _ => Err(AuthenticationError::Unauthorized),
+                }
+            });
+        }
+        Box::pin(async move { Err(AuthenticationError::Unauthorized) })
     }
-    pub fn into_inner(self) -> T {
-        self.secure_data
-    }
-}
-#[inline(always)]
-pub async fn verify_login(
-    username: impl AsRef<str>,
-    password: impl AsRef<str>,
-    database: &DatabaseConnection,
-) -> Result<Result<UserSafeData, NotAuthenticated>, InternalError> {
-    let user_found: Option<UserModel> = UserEntity::find()
-        .filter(UserColumn::Username.eq(username.as_ref()))
-        .one(database)
-        .await?;
-    if user_found.is_none() {
-        return Ok(Err(NotAuthenticated));
-    }
-    let argon2 = Argon2::default();
-    let user = user_found.unwrap();
-    let parsed_hash = PasswordHash::new(user.password.as_str())?;
-    if argon2
-        .verify_password(password.as_ref().as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Ok(Err(NotAuthenticated));
-    }
-    Ok(Ok(user.into()))
 }
 
 #[derive(Debug, Clone)]
@@ -158,11 +115,62 @@ pub enum AuthenticationRaw {
     /// Might deny these requests in the future on API routes
     NoIdentification,
     /// An Auth Token was passed under the Authorization Header
-    AuthToken(AuthTokenModel, UserSafeData),
+    AuthToken(String),
     /// Session Value from Cookie
     Session(Session),
     /// If the Authorization Header could not be parsed. Give them the value
     AuthorizationHeaderUnknown(String, String),
     /// Authorization Basic Header
-    Basic(UserSafeData),
+    Basic { username: String, password: String },
+}
+
+#[inline(always)]
+pub async fn verify_login(
+    username: impl AsRef<str>,
+    password: impl AsRef<str>,
+    database: &DatabaseConnection,
+) -> Result<UserSafeData, AuthenticationError> {
+    let user_found: Option<UserModel> = UserModel::get_by_username_or_email(username, database)
+        .await
+        .map_err(AuthenticationError::DBError)?;
+    if user_found.is_none() {
+        return Err(AuthenticationError::Unauthorized);
+    }
+    let argon2 = Argon2::default();
+    let user = user_found.unwrap();
+    let Some(parsed_hash) = user
+        .password
+        .as_ref()
+        .map(|x| PasswordHash::new(x))
+        .transpose()
+        .map_err(|err| {
+            error!("Failed to parse password hash: {}", err);
+            AuthenticationError::PasswordVerificationError
+        })?
+    else {
+        return Err(AuthenticationError::Unauthorized);
+    };
+
+    if argon2
+        .verify_password(password.as_ref().as_bytes(), &parsed_hash)
+        .is_err()
+    {
+        return Err(AuthenticationError::Unauthorized);
+    }
+    Ok(user.into())
+}
+
+pub async fn get_user_and_auth_token(
+    token: &str,
+    database: &PgPool,
+) -> Result<(UserSafeData, AuthToken), AuthenticationError> {
+    let auth_token = AuthToken::get_by_token(token, database)
+        .await
+        .map_err(AuthenticationError::DBError)?
+        .ok_or(AuthenticationError::Unauthorized)?;
+    let user = UserSafeData::get_by_id(auth_token.user_id, database)
+        .await
+        .map_err(AuthenticationError::DBError)?
+        .ok_or(AuthenticationError::Unauthorized)?;
+    Ok((user, auth_token))
 }

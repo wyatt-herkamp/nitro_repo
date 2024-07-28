@@ -1,9 +1,8 @@
+use config_types::size_config::{ConfigSize, Unit};
+use serde::{Deserialize, Serialize};
+use sqlx::postgres::PgConnectOptions;
 use std::env;
 use std::path::PathBuf;
-pub mod database;
-use config_types::size_config::{ConfigSize, Unit};
-use database::DatabaseConfig;
-use serde::{Deserialize, Serialize};
 
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
@@ -28,10 +27,11 @@ pub fn get_current_directory() -> PathBuf {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NitroRepoConfig {
-    pub database: DatabaseConfig,
+    pub database: PostgresSettings,
     pub log: LoggingConfig,
     pub bind_address: String,
     pub max_upload: ConfigSize,
+    pub server_workers: Option<usize>,
     pub mode: Mode,
     pub sessions: SessionManagerConfig,
     pub tls: Option<TlsConfig>,
@@ -61,13 +61,14 @@ impl NitroRepoConfig {
 impl Default for NitroRepoConfig {
     fn default() -> Self {
         Self {
-            database: DatabaseConfig::default(),
+            database: PostgresSettings::default(),
             log: LoggingConfig::default(),
             bind_address: "0.0.0.0:6742".to_string(),
             max_upload: ConfigSize {
                 size: 1024,
                 unit: Unit::Mebibytes,
             },
+            server_workers: None,
             mode: Mode::default(),
             tls: None,
             sessions: SessionManagerConfig::default(),
@@ -76,7 +77,39 @@ impl Default for NitroRepoConfig {
         }
     }
 }
-
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PostgresSettings {
+    pub user: String,
+    pub password: String,
+    pub host: String,
+    pub database: String,
+}
+impl Default for PostgresSettings {
+    fn default() -> Self {
+        Self {
+            user: "postgres".to_string(),
+            password: "password".to_string(),
+            host: "localhost:5432".to_string(),
+            database: "nitro_repo".to_string(),
+        }
+    }
+}
+impl From<PostgresSettings> for PgConnectOptions {
+    fn from(settings: PostgresSettings) -> Self {
+        let host = settings.host.split(':').collect::<Vec<&str>>();
+        let (host, port) = match host.len() {
+            1 => (host[0], 5432),
+            2 => (host[0], host[1].parse::<u16>().unwrap_or(5432)),
+            _ => ("localhost", 5432),
+        };
+        PgConnectOptions::new()
+            .username(&settings.user)
+            .password(&settings.password)
+            .host(host)
+            .port(port)
+            .database(&settings.database)
+    }
+}
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct TlsConfig {
     pub private_key: PathBuf,

@@ -13,12 +13,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"
 
-sea-orm = { version = "1.0.0-rc", features = [
-    "runtime-actix-rustls",
-    "macros",
-    "sqlx-all",
-] }
-sqlx = "0.7"
+
 
 tracing = "0.1"
 tracing-subscriber = {version = "0.3", features = ["env-filter", "json"]}
@@ -27,7 +22,6 @@ utoipa = { version = "4", features = ["chrono"] }
 
 nr-core = { path = "crates/core" }
 nr-macros = { path = "crates/macros" }
-nr-entities = { path = "crates/entities" }
 # Rust Utilities
 futures = "0.3"
 derive_more = {version="1.0.0-beta", features= ["deref", "from", "into"]}
@@ -35,7 +29,7 @@ ahash = "0.8"
 parking_lot = { version = "0.12", features = [] }
 futures-util = "0.3.21"
 digestible = { version = "0.2", features = ["base64"]}
-uuid = { version = "1", features = ["v4", "v5"] }
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 strum = { version = "0.26", features = ["derive"] }
 mime_guess = "2"
@@ -47,6 +41,10 @@ thiserror = "1"
 anyhow = "1"
 
 reqwest = { version = "0.12", features = ["stream", "http2", "json", "rustls-tls" ] , default-features = false }
+[workspace.dependencies.sqlx]
+version = "0.8"
+default_features = false
+features = ["runtime-tokio-rustls", "macros", "postgres", "chrono", "json", "derive","uuid", "migrate"]
 [workspace.lints.rust]
 async_fn_in_trait = "allow"
 deprecated = "deny"

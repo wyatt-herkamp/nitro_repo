@@ -68,7 +68,7 @@ impl FileMeta {
                 let file = File::open(&path)?;
                 let metadata = file.metadata()?;
                 let modified = metadata.modified_as_chrono_or_now()?;
-                let created = metadata.modified_as_chrono_or_now()?;
+                let created = metadata.created_as_chrono_or_now()?;
                 (created, modified)
             };
 

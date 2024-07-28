@@ -2,7 +2,6 @@ use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 
 use base64::DecodeError;
-use nr_core::user::permissions::PermissionError;
 use this_actix_error::ActixError;
 use thiserror::Error;
 
@@ -15,7 +14,7 @@ pub enum InternalError {
     #[error("IO error {0}")]
     IOError(#[from] std::io::Error),
     #[error("DB error {0}")]
-    DBError(#[from] sea_orm::error::DbErr),
+    DBError(#[from] sqlx::Error),
     #[error("Boolean Parse Error")]
     BooleanParseError(#[from] ParseBoolError),
     #[error("Decode Error")]
@@ -26,11 +25,8 @@ pub enum InternalError {
     Error(String),
     #[error("Missing Config Value {0}")]
     ConfigError(String),
-
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
-    #[error("Permission Error: {0}")]
-    PermissionError(#[from] PermissionError),
 }
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {

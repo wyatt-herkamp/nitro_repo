@@ -49,13 +49,13 @@ impl Default for SessionManagerConfig {
 /// Stored in the session manager.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Session {
-    pub user_id: i64,
+    pub user_id: i32,
     pub session_id: String,
     pub expires: DateTime<Utc>,
     pub created: DateTime<Utc>,
 }
 /// A tuple of (user_id, session_id, expires, created)
-pub type SessionTuple<'value> = (i64, &'value str, i64, i64);
+pub type SessionTuple<'value> = (i32, &'value str, i64, i64);
 impl Session {
     pub fn from_tuple(tuple: SessionTuple) -> Self {
         let (user_id, session_id, expires, created) = tuple;
@@ -154,7 +154,7 @@ impl SessionManager {
             }
         });
     }
-    pub fn create_session(&self, user_id: i64, life: Duration) -> Result<Session, SessionError> {
+    pub fn create_session(&self, user_id: i32, life: Duration) -> Result<Session, SessionError> {
         let sessions = self.sessions.begin_write()?;
         let mut session_table = sessions.open_table(TABLE)?;
 

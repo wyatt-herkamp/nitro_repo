@@ -1,13 +1,15 @@
+use super::authentication::api_middleware::HandleSession;
 use super::authentication::session::SessionManager;
 use super::config::NitroRepoConfig;
 use super::NitroRepo;
 
 use actix_cors::Cors;
+use actix_web::Scope;
 use actix_web::{middleware::DefaultHeaders, web::Data, App, HttpServer};
 use anyhow::Context;
 use rustls::ServerConfig as RustlsServerConfig;
 use rustls_pemfile::{certs, pkcs8_private_keys};
-use sea_orm::Database;
+use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
 use tracing_actix_web::TracingLogger;
@@ -22,15 +24,19 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         tls,
         email,
         site,
+        server_workers,
     } = config;
     log.init(mode)?;
-    let database = Database::connect(database)
+
+    let database = PgPool::connect_with(database.into())
         .await
         .map(Data::new)
-        .with_context(|| "Failed to connect to database")?;
-
+        .context("Could not connec to database")?;
     //  TODO: Run Migrations
-
+    sqlx::migrate!()
+        .run(database.as_ref())
+        .await
+        .context("Failed to run Migrations")?;
     let session_manager = SessionManager::new(sessions).map(Data::new)?;
     let site = Data::new(
         NitroRepo::new(site, database.clone())
@@ -51,7 +57,17 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
             .app_data(session_manager.clone())
             .app_data(site.clone())
             .app_data(database.clone())
+            .wrap(HandleSession {
+                session_manager: session_manager.clone(),
+                nitro_repo: site.clone(),
+            })
+            .service(Scope::new("/api").configure(crate::app::api::init))
     });
+    let server = if let Some(workers) = server_workers {
+        server.workers(workers)
+    } else {
+        server
+    };
 
     if let Some(tls_config) = tls {
         let mut cert_file = BufReader::new(File::open(tls_config.certificate_chain)?);

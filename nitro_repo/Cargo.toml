@@ -19,7 +19,6 @@ actix-files = "0.6"
 # Partly Web
 handlebars = "6"
 # Database
-sea-orm = { workspace = true, features = ["runtime-actix-rustls"] }
 sqlx.workspace = true
 # Serde
 serde.workspace = true
@@ -63,7 +62,6 @@ zip = { version = "2" }
 current_semver = { git = "https://github.com/wyatt-herkamp/current_semver.git" }
 nr-core.workspace = true
 nr-macros.workspace = true
-nr-entities.workspace = true
 redb = { version = "2.1" }
 config_types = { git = "https://github.com/wyatt-herkamp/config_types.git", features = [
     "regex_types",

@@ -7,18 +7,21 @@ use actix_web::http::Method;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, Error, HttpMessage,
+    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+    Error, HttpMessage,
 };
 use futures_util::future::LocalBoxFuture;
-use tracing::warn;
+use tracing::{instrument, warn};
 
+use crate::app::NitroRepo;
 use crate::request_error;
 
 use super::session::{Session, SessionManager};
 use super::AuthenticationRaw;
 
 pub struct HandleSession {
-    session_manager: Data<SessionManager>,
+    pub session_manager: Data<SessionManager>,
+    pub nitro_repo: Data<NitroRepo>,
 }
 
 impl<S, B> Transform<S, ServiceRequest> for HandleSession
@@ -36,6 +39,7 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(SessionMiddleware {
             service: Rc::new(service),
+            nitro_repo: self.nitro_repo.clone(),
             session_manager: self.session_manager.clone(),
         }))
     }
@@ -43,6 +47,7 @@ where
 
 pub struct SessionMiddleware<S> {
     service: Rc<S>,
+    nitro_repo: Data<NitroRepo>,
     session_manager: Data<SessionManager>,
 }
 impl<S, B> SessionMiddleware<S>
@@ -51,6 +56,7 @@ where
     S::Future: 'static,
     B: 'static,
 {
+    #[instrument(skip(session_manager, req, cookie))]
     async fn handle_session(
         session_manager: Data<SessionManager>,
         req: &ServiceRequest,
@@ -81,6 +87,7 @@ where
     /// returns: Result<ServiceResponse<EitherBody<B, BoxBody>>, Error>
     ///    - Ok: The response  - Will just be the call to the next handler
     ///   - Err: The error - Will be an error response
+    #[instrument(skip(service, req, session_manager))]
     async fn handle_authentication(
         service: Rc<S>,
         req: ServiceRequest,
@@ -133,7 +140,7 @@ where
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     forward_ready!(service);
-
+    #[instrument(skip(self, req))]
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Check if its an OPTIONS request. If so exit early and let the request pass through
         if req.method() == Method::OPTIONS {
@@ -142,6 +149,10 @@ where
                 let res = fut.await?;
                 Ok(res.map_into_left_body())
             });
+        }
+        let url = req.request().uri().authority().map(|v| v.to_string());
+        if let Some(url) = url {
+            self.nitro_repo.update_app_url(url);
         }
         // Grab required data from the service
         let session_manager = self.session_manager.clone();
