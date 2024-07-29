@@ -1,11 +1,9 @@
 use std::borrow::Cow;
 use std::fs::OpenOptions;
 use std::io::Read;
-use std::ops::Add;
 use std::path::Path;
 
 use actix_web::http::header::HeaderMap;
-use chrono::{DateTime, Duration, FixedOffset, Local};
 use rust_embed::RustEmbed;
 use tracing::error;
 
@@ -49,28 +47,42 @@ impl Resources {
         }
     }
 }
-pub fn get_current_date_time_struct() -> DateTime<FixedOffset> {
-    let local: DateTime<Local> = Local::now();
-    local.with_timezone(local.offset())
-}
-pub fn get_current_date_time() -> String {
-    let local: DateTime<Local> = Local::now();
-    let format = local.format("%B %d %Y %H:%M");
-    format.to_string()
-}
-
-pub fn default_expiration() -> i64 {
-    let time = Local::now();
-    time.add(Duration::days(30)).timestamp_millis()
-}
 
 pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
-    let option = header_map.get("accept");
-    if option.is_none() {
+    let Some(header_value) = header_map.get("accept") else {
         return Ok(None);
+    };
+
+    let accept = header_value
+        .to_str()
+        .map(|x| x.to_string())
+        .inspect_err(|err| {
+            error!("Failed to convert accept header to string: {}", err);
+        })
+        .ok();
+    Ok(accept)
+}
+
+pub mod password {
+    use argon2::{
+        password_hash::{Error, SaltString},
+        Argon2, PasswordHasher, PasswordVerifier,
+    };
+    use rand::rngs::OsRng;
+    use tracing::error;
+
+    pub fn encrypt_password(password: &str) -> Option<String> {
+        let salt = SaltString::generate(&mut OsRng);
+
+        let argon2 = Argon2::default();
+
+        let password = argon2.hash_password(password.as_ref(), &salt);
+        match password {
+            Ok(ok) => Some(ok.to_string()),
+            Err(err) => {
+                error!("Failed to hash password: {}", err);
+                None
+            }
+        }
     }
-    let x = option.unwrap().to_str();
-    if x.is_err() {}
-    let header = x.unwrap().to_string();
-    Ok(Some(header))
 }

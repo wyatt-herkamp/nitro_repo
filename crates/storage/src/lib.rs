@@ -1,3 +1,7 @@
+#![allow(irrefutable_let_patterns)]
+#![allow(unreachable_patterns)]
+use std::future::Future;
+
 pub use config::*;
 pub use error::StorageError;
 pub use fs::*;
@@ -5,12 +9,14 @@ use serde_json::Value;
 use tracing::warn;
 pub use uuid::Uuid;
 mod config;
+mod dyn_storage;
 mod error;
 mod fs;
+pub use dyn_storage::*;
 pub mod local;
 pub trait Storage: Send + Sync {
     /// Unload the storages
-    async fn unload(&mut self) -> Result<(), StorageError>;
+    fn unload(&self) -> impl Future<Output = Result<(), StorageError>> + Send;
 
     fn storage_type(&self) -> BorrowedStorageTypeConfig<'_> {
         self.storage_config().config.clone()
@@ -68,8 +74,17 @@ pub trait Storage: Send + Sync {
         repository: Uuid,
         location: impl Into<StoragePath>,
     ) -> Result<Option<StorageFile>, StorageError>;
-}
 
+    async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError>;
+}
+pub trait StorageFactory {
+    fn storage_name(&self) -> &'static str;
+
+    //TODO fn storage_config_schema(&self) -> StorageTypeConfigSchema;
+    async fn test_storage_config(&self, config: StorageTypeConfig) -> Result<(), StorageError>;
+
+    async fn create_storage(&self, config: StorageConfig) -> Result<DynStorage, StorageError>;
+}
 #[cfg(test)]
 mod tests {
     #[test]

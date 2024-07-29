@@ -3,10 +3,13 @@ use std::fmt::Debug;
 use actix_web::dev::Payload;
 use actix_web::{FromRequest, HttpMessage, HttpRequest};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use derive_more::From;
 use futures::future::LocalBoxFuture;
 
 use nr_core::database::user::auth_token::AuthToken;
 use nr_core::database::user::{UserModel, UserSafeData, UserType};
+use nr_core::user::permissions::HasPermissions;
+use serde::Serialize;
 use session::Session;
 use sqlx::PgPool;
 use this_actix_error::ActixError;
@@ -39,7 +42,20 @@ pub enum Authentication {
     /// Authorization Basic Header
     Basic(UserSafeData),
 }
-
+impl HasPermissions for Authentication {
+    fn get_permissions(&self) -> &nr_core::user::permissions::UserPermissions {
+        match self {
+            Authentication::AuthToken(_, user) => &user.permissions,
+            Authentication::Session(_, user) => &user.permissions,
+            Authentication::Basic(user) => &user.permissions,
+        }
+    }
+}
+#[derive(Debug, Serialize, Clone, From)]
+pub struct MeWithSession {
+    session: Session,
+    user: UserSafeData,
+}
 impl FromRequest for Authentication {
     type Error = AuthenticationError;
     type Future = LocalBoxFuture<'static, Result<Self, AuthenticationError>>;

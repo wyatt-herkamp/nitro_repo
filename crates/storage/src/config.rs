@@ -1,12 +1,13 @@
-use nr_core::ConfigTimeStamp;
+use nr_core::{database::storage::DBStorage, ConfigTimeStamp};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::local::LocalConfig;
+use crate::{local::LocalConfig, StorageError};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfigInner {
     pub storage_name: String,
     pub storage_id: Uuid,
+    pub storage_type: String,
     pub created_at: ConfigTimeStamp,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -14,6 +15,21 @@ pub struct StorageConfig {
     #[serde(flatten)]
     pub storage_config: StorageConfigInner,
     pub type_config: StorageTypeConfig,
+}
+impl TryFrom<DBStorage> for StorageConfig {
+    type Error = StorageError;
+    fn try_from(db_storage: DBStorage) -> Result<Self, Self::Error> {
+        let type_config = serde_json::from_value(db_storage.config.0)?;
+        Ok(StorageConfig {
+            storage_config: StorageConfigInner {
+                storage_name: db_storage.name,
+                storage_id: db_storage.id,
+                storage_type: db_storage.storage_type,
+                created_at: db_storage.created,
+            },
+            type_config,
+        })
+    }
 }
 impl From<BorrowedStorageConfig<'_>> for StorageConfig {
     fn from(borrowed: BorrowedStorageConfig) -> Self {

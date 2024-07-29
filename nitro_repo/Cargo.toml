@@ -36,9 +36,9 @@ base64.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 sha2.workspace = true
-
+schemars.workspace = true
 reqwest.workspace = true
-bytes = "1.2.0"
+bytes = "1"
 lock_freedom = { git = "https://github.com/wyatt-herkamp/lock_freedom.git" }
 ahash.workspace = true
 parking_lot.workspace = true
@@ -46,8 +46,9 @@ parking_lot.workspace = true
 strum.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
+derive_more.workspace = true
 # Badge Stuff
-badge-maker = "0.3"
+badge-maker.workspace = true
 
 # Installer
 clap = { version = "4", features = ["derive"] }
@@ -62,6 +63,7 @@ zip = { version = "2" }
 current_semver = { git = "https://github.com/wyatt-herkamp/current_semver.git" }
 nr-core.workspace = true
 nr-macros.workspace = true
+nr-storage.workspace = true
 redb = { version = "2.1" }
 config_types = { git = "https://github.com/wyatt-herkamp/config_types.git", features = [
     "regex_types",
@@ -82,3 +84,6 @@ opentelemetry-otlp = { version = "0.15", default-features = true }
 
 [features]
 builtin_frontend = []
+
+[lints]
+workspace = true

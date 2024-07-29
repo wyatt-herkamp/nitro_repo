@@ -161,3 +161,34 @@ mod tests {
         );
     }
 }
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewUserRequest {
+    pub name: String,
+    pub username: String,
+    pub email: String,
+    pub password: Option<String>,
+}
+impl NewUserRequest {
+    pub async fn insert(
+        self,
+        permissions: UserPermissions,
+        database: &PgPool,
+    ) -> sqlx::Result<UserModel> {
+        let Self {
+            name,
+            username,
+            email,
+            password,
+        } = self;
+        let user = sqlx::query_as(
+            r#"INSERT INTO users (name, username, email, password, permissions) VALUES ($1, $2, $3, $4, $5) RETURNING *"#,
+        )
+        .bind(name)
+        .bind(username)
+        .bind(email)
+        .bind(password)
+        .bind(Json(permissions))
+        .fetch_one(database).await?;
+        Ok(user)
+    }
+}

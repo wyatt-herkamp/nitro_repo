@@ -12,6 +12,7 @@ use rustls_pemfile::{certs, pkcs8_private_keys};
 use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
+use tracing::trace;
 use tracing_actix_web::TracingLogger;
 pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
     let NitroRepoConfig {
@@ -43,6 +44,12 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
             .await
             .context("Unable to Initialize Website Core")?,
     );
+    let cloned_site = site.clone();
+    tokio::spawn(async move {
+        if let Err(err) = handle_signals(cloned_site).await {
+            tracing::error!("Failed to handle signals: {}", err);
+        }
+    });
     let server = HttpServer::new(move || {
         App::new()
             .wrap(DefaultHeaders::new().add(("X-Powered-By", "By the power of Rust")))
@@ -86,5 +93,12 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
     } else {
         server.bind(bind_address)?.run().await
     }?;
+    Ok(())
+}
+async fn handle_signals(website: Data<NitroRepo>) -> anyhow::Result<()> {
+    tokio::signal::ctrl_c()
+        .await
+        .expect("Failed to listen for SIGINT");
+    website.close().await;
     Ok(())
 }

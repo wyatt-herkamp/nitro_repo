@@ -1,14 +1,16 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, EnumIter, sqlx::Type)]
+pub mod config;
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, EnumIter, JsonSchema)]
 pub enum Visibility {
     #[default]
     Public,
     Private,
     Hidden,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, EnumIter)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, EnumIter, JsonSchema)]
 pub enum Policy {
     #[default]
     Release,

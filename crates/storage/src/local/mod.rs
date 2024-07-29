@@ -156,9 +156,46 @@ impl Storage for LocalStorage {
         Ok(Some(file))
     }
     #[instrument]
-    async fn unload(&mut self) -> Result<(), StorageError> {
+    fn unload(&self) -> impl std::future::Future<Output = Result<(), StorageError>> + Send {
         info!(?self, "Unloading Local Storage");
         // TODO: Implement Unload
+        async { Ok(()) }
+    }
+
+    async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError> {
+        let StorageTypeConfig::Local(config) = config else {
+            return Err(StorageError::InvalidConfigType("Local"));
+        };
+        if self.config.path != config.path {
+            return Err(StorageError::ConfigError("The path cannot be changed"));
+        }
         Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct LocalStorageFactory;
+impl StorageFactory for LocalStorageFactory {
+    fn storage_name(&self) -> &'static str {
+        "Local"
+    }
+
+    async fn test_storage_config(&self, config: StorageTypeConfig) -> Result<(), StorageError> {
+        //TODO: Ensure that the path is valid and writable
+        Ok(())
+    }
+
+    async fn create_storage(&self, config: StorageConfig) -> Result<DynStorage, StorageError> {
+        let local_config = match config.type_config {
+            StorageTypeConfig::Local(config) => config,
+            _ => return Err(StorageError::InvalidConfigType("Local")),
+        };
+        if !local_config.path.exists() {
+            fs::create_dir_all(&local_config.path)?;
+        }
+        let local = LocalStorageInner {
+            config: local_config,
+            storage_config: config.storage_config,
+        };
+        Ok(DynStorage::Local(LocalStorage(Arc::new(local))))
     }
 }

@@ -2,8 +2,8 @@
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    username TEXT NOT NULL COLLATE ignoreCase,
-    email TEXT NOT NULL COLLATE ignoreCase,
+    username TEXT NOT NULL UNIQUE COLLATE ignoreCase,
+    email TEXT NOT NULL UNIQUE COLLATE ignoreCase,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     password TEXT,
     require_password_change BOOLEAN DEFAULT FALSE,

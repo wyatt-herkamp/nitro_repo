@@ -5,6 +5,8 @@ use base64::DecodeError;
 use this_actix_error::ActixError;
 use thiserror::Error;
 
+use crate::app::authentication::session::SessionError;
+
 /// Errors that happen internally to the system.
 /// Not as a direct result of a Request
 #[derive(Error, Debug, ActixError)]
@@ -27,6 +29,8 @@ pub enum InternalError {
     ConfigError(String),
     #[error("Invalid Repository Type {0}")]
     InvalidRepositoryType(String),
+    #[error("Session Error {0}")]
+    SessionError(#[from] SessionError),
 }
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {
