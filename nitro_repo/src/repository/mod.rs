@@ -4,9 +4,9 @@ use actix_web::http::StatusCode;
 use bytes::Bytes;
 
 use http::{RepoResponse, RepositoryRequest};
+use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 
-pub mod dyn_repository;
 pub mod http;
 pub mod maven;
 mod repo_type;
@@ -17,13 +17,15 @@ pub trait Repository: Send + Sync + Clone {
     fn get_type(&self) -> &'static str;
     /// Config types that this Repository type has.
     fn config_types(&self) -> Vec<String>;
+
+    fn reload(&self);
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,
         request: RepositoryRequest<'_>,
     ) -> Result<RepoResponse, actix_web::Error> {
         Ok(RepoResponse::new_from_string(
-            format!("Head is not implemented for this type: {}", self.get_type()),
+            format!("Get is not implemented for this type: {}", self.get_type()),
             StatusCode::IM_A_TEAPOT,
         ))
     }
@@ -34,7 +36,7 @@ pub trait Repository: Send + Sync + Clone {
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
         Ok(RepoResponse::new_from_string(
-            format!("Head is not implemented for this type: {}", self.get_type()),
+            format!("Post is not implemented for this type: {}", self.get_type()),
             StatusCode::IM_A_TEAPOT,
         ))
     }
@@ -56,7 +58,10 @@ pub trait Repository: Send + Sync + Clone {
         bytes: Bytes,
     ) -> Result<RepoResponse, actix_web::Error> {
         Ok(RepoResponse::new_from_string(
-            format!("Head is not implemented for this type: {}", self.get_type()),
+            format!(
+                "Patch is not implemented for this type: {}",
+                self.get_type()
+            ),
             StatusCode::IM_A_TEAPOT,
         ))
     }
@@ -70,4 +75,8 @@ pub trait Repository: Send + Sync + Clone {
             StatusCode::IM_A_TEAPOT,
         ))
     }
+}
+#[derive(Debug, Clone, DynRepositoryHandler)]
+pub enum DynRepository {
+    Maven(maven::MavenRepository),
 }

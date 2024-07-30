@@ -1,11 +1,13 @@
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
-
+use ahash::{HashMap, HashMapExt};
+use opentelemetry::trace::TracerProvider;
 use opentelemetry::StringValue;
 use opentelemetry::{global, KeyValue};
 use opentelemetry_otlp::{new_exporter, WithExportConfig};
-use opentelemetry_sdk::{propagation::TraceContextPropagator, trace, Resource};
+use opentelemetry_sdk::trace::{Config as SDKTraceConfig, Tracer};
+use opentelemetry_sdk::{propagation::TraceContextPropagator, Resource};
+use serde::{Deserialize, Serialize};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_subscriber::{EnvFilter, Layer};
 
@@ -16,13 +18,6 @@ pub struct LoggingConfig {
     pub logging_directory: PathBuf,
     pub tracing: Option<TracingConfig>,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct TracingConfig {
-    pub endpoint: String,
-    pub service_name: String,
-}
-
 impl Default for LoggingConfig {
     fn default() -> Self {
         let logging_dir = get_current_directory().join("logs");
@@ -32,11 +27,51 @@ impl Default for LoggingConfig {
         }
     }
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TracingConfig {
+    pub endpoint: String,
+    /// Tracing Config Resource Values.
+    ///
+    /// ```toml
+    /// "service.name" = "nitro_repo"
+    /// "service.version" = "0.1.0"
+    /// "service.environment" = "development"
+    /// ```
+    pub trace_config: HashMap<String, String>,
+}
+impl TracingConfig {
+    fn tracer(mut self) -> anyhow::Result<Tracer> {
+        println!("Loading Tracing {self:#?}");
+
+        if !self.trace_config.contains_key("service.name") {
+            self.trace_config
+                .insert("service.name".to_owned(), "nitro_repo".to_owned());
+        }
+        let resources: Vec<KeyValue> = self
+            .trace_config
+            .into_iter()
+            .map(|(k, v)| KeyValue::new(k, Into::<StringValue>::into(v.clone())))
+            .collect();
+        let trace_config = SDKTraceConfig::default().with_resource(Resource::new(resources));
+
+        let exporter = new_exporter().tonic().with_endpoint(&self.endpoint);
+        let provider = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(exporter)
+            .with_trace_config(trace_config)
+            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+        Ok(provider.tracer("tracing-otel-subscriber"))
+    }
+}
+
 impl Default for TracingConfig {
     fn default() -> Self {
+        let mut trace_config = HashMap::new();
+        trace_config.insert("service.name".to_owned(), "nitro_repo".to_owned());
         Self {
             endpoint: "127.0.0.1:5959".to_owned(),
-            service_name: "nitro_repo".to_string(),
+            trace_config,
         }
     }
 }
@@ -73,23 +108,11 @@ impl LoggingConfig {
         let registry = tracing_subscriber::registry().with(fmt_layer).with(file);
 
         if let Some(tracing) = self.tracing.clone() {
-            println!("Loading Tracing {tracing:#?}");
-            let tracer = opentelemetry_otlp::new_pipeline()
-                .tracing()
-                .with_exporter(new_exporter().tonic().with_endpoint(&tracing.endpoint))
-                .with_trace_config(trace::config().with_resource(Resource::new(vec![
-                    KeyValue::new(
-                        "service.name",
-                        Into::<StringValue>::into(tracing.service_name.clone()),
-                    ),
-                ])))
-                .install_batch(opentelemetry_sdk::runtime::Tokio)?;
-
+            let tracer = tracing.tracer()?;
             let otel_layer = tracing_subscriber::Layer::with_filter(
                 tracing_opentelemetry::layer().with_tracer(tracer),
                 otel_env_filter,
             );
-
             registry.with(otel_layer).init();
         } else {
             registry.init();

@@ -22,4 +22,6 @@ impl Repository for MavenHosted {
     fn config_types(&self) -> Vec<String> {
         vec!["push_rules".to_string(), "security".to_string()]
     }
+
+    fn reload(&self) {}
 }

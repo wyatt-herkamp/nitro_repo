@@ -50,7 +50,6 @@ derive_more.workspace = true
 # Badge Stuff
 badge-maker.workspace = true
 
-# Installer
 clap = { version = "4", features = ["derive"] }
 semver = { version = "1", features = ["std", "serde"] }
 
@@ -69,18 +68,18 @@ config_types = { git = "https://github.com/wyatt-herkamp/config_types.git", feat
     "regex_types",
     "strum",
 ] }
-
+auto_impl.workspace = true
 # Tracing
 tracing-actix-web = "0.7"
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true
-tracing-opentelemetry = "0.23"
 
 # OpenTelemetry - Tracing framework
-opentelemetry = { version = "0.22", features = [] }
-opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.15", default-features = true }
+tracing-opentelemetry = "0.25"
+opentelemetry = { version = "0.24", features = [] }
+opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.17", default-features = true }
 
 [features]
 builtin_frontend = []

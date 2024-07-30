@@ -40,6 +40,9 @@ pub trait HasPermissions {
                 .map(|p| p.actions.can_edit)
                 .unwrap_or(false)
     }
+    fn can_view_repositories(&self) -> bool {
+        self.get_permissions().admin || self.get_permissions().repository_manager
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]

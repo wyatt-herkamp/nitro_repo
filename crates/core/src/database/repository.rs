@@ -6,6 +6,30 @@ use uuid::Uuid;
 use crate::repository::Visibility;
 
 use super::DateTime;
+#[derive(Debug, Clone, Serialize, FromRow)]
+
+pub struct DBRepositoryWithStorageName {
+    pub id: Uuid,
+    pub storage_id: Uuid,
+    pub storage_name: String,
+    pub name: String,
+    pub repository_type: String,
+    pub repository_subtype: Option<String>,
+    pub active: bool,
+    pub created_at: DateTime,
+    pub updated_at: DateTime,
+}
+impl DBRepositoryWithStorageName {
+    pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let repositories = sqlx::query_as(
+            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.repository_subtype, r.active, r.created_at, r.updated_at
+                FROM repositories r INNER JOIN storages s ON s.id = r.storage_id"#,
+        )
+        .fetch_all(database)
+        .await?;
+        Ok(repositories)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 pub struct DBRepository {

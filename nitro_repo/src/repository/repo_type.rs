@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use ahash::HashMap;
+use auto_impl::auto_impl;
 use futures::future::LocalBoxFuture;
 use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_storage::DynStorage;
@@ -11,7 +12,7 @@ use uuid::Uuid;
 
 use crate::app::DatabaseConnection;
 
-use super::dyn_repository::DynRepository;
+use super::DynRepository;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct RepositorySubTypeDescription {
@@ -38,6 +39,8 @@ pub struct NewRepository {
     pub sub_type: Option<String>,
     pub configs: Vec<GenericDBRepositoryConfig>,
 }
+/// This trait is invoked via dynamic dispatch for simplicity reasons.
+#[auto_impl(&, Box)]
 pub trait RepositoryType: Send + Debug {
     fn get_type(&self) -> &'static str;
     fn get_description(&self) -> RepositoryTypeDescription;

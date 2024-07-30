@@ -27,4 +27,6 @@ impl Repository for MavenProxy {
             "maven-proxy".to_string(),
         ]
     }
+
+    fn reload(&self) {}
 }

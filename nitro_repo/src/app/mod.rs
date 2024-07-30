@@ -24,9 +24,7 @@ use sqlx::PgPool;
 use tracing::{info, instrument, warn};
 use uuid::Uuid;
 
-use crate::repository::{
-    dyn_repository::DynRepository, maven::MavenRepositoryType, DynRepositoryType,
-};
+use crate::repository::{maven::MavenRepositoryType, DynRepository, DynRepositoryType};
 
 pub mod api;
 pub mod web;
@@ -132,6 +130,11 @@ impl NitroRepo {
         let repository = self.repositories.read();
         repository.get(&id).cloned()
     }
+    pub fn add_storage(&self, id: Uuid, storage: DynStorage) {
+        let mut storages = self.storages.write();
+        storages.insert(id, storage);
+    }
+
     #[instrument]
     pub fn update_app_url(&self, app_url: String) {
         let mut instance = self.instance.lock();

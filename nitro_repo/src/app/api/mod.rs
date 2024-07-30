@@ -7,6 +7,7 @@ use nr_core::{database::user::NewUserRequest, user::permissions::UserPermissions
 use serde::{Deserialize, Serialize};
 use tracing::error;
 pub mod repository;
+pub mod storage;
 pub mod user;
 use crate::{
     app::NitroRepo, error::internal_error::InternalError, utils::password::encrypt_password,
@@ -19,7 +20,8 @@ pub fn init(service: &mut ServiceConfig) {
         .service(info)
         .service(install)
         .service(Scope::new("/user").configure(user::init))
-        .service(Scope::new("/repository").configure(repository::init));
+        .service(Scope::new("/repository").configure(repository::init))
+        .service(Scope::new("/storage").configure(storage::init));
 }
 #[get("/info")]
 pub async fn info(site: Data<NitroRepo>) -> HttpResponse {

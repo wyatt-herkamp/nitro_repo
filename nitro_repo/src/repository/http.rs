@@ -1,16 +1,15 @@
 use actix_web::{
     http::{header::HeaderMap, StatusCode, Uri},
-    FromRequest, HttpRequest, HttpResponse,
+    HttpResponse, Responder,
 };
 use derive_more::From;
 use nr_storage::{StorageFile, StoragePath};
 use serde_json::Value;
 
-use crate::app::{authentication::RepositoryAuthentication, DatabaseConnection, NitroRepoData};
+use crate::app::{authentication::RepositoryAuthentication, NitroRepoData};
 pub struct RepositoryRequest<'r> {
     pub headers: &'r HeaderMap,
     pub path: StoragePath,
-    pub database_connection: DatabaseConnection,
     pub authentication: RepositoryAuthentication,
     pub nitro_repo: NitroRepoData,
     pub uri: &'r Uri,
@@ -30,3 +29,4 @@ impl RepoResponse {
         RepoResponse::HttpResponse(response)
     }
 }
+

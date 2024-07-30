@@ -1,11 +1,10 @@
 use actix_web::{
     get, put,
     web::{self, Data, ServiceConfig},
-    HttpResponse,
+    HttpResponse, Scope,
 };
 use nr_core::{
-    database::repository::{DBRepository, GenericDBRepositoryConfig},
-    repository::config,
+    database::repository::{DBRepository, DBRepositoryWithStorageName, GenericDBRepositoryConfig},
     user::permissions::HasPermissions,
 };
 use uuid::Uuid;
@@ -15,15 +14,15 @@ use crate::{
     error::internal_error::InternalError,
     repository::Repository,
 };
+mod config;
 
 pub fn init(service: &mut ServiceConfig) {
     service
         .service(repository_types)
         .service(update_config)
-        .service(config_schema)
-        .service(config_validate)
-        .service(config_default)
-        .service(update_config);
+        .service(Scope::new("/config").configure(config::init))
+        .service(update_config)
+        .service(list_repositories);
 }
 #[get("/types")]
 pub async fn repository_types(site: Data<NitroRepo>) -> HttpResponse {
@@ -69,60 +68,14 @@ pub async fn update_config(
     //TODO: Update the instance of the repository with the new config
     Ok(HttpResponse::NoContent().finish())
 }
-
-#[get("/config/{key}/schema")]
-pub async fn config_schema(
-    site: Data<NitroRepo>,
-    key: web::Path<String>,
-) -> Result<HttpResponse, InternalError> {
-    // TODO: Add Client side caching
-
-    let key = key.into_inner();
-    let Some(config_type) = site.get_repository_config_type(&key) else {
-        return Ok(HttpResponse::NotFound().finish());
-    };
-
-    let schema = config_type
-        .schema()
-        .map(|schema| HttpResponse::Ok().json(schema))
-        .unwrap_or_else(|| HttpResponse::NotFound().finish());
-    Ok(schema)
-}
-
-#[get("/config/{key}/validate")]
-pub async fn config_validate(
-    site: Data<NitroRepo>,
-    key: web::Path<String>,
+#[get("/list")]
+pub async fn list_repositories(
     auth: Authentication,
-    config: web::Json<serde_json::Value>,
+    database: DatabaseConnection,
 ) -> Result<HttpResponse, InternalError> {
-    //TODO: Check permissions
-    let key = key.into_inner();
-    let Some(config_type) = site.get_repository_config_type(&key) else {
-        return Ok(HttpResponse::NotFound().finish());
-    };
-
-    let response = match config_type.validate_config(config.into_inner()) {
-        Ok(_) => HttpResponse::NoContent().finish(),
-        Err(err) => HttpResponse::BadRequest().body(err.to_string()),
-    };
-    Ok(response)
-}
-
-#[get("/config/{key}/default")]
-pub async fn config_default(
-    site: Data<NitroRepo>,
-    key: web::Path<String>,
-) -> Result<HttpResponse, InternalError> {
-    // TODO: Add Client side caching
-    let key = key.into_inner();
-    let Some(config_type) = site.get_repository_config_type(&key) else {
-        return Ok(HttpResponse::NotFound().finish());
-    };
-
-    let default = match config_type.default() {
-        Ok(ok) => HttpResponse::Ok().json(ok),
-        Err(err) => HttpResponse::InternalServerError().json(err.to_string()),
-    };
-    Ok(default)
+    if !auth.can_view_repositories() {
+        return Ok(HttpResponse::Forbidden().finish());
+    }
+    let repositories = DBRepositoryWithStorageName::get_all(&database).await?;
+    Ok(HttpResponse::Ok().json(repositories))
 }

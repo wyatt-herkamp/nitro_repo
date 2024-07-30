@@ -47,7 +47,7 @@ reqwest = { version = "0.12", features = [
     "rustls-tls",
 ], default-features = false }
 badge-maker = { git = "https://github.com/wyatt-herkamp/badge-maker.git", branch = "updates_and_improvements" }
-
+auto_impl = "1.2"
 [workspace.dependencies.sqlx]
 version = "0.8"
 default_features = false

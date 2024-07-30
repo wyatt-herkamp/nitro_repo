@@ -2,13 +2,14 @@ use ahash::HashMap;
 use futures::future::LocalBoxFuture;
 use hosted::MavenHosted;
 use nr_core::database::repository::GenericDBRepositoryConfig;
+use nr_macros::DynRepositoryHandler;
 use proxy::MavenProxy;
 use sqlx::types::Json;
 
-use super::{dyn_repository::DynRepository, Repository, RepositoryFactoryError, RepositoryType};
+use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
 pub mod proxy;
-#[derive(Debug, Clone)]
+#[derive(Debug, Default)]
 pub struct MavenRepositoryType;
 
 impl RepositoryType for MavenRepositoryType {
@@ -97,28 +98,8 @@ impl RepositoryType for MavenRepositoryType {
         todo!()
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, DynRepositoryHandler)]
 pub enum MavenRepository {
     Hosted(MavenHosted),
     Proxy(MavenProxy),
-}
-
-impl Repository for MavenRepository {
-    fn get_storage(&self) -> nr_storage::DynStorage {
-        match self {
-            MavenRepository::Hosted(hosted) => hosted.get_storage(),
-            MavenRepository::Proxy(proxy) => proxy.get_storage(),
-        }
-    }
-
-    fn get_type(&self) -> &'static str {
-        "maven"
-    }
-
-    fn config_types(&self) -> Vec<String> {
-        match self {
-            MavenRepository::Hosted(hosted) => hosted.config_types(),
-            MavenRepository::Proxy(proxy) => proxy.config_types(),
-        }
-    }
 }
