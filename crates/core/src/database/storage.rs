@@ -22,6 +22,13 @@ impl DBStorage {
             .await?;
         Ok(storages)
     }
+    pub async fn get(id: Uuid, database: &sqlx::PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let storage = sqlx::query_as("SELECT * FROM storages WHERE id = $1")
+            .bind(id)
+            .fetch_optional(database)
+            .await?;
+        Ok(storage)
+    }
     pub async fn insert(self, database: &sqlx::PgPool) -> Result<DBStorage, sqlx::Error> {
         let result = sqlx::query_as(
                     r#"INSERT INTO storages (id, storage_type, name, config, active) VALUES ($1, $2, $3, $4, $5) RETURNING *"#,

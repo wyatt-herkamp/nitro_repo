@@ -13,6 +13,7 @@ use axum::{
 };
 use config::{PostgresSettings, SecuritySettings, SiteSetting};
 use derive_more::{AsRef, Deref, From, Into};
+use http::Uri;
 use nr_core::{
     database::{storage::DBStorage, user::does_user_exist},
     repository::config::{
@@ -191,11 +192,18 @@ impl NitroRepo {
     }
 
     #[instrument]
-    pub fn update_app_url(&self, app_url: String) {
+    pub fn update_app_url(&self, app_url: &Uri) {
         let mut instance = self.instance.lock();
         if instance.app_url.is_empty() {
             info!("Updating app url to {}", app_url);
-            instance.app_url = app_url;
+            let schema = app_url.scheme_str().unwrap_or("http");
+            let host = if let Some(authority) = app_url.host() {
+                authority.to_string()
+            } else {
+                warn!("No host found in uri");
+                return;
+            };
+            instance.app_url = format!("{}://{}", schema, host);
         }
     }
 }

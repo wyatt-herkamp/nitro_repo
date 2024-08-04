@@ -8,7 +8,7 @@ pub use content::*;
 use derive_more::{From, Into};
 pub use file::*;
 pub use file_meta::*;
-pub use path::StoragePath;
+pub use path::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[derive(Debug, Clone, From, Into)]
 pub struct SerdeMime(pub mime::Mime);

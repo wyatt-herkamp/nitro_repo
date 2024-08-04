@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    response::Response,
+    response::{IntoResponse, Response},
     Json,
 };
 use http::StatusCode;
@@ -8,17 +8,25 @@ use nr_core::{
     database::repository::{DBRepository, DBRepositoryWithStorageName, GenericDBRepositoryConfig},
     user::permissions::HasPermissions,
 };
-use tracing::error;
+use tracing::{error, instrument};
 use uuid::Uuid;
 
 use crate::{
     app::{authentication::Authentication, NitroRepo},
     error::internal_error::InternalError,
-    repository::{Repository, RepositoryTypeDescription},
+    repository::Repository,
 };
 mod config;
-
-pub fn repository_types(State(site): State<NitroRepo>) -> Json<Vec<RepositoryTypeDescription>> {
+pub fn repository_routes() -> axum::Router<NitroRepo> {
+    axum::Router::new()
+        .route("/list", axum::routing::get(list_repositories))
+        .route("/:id/config/:key", axum::routing::put(update_config))
+        .route("/:id/config/:key", axum::routing::get(get_repository))
+        .route("/types", axum::routing::get(repository_types))
+        .merge(config::config_routes())
+}
+#[instrument]
+pub async fn repository_types(State(site): State<NitroRepo>) -> Response {
     // TODO: Add Client side caching
 
     let types: Vec<_> = site
@@ -26,8 +34,29 @@ pub fn repository_types(State(site): State<NitroRepo>) -> Json<Vec<RepositoryTyp
         .iter()
         .map(|v| v.get_description())
         .collect();
-    Json(types)
+    Json(types).into_response()
 }
+#[instrument]
+
+pub async fn get_repository(
+    State(site): State<NitroRepo>,
+    auth: Authentication,
+    Path((repository, config_key)): Path<(Uuid, String)>,
+) -> Result<Response, InternalError> {
+    //TODO: Permissions
+    let Some(config) =
+        GenericDBRepositoryConfig::get_config(repository, config_key, site.as_ref()).await?
+    else {
+        // TODO: Check for default config
+        return Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("".into())
+            .unwrap());
+    };
+    let response = Json(config).into_response();
+    Ok(response)
+}
+#[instrument]
 
 pub async fn update_config(
     State(site): State<NitroRepo>,
@@ -59,6 +88,8 @@ pub async fn update_config(
     //TODO: Update the instance of the repository with the new config
     Ok(StatusCode::OK)
 }
+#[instrument]
+
 pub async fn list_repositories(
     auth: Authentication,
     State(site): State<NitroRepo>,

@@ -2,6 +2,7 @@ use std::{fmt::Display, path::PathBuf};
 
 use http::Uri;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use thiserror::Error;
 use tracing::instrument;
 
 use crate::StorageError;
@@ -66,8 +67,13 @@ impl<'de> Deserialize<'de> for StoragePath {
         Ok(StoragePath::from(string))
     }
 }
+#[derive(Debug, Error)]
+pub enum InvalidStoragePath {
+    #[error("Invalid path")]
+    InvalidPath,
+}
 impl TryFrom<Uri> for StoragePath {
-    type Error = StorageError;
+    type Error = InvalidStoragePath;
     #[instrument]
     fn try_from(uri: Uri) -> Result<Self, Self::Error> {
         let path = uri.path();

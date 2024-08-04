@@ -8,9 +8,17 @@ use http::StatusCode;
 use nr_core::database::storage::DBStorage;
 use nr_storage::{StorageConfig, StorageFactory, StorageTypeConfig};
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, instrument};
+use uuid::Uuid;
 
 use crate::{app::NitroRepo, error::internal_error::InternalError};
+pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
+    axum::Router::new()
+        .route("/list", axum::routing::get(list_storages))
+        .route("/new", axum::routing::post(new_storage))
+        .route("/:id", axum::routing::get(get_storage))
+}
+#[instrument]
 
 pub async fn list_storages(State(site): State<NitroRepo>) -> Result<Response, InternalError> {
     let storages = DBStorage::get_all(&site.database).await?;
@@ -60,6 +68,8 @@ pub struct NewStorageRequest {
     pub name: String,
     pub config: StorageTypeConfig,
 }
+#[instrument]
+
 pub async fn new_storage(
     State(site): State<NitroRepo>,
     Path(storage_type): Path<String>,
@@ -111,4 +121,23 @@ pub async fn new_storage(
     }
 
     Ok(NewStorageResponse::Created(storage))
+}
+#[instrument]
+
+pub async fn get_storage(
+    Path(id): Path<Uuid>,
+    State(site): State<NitroRepo>,
+) -> Result<Response, InternalError> {
+    let storage = DBStorage::get(id, &site.database).await?;
+    match storage {
+        Some(storage) => Ok(Response::builder()
+            .status(200)
+            .header("Content-Type", "application/json")
+            .body(Body::from(serde_json::to_string(&storage).unwrap()))
+            .unwrap()),
+        None => Ok(Response::builder()
+            .status(404)
+            .body("Storage not found".into())
+            .unwrap()),
+    }
 }

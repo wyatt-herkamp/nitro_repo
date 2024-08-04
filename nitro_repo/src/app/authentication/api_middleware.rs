@@ -61,6 +61,7 @@ where
             };
         }
         let (mut parts, body) = req.into_parts();
+        self.site.update_app_url(&mut parts.uri);
         let cookie_jar = CookieJar::from_headers(&parts.headers);
         let authorization_header = parts
             .headers

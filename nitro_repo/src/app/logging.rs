@@ -10,7 +10,7 @@ use opentelemetry_sdk::{propagation::TraceContextPropagator, Resource};
 use serde::{Deserialize, Serialize};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_subscriber::{EnvFilter, Layer};
-
+pub mod request_tracing;
 use super::config::{get_current_directory, Mode};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -78,10 +78,10 @@ impl Default for TracingConfig {
 impl LoggingConfig {
     pub fn init(&self, mode: Mode) -> anyhow::Result<()> {
         let base_filter = match mode {
-            Mode::Debug => "debug,nitro_repo=trace",
+            Mode::Debug => "debug,nitro_repo=trace,h2=warn",
             Mode::Release => "info",
         };
-        let otel_filter = format!("{base_filter},nitro_repo=trace,sqlx=debug");
+        let otel_filter = format!("debug,nitro_repo=trace,nitro_repo=trace,sqlx=debug");
 
         let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| base_filter.into());
         let file_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| base_filter.into());

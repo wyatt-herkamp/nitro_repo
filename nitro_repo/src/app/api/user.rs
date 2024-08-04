@@ -6,6 +6,7 @@ use axum::{
 };
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 use crate::{
     app::{
@@ -14,7 +15,12 @@ use crate::{
     },
     error::internal_error::InternalError,
 };
-
+pub fn user_routes() -> axum::Router<NitroRepo> {
+    axum::Router::new()
+        .route("/me", axum::routing::get(me))
+        .route("/login", axum::routing::post(login))
+}
+#[instrument]
 pub async fn me(auth: Authentication) -> Response {
     match auth {
         Authentication::AuthToken(_, user) => {
@@ -41,7 +47,7 @@ pub struct LoginRequest {
     pub email_or_username: String,
     pub password: String,
 }
-#[axum::debug_handler]
+#[instrument]
 pub async fn login(
     State(site): State<NitroRepo>,
     Json(login): axum::Json<LoginRequest>,

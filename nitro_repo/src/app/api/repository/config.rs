@@ -5,11 +5,21 @@ use axum::{
     Json,
 };
 use http::StatusCode;
+use tracing::instrument;
 
 use crate::{
     app::{authentication::Authentication, NitroRepo},
     error::internal_error::InternalError,
 };
+pub fn config_routes() -> axum::Router<NitroRepo> {
+    axum::Router::new()
+        .route("/config/:key/schema", axum::routing::get(config_schema))
+        .route(
+            "/config/:key/validate",
+            axum::routing::post(config_validate),
+        )
+        .route("/config/:key/default", axum::routing::get(config_default))
+}
 pub struct InvalidConfigType(String);
 impl IntoResponse for InvalidConfigType {
     fn into_response(self) -> Response {
@@ -19,6 +29,7 @@ impl IntoResponse for InvalidConfigType {
             .unwrap()
     }
 }
+#[instrument]
 
 pub async fn config_schema(
     State(site): State<NitroRepo>,
@@ -47,8 +58,9 @@ pub async fn config_schema(
         });
     Ok(schema)
 }
+#[instrument]
 
-pub fn config_validate(
+pub async fn config_validate(
     State(site): State<NitroRepo>,
     Path(key): Path<String>,
     auth: Authentication,
@@ -71,6 +83,7 @@ pub fn config_validate(
     };
     Ok(response)
 }
+#[instrument]
 
 pub async fn config_default(
     State(site): State<NitroRepo>,

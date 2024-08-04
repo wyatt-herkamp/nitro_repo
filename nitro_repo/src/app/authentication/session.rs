@@ -13,7 +13,7 @@ use rand::{distributions::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
 use redb::{CommitError, Database, Error, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, instrument};
 #[derive(Debug, Error)]
 pub enum SessionError {
     #[error("Session not found")]
@@ -163,6 +163,8 @@ impl SessionManager {
             }
         });
     }
+    #[instrument]
+
     pub fn create_session(&self, user_id: i32, life: Duration) -> Result<Session, SessionError> {
         let sessions = self.sessions.begin_write()?;
         let mut session_table = sessions.open_table(TABLE)?;
@@ -180,6 +182,7 @@ impl SessionManager {
         sessions.commit()?;
         Ok(session)
     }
+    #[instrument]
 
     pub fn get_session(&self, session_id: &str) -> Result<Option<Session>, SessionError> {
         let sessions = self.sessions.begin_read()?;
@@ -190,6 +193,7 @@ impl SessionManager {
             .map(|x| Session::from_tuple(x.value()));
         Ok(session)
     }
+    #[instrument]
 
     pub fn delete_session(&self, session_id: &str) -> Result<Option<Session>, SessionError> {
         let sessions = self.sessions.begin_write()?;

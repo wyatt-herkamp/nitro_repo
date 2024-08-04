@@ -119,4 +119,18 @@ impl DBRepositoryConfig<Value> {
         }
         Ok(())
     }
+    pub async fn get_config(
+        uuid: Uuid,
+        key: String,
+        database: &PgPool,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        let config = sqlx::query_as::<_, DBRepositoryConfig<Value>>(
+            r#"SELECT * FROM repository_configs WHERE repository_id = $1 AND key = $2"#,
+        )
+        .bind(uuid)
+        .bind(&key)
+        .fetch_optional(database)
+        .await?;
+        Ok(config)
+    }
 }

@@ -2,14 +2,22 @@ use axum::{extract::State, response::IntoResponse, Json};
 use http::StatusCode;
 use nr_core::{database::user::NewUserRequest, user::permissions::UserPermissions};
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, instrument};
 pub mod repository;
 pub mod storage;
 pub mod user;
 use crate::{error::internal_error::InternalError, utils::password::encrypt_password};
 
-use super::NitroRepoState;
-
+use super::{NitroRepo, NitroRepoState};
+pub fn api_routes() -> axum::Router<NitroRepo> {
+    axum::Router::new()
+        .route("/api/info", axum::routing::get(info))
+        .route("/api/install", axum::routing::post(install))
+        .nest("/api/user", user::user_routes())
+        .nest("/api/storage", storage::storage_routes())
+        .nest("/api/repository", repository::repository_routes())
+}
+#[instrument]
 pub async fn info(State(site): NitroRepoState) -> impl IntoResponse {
     let site = site.instance.lock().clone();
     Json(site)
@@ -18,6 +26,8 @@ pub async fn info(State(site): NitroRepoState) -> impl IntoResponse {
 pub struct InstallRequest {
     pub user: NewUserRequest,
 }
+#[instrument]
+
 pub async fn install(
     State(site): NitroRepoState,
     Json(request): Json<InstallRequest>,

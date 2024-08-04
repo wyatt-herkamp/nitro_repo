@@ -1,4 +1,5 @@
 use super::authentication::api_middleware::AuthenticationLayer;
+use super::logging::request_tracing::NitroRepoTracing;
 use super::NitroRepo;
 use super::{api, config::NitroRepoConfig};
 
@@ -7,6 +8,7 @@ use axum::extract::DefaultBodyLimit;
 use axum::routing::post;
 use axum::{extract::Request, routing::get, Router};
 use futures_util::pin_mut;
+use http::{HeaderName, HeaderValue};
 use hyper::body::Incoming;
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use rustls::ServerConfig;
@@ -20,9 +22,14 @@ use std::{
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio_rustls::TlsAcceptor;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowMethods, Any, CorsLayer};
+use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
+use tower_http::set_header::{self, SetResponseHeader, SetResponseHeaderLayer};
 use tower_service::Service;
 use tracing::{error, info, warn};
+const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
+const POWERED_BY_HEADER: HeaderName = HeaderName::from_static("x-powered-by");
+const POWERED_BY_VALUE: HeaderValue = HeaderValue::from_static("Nitro Repo");
 pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
     let NitroRepoConfig {
         database,
@@ -50,15 +57,23 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         .context("Unable to Initialize Website Core")?;
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
-    let app = Router::new()
-        .route("/api/info", get(api::info))
-        .route("/api/install", post(api::install))
-        .route("/api/user/me", get(api::user::me))
-        .route("/api/user/login", post(api::user::login))
+    let app = Router::new().merge(api::api_routes()).with_state(site);
+
+    let app = app
+        .layer(SetResponseHeaderLayer::if_not_present(
+            POWERED_BY_HEADER,
+            POWERED_BY_VALUE,
+        ))
+        .layer(NitroRepoTracing::new_trace_layer())
+        .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
         .layer(DefaultBodyLimit::max(max_upload.get_as_bytes()))
-        .layer(CorsLayer::new().allow_origin(Any).allow_credentials(true))
-        .layer(auth_layer)
-        .with_state(site);
+        .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(AllowMethods::any()),
+        )
+        .layer(auth_layer);
     if let Some(tls) = tls {
         start_app_with_tls(tls, app, bind_address).await?;
     } else {

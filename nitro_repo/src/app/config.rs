@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
 use super::logging::LoggingConfig;
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum Mode {
     Debug,
@@ -36,6 +35,7 @@ impl Default for SecuritySettings {
     }
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(default)]
 pub struct NitroRepoConfig {
     pub database: PostgresSettings,
     pub log: LoggingConfig,
@@ -49,6 +49,7 @@ pub struct NitroRepoConfig {
     pub site: SiteSetting,
     pub security: SecuritySettings,
 }
+
 impl NitroRepoConfig {
     pub fn load(config_file: PathBuf, update_config: bool) -> anyhow::Result<Self> {
         let app = if config_file.exists() {
