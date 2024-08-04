@@ -1,15 +1,15 @@
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 
+use axum::response::IntoResponse;
 use base64::DecodeError;
-use this_actix_error::ActixError;
 use thiserror::Error;
 
 use crate::app::authentication::session::SessionError;
 
 /// Errors that happen internally to the system.
 /// Not as a direct result of a Request
-#[derive(Error, Debug, ActixError)]
+#[derive(Error, Debug)]
 pub enum InternalError {
     #[error("JSON error {0}")]
     JSONError(#[from] serde_json::Error),
@@ -35,5 +35,14 @@ pub enum InternalError {
 impl From<argon2::password_hash::Error> for InternalError {
     fn from(err: argon2::password_hash::Error) -> InternalError {
         InternalError::Error(err.to_string())
+    }
+}
+
+impl IntoResponse for InternalError {
+    fn into_response(self) -> axum::response::Response {
+        axum::http::Response::builder()
+            .status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Internal Server Error".into())
+            .unwrap()
     }
 }

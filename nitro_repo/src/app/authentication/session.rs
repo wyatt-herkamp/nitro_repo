@@ -1,4 +1,5 @@
 use std::{
+    fmt::Debug,
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -82,6 +83,14 @@ pub struct SessionManager {
     sessions: Database,
     running: AtomicBool,
 }
+impl Debug for SessionManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SessionManager")
+            .field("config", &self.config)
+            .field("running", &self.running.load(Ordering::Relaxed))
+            .finish()
+    }
+}
 impl SessionManager {
     pub fn new(session_config: SessionManagerConfig) -> Result<Self, Error> {
         let sessions = if session_config.database_location.exists() {
@@ -132,7 +141,7 @@ impl SessionManager {
         Ok(sessions_removed)
     }
     pub fn start_cleaner(this: Arc<Self>) {
-        actix_rt::spawn(async move {
+        tokio::spawn(async move {
             let this = this;
             let how_often = this
                 .config
@@ -144,11 +153,11 @@ impl SessionManager {
                 match this.clean_inner().await {
                     Ok(value) => {
                         info!("Cleaned {} sessions", value);
-                        actix_rt::time::sleep(how_often).await
+                        tokio::time::sleep(how_often).await
                     }
                     Err(err) => {
                         error!("Failed to clean sessions: {:?}", err);
-                        actix_rt::time::sleep(how_often / 2).await
+                        tokio::time::sleep(how_often / 2).await
                     }
                 }
             }

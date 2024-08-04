@@ -24,7 +24,17 @@ impl Default for Mode {
 pub fn get_current_directory() -> PathBuf {
     env::current_dir().unwrap_or_else(|_| PathBuf::new())
 }
-
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SecuritySettings {
+    pub allow_basic_without_tokens: bool,
+}
+impl Default for SecuritySettings {
+    fn default() -> Self {
+        Self {
+            allow_basic_without_tokens: false,
+        }
+    }
+}
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NitroRepoConfig {
     pub database: PostgresSettings,
@@ -37,6 +47,7 @@ pub struct NitroRepoConfig {
     pub tls: Option<TlsConfig>,
     pub email: EmailSetting,
     pub site: SiteSetting,
+    pub security: SecuritySettings,
 }
 impl NitroRepoConfig {
     pub fn load(config_file: PathBuf, update_config: bool) -> anyhow::Result<Self> {
@@ -74,6 +85,7 @@ impl Default for NitroRepoConfig {
             sessions: SessionManagerConfig::default(),
             email: EmailSetting::default(),
             site: SiteSetting::default(),
+            security: SecuritySettings::default(),
         }
     }
 }

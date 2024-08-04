@@ -3,7 +3,6 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::Path;
 
-use actix_web::http::header::HeaderMap;
 use rust_embed::RustEmbed;
 use tracing::error;
 
@@ -48,21 +47,7 @@ impl Resources {
     }
 }
 
-pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
-    let Some(header_value) = header_map.get("accept") else {
-        return Ok(None);
-    };
-
-    let accept = header_value
-        .to_str()
-        .map(|x| x.to_string())
-        .inspect_err(|err| {
-            error!("Failed to convert accept header to string: {}", err);
-        })
-        .ok();
-    Ok(accept)
-}
-
+pub mod headers;
 pub mod password {
     use argon2::{
         password_hash::{Error, SaltString},

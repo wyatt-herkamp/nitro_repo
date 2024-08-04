@@ -1,19 +1,28 @@
-use super::authentication::api_middleware::HandleSession;
-use super::authentication::session::SessionManager;
-use super::config::NitroRepoConfig;
+use super::authentication::api_middleware::AuthenticationLayer;
 use super::NitroRepo;
+use super::{api, config::NitroRepoConfig};
 
-use actix_cors::Cors;
-use actix_web::Scope;
-use actix_web::{middleware::DefaultHeaders, web::Data, App, HttpServer};
 use anyhow::Context;
-use rustls::ServerConfig as RustlsServerConfig;
+use axum::extract::DefaultBodyLimit;
+use axum::routing::post;
+use axum::{extract::Request, routing::get, Router};
+use futures_util::pin_mut;
+use hyper::body::Incoming;
+use hyper_util::rt::{TokioExecutor, TokioIo};
+use rustls::ServerConfig;
 use rustls_pemfile::{certs, pkcs8_private_keys};
-use sqlx::PgPool;
-use std::fs::File;
-use std::io::BufReader;
-use tracing::trace;
-use tracing_actix_web::TracingLogger;
+use std::{
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+use tokio::net::TcpListener;
+use tokio::signal;
+use tokio_rustls::TlsAcceptor;
+use tower_http::cors::{Any, CorsLayer};
+use tower_service::Service;
+use tracing::{error, info, warn};
 pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
     let NitroRepoConfig {
         database,
@@ -25,80 +34,130 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         tls,
         email,
         site,
-        server_workers,
+        security,
+        ..
     } = config;
     log.init(mode)?;
+    let tls = tls
+        .map(|tls| {
+            rustls_server_config(tls.private_key, tls.certificate_chain)
+                .context("Failed to create TLS configuration")
+        })
+        .transpose()?;
 
-    let database = PgPool::connect_with(database.into())
+    let site = NitroRepo::new(site, security, sessions, database)
         .await
-        .map(Data::new)
-        .context("Could not connec to database")?;
-    //  TODO: Run Migrations
-    sqlx::migrate!()
-        .run(database.as_ref())
-        .await
-        .context("Failed to run Migrations")?;
-    let session_manager = SessionManager::new(sessions).map(Data::new)?;
-    let site = Data::new(
-        NitroRepo::new(site, database.clone())
-            .await
-            .context("Unable to Initialize Website Core")?,
-    );
+        .context("Unable to Initialize Website Core")?;
     let cloned_site = site.clone();
-    tokio::spawn(async move {
-        if let Err(err) = handle_signals(cloned_site).await {
-            tracing::error!("Failed to handle signals: {}", err);
-        }
-    });
-    let server = HttpServer::new(move || {
-        App::new()
-            .wrap(DefaultHeaders::new().add(("X-Powered-By", "By the power of Rust")))
-            .wrap(
-                Cors::default()
-                    .allow_any_header()
-                    .allow_any_method()
-                    .allow_any_origin()
-                    .supports_credentials(),
-            )
-            .wrap(TracingLogger::default())
-            .app_data(session_manager.clone())
-            .app_data(site.clone())
-            .app_data(database.clone())
-            .wrap(HandleSession {
-                session_manager: session_manager.clone(),
-                nitro_repo: site.clone(),
-            })
-            .service(Scope::new("/api").configure(crate::app::api::init))
-    });
-    let server = if let Some(workers) = server_workers {
-        server.workers(workers)
+    let auth_layer = AuthenticationLayer::from(site.clone());
+    let app = Router::new()
+        .route("/api/info", get(api::info))
+        .route("/api/install", post(api::install))
+        .route("/api/user/me", get(api::user::me))
+        .route("/api/user/login", post(api::user::login))
+        .layer(DefaultBodyLimit::max(max_upload.get_as_bytes()))
+        .layer(CorsLayer::new().allow_origin(Any).allow_credentials(true))
+        .layer(auth_layer)
+        .with_state(site);
+    if let Some(tls) = tls {
+        start_app_with_tls(tls, app, bind_address).await?;
     } else {
-        server
-    };
+        start_app(app, bind_address, cloned_site).await?;
+    }
 
-    if let Some(tls_config) = tls {
-        let mut cert_file = BufReader::new(File::open(tls_config.certificate_chain)?);
-        let mut key_file = BufReader::new(File::open(tls_config.private_key)?);
-
-        let cert_chain = certs(&mut cert_file).collect::<Result<Vec<_>, _>>()?;
-        let mut keys = pkcs8_private_keys(&mut key_file).collect::<Result<Vec<_>, _>>()?;
-
-        let config = RustlsServerConfig::builder()
-            .with_no_client_auth()
-            .with_single_cert(
-                cert_chain,
-                rustls::pki_types::PrivateKeyDer::Pkcs8(keys.remove(0)),
-            )?;
-        server.bind_rustls_0_23(bind_address, config)?.run().await
-    } else {
-        server.bind(bind_address)?.run().await
-    }?;
     Ok(())
 }
-async fn handle_signals(website: Data<NitroRepo>) -> anyhow::Result<()> {
-    tokio::signal::ctrl_c()
-        .await
-        .expect("Failed to listen for SIGINT");
-    website.close().await;
+async fn start_app(app: Router, bind: String, site: NitroRepo) -> anyhow::Result<()> {
+    let listener = TcpListener::bind(bind).await?;
+    tracing::debug!("listening on {}", listener.local_addr()?);
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal(site))
+        .await?;
     Ok(())
+}
+async fn start_app_with_tls(
+    tls: Arc<ServerConfig>,
+    app: Router,
+    bind: String,
+) -> anyhow::Result<()> {
+    let tls_acceptor = TlsAcceptor::from(tls);
+    let tcp_listener = TcpListener::bind(bind).await.unwrap();
+
+    pin_mut!(tcp_listener);
+    loop {
+        let tower_service = app.clone();
+        let tls_acceptor = tls_acceptor.clone();
+
+        // Wait for new tcp connection
+        let (cnx, addr) = tcp_listener.accept().await.unwrap();
+
+        tokio::spawn(async move {
+            // Wait for tls handshake to happen
+            let Ok(stream) = tls_acceptor.accept(cnx).await else {
+                error!("error during tls handshake connection from {}", addr);
+                return;
+            };
+            let stream = TokioIo::new(stream);
+            let hyper_service = hyper::service::service_fn(move |request: Request<Incoming>| {
+                tower_service.clone().call(request)
+            });
+
+            let ret = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
+                .serve_connection_with_upgrades(stream, hyper_service)
+                .await;
+
+            if let Err(err) = ret {
+                warn!("error serving connection from {}: {}", addr, err);
+            }
+        });
+    }
+    Ok(())
+}
+
+async fn shutdown_signal(website: NitroRepo) {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+    info!("Shutting down");
+    website.close().await;
+}
+
+fn rustls_server_config(
+    key: impl AsRef<Path>,
+    cert: impl AsRef<Path>,
+) -> anyhow::Result<Arc<ServerConfig>> {
+    let mut key_reader = BufReader::new(File::open(key).unwrap());
+    let mut cert_reader = BufReader::new(File::open(cert).unwrap());
+
+    let cert_chain = certs(&mut cert_reader).collect::<Result<Vec<_>, _>>()?;
+    let mut keys = pkcs8_private_keys(&mut key_reader).collect::<Result<Vec<_>, _>>()?;
+
+    let mut config = ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(
+            cert_chain,
+            rustls::pki_types::PrivateKeyDer::Pkcs8(keys.remove(0)),
+        )?;
+
+    config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+
+    Ok(Arc::new(config))
 }

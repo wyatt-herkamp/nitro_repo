@@ -1,166 +1,139 @@
-use std::future::{ready, Ready};
-use std::rc::Rc;
-
-use actix_web::body::{BoxBody, EitherBody};
-use actix_web::http::header::{self};
-use actix_web::http::Method;
-use actix_web::web::Data;
-use actix_web::HttpResponse;
-use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage,
-};
-use futures_util::future::LocalBoxFuture;
-use tracing::{instrument, warn};
-
+use crate::app::authentication::AuthenticationRaw;
 use crate::app::NitroRepo;
-use crate::request_error;
+use crate::utils::headers::{AuthorizationHeader, HeaderValueExt};
+use axum::body::Body;
+use axum_extra::extract::CookieJar;
+use derive_more::derive::From;
+use http::header::AUTHORIZATION;
+use http::{Request, Response};
+use http_body_util::Either;
+use pin_project::pin_project;
+use std::task::ready;
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
+use tower::Layer;
+use tower_service::Service;
+use tracing::{debug, trace};
+#[derive(Debug, Clone, From)]
+pub struct AuthenticationLayer(pub NitroRepo);
 
-use super::session::{Session, SessionManager};
-use super::AuthenticationRaw;
+impl<S> Layer<S> for AuthenticationLayer {
+    type Service = AuthenticationMiddleware<S>;
 
-pub struct HandleSession {
-    pub session_manager: Data<SessionManager>,
-    pub nitro_repo: Data<NitroRepo>,
-}
-
-impl<S, B> Transform<S, ServiceRequest> for HandleSession
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Response = ServiceResponse<EitherBody<B, BoxBody>>;
-    type Error = Error;
-    type Transform = SessionMiddleware<S>;
-    type InitError = ();
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
-
-    fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(SessionMiddleware {
-            service: Rc::new(service),
-            nitro_repo: self.nitro_repo.clone(),
-            session_manager: self.session_manager.clone(),
-        }))
+    fn layer(&self, inner: S) -> Self::Service {
+        AuthenticationMiddleware {
+            inner,
+            site: self.0.clone(),
+        }
     }
 }
-
-pub struct SessionMiddleware<S> {
-    service: Rc<S>,
-    nitro_repo: Data<NitroRepo>,
-    session_manager: Data<SessionManager>,
+type ServiceBody<T> = Either<T, Body>;
+type ServiceResponse<T> = Response<ServiceBody<T>>;
+#[derive(Debug, Clone)]
+pub struct AuthenticationMiddleware<S> {
+    inner: S,
+    site: NitroRepo,
 }
-impl<S, B> SessionMiddleware<S>
+
+impl<S, ReqBody, ResBody> Service<Request<ReqBody>> for AuthenticationMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
-    S::Future: 'static,
-    B: 'static,
+    S: Service<Request<ReqBody>, Response = Response<ResBody>>,
+    ReqBody: Default,
 {
-    #[instrument(skip(session_manager, req, cookie))]
-    async fn handle_session(
-        session_manager: Data<SessionManager>,
-        req: &ServiceRequest,
-        cookie: impl AsRef<str>,
-    ) -> Result<(), HttpResponse> {
-        let session: Option<Session> = match session_manager.get_session(cookie.as_ref()) {
-            Ok(ok) => ok,
-            Err(e) => {
-                warn!("Session Manager Error: {}", e);
-                return Err(HttpResponse::InternalServerError().body("Session Manager Error"));
+    type Response = ServiceResponse<ResBody>;
+    type Error = S::Error;
+    type Future = ResponseFuture<S::Future>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
+        if req.method() == http::Method::OPTIONS {
+            trace!("Options Request");
+            return ResponseFuture {
+                inner: Kind::Ok {
+                    future: self.inner.call(req),
+                },
+            };
+        }
+        let (mut parts, body) = req.into_parts();
+        let cookie_jar = CookieJar::from_headers(&parts.headers);
+        let authorization_header = parts
+            .headers
+            .get(AUTHORIZATION)
+            .map(|header| header.parsed::<AuthorizationHeader>());
+
+        let raw = if let Some(authorization_header) = authorization_header {
+            match authorization_header {
+                Ok(authorization) => AuthenticationRaw::new_from_header(authorization, &self.site),
+                Err(error) => {
+                    debug!("Invalid Header {}", error);
+                    return ResponseFuture {
+                        inner: Kind::InvalidAuthentication {
+                            error: error.to_string(),
+                        },
+                    };
+                }
+            }
+        } else {
+            if let Some(cookie) = cookie_jar.get("session") {
+                debug!("Session Cookie Found");
+                AuthenticationRaw::new_from_cookie(cookie, &self.site)
+            } else {
+                debug!("No Authorization Header or Session Cookie Found");
+                AuthenticationRaw::NoIdentification
             }
         };
-        if let Some(session) = session {
-            let raw = AuthenticationRaw::Session(session);
-            req.extensions_mut().insert(raw);
+
+        parts.extensions.insert(raw);
+        ResponseFuture {
+            inner: Kind::Ok {
+                future: self.inner.call(Request::from_parts(parts, body)),
+            },
         }
-        Ok(())
-    }
-
-    ///
-    ///
-    /// # Arguments
-    ///
-    /// * `service`: A clone of the service
-    /// * `req`: The request
-    /// * `session_manager`:  The session manager
-    ///
-    /// returns: Result<ServiceResponse<EitherBody<B, BoxBody>>, Error>
-    ///    - Ok: The response  - Will just be the call to the next handler
-    ///   - Err: The error - Will be an error response
-    #[instrument(skip(service, req, session_manager))]
-    async fn handle_authentication(
-        service: Rc<S>,
-        req: ServiceRequest,
-        session_manager: Data<SessionManager>,
-    ) -> Result<ServiceResponse<EitherBody<B, BoxBody>>, Error> {
-        if let Some(auth) = req.headers().get(header::AUTHORIZATION) {
-            let auth_as_str = auth.to_str().map_err(|e| {
-                warn!("Failed to convert auth header to string: {}", e);
-                request_error::bad_request("Not a valid String in Authorization Header")
-            })?;
-
-            let split = auth_as_str.split(' ').collect::<Vec<&str>>();
-
-            if split.len() != 2 {
-                return Err(request_error::bad_request("Could not parse auth header").into());
-            }
-            let auth_type = split[0];
-            match auth_type {
-                "session" => {
-                    if let Err(e) = Self::handle_session(session_manager, &req, split[1]).await {
-                        return Ok(req.into_response(e.map_into_right_body()));
-                    }
-                }
-                _ => {
-                    return Err(request_error::bad_request(
-                        "Unsupported Authorization Header Type ",
-                    )
-                    .into());
-                }
-            }
-        } else if let Some(cookie) = req.cookie("session") {
-            if let Err(e) = Self::handle_session(session_manager, &req, cookie.value()).await {
-                return Ok(req.into_response(e.map_into_right_body()));
-            }
-        }
-        let fut = service.call(req);
-
-        let res = fut.await?;
-        Ok(res.map_into_left_body())
     }
 }
-impl<S, B> Service<ServiceRequest> for SessionMiddleware<S>
-where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Response = ServiceResponse<EitherBody<B, BoxBody>>;
-    type Error = Error;
-    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    forward_ready!(service);
-    #[instrument(skip(self, req))]
-    fn call(&self, req: ServiceRequest) -> Self::Future {
-        // Check if its an OPTIONS request. If so exit early and let the request pass through
-        if req.method() == Method::OPTIONS {
-            let fut = self.service.call(req);
-            return Box::pin(async move {
-                let res = fut.await?;
-                Ok(res.map_into_left_body())
-            });
+#[pin_project]
+pub struct ResponseFuture<F> {
+    #[pin]
+    inner: Kind<F>,
+}
+
+#[pin_project(project = KindProj)]
+enum Kind<F> {
+    Ok {
+        #[pin]
+        future: F,
+    },
+    InvalidAuthentication {
+        error: String,
+    },
+}
+
+impl<F, B, E> Future for ResponseFuture<F>
+where
+    F: Future<Output = Result<Response<B>, E>>,
+{
+    type Output = Result<ServiceResponse<B>, E>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.project().inner.project() {
+            KindProj::InvalidAuthentication { error } => {
+                let body = Body::from(format!("Invalid Authentication Header: {}", error));
+                let response = Response::new(Either::Right(body));
+
+                Poll::Ready(Ok(response))
+            }
+            KindProj::Ok { future } => {
+                let response: Response<B> = ready!(future.poll(cx))?;
+                let response = response.map(Either::Left);
+                Poll::Ready(Ok(response))
+            }
         }
-        let url = req.request().uri().authority().map(|v| v.to_string());
-        if let Some(url) = url {
-            self.nitro_repo.update_app_url(url);
-        }
-        // Grab required data from the service
-        let session_manager = self.session_manager.clone();
-        // Move into an async block
-        let session = Self::handle_authentication(self.service.clone(), req, session_manager);
-        Box::pin(async move {
-            let res = session.await?;
-            Ok(res)
-        })
     }
 }

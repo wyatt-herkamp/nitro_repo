@@ -1,31 +1,24 @@
-use actix_web::{
-    get, put,
-    web::{self, Data, ServiceConfig},
-    HttpResponse, Scope,
+use axum::{
+    extract::{Path, State},
+    response::Response,
+    Json,
 };
+use http::StatusCode;
 use nr_core::{
     database::repository::{DBRepository, DBRepositoryWithStorageName, GenericDBRepositoryConfig},
     user::permissions::HasPermissions,
 };
+use tracing::error;
 use uuid::Uuid;
 
 use crate::{
-    app::{authentication::Authentication, DatabaseConnection, NitroRepo},
+    app::{authentication::Authentication, NitroRepo},
     error::internal_error::InternalError,
-    repository::Repository,
+    repository::{Repository, RepositoryTypeDescription},
 };
 mod config;
 
-pub fn init(service: &mut ServiceConfig) {
-    service
-        .service(repository_types)
-        .service(update_config)
-        .service(Scope::new("/config").configure(config::init))
-        .service(update_config)
-        .service(list_repositories);
-}
-#[get("/types")]
-pub async fn repository_types(site: Data<NitroRepo>) -> HttpResponse {
+pub fn repository_types(State(site): State<NitroRepo>) -> Json<Vec<RepositoryTypeDescription>> {
     // TODO: Add Client side caching
 
     let types: Vec<_> = site
@@ -33,49 +26,54 @@ pub async fn repository_types(site: Data<NitroRepo>) -> HttpResponse {
         .iter()
         .map(|v| v.get_description())
         .collect();
-    HttpResponse::Ok().json(types)
+    Json(types)
 }
-#[put("/{repository}/{config_key}")]
+
 pub async fn update_config(
-    site: Data<NitroRepo>,
+    State(site): State<NitroRepo>,
     auth: Authentication,
-    params: web::Path<(Uuid, String)>,
-    config: web::Json<serde_json::Value>,
-    database: DatabaseConnection,
-) -> Result<HttpResponse, InternalError> {
-    let (repository, config_key) = params.into_inner();
+    Path((repository, config_key)): Path<(Uuid, String)>,
+    Json(config): Json<serde_json::Value>,
+) -> Result<StatusCode, InternalError> {
     if !auth.can_edit_repository(repository) {
-        return Ok(HttpResponse::Forbidden().finish());
+        return Ok(StatusCode::FORBIDDEN);
     }
     let Some(config_type) = site.get_repository_config_type(&config_key) else {
-        return Ok(HttpResponse::BadRequest().finish());
+        return Ok(StatusCode::BAD_REQUEST);
     };
-    let Some(db_repository) = DBRepository::get_by_id(repository, &database).await? else {
-        return Ok(HttpResponse::NotFound().finish());
+    let Some(db_repository) = DBRepository::get_by_id(repository, site.as_ref()).await? else {
+        return Ok(StatusCode::NOT_FOUND);
     };
     let Some(repository) = site.get_repository(db_repository.id) else {
-        return Ok(HttpResponse::NotFound().finish());
+        return Ok(StatusCode::INTERNAL_SERVER_ERROR);
     };
     if !repository.config_types().contains(&config_key) {
-        return Ok(HttpResponse::BadRequest().finish());
+        return Ok(StatusCode::BAD_REQUEST);
     }
-    let config = config.into_inner();
     if let Err(error) = config_type.validate_config(config.clone()) {
-        return Ok(HttpResponse::BadRequest().body(error.to_string()));
+        error!("Error validating config: {}", error);
+        return Ok(StatusCode::BAD_REQUEST);
     }
-    GenericDBRepositoryConfig::add_or_update(db_repository.id, config_key, config, &database)
+    GenericDBRepositoryConfig::add_or_update(db_repository.id, config_key, config, site.as_ref())
         .await?;
     //TODO: Update the instance of the repository with the new config
-    Ok(HttpResponse::NoContent().finish())
+    Ok(StatusCode::OK)
 }
-#[get("/list")]
 pub async fn list_repositories(
     auth: Authentication,
-    database: DatabaseConnection,
-) -> Result<HttpResponse, InternalError> {
+    State(site): State<NitroRepo>,
+) -> Result<Response, InternalError> {
     if !auth.can_view_repositories() {
-        return Ok(HttpResponse::Forbidden().finish());
+        return Ok(Response::builder()
+            .status(StatusCode::FORBIDDEN)
+            .body("".into())
+            .unwrap());
     }
-    let repositories = DBRepositoryWithStorageName::get_all(&database).await?;
-    Ok(HttpResponse::Ok().json(repositories))
+    let repositories = DBRepositoryWithStorageName::get_all(site.as_ref()).await?;
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .body(serde_json::to_string(&repositories).unwrap().into())
+        .unwrap();
+    Ok(response)
 }

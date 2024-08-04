@@ -24,7 +24,12 @@ nr-macros = { path = "crates/macros" }
 nr-storage = { path = "crates/storage" }
 # Rust Utilities
 futures = "0.3"
-derive_more = { version = "1.0.0-beta", features = ["deref", "from", "into"] }
+derive_more = { version = "1.0.0-beta", features = [
+    "deref",
+    "from",
+    "into",
+    "as_ref",
+] }
 ahash = "0.8"
 parking_lot = { version = "0.12", features = [] }
 futures-util = "0.3.21"
@@ -48,6 +53,11 @@ reqwest = { version = "0.12", features = [
 ], default-features = false }
 badge-maker = { git = "https://github.com/wyatt-herkamp/badge-maker.git", branch = "updates_and_improvements" }
 auto_impl = "1.2"
+
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1" }
+http = "1.1"
+http-body-util = "0.1"
 [workspace.dependencies.sqlx]
 version = "0.8"
 default_features = false

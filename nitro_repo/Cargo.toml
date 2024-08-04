@@ -9,13 +9,21 @@ license.workspace = true
 
 [dependencies]
 # Web
-actix-web = { version = "4", features = ["cookies", "rustls-0_23"] }
-actix-cors = "0.7"
-actix-rt = "2"
-actix-service = "2"
+axum = { version = "0.7", features = ["macros", "tokio"] }
+axum-extra = { version = "0.9", features = ["multipart", "cookie"] }
+tower = { version = "0.4", features = ["limit", "timeout"] }
+tower-http = { version = "0.5", features = ["full"] }
+tower-service = "0.3.2"
+hyper.workspace = true
+hyper-util.workspace = true
+http.workspace = true
+http-body-util.workspace = true
+
+async-trait = "0.1"
+# TLS
+tokio-rustls = "0.26"
 rustls = { version = "0.23" }
 rustls-pemfile = { version = "2" }
-actix-files = "0.6"
 # Partly Web
 handlebars = "6"
 # Database
@@ -49,7 +57,7 @@ anyhow.workspace = true
 derive_more.workspace = true
 # Badge Stuff
 badge-maker.workspace = true
-
+pin-project = "1"
 clap = { version = "4", features = ["derive"] }
 semver = { version = "1", features = ["std", "serde"] }
 
@@ -57,7 +65,6 @@ semver = { version = "1", features = ["std", "serde"] }
 tempfile = "3.3.0"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
-this_actix_error = { git = "https://github.com/wyatt-herkamp/this_actix_errors.git" }
 zip = { version = "2" }
 current_semver = { git = "https://github.com/wyatt-herkamp/current_semver.git" }
 nr-core.workspace = true
@@ -70,7 +77,6 @@ config_types = { git = "https://github.com/wyatt-herkamp/config_types.git", feat
 ] }
 auto_impl.workspace = true
 # Tracing
-tracing-actix-web = "0.7"
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-appender.workspace = true

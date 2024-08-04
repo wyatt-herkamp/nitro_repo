@@ -1,73 +1,96 @@
-use actix_web::{
-    get,
-    web::{self, Data, ServiceConfig},
-    HttpResponse,
+use axum::{
+    body::Body,
+    extract::{Path, State},
+    response::{IntoResponse, Response},
+    Json,
 };
+use http::StatusCode;
 
 use crate::{
     app::{authentication::Authentication, NitroRepo},
     error::internal_error::InternalError,
 };
-
-pub fn init(service: &mut ServiceConfig) {
-    service
-        .service(config_schema)
-        .service(config_validate)
-        .service(config_default);
+pub struct InvalidConfigType(String);
+impl IntoResponse for InvalidConfigType {
+    fn into_response(self) -> Response {
+        Response::builder()
+            .status(400)
+            .body(Body::from(format!("Invalid Config Type: {}", self.0)))
+            .unwrap()
+    }
 }
-#[get("/{key}/schema")]
+
 pub async fn config_schema(
-    site: Data<NitroRepo>,
-    key: web::Path<String>,
-) -> Result<HttpResponse, InternalError> {
+    State(site): State<NitroRepo>,
+    Path(key): Path<String>,
+) -> Result<Response, InternalError> {
     // TODO: Add Client side caching
 
-    let key = key.into_inner();
     let Some(config_type) = site.get_repository_config_type(&key) else {
-        return Ok(HttpResponse::NotFound().finish());
+        return Ok(InvalidConfigType(key).into_response());
     };
 
     let schema = config_type
         .schema()
-        .map(|schema| HttpResponse::Ok().json(schema))
-        .unwrap_or_else(|| HttpResponse::NotFound().finish());
+        .map(|schema| {
+            Response::builder()
+                .status(200)
+                .header("Content-Type", "application/json")
+                .body(Body::new(serde_json::to_string(&schema).unwrap()))
+                .unwrap()
+        })
+        .unwrap_or_else(|| {
+            Response::builder()
+                .status(500)
+                .body(Body::from("Internal Server Error"))
+                .unwrap()
+        });
     Ok(schema)
 }
 
-#[get("/{key}/validate")]
-pub async fn config_validate(
-    site: Data<NitroRepo>,
-    key: web::Path<String>,
+pub fn config_validate(
+    State(site): State<NitroRepo>,
+    Path(key): Path<String>,
     auth: Authentication,
-    config: web::Json<serde_json::Value>,
-) -> Result<HttpResponse, InternalError> {
+    Json(config): Json<serde_json::Value>,
+) -> Result<Response, InternalError> {
     //TODO: Check permissions
-    let key = key.into_inner();
     let Some(config_type) = site.get_repository_config_type(&key) else {
-        return Ok(HttpResponse::NotFound().finish());
+        return Ok(InvalidConfigType(key).into_response());
     };
 
-    let response = match config_type.validate_config(config.into_inner()) {
-        Ok(_) => HttpResponse::NoContent().finish(),
-        Err(err) => HttpResponse::BadRequest().body(err.to_string()),
+    let response = match config_type.validate_config(config) {
+        Ok(_) => Response::builder()
+            .status(StatusCode::NO_CONTENT)
+            .body(Body::from("Valid Config"))
+            .unwrap(),
+        Err(err) => Response::builder()
+            .status(400)
+            .body(Body::from(err.to_string()))
+            .unwrap(),
     };
     Ok(response)
 }
 
-#[get("/{key}/default")]
 pub async fn config_default(
-    site: Data<NitroRepo>,
-    key: web::Path<String>,
-) -> Result<HttpResponse, InternalError> {
+    State(site): State<NitroRepo>,
+    Path(key): Path<String>,
+) -> Result<Response, InternalError> {
     // TODO: Add Client side caching
-    let key = key.into_inner();
     let Some(config_type) = site.get_repository_config_type(&key) else {
-        return Ok(HttpResponse::NotFound().finish());
+        return Ok(InvalidConfigType(key).into_response());
     };
 
     let default = match config_type.default() {
-        Ok(ok) => HttpResponse::Ok().json(ok),
-        Err(err) => HttpResponse::InternalServerError().json(err.to_string()),
+        Ok(ok) => Response::builder()
+            .status(200)
+            .header("Content-Type", "application/json")
+            .body(Body::from(serde_json::to_string(&ok).unwrap()))
+            .unwrap(),
+        Err(err) => Response::builder()
+            .status(500)
+            .body(Body::from(err.to_string()))
+            .unwrap(),
     };
     Ok(default)
 }

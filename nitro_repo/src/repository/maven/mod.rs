@@ -1,10 +1,13 @@
 use ahash::HashMap;
 use futures::future::LocalBoxFuture;
 use hosted::MavenHosted;
-use nr_core::database::repository::GenericDBRepositoryConfig;
+use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_macros::DynRepositoryHandler;
+use nr_storage::DynStorage;
 use proxy::MavenProxy;
 use sqlx::types::Json;
+
+use crate::app::NitroRepo;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
@@ -89,11 +92,13 @@ impl RepositoryType for MavenRepositoryType {
         })
     }
 
+    #[doc = " Load a repository from the database"]
+    #[doc = " This function should load the repository from the database and return a DynRepository"]
     fn load_repo(
         &self,
-        repo: nr_core::database::repository::DBRepository,
-        storage: nr_storage::DynStorage,
-        database: crate::app::DatabaseConnection,
+        repo: DBRepository,
+        storage: DynStorage,
+        website: NitroRepo,
     ) -> LocalBoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
         todo!()
     }

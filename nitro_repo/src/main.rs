@@ -33,14 +33,17 @@ fn main() -> anyhow::Result<()> {
         .thread_name_fn(thread_name)
         .enable_all()
         .build()?;
-
-    return match command.sub_command {
-        SubCommands::Start => {
-            actix_rt::System::with_tokio_rt(|| tokio).block_on(app::web::start(config))
-        }
-    };
+    tokio.block_on(inner_main(command.sub_command, config))
 }
 
+async fn inner_main(
+    command: SubCommands,
+    config: app::config::NitroRepoConfig,
+) -> anyhow::Result<()> {
+    return match command {
+        SubCommands::Start => app::web::start(config).await,
+    };
+}
 fn thread_name() -> String {
     static ATOMIC_ID: AtomicUsize = AtomicUsize::new(0);
     let id = ATOMIC_ID.fetch_add(1, Ordering::SeqCst);

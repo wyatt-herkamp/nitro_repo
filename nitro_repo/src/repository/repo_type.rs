@@ -10,7 +10,7 @@ use serde_json::Value;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::app::DatabaseConnection;
+use crate::app::NitroRepo;
 
 use super::DynRepository;
 
@@ -69,7 +69,7 @@ pub trait RepositoryType: Send + Debug {
         &self,
         repo: DBRepository,
         storage: DynStorage,
-        database: DatabaseConnection,
+        website: NitroRepo,
     ) -> LocalBoxFuture<'static, Result<DynRepository, RepositoryFactoryError>>;
 }
 pub type DynRepositoryType = Box<dyn RepositoryType + Send + Sync>;

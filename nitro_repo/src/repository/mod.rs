@@ -1,8 +1,8 @@
 #![allow(unused_variables)]
 
-use actix_web::http::StatusCode;
 use bytes::Bytes;
 
+use ::http::StatusCode;
 use http::{RepoResponse, RepositoryRequest};
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
@@ -22,8 +22,8 @@ pub trait Repository: Send + Sync + Clone {
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,
-        request: RepositoryRequest<'_>,
-    ) -> Result<RepoResponse, actix_web::Error> {
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
         Ok(RepoResponse::new_from_string(
             format!("Get is not implemented for this type: {}", self.get_type()),
             StatusCode::IM_A_TEAPOT,
@@ -32,9 +32,8 @@ pub trait Repository: Send + Sync + Clone {
     /// Handles a Post Request to a Repo
     async fn handle_post(
         &self,
-        request: RepositoryRequest<'_>,
-        bytes: Bytes,
-    ) -> Result<RepoResponse, actix_web::Error> {
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
         Ok(RepoResponse::new_from_string(
             format!("Post is not implemented for this type: {}", self.get_type()),
             StatusCode::IM_A_TEAPOT,
@@ -43,9 +42,8 @@ pub trait Repository: Send + Sync + Clone {
     /// Handles a PUT Request to a Repo
     async fn handle_put(
         &self,
-        request: RepositoryRequest<'_>,
-        bytes: Bytes,
-    ) -> Result<RepoResponse, actix_web::Error> {
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
         Ok(RepoResponse::new_from_string(
             format!("Head is not implemented for this type: {}", self.get_type()),
             StatusCode::IM_A_TEAPOT,
@@ -54,9 +52,8 @@ pub trait Repository: Send + Sync + Clone {
     /// Handles a PATCH Request to a Repo
     async fn handle_patch(
         &self,
-        request: RepositoryRequest<'_>,
-        bytes: Bytes,
-    ) -> Result<RepoResponse, actix_web::Error> {
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
         Ok(RepoResponse::new_from_string(
             format!(
                 "Patch is not implemented for this type: {}",
@@ -68,8 +65,8 @@ pub trait Repository: Send + Sync + Clone {
     /// Handles a HAPIResponseAD Request to a Repo
     async fn handle_head(
         &self,
-        request: RepositoryRequest<'_>,
-    ) -> Result<RepoResponse, actix_web::Error> {
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
         Ok(RepoResponse::new_from_string(
             format!("Head is not implemented for this type: {}", self.get_type()),
             StatusCode::IM_A_TEAPOT,
@@ -80,3 +77,5 @@ pub trait Repository: Send + Sync + Clone {
 pub enum DynRepository {
     Maven(maven::MavenRepository),
 }
+#[derive(Debug)]
+pub enum RepositoryHandlerError {}

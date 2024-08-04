@@ -1,6 +1,10 @@
 use std::{fmt::Display, path::PathBuf};
 
+use http::Uri;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use tracing::instrument;
+
+use crate::StorageError;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct StoragePathComponent(String);
@@ -60,5 +64,13 @@ impl<'de> Deserialize<'de> for StoragePath {
     {
         let string = String::deserialize(deserializer)?;
         Ok(StoragePath::from(string))
+    }
+}
+impl TryFrom<Uri> for StoragePath {
+    type Error = StorageError;
+    #[instrument]
+    fn try_from(uri: Uri) -> Result<Self, Self::Error> {
+        let path = uri.path();
+        Ok(StoragePath::from(path))
     }
 }
