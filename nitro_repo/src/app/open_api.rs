@@ -39,6 +39,7 @@ use utoipa::{Modify, OpenApi};
         (name="user",description= "User Management"),
         (name="storage", description= "Storage Management"),
         (name="repository",description= "Repository Management"),
+        (name="config", description = "Repository Config Types")
     )
 )]
 pub struct ApiDoc;

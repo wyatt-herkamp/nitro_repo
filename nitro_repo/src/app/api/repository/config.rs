@@ -29,8 +29,18 @@ impl IntoResponse for InvalidConfigType {
             .unwrap()
     }
 }
-#[instrument]
 
+#[utoipa::path(
+    get,
+    path = "/config/{key}/schema",
+    responses(
+        (status = 200, description = "Returns a JSON Schema for the config type")
+    ),
+    params(
+        ("key" = String, Path, description = "Config Key"),
+    ),
+)]
+#[instrument]
 pub async fn config_schema(
     State(site): State<NitroRepo>,
     Path(key): Path<String>,
@@ -43,23 +53,27 @@ pub async fn config_schema(
 
     let schema = config_type
         .schema()
-        .map(|schema| {
-            Response::builder()
-                .status(200)
-                .header("Content-Type", "application/json")
-                .body(Body::new(serde_json::to_string(&schema).unwrap()))
-                .unwrap()
-        })
+        .map(|schema| Json(schema).into_response())
         .unwrap_or_else(|| {
             Response::builder()
-                .status(500)
-                .body(Body::from("Internal Server Error"))
+                .status(StatusCode::NOT_FOUND)
+                .body("No schema found".into())
                 .unwrap()
         });
     Ok(schema)
 }
+#[utoipa::path(
+    post,
+    request_body = Value,
+    path = "/config/{key}/validate",
+    responses(
+        (status = 200, description = "Returns a JSON Schema for the config type")
+    ),
+    params(
+        ("key" = String, Path, description = "Config Key"),
+    ),
+)]
 #[instrument]
-
 pub async fn config_validate(
     State(site): State<NitroRepo>,
     Path(key): Path<String>,
@@ -83,8 +97,17 @@ pub async fn config_validate(
     };
     Ok(response)
 }
+#[utoipa::path(
+    get,
+    path = "/config/{key}/default",
+    responses(
+        (status = 200, description = "Returns the default config for the config type"),
+    ),
+    params(
+        ("key" = String, Path, description = "Config Key"),
+    ),
+)]
 #[instrument]
-
 pub async fn config_default(
     State(site): State<NitroRepo>,
     Path(key): Path<String>,

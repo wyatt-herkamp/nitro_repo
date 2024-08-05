@@ -21,7 +21,13 @@ mod config;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(repository_types, list_repositories),
+    paths(
+        repository_types,
+        list_repositories,
+        config::config_schema,
+        config::config_validate,
+        config::config_default
+    ),
     components(schemas(DBRepository, DBRepositoryWithStorageName, RepositoryTypeDescription))
 )]
 pub struct RepositoryAPI;
