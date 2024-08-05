@@ -22,7 +22,7 @@ hyper.workspace = true
 hyper-util.workspace = true
 http.workspace = true
 http-body-util.workspace = true
-utoipa.workspace = true
+utoipa = { workspace = true, features = ["axum_extras"] }
 utoipa-scalar = { version = "0.2.0-alpha", features = [
     "axum",
 ], optional = true }

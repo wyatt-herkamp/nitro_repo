@@ -1856,6 +1856,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "utoipa",
  "uuid",
 ]
 
@@ -3714,6 +3715,7 @@ dependencies = [
  "quote",
  "regex",
  "syn",
+ "uuid",
 ]
 
 [[package]]

@@ -6,7 +6,7 @@ use axum::{
 };
 use http::StatusCode;
 use nr_core::database::storage::DBStorage;
-use nr_storage::{StorageConfig, StorageFactory, StorageTypeConfig};
+use nr_storage::{local::LocalConfig, StorageConfig, StorageFactory, StorageTypeConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use utoipa::{OpenApi, ToSchema};
@@ -16,7 +16,7 @@ use crate::{app::NitroRepo, error::internal_error::InternalError};
 #[derive(OpenApi)]
 #[openapi(
     paths(list_storages, new_storage, get_storage),
-    components(schemas(DBStorage, NewStorageRequest))
+    components(schemas(DBStorage, NewStorageRequest, StorageTypeConfig, LocalConfig))
 )]
 pub struct StorageAPI;
 pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {

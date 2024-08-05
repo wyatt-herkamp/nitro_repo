@@ -9,9 +9,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument, trace, warn};
 use utils::PathUtils;
+use utoipa::ToSchema;
 
 use crate::*;
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct LocalConfig {
     pub path: PathBuf,
 }

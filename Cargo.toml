@@ -17,7 +17,7 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
-utoipa = { version = "5.0.0-alpha", features = ["chrono", "axum_extras"] }
+utoipa = { version = "5.0.0-alpha", features = ["chrono", "uuid"] }
 
 nr-core = { path = "crates/core" }
 nr-macros = { path = "crates/macros" }

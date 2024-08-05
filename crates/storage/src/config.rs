@@ -1,16 +1,17 @@
 use nr_core::{database::storage::DBStorage, ConfigTimeStamp};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{local::LocalConfig, StorageError};
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct StorageConfigInner {
     pub storage_name: String,
     pub storage_id: Uuid,
     pub storage_type: String,
     pub created_at: ConfigTimeStamp,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct StorageConfig {
     #[serde(flatten)]
     pub storage_config: StorageConfigInner,
@@ -51,7 +52,7 @@ macro_rules! storage_type_config {
             $variant:ident($config:ty)
         ),*
     ) => {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
         #[serde(tag = "type", content = "settings")]
         pub enum StorageTypeConfig {
             $(
