@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, FromRow, PgPool};
+use utoipa::ToSchema;
 
 use crate::user::permissions::UserPermissions;
 
@@ -90,7 +91,7 @@ impl UserType for UserModel {
         Ok(user)
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct UserSafeData {
     pub id: i32,
     pub name: String,
@@ -98,6 +99,7 @@ pub struct UserSafeData {
     pub email: String,
     pub require_password_change: bool,
     pub active: bool,
+    #[schema(value_type= UserPermissions)]
     pub permissions: Json<UserPermissions>,
     pub updated_at: DateTime,
     pub created_at: DateTime,
@@ -161,7 +163,7 @@ mod tests {
         );
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct NewUserRequest {
     pub name: String,
     pub username: String,

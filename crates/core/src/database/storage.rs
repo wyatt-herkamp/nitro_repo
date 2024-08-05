@@ -1,16 +1,20 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{prelude::FromRow, types::Json};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::DateTime;
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, ToSchema)]
 
 pub struct DBStorage {
     pub id: Uuid,
     pub storage_type: String,
     pub name: String,
+    /// The configuration for the storage
+    /// This is based on the storage type. It is stored as a JSON object.
+    ///  Requests should be JSON and the response will be JSON. Please refer to the storage type documentation for the configuration.
     pub config: Json<Value>,
     pub active: bool,
     pub created: DateTime,

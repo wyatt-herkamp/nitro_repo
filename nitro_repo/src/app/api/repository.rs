@@ -9,14 +9,22 @@ use nr_core::{
     user::permissions::HasPermissions,
 };
 use tracing::{error, instrument};
+use utoipa::OpenApi;
 use uuid::Uuid;
 
 use crate::{
     app::{authentication::Authentication, NitroRepo},
     error::internal_error::InternalError,
-    repository::Repository,
+    repository::{Repository, RepositoryTypeDescription},
 };
 mod config;
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(repository_types, list_repositories),
+    components(schemas(DBRepository, DBRepositoryWithStorageName, RepositoryTypeDescription))
+)]
+pub struct RepositoryAPI;
 pub fn repository_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_repositories))
@@ -25,6 +33,14 @@ pub fn repository_routes() -> axum::Router<NitroRepo> {
         .route("/types", axum::routing::get(repository_types))
         .merge(config::config_routes())
 }
+
+#[utoipa::path(
+    get,
+    path = "/types",
+    responses(
+        (status = 200, description = "Repository Types", body = [RepositoryTypeDescription]),
+    )
+)]
 #[instrument]
 pub async fn repository_types(State(site): State<NitroRepo>) -> Response {
     // TODO: Add Client side caching
@@ -37,7 +53,6 @@ pub async fn repository_types(State(site): State<NitroRepo>) -> Response {
     Json(types).into_response()
 }
 #[instrument]
-
 pub async fn get_repository(
     State(site): State<NitroRepo>,
     auth: Authentication,
@@ -88,8 +103,15 @@ pub async fn update_config(
     //TODO: Update the instance of the repository with the new config
     Ok(StatusCode::OK)
 }
-#[instrument]
 
+#[utoipa::path(
+    get,
+    path = "/list",
+    responses(
+        (status = 200, description = "List Repositories", body = [DBRepositoryWithStorageName]),
+    )
+)]
+#[instrument]
 pub async fn list_repositories(
     auth: Authentication,
     State(site): State<NitroRepo>,

@@ -1,9 +1,11 @@
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
 
-use axum::response::IntoResponse;
+use axum::response::{IntoResponse, Response};
 use base64::DecodeError;
+use http::StatusCode;
 use thiserror::Error;
+use tracing::error;
 
 use crate::app::authentication::session::SessionError;
 
@@ -40,9 +42,19 @@ impl From<argon2::password_hash::Error> for InternalError {
 
 impl IntoResponse for InternalError {
     fn into_response(self) -> axum::response::Response {
-        axum::http::Response::builder()
-            .status(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body("Internal Server Error".into())
-            .unwrap()
+        match self {
+            Self::SessionError(err) => err.into_response(),
+            other => {
+                error!("{}", other);
+                let message = format!(
+                    "Internal Service Error. Please Contact the System Admin. Error: {}",
+                    other
+                );
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(message.into())
+                    .unwrap()
+            }
+        }
     }
 }

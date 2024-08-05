@@ -10,7 +10,11 @@ license.workspace = true
 [dependencies]
 # Web
 axum = { version = "0.7", features = ["macros", "tokio"] }
-axum-extra = { version = "0.9", features = ["multipart", "cookie"] }
+axum-extra = { version = "0.9", features = [
+    "multipart",
+    "cookie",
+    "typed-header",
+] }
 tower = { version = "0.4", features = ["limit", "timeout"] }
 tower-http = { version = "0.5", features = ["full"] }
 tower-service = "0.3.2"
@@ -18,7 +22,10 @@ hyper.workspace = true
 hyper-util.workspace = true
 http.workspace = true
 http-body-util.workspace = true
-
+utoipa.workspace = true
+utoipa-scalar = { version = "0.2.0-alpha", features = [
+    "axum",
+], optional = true }
 async-trait = "0.1"
 # TLS
 tokio-rustls = "0.26"
@@ -88,6 +95,7 @@ opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.17", default-features = true }
 
 [features]
+default = ["utoipa-scalar"]
 builtin_frontend = []
 
 [lints]

@@ -8,13 +8,14 @@ use nr_storage::DynStorage;
 use serde::Serialize;
 use serde_json::Value;
 use thiserror::Error;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::app::NitroRepo;
 
 use super::DynRepository;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct RepositorySubTypeDescription {
     pub name: &'static str,
     pub description: &'static str,
@@ -22,7 +23,7 @@ pub struct RepositorySubTypeDescription {
     pub is_stable: bool,
     pub required_config: &'static [&'static str],
 }
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct RepositoryTypeDescription {
     pub type_name: &'static str,
     pub name: &'static str,

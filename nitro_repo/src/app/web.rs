@@ -5,28 +5,24 @@ use super::{api, config::NitroRepoConfig};
 
 use anyhow::Context;
 use axum::extract::DefaultBodyLimit;
-use axum::routing::post;
-use axum::{extract::Request, routing::get, Router};
+use axum::{extract::Request, Router};
 use futures_util::pin_mut;
 use http::{HeaderName, HeaderValue};
 use hyper::body::Incoming;
 use hyper_util::rt::{TokioExecutor, TokioIo};
 use rustls::ServerConfig;
 use rustls_pemfile::{certs, pkcs8_private_keys};
-use std::{
-    fs::File,
-    io::BufReader,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::net::SocketAddr;
+use std::{fs::File, io::BufReader, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio_rustls::TlsAcceptor;
-use tower_http::cors::{AllowMethods, Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
-use tower_http::set_header::{self, SetResponseHeader, SetResponseHeaderLayer};
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_service::Service;
 use tracing::{error, info, warn};
+
 const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
 const POWERED_BY_HEADER: HeaderName = HeaderName::from_static("x-powered-by");
 const POWERED_BY_VALUE: HeaderValue = HeaderValue::from_static("Nitro Repo");
@@ -52,12 +48,15 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         })
         .transpose()?;
 
-    let site = NitroRepo::new(site, security, sessions, database)
+    let site = NitroRepo::new(mode, site, security, sessions, database)
         .await
         .context("Unable to Initialize Website Core")?;
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
-    let app = Router::new().merge(api::api_routes()).with_state(site);
+    let app = Router::new()
+        .merge(api::api_routes())
+        .merge(super::open_api::build_router())
+        .with_state(site);
 
     let app = app
         .layer(SetResponseHeaderLayer::if_not_present(
@@ -68,11 +67,7 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
         .layer(DefaultBodyLimit::max(max_upload.get_as_bytes()))
         .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
-        .layer(
-            CorsLayer::new()
-                .allow_origin(Any)
-                .allow_methods(AllowMethods::any()),
-        )
+        .layer(CorsLayer::very_permissive())
         .layer(auth_layer);
     if let Some(tls) = tls {
         start_app_with_tls(tls, app, bind_address).await?;
@@ -85,9 +80,12 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
 async fn start_app(app: Router, bind: String, site: NitroRepo) -> anyhow::Result<()> {
     let listener = TcpListener::bind(bind).await?;
     tracing::debug!("listening on {}", listener.local_addr()?);
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal(site))
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal(site))
+    .await?;
     Ok(())
 }
 async fn start_app_with_tls(

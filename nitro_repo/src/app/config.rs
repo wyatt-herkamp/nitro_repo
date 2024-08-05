@@ -3,11 +3,12 @@ use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgConnectOptions;
 use std::env;
 use std::path::PathBuf;
+use strum::EnumIs;
 
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
 use super::logging::LoggingConfig;
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, EnumIs)]
 pub enum Mode {
     Debug,
     Release,

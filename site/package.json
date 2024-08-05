@@ -1,0 +1,52 @@
+{
+  "name": "nitro-repo-site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build --force",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "pinia": "^2.2.0",
+    "pinia-plugin-persistedstate": "^3.2.1",
+    "vue": "^3.4.35",
+    "vue-router": "^4.4.2",
+    "vue-meta": "3.0.0-alpha.10",
+    "@fortawesome/fontawesome-svg-core": "^6.6.0",
+    "@fortawesome/free-brands-svg-icons": "^6.6.0",
+    "@fortawesome/free-regular-svg-icons": "^6.6.0",
+    "@fortawesome/free-solid-svg-icons": "^6.6.0",
+    "@fortawesome/vue-fontawesome": "^3.0.8",
+    "@kyvg/vue3-notification": "^3.2.1",
+    "radix-vue": "^1.9.2",
+    "vanilla-jsoneditor": "^0.23.8",
+    "json-editor-vue": "^0.15",
+    "vue-final-modal": "^4.5.4",
+    "axios": "^1.7.3"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.10.4",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^22.1.0",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "@vitejs/plugin-vue-jsx": "^4.0.0",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/eslint-config-typescript": "^13.0.0",
+    "@vue/tsconfig": "^0.5.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.27.0",
+    "npm-run-all2": "^6.2.2",
+    "prettier": "^3.3.3",
+    "typescript": "~5.5.4",
+    "vite": "^5.3.5",
+    "vite-plugin-vue-devtools": "^7.3.7",
+    "vue-tsc": "^2.0.29",
+    "sass": "^1.77"
+  }
+}

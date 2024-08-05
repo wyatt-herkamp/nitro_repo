@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Default, ToSchema)]
 #[serde(default)]
 pub struct UserPermissions {
     pub admin: bool,
@@ -45,12 +46,12 @@ pub trait HasPermissions {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, ToSchema)]
 pub struct RepositoryPermission {
     pub repository: Uuid,
     pub actions: RepositoryActions,
 }
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default, ToSchema)]
 pub struct RepositoryActions {
     pub can_read: bool,
     pub can_write: bool,

@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{prelude::FromRow, types::Json, PgPool};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::repository::Visibility;
 
 use super::DateTime;
-#[derive(Debug, Clone, Serialize, FromRow)]
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
 
 pub struct DBRepositoryWithStorageName {
     pub id: Uuid,
@@ -31,7 +32,7 @@ impl DBRepositoryWithStorageName {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct DBRepository {
     pub id: Uuid,
     pub storage_id: Uuid,

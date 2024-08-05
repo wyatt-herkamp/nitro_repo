@@ -2,17 +2,11 @@ use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
-use authentication::session::{SessionManager, SessionManagerConfig};
+use authentication::session::{self, SessionManager, SessionManagerConfig};
 
-use axum::{
-    async_trait,
-    extract::{FromRef, FromRequestParts, State},
-    http::{request::Parts, StatusCode},
-    routing::get,
-    Router,
-};
-use config::{PostgresSettings, SecuritySettings, SiteSetting};
-use derive_more::{AsRef, Deref, From, Into};
+use axum::extract::State;
+use config::{Mode, PostgresSettings, SecuritySettings, SiteSetting};
+use derive_more::{derive::Deref, AsRef, Into};
 use http::Uri;
 use nr_core::{
     database::{storage::DBStorage, user::does_user_exist},
@@ -35,20 +29,23 @@ pub mod logging;
 use current_semver::current_semver;
 use sqlx::PgPool;
 use tracing::{info, instrument, warn};
+use utoipa::ToSchema;
 use uuid::Uuid;
-
+pub mod open_api;
 use crate::repository::{maven::MavenRepositoryType, DynRepository, DynRepositoryType};
 
 pub mod api;
 pub mod web;
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, ToSchema)]
 pub struct Instance {
     pub app_url: String,
     pub name: String,
     pub description: String,
     pub is_https: bool,
     pub is_installed: bool,
+    #[schema(value_type=String)]
     pub version: semver::Version,
+    pub mode: Mode,
 }
 
 #[derive(Debug)]
@@ -59,25 +56,14 @@ pub struct NitroRepoInner {
     pub storage_factories: Vec<DynStorageFactory>,
     pub repository_config_types: Vec<DynRepositoryConfigType>,
     pub repository_types: Vec<DynRepositoryType>,
-    pub session_manager: SessionManager,
     pub general_security_settings: SecuritySettings,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, AsRef, Deref)]
 pub struct NitroRepo {
+    #[deref(forward)]
     pub inner: Arc<NitroRepoInner>,
     pub database: PgPool,
-}
-impl AsRef<PgPool> for NitroRepo {
-    fn as_ref(&self) -> &PgPool {
-        &self.database
-    }
-}
-impl std::ops::Deref for NitroRepo {
-    type Target = NitroRepoInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+    pub session_manager: Arc<SessionManager>,
 }
 impl NitroRepo {
     async fn load_database(database: PostgresSettings) -> anyhow::Result<PgPool> {
@@ -91,6 +77,7 @@ impl NitroRepo {
         Ok(database)
     }
     pub async fn new(
+        mode: Mode,
         site: SiteSetting,
         security: SecuritySettings,
         session_manager: SessionManagerConfig,
@@ -99,6 +86,7 @@ impl NitroRepo {
         let database = Self::load_database(database).await?;
         let is_installed = does_user_exist(&database).await?;
         let instance = Instance {
+            mode,
             version: current_semver!(),
             app_url: site.app_url.unwrap_or_default(),
             is_installed,
@@ -107,7 +95,7 @@ impl NitroRepo {
             is_https: site.is_https,
         };
 
-        let session_manager = SessionManager::new(session_manager)?;
+        let session_manager = SessionManager::new(session_manager, mode)?;
 
         let factories = vec![LocalStorageFactory::default().into()];
         let nitro_repo = NitroRepoInner {
@@ -117,11 +105,13 @@ impl NitroRepo {
             storage_factories: factories,
             repository_config_types: config_types(),
             repository_types: repository_types(),
-            session_manager: session_manager,
             general_security_settings: security,
         };
+        let session_manager = Arc::new(session_manager);
+        SessionManager::start_cleaner(session_manager.clone());
         let nitro_repo = NitroRepo {
             inner: Arc::new(nitro_repo),
+            session_manager: session_manager,
             database: database,
         };
         nitro_repo.load_storages().await?;
@@ -164,6 +154,7 @@ impl NitroRepo {
     }
     #[instrument]
     pub async fn close(&self) {
+        self.session_manager.shutdown();
         //TODO: Close Repositories
         let storages = {
             let mut storages = self.storages.write();

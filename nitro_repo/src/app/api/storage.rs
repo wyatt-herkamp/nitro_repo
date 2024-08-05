@@ -9,17 +9,31 @@ use nr_core::database::storage::DBStorage;
 use nr_storage::{StorageConfig, StorageFactory, StorageTypeConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
+use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
 
 use crate::{app::NitroRepo, error::internal_error::InternalError};
+#[derive(OpenApi)]
+#[openapi(
+    paths(list_storages, new_storage, get_storage),
+    components(schemas(DBStorage, NewStorageRequest))
+)]
+pub struct StorageAPI;
 pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_storages))
-        .route("/new", axum::routing::post(new_storage))
+        .route("/new/:storage_type", axum::routing::post(new_storage))
         .route("/:id", axum::routing::get(get_storage))
 }
-#[instrument]
 
+#[utoipa::path(
+    get,
+    path = "/list",
+    responses(
+        (status = 200, description = "information about the Site", body = Instance)
+    )
+)]
+#[instrument]
 pub async fn list_storages(State(site): State<NitroRepo>) -> Result<Response, InternalError> {
     let storages = DBStorage::get_all(&site.database).await?;
     Ok(Response::builder()
@@ -63,13 +77,24 @@ impl IntoResponse for NewStorageResponse {
         }
     }
 }
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct NewStorageRequest {
     pub name: String,
     pub config: StorageTypeConfig,
 }
-#[instrument]
 
+#[utoipa::path(
+    post,
+    path = "/new/{storage_type}",
+    request_body = NewStorageRequest,
+    responses(
+        (status = 200, description = "information about the Site", body = DBStorage)
+    ),
+    params(
+        ("storage_type" = String, Path, description = "Storage Type"),
+    )
+)]
+#[instrument]
 pub async fn new_storage(
     State(site): State<NitroRepo>,
     Path(storage_type): Path<String>,
@@ -122,19 +147,25 @@ pub async fn new_storage(
 
     Ok(NewStorageResponse::Created(storage))
 }
+#[utoipa::path(
+    post,
+    path = "/{id}",
+    responses(
+        (status = 200, description = "Storage Configuration", body = DBStorage),
+        (status = 404, description = "Storage not found")
+    )
+)]
 #[instrument]
-
 pub async fn get_storage(
     Path(id): Path<Uuid>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
     let storage = DBStorage::get(id, &site.database).await?;
     match storage {
-        Some(storage) => Ok(Response::builder()
-            .status(200)
-            .header("Content-Type", "application/json")
-            .body(Body::from(serde_json::to_string(&storage).unwrap()))
-            .unwrap()),
+        Some(storage) => {
+            let response = Json(storage).into_response();
+            Ok(response)
+        }
         None => Ok(Response::builder()
             .status(404)
             .body("Storage not found".into())

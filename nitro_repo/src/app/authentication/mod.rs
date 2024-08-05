@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::ops::Deref;
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::async_trait;
@@ -17,6 +18,7 @@ use session::Session;
 use sqlx::PgPool;
 use thiserror::Error;
 use tracing::{error, warn};
+use utoipa::ToSchema;
 
 use crate::utils::headers::AuthorizationHeader;
 
@@ -49,6 +51,15 @@ pub enum Authentication {
     AuthToken(AuthToken, UserSafeData),
     /// Session Value from Cookie
     Session(Session, UserSafeData),
+}
+impl Deref for Authentication {
+    type Target = UserSafeData;
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Authentication::AuthToken(_, user) => user,
+            Authentication::Session(_, user) => user,
+        }
+    }
 }
 impl HasPermissions for Authentication {
     fn get_permissions(&self) -> &nr_core::user::permissions::UserPermissions {
@@ -98,7 +109,7 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Clone, From)]
+#[derive(Debug, Serialize, Clone, From, ToSchema)]
 pub struct MeWithSession {
     session: Session,
     user: UserSafeData,
