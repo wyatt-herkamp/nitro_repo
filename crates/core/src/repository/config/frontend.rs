@@ -91,7 +91,7 @@ impl schemars::JsonSchema for BadgeStyle {
     fn schema_id() -> std::borrow::Cow<'static, str> {
         std::borrow::Cow::Borrowed("BadgeStyle")
     }
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(_gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
         schemars::schema::Schema::Object(schemars::schema::SchemaObject {
             instance_type: Some(schemars::schema::InstanceType::String.into()),
             enum_values: Some(vec!["Flat".into(), "FlatSquare".into(), "Plastic".into()]),

@@ -25,7 +25,7 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
     /// Validate the config. If the config is invalid this function should return an error
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError>;
     /// If part of the config cannot be changed this function should return an error
-    fn validate_change(&self, old: Value, new: Value) -> Result<(), RepositoryConfigError> {
+    fn validate_change(&self, _old: Value, new: Value) -> Result<(), RepositoryConfigError> {
         self.validate_config(new)
     }
     /// Get the default config. Errors are usually a bug in the code
@@ -41,6 +41,7 @@ pub type DynRepositoryConfigType = Box<dyn RepositoryConfigType>;
 pub struct SecurityConfig {
     /// If the repository requires an auth token to be used
     pub must_use_auth_token_for_push: bool,
+    /// visibility of the repository
     pub visibility: Visibility,
 }
 #[derive(Debug, Clone, Copy, Default)]

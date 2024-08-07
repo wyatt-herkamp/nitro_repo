@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::{
     app::{authentication::Authentication, NitroRepo},
-    error::internal_error::InternalError,
+    error::InternalError,
     repository::{Repository, RepositoryTypeDescription},
 };
 mod config;
@@ -122,13 +122,11 @@ pub async fn list_repositories(
     auth: Authentication,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
-    if !auth.can_view_repositories() {
-        return Ok(Response::builder()
-            .status(StatusCode::FORBIDDEN)
-            .body("".into())
-            .unwrap());
-    }
-    let repositories = DBRepositoryWithStorageName::get_all(site.as_ref()).await?;
+    let repositories: Vec<_> = DBRepositoryWithStorageName::get_all(site.as_ref())
+        .await?
+        .into_iter()
+        .filter(|repo| auth.can_edit_repository(repo.id))
+        .collect();
     let response = Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "application/json")

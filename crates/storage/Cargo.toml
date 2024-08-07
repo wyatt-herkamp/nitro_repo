@@ -24,6 +24,11 @@ base64.workspace = true
 ahash.workspace = true
 http.workspace = true
 utoipa.workspace = true
+http-body.workspace = true
+tokio-util = "0.7"
+pin-project.workspace = true
+futures.workspace = true
 
+bytes.workspace = true
 [lints]
 workspace = true

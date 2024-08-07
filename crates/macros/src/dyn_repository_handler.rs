@@ -1,7 +1,5 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse::{Parse, ParseStream};
-use syn::spanned::Spanned;
 use syn::{Data, DeriveInput, Result};
 pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
     let DeriveInput { ident, data, .. } = derive_input;

@@ -6,7 +6,7 @@ use std::path::Path;
 use rust_embed::RustEmbed;
 use tracing::error;
 
-use crate::error::internal_error::InternalError;
+use crate::error::InternalError;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
@@ -50,11 +50,12 @@ impl Resources {
 pub mod headers;
 pub mod password {
     use argon2::{
-        password_hash::{Error, SaltString},
-        Argon2, PasswordHasher, PasswordVerifier,
+        password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     };
     use rand::rngs::OsRng;
     use tracing::error;
+
+    use crate::error::InternalError;
 
     pub fn encrypt_password(password: &str) -> Option<String> {
         let salt = SaltString::generate(&mut OsRng);
@@ -67,6 +68,20 @@ pub mod password {
             Err(err) => {
                 error!("Failed to hash password: {}", err);
                 None
+            }
+        }
+    }
+    pub fn verify_password(password: &str, hash: &str) -> Result<bool, InternalError> {
+        let argon2 = Argon2::default();
+        let password_hash = PasswordHash::new(hash)?;
+        match argon2.verify_password(password.as_bytes(), &password_hash) {
+            Ok(_) => Ok(true),
+            // Password is incorrect
+            Err(argon2::password_hash::Error::Password) => Ok(false),
+            // Some other error
+            Err(err) => {
+                error!("Failed to verify password: {}", err);
+                Err(InternalError::from(err))
             }
         }
     }

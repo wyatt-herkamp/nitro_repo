@@ -9,7 +9,7 @@ use tracing::instrument;
 
 use crate::{
     app::{authentication::Authentication, NitroRepo},
-    error::internal_error::InternalError,
+    error::InternalError,
 };
 pub fn config_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()

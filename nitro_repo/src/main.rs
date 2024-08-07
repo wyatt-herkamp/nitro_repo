@@ -8,7 +8,6 @@ use clap::{Parser, Subcommand};
 pub mod app;
 pub mod error;
 pub mod repository;
-pub mod request_error;
 pub mod utils;
 #[derive(Parser)]
 struct Command {

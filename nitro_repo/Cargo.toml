@@ -21,6 +21,7 @@ tower-service = "0.3.2"
 hyper.workspace = true
 hyper-util.workspace = true
 http.workspace = true
+mime.workspace = true
 http-body-util.workspace = true
 utoipa = { workspace = true, features = ["axum_extras"] }
 utoipa-scalar = { version = "0.2.0-alpha", features = [
@@ -43,7 +44,7 @@ toml.workspace = true
 futures.workspace = true
 rand = "0.8"
 rust-embed = { version = "8", features = ["interpolate-folder-path"] }
-argon2 = "0.5"
+argon2 = { version = "0.5.3", features = ["std"] }
 chrono.workspace = true
 regex = "1"
 futures-util.workspace = true
@@ -53,8 +54,7 @@ uuid.workspace = true
 sha2.workspace = true
 schemars.workspace = true
 reqwest.workspace = true
-bytes = "1"
-lock_freedom = { git = "https://github.com/wyatt-herkamp/lock_freedom.git" }
+bytes.workspace = true
 ahash.workspace = true
 parking_lot.workspace = true
 # Rust Internal
@@ -69,11 +69,11 @@ clap = { version = "4", features = ["derive"] }
 semver = { version = "1", features = ["std", "serde"] }
 
 # Staging
-tempfile = "3.3.0"
+tempfile = "3"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 zip = { version = "2" }
-current_semver = { git = "https://github.com/wyatt-herkamp/current_semver.git" }
+current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
 nr-storage.workspace = true

@@ -1,50 +1,17 @@
-use std::{
-    fmt::Debug,
-    fs::File,
-    io::{self, Read},
-    path::Path,
-    pin::Pin,
-};
+use std::{fmt::Debug, fs::File, io, path::Path};
 
 use crate::FileMeta;
 
-use super::{utils::MetadataUtils, FileHashes, SerdeMime};
+use super::{utils::MetadataUtils, FileHashes, SerdeMime, StorageFileReader};
 use chrono::{DateTime, FixedOffset, Local};
+
 use serde::{Deserialize, Serialize};
-use strum::AsRefStr;
+
+use strum::EnumIs;
 use tracing::{debug, instrument};
 
-/// StorageFileReader is a wrapper around different types of readers.
-#[derive(AsRefStr)]
-pub enum StorageFileReader {
-    /// File Readers will be the most common type of reader.
-    /// For this reason, we will give it a special variant. To prevent dynamic dispatch.
-    File(File),
-    /// A Sync Reader type. This won't be used. As local will just use the File variant.
-    Reader(Box<dyn std::io::Read + Send>),
-    /// An Async Reader type. This will be used for remote storage. Such as S3.
-    AsyncReader(Pin<Box<dyn tokio::io::AsyncRead + Send>>),
-}
-impl From<File> for StorageFileReader {
-    fn from(file: File) -> Self {
-        StorageFileReader::File(file)
-    }
-}
-impl StorageFileReader {
-    pub async fn read_to_end(self, buffer: &mut Vec<u8>) -> Result<usize, std::io::Error> {
-        use tokio::io::AsyncReadExt;
-        let size = match self {
-            StorageFileReader::File(mut file) => Read::read_to_end(&mut file, buffer)?,
-            StorageFileReader::Reader(mut reader) => Read::read_to_end(&mut reader, buffer)?,
-            StorageFileReader::AsyncReader(mut reader) => {
-                AsyncReadExt::read_to_end(&mut reader, buffer).await?
-            }
-        };
-        Ok(size)
-    }
-    // TODO: Implement Streaming data from the reader to the response
-}
 /// Two types of files can be returned from the storage. A Directory or a File.
+#[derive(EnumIs)]
 pub enum StorageFile {
     /// A Directory will contain a list of files.
     Directory {
@@ -57,6 +24,7 @@ pub enum StorageFile {
         content: StorageFileReader,
     },
 }
+
 impl Debug for StorageFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -65,13 +33,11 @@ impl Debug for StorageFile {
                 .field("meta", meta)
                 .field("files", files)
                 .finish(),
-            StorageFile::File { meta, content } => {
-                let read_type: &str = content.as_ref();
-                f.debug_struct("StorageFile::File")
-                    .field("meta", meta)
-                    .field("content", &read_type)
-                    .finish()
-            }
+            StorageFile::File { meta, content } => f
+                .debug_struct("StorageFile::File")
+                .field("meta", meta)
+                .field("content", &content)
+                .finish(),
         }
     }
 }
@@ -146,6 +112,14 @@ impl StorageFileMeta {
             created,
         })
     }
+    #[inline(always)]
+    pub fn is_file(&self) -> bool {
+        self.file_type.is_file()
+    }
+    #[inline(always)]
+    pub fn is_directory(&self) -> bool {
+        self.file_type.is_directory()
+    }
 }
 
 impl StorageFileMeta {
@@ -169,7 +143,7 @@ impl StorageFileMeta {
         }
     }
 }
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, EnumIs)]
 pub enum FileType {
     File {
         file_size: u64,

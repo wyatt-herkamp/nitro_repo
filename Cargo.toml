@@ -44,7 +44,7 @@ base64 = "0.22"
 # Error Handling
 thiserror = "1"
 anyhow = "1"
-schemars = "0.8.21"
+schemars = "0.8"
 reqwest = { version = "0.12", features = [
     "stream",
     "http2",
@@ -58,6 +58,9 @@ hyper = { version = "1", features = ["full"] }
 hyper-util = { version = "0.1" }
 http = "1.1"
 http-body-util = "0.1"
+http-body = "1"
+bytes = "1"
+pin-project = "1"
 [workspace.dependencies.sqlx]
 version = "0.8"
 default_features = false

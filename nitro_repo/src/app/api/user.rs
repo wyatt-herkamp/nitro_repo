@@ -1,9 +1,8 @@
 use std::net::SocketAddr;
 
 use axum::{
-    body::Body,
     extract::{ConnectInfo, State},
-    response::{self, IntoResponse, Response},
+    response::{IntoResponse, Response},
     Json,
 };
 use axum_extra::{headers::UserAgent, TypedHeader};
@@ -21,7 +20,7 @@ use crate::{
         },
         NitroRepo,
     },
-    error::internal_error::InternalError,
+    error::InternalError,
 };
 #[derive(OpenApi)]
 #[openapi(

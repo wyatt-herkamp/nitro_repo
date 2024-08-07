@@ -5,21 +5,34 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 use tracing::instrument;
 
-use crate::StorageError;
-
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct StoragePathComponent(String);
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct StoragePath(Vec<StoragePathComponent>);
+impl StoragePath {
+    pub fn has_extension(&self, extension: &str) -> bool {
+        self.0
+            .last()
+            .map(|v| v.0.ends_with(extension))
+            .unwrap_or(false)
+    }
+}
 impl From<StoragePath> for PathBuf {
     fn from(value: StoragePath) -> Self {
-        let path = value
-            .0
-            .iter()
-            .map(|v| v.0.as_str())
-            .collect::<Vec<&str>>()
-            .join("/");
-        PathBuf::from(path)
+        let mut path = PathBuf::new();
+        for component in value.0 {
+            path.push(component.0);
+        }
+        path
+    }
+}
+impl From<&StoragePath> for PathBuf {
+    fn from(value: &StoragePath) -> Self {
+        let mut path = PathBuf::new();
+        for component in &value.0 {
+            path.push(&component.0);
+        }
+        path
     }
 }
 impl Display for StoragePath {

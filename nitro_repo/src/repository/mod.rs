@@ -1,6 +1,9 @@
 #![allow(unused_variables)]
 
-use bytes::Bytes;
+use axum::{
+    body::Body,
+    response::{IntoResponse, Response},
+};
 
 use ::http::StatusCode;
 use http::{RepoResponse, RepositoryRequest};
@@ -11,6 +14,9 @@ pub mod http;
 pub mod maven;
 mod repo_type;
 pub use repo_type::*;
+use thiserror::Error;
+
+use crate::error::BadRequestErrors;
 pub trait Repository: Send + Sync + Clone {
     fn get_storage(&self) -> DynStorage;
     /// The Repository type. This is used to identify the Repository type in the database
@@ -24,9 +30,9 @@ pub trait Repository: Send + Sync + Clone {
         &self,
         request: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::new_from_string(
-            format!("Get is not implemented for this type: {}", self.get_type()),
-            StatusCode::IM_A_TEAPOT,
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
         ))
     }
     /// Handles a Post Request to a Repo
@@ -34,9 +40,9 @@ pub trait Repository: Send + Sync + Clone {
         &self,
         request: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::new_from_string(
-            format!("Post is not implemented for this type: {}", self.get_type()),
-            StatusCode::IM_A_TEAPOT,
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
         ))
     }
     /// Handles a PUT Request to a Repo
@@ -44,9 +50,9 @@ pub trait Repository: Send + Sync + Clone {
         &self,
         request: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::new_from_string(
-            format!("Head is not implemented for this type: {}", self.get_type()),
-            StatusCode::IM_A_TEAPOT,
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
         ))
     }
     /// Handles a PATCH Request to a Repo
@@ -54,12 +60,18 @@ pub trait Repository: Send + Sync + Clone {
         &self,
         request: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::new_from_string(
-            format!(
-                "Patch is not implemented for this type: {}",
-                self.get_type()
-            ),
-            StatusCode::IM_A_TEAPOT,
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
+        ))
+    }
+    async fn handle_delete(
+        &self,
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
         ))
     }
     /// Handles a HAPIResponseAD Request to a Repo
@@ -67,15 +79,60 @@ pub trait Repository: Send + Sync + Clone {
         &self,
         request: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::new_from_string(
-            format!("Head is not implemented for this type: {}", self.get_type()),
-            StatusCode::IM_A_TEAPOT,
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
+        ))
+    }
+    async fn handle_other(
+        &self,
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
         ))
     }
 }
+
 #[derive(Debug, Clone, DynRepositoryHandler)]
 pub enum DynRepository {
     Maven(maven::MavenRepository),
 }
-#[derive(Debug)]
-pub enum RepositoryHandlerError {}
+#[derive(Debug, Error)]
+pub enum RepositoryHandlerError {
+    #[error("Database Error: {0}")]
+    SQLXError(#[from] sqlx::Error),
+    #[error("Storage Error: {0}")]
+    StorageError(#[from] nr_storage::StorageError),
+    #[error("Unexpected Missing Body")]
+    MissingBody,
+    #[error("Invalid JSON: {0}")]
+    InvalidJson(#[from] serde_json::Error),
+    #[error("Bad Request: {0}")]
+    BadRequest(#[from] BadRequestErrors),
+    #[error("Maven Repository Error: {0}")]
+    MavenError(#[from] maven::MavenError),
+}
+impl IntoResponse for RepositoryHandlerError {
+    fn into_response(self) -> Response {
+        match self {
+            RepositoryHandlerError::StorageError(error) => Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Body::from(format!(
+                    "Error from Internal Storage System. Please contact your admin \n {}",
+                    error
+                )))
+                .unwrap(),
+            RepositoryHandlerError::MavenError(error) => error.into_response(),
+            RepositoryHandlerError::BadRequest(error) => error.into_response(),
+            other => Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Body::from(format!(
+                    "Internal Service Error  Please contact your admin \n {}",
+                    other
+                )))
+                .unwrap(),
+        }
+    }
+}

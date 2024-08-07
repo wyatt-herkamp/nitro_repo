@@ -12,7 +12,7 @@ use http::request::Parts;
 use http::Response;
 use nr_core::database::user::auth_token::AuthToken;
 use nr_core::database::user::{UserModel, UserSafeData, UserType};
-use nr_core::user::permissions::HasPermissions;
+use nr_core::user::permissions::{HasPermissions, UserPermissions};
 use serde::Serialize;
 use session::Session;
 use sqlx::PgPool;
@@ -62,10 +62,10 @@ impl Deref for Authentication {
     }
 }
 impl HasPermissions for Authentication {
-    fn get_permissions(&self) -> &nr_core::user::permissions::UserPermissions {
+    fn get_permissions(&self) -> Option<&UserPermissions> {
         match self {
-            Authentication::AuthToken(_, user) => &user.permissions,
-            Authentication::Session(_, user) => &user.permissions,
+            Authentication::AuthToken(_, user) => user.get_permissions(),
+            Authentication::Session(_, user) => user.get_permissions(),
         }
     }
 }
@@ -119,9 +119,47 @@ pub struct MeWithSession {
 pub enum RepositoryAuthentication {
     AuthToken(AuthToken, UserSafeData),
     Session(Session, UserSafeData),
-    Basic(UserSafeData),
+    Basic(UserSafeData, Option<AuthToken>),
     Other(String, String),
     NoIdentification,
+}
+impl HasPermissions for RepositoryAuthentication {
+    fn get_permissions(&self) -> Option<&UserPermissions> {
+        match self {
+            RepositoryAuthentication::AuthToken(_, user) => user.get_permissions(),
+            RepositoryAuthentication::Session(_, user) => user.get_permissions(),
+            RepositoryAuthentication::Basic(user, _) => user.get_permissions(),
+            _ => None,
+        }
+    }
+}
+impl RepositoryAuthentication {
+    pub fn get_user(&self) -> Option<&UserSafeData> {
+        match self {
+            RepositoryAuthentication::AuthToken(_, user) => Some(user),
+            RepositoryAuthentication::Session(_, user) => Some(user),
+            RepositoryAuthentication::Basic(user, _) => Some(user),
+            _ => None,
+        }
+    }
+    pub fn has_auth_token(&self) -> bool {
+        match self {
+            RepositoryAuthentication::AuthToken(..) => true,
+            RepositoryAuthentication::Basic(_, token) => token.is_some(),
+            _ => false,
+        }
+    }
+    pub fn check_permissions<F>(&self, f: F) -> bool
+    where
+        F: FnOnce(&UserPermissions) -> bool,
+    {
+        match self {
+            RepositoryAuthentication::AuthToken(_, user) => f(&user.permissions),
+            RepositoryAuthentication::Session(_, user) => f(&user.permissions),
+            RepositoryAuthentication::Basic(user, _) => f(&user.permissions),
+            _ => false,
+        }
+    }
 }
 #[async_trait]
 impl<S> FromRequestParts<S> for RepositoryAuthentication
@@ -157,7 +195,7 @@ where
             AuthenticationRaw::Basic { username, password } => {
                 let user = verify_login(username, password, &repo.database).await?;
                 // TODO: Check if it is an API Token and not a username/password
-                RepositoryAuthentication::Basic(user)
+                RepositoryAuthentication::Basic(user, None)
             }
         };
         Ok(auth)

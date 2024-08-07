@@ -35,7 +35,7 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         mode,
         sessions,
         tls,
-        email,
+
         site,
         security,
         ..
@@ -124,7 +124,6 @@ async fn start_app_with_tls(
             }
         });
     }
-    Ok(())
 }
 
 async fn shutdown_signal(website: NitroRepo) {

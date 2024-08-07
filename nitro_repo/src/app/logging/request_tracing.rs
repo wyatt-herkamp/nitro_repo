@@ -9,10 +9,7 @@ use tower_http::{
     classify::{ServerErrorsAsFailures, SharedClassifier},
     trace::{DefaultOnBodyChunk, MakeSpan, OnFailure, OnRequest, OnResponse, TraceLayer},
 };
-use tracing::{
-    field::{self, Empty},
-    info_span,
-};
+use tracing::{field::Empty, info_span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[allow(clippy::declare_interior_mutable_const)]

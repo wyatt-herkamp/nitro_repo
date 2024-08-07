@@ -1,4 +1,4 @@
-use axum::{extract::State, response::IntoResponse, Json};
+use axum::{extract::State, Json};
 use http::StatusCode;
 use nr_core::{database::user::NewUserRequest, user::permissions::UserPermissions};
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 pub mod repository;
 pub mod storage;
 pub mod user;
-use crate::{error::internal_error::InternalError, utils::password::encrypt_password};
+use crate::{error::InternalError, utils::password::encrypt_password};
 
 use super::{Instance, NitroRepo, NitroRepoState};
 pub fn api_routes() -> axum::Router<NitroRepo> {

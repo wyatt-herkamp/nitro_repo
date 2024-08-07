@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, FromRow, PgPool};
 use utoipa::ToSchema;
 
-use crate::user::permissions::UserPermissions;
+use crate::user::permissions::{HasPermissions, UserPermissions};
 
 use super::DateTime;
 pub mod auth_token;
@@ -123,6 +123,11 @@ impl UserType for UserSafeData {
         .fetch_optional(database)
         .await?;
         Ok(user)
+    }
+}
+impl HasPermissions for UserSafeData {
+    fn get_permissions(&self) -> Option<&UserPermissions> {
+        Some(self.permissions.as_ref())
     }
 }
 impl From<UserModel> for UserSafeData {

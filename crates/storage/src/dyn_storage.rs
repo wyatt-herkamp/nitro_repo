@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     local::{LocalStorage, LocalStorageFactory},
-    FileContent, Storage, StorageError, StorageFactory,
+    FileContent, Storage, StorageError, StorageFactory, StoragePath, StorageTypeConfig,
 };
 #[derive(Debug, Clone)]
 pub enum DynStorage {
@@ -28,7 +28,7 @@ impl Storage for DynStorage {
         &self,
         repository: Uuid,
         file: FileContent,
-        location: impl Into<crate::StoragePath>,
+        location: &StoragePath,
     ) -> Result<(usize, bool), StorageError> {
         match self {
             DynStorage::Local(storage) => storage.save_file(repository, file, location).await,
@@ -38,7 +38,7 @@ impl Storage for DynStorage {
     async fn delete_file(
         &self,
         repository: Uuid,
-        location: impl Into<crate::StoragePath>,
+        location: &StoragePath,
     ) -> Result<(), StorageError> {
         match self {
             DynStorage::Local(storage) => storage.delete_file(repository, location).await,
@@ -48,7 +48,7 @@ impl Storage for DynStorage {
     async fn get_file_information(
         &self,
         repository: Uuid,
-        location: impl Into<crate::StoragePath>,
+        location: &StoragePath,
     ) -> Result<Option<crate::StorageFileMeta>, StorageError> {
         match self {
             DynStorage::Local(storage) => storage.get_file_information(repository, location).await,
@@ -58,17 +58,14 @@ impl Storage for DynStorage {
     async fn open_file(
         &self,
         repository: Uuid,
-        location: impl Into<crate::StoragePath>,
+        location: &StoragePath,
     ) -> Result<Option<crate::StorageFile>, StorageError> {
         match self {
             DynStorage::Local(storage) => storage.open_file(repository, location).await,
         }
     }
 
-    async fn validate_config_change(
-        &self,
-        config: crate::StorageTypeConfig,
-    ) -> Result<(), StorageError> {
+    async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError> {
         match self {
             DynStorage::Local(storage) => storage.validate_config_change(config).await,
         }

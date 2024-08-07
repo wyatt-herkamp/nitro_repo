@@ -1,6 +1,8 @@
 use ahash::HashMap;
+use axum::response::IntoResponse;
 use futures::future::LocalBoxFuture;
 use hosted::MavenHosted;
+use http::StatusCode;
 use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
@@ -107,4 +109,28 @@ impl RepositoryType for MavenRepositoryType {
 pub enum MavenRepository {
     Hosted(MavenHosted),
     Proxy(MavenProxy),
+}
+#[derive(Debug, thiserror::Error)]
+pub enum MavenError {
+    #[error("Error with processing Maven request: {0}")]
+    MavenRS(#[from] maven_rs::Error),
+}
+impl IntoResponse for MavenError {
+    fn into_response(self) -> axum::http::Response<axum::body::Body> {
+        match self {
+            MavenError::MavenRS(maven_rs::Error::XMLDeserialize(err)) => {
+                axum::http::Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(axum::body::Body::from(format!(
+                        "XML Deserialize Error: {}",
+                        err
+                    )))
+                    .unwrap()
+            }
+            MavenError::MavenRS(e) => axum::http::Response::builder()
+                .status(500)
+                .body(axum::body::Body::from(format!("Maven Error: {}", e)))
+                .unwrap(),
+        }
+    }
 }

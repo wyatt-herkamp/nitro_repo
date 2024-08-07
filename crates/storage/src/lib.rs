@@ -32,11 +32,11 @@ pub trait Storage: Send + Sync {
         &self,
         repository: Uuid,
         file: FileContent,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<(usize, bool), StorageError>;
     async fn put_file_meta(
         _repository: Uuid,
-        _location: impl Into<StoragePath>,
+        _location: &StoragePath,
         _key: impl Into<String>,
         _value: impl Into<Value>,
     ) -> Result<(), StorageError> {
@@ -45,7 +45,7 @@ pub trait Storage: Send + Sync {
     }
     async fn get_file_meta(
         _repository: Uuid,
-        _location: impl Into<StoragePath>,
+        _location: &StoragePath,
         _key: impl Into<String>,
     ) -> Result<Option<Value>, StorageError> {
         warn!("get_file_meta is not implemented for this storage");
@@ -55,14 +55,14 @@ pub trait Storage: Send + Sync {
     async fn delete_file(
         &self,
         repository: Uuid,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<(), StorageError>;
 
     /// Returns Information about the file
     async fn get_file_information(
         &self,
         repository: Uuid,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<Option<StorageFileMeta>, StorageError>;
 
     /// Gets the File Information and Content
@@ -72,7 +72,7 @@ pub trait Storage: Send + Sync {
     async fn open_file(
         &self,
         repository: Uuid,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<Option<StorageFile>, StorageError>;
 
     async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError>;

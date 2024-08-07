@@ -1,7 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::spanned::Spanned;
 use syn::Result;
 use syn::{DeriveInput, Ident, LitStr};
 mod keywords {

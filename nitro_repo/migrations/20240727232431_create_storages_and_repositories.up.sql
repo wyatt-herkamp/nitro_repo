@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS storages (
 CREATE TABLE IF NOT EXISTS repositories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     storage_id UUID NOT NULL,
-    name TEXT NOT NULL UNIQUE COLLATE ignoreCase,
+    name TEXT NOT NULL COLLATE ignoreCase,
     repository_type TEXT NOT NULL,
     repository_subtype TEXT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,

@@ -5,12 +5,14 @@ mod path;
 pub(crate) mod utils;
 
 pub use content::*;
-use derive_more::{From, Into};
+use derive_more::{derive::Deref, From, Into};
 pub use file::*;
 pub use file_meta::*;
 pub use path::*;
+mod file_reader;
+pub use file_reader::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[derive(Debug, Clone, From, Into)]
+#[derive(Debug, Clone, From, Into, Deref)]
 pub struct SerdeMime(pub mime::Mime);
 
 impl Serialize for SerdeMime {

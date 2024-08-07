@@ -12,7 +12,7 @@ use tracing::{error, instrument};
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
 
-use crate::{app::NitroRepo, error::internal_error::InternalError};
+use crate::{app::NitroRepo, error::InternalError};
 #[derive(OpenApi)]
 #[openapi(
     paths(list_storages, new_storage, get_storage),

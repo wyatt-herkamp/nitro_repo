@@ -32,8 +32,8 @@ impl Deref for LocalStorage {
 }
 impl LocalStorageInner {
     #[instrument(skip(location))]
-    pub fn get_path(&self, repository: &Uuid, location: impl Into<StoragePath>) -> PathBuf {
-        let location: PathBuf = location.into().into();
+    pub fn get_path(&self, repository: &Uuid, location: &StoragePath) -> PathBuf {
+        let location: PathBuf = location.into();
         let path = self.config.path.join(repository.to_string());
         path.join(location)
     }
@@ -43,7 +43,7 @@ impl LocalStorageInner {
         let file = fs::File::open(&path)?;
         Ok(StorageFile::File {
             meta,
-            content: StorageFileReader::File(file),
+            content: StorageFileReader::from(file),
         })
     }
     #[instrument]
@@ -82,7 +82,7 @@ impl Storage for LocalStorage {
         &self,
         repository: Uuid,
         content: FileContent,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<(usize, bool), StorageError> {
         let path = self.get_path(&repository, location);
         info!(?path, "Saving File");
@@ -111,7 +111,7 @@ impl Storage for LocalStorage {
     async fn delete_file(
         &self,
         repository: Uuid,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<(), StorageError> {
         let path = self.get_path(&repository, location);
         info!(?path, "Deleting File");
@@ -128,7 +128,7 @@ impl Storage for LocalStorage {
     async fn get_file_information(
         &self,
         repository: Uuid,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<Option<StorageFileMeta>, StorageError> {
         let path = self.get_path(&repository, location);
         if !path.exists() {
@@ -142,7 +142,7 @@ impl Storage for LocalStorage {
     async fn open_file(
         &self,
         repository: Uuid,
-        location: impl Into<StoragePath>,
+        location: &StoragePath,
     ) -> Result<Option<StorageFile>, StorageError> {
         let path = self.get_path(&repository, location);
         if !path.exists() {
@@ -180,7 +180,7 @@ impl StorageFactory for LocalStorageFactory {
         "Local"
     }
 
-    async fn test_storage_config(&self, config: StorageTypeConfig) -> Result<(), StorageError> {
+    async fn test_storage_config(&self, _config: StorageTypeConfig) -> Result<(), StorageError> {
         //TODO: Ensure that the path is valid and writable
         Ok(())
     }

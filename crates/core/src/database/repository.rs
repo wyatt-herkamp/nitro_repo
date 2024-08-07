@@ -4,8 +4,6 @@ use sqlx::{prelude::FromRow, types::Json, PgPool};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::repository::Visibility;
-
 use super::DateTime;
 #[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
 

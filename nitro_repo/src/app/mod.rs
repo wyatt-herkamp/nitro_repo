@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
-use authentication::session::{self, SessionManager, SessionManagerConfig};
+use authentication::session::{SessionManager, SessionManagerConfig};
 
 use axum::extract::State;
 use config::{Mode, PostgresSettings, SecuritySettings, SiteSetting};
@@ -28,13 +28,13 @@ pub mod email;
 pub mod logging;
 use current_semver::current_semver;
 use sqlx::PgPool;
-use tracing::{info, instrument, warn};
+use tracing::{debug, info, instrument, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{maven::MavenRepositoryType, DynRepository, DynRepositoryType};
-
 pub mod api;
+pub mod responses;
 pub mod web;
 #[derive(Debug, Serialize, Clone, ToSchema)]
 pub struct Instance {
@@ -47,12 +47,48 @@ pub struct Instance {
     pub version: semver::Version,
     pub mode: Mode,
 }
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct RepositoryStorageName {
+    pub storage_name: String,
+    pub repository_name: String,
+}
 
+impl RepositoryStorageName {
+    pub async fn query_db(&self, database: &PgPool) -> Result<Option<Uuid>, sqlx::Error> {
+        let query: Option<Uuid> = sqlx::query_scalar(
+            r#"SELECT repositories.id FROM repositories LEFT JOIN storages
+                    ON storages.id = repositories.storage_id
+                    WHERE storages.name = ? AND repositories.name = ?"#,
+        )
+        .bind(&self.storage_name)
+        .bind(&self.repository_name)
+        .fetch_optional(database)
+        .await?;
+        Ok(query)
+    }
+}
+impl From<(&str, &str)> for RepositoryStorageName {
+    fn from((storage_name, repository_name): (&str, &str)) -> Self {
+        Self {
+            storage_name: storage_name.to_lowercase(),
+            repository_name: repository_name.to_lowercase(),
+        }
+    }
+}
+impl From<(String, String)> for RepositoryStorageName {
+    fn from((storage_name, repository_name): (String, String)) -> Self {
+        Self {
+            storage_name: storage_name.to_lowercase(),
+            repository_name: repository_name.to_lowercase(),
+        }
+    }
+}
 #[derive(Debug)]
 pub struct NitroRepoInner {
     pub instance: Mutex<Instance>,
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
+    pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
     pub storage_factories: Vec<DynStorageFactory>,
     pub repository_config_types: Vec<DynRepositoryConfigType>,
     pub repository_types: Vec<DynRepositoryType>,
@@ -105,6 +141,7 @@ impl NitroRepo {
             storage_factories: factories,
             repository_config_types: config_types(),
             repository_types: repository_types(),
+            name_lookup_table: Mutex::new(HashMap::new()),
             general_security_settings: security,
         };
         let session_manager = Arc::new(session_manager);
@@ -196,6 +233,56 @@ impl NitroRepo {
             };
             instance.app_url = format!("{}://{}", schema, host);
         }
+    }
+    /// Checks if a repository name and storage pair are found in the lookup table. If not queries the database.
+    /// If found in the database, adds the pair to the lookup table
+    ///
+    /// ## Notes
+    /// [RepositoryStorageName] is case insensitive. It will be converted to lowercase before being queried. Database queries are case insensitive
+    #[instrument(skip(name))]
+    pub async fn get_repository_from_names(
+        &self,
+        name: impl Into<RepositoryStorageName>,
+    ) -> Result<Option<DynRepository>, sqlx::Error> {
+        let name = name.into();
+        let id = {
+            let lookup_table = self.inner.name_lookup_table.lock();
+            lookup_table.get(&name).cloned()
+        };
+        if let Some(id) = id {
+            debug!(?id, ?name, "Found id in lookup table");
+            let repository: Option<DynRepository> = self.get_repository(id);
+            if repository.is_none() {
+                warn!(?name, "Unregistered database id found in lookup table");
+                {
+                    let mut lookup_table = self.inner.name_lookup_table.lock();
+                    lookup_table.remove(&name);
+                }
+                return Ok(repository);
+            }
+            return Ok(repository);
+        }
+        debug!(
+            ?name,
+            "Name not found in lookup table. Attempting to query database"
+        );
+        let id = name.query_db(&self.database).await?;
+        if let Some(id) = id {
+            debug!(?id, ?name, "Found id in database");
+            let repository: Option<DynRepository> = self.get_repository(id);
+            if repository.is_none() {
+                warn!(?name, "Unregistered database id found. Repositories in database do not match loaded repositories");
+                // TODO: Reload Everything
+                return Ok(repository);
+            }
+            // Add the name to the lookup table
+            let mut lookup_table = self.inner.name_lookup_table.lock();
+            lookup_table.insert(name, id);
+
+            return Ok(repository);
+        }
+        // No repository found in the database
+        Ok(None)
     }
 }
 pub type NitroRepoState = State<NitroRepo>;

@@ -1,38 +1,13 @@
-use axum::http::HeaderMap;
-use http::{
-    header::{AsHeaderName, ToStrError},
-    HeaderValue,
-};
+use http::{header::ToStrError, HeaderValue};
 use nr_core::utils::base64_utils;
-use strum::Display;
-use thiserror::Error;
 use tracing::error;
 
-use crate::error::internal_error::InternalError;
+use crate::error::{BadRequestErrors, InvalidAuthorizationHeader};
 
-pub fn get_accept(header_map: &HeaderMap) -> Result<Option<String>, InternalError> {
-    let Some(header_value) = header_map.get("accept") else {
-        return Ok(None);
-    };
-
-    let accept = header_value
-        .to_str()
-        .map(|x| x.to_string())
-        .inspect_err(|err| {
-            error!("Failed to convert accept header to string: {}", err);
-        })
-        .ok();
-    Ok(accept)
-}
-#[derive(Debug, Display)]
-pub enum InvalidStringOrOtherError<T> {
-    InvalidString(ToStrError),
-    Other(T),
-}
 pub trait HeaderValueExt {
     fn to_string(&self) -> Result<String, ToStrError>;
     fn to_string_as_option(&self) -> Option<String>;
-    fn parsed<T: TryFrom<String>>(&self) -> Result<T, InvalidStringOrOtherError<T::Error>>;
+    fn parsed<T: TryFrom<String, Error = BadRequestErrors>>(&self) -> Result<T, BadRequestErrors>;
 }
 impl HeaderValueExt for HeaderValue {
     fn to_string(&self) -> Result<String, ToStrError> {
@@ -48,22 +23,12 @@ impl HeaderValueExt for HeaderValue {
             .ok()
     }
 
-    fn parsed<T: TryFrom<String>>(&self) -> Result<T, InvalidStringOrOtherError<T::Error>> {
-        let value = self
-            .to_string()
-            .map_err(InvalidStringOrOtherError::InvalidString)?;
-        T::try_from(value).map_err(InvalidStringOrOtherError::Other)
+    fn parsed<T: TryFrom<String, Error = BadRequestErrors>>(&self) -> Result<T, BadRequestErrors> {
+        let value = self.to_string()?;
+        T::try_from(value)
     }
 }
-#[derive(Debug, Error)]
-pub enum InvalidAuthorizationHeader {
-    #[error("Invalid Authorization  Schema")]
-    InvalidScheme,
-    #[error("Invalid Authorization Value")]
-    InvalidValue,
-    #[error("Invalid Authorization Format. Expected: (Schema Type) (Value)")]
-    InvalidFormat,
-}
+
 #[derive(Debug)]
 pub enum AuthorizationHeader {
     Basic { username: String, password: String },
@@ -72,20 +37,19 @@ pub enum AuthorizationHeader {
     Other { scheme: String, value: String },
 }
 impl TryFrom<String> for AuthorizationHeader {
-    type Error = InvalidAuthorizationHeader;
+    type Error = BadRequestErrors;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let parts: Vec<&str> = value.split(' ').collect();
         if parts.len() != 2 {
-            return Err(InvalidAuthorizationHeader::InvalidFormat);
+            return Err(BadRequestErrors::InvalidAuthorizationHeader(
+                InvalidAuthorizationHeader::InvalidFormat,
+            ));
         }
         let scheme = parts[0];
         let value = parts[1];
         match scheme {
-            "Basic" => parse_basic_header(value).map_err(|err| {
-                error!("Failed to parse basic header: {}", err);
-                InvalidAuthorizationHeader::InvalidValue
-            }),
+            "Basic" => parse_basic_header(value),
             "Bearer" => Ok(AuthorizationHeader::Bearer {
                 token: value.to_owned(),
             }),
@@ -99,10 +63,10 @@ impl TryFrom<String> for AuthorizationHeader {
         }
     }
 }
-fn parse_basic_header(header: &str) -> Result<AuthorizationHeader, InvalidAuthorizationHeader> {
+fn parse_basic_header(header: &str) -> Result<AuthorizationHeader, BadRequestErrors> {
     let parts: Vec<&str> = header.split(' ').collect();
     if parts.len() != 2 {
-        return Err(InvalidAuthorizationHeader::InvalidFormat);
+        return Err(InvalidAuthorizationHeader::InvalidFormat.into());
     }
     let value = parts[1];
     let decoded = base64_utils::decode(value).map_err(|err| {
@@ -115,7 +79,7 @@ fn parse_basic_header(header: &str) -> Result<AuthorizationHeader, InvalidAuthor
     })?;
     let parts: Vec<&str> = decoded.split(':').collect();
     if parts.len() != 2 {
-        return Err(InvalidAuthorizationHeader::InvalidValue);
+        return Err(InvalidAuthorizationHeader::InvalidBasicValue.into());
     }
     let username = parts[0];
     let password = parts[1];
@@ -123,4 +87,22 @@ fn parse_basic_header(header: &str) -> Result<AuthorizationHeader, InvalidAuthor
         username: username.to_owned(),
         password: password.to_owned(),
     })
+}
+pub mod date_time {
+    use chrono::FixedOffset;
+    use http::HeaderValue;
+
+    use crate::error::BadRequestErrors;
+
+    pub fn date_time_for_header(date_time: &chrono::DateTime<FixedOffset>) -> HeaderValue {
+        let date_time = date_time.with_timezone(&chrono::Utc);
+        let date_time = date_time.format("%a, %d %b %Y %H:%M:%S GMT").to_string();
+        HeaderValue::from_str(date_time.as_str()).expect("Failed to convert date time to header")
+    }
+    pub fn parse_date_time(
+        header_value: &HeaderValue,
+    ) -> Result<chrono::DateTime<FixedOffset>, BadRequestErrors> {
+        let date_time = header_value.to_str()?;
+        chrono::DateTime::parse_from_rfc2822(date_time).map_err(BadRequestErrors::from)
+    }
 }
