@@ -40,7 +40,7 @@ pub struct InstallRequest {
     request_body = InstallRequest,
     path = "/api/install",
     responses(
-        (status = 200, description = "Site is now installed"),
+        (status = 204, description = "Site is now installed"),
         (status = 404, description = "Site is already installed"),
     )
 )]
@@ -71,5 +71,5 @@ pub async fn install(
         let mut instance = site.instance.lock();
         instance.is_installed = true;
     }
-    return Ok(StatusCode::OK);
+    return Ok(StatusCode::NO_CONTENT);
 }

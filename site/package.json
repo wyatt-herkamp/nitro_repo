@@ -13,10 +13,10 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "pinia": "^2.2.0",
+    "pinia": "^2.2.1",
     "pinia-plugin-persistedstate": "^3.2.1",
-    "vue": "^3.4.35",
-    "vue-router": "^4.4.2",
+    "vue": "^3.4.37",
+    "vue-router": "^4.4.3",
     "vue-meta": "3.0.0-alpha.10",
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-brands-svg-icons": "^6.6.0",
@@ -24,7 +24,6 @@
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "@kyvg/vue3-notification": "^3.2.1",
-    "radix-vue": "^1.9.2",
     "vanilla-jsoneditor": "^0.23.8",
     "json-editor-vue": "^0.15",
     "vue-final-modal": "^4.5.4",
@@ -44,7 +43,7 @@
     "npm-run-all2": "^6.2.2",
     "prettier": "^3.3.3",
     "typescript": "~5.5.4",
-    "vite": "^5.3.5",
+    "vite": "^5.4.0",
     "vite-plugin-vue-devtools": "^7.3.7",
     "vue-tsc": "^2.0.29",
     "sass": "^1.77"

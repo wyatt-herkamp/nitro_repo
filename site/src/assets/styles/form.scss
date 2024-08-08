@@ -1,0 +1,56 @@
+@import 'theme';
+
+label {
+  font-size: medium;
+}
+input {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid $secondary;
+  border-radius: 0.5rem;
+  background-color: $secondary-90;
+  color: $text;
+  font-weight: bold;
+  &::placeholder {
+    color: $text-50;
+    font-weight: bold;
+  }
+  &:focus {
+    outline: none !important;
+    border: 2px solid $accent;
+  }
+}
+form {
+  button {
+    margin-top: 0.5rem;
+  }
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  border: 2px solid $secondary-30;
+  -webkit-text-fill-color: $text;
+  -webkit-box-shadow: 0 0 0px 1000px $secondary-50 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+input[data-ok='error'] {
+  border: 1px solid red;
+}
+input[data-ok='ok'] {
+  border: 1px solid green;
+}
+input[data-ok='warn'] {
+  border: 1px solid yellow;
+}
+
+input[readonly] {
+  font-weight: bold;
+}

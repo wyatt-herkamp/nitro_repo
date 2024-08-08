@@ -232,6 +232,9 @@ impl RepoResponse {
             "Indexing is not allowed for this repository",
         )
     }
+    pub fn disabled_repository() -> Self {
+        Self::basic_text_response(StatusCode::FORBIDDEN, "Repository is disabled")
+    }
     pub fn unsupported_method_response(
         method: ::http::Method,
         repository_type: &str,

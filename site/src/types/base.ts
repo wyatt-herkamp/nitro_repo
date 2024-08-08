@@ -6,7 +6,7 @@ export interface User {
   name: string
   username: string
   email: string
-  admin: boolean
+  permissions: UserPermissions
   created: Date
 }
 export interface PublicUser {
@@ -42,7 +42,11 @@ export interface SiteInfo {
   is_installed: boolean
   version: string
 }
-
+export interface UserPermissions {
+  admin: boolean
+  user_manager: boolean
+  repository_manager: boolean
+}
 export function formatDate(date: Date) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }

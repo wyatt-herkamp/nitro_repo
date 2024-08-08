@@ -97,7 +97,7 @@ pub async fn update_config(
     let Some(repository) = site.get_repository(db_repository.id) else {
         return Ok(StatusCode::INTERNAL_SERVER_ERROR);
     };
-    if !repository.config_types().contains(&config_key) {
+    if !repository.config_types().contains(&config_key.as_str()) {
         return Ok(StatusCode::BAD_REQUEST);
     }
     if let Err(error) = config_type.validate_config(config.clone()) {

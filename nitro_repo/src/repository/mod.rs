@@ -6,11 +6,13 @@ use axum::{
 };
 
 use ::http::StatusCode;
-use http::{RepoResponse, RepositoryRequest};
+
+use nr_core::database::repository::DBRepository;
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 
-pub mod http;
+mod repo_http;
+pub use repo_http::*;
 pub mod maven;
 mod repo_type;
 pub use repo_type::*;
@@ -22,9 +24,12 @@ pub trait Repository: Send + Sync + Clone {
     /// The Repository type. This is used to identify the Repository type in the database
     fn get_type(&self) -> &'static str;
     /// Config types that this Repository type has.
-    fn config_types(&self) -> Vec<String>;
+    fn config_types(&self) -> Vec<&str>;
+    fn base_config(&self) -> DBRepository;
 
-    fn reload(&self);
+    async fn reload(&self) -> Result<(), RepositoryFactoryError> {
+        Ok(())
+    }
     /// Handles a get request to a Repo
     async fn handle_get(
         &self,

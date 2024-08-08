@@ -24,7 +24,7 @@ nr-macros = { path = "crates/macros" }
 nr-storage = { path = "crates/storage" }
 # Rust Utilities
 futures = "0.3"
-derive_more = { version = "1.0.0-beta", features = [
+derive_more = { version = "1.0.0", features = [
     "deref",
     "from",
     "into",

@@ -4,26 +4,26 @@
 <script setup lang="ts"></script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/variables';
+@import '@/assets/styles/theme';
 
 button {
   width: 100%;
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: none;
-  background-color: $accent-color;
+  background-color: $secondary;
   color: #fff;
   font-weight: bold;
   cursor: pointer;
   &:hover {
-    background-color: $accent-color-hover;
+    background-color: $secondary-90;
     transition: background-color;
     transition-duration: 0.5s;
     transition-timing-function: ease-in-out;
   }
 }
 button[disabled] {
-  background-color: #ccc;
+  background-color: $secondary-70;
   color: #000;
   cursor: not-allowed;
 }

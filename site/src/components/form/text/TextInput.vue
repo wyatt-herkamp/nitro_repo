@@ -4,14 +4,14 @@
       <slot />
     </label>
     <span class="error" v-if="error">{{ error }}</span>
-    <div v-show="haveClearButton" class="input-container">
+    <div v-if="haveClearButton" class="input-container">
       <input type="text" :id="haveClearButton ? id : undefined" v-model="value" v-bind="$attrs" />
       <button>
         <font-awesome-icon v-if="value" @click="value = ''" icon="x" />
       </button>
     </div>
     <input
-      v-show="!haveClearButton"
+      v-else
       type="text"
       :id="haveClearButton ? undefined : id"
       v-model="value"
@@ -39,9 +39,8 @@ let value = defineModel<string | undefined>({
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/variables.scss';
+@import '@/assets/styles/theme.scss';
 @import '@/assets/styles/form.scss';
-@import './text.scss';
 
 .input-container {
   position: relative;
@@ -61,12 +60,8 @@ let value = defineModel<string | undefined>({
     background: transparent;
     cursor: pointer;
     font-size: 16px;
-    color: $text-color;
+    color: $text;
     transition: color 0.3s ease;
-
-    &:hover {
-      color: $color-hover-primary;
-    }
   }
 }
 </style>

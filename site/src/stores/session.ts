@@ -3,7 +3,7 @@ import { type Ref, ref } from 'vue'
 import type { Me, User, Session } from '@/types/base'
 import http from '@/http'
 export const sessionStore = defineStore(
-  'userStore',
+  'sessionStore',
   () => {
     const session: Ref<Session | undefined> = ref(undefined)
     const user: Ref<User | undefined> = ref(undefined)
@@ -15,12 +15,12 @@ export const sessionStore = defineStore(
       if (user.value === undefined) {
         return false
       }
-      return user.value.admin
+      return user.value.permissions.admin
     }
 
     async function logout() {
       await http
-        .get('/api/logout')
+        .get('/api/user/logout')
         .then(() => {})
         .catch(() => {})
       session.value = undefined
@@ -39,7 +39,7 @@ export const sessionStore = defineStore(
       }
 
       return await http
-        .get<Me>('/api/me')
+        .get<Me>('/api/user/me')
         .then((response) => {
           console.log(`The user is still logged in: ${JSON.stringify(response.data)}`)
           user.value = response.data.user
@@ -54,7 +54,7 @@ export const sessionStore = defineStore(
         })
     }
 
-    return { user, session, login, name, logout, updateUser, isAdmin }
+    return { user, session, login, logout, updateUser, isAdmin }
   },
   {
     persist: true

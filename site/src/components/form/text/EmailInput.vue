@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="formBox">
     <label :for="id">
       <slot />
     </label>
-    <input type="password" :id="id" v-model="value" v-bind="$attrs" />
+    <input type="email" :id="id" v-model="value" v-bind="$attrs" autocomplete="email" />
   </div>
 </template>
 <script setup lang="ts">

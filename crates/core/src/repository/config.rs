@@ -3,7 +3,11 @@ use std::fmt::Debug;
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sqlx::PgPool;
 use thiserror::Error;
+use uuid::Uuid;
+
+use crate::database::repository::DBRepositoryConfig;
 
 use super::{Policy, Visibility};
 pub mod frontend;
@@ -17,11 +21,13 @@ pub enum RepositoryConfigError {
 /// A Config Type is a type that should be zero sized and should be used to validate and define the layout of a config for a repository
 ///
 /// An array of these will be created at start of the program and can be retrieved to validate and create configs for a repository
-///
-///
 pub trait RepositoryConfigType: Send + Sync + Debug {
     /// The config name. This is used to identify the config type in the database
     fn get_type(&self) -> &'static str;
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized;
     /// Validate the config. If the config is invalid this function should return an error
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError>;
     /// If part of the config cannot be changed this function should return an error
@@ -35,6 +41,17 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
     fn schema(&self) -> Option<schemars::schema::RootSchema> {
         None
     }
+}
+pub async fn get_repository_config_or_default<
+    T: RepositoryConfigType,
+    D: for<'a> Deserialize<'a> + Unpin + Send + 'static + Default,
+>(
+    repository: Uuid,
+    db: &PgPool,
+) -> Result<DBRepositoryConfig<D>, sqlx::Error> {
+    DBRepositoryConfig::<D>::get_config(repository, T::get_type_static(), db)
+        .await
+        .map(|x| x.unwrap_or_default())
 }
 pub type DynRepositoryConfigType = Box<dyn RepositoryConfigType>;
 #[derive(Debug, Clone, Serialize, Deserialize, Default, JsonSchema)]
@@ -58,6 +75,13 @@ impl RepositoryConfigType for SecurityConfigType {
 
     fn default(&self) -> Result<Value, RepositoryConfigError> {
         Ok(serde_json::to_value(SecurityConfig::default())?)
+    }
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized,
+    {
+        "security"
     }
 }
 
@@ -89,5 +113,12 @@ impl RepositoryConfigType for PushRulesConfigType {
 
     fn schema(&self) -> Option<schemars::schema::RootSchema> {
         Some(schema_for!(PushRulesConfig))
+    }
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized,
+    {
+        "push_rules"
     }
 }

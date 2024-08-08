@@ -1,12 +1,20 @@
 use std::net::SocketAddr;
 
 use axum::{
+    body::Body,
     extract::{ConnectInfo, State},
-    response::{IntoResponse, Response},
+    response::{self, IntoResponse, IntoResponseParts, Response},
     Json,
 };
-use axum_extra::{headers::UserAgent, TypedHeader};
-use http::StatusCode;
+use axum_extra::{
+    extract::{
+        cookie::{Cookie, Expiration},
+        CookieJar,
+    },
+    headers::UserAgent,
+    TypedHeader,
+};
+use http::{header::SET_COOKIE, StatusCode};
 use nr_core::database::user::UserSafeData;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
@@ -24,7 +32,7 @@ use crate::{
 };
 #[derive(OpenApi)]
 #[openapi(
-    paths(me, whoami, login, get_sessions),
+    paths(me, whoami, login, get_sessions, logout),
     components(schemas(UserSafeData, MeWithSession, Session))
 )]
 pub struct UserAPI;
@@ -34,6 +42,7 @@ pub fn user_routes() -> axum::Router<NitroRepo> {
         .route("/whoami", axum::routing::get(whoami))
         .route("/login", axum::routing::post(login))
         .route("/sessions", axum::routing::get(get_sessions))
+        .route("/logout", axum::routing::post(logout))
 }
 #[utoipa::path(
     get,
@@ -136,9 +145,46 @@ pub async fn login(
     let session = site
         .session_manager
         .create_session(user.id, user_agent, ip, duration)?;
-
+    let cookie = Cookie::build(("session", session.session_id.clone()))
+        .secure(true)
+        .path("/")
+        .expires(Expiration::Session)
+        .build();
     let user_with_session = MeWithSession::from((session.clone(), user));
-
-    let response = Json(user_with_session).into_response();
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .header(SET_COOKIE, cookie.encoded().to_string())
+        .body(serde_json::to_string(&user_with_session).unwrap().into())
+        .unwrap();
     Ok(response)
+}
+#[utoipa::path(
+    post,
+    path = "/logout",
+    responses(
+        (status = 204, description = "Successfully Logged Out"),
+        (status = 400, description = "Bad Request. Must be a session")
+    )
+)]
+pub async fn logout(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    cookie: CookieJar,
+) -> Result<Response, InternalError> {
+    match auth {
+        Authentication::AuthToken(_, _) => {
+            let response = Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body("Must be a session".into())
+                .unwrap();
+            Ok(response)
+        }
+        Authentication::Session(session, _) => {
+            site.session_manager.delete_session(&session.session_id)?;
+            let empty_session_cookie = Cookie::build("session").removal().build();
+            let cookies = cookie.add(empty_session_cookie);
+            Ok((cookies, StatusCode::NO_CONTENT).into_response())
+        }
+    }
 }

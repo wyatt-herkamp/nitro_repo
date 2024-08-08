@@ -52,7 +52,7 @@ pub trait RepositoryType: Send + Debug {
     /// Such as Maven has hosted and proxy. The proxy type has an additional config type of "proxy"
     ///
     /// This array will contain the proxy type. But when calling Repository::config_types() on a hosted one will not contain "proxy"
-    fn config_types(&self) -> &'static [&'static str];
+    fn config_types(&self) -> Vec<&str>;
     /// Creates a new repository.
     /// Implementations of this function should validate the config and return an error if it is invalid
     /// Tell the storage any necessary information to create the repository
@@ -82,4 +82,8 @@ pub enum RepositoryFactoryError {
     InvalidSubType,
     #[error("Missing Config: {0}")]
     MissingConfig(&'static str),
+    #[error("Database Error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+    #[error("Loaded Repository Not Found {0}")]
+    LoadedRepositoryNotFound(Uuid),
 }

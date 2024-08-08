@@ -1,4 +1,4 @@
-import './assets/styles/theme.scss'
+import './assets/styles/main.scss'
 import 'vue-final-modal/style.css'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import Notifications from '@kyvg/vue3-notification'
@@ -26,7 +26,9 @@ import {
   faHome,
   faArrowRight,
   faAnglesRight,
-  faAnglesLeft
+  faAnglesLeft,
+  faEye,
+  faEyeSlash
 } from '@fortawesome/free-solid-svg-icons'
 
 import { sessionStore } from './stores/session'
@@ -65,6 +67,8 @@ library.add(faHome)
 library.add(faArrowRight)
 library.add(faAnglesRight)
 library.add(faAnglesLeft)
+library.add(faEye)
+library.add(faEyeSlash)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(createMetaManager())

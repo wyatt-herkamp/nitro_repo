@@ -1,0 +1,67 @@
+<template>
+  <nav>
+    <div>
+      <router-link to="/" id="logoAndHome" class="navLink">
+        <img src="/icon-128.png" alt="Logo" />
+        <span>Nitro Repository</span>
+      </router-link>
+    </div>
+    <RouterLink class="navLink" :to="{ name: 'browse' }" title="Browse Repositories"
+      >Browse</RouterLink
+    >
+
+    <UserDropDown class="right" v-if="session.user" />
+    <div v-if="session.user"></div>
+    <RouterLink :to="{ name: 'login' }" class="navLink right" v-else>Login</RouterLink>
+  </nav>
+</template>
+<script setup lang="ts">
+import { sessionStore } from '@/stores/session'
+import UserDropDown from './UserDropDown.vue'
+
+const session = sessionStore()
+</script>
+
+<style lang="scss" scoped>
+@import '@/assets/styles/theme.scss';
+nav {
+  display: flex;
+  gap: 1rem;
+  background-color: $primary-50;
+}
+#logoAndHome {
+  padding-left: 10rem;
+  img {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+.navLink {
+  text-decoration: none;
+  color: $text;
+  font-weight: bold;
+  padding: 0.5rem;
+  // Align text vertically
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  // Box
+  border-radius: 0.5rem;
+}
+.right {
+  margin-left: auto;
+  margin-right: 5rem;
+}
+@media screen and (max-width: 600px) {
+  nav {
+    flex-direction: row;
+  }
+  #logoAndHome {
+    padding-left: 1rem;
+  }
+  .right {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+</style>

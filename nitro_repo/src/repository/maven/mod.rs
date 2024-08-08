@@ -1,15 +1,21 @@
+use super::*;
+use crate::app::NitroRepo;
+use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
 use futures::future::LocalBoxFuture;
 use hosted::MavenHosted;
-use http::StatusCode;
-use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
+use nr_core::{
+    database::repository::{DBRepository, GenericDBRepositoryConfig},
+    repository::config::{
+        frontend::{BadgeSettingsType, FrontendConfigType},
+        PushRulesConfigType, RepositoryConfigType as _, SecurityConfigType,
+    },
+};
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 use proxy::MavenProxy;
 use sqlx::types::Json;
-
-use crate::app::NitroRepo;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
@@ -22,8 +28,13 @@ impl RepositoryType for MavenRepositoryType {
         "maven"
     }
 
-    fn config_types(&self) -> &'static [&'static str] {
-        &["push_rules", "security"]
+    fn config_types(&self) -> Vec<&str> {
+        vec![
+            PushRulesConfigType::get_type_static(),
+            SecurityConfigType::get_type_static(),
+            BadgeSettingsType::get_type_static(),
+            FrontendConfigType::get_type_static(),
+        ]
     }
 
     fn get_description(&self) -> super::RepositoryTypeDescription {
@@ -102,7 +113,20 @@ impl RepositoryType for MavenRepositoryType {
         storage: DynStorage,
         website: NitroRepo,
     ) -> LocalBoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
-        todo!()
+        Box::pin(async move {
+            let sub_type = repo.repository_subtype.clone();
+
+            match sub_type.as_deref() {
+                Some("hosted") => {
+                    let repo = MavenHosted::load(repo, storage, website).await?;
+                    Ok(DynRepository::Maven(MavenRepository::Hosted(repo)))
+                }
+                Some("proxy") => {
+                    todo!()
+                }
+                _ => Err(RepositoryFactoryError::InvalidSubType),
+            }
+        })
     }
 }
 #[derive(Debug, Clone, DynRepositoryHandler)]

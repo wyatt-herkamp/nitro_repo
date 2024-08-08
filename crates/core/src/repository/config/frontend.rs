@@ -39,6 +39,13 @@ impl RepositoryConfigType for FrontendConfigType {
     fn schema(&self) -> Option<schemars::schema::RootSchema> {
         Some(schema_for!(Frontend))
     }
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized,
+    {
+        "frontend"
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
@@ -65,6 +72,13 @@ impl RepositoryConfigType for BadgeSettingsType {
 
     fn schema(&self) -> Option<schemars::schema::RootSchema> {
         Some(schema_for!(BadgeSettings))
+    }
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized,
+    {
+        "badge"
     }
 }
 impl Default for BadgeSettings {
@@ -125,6 +139,13 @@ impl RepositoryConfigType for RepositoryPageType {
 
     fn schema(&self) -> Option<schemars::schema::RootSchema> {
         Some(schema_for!(RepositoryPage))
+    }
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized,
+    {
+        "page"
     }
 }
 impl Default for RepositoryPage {

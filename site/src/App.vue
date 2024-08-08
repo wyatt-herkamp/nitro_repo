@@ -1,11 +1,6 @@
 <template>
   <header>
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
+    <NavBar />
   </header>
 
   <RouterView />
@@ -14,7 +9,10 @@
 import { RouterLink, RouterView } from 'vue-router'
 import { siteStore } from './stores/site'
 import router from './router'
+import NavBar from './components/nav/NavBar.vue'
+import { sessionStore } from './stores/session'
 const site = siteStore()
+const session = sessionStore()
 async function init() {
   const info = await site.getInfo()
   if (info == undefined) {
