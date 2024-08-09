@@ -13,12 +13,12 @@ CREATE TABLE IF NOT EXISTS repositories (
     storage_id UUID NOT NULL,
     name TEXT NOT NULL COLLATE ignoreCase,
     repository_type TEXT NOT NULL,
-    repository_subtype TEXT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_repositories_storage_id FOREIGN KEY (storage_id) REFERENCES storages (id) ON DELETE CASCADE
+    CONSTRAINT fk_repositories_storage_id FOREIGN KEY (storage_id) REFERENCES storages (id) ON DELETE CASCADE,
+    CONSTRAINT unique_repository_name UNIQUE (storage_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS repository_configs (
@@ -29,5 +29,6 @@ CREATE TABLE IF NOT EXISTS repository_configs (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_repository_configs_repository_id FOREIGN KEY (repository_id) REFERENCES repositories (id) ON DELETE CASCADE
+    CONSTRAINT fk_repository_configs_repository_id FOREIGN KEY (repository_id) REFERENCES repositories (id) ON DELETE CASCADE,
+    CONSTRAINT unique_repository_config_key UNIQUE (repository_id, key)
 )

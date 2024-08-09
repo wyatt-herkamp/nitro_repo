@@ -3,23 +3,53 @@ use crate::app::NitroRepo;
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
-use futures::future::LocalBoxFuture;
+use futures::future::{BoxFuture, LocalBoxFuture};
 use hosted::MavenHosted;
 use nr_core::{
-    database::repository::{DBRepository, GenericDBRepositoryConfig},
+    database::repository::{DBRepository, DBRepositoryConfig},
     repository::config::{
         frontend::{BadgeSettingsType, FrontendConfigType},
-        PushRulesConfigType, RepositoryConfigType as _, SecurityConfigType,
+        PushRulesConfigType, RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
     },
 };
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 use proxy::MavenProxy;
-use sqlx::types::Json;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
 pub mod proxy;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "config")]
+pub enum MavenRepositoryConfig {
+    Hosted,
+}
+#[derive(Debug, Clone, Default)]
+pub struct MavenRepositoryConfigType;
+impl RepositoryConfigType for MavenRepositoryConfigType {
+    fn get_type(&self) -> &'static str {
+        "maven"
+    }
+
+    fn get_type_static() -> &'static str
+    where
+        Self: Sized,
+    {
+        "maven"
+    }
+
+    fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
+        let config: MavenRepositoryConfig = serde_json::from_value(config)?;
+        Ok(())
+    }
+
+    fn default(&self) -> Result<Value, RepositoryConfigError> {
+        let config = MavenRepositoryConfig::Hosted;
+        Ok(serde_json::to_value(config).unwrap())
+    }
+}
 #[derive(Debug, Default)]
 pub struct MavenRepositoryType;
 
@@ -44,22 +74,7 @@ impl RepositoryType for MavenRepositoryType {
             description: "A Maven Repository",
             documentation_url: Some("https://maven.apache.org/"),
             is_stable: true,
-            sub_types: vec![
-                super::RepositorySubTypeDescription {
-                    name: "hosted",
-                    description: "A hosted Maven Repository",
-                    documentation_url: None,
-                    is_stable: true,
-                    required_config: &[],
-                },
-                super::RepositorySubTypeDescription {
-                    name: "proxy",
-                    description: "A proxy Maven Repository",
-                    documentation_url: None,
-                    is_stable: true,
-                    required_config: &["maven-proxy"],
-                },
-            ],
+            required_configs: vec![MavenRepositoryConfigType::get_type_static()],
         }
     }
 
@@ -67,39 +82,31 @@ impl RepositoryType for MavenRepositoryType {
         &self,
         name: String,
         uuid: uuid::Uuid,
-        sub_type: Option<String>,
         configs: HashMap<String, serde_json::Value>,
         storage: nr_storage::DynStorage,
-    ) -> LocalBoxFuture<'static, Result<super::NewRepository, super::RepositoryFactoryError>> {
+    ) -> BoxFuture<'static, Result<super::NewRepository, super::RepositoryFactoryError>> {
         Box::pin(async move {
-            let sub_type: String = if let Some(sub_type) = sub_type {
-                if sub_type != "hosted" && sub_type != "proxy" {
-                    return Err(super::RepositoryFactoryError::InvalidSubType);
+            let sub_type = configs
+                .get(MavenRepositoryConfigType::get_type_static())
+                .ok_or(RepositoryFactoryError::MissingConfig(
+                    MavenRepositoryConfigType::get_type_static(),
+                ))?
+                .clone();
+            let maven_config: MavenRepositoryConfig = match serde_json::from_value(sub_type) {
+                Ok(ok) => ok,
+                Err(err) => {
+                    return Err(RepositoryFactoryError::InvalidConfig(
+                        MavenRepositoryConfigType::get_type_static(),
+                        err.to_string(),
+                    ));
                 }
-                sub_type
-            } else {
-                "hosted".to_string()
             };
-            if sub_type == "proxy" {
-                if !configs.contains_key("maven-proxy") {
-                    return Err(super::RepositoryFactoryError::MissingConfig("maven-proxy"));
-                }
-            }
-            let configs: Vec<_> = configs
-                .into_iter()
-                .map(|(k, v)| GenericDBRepositoryConfig {
-                    key: k,
-                    repository_id: uuid,
-                    value: Json(v),
-                    ..Default::default()
-                })
-                .collect();
+            // TODO: Check all configs
 
             Ok(super::NewRepository {
                 name,
                 uuid,
                 repository_type: "maven".to_string(),
-                sub_type: Some(sub_type),
                 configs,
             })
         })
@@ -112,20 +119,11 @@ impl RepositoryType for MavenRepositoryType {
         repo: DBRepository,
         storage: DynStorage,
         website: NitroRepo,
-    ) -> LocalBoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
+    ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
         Box::pin(async move {
-            let sub_type = repo.repository_subtype.clone();
-
-            match sub_type.as_deref() {
-                Some("hosted") => {
-                    let repo = MavenHosted::load(repo, storage, website).await?;
-                    Ok(DynRepository::Maven(MavenRepository::Hosted(repo)))
-                }
-                Some("proxy") => {
-                    todo!()
-                }
-                _ => Err(RepositoryFactoryError::InvalidSubType),
-            }
+            MavenRepository::load(repo, storage, website)
+                .await
+                .map(|x| DynRepository::Maven(x))
         })
     }
 }
@@ -133,6 +131,32 @@ impl RepositoryType for MavenRepositoryType {
 pub enum MavenRepository {
     Hosted(MavenHosted),
     Proxy(MavenProxy),
+}
+impl MavenRepository {
+    pub async fn load(
+        repo: DBRepository,
+        storage: DynStorage,
+        website: NitroRepo,
+    ) -> Result<Self, RepositoryFactoryError> {
+        let Some(maven_config_db) = DBRepositoryConfig::<MavenRepositoryConfig>::get_config(
+            repo.id,
+            MavenRepositoryConfigType::get_type_static(),
+            &website.database,
+        )
+        .await?
+        else {
+            return Err(RepositoryFactoryError::MissingConfig(
+                MavenRepositoryConfigType::get_type_static(),
+            ));
+        };
+        let maven_config = maven_config_db.value.0;
+        match maven_config {
+            MavenRepositoryConfig::Hosted => {
+                let maven_hosted = MavenHosted::load(repo, storage, website).await?;
+                Ok(MavenRepository::Hosted(maven_hosted))
+            }
+        }
+    }
 }
 #[derive(Debug, thiserror::Error)]
 pub enum MavenError {

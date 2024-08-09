@@ -125,6 +125,34 @@ impl UserType for UserSafeData {
         Ok(user)
     }
 }
+impl UserSafeData {
+    pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let users = sqlx::query_as::<_, UserSafeData>("SELECT * FROM users")
+            .fetch_all(database)
+            .await?;
+        Ok(users)
+    }
+    pub async fn is_username_taken(
+        username: impl AsRef<str>,
+        database: &PgPool,
+    ) -> Result<bool, sqlx::Error> {
+        let user = sqlx::query("SELECT id FROM users WHERE username = $1")
+            .bind(username.as_ref())
+            .fetch_optional(database)
+            .await?;
+        Ok(user.is_some())
+    }
+    pub async fn is_email_taken(
+        email: impl AsRef<str>,
+        database: &PgPool,
+    ) -> Result<bool, sqlx::Error> {
+        let user = sqlx::query("SELECT id FROM users WHERE email = $1")
+            .bind(email.as_ref())
+            .fetch_optional(database)
+            .await?;
+        Ok(user.is_some())
+    }
+}
 impl HasPermissions for UserSafeData {
     fn get_permissions(&self) -> Option<&UserPermissions> {
         Some(self.permissions.as_ref())

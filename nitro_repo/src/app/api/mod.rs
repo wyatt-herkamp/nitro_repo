@@ -7,6 +7,7 @@ use utoipa::ToSchema;
 pub mod repository;
 pub mod storage;
 pub mod user;
+pub mod user_management;
 use crate::{error::InternalError, utils::password::encrypt_password};
 
 use super::{Instance, NitroRepo, NitroRepoState};
@@ -16,6 +17,10 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
         .route("/api/install", axum::routing::post(install))
         .nest("/api/user", user::user_routes())
         .nest("/api/storage", storage::storage_routes())
+        .nest(
+            "/api/user-management",
+            user_management::user_management_routes(),
+        )
         .nest("/api/repository", repository::repository_routes())
 }
 #[utoipa::path(

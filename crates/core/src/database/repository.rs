@@ -36,7 +36,6 @@ pub struct DBRepository {
     pub storage_id: Uuid,
     pub name: String,
     pub repository_type: String,
-    pub repository_subtype: Option<String>,
     pub active: bool,
     pub created: DateTime,
 }
@@ -67,6 +66,33 @@ impl DBRepository {
                 .fetch_optional(database)
                 .await?;
         Ok(repository)
+    }
+
+    pub async fn does_name_exist_for_storage(
+        storage_id: Uuid,
+        name: impl AsRef<str>,
+        database: &PgPool,
+    ) -> Result<bool, sqlx::Error> {
+        let result: i64 = sqlx::query_scalar(
+            r#"SELECT COUNT(*) FROM repositories WHERE storage_id = $1 AND name = $2"#,
+        )
+        .bind(storage_id)
+        .bind(name.as_ref())
+        .fetch_one(database)
+        .await?;
+        Ok(result > 0)
+    }
+    pub async fn generate_uuid(database: &PgPool) -> Result<Uuid, sqlx::Error> {
+        let mut uuid = Uuid::new_v4();
+        while sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM storages WHERE id = $1;")
+            .bind(&uuid)
+            .fetch_one(database)
+            .await?
+            > 0
+        {
+            uuid = Uuid::new_v4();
+        }
+        Ok(uuid)
     }
 }
 

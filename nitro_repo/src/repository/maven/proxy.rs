@@ -11,7 +11,7 @@ use nr_storage::DynStorage;
 use parking_lot::RwLock;
 use uuid::Uuid;
 
-use crate::repository::{Repository, RepositoryFactoryError};
+use crate::repository::Repository;
 
 #[derive(Debug)]
 pub struct MavenProxyInner {

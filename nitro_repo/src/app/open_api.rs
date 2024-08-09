@@ -2,6 +2,7 @@ use super::api;
 use super::api::repository::RepositoryAPI;
 use super::api::storage::StorageAPI;
 use super::api::user::UserAPI;
+use super::api::user_management::UserManagementAPI;
 use axum::routing::get;
 use axum::{
     response::{IntoResponse, Response},
@@ -18,6 +19,7 @@ use utoipa::{Modify, OpenApi};
 
     nest(
         (path = "/api/user", api = UserAPI, tags=["user"]),
+        (path="/api/user-management", api = UserManagementAPI, tags=["user-management"]),
         (path = "/api/storage", api = StorageAPI, tags=["storage"]),
         (path = "/api/repository", api = RepositoryAPI, tags=["repository"]),
     ),
@@ -36,7 +38,8 @@ use utoipa::{Modify, OpenApi};
         )
     ),
     tags(
-        (name="user",description= "User Management"),
+        (name="user",description= "Profile/User Access"),
+        (name="user-management", description= "User Management. "),
         (name="storage", description= "Storage Management"),
         (name="repository",description= "Repository Management"),
         (name="config", description = "Repository Config Types")

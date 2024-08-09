@@ -1,6 +1,9 @@
 <template>
   <div class="dropDown">
-    <button class="dropDown-button">User</button>
+    <button class="dropDown-button">
+      <font-awesome-icon icon="fa-solid fa-user" />
+      <span>User</span>
+    </button>
     <div class="dropDown-content">
       <RouterLink class="navLink right" v-if="session.user" :to="{ name: 'profile' }"
         >Profile</RouterLink

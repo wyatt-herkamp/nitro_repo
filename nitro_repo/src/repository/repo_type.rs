@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use ahash::HashMap;
 use auto_impl::auto_impl;
-use futures::future::LocalBoxFuture;
+use futures::future::{BoxFuture, LocalBoxFuture};
 use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_storage::DynStorage;
 use serde::Serialize;
@@ -11,34 +11,47 @@ use thiserror::Error;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::app::NitroRepo;
+use crate::{app::NitroRepo, error::InternalError};
 
 use super::DynRepository;
 
-#[derive(Debug, Clone, Serialize, ToSchema)]
-pub struct RepositorySubTypeDescription {
-    pub name: &'static str,
-    pub description: &'static str,
-    pub documentation_url: Option<&'static str>,
-    pub is_stable: bool,
-    pub required_config: &'static [&'static str],
-}
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct RepositoryTypeDescription {
     pub type_name: &'static str,
     pub name: &'static str,
     pub description: &'static str,
     pub documentation_url: Option<&'static str>,
-    pub sub_types: Vec<RepositorySubTypeDescription>,
     pub is_stable: bool,
+    pub required_configs: Vec<&'static str>,
 }
 #[derive(Debug)]
 pub struct NewRepository {
     pub name: String,
     pub uuid: Uuid,
     pub repository_type: String,
-    pub sub_type: Option<String>,
-    pub configs: Vec<GenericDBRepositoryConfig>,
+    pub configs: HashMap<String, Value>,
+}
+impl NewRepository {
+    // TODO: Transactions
+    pub async fn insert(
+        self,
+        storage: Uuid,
+        database: &sqlx::PgPool,
+    ) -> Result<DBRepository, InternalError> {
+        let repository = sqlx::query_as::<_, DBRepository>(
+            r#"INSERT INTO repositories (id, storage_id, name, repository_type, active) VALUES ($1, $2, $3, $4, $5) RETURNING *"#,
+        )
+        .bind(&self.uuid)
+        .bind(&storage)
+        .bind(&self.name)
+        .bind(&self.repository_type)
+        .bind(true)
+        .fetch_one( database).await?;
+        for (key, value) in self.configs {
+            GenericDBRepositoryConfig::add_or_update(repository.id, key, value, database).await?;
+        }
+        Ok(repository)
+    }
 }
 /// This trait is invoked via dynamic dispatch for simplicity reasons.
 #[auto_impl(&, Box)]
@@ -60,10 +73,9 @@ pub trait RepositoryType: Send + Debug {
         &self,
         name: String,
         uuid: Uuid,
-        sub_type: Option<String>,
         configs: HashMap<String, Value>,
         storage: DynStorage,
-    ) -> LocalBoxFuture<'static, Result<NewRepository, RepositoryFactoryError>>;
+    ) -> BoxFuture<'static, Result<NewRepository, RepositoryFactoryError>>;
     /// Load a repository from the database
     /// This function should load the repository from the database and return a DynRepository
     fn load_repo(
@@ -71,7 +83,7 @@ pub trait RepositoryType: Send + Debug {
         repo: DBRepository,
         storage: DynStorage,
         website: NitroRepo,
-    ) -> LocalBoxFuture<'static, Result<DynRepository, RepositoryFactoryError>>;
+    ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>>;
 }
 pub type DynRepositoryType = Box<dyn RepositoryType + Send + Sync>;
 #[derive(Debug, Error)]

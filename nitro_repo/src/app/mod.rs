@@ -218,6 +218,10 @@ impl NitroRepo {
         let mut storages = self.storages.write();
         storages.insert(id, storage);
     }
+    pub fn add_repository(&self, id: Uuid, repository: DynRepository) {
+        let mut repositories = self.repositories.write();
+        repositories.insert(id, repository);
+    }
 
     #[instrument]
     pub fn update_app_url(&self, app_url: &Uri) {
@@ -283,6 +287,15 @@ impl NitroRepo {
         }
         // No repository found in the database
         Ok(None)
+    }
+    pub fn get_storage(&self, id: Uuid) -> Option<DynStorage> {
+        let storages = self.storages.read();
+        storages.get(&id).cloned()
+    }
+    pub fn get_repository_type(&self, name: &str) -> Option<&DynRepositoryType> {
+        self.repository_types
+            .iter()
+            .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
     }
 }
 pub type NitroRepoState = State<NitroRepo>;

@@ -28,7 +28,11 @@ import {
   faAnglesRight,
   faAnglesLeft,
   faEye,
-  faEyeSlash
+  faEyeSlash,
+  faUsers,
+  faBoxOpen,
+  faBoxesPacking,
+  faToolbox
 } from '@fortawesome/free-solid-svg-icons'
 
 import { sessionStore } from './stores/session'
@@ -68,7 +72,10 @@ library.add(faArrowRight)
 library.add(faAnglesRight)
 library.add(faAnglesLeft)
 library.add(faEye)
-library.add(faEyeSlash)
+library.add(faUsers)
+library.add(faBoxOpen)
+library.add(faBoxesPacking)
+library.add(faToolbox)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(createMetaManager())

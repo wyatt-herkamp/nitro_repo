@@ -11,6 +11,8 @@ use uuid::Uuid;
 pub struct UserPermissions {
     pub admin: bool,
     pub user_manager: bool,
+    /// Storage Manager will be able to create and delete storage locations
+    pub storage_manager: bool,
     /// Repository Manager will be able to create and delete repositories
     /// Also will have full read/write access to all repositories
     pub repository_manager: bool,
@@ -21,6 +23,7 @@ impl Default for UserPermissions {
     fn default() -> Self {
         Self {
             admin: false,
+            storage_manager: false,
             user_manager: false,
             repository_manager: false,
             default_repository_permissions: RepositoryActions {
@@ -36,6 +39,7 @@ impl UserPermissions {
     pub fn admin() -> Self {
         Self {
             admin: true,
+            storage_manager: true,
             user_manager: true,
             repository_manager: true,
             default_repository_permissions: RepositoryActions {
@@ -71,6 +75,12 @@ pub trait HasPermissions {
     fn is_admin_or_repository_manager(&self) -> bool {
         self.get_permissions()
             .map(|p| p.admin || p.repository_manager)
+            .unwrap_or(false)
+    }
+    #[inline(always)]
+    fn is_admin_or_storage_manager(&self) -> bool {
+        self.get_permissions()
+            .map(|p| p.admin || p.storage_manager)
             .unwrap_or(false)
     }
     /// Can a user edit the repository settings

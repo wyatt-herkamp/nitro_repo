@@ -21,6 +21,8 @@ pub enum InternalError {
     Argon2Error(#[from] argon2::Error),
     #[error("Session Error {0}")]
     SessionError(#[from] SessionError),
+    #[error("Storage Error {0}")]
+    StorageError(#[from] nr_storage::StorageError),
 }
 
 impl IntoResponse for InternalError {
