@@ -13,7 +13,7 @@ use nr_core::{
 };
 use serde::Deserialize;
 use serde_json::Value;
-use tracing::{error, instrument};
+use tracing::{error, info, instrument};
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
 
@@ -36,7 +36,9 @@ mod config;
         config::config_schema,
         config::config_validate,
         config::config_default,
-        new_repository
+        new_repository,
+        get_repository,
+        get_config
     ),
     components(schemas(DBRepository, DBRepositoryWithStorageName, RepositoryTypeDescription))
 )]
@@ -44,9 +46,14 @@ pub struct RepositoryAPI;
 pub fn repository_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_repositories))
+        .route("/:id", axum::routing::get(get_repository))
+        .route(
+            "/:id/configs",
+            axum::routing::get(get_configs_for_repository),
+        )
         .route("/new/:repository_type", axum::routing::post(new_repository))
         .route("/:id/config/:key", axum::routing::put(update_config))
-        .route("/:id/config/:key", axum::routing::get(get_repository))
+        .route("/:id/config/:key", axum::routing::get(get_config))
         .route("/types", axum::routing::get(repository_types))
         .merge(config::config_routes())
 }
@@ -69,17 +76,23 @@ pub async fn repository_types(State(site): State<NitroRepo>) -> Response {
         .collect();
     Json(types).into_response()
 }
+#[utoipa::path(
+    get,
+    path = "/{repository_id}",
+    responses(
+        (status = 200, description = "Repository Types", body = DBRepository),
+    )
+)]
 #[instrument]
 pub async fn get_repository(
     State(site): State<NitroRepo>,
     auth: Authentication,
-    Path((repository, config_key)): Path<(Uuid, String)>,
+    Path(repository): Path<Uuid>,
 ) -> Result<Response, InternalError> {
     if !auth.can_edit_repository(repository) {
         return Ok(MissingPermission::EditRepository(repository).into_response());
     }
-    let Some(config) =
-        GenericDBRepositoryConfig::get_config(repository, config_key, site.as_ref()).await?
+    let Some(config) = DBRepositoryWithStorageName::get_by_id(repository, site.as_ref()).await?
     else {
         // TODO: Check for default config
         return Ok(Response::builder()
@@ -91,6 +104,68 @@ pub async fn get_repository(
     Ok(response)
 }
 
+#[utoipa::path(
+    get,
+    path = "/{repository}/configs",
+    responses(
+        (status = 200, description = "List Configs for Repository", body = [String]),
+    )
+)]
+#[instrument]
+pub async fn get_configs_for_repository(
+    State(site): State<NitroRepo>,
+    auth: Authentication,
+    Path(repository): Path<Uuid>,
+) -> Result<Response, InternalError> {
+    if !auth.can_edit_repository(repository) {
+        return Ok(MissingPermission::EditRepository(repository).into_response());
+    }
+    let Some(repository) = site.get_repository(repository) else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+
+    let repository = repository.config_types();
+    info!("Repository Configs: {:?}", repository);
+    let response = Json(repository).into_response();
+    Ok(response)
+}
+#[utoipa::path(
+    get,
+    path = "/{repository}/config/{config_key}",
+    responses(
+        (status = 200, description = "Config for the repository"),
+    )
+)]
+#[instrument]
+pub async fn get_config(
+    State(site): State<NitroRepo>,
+    auth: Authentication,
+    Path((repository, config)): Path<(Uuid, String)>,
+) -> Result<Response, InternalError> {
+    if !auth.can_edit_repository(repository) {
+        return Ok(MissingPermission::EditRepository(repository).into_response());
+    }
+    let Some(config) =
+        GenericDBRepositoryConfig::get_config(repository, config, site.as_ref()).await?
+    else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+    let response = Json(config.value.0).into_response();
+    Ok(response)
+}
+/// Updates a config for a repository
+///
+/// # Method Body
+/// Should be a the message body for the type of config you are updating
+#[utoipa::path(
+    put,
+    path = "/{repository}/config/{config_key}",
+    responses(
+        (status = 204, description = "Updated a config for a repository"),
+        (status = 404, description = "Repository not found"),
+        (status = 400, description="Invalid Config value for the repository"),
+    )
+)]
 #[instrument]
 pub async fn update_config(
     State(site): State<NitroRepo>,
@@ -134,7 +209,7 @@ pub async fn update_config(
             .unwrap());
     }
     Ok(Response::builder()
-        .status(StatusCode::OK)
+        .status(StatusCode::NO_CONTENT)
         .body(Body::empty())
         .unwrap())
 }
@@ -206,7 +281,7 @@ pub async fn new_repository(
             .body("Invalid Storage".into())
             .unwrap());
     };
-    if !DBRepository::does_name_exist_for_storage(request.storage, &name, &site.database).await? {
+    if DBRepository::does_name_exist_for_storage(request.storage, &name, &site.database).await? {
         return Ok(Response::builder()
             .status(StatusCode::CONFLICT)
             .body("Name already in use".into())

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt::Debug, sync::Arc};
 
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
@@ -9,7 +9,7 @@ use config::{Mode, PostgresSettings, SecuritySettings, SiteSetting};
 use derive_more::{derive::Deref, AsRef, Into};
 use http::Uri;
 use nr_core::{
-    database::{storage::DBStorage, user::does_user_exist},
+    database::{repository::DBRepository, storage::DBStorage, user::does_user_exist},
     repository::config::{
         frontend::{BadgeSettingsType, FrontendConfigType, RepositoryPageType},
         DynRepositoryConfigType, PushRulesConfigType, SecurityConfigType,
@@ -32,7 +32,10 @@ use tracing::{debug, info, instrument, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 pub mod open_api;
-use crate::repository::{maven::MavenRepositoryType, DynRepository, DynRepositoryType};
+use crate::repository::{
+    maven::{MavenRepositoryConfigType, MavenRepositoryType},
+    DynRepository, DynRepositoryType,
+};
 pub mod api;
 pub mod responses;
 pub mod web;
@@ -152,6 +155,7 @@ impl NitroRepo {
             database: database,
         };
         nitro_repo.load_storages().await?;
+        nitro_repo.load_repositories().await?;
         Ok(nitro_repo)
     }
     ///Unloads all storages and reloads them from the database
@@ -182,6 +186,27 @@ impl NitroRepo {
             storages.insert(id, storage);
         }
         info!("Loaded {} storages", storages.len());
+        Ok(())
+    }
+    #[instrument]
+    async fn load_repositories(&self) -> anyhow::Result<()> {
+        let mut repositories = self.repositories.write();
+        repositories.clear();
+        let db_repositories = DBRepository::get_all(&self.database).await?;
+        for db_repository in db_repositories {
+            let storage = self
+                .get_storage(db_repository.storage_id)
+                .context("Storage not found")?;
+            let repository_type = self
+                .get_repository_type(&db_repository.repository_type)
+                .context("Repository type not found")?;
+            let repository_id = db_repository.id;
+            let repository = repository_type
+                .load_repo(db_repository, storage, self.clone())
+                .await?;
+            repositories.insert(repository_id, repository);
+        }
+        info!("Loaded {} repositories", repositories.len());
         Ok(())
     }
     pub fn get_storage_factory(&self, storage_name: &str) -> Option<&DynStorageFactory> {
@@ -298,6 +323,7 @@ impl NitroRepo {
             .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
     }
 }
+
 pub type NitroRepoState = State<NitroRepo>;
 
 fn config_types() -> Vec<DynRepositoryConfigType> {
@@ -307,6 +333,7 @@ fn config_types() -> Vec<DynRepositoryConfigType> {
         Box::new(BadgeSettingsType),
         Box::new(FrontendConfigType),
         Box::new(RepositoryPageType),
+        Box::new(MavenRepositoryConfigType),
     ]
 }
 fn repository_types() -> Vec<DynRepositoryType> {

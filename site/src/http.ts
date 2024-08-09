@@ -7,12 +7,13 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
-  }
+  },
+  withCredentials: true
 })
 axiosInstance.interceptors.request.use((config) => {
   const store = sessionStore()
   if (store.session !== undefined) {
-    config.headers.Authorization = `session ${store.session.session_id}`
+    config.headers.Authorization = `Session ${store.session.session_id}`
   }
   return config
 })

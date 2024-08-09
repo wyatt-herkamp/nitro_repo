@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{prelude::FromRow, types::Json, PgPool};
+use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -13,20 +14,29 @@ pub struct DBRepositoryWithStorageName {
     pub storage_name: String,
     pub name: String,
     pub repository_type: String,
-    pub repository_subtype: Option<String>,
     pub active: bool,
-    pub created_at: DateTime,
     pub updated_at: DateTime,
+    pub created_at: DateTime,
 }
 impl DBRepositoryWithStorageName {
     pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let repositories = sqlx::query_as(
-            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.repository_subtype, r.active, r.created_at, r.updated_at
+            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.active, r.created_at, r.updated_at
                 FROM repositories r INNER JOIN storages s ON s.id = r.storage_id"#,
         )
         .fetch_all(database)
         .await?;
         Ok(repositories)
+    }
+    pub async fn get_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let repository = sqlx::query_as(
+            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.active, r.created_at, r.updated_at
+                FROM repositories r INNER JOIN storages s ON s.id = r.storage_id WHERE r.id = $1"#,
+        )
+        .bind(id)
+        .fetch_optional(database)
+        .await?;
+        Ok(repository)
     }
 }
 
@@ -37,7 +47,8 @@ pub struct DBRepository {
     pub name: String,
     pub repository_type: String,
     pub active: bool,
-    pub created: DateTime,
+    pub updated_at: DateTime,
+    pub created_at: DateTime,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 pub struct RepositoryLookup {
@@ -45,6 +56,12 @@ pub struct RepositoryLookup {
     pub repository_id: Uuid,
 }
 impl DBRepository {
+    pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let repositories = sqlx::query_as("SELECT * FROM repositories")
+            .fetch_all(database)
+            .await?;
+        Ok(repositories)
+    }
     pub async fn get_id_from_storage_and_name(
         storage_name: impl AsRef<str>,
         repository_name: impl AsRef<str>,
@@ -80,7 +97,13 @@ impl DBRepository {
         .bind(name.as_ref())
         .fetch_one(database)
         .await?;
-        Ok(result > 0)
+        info!(
+            "Found {} repositories with the name {} for storage {}",
+            result,
+            name.as_ref(),
+            storage_id
+        );
+        Ok(result != 0)
     }
     pub async fn generate_uuid(database: &PgPool) -> Result<Uuid, sqlx::Error> {
         let mut uuid = Uuid::new_v4();
@@ -98,15 +121,15 @@ impl DBRepository {
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, Default)]
 pub struct DBRepositoryConfig<T> {
-    pub id: i64,
+    pub id: i32,
     /// The Repository ID that this config belongs to.
     pub repository_id: Uuid,
     /// The Repository Config Key. This is the key that used to identify a config type.
     pub key: String,
     /// The Repository Config Value. This is the value that is stored for the key.
     pub value: Json<T>,
-    pub updated: DateTime,
-    pub created: DateTime,
+    pub updated_at: DateTime,
+    pub created_at: DateTime,
 }
 pub type GenericDBRepositoryConfig = DBRepositoryConfig<Value>;
 impl DBRepositoryConfig<Value> {

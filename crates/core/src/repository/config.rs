@@ -77,6 +77,10 @@ impl RepositoryConfigType for SecurityConfigType {
         Ok(serde_json::to_value(SecurityConfig::default())?)
     }
 
+    fn schema(&self) -> Option<schemars::schema::RootSchema> {
+        Some(schema_for!(SecurityConfig))
+    }
+
     fn get_type_static() -> &'static str
     where
         Self: Sized,

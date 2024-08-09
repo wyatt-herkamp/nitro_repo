@@ -5,6 +5,7 @@ use axum::{
 };
 use http::StatusCode;
 use serde::Deserialize;
+use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
 
 use crate::{
@@ -35,6 +36,7 @@ pub fn user_management_routes() -> axum::Router<NitroRepo> {
         (status = 200, description = "List All registered users", body = [UserSafeData])
     )
 )]
+#[instrument]
 pub async fn list_users(
     auth: Authentication,
     State(site): State<NitroRepo>,

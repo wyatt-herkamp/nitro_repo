@@ -25,7 +25,7 @@ use crate::{
 };
 #[derive(OpenApi)]
 #[openapi(
-    paths(list_storages, new_storage, get_storage),
+    paths(list_storages, new_storage, get_storage, local_storage_path_helper),
     components(schemas(DBStorage, NewStorageRequest, StorageTypeConfig, LocalConfig))
 )]
 pub struct StorageAPI;
@@ -34,6 +34,10 @@ pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
         .route("/list", axum::routing::get(list_storages))
         .route("/new/:storage_type", axum::routing::post(new_storage))
         .route("/:id", axum::routing::get(get_storage))
+        .route(
+            "/local-storage-path-helper",
+            axum::routing::post(local_storage_path_helper),
+        )
 }
 
 #[utoipa::path(
@@ -58,6 +62,68 @@ pub async fn list_storages(
         .body(Body::from(serde_json::to_string(&storages).unwrap()))
         .unwrap())
 }
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct LocalStoragePathHelperRequest {
+    pub path: Option<String>,
+}
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(tag = "type", content = "value")]
+pub enum LocalStoragePathHelperResponse {
+    CurrentPath(String),
+    Directories(Vec<String>),
+    PathDoesNotExist,
+}
+#[utoipa::path(
+    get,
+    path = "/local-storage-path-helper",
+    responses(
+        (status = 200, description = "information about the Site", body = Instance)
+    )
+)]
+#[instrument]
+pub async fn local_storage_path_helper(
+    auth: Authentication,
+    Json(request): Json<LocalStoragePathHelperRequest>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_storage_manager() {
+        return Ok(MissingPermission::StorageManager.into_response());
+    }
+    let path = request.path.unwrap_or_default().trim().to_owned();
+    if path.is_empty() {
+        let working_dir = std::env::current_dir().unwrap();
+        let current_path = working_dir.to_string_lossy().to_string();
+        return Ok(Response::builder()
+            .status(200)
+            .header("Content-Type", "application/json")
+            .body(Body::from(
+                serde_json::to_string(&LocalStoragePathHelperResponse::CurrentPath(current_path))
+                    .unwrap(),
+            ))
+            .unwrap());
+    }
+    let path = std::path::Path::new(&path);
+    let response = if path.exists() {
+        // List directories
+        let mut directories = vec![];
+        for entry in std::fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_dir() {
+                if let Some(file_name) = path.file_name() {
+                    directories.push(file_name.to_string_lossy().to_string());
+                }
+            }
+        }
+        LocalStoragePathHelperResponse::Directories(directories)
+    } else {
+        LocalStoragePathHelperResponse::PathDoesNotExist
+    };
+    Ok(Response::builder()
+        .status(200)
+        .header("Content-Type", "application/json")
+        .body(Body::from(serde_json::to_string(&response).unwrap()))
+        .unwrap())
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct NewStorageRequest {
@@ -70,7 +136,7 @@ pub struct NewStorageRequest {
     path = "/new/{storage_type}",
     request_body = NewStorageRequest,
     responses(
-        (status = 200, description = "information about the Site", body = DBStorage),
+        (status = 201, description = "Storage Successfully Created", body = DBStorage),
         (status = 409, description = "Name already in use"),
         (status = 400, description = "Invalid Storage Config"),
     ),
@@ -106,7 +172,7 @@ pub async fn new_storage(
         return Ok(InvalidStorageConfig(error).into_response());
     }
     let config = serde_json::to_value(request.config).unwrap();
-    let storage = NewDBStorage::new(request.name, storage_type, config)
+    let storage = NewDBStorage::new(storage_type, request.name, config)
         .insert(&site.database)
         .await?;
     let Some(storage) = storage else {

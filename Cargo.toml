@@ -29,6 +29,7 @@ derive_more = { version = "1.0.0", features = [
     "from",
     "into",
     "as_ref",
+    "debug",
 ] }
 ahash = "0.8"
 parking_lot = { version = "0.12", features = [] }

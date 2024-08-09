@@ -20,7 +20,7 @@ impl NewDBStorage {
     }
     pub async fn insert(self, database: &sqlx::PgPool) -> Result<Option<DBStorage>, sqlx::Error> {
         let result = sqlx::query_as(
-            r#"INSERT INTO storages (storage_type, name, config) VALUES ($1, $2, $3) RETURNING * ON CONFLICT (name) DO NOTHING"#,
+            r#"INSERT INTO storages (storage_type, name, config) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING RETURNING *"#,
         )
         .bind(self.storage_type)
         .bind(self.name)
@@ -41,7 +41,8 @@ pub struct DBStorage {
     ///  Requests should be JSON and the response will be JSON. Please refer to the storage type documentation for the configuration.
     pub config: Json<Value>,
     pub active: bool,
-    pub created: DateTime,
+    pub updated_at: DateTime,
+    pub created_at: DateTime,
 }
 impl DBStorage {
     pub async fn get_all(database: &sqlx::PgPool) -> Result<Vec<Self>, sqlx::Error> {
@@ -69,7 +70,7 @@ impl DBStorage {
         name: &str,
         database: &sqlx::PgPool,
     ) -> Result<bool, sqlx::Error> {
-        let result: i64 = sqlx::query_scalar("SELECT COUNT(*) storages WHERE name = $1;")
+        let result: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM storages WHERE name = $1;")
             .bind(name)
             .fetch_one(database)
             .await?;

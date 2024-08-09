@@ -20,11 +20,14 @@ use uuid::Uuid;
 
 use crate::{
     app::NitroRepo,
-    repository::{Repository, RepositoryFactoryError, RepositoryHandlerError},
+    repository::{
+        maven::{MavenRepositoryConfig, MavenRepositoryConfigType},
+        Repository, RepositoryFactoryError, RepositoryHandlerError,
+    },
 };
 
 use super::{RepoResponse, RepositoryRequest};
-#[derive(Debug)]
+#[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
     pub id: Uuid,
     pub repository: RwLock<DBRepository>,
@@ -32,7 +35,9 @@ pub struct MavenHostedInner {
     pub security: RwLock<SecurityConfig>,
     pub frontend: RwLock<Frontend>,
     pub badge_settings: RwLock<BadgeSettings>,
+    #[debug(skip)]
     pub storage: DynStorage,
+    #[debug(skip)]
     pub site: NitroRepo,
 }
 impl MavenHostedInner {
@@ -102,6 +107,7 @@ impl Repository for MavenHosted {
             SecurityConfigType::get_type_static(),
             BadgeSettingsType::get_type_static(),
             FrontendConfigType::get_type_static(),
+            MavenRepositoryConfigType::get_type_static(),
         ]
     }
 

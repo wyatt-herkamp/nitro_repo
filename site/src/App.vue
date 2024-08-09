@@ -7,6 +7,7 @@
     <RouterView />
   </div>
   <RouterView v-else />
+  <Notifications />
 </template>
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
@@ -16,6 +17,7 @@ import NavBar from './components/nav/NavBar.vue'
 import { sessionStore } from './stores/session'
 import { computed } from 'vue'
 import AdminNav from './components/nav/AdminNav.vue'
+import { Notifications } from '@kyvg/vue3-notification'
 const site = siteStore()
 const session = sessionStore()
 const isAdminPage = computed(() => {
@@ -35,12 +37,22 @@ async function init() {
   if (!info?.is_installed) {
     router.push('/admin/install')
   }
+  const session = sessionStore()
+  const user = await session.updateUser()
+  if (user == undefined) {
+    console.log('user is undefined')
+    return
+  }
 }
 init()
 </script>
-<style scoped>
+<style scoped lang="scss">
 .admin-content {
   display: flex;
-  height: 100vh;
+  height: 90vh;
+  main {
+    flex: 1;
+    padding: 1rem;
+  }
 }
 </style>

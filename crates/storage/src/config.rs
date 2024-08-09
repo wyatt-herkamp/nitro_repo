@@ -26,7 +26,7 @@ impl TryFrom<DBStorage> for StorageConfig {
                 storage_name: db_storage.name,
                 storage_id: db_storage.id,
                 storage_type: db_storage.storage_type,
-                created_at: db_storage.created,
+                created_at: db_storage.created_at,
             },
             type_config,
         })

@@ -3,7 +3,7 @@ use crate::app::NitroRepo;
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
-use futures::future::{BoxFuture, LocalBoxFuture};
+use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
     database::repository::{DBRepository, DBRepositoryConfig},

@@ -32,7 +32,7 @@ let session = sessionStore()
 <style scoped lang="scss">
 @import '@/assets/styles/theme.scss';
 .dropDown-button {
-  background-color: $primary-50;
+  background-color: inherit;
   border-radius: 0.5rem;
   color: $text;
   padding: 16px;
