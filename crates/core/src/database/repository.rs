@@ -1,11 +1,25 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::{prelude::FromRow, types::Json, PgPool};
+use sqlx::{postgres::PgRow, prelude::FromRow, types::Json, PgPool};
 use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::DateTime;
+pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
+    fn columns() -> Vec<&'static str>;
+    fn format_columns(prefix: Option<&str>) -> String {
+        if let Some(prefix) = prefix {
+            Self::columns()
+                .iter()
+                .map(|column| format!("{}.`{}`", prefix, column))
+                .collect::<Vec<String>>()
+                .join(", ")
+        } else {
+            Self::columns().join(", ")
+        }
+    }
+}
 #[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
 
 pub struct DBRepositoryWithStorageName {

@@ -1,10 +1,11 @@
 use std::fmt::Debug;
 
-use schemars::{schema_for, JsonSchema};
+use schemars::{schema_for, JsonSchema, Schema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::PgPool;
 use thiserror::Error;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::repository::DBRepositoryConfig;
@@ -18,6 +19,22 @@ pub enum RepositoryConfigError {
     #[error("Invalid Config: {0}")]
     SerdeError(#[from] serde_json::Error),
 }
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[non_exhaustive]
+pub struct ConfigDescription {
+    pub name: &'static str,
+    pub description: &'static str,
+    pub documentation_link: Option<&'static str>,
+}
+impl Default for ConfigDescription {
+    fn default() -> Self {
+        ConfigDescription {
+            name: "",
+            description: "No Description",
+            documentation_link: None,
+        }
+    }
+}
 /// A Config Type is a type that should be zero sized and should be used to validate and define the layout of a config for a repository
 ///
 /// An array of these will be created at start of the program and can be retrieved to validate and create configs for a repository
@@ -28,6 +45,11 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
     fn get_type_static() -> &'static str
     where
         Self: Sized;
+
+    fn get_description(&self) -> ConfigDescription {
+        ConfigDescription::default()
+    }
+
     /// Validate the config. If the config is invalid this function should return an error
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError>;
     /// If part of the config cannot be changed this function should return an error
@@ -38,7 +60,7 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
     fn default(&self) -> Result<Value, RepositoryConfigError>;
     /// Schema for the config
 
-    fn schema(&self) -> Option<schemars::schema::RootSchema> {
+    fn schema(&self) -> Option<Schema> {
         None
     }
 }
@@ -55,6 +77,8 @@ pub async fn get_repository_config_or_default<
 }
 pub type DynRepositoryConfigType = Box<dyn RepositoryConfigType>;
 #[derive(Debug, Clone, Serialize, Deserialize, Default, JsonSchema)]
+#[serde(default)]
+
 pub struct SecurityConfig {
     /// If the repository requires an auth token to be used
     pub must_use_auth_token_for_push: bool,
@@ -67,6 +91,14 @@ impl RepositoryConfigType for SecurityConfigType {
     fn get_type(&self) -> &'static str {
         "security"
     }
+    fn get_description(&self) -> ConfigDescription {
+        ConfigDescription {
+            name: "Security",
+            description: "Security settings for the repository",
+            documentation_link: None,
+            ..Default::default()
+        }
+    }
 
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
         let _config: SecurityConfig = serde_json::from_value(config)?;
@@ -77,7 +109,7 @@ impl RepositoryConfigType for SecurityConfigType {
         Ok(serde_json::to_value(SecurityConfig::default())?)
     }
 
-    fn schema(&self) -> Option<schemars::schema::RootSchema> {
+    fn schema(&self) -> Option<Schema> {
         Some(schema_for!(SecurityConfig))
     }
 
@@ -89,7 +121,8 @@ impl RepositoryConfigType for SecurityConfigType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(default)]
 pub struct PushRulesConfig {
     /// The push policy. Rather it allows snapshots, stages, or both
     pub push_policy: Policy,
@@ -97,6 +130,18 @@ pub struct PushRulesConfig {
     pub yanking_allowed: bool,
     /// If overwriting is allowed
     pub allow_overwrite: bool,
+    /// If a project exists the user must be a member of the project to push.
+    pub must_be_project_member: bool,
+}
+impl Default for PushRulesConfig {
+    fn default() -> Self {
+        Self {
+            push_policy: Default::default(),
+            yanking_allowed: Default::default(),
+            allow_overwrite: Default::default(),
+            must_be_project_member: Default::default(),
+        }
+    }
 }
 #[derive(Debug, Clone, Copy, Default)]
 
@@ -105,7 +150,14 @@ impl RepositoryConfigType for PushRulesConfigType {
     fn get_type(&self) -> &'static str {
         "push_rules"
     }
-
+    fn get_description(&self) -> ConfigDescription {
+        ConfigDescription {
+            name: "Push Rules",
+            description: "Rules for pushing to the repository",
+            documentation_link: None,
+            ..Default::default()
+        }
+    }
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
         let _config: PushRulesConfig = serde_json::from_value(config)?;
         Ok(())
@@ -115,7 +167,7 @@ impl RepositoryConfigType for PushRulesConfigType {
         Ok(serde_json::to_value(PushRulesConfig::default())?)
     }
 
-    fn schema(&self) -> Option<schemars::schema::RootSchema> {
+    fn schema(&self) -> Option<Schema> {
         Some(schema_for!(PushRulesConfig))
     }
 

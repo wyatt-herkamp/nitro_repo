@@ -1,9 +1,11 @@
 use derive_more::From;
+use nr_core::storage::StoragePath;
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
     local::{LocalStorage, LocalStorageFactory},
-    FileContent, Storage, StorageError, StorageFactory, StoragePath, StorageTypeConfig,
+    FileContent, Storage, StorageError, StorageFactory, StorageTypeConfig,
 };
 #[derive(Debug, Clone)]
 pub enum DynStorage {
@@ -68,6 +70,29 @@ impl Storage for DynStorage {
     async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError> {
         match self {
             DynStorage::Local(storage) => storage.validate_config_change(config).await,
+        }
+    }
+    async fn put_repository_meta(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+        value: Value,
+    ) -> Result<(), StorageError> {
+        match self {
+            DynStorage::Local(storage) => {
+                storage
+                    .put_repository_meta(repository, location, value)
+                    .await
+            }
+        }
+    }
+    async fn get_repository_meta(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Value>, StorageError> {
+        match self {
+            DynStorage::Local(storage) => storage.get_repository_meta(repository, location).await,
         }
     }
 }

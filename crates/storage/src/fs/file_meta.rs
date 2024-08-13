@@ -4,11 +4,9 @@ use std::{
     path::Path,
 };
 
-use ahash::{HashMap, HashMapExt};
 use chrono::{DateTime, FixedOffset};
 use mime::Mime;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use tracing::{debug, instrument, warn};
 
 use crate::utils::MetadataUtils;
@@ -42,14 +40,6 @@ pub struct FileMeta {
     pub hashes: FileHashes,
     pub created: DateTime<FixedOffset>,
     pub modified: DateTime<FixedOffset>,
-    /// Extra data that can be stored in the meta file. This is usually handled by the repository.
-    ///
-    /// Examples:
-    /// - Version
-    /// - Author
-    /// - License
-    #[serde(default)]
-    pub extras: HashMap<String, Value>,
 }
 impl FileMeta {
     #[instrument(skip(path))]
@@ -76,7 +66,6 @@ impl FileMeta {
                 hashes,
                 created,
                 modified,
-                extras: HashMap::new(),
             };
             debug!(?meta, ?meta_path, "Writing Meta File");
             let file = File::create(meta_path)?;

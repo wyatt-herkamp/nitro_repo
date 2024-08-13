@@ -23,9 +23,8 @@ use http::{
     HeaderValue, Method, StatusCode,
 };
 use http_body_util::BodyExt;
-use nr_storage::{
-    InvalidStoragePath, StorageFile, StorageFileMeta, StorageFileReader, StoragePath,
-};
+use nr_core::storage::{InvalidStoragePath, StoragePath};
+use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
 use serde_json::Value;
 use tracing::{error, instrument, trace};

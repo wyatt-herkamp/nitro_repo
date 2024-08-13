@@ -47,11 +47,32 @@ pub fn system_time_to_date_time(time: std::time::SystemTime) -> io::Result<DateT
 
 pub trait PathUtils {
     fn parent_or_err(&self) -> io::Result<&Path>;
+    /// Appends an extension to the path.
+    fn add_extension(&self, extension: &str) -> io::Result<PathBuf>;
 }
 impl PathUtils for PathBuf {
     fn parent_or_err(&self) -> io::Result<&Path> {
         self.parent()
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Parent Directory not found"))
+    }
+
+    fn add_extension(&self, extension: &str) -> io::Result<PathBuf> {
+        let mut path = self.clone();
+        if path.extension().is_none() {
+            path.set_extension(extension);
+            return Ok(path);
+        }
+        let Some(old_extension) = path
+            .extension()
+            .and_then(|v| v.to_str().map(|v| v.to_owned()))
+        else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Path already has an extension",
+            ));
+        };
+        path.set_extension(format!("{}.{}", old_extension, extension));
+        Ok(path)
     }
 }
 #[instrument]

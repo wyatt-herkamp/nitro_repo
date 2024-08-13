@@ -19,6 +19,10 @@ pub fn config_routes() -> axum::Router<NitroRepo> {
             axum::routing::post(config_validate),
         )
         .route("/config/:key/default", axum::routing::get(config_default))
+        .route(
+            "/config/:key/description",
+            axum::routing::get(config_description),
+        )
 }
 pub struct InvalidConfigType(String);
 impl IntoResponse for InvalidConfigType {
@@ -129,4 +133,30 @@ pub async fn config_default(
             .unwrap(),
     };
     Ok(default)
+}
+#[utoipa::path(
+    get,
+    path = "/config/{key}/description",
+    responses(
+        (status = 200, description = "Returns the description for the config type"),
+    ),
+    params(
+        ("key" = String, Path, description = "Config Key"),
+    ),
+)]
+pub async fn config_description(
+    State(site): State<NitroRepo>,
+    Path(key): Path<String>,
+) -> Result<Response, InternalError> {
+    let Some(config_type) = site.get_repository_config_type(&key) else {
+        return Ok(InvalidConfigType(key).into_response());
+    };
+
+    let description = config_type.get_description();
+    let description = Response::builder()
+        .status(200)
+        .header("Content-Type", "application/json")
+        .body(Body::from(serde_json::to_string(&description).unwrap()))
+        .unwrap();
+    Ok(description)
 }

@@ -6,6 +6,7 @@ use std::{
     sync::Arc,
 };
 
+use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument, trace, warn};
 use utils::PathUtils;
@@ -37,6 +38,28 @@ impl LocalStorageInner {
         let path = self.config.path.join(repository.to_string());
         path.join(location)
     }
+    pub fn get_repository_meta_path(
+        &self,
+        repository: &Uuid,
+        location: &StoragePath,
+    ) -> Result<PathBuf, StorageError> {
+        let path = self.get_path(&repository, location);
+        let path = if path.is_dir() {
+            let Some(folder_name) = path.file_name() else {
+                return Err(StorageError::IOError(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "Path is a directory but has no file name",
+                )));
+            };
+            path.parent_or_err()?
+                .join(folder_name)
+                .add_extension("nr-repository-meta")?
+        } else {
+            path.add_extension("nr-repository-meta")?
+        };
+        Ok(path)
+    }
+
     #[instrument]
     pub fn open_file(&self, path: PathBuf) -> Result<StorageFile, StorageError> {
         let meta = StorageFileMeta::new_from_file(&path)?;
@@ -170,6 +193,40 @@ impl Storage for LocalStorage {
         if self.config.path != config.path {
             return Err(StorageError::ConfigError("The path cannot be changed"));
         }
+        Ok(())
+    }
+    async fn get_repository_meta(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Value>, StorageError> {
+        let path = self.get_repository_meta_path(&repository, location)?;
+        if !path.exists() {
+            return Ok(None);
+        }
+        let file = fs::File::open(&path)?;
+        let value: Value = serde_json::from_reader(file)?;
+        Ok(Some(value))
+    }
+    async fn put_repository_meta(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+        value: Value,
+    ) -> Result<(), StorageError> {
+        let path = self.get_repository_meta_path(&repository, location)?;
+        if path.exists() {
+            let path_backup = path.add_extension("bak")?;
+            fs::rename(&path, &path_backup)?;
+        }
+
+        let parent = path.parent_or_err()?;
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let file = fs::File::create(&path)?;
+        serde_json::to_writer(file, &value)?;
         Ok(())
     }
 }

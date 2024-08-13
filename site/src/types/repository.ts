@@ -3,7 +3,6 @@ import MavenConfig from '@/components/admin/repository/configs/MavenConfig.vue'
 import PushRulesConfig from '@/components/admin/repository/configs/PushRulesConfig.vue'
 import SecurityConfig from '@/components/admin/repository/configs/SecurityConfig.vue'
 import type { Component } from 'vue'
-import type { JSONSchema } from 'vanilla-jsoneditor'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -22,6 +21,11 @@ export interface RepositoryWithStorageName {
   active: boolean
   updated_at: string
   created_at: string
+}
+export interface ConfigDescription {
+  name: string
+  description: string
+  documentation_url?: string
 }
 export interface MavenProxyConfigType {
   goTo: string
@@ -50,17 +54,6 @@ export const configTypes: ConfigType[] = [
 
 export function getConfigType(name: string): ConfigType | undefined {
   return configTypes.find((configType) => configType.name === name)
-}
-
-export async function getConfigSchema(name: string): Promise<JSONSchema | undefined> {
-  return await http
-    .get<JSONSchema>(`/api/repository/config/${name}/schema`)
-    .then((response: any) => {
-      return response.data
-    })
-    .catch((error: any) => {
-      console.error(error)
-    })
 }
 
 export async function getConfigTypeDefault(name: string): Promise<any> {

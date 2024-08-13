@@ -35,6 +35,7 @@ import SubmitButton from '@/components/form/SubmitButton.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
 import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
 import http from '@/http'
+import { repositoriesStore } from '@/stores/repositories'
 import { getConfigType, type RepositoryTypeDescription } from '@/types/repository'
 import { type StorageItem } from '@/types/storage'
 import { notify } from '@kyvg/vue3-notification'
@@ -43,6 +44,7 @@ const input = ref({
   name: '',
   storage: ''
 })
+const repoTypesStore = repositoriesStore()
 const selectedRepositoryType = ref('')
 const error = ref('')
 const repositoryTypes = ref<RepositoryTypeDescription[]>([])
@@ -106,33 +108,15 @@ const requiredConfigComponents = computed(() => {
 })
 
 async function load() {
-  await http
-    .get(`/api/storage/list`)
-    .then((response) => {
-      storages.value = response.data
-    })
-    .catch((error) => {
-      notify({
-        type: 'error',
-        title: 'Error',
-        text: 'Failed to load storages'
-      })
-      console.error(error)
-    })
-  await http
-    .get(`/api/repository/types`)
-    .then((response) => {
-      repositoryTypes.value = response.data
-    })
-    .catch((error) => {
-      notify({
-        type: 'error',
-        title: 'Error',
-        text: 'Failed to load repository types'
-      })
-      console.error(error)
-    })
+  await repoTypesStore.getStorages(true).then((response) => {
+    storages.value = response
+  })
+
+  await repoTypesStore.getRepositoryTypes().then((response) => {
+    repositoryTypes.value = response
+  })
 }
+
 load()
 
 async function createRepository() {

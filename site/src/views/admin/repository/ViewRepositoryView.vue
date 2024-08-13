@@ -12,7 +12,7 @@
           :data-active="currentConfig === configType"
           @click="currentConfig = configType"
         >
-          {{ configType }}
+          {{ getConfigTitleOrFallback(configType) }}
         </div>
       </div>
       <div class="tabs-content">
@@ -25,47 +25,46 @@
           <component class="config" :is="configType.component" v-bind="configType.props" />
         </div>
         <div class="tab-content" :data-active="currentConfig === 'main'">
-          <form id="repository">
-            <h2>Repository Info</h2>
-
-            <TwoByFormBox>
-              <TextInput v-model="repository.name" required disabled> Name </TextInput>
-              <TextInput v-model="repository.repository_type" required disabled>
-                Repository Type
-              </TextInput>
-            </TwoByFormBox>
-            <TwoByFormBox>
-              <TextInput v-model="repository.storage_name" required disabled>
-                Storage Name
-              </TextInput>
-              <TextInput v-model="repository.storage_id" required disabled>
-                Storage Id Type
-              </TextInput>
-            </TwoByFormBox>
-          </form>
+          <BasicRepositoryInfo :repository="repository" />
         </div>
       </div>
     </div>
   </main>
 </template>
 <script setup lang="ts">
+import BasicRepositoryInfo from '@/components/admin/repository/BasicRepositoryInfo.vue'
 import FallBackEditor from '@/components/admin/repository/configs/FallBackEditor.vue'
-import TextInput from '@/components/form/text/TextInput.vue'
-import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
 import http from '@/http'
 import router from '@/router'
-import { getConfigType, type RepositoryWithStorageName } from '@/types/repository'
+import { repositoriesStore } from '@/stores/repositories'
+import {
+  getConfigType,
+  type ConfigDescription,
+  type RepositoryWithStorageName
+} from '@/types/repository'
 import { storageTypes, type StorageItem } from '@/types/storage'
 import { computed, ref, watch } from 'vue'
-
+const repositoryTypesStore = repositoriesStore()
 const repositoryId = router.currentRoute.value.params.id as string
 const currentConfig = ref<string | undefined>('main')
 watch(currentConfig, (newValue) => {
   console.log('New Value ' + newValue)
 })
 const repository = ref<RepositoryWithStorageName | undefined>(undefined)
+const configDescriptions = ref<Map<string, ConfigDescription>>(new Map())
 const configTypes = ref<string[]>([])
-
+function getConfigTitleOrFallback(config: string) {
+  return configDescriptions.value.get(config)?.name || config
+}
+watch(configTypes, async () => {
+  for (const config of configTypes.value) {
+    await repositoryTypesStore.getConfigDescription(config).then((response) => {
+      if (response) {
+        configDescriptions.value.set(config, response)
+      }
+    })
+  }
+})
 const configComponents = computed(() => {
   const configs = configTypes.value.map((config) => {
     const component = getConfigType(config)
@@ -119,7 +118,7 @@ getRepository()
 }
 .tabs-header {
   display: flex;
-  justify-content: space-between;
+  gap: 1rem;
   width: 100%;
   background-color: $primary-30;
 }

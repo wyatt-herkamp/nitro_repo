@@ -21,8 +21,8 @@ use uuid::Uuid;
 use crate::{
     app::NitroRepo,
     repository::{
-        maven::{MavenRepositoryConfig, MavenRepositoryConfigType},
-        Repository, RepositoryFactoryError, RepositoryHandlerError,
+        maven::MavenRepositoryConfigType, Repository, RepositoryFactoryError,
+        RepositoryHandlerError,
     },
 };
 

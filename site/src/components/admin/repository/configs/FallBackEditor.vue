@@ -1,24 +1,23 @@
 <template>
-  <div v-if="schema && validator" class="editorBox">
+  <div v-if="form && model" class="editorBox">
     <h2 class="settingHeader">Generic Config Editor: {{ settingName }}</h2>
 
-    <JsonEditorVue class="editor" :validator="validator" v-model="model" />
+    <JsonSchemaForm :form="form" v-model="model" />
     <SubmitButton>Update Settings</SubmitButton>
   </div>
 </template>
 <script setup lang="ts">
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import http from '@/http'
-import { createAjvValidator, type JSONSchema } from 'vanilla-jsoneditor'
 import { computed, ref, type PropType } from 'vue'
-import JsonEditorVue from 'json-editor-vue'
+import { repositoriesStore } from '@/stores/repositories'
+import JsonSchemaForm from '@/components/form/JsonSchemaForm.vue'
+import { createForm, type RootSchema } from 'nitro-jsr'
 
-const schema = ref<JSONSchema | undefined>(undefined)
-const validator = computed(() => {
+const schema = ref<RootSchema | undefined>(undefined)
+const form = computed(() => {
   if (schema.value) {
-    return createAjvValidator({
-      schema: schema.value
-    })
+    return createForm(schema.value)
   }
   return undefined
 })
@@ -30,17 +29,15 @@ const props = defineProps({
   }
 })
 const model = defineModel<any>()
-
+const repositoryTypeStore = repositoriesStore()
 async function load() {
-  await http
-    .get(`/api/repository/config/${props.settingName}/schema`)
-    .then((response) => {
-      schema.value = response.data
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-
+  if (!props.settingName) {
+    throw new Error('settingName is required')
+  }
+  await repositoryTypeStore.getConfigSchema(props.settingName).then((response) => {
+    schema.value = response as RootSchema
+    console.log(schema.value)
+  })
   if (props.repository) {
     await http
       .get(`/api/repository/repository/${props.repository}/config/${props.settingName}`)
@@ -58,14 +55,12 @@ async function load() {
   }
 }
 async function loadDefault() {
-  await http
-    .get(`/api/repository/config/${props.settingName}/default`)
-    .then((response) => {
-      model.value = response.data
-    })
-    .catch((error) => {
-      console.error(error)
-    })
+  if (!props.settingName) {
+    throw new Error('settingName is required')
+  }
+  await repositoryTypeStore.getDefaultConfig(props.settingName).then((response) => {
+    model.value = response
+  })
 }
 load()
 </script>

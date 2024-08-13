@@ -15,13 +15,14 @@ use nr_core::{
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 use proxy::MavenProxy;
+use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
 pub mod proxy;
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "config")]
 pub enum MavenRepositoryConfig {
     Hosted,
@@ -39,7 +40,9 @@ impl RepositoryConfigType for MavenRepositoryConfigType {
     {
         "maven"
     }
-
+    fn schema(&self) -> Option<schemars::Schema> {
+        Some(schema_for!(MavenRepositoryConfig))
+    }
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
         let config: MavenRepositoryConfig = serde_json::from_value(config)?;
         Ok(())

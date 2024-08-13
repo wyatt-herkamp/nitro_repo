@@ -36,6 +36,7 @@ mod config;
         config::config_schema,
         config::config_validate,
         config::config_default,
+        config::config_description,
         new_repository,
         get_repository,
         get_config

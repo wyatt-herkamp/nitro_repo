@@ -5,6 +5,7 @@ use std::future::Future;
 pub use config::*;
 pub use error::StorageError;
 pub use fs::*;
+use nr_core::storage::StoragePath;
 use serde_json::Value;
 use tracing::warn;
 pub use uuid::Uuid;
@@ -34,23 +35,19 @@ pub trait Storage: Send + Sync {
         file: FileContent,
         location: &StoragePath,
     ) -> Result<(usize, bool), StorageError>;
-    async fn put_file_meta(
-        _repository: Uuid,
-        _location: &StoragePath,
-        _key: impl Into<String>,
-        _value: impl Into<Value>,
-    ) -> Result<(), StorageError> {
-        warn!("put_file_meta is not implemented for this storage");
-        Ok(())
-    }
-    async fn get_file_meta(
-        _repository: Uuid,
-        _location: &StoragePath,
-        _key: impl Into<String>,
-    ) -> Result<Option<Value>, StorageError> {
-        warn!("get_file_meta is not implemented for this storage");
-        Ok(None)
-    }
+    /// Repository Meta files are files that are not listed and the repository controls the content. The content is stored as JSON
+    async fn put_repository_meta(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+        value: Value,
+    ) -> Result<(), StorageError>;
+    /// Repository Meta files are files that are not listed and the repository controls the content. The content is stored as JSON
+    async fn get_repository_meta(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Value>, StorageError>;
     /// Deletes a file at a given location
     async fn delete_file(
         &self,

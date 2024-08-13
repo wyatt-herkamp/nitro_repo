@@ -42,19 +42,22 @@ mime_guess = "2"
 mime = "0.3"
 sha2 = "0.10"
 base64 = "0.22"
+derive_builder = "0.20"
+
 # Error Handling
-thiserror = "1"
-anyhow = "1"
-schemars = "0.8"
+schemars = { git = "https://github.com/wyatt-herkamp/schemars.git", branch = "if_for_adjacent" }
 reqwest = { version = "0.12", features = [
     "stream",
     "http2",
     "json",
     "rustls-tls",
 ], default-features = false }
+thiserror = "1"
+anyhow = "1"
 badge-maker = { git = "https://github.com/wyatt-herkamp/badge-maker.git", branch = "updates_and_improvements" }
 auto_impl = "1.2"
-
+once_cell = "1.8"
+regex = "1"
 hyper = { version = "1", features = ["full"] }
 hyper-util = { version = "0.1" }
 http = "1.1"

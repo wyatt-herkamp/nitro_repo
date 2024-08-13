@@ -74,7 +74,8 @@ impl StorageFileMeta {
             for entry in std::fs::read_dir(path)? {
                 let entry = entry?;
                 let path = entry.path();
-                if path.is_file() && path.extension().unwrap_or_default() == "nr-meta" {
+                let extension = path.extension().unwrap_or_default();
+                if extension == "nr-meta" || extension == "nr-repository-meta" {
                     debug!(?path, "Skipping Meta File");
                     // Check if file is a meta file
                     continue;
