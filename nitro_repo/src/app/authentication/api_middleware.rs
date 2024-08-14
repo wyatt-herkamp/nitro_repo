@@ -50,7 +50,11 @@ where
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
-
+    #[tracing::instrument(
+        skip(self, req),
+        name = "AuthenticationMiddleware",
+        fields(project_module = "Authentication")
+    )]
     fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
         if req.method() == http::Method::OPTIONS {
             trace!("Options Request");
@@ -61,7 +65,6 @@ where
             };
         }
         let (mut parts, body) = req.into_parts();
-        self.site.update_app_url(&mut parts.uri);
         let cookie_jar = CookieJar::from_headers(&parts.headers);
         let authorization_header = parts
             .headers

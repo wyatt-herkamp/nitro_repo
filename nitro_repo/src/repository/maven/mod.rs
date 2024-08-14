@@ -5,12 +5,23 @@ use ahash::HashMap;
 use axum::response::IntoResponse;
 use futures::future::BoxFuture;
 use hosted::MavenHosted;
+use maven_rs::pom::Pom;
 use nr_core::{
-    database::repository::{DBRepository, DBRepositoryConfig},
-    repository::config::{
-        frontend::{BadgeSettingsType, FrontendConfigType},
-        PushRulesConfigType, RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
+    database::{
+        project::{
+            NewProject, NewProjectBuilder, NewProjectBuilderError, NewVersion, NewVersionBuilder,
+            NewVersionBuilderError,
+        },
+        repository::{DBRepository, DBRepositoryConfig},
     },
+    repository::{
+        config::{
+            frontend::{BadgeSettingsType, FrontendConfigType},
+            PushRulesConfigType, RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
+        },
+        project::{ReleaseType, VersionDataBuilder, VersionDataBuilderError},
+    },
+    storage::StoragePath,
 };
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
@@ -18,6 +29,7 @@ use proxy::MavenProxy;
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use uuid::Uuid;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
@@ -165,23 +177,83 @@ impl MavenRepository {
 pub enum MavenError {
     #[error("Error with processing Maven request: {0}")]
     MavenRS(#[from] maven_rs::Error),
+    #[error("XML Deserialize Error: {0}")]
+    XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
+    #[error("Database Error: {0}")]
+    Database(#[from] sqlx::Error),
+    #[error("New Project Error: {0}")]
+    NewProject(#[from] NewProjectBuilderError),
+    #[error("New Version Error: {0}")]
+    NewVersion(#[from] NewVersionBuilderError),
+    #[error("New Version Error: {0}")]
+    VersionData(#[from] VersionDataBuilderError),
 }
 impl IntoResponse for MavenError {
     fn into_response(self) -> axum::http::Response<axum::body::Body> {
         match self {
-            MavenError::MavenRS(maven_rs::Error::XMLDeserialize(err)) => {
-                axum::http::Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
-                    .body(axum::body::Body::from(format!(
-                        "XML Deserialize Error: {}",
-                        err
-                    )))
-                    .unwrap()
-            }
+            MavenError::MavenRS(maven_rs::Error::XMLDeserialize(err))
+            | MavenError::XMLDeserialize(err) => axum::http::Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(axum::body::Body::from(format!(
+                    "XML Deserialize Error: {}",
+                    err
+                )))
+                .unwrap(),
             MavenError::MavenRS(e) => axum::http::Response::builder()
                 .status(500)
                 .body(axum::body::Body::from(format!("Maven Error: {}", e)))
                 .unwrap(),
+            err => axum::http::Response::builder()
+                .status(500)
+                .body(axum::body::Body::from(format!(
+                    "Internal Server Error: {}",
+                    err
+                )))
+                .unwrap(),
         }
     }
+}
+pub fn get_release_type(version: &str) -> ReleaseType {
+    let version = version.to_lowercase();
+    if version.contains("snapshot") {
+        ReleaseType::Snapshot
+    } else {
+        ReleaseType::Stable
+    }
+}
+
+pub fn pom_to_db_project(
+    project_path: StoragePath,
+    repository: Uuid,
+    pom: Pom,
+) -> Result<NewProject, MavenError> {
+    let result = NewProjectBuilder::default()
+        .project_key(format!("{}:{}", pom.group_id, pom.artifact_id))
+        .scope(Some(pom.group_id))
+        .name(pom.name.unwrap_or(pom.artifact_id))
+        .description(pom.description)
+        .repository(repository)
+        .storage_path(project_path.to_string())
+        .build()?;
+    Ok(result)
+}
+pub fn pom_to_db_project_version(
+    project_id: Uuid,
+    version_path: StoragePath,
+    publisher: i32,
+    pom: Pom,
+) -> Result<NewVersion, MavenError> {
+    let version_data = VersionDataBuilder::default()
+        .description(pom.description)
+        .build()?;
+    let release_type = ReleaseType::release_type_from_version(&pom.version);
+    let result = NewVersionBuilder::default()
+        .project_id(project_id)
+        .version(pom.version)
+        .publisher(publisher)
+        .version_path(version_path.to_string())
+        .release_type(release_type)
+        .extra(version_data)
+        .build()?;
+    Ok(result)
 }

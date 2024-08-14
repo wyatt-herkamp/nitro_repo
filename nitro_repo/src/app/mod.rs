@@ -86,7 +86,6 @@ impl From<(String, String)> for RepositoryStorageName {
         }
     }
 }
-#[derive(Debug)]
 pub struct NitroRepoInner {
     pub instance: Mutex<Instance>,
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
@@ -97,7 +96,17 @@ pub struct NitroRepoInner {
     pub repository_types: Vec<DynRepositoryType>,
     pub general_security_settings: SecuritySettings,
 }
-#[derive(Debug, Clone, AsRef, Deref)]
+impl Debug for NitroRepo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NitroRepo")
+            .field("instance", &self.inner.instance.lock())
+            .field("active_storages", &self.inner.storages.read().len())
+            .field("active_repositories", &self.inner.repositories.read().len())
+            .field("database", &self.database)
+            .finish()
+    }
+}
+#[derive(Clone, AsRef, Deref)]
 pub struct NitroRepo {
     #[deref(forward)]
     pub inner: Arc<NitroRepoInner>,
@@ -158,8 +167,6 @@ impl NitroRepo {
         nitro_repo.load_repositories().await?;
         Ok(nitro_repo)
     }
-    ///Unloads all storages and reloads them from the database
-    #[instrument]
     async fn load_storages(&self) -> anyhow::Result<()> {
         let mut storages = self.storages.write();
         storages.clear();
@@ -188,7 +195,6 @@ impl NitroRepo {
         info!("Loaded {} storages", storages.len());
         Ok(())
     }
-    #[instrument]
     async fn load_repositories(&self) -> anyhow::Result<()> {
         let mut repositories = self.repositories.write();
         repositories.clear();
@@ -248,20 +254,9 @@ impl NitroRepo {
         repositories.insert(id, repository);
     }
 
-    #[instrument]
     pub fn update_app_url(&self, app_url: &Uri) {
-        let mut instance = self.instance.lock();
-        if instance.app_url.is_empty() {
-            info!("Updating app url to {}", app_url);
-            let schema = app_url.scheme_str().unwrap_or("http");
-            let host = if let Some(authority) = app_url.host() {
-                authority.to_string()
-            } else {
-                warn!("No host found in uri");
-                return;
-            };
-            instance.app_url = format!("{}://{}", schema, host);
-        }
+        info!(?app_url, "Updating app url");
+        // TODO:
     }
     /// Checks if a repository name and storage pair are found in the lookup table. If not queries the database.
     /// If found in the database, adds the pair to the lookup table

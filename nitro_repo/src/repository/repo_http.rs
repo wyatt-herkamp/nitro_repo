@@ -28,7 +28,7 @@ use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
 use serde_json::Value;
-use tracing::{debug, error, info, instrument, trace};
+use tracing::{debug, error, info, instrument, span, trace, Level};
 use utoipa::openapi::info;
 
 use super::RepositoryHandlerError;
@@ -134,7 +134,6 @@ pub enum RepoResponse {
     FileMetaResponse(StorageFileMeta),
     Json(Value, StatusCode),
     Generic(axum::response::Response),
-    Unauthorized,
 }
 impl RepoResponse {
     /// Default Response Format
@@ -184,10 +183,6 @@ impl RepoResponse {
                     .unwrap()
             }
             Self::Generic(response) => response,
-            Self::Unauthorized => Response::builder()
-                .status(StatusCode::UNAUTHORIZED)
-                .body(Body::from("Unauthorized"))
-                .unwrap(),
         }
     }
     pub fn put_response(was_created: bool, location: impl AsRef<str>) -> Self {
@@ -233,6 +228,39 @@ impl RepoResponse {
             "Indexing is not allowed for this repository",
         )
     }
+    pub fn www_authenticate(value: &str) -> Self {
+        Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .header("WWW-Authenticate", value)
+            .body(Body::from("Unauthorized"))
+            .unwrap()
+            .into()
+    }
+    pub fn unauthorized() -> Self {
+        Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body(Body::from("Unauthorized"))
+            .unwrap()
+            .into()
+    }
+    pub fn forbidden() -> Self {
+        Response::builder()
+            .status(StatusCode::FORBIDDEN)
+            .body(Body::from(
+                "You do not have permission to access this repository",
+            ))
+            .unwrap()
+            .into()
+    }
+    pub fn require_auth_token() -> Self {
+        Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body(Body::from(
+                "Authentication Token is required for this repository.",
+            ))
+            .unwrap()
+            .into()
+    }
     pub fn disabled_repository() -> Self {
         Self::basic_text_response(StatusCode::FORBIDDEN, "Repository is disabled")
     }
@@ -272,6 +300,7 @@ impl From<Option<StorageFileMeta>> for RepoResponse {
 pub struct RepoRequestPath {
     storage: String,
     repository: String,
+    #[serde(default)]
     path: Option<StoragePath>,
 }
 #[debug_handler]
@@ -304,16 +333,25 @@ pub async fn handle_repo_request(
         path: path.unwrap_or_default(),
         authentication,
     };
-    info!("Executing Request");
-    let response = match method {
-        Method::GET => repository.handle_get(request).await,
-        Method::PUT => repository.handle_put(request).await,
-        Method::DELETE => repository.handle_delete(request).await,
-        Method::PATCH => repository.handle_patch(request).await,
-        Method::HEAD => repository.handle_head(request).await,
-        _ => repository.handle_other(request).await,
+
+    let response = {
+        let span = span!(
+            Level::DEBUG,
+            "Repository Request",
+            "repository_type" = repository.get_type(),
+            ?method,
+            ?request
+        );
+        let _enter = span.enter();
+        match method {
+            Method::GET => repository.handle_get(request).await,
+            Method::PUT => repository.handle_put(request).await,
+            Method::DELETE => repository.handle_delete(request).await,
+            Method::PATCH => repository.handle_patch(request).await,
+            Method::HEAD => repository.handle_head(request).await,
+            _ => repository.handle_other(request).await,
+        }
     };
-    // TODO: If request is HTML, return HTML, If request is JSON, return JSON, else return text
     match response {
         Ok(response) => Ok(response.into_response_default()),
         Err(err) => {

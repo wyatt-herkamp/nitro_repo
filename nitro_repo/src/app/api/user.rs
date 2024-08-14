@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use axum::{
     body::Body,
     extract::{ConnectInfo, State},
-    response::{self, IntoResponse, IntoResponseParts, Response},
+    response::{self, IntoResponse, Response},
     Json,
 };
 use axum_extra::{

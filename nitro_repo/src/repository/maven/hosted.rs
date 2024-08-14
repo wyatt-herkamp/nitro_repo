@@ -1,8 +1,14 @@
 use std::sync::Arc;
 
+use axum::response::{self, Response};
 use derive_more::derive::Deref;
+use http::{version, StatusCode};
+use maven_rs::pom::Pom;
 use nr_core::{
-    database::repository::DBRepository,
+    database::{
+        project::{DBProject, DBProjectVersion, NewProjectMember, ProjectDBType},
+        repository::DBRepository,
+    },
     repository::{
         config::{
             frontend::{BadgeSettings, BadgeSettingsType, Frontend, FrontendConfigType},
@@ -11,18 +17,20 @@ use nr_core::{
         },
         Visibility,
     },
+    storage::StoragePath,
     user::permissions::HasPermissions,
 };
 use nr_storage::{DynStorage, Storage};
 use parking_lot::RwLock;
-use tracing::{debug, info, instrument};
+use tokio::io::AsyncReadExt;
+use tracing::{debug, error, info, instrument};
 use uuid::Uuid;
 
 use crate::{
-    app::NitroRepo,
+    app::{authentication::RepositoryAuthentication, NitroRepo},
     repository::{
-        maven::MavenRepositoryConfigType, Repository, RepositoryFactoryError,
-        RepositoryHandlerError,
+        maven::{self, MavenError, MavenRepositoryConfigType},
+        Repository, RepositoryFactoryError, RepositoryHandlerError,
     },
 };
 
@@ -90,6 +98,84 @@ impl MavenHosted {
             site,
         };
         Ok(Self(Arc::new(inner)))
+    }
+    pub fn check_read(&self, authentication: &RepositoryAuthentication) -> Option<RepoResponse> {
+        if self.visibility().is_private() {
+            if authentication.is_no_identification() {
+                return Some(RepoResponse::www_authenticate("Basic"));
+            } else if !(authentication.can_read_repository(self.id)) {
+                return Some(RepoResponse::forbidden());
+            }
+        }
+        None
+    }
+    async fn add_or_update_version(
+        &self,
+        version_directory: StoragePath,
+        project_id: Uuid,
+        publisher: i32,
+        pom: Pom,
+    ) -> Result<(), MavenError> {
+        let db_version = DBProjectVersion::find_by_version_and_project(
+            &pom.version,
+            project_id,
+            &self.site.database,
+        )
+        .await?;
+        if let Some(version) = db_version {
+            info!(?version, "Version already exists");
+            // TODO: Update Version
+        } else {
+            let version = super::pom_to_db_project_version(
+                project_id,
+                version_directory,
+                publisher,
+                pom.clone(),
+            )?;
+            version.insert_no_return(&self.site.database).await?;
+            info!("Created Version");
+        };
+        Ok(())
+    }
+    #[instrument]
+    async fn post_pom_upload_inner(
+        &self,
+        pom_directory: StoragePath,
+        publisher: i32,
+        pom: Pom,
+    ) -> Result<(), MavenError> {
+        let project_key = format!("{}:{}", pom.group_id, pom.artifact_id);
+        let version_directory = pom_directory.clone().parent();
+        let db_project =
+            DBProject::find_by_project_key(&project_key, self.id, &self.site.database).await?;
+        let project_id = if let Some(project) = db_project {
+            project.id
+        } else {
+            let project_directory = version_directory.clone().parent();
+            let project = super::pom_to_db_project(project_directory, self.id, pom.clone())?;
+            let project = project.insert(&self.site.database).await?;
+
+            let new_member = NewProjectMember::new_owner(publisher, project.id);
+            new_member.insert_no_return(&self.site.database).await?;
+            info!(?project, "Created Project");
+            project.id
+        };
+
+        self.add_or_update_version(version_directory, project_id, publisher, pom)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn post_pom_upload(&self, pom_directory: StoragePath, publisher: i32, pom: Pom) {
+        match self
+            .post_pom_upload_inner(pom_directory, publisher, pom)
+            .await
+        {
+            Ok(()) => {}
+            Err(e) => {
+                error!(?e, "Failed to handle POM Upload");
+            }
+        }
     }
 }
 impl Repository for MavenHosted {
@@ -160,7 +246,7 @@ impl Repository for MavenHosted {
         }
         Ok(())
     }
-
+    #[instrument(name = "maven_hosted_get")]
     async fn handle_get(
         &self,
         RepositoryRequest {
@@ -174,12 +260,10 @@ impl Repository for MavenHosted {
             return Ok(RepoResponse::disabled_repository());
         }
 
-        let visibility = { self.security.read().visibility };
-
-        if visibility.is_private() && !authentication.can_read_repository(self.id) {
-            return Ok(RepoResponse::Unauthorized);
+        if let Some(err) = self.check_read(&authentication) {
+            return Ok(err);
         }
-
+        let visibility = self.visibility();
         let file = self.0.storage.open_file(self.id, &path).await?;
         if let Some(file) = &file {
             if file.is_directory()
@@ -191,6 +275,7 @@ impl Repository for MavenHosted {
         }
         Ok(RepoResponse::from(file))
     }
+    #[instrument(name = "maven_hosted_head")]
     async fn handle_head(
         &self,
         RepositoryRequest {
@@ -205,8 +290,8 @@ impl Repository for MavenHosted {
         }
         let visibility = { self.security.read().visibility };
 
-        if visibility.is_private() && !authentication.can_read_repository(self.id) {
-            return Ok(RepoResponse::Unauthorized);
+        if let Some(err) = self.check_read(&authentication) {
+            return Ok(err);
         }
         let file = self.storage.get_file_information(self.id, &path).await?;
         if let Some(file) = &file {
@@ -219,7 +304,7 @@ impl Repository for MavenHosted {
         }
         Ok(RepoResponse::from(file))
     }
-    #[instrument]
+    #[instrument(name = "maven_hosted_put")]
     async fn handle_put(
         &self,
         RepositoryRequest {
@@ -233,28 +318,36 @@ impl Repository for MavenHosted {
             "Handling PUT Request for Repository: {} Path: {}",
             self.id, path
         );
-        let repository_name = {
+        let (save_path, user_id) = {
             let repository = self.repository.read();
             if !repository.active {
                 return Ok(RepoResponse::disabled_repository());
             }
-            repository.name.clone()
-        };
-        let Some(user) = authentication.get_user() else {
-            return Ok(RepoResponse::Unauthorized);
-        };
-        {
-            let security_config = self.security.read();
-            if security_config.visibility.is_private() && !user.can_read_repository(self.id) {
-                return Ok(RepoResponse::Unauthorized);
+            let security = self.security.read();
+            if security.must_use_auth_token_for_push && !authentication.has_auth_token() {
+                info!("Repository requires an auth token for push");
+                return Ok(RepoResponse::require_auth_token());
             }
-        }
+            let Some(user) = authentication.get_user() else {
+                info!("No acceptable user authentication provided");
+                return Ok(RepoResponse::unauthorized());
+            };
+            if !user.can_write_to_repository(self.id) {
+                info!(?repository, ?user, "User does not have write permissions");
+                return Ok(RepoResponse::forbidden());
+            }
+
+            let save_path = format!(
+                "/repositories/{}/{}/{}",
+                self.storage.storage_config().storage_config.storage_name,
+                repository.name,
+                path
+            );
+            (save_path, user.id)
+        };
+
         {
             let push_rules = self.push_rules.read();
-
-            if !user.can_write_to_repository(self.id) {
-                return Ok(RepoResponse::Unauthorized);
-            }
         }
         info!("Saving File: {}", path);
         let body = body.body_as_bytes().await?;
@@ -263,14 +356,25 @@ impl Repository for MavenHosted {
         let (size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
         // Trigger Push Event if it is the .pom file
         if path.has_extension("pom") {
-            // TODO: Trigger Push Event
+            let file = self
+                .storage
+                .open_file(self.id, &path)
+                .await?
+                .and_then(|x| x.file());
+            let Some((mut file, meta)) = file else {
+                return Ok(Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body("Failed to open file".into())
+                    .unwrap()
+                    .into());
+            };
+            let mut pom_file = String::with_capacity(size);
+            file.read_to_string(&mut pom_file).await?;
+            let pom: maven_rs::pom::Pom =
+                maven_rs::quick_xml::de::from_str(&pom_file).map_err(MavenError::from)?;
+            debug!(?pom, "Parsed POM File");
+            self.post_pom_upload(path.clone(), user_id, pom).await;
         }
-        let save_path = format!(
-            "/repositories/{}/{}/{}",
-            self.storage.storage_config().storage_config.storage_name,
-            repository_name,
-            path
-        );
 
         Ok(RepoResponse::put_response(created, save_path))
     }

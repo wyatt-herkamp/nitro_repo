@@ -134,6 +134,8 @@ pub enum RepositoryHandlerError {
     BadRequest(#[from] BadRequestErrors),
     #[error("Maven Repository Error: {0}")]
     MavenError(#[from] maven::MavenError),
+    #[error("IO Error: {0}")]
+    IOError(#[from] std::io::Error),
 }
 impl IntoResponse for RepositoryHandlerError {
     fn into_response(self) -> Response {

@@ -16,8 +16,9 @@ use nr_core::user::permissions::{HasPermissions, UserPermissions};
 use serde::Serialize;
 use session::Session;
 use sqlx::PgPool;
+use strum::EnumIs;
 use thiserror::Error;
-use tracing::{error, info, warn};
+use tracing::{error, info, instrument, warn};
 use utoipa::ToSchema;
 
 use crate::utils::headers::AuthorizationHeader;
@@ -76,6 +77,11 @@ where
     S: Send + Sync,
 {
     type Rejection = AuthenticationError;
+    #[instrument(
+        name = "api_auth_from_request",
+        skip(parts, state),
+        fields(project_module = "Authentication")
+    )]
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
         let repo = NitroRepo::from_ref(state);
@@ -115,7 +121,7 @@ pub struct MeWithSession {
     user: UserSafeData,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, EnumIs)]
 pub enum RepositoryAuthentication {
     AuthToken(AuthToken, UserSafeData),
     Session(Session, UserSafeData),
@@ -168,6 +174,11 @@ where
     S: Send + Sync,
 {
     type Rejection = AuthenticationError;
+    #[instrument(
+        name = "repository_auth_from_request",
+        skip(parts, state),
+        fields(project_module = "Authentication")
+    )]
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
         let repo = NitroRepo::from_ref(state);
@@ -216,6 +227,7 @@ pub enum AuthenticationRaw {
     Basic { username: String, password: String },
 }
 impl AuthenticationRaw {
+    #[instrument(skip(header, site), fields(project_module = "Authentication"))]
     pub fn new_from_header(header: AuthorizationHeader, site: &NitroRepo) -> Self {
         match header {
             AuthorizationHeader::Basic { username, password } => {
@@ -251,6 +263,10 @@ impl AuthenticationRaw {
     }
 }
 #[inline(always)]
+#[instrument(
+    skip(username, password, database),
+    fields(project_module = "Authentication")
+)]
 pub async fn verify_login(
     username: impl AsRef<str>,
     password: impl AsRef<str>,
@@ -259,33 +275,13 @@ pub async fn verify_login(
     let user_found: Option<UserModel> = UserModel::get_by_username_or_email(username, database)
         .await
         .map_err(AuthenticationError::DBError)?;
-    if user_found.is_none() {
-        return Err(AuthenticationError::Unauthorized);
-    }
-    let argon2 = Argon2::default();
-    let user = user_found.unwrap();
-    let Some(parsed_hash) = user
-        .password
-        .as_ref()
-        .map(|x| PasswordHash::new(x))
-        .transpose()
-        .map_err(|err| {
-            error!("Failed to parse password hash: {}", err);
-            AuthenticationError::PasswordVerificationError
-        })?
-    else {
+    let Some(user) = user_found else {
         return Err(AuthenticationError::Unauthorized);
     };
-
-    if argon2
-        .verify_password(password.as_ref().as_bytes(), &parsed_hash)
-        .is_err()
-    {
-        return Err(AuthenticationError::Unauthorized);
-    }
+    password::verify_password(password.as_ref(), user.password.as_deref())?;
     Ok(user.into())
 }
-
+#[instrument(skip(token, database), fields(project_module = "Authentication"))]
 pub async fn get_user_and_auth_token(
     token: &str,
     database: &PgPool,
@@ -299,4 +295,47 @@ pub async fn get_user_and_auth_token(
         .map_err(AuthenticationError::DBError)?
         .ok_or(AuthenticationError::Unauthorized)?;
     Ok((user, auth_token))
+}
+pub mod password {
+    use argon2::{
+        password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+    };
+    use rand::rngs::OsRng;
+    use tracing::{error, instrument};
+
+    use crate::app::authentication::AuthenticationError;
+    #[instrument(skip(password), fields(project_module = "Authentication"))]
+    pub fn encrypt_password(password: &str) -> Option<String> {
+        let salt = SaltString::generate(&mut OsRng);
+
+        let argon2 = Argon2::default();
+
+        let password = argon2.hash_password(password.as_ref(), &salt);
+        match password {
+            Ok(ok) => Some(ok.to_string()),
+            Err(err) => {
+                error!("Failed to hash password: {}", err);
+                None
+            }
+        }
+    }
+    #[instrument(skip(password, hash), fields(project_module = "Authentication"))]
+    pub fn verify_password(password: &str, hash: Option<&str>) -> Result<(), AuthenticationError> {
+        let argon2 = Argon2::default();
+        let Some(parsed_hash) = hash.map(PasswordHash::new).transpose().map_err(|err| {
+            error!("Failed to parse password hash: {}", err);
+            AuthenticationError::PasswordVerificationError
+        })?
+        else {
+            return Err(AuthenticationError::Unauthorized);
+        };
+
+        if argon2
+            .verify_password(password.as_bytes(), &parsed_hash)
+            .is_err()
+        {
+            return Err(AuthenticationError::Unauthorized);
+        }
+        Ok(())
+    }
 }

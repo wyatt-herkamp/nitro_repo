@@ -2,26 +2,28 @@ use axum::{extract::State, Json};
 use http::StatusCode;
 use nr_core::{database::user::NewUserRequest, user::permissions::UserPermissions};
 use serde::{Deserialize, Serialize};
+use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
 use utoipa::ToSchema;
 pub mod repository;
 pub mod storage;
 pub mod user;
 pub mod user_management;
-use crate::{error::InternalError, utils::password::encrypt_password};
+use crate::error::InternalError;
 
-use super::{Instance, NitroRepo, NitroRepoState};
+use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
 pub fn api_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
-        .route("/api/info", axum::routing::get(info))
-        .route("/api/install", axum::routing::post(install))
-        .nest("/api/user", user::user_routes())
-        .nest("/api/storage", storage::storage_routes())
+        .route("/info", axum::routing::get(info))
+        .route("/install", axum::routing::post(install))
+        .nest("/user", user::user_routes())
+        .nest("/storage", storage::storage_routes())
         .nest(
-            "/api/user-management",
+            "/user-management",
             user_management::user_management_routes(),
         )
-        .nest("/api/repository", repository::repository_routes())
+        .nest("/repository", repository::repository_routes())
+        .layer(CorsLayer::very_permissive())
 }
 #[utoipa::path(
     get,
@@ -64,7 +66,7 @@ pub async fn install(
     let password = user
         .password
         .as_ref()
-        .and_then(|password| encrypt_password(password));
+        .and_then(|password| password::encrypt_password(password));
     if password.is_none() {
         error!("A Password must exist for the first user.");
         return Ok(StatusCode::BAD_REQUEST);

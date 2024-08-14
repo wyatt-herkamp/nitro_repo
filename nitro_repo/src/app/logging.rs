@@ -78,10 +78,14 @@ impl Default for TracingConfig {
 impl LoggingConfig {
     pub fn init(&self, mode: Mode) -> anyhow::Result<()> {
         let base_filter = match mode {
-            Mode::Debug => "debug,nitro_repo=trace,h2=warn",
+            Mode::Debug => {
+                "debug,nitro_repo=trace,nr_storage=trace,nr_core=trace,h2=warn,tower=warn,hyper_util=warn"
+            }
             Mode::Release => "info",
         };
-        let otel_filter = format!("debug,nitro_repo=trace,nitro_repo=trace,sqlx=debug");
+        let otel_filter = format!(
+            "debug,nitro_repo=trace,nr_storage=trace,nr_core=trace,tower=warn,hyper_util=warn"
+        );
 
         let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| base_filter.into());
         let file_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| base_filter.into());

@@ -8,7 +8,7 @@ use std::{
 
 use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, instrument, trace, warn};
+use tracing::{debug, info, instrument, span, trace, warn, Level};
 use utils::PathUtils;
 use utoipa::ToSchema;
 
@@ -100,16 +100,15 @@ impl Storage for LocalStorage {
             config: BorrowedStorageTypeConfig::Local(&self.config),
         }
     }
-    #[instrument(skip(content, location))]
     async fn save_file(
         &self,
         repository: Uuid,
         content: FileContent,
         location: &StoragePath,
     ) -> Result<(usize, bool), StorageError> {
+        let span = span!(Level::DEBUG, "local_storage_save", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
+        let _enter = span.enter();
         let path = self.get_path(&repository, location);
-        info!(?path, "Saving File");
-
         let parent_directory = path.parent_or_err()?;
         let new_file = !path.exists();
         if !parent_directory.exists() {
@@ -130,14 +129,14 @@ impl Storage for LocalStorage {
         }
         Ok((bytes_written, new_file))
     }
-    #[instrument(skip(location))]
     async fn delete_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> Result<(), StorageError> {
+        let span = span!(Level::DEBUG, "local_storage_delete", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
+        let _enter = span.enter();
         let path = self.get_path(&repository, location);
-        info!(?path, "Deleting File");
         if path.is_dir() {
             info!(?path, "Deleting Directory");
             fs::remove_dir_all(path)?;
@@ -147,13 +146,15 @@ impl Storage for LocalStorage {
         }
         Ok(())
     }
-    #[instrument(skip(location))]
     async fn get_file_information(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> Result<Option<StorageFileMeta>, StorageError> {
+        let span = span!(Level::DEBUG, "local_storage_get_info", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
+        let _enter = span.enter();
         let path = self.get_path(&repository, location);
+
         if !path.exists() {
             debug!(?path, "File does not exist");
             return Ok(None);
@@ -161,12 +162,13 @@ impl Storage for LocalStorage {
         let meta = StorageFileMeta::new_from_file(path)?;
         Ok(Some(meta))
     }
-    #[instrument(skip(location))]
     async fn open_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> Result<Option<StorageFile>, StorageError> {
+        let span = span!(Level::DEBUG, "local_storage_open_file", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
+        let _enter = span.enter();
         let path = self.get_path(&repository, location);
         if !path.exists() {
             debug!(?path, "File does not exist");
@@ -179,7 +181,6 @@ impl Storage for LocalStorage {
         };
         Ok(Some(file))
     }
-    #[instrument]
     fn unload(&self) -> impl std::future::Future<Output = Result<(), StorageError>> + Send {
         info!(?self, "Unloading Local Storage");
         // TODO: Implement Unload

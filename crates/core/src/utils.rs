@@ -1,7 +1,8 @@
 pub mod base64_utils {
     use base64::{engine::general_purpose::STANDARD, DecodeError, Engine};
+    use tracing::instrument;
+    #[instrument(skip(input), name = "base64_utils::decode")]
     #[inline(always)]
-
     pub fn decode(input: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
         STANDARD.decode(input)
     }

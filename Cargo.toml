@@ -81,3 +81,24 @@ features = [
 [workspace.lints.rust]
 async_fn_in_trait = "allow"
 deprecated = "deny"
+
+[profile.dev.package."argon2"]
+opt-level = 3
+[profile.dev.package."tokio"]
+opt-level = 3
+[profile.dev.package."sha2"]
+opt-level = 3
+[profile.dev.package."tracing"]
+opt-level = 3
+[profile.dev.package."tracing-subscriber"]
+opt-level = 3
+[profile.dev.package."tracing-appender"]
+opt-level = 3
+[profile.dev.package."tracing-opentelemetry"]
+opt-level = 3
+[profile.dev.package."opentelemetry"]
+opt-level = 3
+[profile.dev.package."opentelemetry_sdk"]
+opt-level = 3
+[profile.dev.package."opentelemetry-otlp"]
+opt-level = 3

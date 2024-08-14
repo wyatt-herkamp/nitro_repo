@@ -9,6 +9,13 @@ use tracing::instrument;
 struct StoragePathComponent(String);
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct StoragePath(Vec<StoragePathComponent>);
+impl StoragePath {
+    pub fn parent(self) -> Self {
+        let mut path = self.0;
+        path.pop();
+        StoragePath(path)
+    }
+}
 impl Default for StoragePath {
     fn default() -> Self {
         StoragePath(vec![])

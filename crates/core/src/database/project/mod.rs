@@ -1,4 +1,5 @@
 use derive_builder::Builder;
+use http::version;
 use serde::Serialize;
 use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
 use utoipa::ToSchema;
@@ -17,12 +18,28 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         if let Some(prefix) = prefix {
             Self::columns()
                 .iter()
-                .map(|column| format!("{}.`{}`", prefix, column))
+                .map(|column| format!("{}.{}", prefix, column))
                 .collect::<Vec<String>>()
                 .join(", ")
         } else {
             Self::columns().join(", ")
         }
+    }
+    async fn find_by_project_key(
+        project_key: &str,
+        repository: Uuid,
+        database: &PgPool,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        let columns = Self::format_columns(None);
+        let project = sqlx::query_as::<_, Self>(&format!(
+            "SELECT {} FROM projects WHERE repository = $1 AND LOWER(project_key) = $2",
+            columns
+        ))
+        .bind(repository)
+        .bind(project_key.to_lowercase())
+        .fetch_optional(database)
+        .await?;
+        Ok(project)
     }
     async fn find_by_project_directory(
         directory: &str,
@@ -31,7 +48,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     ) -> Result<Option<Self>, sqlx::Error> {
         let columns = Self::format_columns(None);
         let project = sqlx::query_as::<_, Self>(&format!(
-            "SELECT {} FROM projects WHERE `repository` = $1 AND LOWER(`storage_path`) = $2",
+            "SELECT {} FROM projects WHERE repository = $1 AND LOWER(storage_path) = $2",
             columns
         ))
         .bind(repository)
@@ -140,4 +157,20 @@ pub struct DBProjectVersion {
     /// When the version was created
     pub updated_at: DateTime,
     pub created_at: DateTime,
+}
+impl DBProjectVersion {
+    pub async fn find_by_version_and_project(
+        version: &str,
+        project_id: Uuid,
+        database: &PgPool,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        let version = sqlx::query_as::<_, Self>(
+            r#"SELECT * FROM project_versions WHERE project_id = $1 AND version = $2"#,
+        )
+        .bind(project_id)
+        .bind(version)
+        .fetch_optional(database)
+        .await?;
+        Ok(version)
+    }
 }

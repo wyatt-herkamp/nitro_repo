@@ -24,7 +24,20 @@ pub enum StorageFile {
         content: StorageFileReader,
     },
 }
-
+impl StorageFile {
+    pub fn meta(&self) -> &StorageFileMeta {
+        match self {
+            StorageFile::Directory { meta, .. } => meta,
+            StorageFile::File { meta, .. } => meta,
+        }
+    }
+    pub fn file(self) -> Option<(StorageFileReader, StorageFileMeta)> {
+        match self {
+            StorageFile::File { content, meta } => Some((content, meta)),
+            _ => None,
+        }
+    }
+}
 impl Debug for StorageFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

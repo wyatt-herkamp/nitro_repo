@@ -7,6 +7,7 @@ use anyhow::Context;
 use axum::extract::DefaultBodyLimit;
 use axum::routing::any;
 use axum::{extract::Request, Router};
+use axum_extra::routing::RouterExt;
 use futures_util::pin_mut;
 use http::{HeaderName, HeaderValue};
 use hyper::body::Incoming;
@@ -59,11 +60,19 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
             "/repositories/:storage/:repository/*path",
             any(crate::repository::handle_repo_request),
         )
+        .route_with_tsr(
+            "/repositories/:storage/:repository",
+            any(crate::repository::handle_repo_request),
+        )
         .route(
             "/storages/:storage/:repository/*path",
             any(crate::repository::handle_repo_request),
         )
-        .merge(api::api_routes())
+        .route_with_tsr(
+            "/storages/:storage/:repository",
+            any(crate::repository::handle_repo_request),
+        )
+        .nest("/api", api::api_routes())
         .merge(super::open_api::build_router())
         .with_state(site);
 
@@ -76,7 +85,6 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
         .layer(DefaultBodyLimit::max(max_upload.get_as_bytes()))
         .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
-        .layer(CorsLayer::very_permissive())
         .layer(auth_layer);
     if let Some(tls) = tls {
         start_app_with_tls(tls, app, bind_address).await?;

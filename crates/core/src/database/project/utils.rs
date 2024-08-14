@@ -43,19 +43,19 @@ impl ProjectLookup {
         }
         if let Some(scope) = scope {
             where_values.push((
-                format!("LOWER(`scope`) = {}", where_values.len() + 1),
+                format!("LOWER(scope) = {}", where_values.len() + 1),
                 scope.to_lowercase(),
             ));
         }
         if let Some(name) = name {
             where_values.push((
-                format!("LOWER(`name`) = {}", where_values.len() + 1),
+                format!("LOWER(name) = {}", where_values.len() + 1),
                 name.to_lowercase(),
             ));
         }
         if let Some(storage_path) = storage_path {
             where_values.push((
-                format!("LOWER(`storage_path`) = {}", where_values.len() + 1),
+                format!("LOWER(storage_path) = {}", where_values.len() + 1),
                 storage_path.to_lowercase(),
             ));
         }
@@ -69,7 +69,7 @@ impl ProjectLookup {
                 .join(" OR ")
         };
         let query = format!(
-            r#"SELECT id, scope, project_key, name, storage_path  FROM projects WHERE `repository` = $1 AND ({})"#,
+            r#"SELECT id, scope, project_key, name, storage_path  FROM projects WHERE repository = $1 AND ({})"#,
             where_clause
         );
         debug!(
