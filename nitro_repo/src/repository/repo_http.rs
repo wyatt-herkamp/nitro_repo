@@ -12,6 +12,7 @@ use crate::{
 };
 use axum::{
     body::Body,
+    debug_handler,
     extract::{Path, Request, State},
     response::{IntoResponse, Response},
 };
@@ -27,7 +28,8 @@ use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
 use serde_json::Value;
-use tracing::{error, instrument, trace};
+use tracing::{debug, error, info, instrument, trace};
+use utoipa::openapi::info;
 
 use super::RepositoryHandlerError;
 #[derive(Debug, From)]
@@ -270,16 +272,17 @@ impl From<Option<StorageFileMeta>> for RepoResponse {
 pub struct RepoRequestPath {
     storage: String,
     repository: String,
-    path: StoragePath,
+    path: Option<StoragePath>,
 }
+#[debug_handler]
 #[instrument]
-async fn handle_repo_request(
+pub async fn handle_repo_request(
     State(site): State<NitroRepo>,
     Path(request_path): Path<RepoRequestPath>,
     authentication: RepositoryAuthentication,
     request: Request,
 ) -> Result<Response, RepositoryHandlerError> {
-    trace!(?request_path, "Handling request");
+    debug!(?request_path, "Repository Request Happening");
     let RepoRequestPath {
         storage,
         repository,
@@ -298,9 +301,10 @@ async fn handle_repo_request(
     let request = RepositoryRequest {
         parts,
         body: RepositoryRequestBody(body),
-        path,
+        path: path.unwrap_or_default(),
         authentication,
     };
+    info!("Executing Request");
     let response = match method {
         Method::GET => repository.handle_get(request).await,
         Method::PUT => repository.handle_put(request).await,

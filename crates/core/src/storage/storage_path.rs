@@ -9,6 +9,11 @@ use tracing::instrument;
 struct StoragePathComponent(String);
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct StoragePath(Vec<StoragePathComponent>);
+impl Default for StoragePath {
+    fn default() -> Self {
+        StoragePath(vec![])
+    }
+}
 impl StoragePath {
     pub fn has_extension(&self, extension: &str) -> bool {
         self.0

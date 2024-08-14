@@ -15,7 +15,7 @@ use nr_core::{
 };
 use nr_storage::{DynStorage, Storage};
 use parking_lot::RwLock;
-use tracing::{debug, instrument};
+use tracing::{debug, info, instrument};
 use uuid::Uuid;
 
 use crate::{
@@ -229,21 +229,34 @@ impl Repository for MavenHosted {
             authentication,
         }: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        let repository = self.repository.read();
-        if !repository.active {
-            return Ok(RepoResponse::disabled_repository());
-        }
+        info!(
+            "Handling PUT Request for Repository: {} Path: {}",
+            self.id, path
+        );
+        let repository_name = {
+            let repository = self.repository.read();
+            if !repository.active {
+                return Ok(RepoResponse::disabled_repository());
+            }
+            repository.name.clone()
+        };
         let Some(user) = authentication.get_user() else {
             return Ok(RepoResponse::Unauthorized);
         };
-        let security_config = self.security.read();
-        let push_rules = self.push_rules.read();
-        if security_config.must_use_auth_token_for_push && !authentication.has_auth_token() {
-            return Ok(RepoResponse::Unauthorized);
+        {
+            let security_config = self.security.read();
+            if security_config.visibility.is_private() && !user.can_read_repository(self.id) {
+                return Ok(RepoResponse::Unauthorized);
+            }
         }
-        if !user.can_write_to_repository(self.id) {
-            return Ok(RepoResponse::Unauthorized);
+        {
+            let push_rules = self.push_rules.read();
+
+            if !user.can_write_to_repository(self.id) {
+                return Ok(RepoResponse::Unauthorized);
+            }
         }
+        info!("Saving File: {}", path);
         let body = body.body_as_bytes().await?;
         // TODO: Validate Against Push Rules
 
@@ -255,9 +268,10 @@ impl Repository for MavenHosted {
         let save_path = format!(
             "/repositories/{}/{}/{}",
             self.storage.storage_config().storage_config.storage_name,
-            repository.name,
+            repository_name,
             path
         );
+
         Ok(RepoResponse::put_response(created, save_path))
     }
 

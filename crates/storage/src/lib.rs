@@ -29,50 +29,53 @@ pub trait Storage: Send + Sync {
     ///
     /// # Result
     /// Return the number of bytes written and if a new file was created
-    async fn save_file(
+    fn save_file(
         &self,
         repository: Uuid,
         file: FileContent,
         location: &StoragePath,
-    ) -> Result<(usize, bool), StorageError>;
+    ) -> impl Future<Output = Result<(usize, bool), StorageError>> + Send;
     /// Repository Meta files are files that are not listed and the repository controls the content. The content is stored as JSON
-    async fn put_repository_meta(
+    fn put_repository_meta(
         &self,
         repository: Uuid,
         location: &StoragePath,
         value: Value,
-    ) -> Result<(), StorageError>;
+    ) -> impl Future<Output = Result<(), StorageError>> + Send;
     /// Repository Meta files are files that are not listed and the repository controls the content. The content is stored as JSON
-    async fn get_repository_meta(
+    fn get_repository_meta(
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<Option<Value>, StorageError>;
+    ) -> impl Future<Output = Result<Option<Value>, StorageError>> + Send;
     /// Deletes a file at a given location
-    async fn delete_file(
+    fn delete_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<(), StorageError>;
+    ) -> impl Future<Output = Result<(), StorageError>> + Send;
 
     /// Returns Information about the file
-    async fn get_file_information(
+    fn get_file_information(
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<Option<StorageFileMeta>, StorageError>;
+    ) -> impl Future<Output = Result<Option<StorageFileMeta>, StorageError>> + Send;
 
     /// Gets the File Information and Content
     ///
     /// range is ignored for directories
     /// range is the byte range to read from the file
-    async fn open_file(
+    fn open_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<Option<StorageFile>, StorageError>;
+    ) -> impl Future<Output = Result<Option<StorageFile>, StorageError>> + Send;
 
-    async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError>;
+    fn validate_config_change(
+        &self,
+        config: StorageTypeConfig,
+    ) -> impl Future<Output = Result<(), StorageError>> + Send;
 }
 pub trait StorageFactory {
     fn storage_name(&self) -> &'static str;

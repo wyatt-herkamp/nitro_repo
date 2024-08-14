@@ -1,6 +1,6 @@
 use http::{header::ToStrError, HeaderValue};
 use nr_core::utils::base64_utils;
-use tracing::error;
+use tracing::{debug, error};
 
 use crate::error::{BadRequestErrors, InvalidAuthorizationHeader};
 
@@ -41,6 +41,7 @@ impl TryFrom<String> for AuthorizationHeader {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let parts: Vec<&str> = value.split(' ').collect();
+
         if parts.len() != 2 {
             return Err(BadRequestErrors::InvalidAuthorizationHeader(
                 InvalidAuthorizationHeader::InvalidFormat,
@@ -64,12 +65,7 @@ impl TryFrom<String> for AuthorizationHeader {
     }
 }
 fn parse_basic_header(header: &str) -> Result<AuthorizationHeader, BadRequestErrors> {
-    let parts: Vec<&str> = header.split(' ').collect();
-    if parts.len() != 2 {
-        return Err(InvalidAuthorizationHeader::InvalidFormat.into());
-    }
-    let value = parts[1];
-    let decoded = base64_utils::decode(value).map_err(|err| {
+    let decoded = base64_utils::decode(header).map_err(|err| {
         error!("Failed to decode base64: {}", err);
         InvalidAuthorizationHeader::InvalidValue
     })?;

@@ -1,5 +1,7 @@
 #![allow(unused_variables)]
 
+use std::future::Future;
+
 use axum::{
     body::Body,
     response::{IntoResponse, Response},
@@ -31,72 +33,86 @@ pub trait Repository: Send + Sync + Clone {
         Ok(())
     }
     /// Handles a get request to a Repo
-    async fn handle_get(
+    fn handle_get(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
     /// Handles a Post Request to a Repo
-    async fn handle_post(
+    fn handle_post(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
     /// Handles a PUT Request to a Repo
-    async fn handle_put(
+    fn handle_put(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
     /// Handles a PATCH Request to a Repo
-    async fn handle_patch(
+    fn handle_patch(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
-    async fn handle_delete(
+    fn handle_delete(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
     /// Handles a HAPIResponseAD Request to a Repo
-    async fn handle_head(
+    fn handle_head(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
-    async fn handle_other(
+    fn handle_other(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+        async {
+            Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ))
+        }
     }
 }
 

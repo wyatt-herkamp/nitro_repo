@@ -17,7 +17,7 @@ use serde::Serialize;
 use session::Session;
 use sqlx::PgPool;
 use thiserror::Error;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 use utoipa::ToSchema;
 
 use crate::utils::headers::AuthorizationHeader;
@@ -175,9 +175,7 @@ where
             return Err(AuthenticationError::Unauthorized);
         };
         let auth = match raw_auth {
-            AuthenticationRaw::NoIdentification => {
-                return Err(AuthenticationError::Unauthorized);
-            }
+            AuthenticationRaw::NoIdentification => RepositoryAuthentication::NoIdentification,
             AuthenticationRaw::AuthToken(..) => {
                 todo!("Auth Token Authentication")
             }
@@ -193,6 +191,7 @@ where
                 return Err(AuthenticationError::Unauthorized);
             }
             AuthenticationRaw::Basic { username, password } => {
+                info!("Basic Auth: {}", username);
                 let user = verify_login(username, password, &repo.database).await?;
                 // TODO: Check if it is an API Token and not a username/password
                 RepositoryAuthentication::Basic(user, None)

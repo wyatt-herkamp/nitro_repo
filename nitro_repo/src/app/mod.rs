@@ -60,8 +60,8 @@ impl RepositoryStorageName {
     pub async fn query_db(&self, database: &PgPool) -> Result<Option<Uuid>, sqlx::Error> {
         let query: Option<Uuid> = sqlx::query_scalar(
             r#"SELECT repositories.id FROM repositories LEFT JOIN storages
-                    ON storages.id = repositories.storage_id
-                    WHERE storages.name = ? AND repositories.name = ?"#,
+                    ON storages.id = repositories.storage_id AND storages.name = $1
+                    WHERE repositories.name = $2"#,
         )
         .bind(&self.storage_name)
         .bind(&self.repository_name)

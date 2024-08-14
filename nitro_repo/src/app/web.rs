@@ -5,6 +5,7 @@ use super::{api, config::NitroRepoConfig};
 
 use anyhow::Context;
 use axum::extract::DefaultBodyLimit;
+use axum::routing::any;
 use axum::{extract::Request, Router};
 use futures_util::pin_mut;
 use http::{HeaderName, HeaderValue};
@@ -54,6 +55,14 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let app = Router::new()
+        .route(
+            "/repositories/:storage/:repository/*path",
+            any(crate::repository::handle_repo_request),
+        )
+        .route(
+            "/storages/:storage/:repository/*path",
+            any(crate::repository::handle_repo_request),
+        )
         .merge(api::api_routes())
         .merge(super::open_api::build_router())
         .with_state(site);

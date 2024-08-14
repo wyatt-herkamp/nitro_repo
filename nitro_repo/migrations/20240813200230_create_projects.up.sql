@@ -1,5 +1,5 @@
 -- Add up migration script here
-create table TABLE IF NOT EXISTS  projects
+create  TABLE IF NOT EXISTS  projects
 (
     id                 UUID                     default gen_random_uuid() not null
         constraint projects_pk
@@ -19,7 +19,7 @@ create table TABLE IF NOT EXISTS  projects
     updated_at         TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null,
     created_at         TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null
 );
-create table TABLE IF NOT EXISTS  project_members
+create TABLE IF NOT EXISTS  project_members
 (
     id         serial
         constraint project_members_pk
@@ -37,7 +37,7 @@ create table TABLE IF NOT EXISTS  project_members
     added_at   TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null
 );
 
-create table TABLE IF NOT EXISTS  project_versions
+create TABLE IF NOT EXISTS  project_versions
 (
     id           serial
         constraint project_versions_pk
