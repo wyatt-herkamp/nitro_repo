@@ -79,7 +79,7 @@ impl LoggingConfig {
     pub fn init(&self, mode: Mode) -> anyhow::Result<()> {
         let base_filter = match mode {
             Mode::Debug => {
-                "debug,nitro_repo=trace,nr_storage=trace,nr_core=trace,h2=warn,tower=warn,hyper_util=warn"
+                "debug,nitro_repo=trace,nr_storage=trace,nr_core=trace,h2=warn,tower=warn,hyper_util=warn,lettre=trace"
             }
             Mode::Release => "info",
         };

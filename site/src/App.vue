@@ -1,9 +1,9 @@
 <template>
   <header>
-    <NavBar />
+    <NavBar :user="user" />
   </header>
   <div class="admin-content" v-if="isAdminPage && !isInstallPage">
-    <AdminNav />
+    <AdminNav :user="user" />
     <RouterView />
   </div>
   <RouterView v-else />
@@ -20,6 +20,7 @@ import AdminNav from './components/nav/AdminNav.vue'
 import { Notifications } from '@kyvg/vue3-notification'
 const site = siteStore()
 const session = sessionStore()
+const user = computed(() => session.user)
 const isAdminPage = computed(() => {
   return router.currentRoute.value.path.startsWith('/admin')
 })

@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use axum::{
     body::Body,
     extract::{ConnectInfo, State},
-    response::{self, IntoResponse, Response},
+    response::{IntoResponse, Response},
     Json,
 };
 use axum_extra::{
@@ -15,14 +15,17 @@ use axum_extra::{
     TypedHeader,
 };
 use http::{header::SET_COOKIE, StatusCode};
-use nr_core::database::user::UserSafeData;
+use nr_core::database::user::{
+    ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,
+};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use utoipa::OpenApi;
-
+mod password_reset;
 use crate::{
     app::{
         authentication::{
+            password::{self, verify_password},
             session::{Session, SessionError},
             verify_login, Authentication, MeWithSession,
         },
@@ -32,8 +35,24 @@ use crate::{
 };
 #[derive(OpenApi)]
 #[openapi(
-    paths(me, whoami, login, get_sessions, logout),
-    components(schemas(UserSafeData, MeWithSession, Session))
+    paths(
+        me,
+        whoami,
+        login,
+        get_sessions,
+        logout,
+        password_reset::request_password_reset,
+        password_reset::does_exist,
+        password_reset::change_password
+    ),
+    components(schemas(
+        UserSafeData,
+        MeWithSession,
+        Session,
+        password_reset::RequestPasswordReset,
+        ChangePasswordWithCheck,
+        ChangePasswordNoCheck
+    ))
 )]
 pub struct UserAPI;
 pub fn user_routes() -> axum::Router<NitroRepo> {
@@ -43,6 +62,7 @@ pub fn user_routes() -> axum::Router<NitroRepo> {
         .route("/login", axum::routing::post(login))
         .route("/sessions", axum::routing::get(get_sessions))
         .route("/logout", axum::routing::post(logout))
+        .nest("/password-reset", password_reset::password_reset_routes())
 }
 #[utoipa::path(
     get,
@@ -187,4 +207,51 @@ pub async fn logout(
             Ok((cookies, StatusCode::NO_CONTENT).into_response())
         }
     }
+}
+
+#[utoipa::path(
+    post,
+    path = "/change-password",
+    request_body = ChangePasswordWithCheck,
+    responses(
+        (status = 204, description = "Successfully Changed Password"),
+        (status = 400, description = "Bad Request. Must be a session")
+    )
+)]
+pub async fn change_password(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Json(change_password): Json<ChangePasswordWithCheck>,
+) -> Result<Response, InternalError> {
+    let Authentication::Session(_, user) = auth else {
+        return Ok(Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .body("Must be a session".into())
+            .unwrap());
+    };
+    let ChangePasswordWithCheck {
+        old_password,
+        new_password,
+    } = change_password;
+    let Some(user_password) = UserModel::get_password_by_id(user.id, &site.database).await? else {
+        return Ok(Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("User password not found".into())
+            .unwrap());
+    };
+    if let Err(err) = verify_password(&old_password, Some(&user_password.as_str())) {
+        return Ok(err.into_response());
+    }
+    let Some(new_password) = password::encrypt_password(&new_password) else {
+        return Ok(Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body("Failed to encrypt password".into())
+            .unwrap());
+    };
+    user.update_password(Some(new_password), &site.database)
+        .await?;
+    Ok(Response::builder()
+        .status(StatusCode::NO_CONTENT)
+        .body(Body::empty())
+        .unwrap())
 }

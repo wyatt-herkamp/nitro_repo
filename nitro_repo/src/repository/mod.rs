@@ -9,16 +9,17 @@ use axum::{
 
 use ::http::StatusCode;
 
-use nr_core::database::repository::DBRepository;
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
-
+mod staging;
+pub use staging::*;
 mod repo_http;
 pub use repo_http::*;
 pub mod maven;
 mod repo_type;
 pub use repo_type::*;
 use thiserror::Error;
+use uuid::Uuid;
 
 use crate::error::BadRequestErrors;
 pub trait Repository: Send + Sync + Clone {
@@ -27,7 +28,9 @@ pub trait Repository: Send + Sync + Clone {
     fn get_type(&self) -> &'static str;
     /// Config types that this Repository type has.
     fn config_types(&self) -> Vec<&str>;
-    fn base_config(&self) -> DBRepository;
+    fn name(&self) -> String;
+    fn id(&self) -> Uuid;
+    fn is_active(&self) -> bool;
 
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
         Ok(())

@@ -28,10 +28,10 @@ use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
 use serde_json::Value;
-use tracing::{debug, error, info, instrument, span, trace, Level};
-use utoipa::openapi::info;
-
+use tracing::{debug, error, instrument, span, Level};
+mod header;
 use super::RepositoryHandlerError;
+pub use header::*;
 #[derive(Debug, From)]
 pub struct RepositoryRequestBody(Body);
 impl RepositoryRequestBody {
@@ -70,6 +70,7 @@ impl AsRef<Parts> for RepositoryRequest {
 pub enum RepositoryRequestError {
     InvalidPath(InvalidStoragePath),
     AuthorizationError(AuthenticationError),
+    BadRequestErrors(BadRequestErrors),
 }
 impl IntoResponse for RepositoryRequestError {
     fn into_response(self) -> axum::response::Response {
@@ -83,6 +84,10 @@ impl IntoResponse for RepositoryRequestError {
             }
             Self::AuthorizationError(err) => {
                 error!(?err, "Failed to authenticate request");
+                err.into_response()
+            }
+            Self::BadRequestErrors(err) => {
+                error!(?err, "Bad Request Error");
                 err.into_response()
             }
         }
@@ -207,6 +212,12 @@ impl RepoResponse {
             .unwrap()
             .into()
     }
+    pub fn require_nitro_deploy() -> Self {
+        Self::basic_text_response(
+            StatusCode::BAD_REQUEST,
+            "This repository requires Nitro Deploy to push",
+        )
+    }
     pub fn internal_error(error: impl Error) -> Self {
         error!(?error, "Internal Error");
         Response::builder()
@@ -325,6 +336,9 @@ pub async fn handle_repo_request(
             RepositoryNotFound::from(RepositoryStorageName::from((storage, repository)));
         return Ok(not_found.into_response());
     };
+    if !repository.is_active() {
+        return Ok(RepoResponse::disabled_repository().into_response_default());
+    }
     let method = request.method().clone();
     let (parts, body) = request.into_parts();
     let request = RepositoryRequest {

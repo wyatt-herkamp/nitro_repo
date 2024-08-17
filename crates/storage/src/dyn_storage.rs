@@ -1,4 +1,3 @@
-use derive_more::From;
 use nr_core::storage::StoragePath;
 use serde_json::Value;
 use uuid::Uuid;
@@ -97,32 +96,4 @@ impl Storage for DynStorage {
     }
 }
 
-#[derive(Debug, From)]
-pub enum DynStorageFactory {
-    Local(LocalStorageFactory),
-}
-impl StorageFactory for DynStorageFactory {
-    fn storage_name(&self) -> &'static str {
-        match self {
-            DynStorageFactory::Local(storage) => storage.storage_name(),
-        }
-    }
-
-    async fn test_storage_config(
-        &self,
-        config: crate::StorageTypeConfig,
-    ) -> Result<(), StorageError> {
-        match self {
-            DynStorageFactory::Local(storage) => storage.test_storage_config(config).await,
-        }
-    }
-
-    async fn create_storage(
-        &self,
-        config: crate::StorageConfig,
-    ) -> Result<DynStorage, StorageError> {
-        match self {
-            DynStorageFactory::Local(storage) => storage.create_storage(config).await,
-        }
-    }
-}
+pub static STORAGE_FACTORIES: &'static [&dyn StorageFactory] = &[&LocalStorageFactory];

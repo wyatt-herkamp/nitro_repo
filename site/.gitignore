@@ -28,3 +28,10 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+.env
+
+*storybook.log
+
+/storybook-static
+/node_modules

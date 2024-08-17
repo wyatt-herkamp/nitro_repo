@@ -1,9 +1,12 @@
+use chrono::Duration;
 use config_types::size_config::{ConfigSize, Unit};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgConnectOptions;
 use std::env;
 use std::path::PathBuf;
 use strum::EnumIs;
+
+use crate::repository::StagingConfig;
 
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
@@ -35,6 +38,7 @@ impl Default for SecuritySettings {
         }
     }
 }
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(default)]
 pub struct NitroRepoConfig {
@@ -49,6 +53,7 @@ pub struct NitroRepoConfig {
     pub email: EmailSetting,
     pub site: SiteSetting,
     pub security: SecuritySettings,
+    pub staging_config: StagingConfig,
 }
 
 impl NitroRepoConfig {
@@ -88,6 +93,7 @@ impl Default for NitroRepoConfig {
             email: EmailSetting::default(),
             site: SiteSetting::default(),
             security: SecuritySettings::default(),
+            staging_config: StagingConfig::default(),
         }
     }
 }

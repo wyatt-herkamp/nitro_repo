@@ -33,6 +33,7 @@ use uuid::Uuid;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
+pub mod nitro_deploy;
 pub mod proxy;
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "config")]

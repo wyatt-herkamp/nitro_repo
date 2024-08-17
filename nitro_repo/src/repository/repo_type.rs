@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use ahash::HashMap;
 use auto_impl::auto_impl;
-use futures::future::{BoxFuture, LocalBoxFuture};
+use futures::future::BoxFuture;
 use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_storage::DynStorage;
 use serde::Serialize;
@@ -55,7 +55,7 @@ impl NewRepository {
 }
 /// This trait is invoked via dynamic dispatch for simplicity reasons.
 #[auto_impl(&, Box)]
-pub trait RepositoryType: Send + Debug {
+pub trait RepositoryType: Send + Debug + Sync {
     fn get_type(&self) -> &'static str;
     fn get_description(&self) -> RepositoryTypeDescription;
 

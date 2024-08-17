@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgValueRef, Decode, Encode};
-use strum::{AsRefStr, Display, EnumIs, EnumString, IntoStaticStr};
+use sqlx::{postgres::PgValueRef, prelude::Type, Decode, Encode};
+use strum::{Display, EnumIs, EnumString, IntoStaticStr};
 use utoipa::ToSchema;
 /// Release type of a project
 ///
@@ -21,7 +21,9 @@ use utoipa::ToSchema;
     IntoStaticStr,
     Display,
     EnumString,
+    Type,
 )]
+#[sqlx(type_name = "TEXT")]
 pub enum ReleaseType {
     /// Stable Release
     Stable,
@@ -37,44 +39,7 @@ pub enum ReleaseType {
     /// The release type could not be determined
     Unknown,
 }
-impl<'q, DB: ::sqlx::Database> Encode<'q, DB> for ReleaseType
-where
-    &'q str: Encode<'q, DB>,
-{
-    fn encode_by_ref(
-        &self,
-        buf: &mut <DB as ::sqlx::database::Database>::ArgumentBuffer<'q>,
-    ) -> ::std::result::Result<::sqlx::encode::IsNull, ::sqlx::error::BoxDynError> {
-        let val: &str = self.into();
-        <&str as Encode<'q, DB>>::encode(val, buf)
-    }
-    fn size_hint(&self) -> ::std::primitive::usize {
-        let val = self.into();
-        <&str as Encode<'q, DB>>::size_hint(&val)
-    }
-}
-#[automatically_derived]
-impl<'r> Decode<'r, ::sqlx::postgres::Postgres> for ReleaseType {
-    fn decode(
-        value: PgValueRef<'r>,
-    ) -> Result<Self, Box<dyn std::error::Error + 'static + Send + Sync>> {
-        let value = <&'r str as Decode<'r, ::sqlx::postgres::Postgres>>::decode(value)?;
-        ReleaseType::from_str(value)
-            .map_err(|_| format!("invalid value {:?} for enum {}", value, "ReleaseType").into())
-    }
-}
-#[automatically_derived]
-impl ::sqlx::Type<::sqlx::Postgres> for ReleaseType {
-    fn type_info() -> ::sqlx::postgres::PgTypeInfo {
-        ::sqlx::postgres::PgTypeInfo::with_name("TEXT")
-    }
-}
-#[automatically_derived]
-impl ::sqlx::postgres::PgHasArrayType for ReleaseType {
-    fn array_type_info() -> ::sqlx::postgres::PgTypeInfo {
-        ::sqlx::postgres::PgTypeInfo::array_of("TEXT")
-    }
-}
+
 impl Default for ReleaseType {
     fn default() -> Self {
         ReleaseType::Unknown
@@ -133,7 +98,11 @@ pub struct Author {
 #[serde(tag = "type", content = "value")]
 pub enum ProjectSource {
     /// A git repository
-    Git { url: String },
+    Git {
+        url: String,
+        branch: Option<String>,
+        commit: Option<String>,
+    },
 }
 /// Licence of the project Two Different types depending on how the artifact is setup
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]

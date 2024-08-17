@@ -70,6 +70,16 @@ pub struct RepositoryLookup {
     pub repository_id: Uuid,
 }
 impl DBRepository {
+    pub async fn get_active_by_id(
+        id: Uuid,
+        database: &PgPool,
+    ) -> Result<Option<bool>, sqlx::Error> {
+        let is_active = sqlx::query_scalar(r#"SELECT active FROM repositories WHERE id = $1"#)
+            .bind(id)
+            .fetch_optional(database)
+            .await?;
+        Ok(is_active)
+    }
     pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let repositories = sqlx::query_as("SELECT * FROM repositories")
             .fetch_all(database)

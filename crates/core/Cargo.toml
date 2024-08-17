@@ -19,6 +19,7 @@ badge-maker.workspace = true
 utoipa.workspace = true
 once_cell.workspace = true
 regex.workspace = true
+rand.workspace = true
 http.workspace = true
 derive_builder.workspace = true
 [lints]

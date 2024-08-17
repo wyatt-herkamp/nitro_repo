@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { EnumInput, SchemaForm, type FormInputType } from 'nitro-jsr'
+import { EnumInput, SchemaForm, type FormInputType } from 'nitro-jsf'
 import { computed, type Component, type PropType } from 'vue'
 import TextInput from './text/TextInput.vue'
 import DropDown from './dropdown/DropDown.vue'
@@ -50,7 +50,7 @@ function formFieldToInput(field: FormInputType): Input | undefined {
       const enumField = field as EnumInput
       let options = enumField.values.map((value) => {
         return {
-          label: value.name,
+          label: value.title ?? value.value,
           value: value.value
         }
       })

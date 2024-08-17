@@ -18,6 +18,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
 utoipa = { version = "5.0.0-alpha", features = ["chrono", "uuid"] }
+rand = "0.8"
 
 nr-core = { path = "crates/core" }
 nr-macros = { path = "crates/macros" }

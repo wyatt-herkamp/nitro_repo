@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{atomic::AtomicBool, Arc};
 
 use nr_core::{
     database::repository::DBRepository,
@@ -17,6 +17,8 @@ use crate::repository::Repository;
 pub struct MavenProxyInner {
     pub storage: DynStorage,
     pub id: Uuid,
+    pub name: String,
+    pub active: AtomicBool,
     pub repository: RwLock<DBRepository>,
 }
 #[derive(Debug, Clone)]
@@ -39,7 +41,15 @@ impl Repository for MavenProxy {
         ]
     }
 
-    fn base_config(&self) -> DBRepository {
-        self.0.repository.read().clone()
+    fn name(&self) -> String {
+        self.0.name.clone()
+    }
+
+    fn id(&self) -> Uuid {
+        self.0.id
+    }
+
+    fn is_active(&self) -> bool {
+        self.0.active.load(std::sync::atomic::Ordering::Relaxed)
     }
 }

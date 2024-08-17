@@ -7,24 +7,23 @@ use authentication::session::{SessionManager, SessionManagerConfig};
 use axum::extract::State;
 use config::{Mode, PostgresSettings, SecuritySettings, SiteSetting};
 use derive_more::{derive::Deref, AsRef, Into};
+use email::EmailSetting;
+use email_service::EmailAccess;
 use http::Uri;
 use nr_core::{
-    database::{repository::DBRepository, storage::DBStorage, user::does_user_exist},
+    database::{repository::DBRepository, storage::DBStorage, user::user_utils},
     repository::config::{
         frontend::{BadgeSettingsType, FrontendConfigType, RepositoryPageType},
-        DynRepositoryConfigType, PushRulesConfigType, SecurityConfigType,
+        PushRulesConfigType, RepositoryConfigType, SecurityConfigType,
     },
 };
-use nr_storage::{
-    local::LocalStorageFactory, DynStorage, DynStorageFactory, Storage, StorageConfig,
-    StorageFactory,
-};
+use nr_storage::{DynStorage, Storage, StorageConfig, StorageFactory, STORAGE_FACTORIES};
 use parking_lot::{Mutex, RwLock};
 use serde::Serialize;
-
 pub mod authentication;
 pub mod config;
 pub mod email;
+pub mod email_service;
 pub mod logging;
 use current_semver::current_semver;
 use sqlx::PgPool;
@@ -34,7 +33,7 @@ use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
     maven::{MavenRepositoryConfigType, MavenRepositoryType},
-    DynRepository, DynRepositoryType,
+    DynRepository, RepositoryType, StagingConfig,
 };
 pub mod api;
 pub mod responses;
@@ -91,10 +90,8 @@ pub struct NitroRepoInner {
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
-    pub storage_factories: Vec<DynStorageFactory>,
-    pub repository_config_types: Vec<DynRepositoryConfigType>,
-    pub repository_types: Vec<DynRepositoryType>,
     pub general_security_settings: SecuritySettings,
+    pub staging_config: StagingConfig,
 }
 impl Debug for NitroRepo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -112,6 +109,7 @@ pub struct NitroRepo {
     pub inner: Arc<NitroRepoInner>,
     pub database: PgPool,
     pub session_manager: Arc<SessionManager>,
+    pub email_access: Arc<EmailAccess>,
 }
 impl NitroRepo {
     async fn load_database(database: PostgresSettings) -> anyhow::Result<PgPool> {
@@ -129,10 +127,12 @@ impl NitroRepo {
         site: SiteSetting,
         security: SecuritySettings,
         session_manager: SessionManagerConfig,
+        staging_config: StagingConfig,
+        email_settings: EmailSetting,
         database: PostgresSettings,
     ) -> anyhow::Result<Self> {
         let database = Self::load_database(database).await?;
-        let is_installed = does_user_exist(&database).await?;
+        let is_installed = user_utils::does_user_exist(&database).await?;
         let instance = Instance {
             mode,
             version: current_semver!(),
@@ -142,19 +142,16 @@ impl NitroRepo {
             description: site.description,
             is_https: site.is_https,
         };
-
+        let email_service = email_service::EmailService::start(email_settings).await?;
         let session_manager = SessionManager::new(session_manager, mode)?;
 
-        let factories = vec![LocalStorageFactory::default().into()];
         let nitro_repo = NitroRepoInner {
             instance: Mutex::new(instance),
             storages: RwLock::new(HashMap::new()),
             repositories: RwLock::new(HashMap::new()),
-            storage_factories: factories,
-            repository_config_types: config_types(),
-            repository_types: repository_types(),
             name_lookup_table: Mutex::new(HashMap::new()),
             general_security_settings: security,
+            staging_config,
         };
         let session_manager = Arc::new(session_manager);
         SessionManager::start_cleaner(session_manager.clone());
@@ -162,6 +159,7 @@ impl NitroRepo {
             inner: Arc::new(nitro_repo),
             session_manager: session_manager,
             database: database,
+            email_access: Arc::new(email_service),
         };
         nitro_repo.load_storages().await?;
         nitro_repo.load_repositories().await?;
@@ -215,10 +213,11 @@ impl NitroRepo {
         info!("Loaded {} repositories", repositories.len());
         Ok(())
     }
-    pub fn get_storage_factory(&self, storage_name: &str) -> Option<&DynStorageFactory> {
-        self.storage_factories
+    pub fn get_storage_factory(&self, storage_name: &str) -> Option<&'static dyn StorageFactory> {
+        STORAGE_FACTORIES
             .iter()
             .find(|factory| factory.storage_name() == storage_name)
+            .copied()
     }
     #[instrument]
     pub async fn close(&self) {
@@ -236,10 +235,14 @@ impl NitroRepo {
             });
         }
     }
-    pub fn get_repository_config_type(&self, name: &str) -> Option<&DynRepositoryConfigType> {
-        self.repository_config_types
+    pub fn get_repository_config_type(
+        &self,
+        name: &str,
+    ) -> Option<&'static dyn RepositoryConfigType> {
+        REPOSITORY_CONFIG_TYPES
             .iter()
             .find(|config_type| config_type.get_type().eq_ignore_ascii_case(name))
+            .copied()
     }
     pub fn get_repository(&self, id: Uuid) -> Option<DynRepository> {
         let repository = self.repositories.read();
@@ -312,25 +315,22 @@ impl NitroRepo {
         let storages = self.storages.read();
         storages.get(&id).cloned()
     }
-    pub fn get_repository_type(&self, name: &str) -> Option<&DynRepositoryType> {
-        self.repository_types
+    pub fn get_repository_type(&self, name: &str) -> Option<&'static dyn RepositoryType> {
+        REPOSITORY_TYPES
             .iter()
             .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
+            .copied()
     }
 }
 
 pub type NitroRepoState = State<NitroRepo>;
 
-fn config_types() -> Vec<DynRepositoryConfigType> {
-    vec![
-        Box::new(PushRulesConfigType),
-        Box::new(SecurityConfigType),
-        Box::new(BadgeSettingsType),
-        Box::new(FrontendConfigType),
-        Box::new(RepositoryPageType),
-        Box::new(MavenRepositoryConfigType),
-    ]
-}
-fn repository_types() -> Vec<DynRepositoryType> {
-    vec![Box::new(MavenRepositoryType)]
-}
+pub static REPOSITORY_CONFIG_TYPES: &'static [&dyn RepositoryConfigType] = &[
+    &PushRulesConfigType,
+    &SecurityConfigType,
+    &BadgeSettingsType,
+    &FrontendConfigType,
+    &RepositoryPageType,
+    &MavenRepositoryConfigType,
+];
+pub static REPOSITORY_TYPES: &'static [&dyn RepositoryType] = &[&MavenRepositoryType];

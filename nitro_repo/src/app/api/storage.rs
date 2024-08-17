@@ -9,7 +9,7 @@ use nr_core::{
     database::storage::{DBStorage, NewDBStorage},
     user::permissions::HasPermissions,
 };
-use nr_storage::{local::LocalConfig, StorageConfig, StorageFactory, StorageTypeConfig};
+use nr_storage::{local::LocalConfig, StorageConfig, StorageTypeConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use utoipa::{OpenApi, ToSchema};

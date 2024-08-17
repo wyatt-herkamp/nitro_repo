@@ -48,13 +48,28 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
                     )*
                 }
             }
-            fn base_config(&self) -> DBRepository{
+            fn name(&self) -> String{
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.base_config(),
+                        #ident::#variants(variant) => variant.name(),
                     )*
                 }
             }
+            fn id(&self) -> uuid::Uuid{
+                match self {
+                    #(
+                        #ident::#variants(variant) => variant.id(),
+                    )*
+                }
+            }
+            fn is_active(&self) -> bool{
+                match self {
+                    #(
+                        #ident::#variants(variant) => variant.is_active(),
+                    )*
+                }
+            }
+
             fn get_type(&self) -> &'static str {
                 match self {
                     #(

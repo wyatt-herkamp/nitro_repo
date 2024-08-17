@@ -1,0 +1,21 @@
+name: Frontend Push or PR
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "site/.node-version"
+      - name: Install Site
+        working-directory: site
+        run: npm install && npm run build

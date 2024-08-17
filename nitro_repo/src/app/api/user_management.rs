@@ -1,24 +1,39 @@
 use axum::{
+    body::Body,
     extract::{Path, State},
     response::{IntoResponse, Response},
-    Form, Json,
+    Json,
 };
 use http::StatusCode;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
 
 use crate::{
-    app::{authentication::Authentication, responses::MissingPermission, NitroRepo},
+    app::{
+        authentication::{password, Authentication},
+        responses::MissingPermission,
+        NitroRepo,
+    },
     error::InternalError,
 };
 use nr_core::{
-    database::user::{NewUserRequest, UserSafeData, UserType as _},
+    database::user::{
+        user_utils, ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
+    },
     user::permissions::{HasPermissions, UserPermissions},
 };
+
 #[derive(OpenApi)]
 #[openapi(
-    paths(list_users, get_user, create_user, is_taken),
+    paths(
+        list_users,
+        get_user,
+        create_user,
+        is_taken,
+        update_permissions,
+        update_password
+    ),
     components(schemas(IsTaken))
 )]
 pub struct UserManagementAPI;
@@ -28,6 +43,14 @@ pub fn user_management_routes() -> axum::Router<NitroRepo> {
         .route("/{user_id}", axum::routing::get(get_user))
         .route("/create", axum::routing::post(create_user))
         .route("/is-taken", axum::routing::post(is_taken))
+        .route(
+            "/update/{user_id}/permissions",
+            axum::routing::put(update_permissions),
+        )
+        .route(
+            "/update/{user}/password",
+            axum::routing::put(update_password),
+        )
 }
 #[utoipa::path(
     get,
@@ -87,13 +110,13 @@ pub async fn create_user(
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
-    if UserSafeData::is_username_taken(&user.username, &site.database).await? {
+    if user_utils::is_username_taken(&user.username, &site.database).await? {
         return Ok(Response::builder()
             .status(http::StatusCode::CONFLICT)
             .body("Username already taken".into())
             .unwrap());
     }
-    if UserSafeData::is_email_taken(&user.email, &site.database).await? {
+    if user_utils::is_email_taken(&user.email, &site.database).await? {
         return Ok(Response::builder()
             .status(http::StatusCode::CONFLICT)
             .body("Email already taken".into())
@@ -130,11 +153,11 @@ pub async fn is_taken(
     }
     let (taken, what) = match is_taken {
         IsTaken::Username(username) => (
-            UserSafeData::is_username_taken(&username, &site.database).await?,
+            user_utils::is_username_taken(&username, &site.database).await?,
             "username",
         ),
         IsTaken::Email(email) => (
-            UserSafeData::is_email_taken(&email, &site.database).await?,
+            user_utils::is_email_taken(&email, &site.database).await?,
             "email",
         ),
     };
@@ -149,4 +172,78 @@ pub async fn is_taken(
             .body("".into())
             .unwrap())
     }
+}
+#[utoipa::path(
+    put,
+    path = "/update/{user_id}/permissions",
+    request_body = UserPermissions,
+    responses(
+        (status = 204, description = "Permissions were updated"),
+        (status = 404, description = "User not found"),
+    )
+)]
+pub async fn update_permissions(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Path(user_id): Path<i32>,
+    Json(permissions): Json<UserPermissions>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_user_manager() {
+        return Ok(MissingPermission::UserManager.into_response());
+    }
+    let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
+        return Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("User not found".into())
+            .unwrap());
+    };
+
+    user.update_permissions(permissions, &site.database).await?;
+    Ok(Response::builder()
+        .status(StatusCode::NO_CONTENT)
+        .body(Body::empty())
+        .unwrap())
+}
+
+#[utoipa::path(
+    put,
+    request_body = ChangePasswordNoCheck,
+    path = "/update/{user}/password",
+    responses(
+        (status = 204, description = "Password Changed"),
+        (status = 404, description = "Token Does Not Exist")
+    ),
+)]
+pub async fn update_password(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Path(user_id): Path<i32>,
+    Json(password_reset): Json<ChangePasswordNoCheck>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_user_manager() {
+        return Ok(MissingPermission::UserManager.into_response());
+    }
+    let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
+        return Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("User not found".into())
+            .unwrap());
+    };
+    let Some(encrypted_password) = password::encrypt_password(&password_reset.password) else {
+        return Ok(Response::builder()
+            .status(400)
+            .body("Failed to encrypt password".into())
+            .unwrap());
+    };
+    user.update_password(Some(encrypted_password), &site.database)
+        .await?;
+    Ok(Response::builder()
+        .status(StatusCode::NO_CONTENT)
+        .body(Body::empty())
+        .unwrap())
+}
+pub struct AdminUpdateUserRequest {
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub name: Option<String>,
 }

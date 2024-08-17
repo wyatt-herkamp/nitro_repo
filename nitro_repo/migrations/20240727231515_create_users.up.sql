@@ -12,29 +12,3 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE IF NOT EXISTS user_auth_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    expires_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT
-        fk_user_auth_tokens_user_id
-            FOREIGN KEY (user_id)
-                REFERENCES users (id)
-                ON DELETE CASCADE
-);
-CREATE TABLE IF NOT EXISTS user_password_reset_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    used_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT
-        fk_user_password_reset_tokens_user_id
-            FOREIGN KEY (user_id)
-                REFERENCES users (id)
-                ON DELETE CASCADE
-);

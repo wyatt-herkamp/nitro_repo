@@ -5,9 +5,9 @@ use std::future::Future;
 pub use config::*;
 pub use error::StorageError;
 pub use fs::*;
+use futures::future::BoxFuture;
 use nr_core::storage::StoragePath;
 use serde_json::Value;
-use tracing::warn;
 pub use uuid::Uuid;
 mod config;
 mod dyn_storage;
@@ -77,13 +77,19 @@ pub trait Storage: Send + Sync {
         config: StorageTypeConfig,
     ) -> impl Future<Output = Result<(), StorageError>> + Send;
 }
-pub trait StorageFactory {
+pub trait StorageFactory: Send + Sync {
     fn storage_name(&self) -> &'static str;
 
     //TODO fn storage_config_schema(&self) -> StorageTypeConfigSchema;
-    async fn test_storage_config(&self, config: StorageTypeConfig) -> Result<(), StorageError>;
+    fn test_storage_config(
+        &self,
+        config: StorageTypeConfig,
+    ) -> BoxFuture<'static, Result<(), StorageError>>;
 
-    async fn create_storage(&self, config: StorageConfig) -> Result<DynStorage, StorageError>;
+    fn create_storage(
+        &self,
+        config: StorageConfig,
+    ) -> BoxFuture<'static, Result<DynStorage, StorageError>>;
 }
 #[cfg(test)]
 mod tests {

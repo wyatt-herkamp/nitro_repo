@@ -1,8 +1,14 @@
-use std::sync::Arc;
+use std::{
+    cmp::Ordering,
+    sync::{
+        atomic::{self, AtomicBool},
+        Arc,
+    },
+};
 
-use axum::response::{self, Response};
+use axum::response::Response;
 use derive_more::derive::Deref;
-use http::{version, StatusCode};
+use http::StatusCode;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::{
@@ -29,7 +35,7 @@ use uuid::Uuid;
 use crate::{
     app::{authentication::RepositoryAuthentication, NitroRepo},
     repository::{
-        maven::{self, MavenError, MavenRepositoryConfigType},
+        maven::{MavenError, MavenRepositoryConfigType},
         Repository, RepositoryFactoryError, RepositoryHandlerError,
     },
 };
@@ -38,7 +44,8 @@ use super::{RepoResponse, RepositoryRequest};
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
     pub id: Uuid,
-    pub repository: RwLock<DBRepository>,
+    pub name: String,
+    pub active: AtomicBool,
     pub push_rules: RwLock<PushRulesConfig>,
     pub security: RwLock<SecurityConfig>,
     pub frontend: RwLock<Frontend>,
@@ -56,6 +63,63 @@ impl MavenHostedInner {
 #[derive(Debug, Clone, Deref)]
 pub struct MavenHosted(Arc<MavenHostedInner>);
 impl MavenHosted {
+    #[instrument]
+    pub async fn standard_maven_deploy(
+        &self,
+        RepositoryRequest {
+            parts,
+            body,
+            path,
+            authentication,
+        }: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
+        let user_id = if let Some(user) = authentication.get_user() {
+            user.id
+        } else {
+            return Ok(RepoResponse::unauthorized());
+        };
+
+        {
+            let push_rules = self.push_rules.read();
+            if push_rules.require_nitro_deploy {
+                return Ok(RepoResponse::require_nitro_deploy());
+            }
+        }
+        info!("Saving File: {}", path);
+        let body = body.body_as_bytes().await?;
+        // TODO: Validate Against Push Rules
+
+        let (size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
+        // Trigger Push Event if it is the .pom file
+        if path.has_extension("pom") {
+            let file = self
+                .storage
+                .open_file(self.id, &path)
+                .await?
+                .and_then(|x| x.file());
+            let Some((mut file, meta)) = file else {
+                return Ok(Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body("Failed to open file".into())
+                    .unwrap()
+                    .into());
+            };
+            let mut pom_file = String::with_capacity(size);
+            file.read_to_string(&mut pom_file).await?;
+            let pom: maven_rs::pom::Pom =
+                maven_rs::quick_xml::de::from_str(&pom_file).map_err(MavenError::from)?;
+            debug!(?pom, "Parsed POM File");
+            self.post_pom_upload(path.clone(), user_id, pom).await;
+        }
+        let save_path = format!(
+            "/repositories/{}/{}/{}",
+            self.storage.storage_config().storage_config.storage_name,
+            self.name,
+            path
+        );
+
+        Ok(RepoResponse::put_response(created, save_path))
+    }
     pub async fn load(
         repository: DBRepository,
         storage: DynStorage,
@@ -86,10 +150,12 @@ impl MavenHosted {
             site.as_ref(),
         )
         .await?;
+        let active = AtomicBool::new(repository.active);
         debug!("Loaded Frontend Config: {:?}", frontend_db);
         let inner = MavenHostedInner {
             id: repository.id,
-            repository: RwLock::new(repository),
+            name: repository.name,
+            active: active,
             push_rules: RwLock::new(push_rules_db.value.0),
             security: RwLock::new(security_db.value.0),
             frontend: RwLock::new(frontend_db.value.0),
@@ -198,13 +264,13 @@ impl Repository for MavenHosted {
     }
 
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
-        let config = DBRepository::get_by_id(self.id, self.site.as_ref())
-            .await?
-            .ok_or(RepositoryFactoryError::LoadedRepositoryNotFound(self.id))?;
-        {
-            let mut repository = self.repository.write();
-            *repository = config;
-        }
+        let Some(is_active) = DBRepository::get_active_by_id(self.id, self.site.as_ref()).await?
+        else {
+            error!("Failed to get repository");
+            self.0.active.store(false, atomic::Ordering::Relaxed);
+            return Ok(());
+        };
+        self.0.active.store(is_active, atomic::Ordering::Relaxed);
 
         let push_rules_db =
             get_repository_config_or_default::<PushRulesConfigType, PushRulesConfig>(
@@ -256,10 +322,6 @@ impl Repository for MavenHosted {
             ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        if !self.repository.read().active {
-            return Ok(RepoResponse::disabled_repository());
-        }
-
         if let Some(err) = self.check_read(&authentication) {
             return Ok(err);
         }
@@ -285,9 +347,6 @@ impl Repository for MavenHosted {
             ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        if !self.repository.read().active {
-            return Ok(RepoResponse::disabled_repository());
-        }
         let visibility = { self.security.read().visibility };
 
         if let Some(err) = self.check_read(&authentication) {
@@ -307,79 +366,57 @@ impl Repository for MavenHosted {
     #[instrument(name = "maven_hosted_put")]
     async fn handle_put(
         &self,
-        RepositoryRequest {
-            parts,
-            body,
-            path,
-            authentication,
-        }: RepositoryRequest,
+        request: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        info!(
-            "Handling PUT Request for Repository: {} Path: {}",
-            self.id, path
-        );
-        let (save_path, user_id) = {
-            let repository = self.repository.read();
-            if !repository.active {
-                return Ok(RepoResponse::disabled_repository());
-            }
+        info!("Handling PUT Request for Repository: {}", self.id);
+        {
             let security = self.security.read();
-            if security.must_use_auth_token_for_push && !authentication.has_auth_token() {
+            if security.must_use_auth_token_for_push && !request.authentication.has_auth_token() {
                 info!("Repository requires an auth token for push");
                 return Ok(RepoResponse::require_auth_token());
             }
-            let Some(user) = authentication.get_user() else {
-                info!("No acceptable user authentication provided");
-                return Ok(RepoResponse::unauthorized());
-            };
-            if !user.can_write_to_repository(self.id) {
-                info!(?repository, ?user, "User does not have write permissions");
-                return Ok(RepoResponse::forbidden());
-            }
-
-            let save_path = format!(
-                "/repositories/{}/{}/{}",
-                self.storage.storage_config().storage_config.storage_name,
-                repository.name,
-                path
-            );
-            (save_path, user.id)
+        }
+        let Some(user) = request.authentication.get_user() else {
+            info!("No acceptable user authentication provided");
+            return Ok(RepoResponse::unauthorized());
         };
-
-        {
-            let push_rules = self.push_rules.read();
-        }
-        info!("Saving File: {}", path);
-        let body = body.body_as_bytes().await?;
-        // TODO: Validate Against Push Rules
-
-        let (size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
-        // Trigger Push Event if it is the .pom file
-        if path.has_extension("pom") {
-            let file = self
-                .storage
-                .open_file(self.id, &path)
-                .await?
-                .and_then(|x| x.file());
-            let Some((mut file, meta)) = file else {
-                return Ok(Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body("Failed to open file".into())
-                    .unwrap()
-                    .into());
-            };
-            let mut pom_file = String::with_capacity(size);
-            file.read_to_string(&mut pom_file).await?;
-            let pom: maven_rs::pom::Pom =
-                maven_rs::quick_xml::de::from_str(&pom_file).map_err(MavenError::from)?;
-            debug!(?pom, "Parsed POM File");
-            self.post_pom_upload(path.clone(), user_id, pom).await;
+        if !user.can_write_to_repository(self.id) {
+            info!(?self.id, ?user, "User does not have write permissions");
+            return Ok(RepoResponse::forbidden());
         }
 
-        Ok(RepoResponse::put_response(created, save_path))
+        let Some(nitro_deploy_version) = request.get_nitro_repo_deploy_header()? else {
+            return self.standard_maven_deploy(request).await;
+        };
+        info!(?nitro_deploy_version, "Handling Nitro Deploy Version");
+
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
+        ))
+    }
+    async fn handle_post(
+        &self,
+        request: RepositoryRequest,
+    ) -> Result<RepoResponse, RepositoryHandlerError> {
+        let Some(nitro_deploy_version) = request.get_nitro_repo_deploy_header()? else {
+            return Ok(RepoResponse::unsupported_method_response(
+                request.parts.method,
+                self.get_type(),
+            ));
+        };
+        info!(?nitro_deploy_version, "Handling Nitro Deploy Version");
+        todo!()
+    }
+    fn name(&self) -> String {
+        self.0.name.clone()
     }
 
-    fn base_config(&self) -> DBRepository {
-        self.0.repository.read().clone()
+    fn id(&self) -> Uuid {
+        self.0.id
+    }
+
+    fn is_active(&self) -> bool {
+        self.active.load(atomic::Ordering::Relaxed)
     }
 }

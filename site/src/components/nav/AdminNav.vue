@@ -86,9 +86,12 @@
 import { sessionStore } from '@/stores/session'
 import { RouterLink } from 'vue-router'
 import AdminNavSub from './AdminNavSub.vue'
-import { computed } from 'vue'
+import { computed, type PropType } from 'vue'
 import router from '@/router'
-const session = sessionStore()
+import type { User } from '@/types/base'
+const props = defineProps({
+  user: Object as PropType<User>
+})
 const isOnUsersPage = computed(() => {
   const name = router.currentRoute.value.path
   return name.startsWith('/admin/users') || name.startsWith('/admin/user')

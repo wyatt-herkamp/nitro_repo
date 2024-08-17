@@ -1,9 +1,0 @@
-[Unit]
-Description=Nitro Repository
-After=mysql.service
-
-[Service]
-WorkingDirectory=/opt/nitro_repo
-ExecStart=/opt/nitro_repo/nitro_repo
-Restart=always
-NoNewPrivileges=true

@@ -12,7 +12,6 @@ pub enum Visibility {
     Public,
     /// Private. Only users with the correct permissions can read this repository
     Private,
-    #[schemars(title = "SUper Hidden")]
     /// Hidden. You can read this repository but indexing will be disabled
     Hidden,
 }

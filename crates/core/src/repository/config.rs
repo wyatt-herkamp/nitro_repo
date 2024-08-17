@@ -132,6 +132,8 @@ pub struct PushRulesConfig {
     pub allow_overwrite: bool,
     /// If a project exists the user must be a member of the project to push.
     pub must_be_project_member: bool,
+    /// Require Nitro Deploy
+    pub require_nitro_deploy: bool,
 }
 impl Default for PushRulesConfig {
     fn default() -> Self {
@@ -140,6 +142,7 @@ impl Default for PushRulesConfig {
             yanking_allowed: Default::default(),
             allow_overwrite: Default::default(),
             must_be_project_member: Default::default(),
+            require_nitro_deploy: false,
         }
     }
 }

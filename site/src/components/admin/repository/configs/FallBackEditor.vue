@@ -12,7 +12,7 @@ import http from '@/http'
 import { computed, ref, type PropType } from 'vue'
 import { repositoriesStore } from '@/stores/repositories'
 import JsonSchemaForm from '@/components/form/JsonSchemaForm.vue'
-import { createForm, type RootSchema } from 'nitro-jsr'
+import { createForm, type RootSchema } from 'nitro-jsf'
 
 const schema = ref<RootSchema | undefined>(undefined)
 const form = computed(() => {

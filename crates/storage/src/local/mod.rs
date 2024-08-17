@@ -238,23 +238,30 @@ impl StorageFactory for LocalStorageFactory {
         "Local"
     }
 
-    async fn test_storage_config(&self, _config: StorageTypeConfig) -> Result<(), StorageError> {
-        //TODO: Ensure that the path is valid and writable
-        Ok(())
+    fn test_storage_config(
+        &self,
+        config: StorageTypeConfig,
+    ) -> BoxFuture<'static, Result<(), StorageError>> {
+        Box::pin(async move { Ok(()) })
     }
 
-    async fn create_storage(&self, config: StorageConfig) -> Result<DynStorage, StorageError> {
-        let local_config = match config.type_config {
-            StorageTypeConfig::Local(config) => config,
-            _ => return Err(StorageError::InvalidConfigType("Local")),
-        };
-        if !local_config.path.exists() {
-            fs::create_dir_all(&local_config.path)?;
-        }
-        let local = LocalStorageInner {
-            config: local_config,
-            storage_config: config.storage_config,
-        };
-        Ok(DynStorage::Local(LocalStorage(Arc::new(local))))
+    fn create_storage(
+        &self,
+        config: StorageConfig,
+    ) -> BoxFuture<'static, Result<DynStorage, StorageError>> {
+        Box::pin(async move {
+            let local_config = match config.type_config {
+                StorageTypeConfig::Local(config) => config,
+                _ => return Err(StorageError::InvalidConfigType("Local")),
+            };
+            if !local_config.path.exists() {
+                fs::create_dir_all(&local_config.path)?;
+            }
+            let local = LocalStorageInner {
+                config: local_config,
+                storage_config: config.storage_config,
+            };
+            Ok(DynStorage::Local(LocalStorage(Arc::new(local))))
+        })
     }
 }

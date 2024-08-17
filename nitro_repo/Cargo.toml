@@ -33,7 +33,7 @@ tokio-rustls = "0.26"
 rustls = { version = "0.23" }
 rustls-pemfile = { version = "2" }
 # Partly Web
-handlebars = "6"
+handlebars = { version = "6", features = ["rust-embed"] }
 # Database
 sqlx.workspace = true
 # Serde
@@ -51,6 +51,7 @@ futures-util.workspace = true
 base64.workspace = true
 tokio.workspace = true
 uuid.workspace = true
+flume = "0.11"
 sha2.workspace = true
 schemars.workspace = true
 reqwest.workspace = true
@@ -94,6 +95,12 @@ opentelemetry = { version = "0.24", features = [] }
 opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.17", default-features = true }
 
+lettre = { version = "=0.11.7", features = [
+    "builder",
+    "tokio1",
+    "smtp-transport",
+    "tokio1-rustls-tls",
+], default-features = false }
 [features]
 default = ["utoipa-scalar"]
 builtin_frontend = []

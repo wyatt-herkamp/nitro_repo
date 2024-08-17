@@ -1,6 +1,6 @@
 use http::{header::ToStrError, HeaderValue};
 use nr_core::utils::base64_utils;
-use tracing::{debug, error, instrument};
+use tracing::{error, instrument};
 
 use crate::error::{BadRequestErrors, InvalidAuthorizationHeader};
 

@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::ops::Deref;
 
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::async_trait;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::response::IntoResponse;
@@ -46,7 +45,7 @@ impl IntoResponse for AuthenticationError {
             .unwrap()
     }
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, EnumIs)]
 pub enum Authentication {
     /// An Auth Token was passed under the Authorization Header
     AuthToken(AuthToken, UserSafeData),
@@ -140,6 +139,14 @@ impl HasPermissions for RepositoryAuthentication {
     }
 }
 impl RepositoryAuthentication {
+    pub fn get_user_id(&self) -> Option<i32> {
+        match self {
+            RepositoryAuthentication::AuthToken(_, user) => Some(user.id),
+            RepositoryAuthentication::Session(_, user) => Some(user.id),
+            RepositoryAuthentication::Basic(user, _) => Some(user.id),
+            _ => None,
+        }
+    }
     pub fn get_user(&self) -> Option<&UserSafeData> {
         match self {
             RepositoryAuthentication::AuthToken(_, user) => Some(user),

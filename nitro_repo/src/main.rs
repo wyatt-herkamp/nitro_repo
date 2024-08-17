@@ -25,6 +25,14 @@ enum SubCommands {
     Start,
 }
 fn main() -> anyhow::Result<()> {
+    // For Some Reason Lettre fails if this is not installed
+    if rustls::crypto::ring::default_provider()
+        .install_default()
+        .is_err()
+    {
+        eprintln!("Default Crypto Provider already installed. This is not an error. But it should be reported.");
+    }
+
     let command = Command::parse();
     let config =
         app::config::NitroRepoConfig::load(command.config, command.add_defaults_to_config)?;

@@ -10,16 +10,23 @@
       >Browse</RouterLink
     >
 
-    <UserDropDown class="right" v-if="session.user" />
-    <div v-if="session.user"></div>
+    <UserDropDown class="right" v-if="user" />
+    <div v-if="user"></div>
     <RouterLink :to="{ name: 'login' }" class="navLink right" v-else>Login</RouterLink>
   </nav>
 </template>
 <script setup lang="ts">
 import { sessionStore } from '@/stores/session'
 import UserDropDown from './UserDropDown.vue'
+import type { PropType } from 'vue'
+import type { User } from '@/types/base'
 
-const session = sessionStore()
+const props = defineProps({
+  user: {
+    type: Object as PropType<User>,
+    required: false
+  }
+})
 </script>
 
 <style lang="scss" scoped>

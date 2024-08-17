@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Json, FromRow, PgPool};
+use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
+use tracing::instrument;
 use utoipa::ToSchema;
 
 use crate::user::permissions::{HasPermissions, UserPermissions};
@@ -7,6 +8,7 @@ use crate::user::permissions::{HasPermissions, UserPermissions};
 use super::DateTime;
 pub mod auth_token;
 pub mod password_reset;
+pub mod user_utils;
 /// Implements on types that references a user in the database.
 ///
 /// Such as APIKeys and PasswordReset tokens.
@@ -17,10 +19,40 @@ pub trait ReferencesUser {
     where
         Self: Sized;
 }
-pub trait UserType {
+pub trait UserType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
+    fn get_id(&self) -> i32;
+
+    fn columns() -> Vec<&'static str>;
+    fn format_columns(prefix: Option<&str>) -> String {
+        if let Some(prefix) = prefix {
+            Self::columns()
+                .iter()
+                .map(|column| format!("{}.{}", prefix, column))
+                .collect::<Vec<String>>()
+                .join(", ")
+        } else {
+            Self::columns().join(", ")
+        }
+    }
     async fn get_by_id(id: i32, database: &PgPool) -> Result<Option<Self>, sqlx::Error>
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        let columns = Self::format_columns(None);
+        let user = sqlx::query_as::<_, Self>(&format!("SELECT {columns} FROM users WHERE id = $1"))
+            .bind(id)
+            .fetch_optional(database)
+            .await?;
+        Ok(user)
+    }
+    async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let columns = Self::format_columns(None);
+
+        let users = sqlx::query_as::<_, Self>(&format!("SELECT {columns} FROM users"))
+            .fetch_all(database)
+            .await?;
+        Ok(users)
+    }
 
     async fn get_by_reference(
         reference: &impl ReferencesUser,
@@ -31,12 +63,108 @@ pub trait UserType {
     {
         Self::get_by_id(reference.user_id(), database).await
     }
+    async fn get_by_email(email: &str, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let columns: String = Self::format_columns(None);
+
+        let user =
+            sqlx::query_as::<_, Self>(&format!("SELECT {columns} FROM users WHERE email = $1"))
+                .bind(email)
+                .fetch_optional(database)
+                .await?;
+        Ok(user)
+    }
     async fn get_by_username_or_email(
         username: impl AsRef<str>,
         database: &PgPool,
     ) -> Result<Option<Self>, sqlx::Error>
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        let columns: String = Self::format_columns(None);
+
+        let user = sqlx::query_as::<_, Self>(&format!(
+            "SELECT {columns} FROM users WHERE username = $1 OR email = $1"
+        ))
+        .bind(username.as_ref())
+        .fetch_optional(database)
+        .await?;
+        Ok(user)
+    }
+
+    async fn update_permissions(
+        &self,
+        permissions: UserPermissions,
+        database: &PgPool,
+    ) -> Result<(), sqlx::Error>
+    where
+        Self: Sized,
+    {
+        sqlx::query("UPDATE users SET permissions = $1 WHERE id = $2")
+            .bind(Json(permissions))
+            .bind(self.get_id())
+            .execute(database)
+            .await?;
+        Ok(())
+    }
+    async fn update_password(
+        &self,
+        password: Option<String>,
+        database: &PgPool,
+    ) -> Result<(), sqlx::Error>
+    where
+        Self: Sized,
+    {
+        sqlx::query("UPDATE users SET password = $1, password_last_changed = NOW(), require_password_change = false WHERE id = $2")
+            .bind(password)
+            .bind(self.get_id())
+            .execute(database)
+            .await?;
+        Ok(())
+    }
+
+    async fn update_email_address(
+        &self,
+        email: impl AsRef<str>,
+        database: &PgPool,
+    ) -> Result<(), sqlx::Error>
+    where
+        Self: Sized,
+    {
+        sqlx::query("UPDATE users SET email = $1 WHERE id = $2")
+            .bind(email.as_ref())
+            .bind(self.get_id())
+            .execute(database)
+            .await?;
+        Ok(())
+    }
+
+    async fn update_username(
+        &self,
+        username: impl AsRef<str>,
+        database: &PgPool,
+    ) -> Result<(), sqlx::Error>
+    where
+        Self: Sized,
+    {
+        sqlx::query("UPDATE users SET username = $1 WHERE id = $2")
+            .bind(username.as_ref())
+            .bind(self.get_id())
+            .execute(database)
+            .await?;
+        Ok(())
+    }
+
+    async fn update_name(&self, name: impl AsRef<str>, database: &PgPool) -> Result<(), sqlx::Error>
+    where
+        Self: Sized,
+    {
+        sqlx::query("UPDATE users SET name = $1 WHERE id = $2")
+            .bind(name.as_ref())
+            .bind(self.get_id())
+            .execute(database)
+            .await?;
+        Ok(())
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 pub struct UserModel {
@@ -53,6 +181,19 @@ pub struct UserModel {
     pub permissions: Json<UserPermissions>,
     pub updated_at: DateTime,
     pub created_at: DateTime,
+}
+impl UserModel {
+    pub async fn get_password_by_id(
+        id: i32,
+        database: &PgPool,
+    ) -> Result<Option<String>, sqlx::Error> {
+        let user_password: Option<String> =
+            sqlx::query_scalar("SELECT password FROM users WHERE id = $1")
+                .bind(id)
+                .fetch_optional(database)
+                .await?;
+        Ok(user_password)
+    }
 }
 impl Default for UserModel {
     fn default() -> Self {
@@ -72,23 +213,12 @@ impl Default for UserModel {
     }
 }
 impl UserType for UserModel {
-    async fn get_by_id(id: i32, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
-        let user = sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE id = $1")
-            .bind(id)
-            .fetch_optional(database)
-            .await?;
-        Ok(user)
+    fn get_id(&self) -> i32 {
+        self.id
     }
-    async fn get_by_username_or_email(
-        username: impl AsRef<str>,
-        database: &PgPool,
-    ) -> Result<Option<Self>, sqlx::Error> {
-        let user =
-            sqlx::query_as::<_, UserModel>("SELECT * FROM users WHERE username = $1 OR email = $1")
-                .bind(username.as_ref())
-                .fetch_optional(database)
-                .await?;
-        Ok(user)
+
+    fn columns() -> Vec<&'static str> {
+        vec!["*"]
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
@@ -105,54 +235,24 @@ pub struct UserSafeData {
     pub created_at: DateTime,
 }
 impl UserType for UserSafeData {
-    async fn get_by_id(id: i32, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
-        let user = sqlx::query_as::<_, UserSafeData>("SELECT * FROM users WHERE id = $1")
-            .bind(id)
-            .fetch_optional(database)
-            .await?;
-        Ok(user)
+    fn columns() -> Vec<&'static str> {
+        vec![
+            "id",
+            "name",
+            "username",
+            "email",
+            "require_password_change",
+            "active",
+            "permissions",
+            "updated_at",
+            "created_at",
+        ]
     }
-    async fn get_by_username_or_email(
-        username: impl AsRef<str>,
-        database: &PgPool,
-    ) -> Result<Option<Self>, sqlx::Error> {
-        let user = sqlx::query_as::<_, UserSafeData>(
-            "SELECT * FROM users WHERE username = $1 OR email = $1",
-        )
-        .bind(username.as_ref())
-        .fetch_optional(database)
-        .await?;
-        Ok(user)
+    fn get_id(&self) -> i32 {
+        self.id
     }
 }
-impl UserSafeData {
-    pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let users = sqlx::query_as::<_, UserSafeData>("SELECT * FROM users")
-            .fetch_all(database)
-            .await?;
-        Ok(users)
-    }
-    pub async fn is_username_taken(
-        username: impl AsRef<str>,
-        database: &PgPool,
-    ) -> Result<bool, sqlx::Error> {
-        let user = sqlx::query("SELECT id FROM users WHERE username = $1")
-            .bind(username.as_ref())
-            .fetch_optional(database)
-            .await?;
-        Ok(user.is_some())
-    }
-    pub async fn is_email_taken(
-        email: impl AsRef<str>,
-        database: &PgPool,
-    ) -> Result<bool, sqlx::Error> {
-        let user = sqlx::query("SELECT id FROM users WHERE email = $1")
-            .bind(email.as_ref())
-            .fetch_optional(database)
-            .await?;
-        Ok(user.is_some())
-    }
-}
+
 impl HasPermissions for UserSafeData {
     fn get_permissions(&self) -> Option<&UserPermissions> {
         Some(self.permissions.as_ref())
@@ -173,12 +273,7 @@ impl From<UserModel> for UserSafeData {
         }
     }
 }
-pub async fn does_user_exist(database: &PgPool) -> Result<bool, sqlx::Error> {
-    let user = sqlx::query("SELECT id FROM users WHERE active = true LIMIT 1")
-        .fetch_optional(database)
-        .await?;
-    Ok(user.is_some())
-}
+
 #[cfg(test)]
 mod tests {
     /// Just incase a bug get's introduced from serde where the password is serialized. We want to error out.
@@ -226,4 +321,17 @@ impl NewUserRequest {
         .fetch_one(database).await?;
         Ok(user)
     }
+}
+/// Change Password request. That does not check the old password.
+/// Used for password reset and admin password changes.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct ChangePasswordNoCheck {
+    pub password: String,
+}
+/// Change Password request. That checks the old password.
+/// Used for changing the password when the user is logged in.
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct ChangePasswordWithCheck {
+    pub old_password: String,
+    pub new_password: String,
 }

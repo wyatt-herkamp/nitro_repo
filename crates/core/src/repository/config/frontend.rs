@@ -1,13 +1,10 @@
 use std::{fmt::Display, str::FromStr};
 
 use badge_maker::Style;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use schemars::{schema_for, JsonSchema, Schema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
-use utoipa::ToSchema;
 
 use super::{RepositoryConfigError, RepositoryConfigType};
 
@@ -203,7 +200,7 @@ impl JsonSchema for RGBColor {
         std::borrow::Cow::Borrowed("RGBColor")
     }
 
-    fn json_schema(gen: &mut schemars::SchemaGenerator) -> Schema {
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> Schema {
         {
             let mut map = schemars::_serde_json::Map::new();
             map.insert("type".to_owned(), "string".into());

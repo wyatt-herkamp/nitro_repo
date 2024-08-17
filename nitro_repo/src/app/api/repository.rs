@@ -21,7 +21,7 @@ use crate::{
     app::{
         authentication::Authentication,
         responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
-        NitroRepo,
+        NitroRepo, REPOSITORY_TYPES,
     },
     error::InternalError,
     repository::{Repository, RepositoryTypeDescription},
@@ -69,9 +69,7 @@ pub fn repository_routes() -> axum::Router<NitroRepo> {
 #[instrument]
 pub async fn repository_types(State(site): State<NitroRepo>) -> Response {
     // TODO: Add Client side caching
-
-    let types: Vec<_> = site
-        .repository_types
+    let types: Vec<_> = REPOSITORY_TYPES
         .iter()
         .map(|v| v.get_description())
         .collect();
@@ -190,9 +188,9 @@ pub async fn update_config(
             .unwrap());
     };
     if !repository.config_types().contains(&config_key.as_str()) {
-        let repository = repository.base_config();
+        let repository = repository.get_type();
         return Ok(InvalidRepositoryConfig::RepositoryTypeDoesntSupportConfig {
-            repository_type: repository.repository_type,
+            repository_type: repository.to_owned(),
             config_key,
         }
         .into_response());

@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
 import http from '@/http'
 import type { ConfigDescription, RepositoryTypeDescription } from '@/types/repository'
-import type { RootSchema } from 'nitro-jsr'
+import type { RootSchema } from 'nitro-jsf'
 export const repositoriesStore = defineStore(
   'repositories',
   () => {

@@ -1,5 +1,4 @@
 use derive_builder::Builder;
-use http::version;
 use serde::Serialize;
 use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
 use utoipa::ToSchema;

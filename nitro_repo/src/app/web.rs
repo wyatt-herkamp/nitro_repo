@@ -19,7 +19,6 @@ use std::{fs::File, io::BufReader, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio_rustls::TlsAcceptor;
-use tower_http::cors::CorsLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_service::Service;
@@ -37,9 +36,10 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         mode,
         sessions,
         tls,
-
+        staging_config,
         site,
         security,
+        email,
         ..
     } = config;
     log.init(mode)?;
@@ -50,9 +50,17 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         })
         .transpose()?;
 
-    let site = NitroRepo::new(mode, site, security, sessions, database)
-        .await
-        .context("Unable to Initialize Website Core")?;
+    let site = NitroRepo::new(
+        mode,
+        site,
+        security,
+        sessions,
+        staging_config,
+        email,
+        database,
+    )
+    .await
+    .context("Unable to Initialize Website Core")?;
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let app = Router::new()
