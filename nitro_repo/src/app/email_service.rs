@@ -12,7 +12,6 @@ use lettre::{
     Address, AsyncSmtpTransport, AsyncTransport, Message,
 };
 use rust_embed::RustEmbed;
-use rustls::crypto::CryptoProvider;
 use serde::Serialize;
 use tracing::{debug, error, info, instrument, log::log_enabled, warn};
 

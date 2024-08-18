@@ -4,14 +4,16 @@ use sqlx::{prelude::FromRow, types::Json};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use crate::storage::StorageName;
+
 use super::DateTime;
 pub struct NewDBStorage {
     pub storage_type: String,
-    pub name: String,
+    pub name: StorageName,
     pub config: Json<Value>,
 }
 impl NewDBStorage {
-    pub fn new(storage_type: String, name: String, config: Value) -> Self {
+    pub fn new(storage_type: String, name: StorageName, config: Value) -> Self {
         Self {
             storage_type,
             name,
@@ -35,7 +37,7 @@ impl NewDBStorage {
 pub struct DBStorage {
     pub id: Uuid,
     pub storage_type: String,
-    pub name: String,
+    pub name: StorageName,
     /// The configuration for the storage
     /// This is based on the storage type. It is stored as a JSON object.
     ///  Requests should be JSON and the response will be JSON. Please refer to the storage type documentation for the configuration.

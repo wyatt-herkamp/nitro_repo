@@ -68,3 +68,59 @@ pub mod duration_serde {
         }
     }
 }
+pub mod validations {
+    /// Accepted Characters for URL Safe Strings
+    ///
+    /// - A-Z
+    /// - a-z
+    /// - 0-9
+    /// - _
+    /// - -
+    #[inline(always)]
+    pub fn valid_name_char(c: char) -> bool {
+        c.is_ascii_alphanumeric() || c == '_' || c == '-'
+    }
+    pub fn valid_name_string(s: &str) -> bool {
+        s.chars().all(valid_name_char)
+    }
+    macro_rules! from_impls {
+        ($f:ty, $error:ty) => {
+            impl serde::Serialize for $f {
+                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: serde::Serializer,
+                {
+                    self.0.serialize(serializer)
+                }
+            }
+            impl<'de> serde::Deserialize<'de> for $f {
+                fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                where
+                    D: serde::Deserializer<'de>,
+                {
+                    String::deserialize(deserializer)
+                        .and_then(|s| Self::new(s).map_err(|e| serde::de::Error::custom(e)))
+                }
+            }
+            impl TryFrom<String> for $f {
+                type Error = $error;
+                fn try_from(value: String) -> Result<Self, Self::Error> {
+                    Self::new(value)
+                }
+            }
+            impl TryFrom<&str> for $f {
+                type Error = $error;
+                fn try_from(value: &str) -> Result<Self, Self::Error> {
+                    Self::new(value.to_string())
+                }
+            }
+            impl std::str::FromStr for $f {
+                type Err = $error;
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    Self::new(s.to_string())
+                }
+            }
+        };
+    }
+    pub(crate) use from_impls;
+}

@@ -21,7 +21,10 @@ use nr_core::{
     database::user::{
         user_utils, ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
     },
-    user::permissions::{HasPermissions, UserPermissions},
+    user::{
+        permissions::{HasPermissions, UpdatePermissions, UserPermissions},
+        Email, Username,
+    },
 };
 
 #[derive(OpenApi)]
@@ -34,21 +37,21 @@ use nr_core::{
         update_permissions,
         update_password
     ),
-    components(schemas(IsTaken))
+    components(schemas(IsTaken, UpdatePermissions))
 )]
 pub struct UserManagementAPI;
 pub fn user_management_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_users))
-        .route("/{user_id}", axum::routing::get(get_user))
+        .route("/get/:user_id", axum::routing::get(get_user))
         .route("/create", axum::routing::post(create_user))
         .route("/is-taken", axum::routing::post(is_taken))
         .route(
-            "/update/{user_id}/permissions",
+            "/update/:user_id/permissions",
             axum::routing::put(update_permissions),
         )
         .route(
-            "/update/{user}/password",
+            "/update/:user_id/password",
             axum::routing::put(update_password),
         )
 }
@@ -72,7 +75,7 @@ pub async fn list_users(
 }
 #[utoipa::path(
     get,
-    path = "/{user_id}",
+    path = "/get/{user_id}",
     responses(
         (status = 200, description = "User Info", body = UserSafeData),
         (status = 404, description = "User not found")
@@ -152,14 +155,30 @@ pub async fn is_taken(
         return Ok(MissingPermission::UserManager.into_response());
     }
     let (taken, what) = match is_taken {
-        IsTaken::Username(username) => (
-            user_utils::is_username_taken(&username, &site.database).await?,
-            "username",
-        ),
-        IsTaken::Email(email) => (
-            user_utils::is_email_taken(&email, &site.database).await?,
-            "email",
-        ),
+        IsTaken::Username(username) => {
+            if let Err(err) = Username::new(username.clone()) {
+                return Ok(Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(err.to_string().into())
+                    .unwrap());
+            }
+            (
+                user_utils::is_username_taken(&username, &site.database).await?,
+                "username",
+            )
+        }
+        IsTaken::Email(email) => {
+            if let Err(err) = Email::new(email.clone()) {
+                return Ok(Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(err.to_string().into())
+                    .unwrap());
+            }
+            (
+                user_utils::is_email_taken(&email, &site.database).await?,
+                "email",
+            )
+        }
     };
     if taken {
         Ok(Response::builder()
@@ -173,10 +192,11 @@ pub async fn is_taken(
             .unwrap())
     }
 }
+
 #[utoipa::path(
     put,
     path = "/update/{user_id}/permissions",
-    request_body = UserPermissions,
+    request_body = UpdatePermissions,
     responses(
         (status = 204, description = "Permissions were updated"),
         (status = 404, description = "User not found"),
@@ -186,7 +206,7 @@ pub async fn update_permissions(
     auth: Authentication,
     State(site): State<NitroRepo>,
     Path(user_id): Path<i32>,
-    Json(permissions): Json<UserPermissions>,
+    Json(permissions): Json<UpdatePermissions>,
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
@@ -197,8 +217,10 @@ pub async fn update_permissions(
             .body("User not found".into())
             .unwrap());
     };
-
-    user.update_permissions(permissions, &site.database).await?;
+    let mut new_permissions = user.permissions.clone().0;
+    permissions.apply(&mut new_permissions);
+    user.update_permissions(new_permissions, &site.database)
+        .await?;
     Ok(Response::builder()
         .status(StatusCode::NO_CONTENT)
         .body(Body::empty())

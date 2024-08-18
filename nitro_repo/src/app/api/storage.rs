@@ -7,6 +7,7 @@ use axum::{
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
     database::storage::{DBStorage, NewDBStorage},
+    storage::StorageName,
     user::permissions::HasPermissions,
 };
 use nr_storage::{local::LocalConfig, StorageConfig, StorageTypeConfig};
@@ -127,7 +128,7 @@ pub async fn local_storage_path_helper(
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct NewStorageRequest {
-    pub name: String,
+    pub name: StorageName,
     pub config: StorageTypeConfig,
 }
 

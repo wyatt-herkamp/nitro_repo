@@ -3,7 +3,10 @@ use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
 use tracing::instrument;
 use utoipa::ToSchema;
 
-use crate::user::permissions::{HasPermissions, UserPermissions};
+use crate::user::{
+    permissions::{HasPermissions, UserPermissions},
+    Email, Username,
+};
 
 use super::DateTime;
 pub mod auth_token;
@@ -170,8 +173,8 @@ pub trait UserType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
 pub struct UserModel {
     pub id: i32,
     pub name: String,
-    pub username: String,
-    pub email: String,
+    pub username: Username,
+    pub email: Email,
     pub active: bool,
     #[serde(skip_serializing)]
     pub password: Option<String>,
@@ -225,8 +228,8 @@ impl UserType for UserModel {
 pub struct UserSafeData {
     pub id: i32,
     pub name: String,
-    pub username: String,
-    pub email: String,
+    pub username: Username,
+    pub email: Email,
     pub require_password_change: bool,
     pub active: bool,
     #[schema(value_type= UserPermissions)]
@@ -294,8 +297,8 @@ mod tests {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct NewUserRequest {
     pub name: String,
-    pub username: String,
-    pub email: String,
+    pub username: Username,
+    pub email: Email,
     pub password: Option<String>,
 }
 impl NewUserRequest {

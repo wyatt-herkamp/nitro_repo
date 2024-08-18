@@ -5,6 +5,8 @@ use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use crate::{repository::RepositoryName, storage::StorageName};
+
 use super::DateTime;
 pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     fn columns() -> Vec<&'static str>;
@@ -25,8 +27,8 @@ pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
 pub struct DBRepositoryWithStorageName {
     pub id: Uuid,
     pub storage_id: Uuid,
-    pub storage_name: String,
-    pub name: String,
+    pub storage_name: StorageName,
+    pub name: RepositoryName,
     pub repository_type: String,
     pub active: bool,
     pub updated_at: DateTime,
@@ -58,7 +60,7 @@ impl DBRepositoryWithStorageName {
 pub struct DBRepository {
     pub id: Uuid,
     pub storage_id: Uuid,
-    pub name: String,
+    pub name: RepositoryName,
     pub repository_type: String,
     pub active: bool,
     pub updated_at: DateTime,

@@ -154,7 +154,7 @@ impl MavenHosted {
         debug!("Loaded Frontend Config: {:?}", frontend_db);
         let inner = MavenHostedInner {
             id: repository.id,
-            name: repository.name,
+            name: repository.name.into(),
             active: active,
             push_rules: RwLock::new(push_rules_db.value.0),
             security: RwLock::new(security_db.value.0),

@@ -5,7 +5,7 @@ use anyhow::Context;
 use authentication::session::{SessionManager, SessionManagerConfig};
 
 use axum::extract::State;
-use config::{Mode, PostgresSettings, SecuritySettings, SiteSetting};
+use config::{Mode, PasswordRules, PostgresSettings, SecuritySettings, SiteSetting};
 use derive_more::{derive::Deref, AsRef, Into};
 use email::EmailSetting;
 use email_service::EmailAccess;
@@ -48,6 +48,7 @@ pub struct Instance {
     #[schema(value_type=String)]
     pub version: semver::Version,
     pub mode: Mode,
+    pub password_rules: Option<PasswordRules>,
 }
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct RepositoryStorageName {
@@ -141,6 +142,7 @@ impl NitroRepo {
             name: site.name,
             description: site.description,
             is_https: site.is_https,
+            password_rules: security.password_rules.clone(),
         };
         let email_service = email_service::EmailService::start(email_settings).await?;
         let session_manager = SessionManager::new(session_manager, mode)?;

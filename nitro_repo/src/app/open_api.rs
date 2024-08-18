@@ -9,7 +9,7 @@ use axum::{
     Json, Router,
 };
 use nr_core::database::user::NewUserRequest;
-use nr_core::user::permissions::{RepositoryActions, RepositoryPermission, UserPermissions};
+use nr_core::user::permissions::{RepositoryActions, UserPermissions};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};
 
 use utoipa::{Modify, OpenApi};
@@ -31,7 +31,6 @@ use utoipa::{Modify, OpenApi};
         schemas(
             super::Instance,
             RepositoryActions,
-            RepositoryPermission,
             UserPermissions,
             api::InstallRequest,
             NewUserRequest

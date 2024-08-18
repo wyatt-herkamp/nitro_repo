@@ -17,7 +17,39 @@ pub struct UserPermissions {
     /// Also will have full read/write access to all repositories
     pub repository_manager: bool,
     pub default_repository_permissions: RepositoryActions,
-    pub repository_permissions: HashMap<Uuid, RepositoryPermission>,
+    pub repository_permissions: HashMap<Uuid, RepositoryActions>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct UpdatePermissions {
+    pub admin: Option<bool>,
+    pub user_manager: Option<bool>,
+    pub storage_manager: Option<bool>,
+    pub repository_manager: Option<bool>,
+    pub default_repository_permissions: Option<RepositoryActions>,
+    pub repository_permissions: Option<HashMap<Uuid, RepositoryActions>>,
+}
+impl UpdatePermissions {
+    pub fn apply(self, permissions: &mut UserPermissions) {
+        if let Some(admin) = self.admin {
+            permissions.admin = admin;
+        }
+        if let Some(user_manager) = self.user_manager {
+            permissions.user_manager = user_manager;
+        }
+        if let Some(storage_manager) = self.storage_manager {
+            permissions.storage_manager = storage_manager;
+        }
+        if let Some(repository_manager) = self.repository_manager {
+            permissions.repository_manager = repository_manager;
+        }
+        if let Some(default_repository_permissions) = self.default_repository_permissions {
+            permissions.default_repository_permissions = default_repository_permissions;
+        }
+        if let Some(repository_permissions) = self.repository_permissions {
+            permissions.repository_permissions = repository_permissions;
+        }
+    }
 }
 impl Default for UserPermissions {
     fn default() -> Self {
@@ -96,7 +128,7 @@ pub trait HasPermissions {
         permissions
             .repository_permissions
             .get(&repository)
-            .map(|p| p.actions.can_edit)
+            .map(|p| p.can_edit)
             .unwrap_or(permissions.default_repository_permissions.can_edit)
     }
     /// Can a user write to the repository
@@ -112,7 +144,7 @@ pub trait HasPermissions {
         permissions
             .repository_permissions
             .get(&repository)
-            .map(|p| p.actions.can_edit)
+            .map(|p| p.can_edit)
             .unwrap_or(permissions.default_repository_permissions.can_write)
     }
     /// Can a user read from the repository
@@ -128,16 +160,11 @@ pub trait HasPermissions {
         permissions
             .repository_permissions
             .get(&repository)
-            .map(|p| p.actions.can_edit)
+            .map(|p| p.can_edit)
             .unwrap_or(permissions.default_repository_permissions.can_read)
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, ToSchema)]
-pub struct RepositoryPermission {
-    pub repository: Uuid,
-    pub actions: RepositoryActions,
-}
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default, ToSchema)]
 pub struct RepositoryActions {
     /// Can the user read/pull from this repository

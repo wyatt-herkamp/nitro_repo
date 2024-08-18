@@ -29,17 +29,5 @@ div {
   display: flex;
   flex-direction: column;
   margin-bottom: 1rem;
-  select {
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    border: 2px solid $secondary;
-    border-radius: 0.5rem;
-    background-color: $secondary-90;
-    color: $text;
-    option {
-      background-color: $secondary-90;
-      color: $text;
-    }
-  }
 }
 </style>

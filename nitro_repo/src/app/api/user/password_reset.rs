@@ -2,8 +2,7 @@ use std::{net::SocketAddr, str::FromStr};
 
 use axum::{
     body::Body,
-    debug_handler,
-    extract::{ConnectInfo, Path, Request, State},
+    extract::{ConnectInfo, Path, State},
     response::Response,
     routing::{get, post},
     Json,
@@ -101,7 +100,7 @@ async fn request_password_reset(
         let email: PasswordResetEmail = PasswordResetEmail {
             token: token,
             panel_url: origin,
-            username: user.username,
+            username: user.username.into(),
             required: false,
         };
         site.email_access.send_one_fn(address, email)

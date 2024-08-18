@@ -2,7 +2,11 @@ import { type StorageItem } from './../types/storage'
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
 import http from '@/http'
-import type { ConfigDescription, RepositoryTypeDescription } from '@/types/repository'
+import type {
+  ConfigDescription,
+  RepositoryTypeDescription,
+  RepositoryWithStorageName
+} from '@/types/repository'
 import type { RootSchema } from 'nitro-jsf'
 export const repositoriesStore = defineStore(
   'repositories',
@@ -12,7 +16,37 @@ export const repositoriesStore = defineStore(
     const repositoryTypes: Ref<RepositoryTypeDescription[]> = ref([])
     const configDescriptions: Ref<Map<string, ConfigDescription>> = ref(new Map())
     const storages: Ref<StorageItem[]> = ref([])
-
+    const repositories: Ref<Record<string, RepositoryWithStorageName>> = ref({})
+    async function getRepositories(
+      resetCache: boolean = true
+    ): Promise<RepositoryWithStorageName[]> {
+      if (resetCache || Object.keys(repositories.value).length === 0) {
+        return await http
+          .get<RepositoryWithStorageName[]>('/api/repository/list')
+          .then((response) => {
+            repositories.value = {}
+            response.data.forEach((repo) => {
+              repositories.value[repo.id] = repo
+            })
+            return response.data
+          })
+          .catch(() => {
+            return []
+          })
+      }
+      return Object.values(repositories.value)
+    }
+    async function getRepositoryById(
+      id: string,
+      resetCache: boolean = true
+    ): Promise<RepositoryWithStorageName | undefined> {
+      if (resetCache || !repositories.value[id]) {
+        await http.get<RepositoryWithStorageName>(`/api/repository/${id}`).then((response) => {
+          repositories.value[response.data.id] = response.data
+        })
+      }
+      return repositories.value[id]
+    }
     async function getStorages(resetCache: boolean = true): Promise<StorageItem[]> {
       if (resetCache || storages.value.length === 0) {
         return await http
@@ -96,11 +130,14 @@ export const repositoriesStore = defineStore(
       defaultConfigs,
       configSchemas,
       configDescriptions,
+      repositories,
+      getRepositoryById,
       getRepositoryTypes,
       getConfigDescription,
       getConfigSchema,
       getDefaultConfig,
-      getStorages
+      getStorages,
+      getRepositories
     }
   },
   {

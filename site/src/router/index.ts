@@ -14,6 +14,7 @@ import StorageListView from '@/views/admin/storage/StorageListView.vue'
 import CreateRepositoryView from '@/views/admin/repository/CreateRepositoryView.vue'
 import ViewRepositoryView from '@/views/admin/repository/ViewRepositoryView.vue'
 import RepositoryListView from '@/views/admin/repository/RepositoryListView.vue'
+import UserPage from '@/views/admin/user/UserPage.vue'
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
@@ -66,6 +67,11 @@ const router = createRouter({
       path: '/admin/user/create',
       name: 'UserCreate',
       component: UserCreateView
+    },
+    {
+      path: '/admin/user/:id',
+      name: 'ViewUser',
+      component: UserPage
     },
     {
       path: '/admin/repositories',

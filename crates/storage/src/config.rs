@@ -23,7 +23,7 @@ impl TryFrom<DBStorage> for StorageConfig {
         let type_config = serde_json::from_value(db_storage.config.0)?;
         Ok(StorageConfig {
             storage_config: StorageConfigInner {
-                storage_name: db_storage.name,
+                storage_name: db_storage.name.into(),
                 storage_id: db_storage.id,
                 storage_type: db_storage.storage_type,
                 created_at: db_storage.created_at,

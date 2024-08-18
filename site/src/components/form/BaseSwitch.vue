@@ -1,19 +1,14 @@
 <template>
   <div class="switchBox">
-    <label :for="id" class="switchBoxText">
-      <slot />
-    </label>
     <label class="switch">
-      <input v-model="value" v-bind="$attrs" :id="id" type="checkbox" />
+      <input v-model="value" v-bind="$attrs" type="checkbox" />
       <span class="slider" :data-checked="value ? 'true' : 'false'"></span>
     </label>
   </div>
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-const props = defineProps<{
-  id: string
-}>()
+
 let value = defineModel<boolean>({
   required: true
 })
@@ -26,15 +21,7 @@ watch(value, (newValue) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/variables';
-
-.switchBox {
-  margin: 1rem 2rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
+@import '@/assets/styles/theme';
 
 .switchBox > label {
   margin-right: 1rem;
@@ -68,7 +55,7 @@ watch(value, (newValue) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: $slider-background;
+  background-color: $switch-slider;
   transition: 0.4s;
 }
 
@@ -79,16 +66,16 @@ watch(value, (newValue) => {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: $slider-background-before;
+  background-color: $switch-slider-before;
   transition: 0.4s;
 }
 
 .slider[data-checked='true'] {
-  background-color: $slider-background-checked;
+  background-color: $switch-slider-checked;
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px $slider-background-checked;
+  box-shadow: 0 0 1px red;
 }
 
 input:checked + .slider:before {
