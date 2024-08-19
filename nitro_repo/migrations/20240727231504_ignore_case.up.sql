@@ -1,5 +1,5 @@
 -- Add up migration script here
-CREATE COLLATION ignoreCase (
+CREATE COLLATION IF NOT EXISTS ignoreCase (
   provider = 'icu',
   locale = '@colStrength=secondary',
   deterministic = false

@@ -1,10 +1,7 @@
-use std::{
-    cmp::Ordering,
-    sync::{
+use std::sync::{
         atomic::{self, AtomicBool},
         Arc,
-    },
-};
+    };
 
 use axum::response::Response;
 use derive_more::derive::Deref;
@@ -17,9 +14,11 @@ use nr_core::{
     },
     repository::{
         config::{
-            frontend::{BadgeSettings, BadgeSettingsType, Frontend, FrontendConfigType},
-            get_repository_config_or_default, PushRulesConfig, PushRulesConfigType,
-            RepositoryConfigType, SecurityConfig, SecurityConfigType,
+            frontend::{BadgeSettings, BadgeSettingsType, FrontendConfigType, ProjectPage},
+            get_repository_config_or_default,
+            repository_page::RepositoryPageType,
+            PushRulesConfig, PushRulesConfigType, RepositoryConfigType, SecurityConfig,
+            SecurityConfigType,
         },
         Visibility,
     },
@@ -46,20 +45,17 @@ pub struct MavenHostedInner {
     pub id: Uuid,
     pub name: String,
     pub active: AtomicBool,
+    pub visibility: RwLock<Visibility>,
     pub push_rules: RwLock<PushRulesConfig>,
     pub security: RwLock<SecurityConfig>,
-    pub frontend: RwLock<Frontend>,
+    pub frontend: RwLock<ProjectPage>,
     pub badge_settings: RwLock<BadgeSettings>,
     #[debug(skip)]
     pub storage: DynStorage,
     #[debug(skip)]
     pub site: NitroRepo,
 }
-impl MavenHostedInner {
-    pub fn visibility(&self) -> Visibility {
-        self.security.read().visibility
-    }
-}
+impl MavenHostedInner {}
 #[derive(Debug, Clone, Deref)]
 pub struct MavenHosted(Arc<MavenHostedInner>);
 impl MavenHosted {
@@ -145,7 +141,7 @@ impl MavenHosted {
             )
             .await?;
         debug!("Loaded Badge Settings Config: {:?}", badge_settings_db);
-        let frontend_db = get_repository_config_or_default::<FrontendConfigType, Frontend>(
+        let frontend_db = get_repository_config_or_default::<FrontendConfigType, ProjectPage>(
             repository.id,
             site.as_ref(),
         )
@@ -156,6 +152,7 @@ impl MavenHosted {
             id: repository.id,
             name: repository.name.into(),
             active: active,
+            visibility: RwLock::new(repository.visibility),
             push_rules: RwLock::new(push_rules_db.value.0),
             security: RwLock::new(security_db.value.0),
             frontend: RwLock::new(frontend_db.value.0),
@@ -248,13 +245,16 @@ impl Repository for MavenHosted {
     fn get_storage(&self) -> nr_storage::DynStorage {
         self.0.storage.clone()
     }
-
+    fn visibility(&self) -> Visibility {
+        self.visibility.read().clone()
+    }
     fn get_type(&self) -> &'static str {
         "maven"
     }
 
     fn config_types(&self) -> Vec<&str> {
         vec![
+            RepositoryPageType::get_type_static(),
             PushRulesConfigType::get_type_static(),
             SecurityConfigType::get_type_static(),
             BadgeSettingsType::get_type_static(),
@@ -289,7 +289,7 @@ impl Repository for MavenHosted {
                 self.site.as_ref(),
             )
             .await?;
-        let frontend_db = get_repository_config_or_default::<FrontendConfigType, Frontend>(
+        let frontend_db = get_repository_config_or_default::<FrontendConfigType, ProjectPage>(
             self.id,
             self.site.as_ref(),
         )
@@ -347,7 +347,7 @@ impl Repository for MavenHosted {
             ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
-        let visibility = { self.security.read().visibility };
+        let visibility = self.visibility();
 
         if let Some(err) = self.check_read(&authentication) {
             return Ok(err);

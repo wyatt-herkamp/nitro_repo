@@ -4,25 +4,36 @@ use std::{
 };
 
 use clap::{Parser, Subcommand};
-
 pub mod app;
 pub mod error;
+mod exporter;
 pub mod repository;
 pub mod utils;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum ExportOptions {
+    RepositoryConfigTypes,
+    RepositoryTypes,
+    OpenAPI,
+}
 #[derive(Parser)]
 struct Command {
     #[clap(subcommand)]
     sub_command: SubCommands,
-    /// The thd-helper config file
-    #[clap(short, long, default_value = "nitro_repo.toml")]
-    config: PathBuf,
-    // Comments will be destroyed by TOML
-    #[clap(long, default_value = "false")]
-    add_defaults_to_config: bool,
 }
 #[derive(Subcommand, Clone, Debug)]
 enum SubCommands {
-    Start,
+    Start {
+        // Comments will be destroyed by TOML
+        #[clap(long, default_value = "false")]
+        add_defaults_to_config: bool,
+        /// The thd-helper config file
+        #[clap(short, long, default_value = "nitro_repo.toml")]
+        config: PathBuf,
+    },
+    Export {
+        export: ExportOptions,
+        location: PathBuf,
+    },
 }
 fn main() -> anyhow::Result<()> {
     // For Some Reason Lettre fails if this is not installed
@@ -34,22 +45,26 @@ fn main() -> anyhow::Result<()> {
     }
 
     let command = Command::parse();
-    let config =
-        app::config::NitroRepoConfig::load(command.config, command.add_defaults_to_config)?;
+
+    return match command.sub_command {
+        SubCommands::Start {
+            add_defaults_to_config,
+            config,
+        } => web_start(add_defaults_to_config, config),
+        SubCommands::Export { export, location } => match export {
+            ExportOptions::RepositoryConfigTypes => exporter::export_repository_configs(location),
+            ExportOptions::RepositoryTypes => exporter::export_repository_types(location),
+            ExportOptions::OpenAPI => exporter::export_openapi(location),
+        },
+    };
+}
+
+fn web_start(add_defaults: bool, config_path: PathBuf) -> anyhow::Result<()> {
     let tokio = tokio::runtime::Builder::new_current_thread()
         .thread_name_fn(thread_name)
         .enable_all()
         .build()?;
-    tokio.block_on(inner_main(command.sub_command, config))
-}
-
-async fn inner_main(
-    command: SubCommands,
-    config: app::config::NitroRepoConfig,
-) -> anyhow::Result<()> {
-    return match command {
-        SubCommands::Start => app::web::start(config).await,
-    };
+    tokio.block_on(app::web::start(config_path, add_defaults))
 }
 fn thread_name() -> String {
     static ATOMIC_ID: AtomicUsize = AtomicUsize::new(0);

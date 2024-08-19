@@ -245,11 +245,11 @@ async function save() {
   }
 }
 #header {
+  border-bottom: 1px solid $primary-50;
+  padding: 1rem 0rem;
   .col {
     font-weight: bold;
   }
-  border-bottom: 1px solid $primary-50;
-  padding: 1rem 0rem;
 }
 .row {
   padding: 1rem;

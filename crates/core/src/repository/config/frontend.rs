@@ -20,34 +20,34 @@ pub enum PageProvider {
 /// Frontend Settings
 #[derive(Debug, Clone, Serialize, Deserialize, Default, JsonSchema)]
 #[serde(default)]
-pub struct Frontend {
+pub struct ProjectPage {
     pub page_provider: PageProvider,
 }
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FrontendConfigType;
 impl RepositoryConfigType for FrontendConfigType {
     fn get_type(&self) -> &'static str {
-        "frontend"
+        "project_page"
     }
 
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
-        let _config: Frontend = serde_json::from_value(config)?;
+        let _config: ProjectPage = serde_json::from_value(config)?;
         Ok(())
     }
 
     fn default(&self) -> Result<Value, RepositoryConfigError> {
-        Ok(serde_json::to_value(Frontend::default())?)
+        Ok(serde_json::to_value(ProjectPage::default())?)
     }
 
     fn schema(&self) -> Option<Schema> {
-        Some(schema_for!(Frontend))
+        Some(schema_for!(ProjectPage))
     }
 
     fn get_type_static() -> &'static str
     where
         Self: Sized,
     {
-        "frontend"
+        "project_page"
     }
 }
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -66,7 +66,7 @@ impl RepositoryConfigType for BadgeSettingsType {
     fn get_description(&self) -> super::ConfigDescription {
         super::ConfigDescription {
             name: "Badge Settings",
-            description: "Settings for the badge",
+            description: Some("Settings for the badge"),
             documentation_link: None,
             ..Default::default()
         }
@@ -133,56 +133,6 @@ impl schemars::JsonSchema for BadgeStyle {
             );
             schemars::Schema::from(map)
         }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
-#[serde(tag = "page_type", content = "properties")]
-pub enum RepositoryPage {
-    None,
-    /// Yes I am storing markdown in a json field.  I am a monster
-    #[schemars(title = "Markdown Page")]
-    Markdown {
-        markdown: String,
-    },
-}
-#[derive(Debug, Clone, Copy, Default)]
-pub struct RepositoryPageType;
-impl RepositoryConfigType for RepositoryPageType {
-    fn get_type(&self) -> &'static str {
-        "page"
-    }
-    fn get_description(&self) -> super::ConfigDescription {
-        super::ConfigDescription {
-            name: "Page",
-            description: "The page for the repository",
-            documentation_link: None,
-            ..Default::default()
-        }
-    }
-    fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
-        let _config: RepositoryPage = serde_json::from_value(config)?;
-        Ok(())
-    }
-
-    fn default(&self) -> Result<Value, RepositoryConfigError> {
-        Ok(serde_json::to_value(RepositoryPage::default())?)
-    }
-
-    fn schema(&self) -> Option<Schema> {
-        Some(schema_for!(RepositoryPage))
-    }
-
-    fn get_type_static() -> &'static str
-    where
-        Self: Sized,
-    {
-        "page"
-    }
-}
-impl Default for RepositoryPage {
-    fn default() -> Self {
-        RepositoryPage::None
     }
 }
 

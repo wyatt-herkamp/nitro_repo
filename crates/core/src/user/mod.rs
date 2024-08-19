@@ -1,7 +1,6 @@
-use std::{fmt::Display, str::FromStr};
+use std::fmt::Display;
 
 use derive_more::derive::{AsRef, Deref, Into};
-use serde::Serialize;
 use sqlx::prelude::Type;
 use thiserror::Error;
 use tracing::instrument;

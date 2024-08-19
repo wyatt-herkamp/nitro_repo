@@ -92,6 +92,11 @@ impl HasPermissions for UserPermissions {
         Some(self)
     }
 }
+impl<HS: HasPermissions> HasPermissions for Option<HS> {
+    fn get_permissions(&self) -> Option<&UserPermissions> {
+        self.as_ref().and_then(HasPermissions::get_permissions)
+    }
+}
 pub trait HasPermissions {
     /// Get the permissions of the user. If the user or not logged in, return None
     fn get_permissions(&self) -> Option<&UserPermissions>;

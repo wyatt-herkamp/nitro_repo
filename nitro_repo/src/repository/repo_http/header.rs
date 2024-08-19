@@ -1,5 +1,4 @@
 use http::HeaderName;
-use serde::de::value;
 use tracing::{debug, instrument, trace, warn};
 
 use crate::{
@@ -16,8 +15,8 @@ pub const NITRO_REPO_DEPLOY_HEADER: HeaderName = HeaderName::from_static("x-nitr
 /// Not all repositories will have a custom deploy system.
 #[derive(Debug)]
 pub struct NitroRepoDeployHeaderValue {
-    repository_type: String,
-    version: u8,
+    pub repository_type: String,
+    pub version: u8,
 }
 impl TryFrom<String> for NitroRepoDeployHeaderValue {
     type Error = BadRequestErrors;

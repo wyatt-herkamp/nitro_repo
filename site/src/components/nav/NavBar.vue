@@ -9,7 +9,9 @@
     <RouterLink class="navLink" :to="{ name: 'browse' }" title="Browse Repositories"
       >Browse</RouterLink
     >
-
+    <RouterLink class="navLink" :to="{ name: 'repositories' }" title="Browse Repositories"
+      >Repositories</RouterLink
+    >
     <UserDropDown class="right" v-if="user" />
     <div v-if="user"></div>
     <RouterLink :to="{ name: 'login' }" class="navLink right" v-else>Login</RouterLink>

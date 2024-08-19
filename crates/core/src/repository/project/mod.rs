@@ -1,8 +1,7 @@
-use std::str::FromStr;
 
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgValueRef, prelude::Type, Decode, Encode};
+use sqlx::prelude::Type;
 use strum::{Display, EnumIs, EnumString, IntoStaticStr};
 use utoipa::ToSchema;
 /// Release type of a project

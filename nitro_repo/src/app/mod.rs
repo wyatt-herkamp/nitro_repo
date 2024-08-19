@@ -13,7 +13,8 @@ use http::Uri;
 use nr_core::{
     database::{repository::DBRepository, storage::DBStorage, user::user_utils},
     repository::config::{
-        frontend::{BadgeSettingsType, FrontendConfigType, RepositoryPageType},
+        frontend::{BadgeSettingsType, FrontendConfigType},
+        repository_page::RepositoryPageType,
         PushRulesConfigType, RepositoryConfigType, SecurityConfigType,
     },
 };

@@ -15,6 +15,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use rustls::ServerConfig;
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::{fs::File, io::BufReader, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -27,7 +28,7 @@ use tracing::{error, info, warn};
 const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
 const POWERED_BY_HEADER: HeaderName = HeaderName::from_static("x-powered-by");
 const POWERED_BY_VALUE: HeaderValue = HeaderValue::from_static("Nitro Repo");
-pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
+pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::Result<()> {
     let NitroRepoConfig {
         database,
         log,
@@ -41,7 +42,7 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
         security,
         email,
         ..
-    } = config;
+    } = NitroRepoConfig::load(config_path, add_defaults)?;
     log.init(mode)?;
     let tls = tls
         .map(|tls| {
@@ -61,6 +62,10 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
     )
     .await
     .context("Unable to Initialize Website Core")?;
+    let is_installed = {
+        let site = site.instance.lock();
+        site.is_installed
+    };
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let app = Router::new()
@@ -80,7 +85,7 @@ pub(crate) async fn start(config: NitroRepoConfig) -> anyhow::Result<()> {
             "/storages/:storage/:repository",
             any(crate::repository::handle_repo_request),
         )
-        .nest("/api", api::api_routes())
+        .nest("/api", api::api_routes(is_installed))
         .merge(super::open_api::build_router())
         .with_state(site);
 

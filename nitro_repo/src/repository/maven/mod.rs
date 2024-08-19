@@ -17,7 +17,8 @@ use nr_core::{
     repository::{
         config::{
             frontend::{BadgeSettingsType, FrontendConfigType},
-            PushRulesConfigType, RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
+            ConfigDescription, PushRulesConfigType, RepositoryConfigError, RepositoryConfigType,
+            SecurityConfigType,
         },
         project::{ReleaseType, VersionDataBuilder, VersionDataBuilderError},
     },
@@ -25,7 +26,7 @@ use nr_core::{
 };
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
-use proxy::MavenProxy;
+use proxy::{MavenProxy, MavenProxyConfig};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -39,6 +40,7 @@ pub mod proxy;
 #[serde(tag = "type", content = "config")]
 pub enum MavenRepositoryConfig {
     Hosted,
+    Proxy { proxy_config: MavenProxyConfig },
 }
 #[derive(Debug, Clone, Default)]
 pub struct MavenRepositoryConfigType;
@@ -64,6 +66,14 @@ impl RepositoryConfigType for MavenRepositoryConfigType {
     fn default(&self) -> Result<Value, RepositoryConfigError> {
         let config = MavenRepositoryConfig::Hosted;
         Ok(serde_json::to_value(config).unwrap())
+    }
+    fn get_description(&self) -> ConfigDescription {
+        ConfigDescription {
+            name: "Maven Repository Config",
+            description: Some("Handles the type of Maven Repository"),
+            documentation_link: None,
+            ..Default::default()
+        }
     }
 }
 #[derive(Debug, Default)]
@@ -170,6 +180,10 @@ impl MavenRepository {
             MavenRepositoryConfig::Hosted => {
                 let maven_hosted = MavenHosted::load(repo, storage, website).await?;
                 Ok(MavenRepository::Hosted(maven_hosted))
+            }
+            MavenRepositoryConfig::Proxy { proxy_config } => {
+                let proxy = MavenProxy::load(repo, storage, website, proxy_config).await?;
+                Ok(MavenRepository::Proxy(proxy))
             }
         }
     }

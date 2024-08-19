@@ -5,7 +5,10 @@ use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{repository::RepositoryName, storage::StorageName};
+use crate::{
+    repository::{RepositoryName, Visibility},
+    storage::StorageName,
+};
 
 use super::DateTime;
 pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
@@ -30,6 +33,7 @@ pub struct DBRepositoryWithStorageName {
     pub storage_name: StorageName,
     pub name: RepositoryName,
     pub repository_type: String,
+    pub visibility: Visibility,
     pub active: bool,
     pub updated_at: DateTime,
     pub created_at: DateTime,
@@ -37,7 +41,7 @@ pub struct DBRepositoryWithStorageName {
 impl DBRepositoryWithStorageName {
     pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let repositories = sqlx::query_as(
-            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.active, r.created_at, r.updated_at
+            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.visibility, r.active, r.created_at, r.updated_at
                 FROM repositories r INNER JOIN storages s ON s.id = r.storage_id"#,
         )
         .fetch_all(database)
@@ -46,7 +50,7 @@ impl DBRepositoryWithStorageName {
     }
     pub async fn get_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
         let repository = sqlx::query_as(
-            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.active, r.created_at, r.updated_at
+            r#"SELECT r.id, r.storage_id, s.name AS storage_name, r.name, r.repository_type, r.visibility, r.active, r.created_at, r.updated_at
                 FROM repositories r INNER JOIN storages s ON s.id = r.storage_id WHERE r.id = $1"#,
         )
         .bind(id)
@@ -62,6 +66,7 @@ pub struct DBRepository {
     pub storage_id: Uuid,
     pub name: RepositoryName,
     pub repository_type: String,
+    pub visibility: Visibility,
     pub active: bool,
     pub updated_at: DateTime,
     pub created_at: DateTime,

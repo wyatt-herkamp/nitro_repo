@@ -240,7 +240,7 @@ impl StorageFactory for LocalStorageFactory {
 
     fn test_storage_config(
         &self,
-        config: StorageTypeConfig,
+        _config: StorageTypeConfig,
     ) -> BoxFuture<'static, Result<(), StorageError>> {
         Box::pin(async move { Ok(()) })
     }

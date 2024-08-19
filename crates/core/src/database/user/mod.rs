@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
-use tracing::instrument;
 use utoipa::ToSchema;
 
 use crate::user::{

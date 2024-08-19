@@ -62,6 +62,13 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
                     )*
                 }
             }
+            fn visibility(&self) -> Visibility{
+                match self {
+                    #(
+                        #ident::#variants(variant) => variant.visibility(),
+                    )*
+                }
+            }
             fn is_active(&self) -> bool{
                 match self {
                     #(

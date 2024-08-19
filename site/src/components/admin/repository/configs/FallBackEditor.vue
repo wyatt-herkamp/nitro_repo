@@ -55,12 +55,14 @@ async function load() {
   }
 }
 async function loadDefault() {
-  if (!props.settingName) {
-    throw new Error('settingName is required')
-  }
-  await repositoryTypeStore.getDefaultConfig(props.settingName).then((response) => {
-    model.value = response
-  })
+  await http
+    .get(`/api/repository/repository/${props.repository}/config/${props.settingName}`)
+    .then((response) => {
+      model.value = response.data
+    })
+    .catch((error) => {
+      console.error(error)
+    })
 }
 load()
 </script>

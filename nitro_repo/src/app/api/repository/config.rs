@@ -66,6 +66,7 @@ pub async fn config_schema(
         });
     Ok(schema)
 }
+/// Requires Authentication to prevent abuse
 #[utoipa::path(
     post,
     request_body = Value,

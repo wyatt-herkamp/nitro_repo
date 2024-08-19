@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use ahash::HashMap;
 use auto_impl::auto_impl;
+use digestible::Digestible;
 use futures::future::BoxFuture;
 use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_storage::DynStorage;
@@ -15,7 +16,7 @@ use crate::{app::NitroRepo, error::InternalError};
 
 use super::DynRepository;
 
-#[derive(Debug, Clone, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, ToSchema, Digestible)]
 pub struct RepositoryTypeDescription {
     pub type_name: &'static str,
     pub name: &'static str,

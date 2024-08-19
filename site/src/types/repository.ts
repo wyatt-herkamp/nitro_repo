@@ -3,6 +3,7 @@ import MavenConfig from '@/components/admin/repository/configs/MavenConfig.vue'
 import PushRulesConfig from '@/components/admin/repository/configs/PushRulesConfig.vue'
 import SecurityConfig from '@/components/admin/repository/configs/SecurityConfig.vue'
 import type { Component } from 'vue'
+import RepositoryPageEditor from '@/components/admin/repository/configs/RepositoryPageEditor.vue'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -12,6 +13,11 @@ export interface RepositoryTypeDescription {
   is_stable: boolean
   required_configs: string[]
 }
+enum Visibility {
+  Private = 'Private',
+  Public = 'Public',
+  Hidden = 'Hidden'
+}
 export interface RepositoryWithStorageName {
   id: string
   storage_name: string
@@ -19,6 +25,7 @@ export interface RepositoryWithStorageName {
   name: string
   repository_type: string
   active: boolean
+  visibility: Visibility
   updated_at: string
   created_at: string
 }
@@ -49,6 +56,11 @@ export const configTypes: ConfigType[] = [
     name: 'maven',
     title: 'Maven',
     component: MavenConfig
+  },
+  {
+    name: 'page',
+    title: 'Page',
+    component: RepositoryPageEditor
   }
 ]
 
@@ -76,4 +88,13 @@ export async function validateConfig(name: string, config: any): Promise<any> {
     .catch((error: any) => {
       console.error(error)
     })
+}
+export enum PageType {
+  Markdown = 'Markdown',
+  HTML = 'HTML',
+  None = 'None'
+}
+export interface RepositoryPage {
+  page_type: PageType
+  content: string | undefined
 }

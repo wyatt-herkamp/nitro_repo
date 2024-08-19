@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use http::StatusCode;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
 

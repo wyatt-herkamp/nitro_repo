@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use digestible::Digestible;
 use schemars::{schema_for, JsonSchema, Schema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -10,8 +11,9 @@ use uuid::Uuid;
 
 use crate::database::repository::DBRepositoryConfig;
 
-use super::{Policy, Visibility};
+use super::Policy;
 pub mod frontend;
+pub mod repository_page;
 #[derive(Debug, Error)]
 pub enum RepositoryConfigError {
     #[error("Invalid Config: {0}")]
@@ -19,19 +21,20 @@ pub enum RepositoryConfigError {
     #[error("Invalid Config: {0}")]
     SerdeError(#[from] serde_json::Error),
 }
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-#[non_exhaustive]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Digestible)]
 pub struct ConfigDescription {
     pub name: &'static str,
-    pub description: &'static str,
+    pub description: Option<&'static str>,
     pub documentation_link: Option<&'static str>,
+    pub has_public_view: bool,
 }
 impl Default for ConfigDescription {
     fn default() -> Self {
         ConfigDescription {
             name: "",
-            description: "No Description",
+            description: None,
             documentation_link: None,
+            has_public_view: false,
         }
     }
 }
@@ -47,9 +50,16 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
         Self: Sized;
 
     fn get_description(&self) -> ConfigDescription {
-        ConfigDescription::default()
+        ConfigDescription {
+            name: self.get_type(),
+            ..Default::default()
+        }
     }
-
+    /// Sanitizes the config for public view. By default this function returns None which will mean the config is not shown to the public
+    #[inline(always)]
+    fn sanitize_for_public_view(&self, _: Value) -> Option<Value> {
+        None
+    }
     /// Validate the config. If the config is invalid this function should return an error
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError>;
     /// If part of the config cannot be changed this function should return an error
@@ -82,8 +92,6 @@ pub type DynRepositoryConfigType = Box<dyn RepositoryConfigType>;
 pub struct SecurityConfig {
     /// If the repository requires an auth token to be used
     pub must_use_auth_token_for_push: bool,
-    /// visibility of the repository
-    pub visibility: Visibility,
 }
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SecurityConfigType;
@@ -94,7 +102,7 @@ impl RepositoryConfigType for SecurityConfigType {
     fn get_description(&self) -> ConfigDescription {
         ConfigDescription {
             name: "Security",
-            description: "Security settings for the repository",
+            description: Some("Security settings for the repository"),
             documentation_link: None,
             ..Default::default()
         }
@@ -156,7 +164,7 @@ impl RepositoryConfigType for PushRulesConfigType {
     fn get_description(&self) -> ConfigDescription {
         ConfigDescription {
             name: "Push Rules",
-            description: "Rules for pushing to the repository",
+            description: Some("Rules for pushing to the repository"),
             documentation_link: None,
             ..Default::default()
         }

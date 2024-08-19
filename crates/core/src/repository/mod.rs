@@ -7,13 +7,26 @@ use sqlx::prelude::Type;
 use strum::{EnumIs, EnumIter};
 use thiserror::Error;
 use tracing::instrument;
+use utoipa::ToSchema;
 
 use crate::utils::validations;
 pub mod config;
 pub mod project;
 #[derive(
-    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default, EnumIter, JsonSchema, EnumIs,
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Default,
+    EnumIter,
+    ToSchema,
+    EnumIs,
+    Type,
 )]
+#[sqlx(type_name = "TEXT")]
 pub enum Visibility {
     /// Completely public anyone can read to this repository
     #[default]

@@ -31,11 +31,12 @@ impl IntoResponse for RepositoryNotFound {
     }
 }
 
-#[derive(Debug, From)]
+#[derive(Debug)]
 pub enum MissingPermission {
     UserManager,
     RepositoryManager,
     EditRepository(uuid::Uuid),
+    ReadRepository(uuid::Uuid),
     StorageManager,
 }
 impl IntoResponse for MissingPermission {
@@ -54,6 +55,13 @@ impl IntoResponse for MissingPermission {
                 .status(StatusCode::FORBIDDEN)
                 .body(Body::from(format!(
                     "You do not have permission to edit repository: {}",
+                    id
+                )))
+                .unwrap(),
+            Self::ReadRepository(id) => Response::builder()
+                .status(StatusCode::FORBIDDEN)
+                .body(Body::from(format!(
+                    "You do not have permission to read repository: {}",
                     id
                 )))
                 .unwrap(),

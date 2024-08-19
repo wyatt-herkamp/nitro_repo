@@ -9,6 +9,7 @@ use axum::{
 
 use ::http::StatusCode;
 
+use nr_core::repository::Visibility;
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 mod staging;
@@ -30,6 +31,7 @@ pub trait Repository: Send + Sync + Clone {
     fn config_types(&self) -> Vec<&str>;
     fn name(&self) -> String;
     fn id(&self) -> Uuid;
+    fn visibility(&self) -> Visibility;
     fn is_active(&self) -> bool;
 
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {

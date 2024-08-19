@@ -15,6 +15,8 @@ import CreateRepositoryView from '@/views/admin/repository/CreateRepositoryView.
 import ViewRepositoryView from '@/views/admin/repository/ViewRepositoryView.vue'
 import RepositoryListView from '@/views/admin/repository/RepositoryListView.vue'
 import UserPage from '@/views/admin/user/UserPage.vue'
+import RepositoriesView from '@/views/RepositoriesView.vue'
+import RepositoryPageView from '@/views/RepositoryPageView.vue'
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
@@ -54,6 +56,16 @@ const router = createRouter({
       component: LogoutView
     },
     {
+      path: '/page/repositories',
+      name: 'repositories',
+      component: RepositoriesView
+    },
+    {
+      path: '/page/repositories/:id',
+      name: 'repository',
+      component: RepositoryPageView
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: AdminHome
@@ -85,7 +97,7 @@ const router = createRouter({
     },
     {
       path: '/admin/repository/:id',
-      name: 'ViewRepository',
+      name: 'AdminViewRepository',
       component: ViewRepositoryView
     },
     {

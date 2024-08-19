@@ -3,7 +3,7 @@ use http::StatusCode;
 use nr_core::{database::user::NewUserRequest, user::permissions::UserPermissions};
 use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
-use tracing::{error, instrument};
+use tracing::{error, info, instrument};
 use utoipa::ToSchema;
 pub mod repository;
 pub mod storage;
@@ -12,10 +12,9 @@ pub mod user_management;
 use crate::error::InternalError;
 
 use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
-pub fn api_routes() -> axum::Router<NitroRepo> {
-    axum::Router::new()
+pub fn api_routes(is_installed: bool) -> axum::Router<NitroRepo> {
+    let mut router = axum::Router::new()
         .route("/info", axum::routing::get(info))
-        .route("/install", axum::routing::post(install))
         .nest("/user", user::user_routes())
         .nest("/storage", storage::storage_routes())
         .nest(
@@ -23,7 +22,12 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
             user_management::user_management_routes(),
         )
         .nest("/repository", repository::repository_routes())
-        .layer(CorsLayer::very_permissive())
+        .layer(CorsLayer::very_permissive());
+    if !is_installed {
+        info!("Site is not installed. Adding Install Route");
+        router = router.route("/install", axum::routing::post(install));
+    }
+    router
 }
 #[utoipa::path(
     get,

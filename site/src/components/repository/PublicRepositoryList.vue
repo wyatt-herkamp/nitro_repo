@@ -36,7 +36,7 @@
         class="row item"
         v-for="repository in filteredTable"
         :key="repository.id"
-        @click="router.push({ name: 'AdminViewRepository', params: { id: repository.id } })">
+        @click="router.push({ name: 'repository', params: { id: repository.id } })">
         <div class="col">{{ repository.id }}</div>
         <div class="col" :title="repository.name">{{ repository.name }}</div>
         <div class="col" :title="repository.storage_name">{{ repository.storage_name }}</div>
