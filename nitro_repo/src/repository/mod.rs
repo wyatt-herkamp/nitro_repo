@@ -20,6 +20,7 @@ pub use staging::*;
 mod repo_http;
 pub use repo_http::*;
 pub mod maven;
+pub mod npm;
 mod repo_type;
 pub use repo_type::*;
 use thiserror::Error;
