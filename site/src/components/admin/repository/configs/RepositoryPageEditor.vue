@@ -4,7 +4,7 @@
     <div v-if="input.page_type === PageType.Markdown" id="markdownEditor">
       <MilkdownProvider>
         <MarkdownEditor
-          :value="input.content"
+          :value="input.content || ''"
           @update="
             (content: string) => {
               input.content = content

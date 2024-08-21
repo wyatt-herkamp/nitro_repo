@@ -14,7 +14,7 @@
 </template>
 <script setup lang="ts">
 import { apiURL } from '@/config'
-import type { RepositoryWithStorageName } from '@/types/repository'
+import { createRepositoryRoute, type RepositoryWithStorageName } from '@/types/repository'
 import { computed, type PropType } from 'vue'
 import { createSnippetsForPulling } from './MavenRepositoryHelpers'
 import CodeMenu from '@/components/code/CodeMenu.vue'
@@ -35,7 +35,7 @@ const props = defineProps({
 })
 const snippets = createSnippetsForPulling(props.repository)
 const url = computed(() => {
-  return apiURL + `/repositories/${props.repository.storage_name}/${props.repository.name}`
+  return createRepositoryRoute(props.repository)
 })
 </script>
 <style lang="scss" scoped>

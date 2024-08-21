@@ -2,6 +2,15 @@
   <main v-if="repository" :data-has-page="repositoryPage != undefined">
     <div class="header">
       <h1>{{ repository.storage_name }}/{{ repository.name }}</h1>
+      <div class="openBrowse">
+        <RouterLink
+          :to="{
+            name: 'Browse',
+            params: { id: repository.id, catchAll: '' }
+          }"
+          >Browse</RouterLink
+        >
+      </div>
       <div>
         Maven
         <ApacheMavenIcon />
@@ -62,6 +71,7 @@ async function fetchRepository() {
 fetchRepository()
 </script>
 <style scoped lang="scss">
+@import '@/assets/styles/theme.scss';
 main {
   margin: 0 auto;
   padding: 1rem;
@@ -99,6 +109,12 @@ main[data-has-page='true'] {
   }
   #page {
     border-bottom: none;
+  }
+}
+.openBrowse {
+  a {
+    text-decoration: none;
+    color: $text;
   }
 }
 </style>

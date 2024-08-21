@@ -6,9 +6,7 @@
         <span>Nitro Repository</span>
       </router-link>
     </div>
-    <RouterLink class="navLink" :to="{ name: 'browse' }" title="Browse Repositories"
-      >Browse</RouterLink
-    >
+
     <RouterLink class="navLink" :to="{ name: 'repositories' }" title="Browse Repositories"
       >Repositories</RouterLink
     >

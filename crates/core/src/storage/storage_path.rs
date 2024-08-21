@@ -64,7 +64,13 @@ impl From<&str> for StoragePath {
         let value = value.split("/").collect::<Vec<&str>>();
         let components = value
             .iter()
-            .map(|v| StoragePathComponent(v.to_string()))
+            .filter_map(|v| {
+                if v.is_empty() {
+                    None
+                } else {
+                    Some(StoragePathComponent(v.to_string()))
+                }
+            })
             .collect::<Vec<StoragePathComponent>>();
         StoragePath(components)
     }

@@ -4,6 +4,7 @@ import PushRulesConfig from '@/components/admin/repository/configs/PushRulesConf
 import SecurityConfig from '@/components/admin/repository/configs/SecurityConfig.vue'
 import type { Component } from 'vue'
 import RepositoryPageEditor from '@/components/admin/repository/configs/RepositoryPageEditor.vue'
+import { apiURL } from '@/config'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -97,4 +98,18 @@ export enum PageType {
 export interface RepositoryPage {
   page_type: PageType
   content: string | undefined
+}
+export function createRepositoryRoute(
+  repository: { storage_name: string; name: string },
+  route?: string
+): string {
+  let backend = apiURL
+  if (backend.endsWith('/')) {
+    backend = backend.substring(0, backend.length - 1)
+  }
+  if (route === undefined) {
+    return `${backend}/repositories/${repository.storage_name}/${repository.name}`
+  } else {
+    return `${backend}/repositories/${repository.storage_name}/${repository.name}/${route}`
+  }
 }

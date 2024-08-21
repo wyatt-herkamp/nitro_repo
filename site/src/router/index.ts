@@ -36,8 +36,8 @@ const router = createRouter({
       component: InstallView
     },
     {
-      path: '/browse',
-      name: 'browse',
+      path: '/browse/:id/:catchAll(.*)?',
+      name: 'Browse',
       component: BrowseView
     },
     {
@@ -61,7 +61,7 @@ const router = createRouter({
       component: RepositoriesView
     },
     {
-      path: '/page/repositories/:id',
+      path: '/page/repository/:id',
       name: 'repository',
       component: RepositoryPageView
     },

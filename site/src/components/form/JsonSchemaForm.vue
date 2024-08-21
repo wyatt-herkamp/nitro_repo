@@ -14,6 +14,7 @@ import { EnumInput, SchemaForm, type FormInputType } from 'nitro-jsf'
 import { computed, type Component, type PropType } from 'vue'
 import TextInput from './text/TextInput.vue'
 import DropDown from './dropdown/DropDown.vue'
+import SwitchInput from './SwitchInput.vue'
 
 const props = defineProps({
   form: Object as PropType<SchemaForm>
@@ -62,6 +63,14 @@ function formFieldToInput(field: FormInputType): Input | undefined {
         props: {
           options: options
         }
+      }
+    }
+    case 'boolean': {
+      return {
+        component: SwitchInput,
+        label: field.title() ?? field.key(),
+        id: field.key(),
+        props: {}
       }
     }
     default:

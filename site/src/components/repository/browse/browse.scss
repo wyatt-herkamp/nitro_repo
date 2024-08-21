@@ -1,0 +1,14 @@
+@import '@/assets/styles/theme.scss';
+.browseItem {
+  color: $text;
+
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  flex-direction: row;
+  border: 1px solid #e0e0e0;
+  &:hover {
+    border: 1px solid $primary;
+    cursor: pointer;
+  }
+}

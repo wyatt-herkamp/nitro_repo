@@ -1,6 +1,6 @@
 use ahash::HashMap;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::{get, post, put},
     Json, Router,
@@ -121,6 +121,7 @@ pub async fn new_repository(
         .body(serde_json::to_string(&db_repository).unwrap().into())
         .unwrap())
 }
+
 #[utoipa::path(
     get,
     path = "/{repository}/configs",
@@ -147,6 +148,11 @@ pub async fn get_configs_for_repository(
         .status(StatusCode::OK)
         .json_body(&repository)
 }
+#[derive(Deserialize, Default, Debug)]
+#[serde(default)]
+pub struct GetConfigParams {
+    default: bool,
+}
 #[utoipa::path(
     get,
     path = "/{repository}/config/{config_key}",
@@ -158,19 +164,35 @@ pub async fn get_configs_for_repository(
 pub async fn get_config(
     State(site): State<NitroRepo>,
     auth: Authentication,
+    Query(params): Query<GetConfigParams>,
     Path((repository, config)): Path<(Uuid, String)>,
 ) -> Result<Response, InternalError> {
     if !auth.can_edit_repository(repository) {
         return Ok(MissingPermission::EditRepository(repository).into_response());
     }
-    let Some(config) =
-        GenericDBRepositoryConfig::get_config(repository, config, site.as_ref()).await?
-    else {
-        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    let config = match GenericDBRepositoryConfig::get_config(repository, &config, site.as_ref())
+        .await?
+    {
+        Some(config) => config.value.0,
+        None => {
+            if params.default {
+                let Some(config_type) = site.get_repository_config_type(&config) else {
+                    return Ok(InvalidRepositoryConfig::InvalidConfigType(config).into_response());
+                };
+                match config_type.default() {
+                    Ok(ok) => ok,
+                    Err(_) => {
+                        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+                    }
+                }
+            } else {
+                return Ok(RepositoryNotFound::Uuid(repository).into_response());
+            }
+        }
     };
     Response::builder()
         .status(StatusCode::OK)
-        .json_body(&config.value.0)
+        .json_body(&config)
 }
 /// Updates a config for a repository
 ///

@@ -40,7 +40,7 @@ async function load() {
   })
   if (props.repository) {
     await http
-      .get(`/api/repository/repository/${props.repository}/config/${props.settingName}`)
+      .get(`/api/repository/${props.repository}/config/${props.settingName}?default=true`)
       .then((response) => {
         model.value = response.data
       })

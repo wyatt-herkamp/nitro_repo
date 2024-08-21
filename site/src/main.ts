@@ -36,7 +36,9 @@ import {
   faUserPlus,
   faAngleDown,
   faCircleXmark,
-  faCheckCircle
+  faCheckCircle,
+  faFile,
+  faFolder
 } from '@fortawesome/free-solid-svg-icons'
 
 import { sessionStore } from './stores/session'
@@ -84,6 +86,8 @@ library.add(faToolbox)
 library.add(faUserPlus)
 library.add(faCircleXmark)
 library.add(faCheckCircle)
+library.add(faFile)
+library.add(faFolder)
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.use(createMetaManager())
