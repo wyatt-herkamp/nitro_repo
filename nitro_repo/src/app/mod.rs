@@ -17,9 +17,8 @@ use nr_core::{
         user::user_utils,
     },
     repository::config::{
-        frontend::{BadgeSettingsType, FrontendConfigType},
-        repository_page::RepositoryPageType,
-        PushRulesConfigType, RepositoryConfigType, SecurityConfigType,
+        project::ProjectConfigType, repository_page::RepositoryPageType, PushRulesConfigType,
+        RepositoryConfigType, SecurityConfigType,
     },
 };
 use nr_storage::{DynStorage, Storage, StorageConfig, StorageFactory, STORAGE_FACTORIES};
@@ -328,6 +327,16 @@ impl NitroRepo {
             .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
             .copied()
     }
+    pub fn remove_repository(&self, id: Uuid) {
+        {
+            let mut repositories = self.repositories.write();
+            repositories.remove(&id);
+        }
+        {
+            let mut lookup_table = self.inner.name_lookup_table.lock();
+            lookup_table.retain(|_, value| *value != id);
+        }
+    }
 }
 
 pub type NitroRepoState = State<NitroRepo>;
@@ -335,8 +344,7 @@ pub type NitroRepoState = State<NitroRepo>;
 pub static REPOSITORY_CONFIG_TYPES: &'static [&dyn RepositoryConfigType] = &[
     &PushRulesConfigType,
     &SecurityConfigType,
-    &BadgeSettingsType,
-    &FrontendConfigType,
+    &ProjectConfigType,
     &RepositoryPageType,
     &MavenRepositoryConfigType,
 ];

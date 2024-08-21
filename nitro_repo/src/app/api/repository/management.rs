@@ -1,8 +1,9 @@
 use ahash::HashMap;
 use axum::{
+    body::Body,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Json, Router,
 };
 use http::{header::CONTENT_TYPE, StatusCode};
@@ -34,6 +35,7 @@ pub fn management_routes() -> Router<NitroRepo> {
         .route("/new/:repository_type", post(new_repository))
         .route("/:id/config/:key", put(update_config))
         .route("/:id/config/:key", get(get_config))
+        .route("/:id", delete(delete_repository))
 }
 #[derive(Deserialize, ToSchema, Debug)]
 pub struct NewRepositoryRequest {
@@ -250,4 +252,32 @@ pub async fn update_config(
             .unwrap());
     }
     no_content_response_with_error()
+}
+#[utoipa::path(
+    delete,
+    path = "/{repository}",
+    responses(
+        (status = 204, description = "Repository Deleted"),
+    )
+)]
+pub async fn delete_repository(
+    State(site): State<NitroRepo>,
+    auth: Authentication,
+    Path(repository): Path<Uuid>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_repository_manager() {
+        return Ok(MissingPermission::RepositoryManager.into_response());
+    }
+    let Some(db_repository) = DBRepository::get_by_id(repository, site.as_ref()).await? else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+    info!("Deleting Repository: {}", db_repository.name);
+    DBRepository::delete_by_id(repository, site.as_ref()).await?;
+
+    site.remove_repository(repository);
+    // TODO: Delete all files for the repository
+    Ok(Response::builder()
+        .status(StatusCode::NO_CONTENT)
+        .body(Body::empty())
+        .unwrap())
 }

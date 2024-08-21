@@ -11,9 +11,9 @@
           >Browse</RouterLink
         >
       </div>
-      <div>
-        Maven
-        <ApacheMavenIcon />
+      <div v-if="repositoryType">
+        {{ repositoryType.properName }}
+        <component :is="repositoryType.icon.component" />
       </div>
     </div>
     <div class="content">
@@ -37,12 +37,15 @@ import ErrorOnRequest from '@/components/ErrorOnRequest.vue'
 import RepositoryHelper from '@/components/repository/RepositoryHelper.vue'
 import RepositoryPageViewer from '@/components/repository/RepositoryPageViewer.vue'
 import http from '@/http'
-import { ApacheMavenIcon, NpmIcon } from 'vue3-simple-icons'
 
 import router from '@/router'
 import { repositoriesStore } from '@/stores/repositories'
 import type { User } from '@/types/base'
-import type { RepositoryPage, RepositoryWithStorageName } from '@/types/repository'
+import {
+  findRepositoryType,
+  type RepositoryPage,
+  type RepositoryWithStorageName
+} from '@/types/repository'
 import { computed, ref } from 'vue'
 const repositoryId = router.currentRoute.value.params.id as string
 const repository = ref<RepositoryWithStorageName | undefined>(undefined)
@@ -50,7 +53,12 @@ const repositoryPage = ref<RepositoryPage | undefined>(undefined)
 const error = ref<string | null>(null)
 const errorCode = ref<number | undefined>(undefined)
 const repoStore = repositoriesStore()
-
+const repositoryType = computed(() => {
+  if (repository.value) {
+    return findRepositoryType(repository.value.repository_type)
+  }
+  return undefined
+})
 async function fetchRepository() {
   await repoStore.getRepositoryById(repositoryId).then((response) => {
     repository.value = response

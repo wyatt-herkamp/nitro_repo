@@ -5,6 +5,8 @@ import SecurityConfig from '@/components/admin/repository/configs/SecurityConfig
 import type { Component } from 'vue'
 import RepositoryPageEditor from '@/components/admin/repository/configs/RepositoryPageEditor.vue'
 import { apiURL } from '@/config'
+import { ApacheMavenIcon } from 'vue3-simple-icons'
+import MavenProjectHelper from '@/components/repository/types/maven/MavenProjectHelper.vue'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -64,6 +66,35 @@ export const configTypes: ConfigType[] = [
     component: RepositoryPageEditor
   }
 ]
+export interface FrontendRepositoryType {
+  name: string
+  properName: string
+  projectComponent: {
+    component: Component
+    props: Record<string, any>
+  }
+  icon: {
+    component: Component
+    props: Record<string, any>
+  }
+}
+export const repositoryTypes: FrontendRepositoryType[] = [
+  {
+    name: 'maven',
+    properName: 'Maven',
+    projectComponent: {
+      component: MavenProjectHelper,
+      props: {}
+    },
+    icon: {
+      component: ApacheMavenIcon,
+      props: {}
+    }
+  }
+]
+export function findRepositoryType(name: string): FrontendRepositoryType | undefined {
+  return repositoryTypes.find((repositoryType) => repositoryType.name === name)
+}
 
 export function getConfigType(name: string): ConfigType | undefined {
   return configTypes.find((configType) => configType.name === name)

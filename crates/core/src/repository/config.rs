@@ -10,9 +10,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::repository::DBRepositoryConfig;
-
+pub mod project;
 use super::Policy;
-pub mod frontend;
 pub mod repository_page;
 #[derive(Debug, Error)]
 pub enum RepositoryConfigError {
@@ -90,6 +89,7 @@ pub type DynRepositoryConfigType = Box<dyn RepositoryConfigType>;
 #[serde(default)]
 
 pub struct SecurityConfig {
+    #[schemars(title = "Require Auth Token for Push")]
     /// If the repository requires an auth token to be used
     pub must_use_auth_token_for_push: bool,
 }
@@ -132,23 +132,27 @@ impl RepositoryConfigType for SecurityConfigType {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct PushRulesConfig {
+    #[schemars(title = "Push Policy")]
     /// The push policy. Rather it allows snapshots, stages, or both
     pub push_policy: Policy,
     /// If yanking is allowed
+    #[schemars(title = "Yanking Allowed")]
     pub yanking_allowed: bool,
     /// If overwriting is allowed
+    #[schemars(title = "Allow Overwrite")]
     pub allow_overwrite: bool,
     /// If a project exists the user must be a member of the project to push.
+    #[schemars(title = "Project Members can only push")]
     pub must_be_project_member: bool,
-    /// Require Nitro Deploy
+    #[schemars(title = "Require Nitro Deploy")]
     pub require_nitro_deploy: bool,
 }
 impl Default for PushRulesConfig {
     fn default() -> Self {
         Self {
             push_policy: Default::default(),
-            yanking_allowed: Default::default(),
-            allow_overwrite: Default::default(),
+            yanking_allowed: true,
+            allow_overwrite: true,
             must_be_project_member: Default::default(),
             require_nitro_deploy: false,
         }

@@ -29,13 +29,15 @@
         <button
           class="disable"
           @click="notify('This feature is not implemented yet')"
-          v-if="repository.active"
-        >
+          v-if="repository.active">
           Disable
         </button>
         <button class="enable" @click="notify('This feature is not implemented yet')" v-else>
           Enable
         </button>
+      </div>
+      <div>
+        <button id="deleteRepository" @click="deleteRepository()">Delete Repository</button>
       </div>
     </div>
   </div>
@@ -43,16 +45,31 @@
 <script setup lang="ts">
 import TextInput from '@/components/form/text/TextInput.vue'
 import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
+import http from '@/http'
+import router from '@/router'
 import type { RepositoryWithStorageName } from '@/types/repository'
 import { notify } from '@kyvg/vue3-notification'
 import { computed, ref, type PropType } from 'vue'
 const props = defineProps({
-  repository: Object as PropType<RepositoryWithStorageName>
+  repository: {
+    type: Object as PropType<RepositoryWithStorageName>,
+    required: true
+  }
 })
 const repositoryStatus = computed(() => {
   if (!props.repository) return 'No Repository'
   return props.repository.active ? 'Active' : 'Inactive'
 })
+async function deleteRepository() {
+  http.delete(`/api/repository/${props.repository.id}`).then(() => {
+    notify({
+      type: 'success',
+      title: 'Deleted',
+      text: 'Repository Deleted'
+    })
+    router.push({ name: 'RepositoriesList' })
+  })
+}
 </script>
 <style lang="scss" scoped>
 @import '@/assets/styles/theme.scss';
@@ -99,6 +116,15 @@ const repositoryStatus = computed(() => {
   // Make it look like a input
   label {
     font-weight: bold;
+  }
+}
+#deleteRepository {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  &:hover {
+    transition: background 0.5s;
   }
 }
 </style>

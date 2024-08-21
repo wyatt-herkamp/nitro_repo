@@ -47,6 +47,7 @@ mod types;
         management::get_config,
         management::update_config,
         management::get_configs_for_repository,
+        management::delete_repository,
         page::get_repository_page,
         browse::browse,
     ),

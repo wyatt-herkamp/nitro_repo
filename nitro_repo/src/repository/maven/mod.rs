@@ -16,9 +16,8 @@ use nr_core::{
     },
     repository::{
         config::{
-            frontend::{BadgeSettingsType, FrontendConfigType},
-            ConfigDescription, PushRulesConfigType, RepositoryConfigError, RepositoryConfigType,
-            SecurityConfigType,
+            project::ProjectConfigType, ConfigDescription, PushRulesConfigType,
+            RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
         },
         project::{ReleaseType, VersionDataBuilder, VersionDataBuilderError},
     },
@@ -88,8 +87,7 @@ impl RepositoryType for MavenRepositoryType {
         vec![
             PushRulesConfigType::get_type_static(),
             SecurityConfigType::get_type_static(),
-            BadgeSettingsType::get_type_static(),
-            FrontendConfigType::get_type_static(),
+            ProjectConfigType::get_type_static(),
         ]
     }
 

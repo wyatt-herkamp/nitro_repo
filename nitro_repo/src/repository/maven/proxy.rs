@@ -3,10 +3,7 @@ use std::sync::{atomic::AtomicBool, Arc};
 use nr_core::{
     database::repository::DBRepository,
     repository::{
-        config::{
-            frontend::{BadgeSettingsType, FrontendConfigType},
-            RepositoryConfigType as _, SecurityConfigType,
-        },
+        config::{project::ProjectConfigType, RepositoryConfigType as _, SecurityConfigType},
         Visibility,
     },
 };
@@ -78,8 +75,7 @@ impl Repository for MavenProxy {
     fn config_types(&self) -> Vec<&str> {
         vec![
             SecurityConfigType::get_type_static(),
-            BadgeSettingsType::get_type_static(),
-            FrontendConfigType::get_type_static(),
+            ProjectConfigType::get_type_static(),
         ]
     }
 

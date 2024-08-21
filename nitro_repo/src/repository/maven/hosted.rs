@@ -14,8 +14,8 @@ use nr_core::{
     },
     repository::{
         config::{
-            frontend::{BadgeSettings, BadgeSettingsType, FrontendConfigType, ProjectPage},
             get_repository_config_or_default,
+            project::{ProjectConfig, ProjectConfigType},
             repository_page::RepositoryPageType,
             PushRulesConfig, PushRulesConfigType, RepositoryConfigType, SecurityConfig,
             SecurityConfigType,
@@ -49,8 +49,7 @@ pub struct MavenHostedInner {
     pub visibility: RwLock<Visibility>,
     pub push_rules: RwLock<PushRulesConfig>,
     pub security: RwLock<SecurityConfig>,
-    pub frontend: RwLock<ProjectPage>,
-    pub badge_settings: RwLock<BadgeSettings>,
+    pub project: RwLock<ProjectConfig>,
     #[debug(skip)]
     pub storage: DynStorage,
     #[debug(skip)]
@@ -135,20 +134,14 @@ impl MavenHosted {
             )
             .await?;
         debug!("Loaded Push Rules Config: {:?}", push_rules_db);
-        let badge_settings_db =
-            get_repository_config_or_default::<BadgeSettingsType, BadgeSettings>(
-                repository.id,
-                site.as_ref(),
-            )
-            .await?;
-        debug!("Loaded Badge Settings Config: {:?}", badge_settings_db);
-        let frontend_db = get_repository_config_or_default::<FrontendConfigType, ProjectPage>(
+
+        let project_db = get_repository_config_or_default::<ProjectConfigType, ProjectConfig>(
             repository.id,
             site.as_ref(),
         )
         .await?;
         let active = AtomicBool::new(repository.active);
-        debug!("Loaded Frontend Config: {:?}", frontend_db);
+        debug!("Loaded Frontend Config: {:?}", project_db);
         let inner = MavenHostedInner {
             id: repository.id,
             name: repository.name.into(),
@@ -156,8 +149,7 @@ impl MavenHosted {
             visibility: RwLock::new(repository.visibility),
             push_rules: RwLock::new(push_rules_db.value.0),
             security: RwLock::new(security_db.value.0),
-            frontend: RwLock::new(frontend_db.value.0),
-            badge_settings: RwLock::new(badge_settings_db.value.0),
+            project: RwLock::new(project_db.value.0),
             storage,
             site,
         };
@@ -258,8 +250,7 @@ impl Repository for MavenHosted {
             RepositoryPageType::get_type_static(),
             PushRulesConfigType::get_type_static(),
             SecurityConfigType::get_type_static(),
-            BadgeSettingsType::get_type_static(),
-            FrontendConfigType::get_type_static(),
+            ProjectConfigType::get_type_static(),
             MavenRepositoryConfigType::get_type_static(),
         ]
     }
@@ -284,17 +275,13 @@ impl Repository for MavenHosted {
             self.site.as_ref(),
         )
         .await?;
-        let badge_settings_db =
-            get_repository_config_or_default::<BadgeSettingsType, BadgeSettings>(
+        let project_config_db =
+            get_repository_config_or_default::<ProjectConfigType, ProjectConfig>(
                 self.id,
                 self.site.as_ref(),
             )
             .await?;
-        let frontend_db = get_repository_config_or_default::<FrontendConfigType, ProjectPage>(
-            self.id,
-            self.site.as_ref(),
-        )
-        .await?;
+
         {
             let mut push_rules = self.push_rules.write();
             *push_rules = push_rules_db.value.0;
@@ -304,13 +291,10 @@ impl Repository for MavenHosted {
             *security = security_db.value.0;
         }
         {
-            let mut badge_settings = self.badge_settings.write();
-            *badge_settings = badge_settings_db.value.0;
+            let mut project_config = self.project.write();
+            *project_config = project_config_db.value.0;
         }
-        {
-            let mut frontend = self.frontend.write();
-            *frontend = frontend_db.value.0;
-        }
+
         Ok(())
     }
     #[instrument(name = "maven_hosted_get")]

@@ -6,7 +6,7 @@
         <h2>Project Info</h2>
         <CodeMenu :snippets="snippets" />
       </div>
-      <div>
+      <div class="details">
         <KeyAndValue :label="'Group Id'" :value="project.scope || 'undefined'" />
         <KeyAndValue :label="'Artifact Id'" :value="project.name || 'undefined'" />
       </div>
@@ -40,9 +40,21 @@ const snippets = createProjectSnippets(props.project)
 </script>
 
 <style lang="scss" scoped>
-.info {
-  display: grid;
-  grid-template-columns: 3fr 1fr;
+.mavenProject {
+  margin: 0 auto;
+}
+.details {
+  display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+}
+.info {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap-reverse;
+}
+.codeBlock {
+  flex-grow: 1;
+  max-width: 50%;
 }
 </style>

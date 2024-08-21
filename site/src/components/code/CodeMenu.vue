@@ -36,6 +36,11 @@ const currentSnippet = computed(() => {
 @import '@/assets/styles/theme.scss';
 .codeMenu {
   width: 100%;
+}
+.codeBlock {
+  height: 9rem;
+  max-height: 9rem;
+  overflow-y: auto;
   background-color: $background-50;
 }
 .selector {

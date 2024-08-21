@@ -28,14 +28,3 @@ export class Project {
     this.created_at = new Date(data.created_at)
   }
 }
-
-export const projectHandlers = [
-  {
-    type: 'maven',
-    component: MavenProjectHelper
-  }
-]
-
-export function findProjectHandler(type: string) {
-  return projectHandlers.find((handler) => handler.type === type)
-}

@@ -19,8 +19,7 @@
         <component
           :is="config.component"
           v-bind="config.props"
-          v-model="requiredConfigValues[config.configName]"
-        />
+          v-model="requiredConfigValues[config.configName]" />
       </div>
 
       <SubmitButton>Create</SubmitButton>
@@ -35,6 +34,7 @@ import SubmitButton from '@/components/form/SubmitButton.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
 import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
 import http from '@/http'
+import router from '@/router'
 import { repositoriesStore } from '@/stores/repositories'
 import { getConfigType, type RepositoryTypeDescription } from '@/types/repository'
 import { type StorageItem } from '@/types/storage'
@@ -138,6 +138,7 @@ async function createRepository() {
         title: 'Success',
         text: 'Repository created'
       })
+      router.push({ name: 'AdminViewRepository', params: { id: response.data.id } })
     })
     .catch((error) => {
       notify({

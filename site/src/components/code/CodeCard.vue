@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineComponent, onMounted } from 'vue'
+import { computed } from 'vue'
 import hljs from 'highlight.js/lib/core'
 import xml from 'highlight.js/lib/languages/xml'
 import java from 'highlight.js/lib/languages/java'
@@ -41,10 +41,12 @@ pre.nitroEditor {
   white-space: pre-wrap;
 }
 code.nitroEditor {
-  white-space: pre;
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 .nitroEditorParent {
-  width: 100%;
-  overflow-x: auto;
+  height: 100%;
+  overflow-x: scroll;
 }
 </style>

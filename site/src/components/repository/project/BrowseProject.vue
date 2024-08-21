@@ -2,7 +2,7 @@
   <div>
     <div v-if="projectHandler">
       <component
-        :is="projectHandler.component"
+        :is="projectHandler.projectComponent.component"
         :project="project"
         :version="version"
         :repository="repository" />
@@ -10,8 +10,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { findProjectHandler, Project } from '@/types/project'
-import type { RepositoryWithStorageName } from '@/types/repository'
+import { Project } from '@/types/project'
+import { findRepositoryType, type RepositoryWithStorageName } from '@/types/repository'
 import { computed, type PropType } from 'vue'
 
 const props = defineProps({
@@ -29,6 +29,6 @@ const props = defineProps({
   }
 })
 const projectHandler = computed(() => {
-  return findProjectHandler(props.repository.repository_type)
+  return findRepositoryType(props.repository.repository_type)
 })
 </script>

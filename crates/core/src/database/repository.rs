@@ -148,6 +148,13 @@ impl DBRepository {
         }
         Ok(uuid)
     }
+    pub async fn delete_by_id(id: Uuid, database: &PgPool) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM repositories WHERE id = $1")
+            .bind(id)
+            .execute(database)
+            .await?;
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, Default)]

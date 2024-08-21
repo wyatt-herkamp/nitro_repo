@@ -24,7 +24,7 @@ impl RepositoryConfigType for RepositoryPageType {
     }
     fn get_description(&self) -> super::ConfigDescription {
         super::ConfigDescription {
-            name: "Page",
+            name: "Repository Page",
             description: Some("The page for the repository"),
             documentation_link: None,
             ..Default::default()

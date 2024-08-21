@@ -7,7 +7,7 @@
         id="nameSearch"
         v-model="searchValue"
         autofocus
-        placeholder="Search by Name, Username, or Primary Email Address" />
+        placeholder="Search by Name, Storage Name" />
     </div>
     <div id="repositories" class="betterScroll">
       <div class="row" id="header">
