@@ -1,12 +1,12 @@
 use axum::{
     body::Body,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     response::{IntoResponse, Response},
     Json,
 };
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
-    database::storage::{DBStorage, NewDBStorage},
+    database::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
     storage::StorageName,
     user::permissions::HasPermissions,
 };
@@ -19,7 +19,9 @@ use uuid::Uuid;
 use crate::{
     app::{
         authentication::Authentication,
-        responses::{InvalidStorageConfig, InvalidStorageType, MissingPermission},
+        responses::{
+            InvalidStorageConfig, InvalidStorageType, MissingPermission, ResponseBuilderExt,
+        },
         NitroRepo,
     },
     error::InternalError,
@@ -40,28 +42,40 @@ pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
             axum::routing::post(local_storage_path_helper),
         )
 }
-
+#[derive(Debug, Default, Serialize, Deserialize, ToSchema)]
+#[serde(default)]
+pub struct StorageListRequest {
+    pub include_config: bool,
+    pub active_only: bool,
+}
 #[utoipa::path(
     get,
     path = "/list",
     responses(
-        (status = 200, description = "information about the Site", body = Instance)
+        (status = 200, description = "All Storages registered to the system. Config will be null if you are a repository manager but not a StorageManager", body = [DBStorage]),
+        (status = 403, description = "Does not have permission to view storages")
     )
 )]
 #[instrument]
 pub async fn list_storages(
     State(site): State<NitroRepo>,
     auth: Authentication,
+    Query(request): Query<StorageListRequest>,
 ) -> Result<Response, InternalError> {
-    if !auth.is_admin_or_storage_manager() {
-        return Ok(MissingPermission::StorageManager.into_response());
+    if auth.is_admin_or_storage_manager() {
+        if request.include_config {
+            let storages = DBStorage::get_all(&site.database).await?;
+            Response::builder().status(200).json_body(&storages)
+        } else {
+            let storages = DBStorageNoConfig::get_all(&site.database).await?;
+            Response::builder().status(200).json_body(&storages)
+        }
+    } else if auth.is_admin_or_repository_manager() {
+        let storages = DBStorageNoConfig::get_all(&site.database).await?;
+        return Response::builder().status(200).json_body(&storages);
+    } else {
+        Ok(MissingPermission::StorageManager.into_response())
     }
-    let storages = DBStorage::get_all(&site.database).await?;
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(Body::from(serde_json::to_string(&storages).unwrap()))
-        .unwrap())
 }
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct LocalStoragePathHelperRequest {
@@ -223,7 +237,7 @@ pub async fn get_storage(
     if !auth.is_admin_or_storage_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
     }
-    let storage = DBStorage::get(id, &site.database).await?;
+    let storage = DBStorage::get_by_id(id, &site.database).await?;
     match storage {
         Some(storage) => {
             let response = Json(storage).into_response();

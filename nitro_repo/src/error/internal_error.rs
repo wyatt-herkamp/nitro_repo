@@ -23,6 +23,8 @@ pub enum InternalError {
     SessionError(#[from] SessionError),
     #[error("Storage Error {0}")]
     StorageError(#[from] nr_storage::StorageError),
+    #[error("Unable to build HTTP Response {0}")]
+    ResponseError(#[from] http::Error),
 }
 
 impl IntoResponse for InternalError {

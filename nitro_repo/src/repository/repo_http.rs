@@ -110,7 +110,7 @@ fn response_file(meta: StorageFileMeta, content: StorageFileReader) -> Response<
         .header(CONTENT_LENGTH, file_size.to_string())
         .header(LAST_MODIFIED, last_modified);
 
-    if let Some(etag) = &file_hash.sha256 {
+    if let Some(etag) = &file_hash.sha2_256 {
         response = response.header(ETAG, etag);
     }
     if let Some(mime_type) = mime_type {
@@ -166,7 +166,7 @@ impl RepoResponse {
                         file_size,
                         mime_type,
                     } => {
-                        if let Some(etag) = &file_hash.sha256 {
+                        if let Some(etag) = &file_hash.sha2_256 {
                             response = response.header(ETAG, etag);
                         }
                         if let Some(mime_type) = mime_type {

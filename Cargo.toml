@@ -35,13 +35,13 @@ derive_more = { version = "1.0.0", features = [
 ahash = "0.8"
 parking_lot = { version = "0.12", features = [] }
 futures-util = "0.3.21"
-digestible = { version = "0.2", features = ["base64"] }
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 strum = { version = "0.26", features = ["derive"] }
 mime_guess = "2"
 mime = "0.3"
-sha2 = "0.10"
+
+
 base64 = "0.22"
 derive_builder = "0.20"
 
@@ -66,6 +66,14 @@ http-body-util = "0.1"
 http-body = "1"
 bytes = "1"
 pin-project = "1"
+
+## Hashing
+digestible = { version = "0.2", features = ["base64"] }
+digest = { version = "0.10", features = ["std", "alloc"] }
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+sha3 = "0.10"
 [workspace.dependencies.sqlx]
 version = "0.8"
 default_features = false
@@ -87,7 +95,15 @@ deprecated = "deny"
 opt-level = 3
 [profile.dev.package."tokio"]
 opt-level = 3
+[profile.dev.package."digest"]
+opt-level = 3
+[profile.dev.package."md-5"]
+opt-level = 3
+[profile.dev.package."sha1"]
+opt-level = 3
 [profile.dev.package."sha2"]
+opt-level = 3
+[profile.dev.package."sha3"]
 opt-level = 3
 [profile.dev.package."tracing"]
 opt-level = 3

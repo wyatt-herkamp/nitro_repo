@@ -8,7 +8,8 @@ use std::{
 
 use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, instrument, span, trace, warn, Level};
+use tokio::task::JoinSet;
+use tracing::{debug, error, info, instrument, span, trace, warn, Level};
 use utils::PathUtils;
 use utoipa::ToSchema;
 
@@ -53,9 +54,9 @@ impl LocalStorageInner {
             };
             path.parent_or_err()?
                 .join(folder_name)
-                .add_extension("nr-repository-meta")?
+                .add_extension(NITRO_REPO_REPOSITORY_META_EXTENSION)?
         } else {
-            path.add_extension("nr-repository-meta")?
+            path.add_extension(NITRO_REPO_REPOSITORY_META_EXTENSION)?
         };
         Ok(path)
     }
@@ -69,27 +70,46 @@ impl LocalStorageInner {
             content: StorageFileReader::from(file),
         })
     }
-    #[instrument]
-    pub fn open_folder(&self, path: PathBuf) -> Result<StorageFile, StorageError> {
-        let mut files = vec![];
+    #[instrument(skip(path))]
+    pub async fn open_folder(&self, path: PathBuf) -> Result<StorageFile, StorageError> {
+        let mut set = JoinSet::<Result<StorageFileMeta, StorageError>>::new();
+
         for entry in fs::read_dir(&path)? {
             let entry = entry?;
             let path = entry.path();
-            if path.is_file() && path.extension().unwrap_or_default() == "nr-meta" {
+            if path.is_file() && is_hidden_file(&path) {
                 trace!(?path, "Skipping Meta File");
                 // Check if file is a meta file
                 continue;
             }
-            let meta = StorageFileMeta::new_from_file(path)?;
-            files.push(meta);
+            set.spawn_blocking(move || {
+                let meta = StorageFileMeta::new_from_file(&path)?;
+                Ok(meta)
+            });
         }
         let meta = StorageFileMeta::new_from_file(path)?;
+
+        let mut files = vec![];
+        while let Some(res) = set.join_next().await {
+            let idx = res.unwrap();
+            files.push(idx?);
+        }
+
         Ok(StorageFile::Directory { meta, files })
     }
 }
 impl LocalStorage {
     pub fn run_post_save_file(self, path: PathBuf) -> Result<(), StorageError> {
-        info!(?path, "Running Post Save File");
+        tokio::task::spawn_blocking(move || {
+            match FileMeta::create_meta_or_update(&path) {
+                Ok(()) => {
+                    info!(?path, "Meta File Created or Updated");
+                }
+                Err(err) => {
+                    error!(?err, "Unable to create or update meta file");
+                }
+            };
+        });
         Ok(())
     }
 }
@@ -100,14 +120,13 @@ impl Storage for LocalStorage {
             config: BorrowedStorageTypeConfig::Local(&self.config),
         }
     }
+    #[instrument(name = "local_storage_save")]
     async fn save_file(
         &self,
         repository: Uuid,
         content: FileContent,
         location: &StoragePath,
     ) -> Result<(usize, bool), StorageError> {
-        let span = span!(Level::DEBUG, "local_storage_save", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
-        let _enter = span.enter();
         let path = self.get_path(&repository, location);
         let parent_directory = path.parent_or_err()?;
         let new_file = !path.exists();
@@ -123,19 +142,18 @@ impl Storage for LocalStorage {
 
         let mut file = fs::File::create(&path)?;
         let bytes_written = content.write_to(&mut file)?;
-        if path.extension().unwrap_or_default() != "nr-meta" {
+        if !is_hidden_file(&path) {
             // Don't run post save file for meta files
             self.clone().run_post_save_file(path)?;
         }
         Ok((bytes_written, new_file))
     }
+    #[instrument(name = "local_storage_delete")]
     async fn delete_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> Result<(), StorageError> {
-        let span = span!(Level::DEBUG, "local_storage_delete", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
-        let _enter = span.enter();
         let path = self.get_path(&repository, location);
         if path.is_dir() {
             info!(?path, "Deleting Directory");
@@ -146,13 +164,12 @@ impl Storage for LocalStorage {
         }
         Ok(())
     }
+    #[instrument(name = "local_storage_get_info")]
     async fn get_file_information(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> Result<Option<StorageFileMeta>, StorageError> {
-        let span = span!(Level::DEBUG, "local_storage_get_info", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
-        let _enter = span.enter();
         let path = self.get_path(&repository, location);
 
         if !path.exists() {
@@ -162,20 +179,19 @@ impl Storage for LocalStorage {
         let meta = StorageFileMeta::new_from_file(path)?;
         Ok(Some(meta))
     }
+    #[instrument(name = "local_storage_open_file")]
     async fn open_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> Result<Option<StorageFile>, StorageError> {
-        let span = span!(Level::DEBUG, "local_storage_open_file", "repository" = ?repository, "location" = ?location, "storage_id" = ?self.storage_config.storage_id);
-        let _enter = span.enter();
         let path = self.get_path(&repository, location);
         if !path.exists() {
             debug!(?path, "File does not exist");
             return Ok(None);
         }
         let file = if path.is_dir() {
-            self.open_folder(path)?
+            self.open_folder(path).await?
         } else {
             self.0.open_file(path)?
         };
@@ -216,10 +232,6 @@ impl Storage for LocalStorage {
         value: Value,
     ) -> Result<(), StorageError> {
         let path = self.get_repository_meta_path(&repository, location)?;
-        if path.exists() {
-            let path_backup = path.add_extension("bak")?;
-            fs::rename(&path, &path_backup)?;
-        }
 
         let parent = path.parent_or_err()?;
         if !parent.exists() {

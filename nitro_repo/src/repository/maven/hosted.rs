@@ -1,7 +1,7 @@
 use std::sync::{
-        atomic::{self, AtomicBool},
-        Arc,
-    };
+    atomic::{self, AtomicBool},
+    Arc,
+};
 
 use axum::response::Response;
 use derive_more::derive::Deref;
@@ -20,6 +20,7 @@ use nr_core::{
             PushRulesConfig, PushRulesConfigType, RepositoryConfigType, SecurityConfig,
             SecurityConfigType,
         },
+        project::ProjectResolution,
         Visibility,
     },
     storage::StoragePath,
@@ -418,5 +419,27 @@ impl Repository for MavenHosted {
 
     fn is_active(&self) -> bool {
         self.active.load(atomic::Ordering::Relaxed)
+    }
+    #[instrument]
+    async fn resolve_project_and_version_for_path(
+        &self,
+        path: StoragePath,
+    ) -> Result<ProjectResolution, RepositoryHandlerError> {
+        let path_as_string = path.to_string();
+        let version = DBProjectVersion::find_by_version_directory(
+            &path_as_string,
+            self.id,
+            self.site.as_ref(),
+        )
+        .await?;
+
+        let project = if let Some(version) = version.as_ref() {
+            DBProject::find_by_id(version.project_id, self.site.as_ref()).await?
+        } else {
+            DBProject::find_by_project_directory(&path_as_string, self.id, self.site.as_ref())
+                .await?
+        };
+
+        Ok(ProjectResolution { project, version })
     }
 }

@@ -98,6 +98,16 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
                     )*
                 }
             }
+            async fn resolve_project_and_version_for_path(
+                &self,
+                path: StoragePath,
+            ) -> Result<ProjectResolution, RepositoryHandlerError> {
+                match self {
+                    #(
+                        #ident::#variants(variant) => variant.resolve_project_and_version_for_path(path).await,
+                    )*
+                }
+            }
             async fn handle_get(
                 &self,
                 request: RepositoryRequest,

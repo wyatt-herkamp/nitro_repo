@@ -9,7 +9,10 @@ use axum::{
 
 use ::http::StatusCode;
 
-use nr_core::repository::Visibility;
+use nr_core::{
+    repository::{project::ProjectResolution, Visibility},
+    storage::StoragePath,
+};
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 mod staging;
@@ -21,7 +24,7 @@ mod repo_type;
 pub use repo_type::*;
 use thiserror::Error;
 use uuid::Uuid;
-
+pub mod utils;
 use crate::error::BadRequestErrors;
 pub trait Repository: Send + Sync + Clone {
     fn get_storage(&self) -> DynStorage;
@@ -33,6 +36,18 @@ pub trait Repository: Send + Sync + Clone {
     fn id(&self) -> Uuid;
     fn visibility(&self) -> Visibility;
     fn is_active(&self) -> bool;
+
+    fn resolve_project_and_version_for_path(
+        &self,
+        path: StoragePath,
+    ) -> impl Future<Output = Result<ProjectResolution, RepositoryHandlerError>> + Send {
+        async {
+            Ok(ProjectResolution {
+                project: None,
+                version: None,
+            })
+        }
+    }
 
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
         Ok(())

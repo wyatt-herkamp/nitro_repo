@@ -1,6 +1,7 @@
 use derive_builder::Builder;
 use serde::Serialize;
 use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
+use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
 mod new;
@@ -24,6 +25,15 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
             Self::columns().join(", ")
         }
     }
+    async fn find_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let columns = Self::format_columns(None);
+        let project =
+            sqlx::query_as::<_, Self>(&format!("SELECT {} FROM projects WHERE id = $1", columns))
+                .bind(id)
+                .fetch_optional(database)
+                .await?;
+        Ok(project)
+    }
     async fn find_by_project_key(
         project_key: &str,
         repository: Uuid,
@@ -40,6 +50,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         .await?;
         Ok(project)
     }
+    #[instrument(skip(database), name = "ProjectDBType::find_by_project_directory")]
     async fn find_by_project_directory(
         directory: &str,
         repository: Uuid,
@@ -56,6 +67,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         .await?;
         Ok(project)
     }
+    #[instrument(skip(database), name = "ProjectDBType::find_by_version_directory")]
     async fn get_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
         let columns = Self::format_columns(None);
 
@@ -158,6 +170,7 @@ pub struct DBProjectVersion {
     pub created_at: DateTime,
 }
 impl DBProjectVersion {
+    #[instrument(skip(database), name = "DBProjectVersion::find_by_version_and_project")]
     pub async fn find_by_version_and_project(
         version: &str,
         project_id: Uuid,
@@ -168,6 +181,21 @@ impl DBProjectVersion {
         )
         .bind(project_id)
         .bind(version)
+        .fetch_optional(database)
+        .await?;
+        Ok(version)
+    }
+    #[instrument(skip(database), name = "DBProjectVersion::find_by_version_directory")]
+    pub async fn find_by_version_directory(
+        directory: &str,
+        repository_id: Uuid,
+        database: &PgPool,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        let version = sqlx::query_as::<_, Self>(
+            r#"SELECT project_versions.* FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository = $1 WHERE LOWER(project_versions.version_path) = $2"#,
+        )
+        .bind(repository_id)
+        .bind(directory.to_lowercase())
         .fetch_optional(database)
         .await?;
         Ok(version)

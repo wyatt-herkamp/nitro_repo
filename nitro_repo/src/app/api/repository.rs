@@ -3,6 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
+use browse::{BrowseFile, BrowseResponse};
 use http::{header::CONTENT_TYPE, StatusCode};
 use management::NewRepositoryRequest;
 use nr_core::{
@@ -21,12 +22,13 @@ use uuid::Uuid;
 use crate::{
     app::{
         authentication::Authentication,
-        responses::{MissingPermission, RepositoryNotFound},
+        responses::{MissingPermission, RepositoryNotFound, ResponseBuilderExt},
         NitroRepo,
     },
     error::InternalError,
     repository::RepositoryTypeDescription,
 };
+mod browse;
 mod config;
 mod management;
 mod page;
@@ -46,6 +48,7 @@ mod types;
         management::update_config,
         management::get_configs_for_repository,
         page::get_repository_page,
+        browse::browse,
     ),
     components(schemas(
         DBRepository,
@@ -53,7 +56,9 @@ mod types;
         RepositoryTypeDescription,
         RepositoryPage,
         NewRepositoryRequest,
-        PageType
+        PageType,
+        BrowseFile,
+        BrowseResponse
     ))
 )]
 pub struct RepositoryAPI;
@@ -63,6 +68,7 @@ pub fn repository_routes() -> axum::Router<NitroRepo> {
         .route("/:id", get(get_repository))
         .route("/page/:id", get(page::get_repository_page))
         .route("/types", get(types::repository_types))
+        .merge(browse::browse_routes())
         .merge(management::management_routes())
         .merge(config::config_routes())
 }
@@ -118,10 +124,7 @@ pub async fn list_repositories(
             _ => true,
         })
         .collect();
-    let response = Response::builder()
+    Response::builder()
         .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&repositories).unwrap().into())
-        .unwrap();
-    Ok(response)
+        .json_body(&repositories)
 }

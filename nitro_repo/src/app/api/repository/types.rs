@@ -1,8 +1,8 @@
-use axum::response::Response;
-use http::{header::CONTENT_TYPE, StatusCode};
+use axum::response::{IntoResponse, Response};
+use http::StatusCode;
 use tracing::instrument;
 
-use crate::app::REPOSITORY_TYPES;
+use crate::app::{responses::ResponseBuilderExt, REPOSITORY_TYPES};
 
 #[utoipa::path(
     get,
@@ -21,7 +21,6 @@ pub async fn repository_types() -> Response {
 
     Response::builder()
         .status(StatusCode::OK)
-        .header(CONTENT_TYPE, "application/json")
-        .body(serde_json::to_string(&types).unwrap().into())
-        .unwrap()
+        .json_body(&types)
+        .into_response()
 }

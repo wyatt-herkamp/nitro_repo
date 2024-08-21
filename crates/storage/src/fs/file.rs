@@ -1,6 +1,6 @@
 use std::{fmt::Debug, fs::File, io, path::Path};
 
-use crate::FileMeta;
+use crate::{is_hidden_file, FileMeta};
 
 use super::{utils::MetadataUtils, FileHashes, SerdeMime, StorageFileReader};
 use chrono::{DateTime, FixedOffset, Local};
@@ -24,6 +24,7 @@ pub enum StorageFile {
         content: StorageFileReader,
     },
 }
+
 impl StorageFile {
     pub fn meta(&self) -> &StorageFileMeta {
         match self {
@@ -59,19 +60,19 @@ impl Debug for StorageFile {
 #[non_exhaustive]
 pub struct StorageFileMeta {
     /// File Name
-    name: String,
+    pub name: String,
     /// Individually stored file type. Different data is stored based if it is a file or a directory.
-    file_type: FileType,
+    pub file_type: FileType,
     /// Last time it was modified.
-    modified: DateTime<FixedOffset>,
+    pub modified: DateTime<FixedOffset>,
     /// The first time it was created.
-    created: DateTime<FixedOffset>,
+    pub created: DateTime<FixedOffset>,
 }
 impl StorageFileMeta {
-    #[instrument(skip(path))]
+    #[instrument(name = "StorageFileMeta::new_from_file", skip(path))]
     pub fn new_from_file(path: impl AsRef<Path>) -> Result<Self, io::Error> {
         let path = path.as_ref();
-        debug!(?path, "Creating StorageFileMeta from file");
+        debug!(?path, "Reading File Meta");
         let file = File::open(&path)?;
         let metadata = file.metadata()?;
         // TODO: If the data is not available in the metadata. We should pull from the .nr-meta file.
@@ -87,10 +88,9 @@ impl StorageFileMeta {
             for entry in std::fs::read_dir(path)? {
                 let entry = entry?;
                 let path = entry.path();
-                let extension = path.extension().unwrap_or_default();
-                if extension == "nr-meta" || extension == "nr-repository-meta" {
+                // Ignore hidden files.
+                if is_hidden_file(&path) {
                     debug!(?path, "Skipping Meta File");
-                    // Check if file is a meta file
                     continue;
                 }
                 file_count += 1;

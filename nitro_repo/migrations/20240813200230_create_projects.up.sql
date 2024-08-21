@@ -32,8 +32,8 @@ create TABLE IF NOT EXISTS  project_members
         constraint fk_user
             references users
             on delete cascade,
-    can_write  integer,
-    can_manage integer,
+    can_write  boolean,
+    can_manage boolean,
     added_at   TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null
 );
 

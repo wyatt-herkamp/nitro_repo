@@ -19,7 +19,6 @@ anyhow.workspace = true
 mime_guess.workspace = true
 mime.workspace = true
 derive_more.workspace = true
-sha2.workspace = true
 base64.workspace = true
 ahash.workspace = true
 http.workspace = true
@@ -30,5 +29,13 @@ pin-project.workspace = true
 futures.workspace = true
 
 bytes.workspace = true
+# Hashing Algorithms
+md-5.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+sha3.workspace = true
+digest.workspace = true
+
+postcard = { version = "1.0", features = ["use-std", "alloc"] }
 [lints]
 workspace = true

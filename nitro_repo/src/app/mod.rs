@@ -11,7 +11,11 @@ use email::EmailSetting;
 use email_service::EmailAccess;
 use http::Uri;
 use nr_core::{
-    database::{repository::DBRepository, storage::DBStorage, user::user_utils},
+    database::{
+        repository::DBRepository,
+        storage::{DBStorage, StorageDBType},
+        user::user_utils,
+    },
     repository::config::{
         frontend::{BadgeSettingsType, FrontendConfigType},
         repository_page::RepositoryPageType,

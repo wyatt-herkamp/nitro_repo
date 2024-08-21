@@ -1,12 +1,65 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::{prelude::FromRow, types::Json};
+use sqlx::{postgres::PgRow, prelude::FromRow, types::Json};
+use tracing::{instrument, trace};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::storage::StorageName;
 
 use super::DateTime;
+
+pub trait StorageDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
+    fn columns() -> Vec<&'static str>;
+    fn format_columns(prefix: Option<&str>) -> String {
+        if let Some(prefix) = prefix {
+            Self::columns()
+                .iter()
+                .map(|column| format!("{}.`{}`", prefix, column))
+                .collect::<Vec<String>>()
+                .join(", ")
+        } else {
+            Self::columns().join(", ")
+        }
+    }
+    fn id(&self) -> Uuid;
+    #[instrument(name = "get_all_storages", skip(database))]
+    async fn get_all(database: &sqlx::PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let columns = Self::format_columns(None);
+        let query = format!("SELECT {} FROM storages", columns);
+        trace!(?query);
+        let storages = sqlx::query_as(&query).fetch_all(database).await?;
+        Ok(storages)
+    }
+    #[instrument(name = "get_active_storages", skip(database))]
+    async fn get_all_active(database: &sqlx::PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let columns = Self::format_columns(None);
+        let query = format!("SELECT {} FROM storages WHERE active = true", columns);
+        trace!(?query);
+        let storages = sqlx::query_as(&query).fetch_all(database).await?;
+        Ok(storages)
+    }
+    #[instrument(name = "get_by_id", skip(database))]
+    async fn get_by_id(id: Uuid, database: &sqlx::PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let columns = Self::format_columns(None);
+        let query = format!("SELECT {} FROM storages WHERE id = $1", columns);
+        trace!(?query);
+        let storage = sqlx::query_as(&query)
+            .bind(id)
+            .fetch_optional(database)
+            .await?;
+        Ok(storage)
+    }
+    async fn delete_self(&self, database: &sqlx::PgPool) -> Result<(), sqlx::Error> {
+        let query = format!("DELETE FROM storages WHERE id = $1");
+        sqlx::query(&query)
+            .bind(self.id())
+            .execute(database)
+            .await?;
+        Ok(())
+    }
+}
+
 pub struct NewDBStorage {
     pub storage_type: String,
     pub name: StorageName,
@@ -33,6 +86,30 @@ impl NewDBStorage {
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, ToSchema)]
+pub struct DBStorageNoConfig {
+    pub id: Uuid,
+    pub storage_type: String,
+    pub name: StorageName,
+    pub active: bool,
+    pub updated_at: DateTime,
+    pub created_at: DateTime,
+}
+impl StorageDBType for DBStorageNoConfig {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+    fn columns() -> Vec<&'static str> {
+        vec![
+            "id",
+            "storage_type",
+            "name",
+            "active",
+            "updated_at",
+            "created_at",
+        ]
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, ToSchema)]
 
 pub struct DBStorage {
     pub id: Uuid,
@@ -46,21 +123,23 @@ pub struct DBStorage {
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
+impl StorageDBType for DBStorage {
+    fn columns() -> Vec<&'static str> {
+        vec![
+            "id",
+            "storage_type",
+            "name",
+            "config",
+            "active",
+            "updated_at",
+            "created_at",
+        ]
+    }
+    fn id(&self) -> Uuid {
+        self.id
+    }
+}
 impl DBStorage {
-    pub async fn get_all(database: &sqlx::PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let storages = sqlx::query_as("SELECT * FROM storages")
-            .fetch_all(database)
-            .await?;
-        Ok(storages)
-    }
-    pub async fn get(id: Uuid, database: &sqlx::PgPool) -> Result<Option<Self>, sqlx::Error> {
-        let storage = sqlx::query_as("SELECT * FROM storages WHERE id = $1")
-            .bind(id)
-            .fetch_optional(database)
-            .await?;
-        Ok(storage)
-    }
-
     pub async fn delete(id: Uuid, database: &sqlx::PgPool) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM storages WHERE id = $1")
             .bind(id)

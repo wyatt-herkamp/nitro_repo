@@ -55,7 +55,7 @@ impl PathUtils for PathBuf {
         self.parent()
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Parent Directory not found"))
     }
-
+    #[instrument]
     fn add_extension(&self, extension: &str) -> io::Result<PathBuf> {
         let mut path = self.clone();
         if path.extension().is_none() {

@@ -1,6 +1,5 @@
 use ahash::HashMap;
 use axum::{
-    body::Body,
     extract::{Path, State},
     response::{IntoResponse, Response},
     routing::{get, post, put},
@@ -20,7 +19,10 @@ use uuid::Uuid;
 use crate::{
     app::{
         authentication::Authentication,
-        responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
+        responses::{
+            no_content_response_with_error, InvalidRepositoryConfig, MissingPermission,
+            RepositoryNotFound, ResponseBuilderExt,
+        },
         NitroRepo,
     },
     error::InternalError,
@@ -141,8 +143,9 @@ pub async fn get_configs_for_repository(
 
     let repository = repository.config_types();
     info!("Repository Configs: {:?}", repository);
-    let response = Json(repository).into_response();
-    Ok(response)
+    Response::builder()
+        .status(StatusCode::OK)
+        .json_body(&repository)
 }
 #[utoipa::path(
     get,
@@ -165,8 +168,9 @@ pub async fn get_config(
     else {
         return Ok(RepositoryNotFound::Uuid(repository).into_response());
     };
-    let response = Json(config.value.0).into_response();
-    Ok(response)
+    Response::builder()
+        .status(StatusCode::OK)
+        .json_body(&config.value.0)
 }
 /// Updates a config for a repository
 ///
@@ -223,8 +227,5 @@ pub async fn update_config(
             .body(format!("Failed to reload repository: {}", err).into())
             .unwrap());
     }
-    Ok(Response::builder()
-        .status(StatusCode::NO_CONTENT)
-        .body(Body::empty())
-        .unwrap())
+    no_content_response_with_error()
 }

@@ -17,7 +17,9 @@ use uuid::Uuid;
 use crate::{
     app::{
         authentication::Authentication,
-        responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
+        responses::{
+            InvalidRepositoryConfig, MissingPermission, RepositoryNotFound, ResponseBuilderExt,
+        },
         NitroRepo,
     },
     error::InternalError,
@@ -63,10 +65,5 @@ pub async fn get_repository_page(
     .await?
     .map(|x| x.value.0)
     .unwrap_or_default();
-    let response = Response::builder()
-        .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(serde_json::to_string(&page).unwrap().into())
-        .unwrap();
-    Ok(response)
+    Response::builder().status(StatusCode::OK).json_body(&page)
 }

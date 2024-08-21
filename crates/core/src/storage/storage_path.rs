@@ -7,6 +7,7 @@ use tracing::instrument;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct StoragePathComponent(String);
+/// A Storage path is a UTF-8 only path. Where the root is the base of the storage.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct StoragePath(Vec<StoragePathComponent>);
 impl StoragePath {

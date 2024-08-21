@@ -8,7 +8,7 @@ use http::StatusCode;
 use tracing::instrument;
 
 use crate::{
-    app::{authentication::Authentication, NitroRepo},
+    app::{authentication::Authentication, responses::ResponseBuilderExt, NitroRepo},
     error::InternalError,
 };
 pub fn config_routes() -> axum::Router<NitroRepo> {
@@ -93,7 +93,7 @@ pub async fn config_validate(
     let response = match config_type.validate_config(config) {
         Ok(_) => Response::builder()
             .status(StatusCode::NO_CONTENT)
-            .body(Body::from("Valid Config"))
+            .body(Body::empty())
             .unwrap(),
         Err(err) => Response::builder()
             .status(400)
@@ -122,18 +122,15 @@ pub async fn config_default(
         return Ok(InvalidConfigType(key).into_response());
     };
 
-    let default = match config_type.default() {
-        Ok(ok) => Response::builder()
-            .status(200)
-            .header("Content-Type", "application/json")
-            .body(Body::from(serde_json::to_string(&ok).unwrap()))
-            .unwrap(),
-        Err(err) => Response::builder()
-            .status(500)
-            .body(Body::from(err.to_string()))
-            .unwrap(),
-    };
-    Ok(default)
+    match config_type.default() {
+        Ok(ok) => return Response::builder().status(200).json_body(&ok),
+        Err(err) => {
+            return Ok(Response::builder()
+                .status(500)
+                .body(Body::from(err.to_string()))
+                .unwrap())
+        }
+    }
 }
 #[utoipa::path(
     get,

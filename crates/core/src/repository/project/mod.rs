@@ -1,9 +1,15 @@
-
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::Type;
 use strum::{Display, EnumIs, EnumString, IntoStaticStr};
 use utoipa::ToSchema;
+
+use crate::database::project::{DBProject, DBProjectVersion};
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ToSchema, Builder)]
+pub struct ProjectResolution {
+    pub project: Option<DBProject>,
+    pub version: Option<DBProjectVersion>,
+}
 /// Release type of a project
 ///
 /// Can be overridden in the panel.
