@@ -125,9 +125,7 @@ pub async fn create_user(
             .body("Email already taken".into())
             .unwrap());
     }
-    let user = user
-        .insert(UserPermissions::default(), site.as_ref())
-        .await?;
+    let user = user.insert(site.as_ref()).await?;
     Ok(Json(user).into_response())
 }
 #[derive(Deserialize, ToSchema)]
@@ -217,10 +215,7 @@ pub async fn update_permissions(
             .body("User not found".into())
             .unwrap());
     };
-    let mut new_permissions = user.permissions.clone().0;
-    permissions.apply(&mut new_permissions);
-    user.update_permissions(new_permissions, &site.database)
-        .await?;
+    todo!();
     Ok(Response::builder()
         .status(StatusCode::NO_CONTENT)
         .body(Body::empty())

@@ -6,7 +6,11 @@ export interface User {
   name: string
   username: string
   email: string
-  permissions: RawUserPermissions
+  admin: boolean
+  user_manager: boolean
+  storage_manager: boolean
+  repository_manager: boolean
+  default_repository_actions: RepositoryActions[]
   created_at: Date
 }
 
@@ -51,14 +55,7 @@ export interface PasswordRules {
   require_number: boolean
   require_special: boolean
 }
-export interface RawUserPermissions {
-  admin: boolean
-  user_manager: boolean
-  storage_manager: boolean
-  repository_manager: boolean
-  default_repository_permissions: RepositoryActions
-  repository_permissions: Record<string, RepositoryActions>
-}
+
 export interface RepositoryActions {
   can_read: boolean
   can_write: boolean

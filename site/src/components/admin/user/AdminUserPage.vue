@@ -54,9 +54,6 @@
       <div class="tab-content" :data-active="currentTab === 'user-permissions'">
         <UserPermissions :user="user" />
       </div>
-      <div class="tab-content" :data-active="currentTab === 'repository-permissions'">
-        <RepositoryPermissions :user="user" />
-      </div>
     </div>
   </div>
 </template>

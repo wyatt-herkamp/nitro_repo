@@ -26,7 +26,7 @@ pub use repo_type::*;
 use thiserror::Error;
 use uuid::Uuid;
 pub mod utils;
-use crate::error::BadRequestErrors;
+use crate::{app::authentication::AuthenticationError, error::BadRequestErrors};
 pub trait Repository: Send + Sync + Clone {
     fn get_storage(&self) -> DynStorage;
     /// The Repository type. This is used to identify the Repository type in the database
@@ -140,6 +140,7 @@ pub trait Repository: Send + Sync + Clone {
 #[derive(Debug, Clone, DynRepositoryHandler)]
 pub enum DynRepository {
     Maven(maven::MavenRepository),
+    NPM(npm::NpmRegistry),
 }
 #[derive(Debug, Error)]
 pub enum RepositoryHandlerError {
@@ -157,6 +158,8 @@ pub enum RepositoryHandlerError {
     MavenError(#[from] maven::MavenError),
     #[error("IO Error: {0}")]
     IOError(#[from] std::io::Error),
+    #[error("Authentication Error: {0}")]
+    AuthenticationError(#[from] AuthenticationError),
 }
 impl IntoResponse for RepositoryHandlerError {
     fn into_response(self) -> Response {

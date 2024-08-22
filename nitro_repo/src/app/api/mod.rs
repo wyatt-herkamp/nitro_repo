@@ -15,6 +15,7 @@ use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
 pub fn api_routes(is_installed: bool) -> axum::Router<NitroRepo> {
     let mut router = axum::Router::new()
         .route("/info", axum::routing::get(info))
+        .route("/install", axum::routing::post(install))
         .nest("/user", user::user_routes())
         .nest("/storage", storage::storage_routes())
         .nest(
@@ -23,10 +24,7 @@ pub fn api_routes(is_installed: bool) -> axum::Router<NitroRepo> {
         )
         .nest("/repository", repository::repository_routes())
         .layer(CorsLayer::very_permissive());
-    if !is_installed {
-        info!("Site is not installed. Adding Install Route");
-        router = router.route("/install", axum::routing::post(install));
-    }
+
     router
 }
 #[utoipa::path(
@@ -76,8 +74,7 @@ pub async fn install(
         return Ok(StatusCode::BAD_REQUEST);
     }
     user.password = password;
-    user.insert(UserPermissions::admin(), &site.database)
-        .await?;
+    user.insert_admin(&site.database).await?;
     {
         let mut instance = site.instance.lock();
         instance.is_installed = true;

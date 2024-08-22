@@ -73,7 +73,6 @@ import SubmitButton from '@/components/form/SubmitButton.vue'
 import SwitchInput from '@/components/form/SwitchInput.vue'
 import http from '@/http'
 import type { User } from '@/types/base'
-import { UserPermissions } from '@/types/user'
 import { notify } from '@kyvg/vue3-notification'
 import { computed, ref, watch, type PropType } from 'vue'
 
@@ -86,8 +85,17 @@ const props = defineProps({
 const hasChanged = computed(() => {
   return !userPermissions.value.equalsRawType(props.user.permissions)
 })
-const userPermissions = ref<UserPermissions>(new UserPermissions(props.user.permissions))
-
+const userPermissions = ref({
+  admin: props.user.admin,
+  user_manager: props.user.user_manager,
+  storage_manager: props.user.storage_manager,
+  repository_manager: props.user.repository_manager,
+  default_repository_permissions: {
+    can_read: props.user.default_repository_permissions.can_read,
+    can_write: props.user.default_repository_permissions.can_write,
+    can_edit: props.user.default_repository_permissions.can_edit
+  }
+})
 watch(
   userPermissions,
   (newValue) => {

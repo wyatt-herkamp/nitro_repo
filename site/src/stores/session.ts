@@ -15,7 +15,7 @@ export const sessionStore = defineStore(
       if (user.value === undefined) {
         return false
       }
-      return user.value.permissions.admin
+      return user.value.admin
     }
 
     async function logout() {
@@ -29,6 +29,7 @@ export const sessionStore = defineStore(
     }
     async function updateUser(): Promise<User | undefined> {
       if (session.value == undefined) {
+        console.log('No session found')
         return undefined
       }
       // Check if the session is still valid

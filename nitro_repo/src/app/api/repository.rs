@@ -12,7 +12,7 @@ use nr_core::{
         config::repository_page::{PageType, RepositoryPage},
         Visibility,
     },
-    user::permissions::HasPermissions,
+    user::permissions::{HasPermissions, RepositoryActionOptions},
 };
 
 use tracing::instrument;
@@ -92,7 +92,10 @@ pub async fn get_repository(
         return Ok(RepositoryNotFound::Uuid(repository).into_response());
     };
     if config.visibility.is_private() {
-        if !auth.can_read_repository(repository) {
+        if !auth
+            .has_action(RepositoryActionOptions::Read, repository, site.as_ref())
+            .await?
+        {
             return Ok(MissingPermission::ReadRepository(repository).into_response());
         }
     }
@@ -120,8 +123,7 @@ pub async fn list_repositories(
         .await?
         .into_iter()
         .filter(|repo| match repo.visibility {
-            Visibility::Private => auth.can_read_repository(repo.id),
-            Visibility::Hidden => auth.can_read_repository(repo.id),
+            Visibility::Private | Visibility::Public => true, // TODO FIX
             _ => true,
         })
         .collect();

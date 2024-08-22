@@ -123,7 +123,14 @@ async fn browse(
     let Some(repository) = site.get_repository(browse_path.repository_id) else {
         return Ok(RepositoryNotFound::Uuid(browse_path.repository_id).into_response());
     };
-    if !can_read_repository(auth, repository.visibility(), repository.id()) {
+    if !can_read_repository(
+        auth,
+        repository.visibility(),
+        repository.id(),
+        site.as_ref(),
+    )
+    .await?
+    {
         return Ok(MissingPermission::ReadRepository(repository.id()).into_response());
     }
     let repository_storage = repository.get_storage();

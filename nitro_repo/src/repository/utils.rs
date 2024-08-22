@@ -1,15 +1,22 @@
-use nr_core::{repository::Visibility, user::permissions::HasPermissions};
+use nr_core::{
+    repository::Visibility,
+    user::permissions::{HasPermissions, RepositoryActionOptions},
+};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::app::authentication::Authentication;
 
-pub fn can_read_repository(
+pub async fn can_read_repository(
     auth: Option<Authentication>,
     visibility: Visibility,
     repository_id: Uuid,
-) -> bool {
+    database: &PgPool,
+) -> Result<bool, sqlx::Error> {
     match visibility {
-        Visibility::Public => true,
-        Visibility::Private | Visibility::Hidden => auth.can_read_repository(repository_id),
+        Visibility::Public => Ok(true),
+        Visibility::Private | Visibility::Hidden => Ok(auth
+            .has_action(RepositoryActionOptions::Read, repository_id, database)
+            .await?),
     }
 }

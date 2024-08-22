@@ -37,6 +37,7 @@ use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
     maven::{MavenRepositoryConfigType, MavenRepositoryType},
+    npm::registry_type::NpmRegistryType,
     DynRepository, RepositoryType, StagingConfig,
 };
 pub mod api;
@@ -348,4 +349,5 @@ pub static REPOSITORY_CONFIG_TYPES: &'static [&dyn RepositoryConfigType] = &[
     &RepositoryPageType,
     &MavenRepositoryConfigType,
 ];
-pub static REPOSITORY_TYPES: &'static [&dyn RepositoryType] = &[&MavenRepositoryType];
+pub static REPOSITORY_TYPES: &'static [&dyn RepositoryType] =
+    &[&MavenRepositoryType, &NpmRegistryType];

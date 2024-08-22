@@ -4,7 +4,7 @@ use derive_more::derive::{AsRef, Deref, Into};
 use sqlx::prelude::Type;
 use thiserror::Error;
 use tracing::instrument;
-
+pub mod scopes;
 use crate::utils::validations;
 
 pub mod permissions;

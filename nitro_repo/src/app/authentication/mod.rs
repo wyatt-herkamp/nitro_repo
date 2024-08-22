@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::ops::Deref;
 
 use axum::async_trait;
@@ -17,7 +17,7 @@ use session::Session;
 use sqlx::PgPool;
 use strum::EnumIs;
 use thiserror::Error;
-use tracing::{error, info, instrument, warn};
+use tracing::{error, instrument, warn};
 use utoipa::ToSchema;
 
 use crate::utils::headers::AuthorizationHeader;
@@ -62,10 +62,18 @@ impl Deref for Authentication {
     }
 }
 impl HasPermissions for Authentication {
-    fn get_permissions(&self) -> Option<&UserPermissions> {
+    fn user_id(&self) -> Option<i32> {
         match self {
-            Authentication::AuthToken(_, user) => user.get_permissions(),
-            Authentication::Session(_, user) => user.get_permissions(),
+            Authentication::AuthToken(_, user) => Some(user.id),
+            Authentication::Session(_, user) => Some(user.id),
+        }
+    }
+
+    fn get_permissions(&self) -> Option<UserPermissions> {
+        match self {
+            Authentication::AuthToken(_, user) | Authentication::Session(_, user) => {
+                user.get_permissions()
+            }
         }
     }
 }
@@ -91,22 +99,18 @@ where
             AuthenticationRaw::NoIdentification => {
                 return Err(AuthenticationError::Unauthorized);
             }
-            AuthenticationRaw::AuthToken(..) => {
-                todo!("Auth Token Authentication")
+            AuthenticationRaw::AuthToken(token) => {
+                let (user, auth_token) = get_user_and_auth_token(&token, &repo.database).await?;
+                Authentication::AuthToken(auth_token, user)
             }
             AuthenticationRaw::Session(session) => {
                 let user = UserSafeData::get_by_id(session.user_id, &repo.database)
-                    .await
-                    .map_err(AuthenticationError::DBError)?
+                    .await?
                     .ok_or(AuthenticationError::Unauthorized)?;
                 Authentication::Session(session, user)
             }
-            AuthenticationRaw::AuthorizationHeaderUnknown(scheme, value) => {
-                error!("Unknown Authorization Header: {} {}", scheme, value);
-                return Err(AuthenticationError::Unauthorized);
-            }
-            AuthenticationRaw::Basic { .. } => {
-                warn!("Basic Auth is not allowed in API routes");
+            other => {
+                warn!("Unknown Authentication Method: {}", other);
                 return Err(AuthenticationError::Unauthorized);
             }
         };
@@ -118,105 +122,6 @@ where
 pub struct MeWithSession {
     session: Session,
     user: UserSafeData,
-}
-
-#[derive(Clone, Debug, PartialEq, EnumIs)]
-pub enum RepositoryAuthentication {
-    AuthToken(AuthToken, UserSafeData),
-    Session(Session, UserSafeData),
-    Basic(UserSafeData, Option<AuthToken>),
-    Other(String, String),
-    NoIdentification,
-}
-impl HasPermissions for RepositoryAuthentication {
-    fn get_permissions(&self) -> Option<&UserPermissions> {
-        match self {
-            RepositoryAuthentication::AuthToken(_, user) => user.get_permissions(),
-            RepositoryAuthentication::Session(_, user) => user.get_permissions(),
-            RepositoryAuthentication::Basic(user, _) => user.get_permissions(),
-            _ => None,
-        }
-    }
-}
-impl RepositoryAuthentication {
-    pub fn get_user_id(&self) -> Option<i32> {
-        match self {
-            RepositoryAuthentication::AuthToken(_, user) => Some(user.id),
-            RepositoryAuthentication::Session(_, user) => Some(user.id),
-            RepositoryAuthentication::Basic(user, _) => Some(user.id),
-            _ => None,
-        }
-    }
-    pub fn get_user(&self) -> Option<&UserSafeData> {
-        match self {
-            RepositoryAuthentication::AuthToken(_, user) => Some(user),
-            RepositoryAuthentication::Session(_, user) => Some(user),
-            RepositoryAuthentication::Basic(user, _) => Some(user),
-            _ => None,
-        }
-    }
-    pub fn has_auth_token(&self) -> bool {
-        match self {
-            RepositoryAuthentication::AuthToken(..) => true,
-            RepositoryAuthentication::Basic(_, token) => token.is_some(),
-            _ => false,
-        }
-    }
-    pub fn check_permissions<F>(&self, f: F) -> bool
-    where
-        F: FnOnce(&UserPermissions) -> bool,
-    {
-        match self {
-            RepositoryAuthentication::AuthToken(_, user) => f(&user.permissions),
-            RepositoryAuthentication::Session(_, user) => f(&user.permissions),
-            RepositoryAuthentication::Basic(user, _) => f(&user.permissions),
-            _ => false,
-        }
-    }
-}
-#[async_trait]
-impl<S> FromRequestParts<S> for RepositoryAuthentication
-where
-    NitroRepo: FromRef<S>,
-    S: Send + Sync,
-{
-    type Rejection = AuthenticationError;
-    #[instrument(
-        name = "repository_auth_from_request",
-        skip(parts, state),
-        fields(project_module = "Authentication")
-    )]
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
-        let repo = NitroRepo::from_ref(state);
-        let Some(raw_auth) = raw_extension else {
-            return Err(AuthenticationError::Unauthorized);
-        };
-        let auth = match raw_auth {
-            AuthenticationRaw::NoIdentification => RepositoryAuthentication::NoIdentification,
-            AuthenticationRaw::AuthToken(..) => {
-                todo!("Auth Token Authentication")
-            }
-            AuthenticationRaw::Session(session) => {
-                let user = UserSafeData::get_by_id(session.user_id, &repo.database)
-                    .await
-                    .map_err(AuthenticationError::DBError)?
-                    .ok_or(AuthenticationError::Unauthorized)?;
-                RepositoryAuthentication::Session(session, user)
-            }
-            AuthenticationRaw::AuthorizationHeaderUnknown(scheme, value) => {
-                error!("Unknown Authorization Header: {} {}", scheme, value);
-                return Err(AuthenticationError::Unauthorized);
-            }
-            AuthenticationRaw::Basic { username, password } => {
-                info!("Basic Auth: {}", username);
-                let user = verify_login(username, password, &repo.database).await?;
-                // TODO: Check if it is an API Token and not a username/password
-                RepositoryAuthentication::Basic(user, None)
-            }
-        };
-        Ok(auth)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -232,6 +137,23 @@ pub enum AuthenticationRaw {
     AuthorizationHeaderUnknown(String, String),
     /// Authorization Basic Header
     Basic { username: String, password: String },
+}
+impl AsRef<str> for AuthenticationRaw {
+    fn as_ref(&self) -> &str {
+        match self {
+            AuthenticationRaw::AuthToken(_) => "AuthToken",
+            AuthenticationRaw::Session(_) => "Session",
+            AuthenticationRaw::AuthorizationHeaderUnknown(_, _) => "AuthorizationHeaderUnknown",
+            AuthenticationRaw::Basic { .. } => "Basic",
+            AuthenticationRaw::NoIdentification => "NoIdentification",
+        }
+    }
+}
+impl Display for AuthenticationRaw {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let as_ref: &str = self.as_ref();
+        write!(f, "{}", as_ref)
+    }
 }
 impl AuthenticationRaw {
     #[instrument(skip(header, site), fields(project_module = "Authentication"))]
@@ -288,6 +210,7 @@ pub async fn verify_login(
     password::verify_password(password.as_ref(), user.password.as_deref())?;
     Ok(user.into())
 }
+
 #[instrument(skip(token, database), fields(project_module = "Authentication"))]
 pub async fn get_user_and_auth_token(
     token: &str,

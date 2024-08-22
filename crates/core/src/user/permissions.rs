@@ -1,14 +1,23 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use serde::{Deserialize, Serialize};
+use sqlx::{
+    prelude::{FromRow, Type},
+    PgPool,
+};
+use tracing::{debug, instrument, trace};
 use utoipa::ToSchema;
 use uuid::Uuid;
+
+use crate::database::{user::auth_token::AuthToken, DateTime};
+
+use super::scopes::Scopes;
 /// User permissions
 ///
 /// Default permissions are allowed to read and write to repositories but nothing else
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, ToSchema)]
-#[serde(default)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, ToSchema, FromRow)]
 pub struct UserPermissions {
+    pub id: i32,
     pub admin: bool,
     pub user_manager: bool,
     /// Storage Manager will be able to create and delete storage locations
@@ -16,90 +25,76 @@ pub struct UserPermissions {
     /// Repository Manager will be able to create and delete repositories
     /// Also will have full read/write access to all repositories
     pub repository_manager: bool,
-    pub default_repository_permissions: RepositoryActions,
-    pub repository_permissions: HashMap<Uuid, RepositoryActions>,
+    pub default_repository_actions: Vec<RepositoryActionOptions>,
 }
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow)]
 
+pub struct UserRepositoryPermissions {
+    pub id: i32,
+    pub user_id: i32,
+    pub repository_id: Uuid,
+    pub actions: Vec<RepositoryActionOptions>,
+    pub updated_at: DateTime,
+    pub created_at: DateTime,
+}
+impl UserRepositoryPermissions {
+    pub async fn has_repository_action(
+        user_id: i32,
+        repository: Uuid,
+        action: RepositoryActionOptions,
+        database: &PgPool,
+    ) -> sqlx::Result<bool> {
+        let Some(actions) = sqlx::query_scalar::<_, Vec<RepositoryActionOptions>>(
+            r#"SELECT * FROM user_repository_permissions WHERE user_id = $1 AND repository_id = $2 "#,
+        )
+        .bind(user_id)
+        .bind(repository)
+        .fetch_optional(database)
+        .await? else{
+            return Ok(false);
+        };
+        Ok(actions.contains(&action))
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct UpdatePermissions {
     pub admin: Option<bool>,
     pub user_manager: Option<bool>,
     pub storage_manager: Option<bool>,
     pub repository_manager: Option<bool>,
-    pub default_repository_permissions: Option<RepositoryActions>,
+    pub default_repository_actions: Option<RepositoryActions>,
     pub repository_permissions: Option<HashMap<Uuid, RepositoryActions>>,
 }
+
 impl UpdatePermissions {
     pub fn apply(self, permissions: &mut UserPermissions) {
-        if let Some(admin) = self.admin {
-            permissions.admin = admin;
-        }
-        if let Some(user_manager) = self.user_manager {
-            permissions.user_manager = user_manager;
-        }
-        if let Some(storage_manager) = self.storage_manager {
-            permissions.storage_manager = storage_manager;
-        }
-        if let Some(repository_manager) = self.repository_manager {
-            permissions.repository_manager = repository_manager;
-        }
-        if let Some(default_repository_permissions) = self.default_repository_permissions {
-            permissions.default_repository_permissions = default_repository_permissions;
-        }
-        if let Some(repository_permissions) = self.repository_permissions {
-            permissions.repository_permissions = repository_permissions;
-        }
+        todo!()
     }
 }
-impl Default for UserPermissions {
-    fn default() -> Self {
-        Self {
-            admin: false,
-            storage_manager: false,
-            user_manager: false,
-            repository_manager: false,
-            default_repository_permissions: RepositoryActions {
-                can_read: true,
-                can_write: true,
-                can_edit: false,
-            },
-            repository_permissions: HashMap::new(),
-        }
-    }
-}
-impl UserPermissions {
-    pub fn admin() -> Self {
-        Self {
-            admin: true,
-            storage_manager: true,
-            user_manager: true,
-            repository_manager: true,
-            default_repository_permissions: RepositoryActions {
-                can_read: true,
-                can_write: true,
-                can_edit: true,
-            },
-            repository_permissions: HashMap::new(),
-        }
-    }
-    pub fn delete_repository(&mut self, repository: Uuid) {
-        self.repository_permissions.remove(&repository);
-    }
-}
+
 impl HasPermissions for UserPermissions {
     #[inline(always)]
-    fn get_permissions(&self) -> Option<&UserPermissions> {
-        Some(self)
+    fn get_permissions(&self) -> Option<UserPermissions> {
+        Some(self.clone())
+    }
+
+    fn user_id(&self) -> Option<i32> {
+        Some(self.id)
     }
 }
 impl<HS: HasPermissions> HasPermissions for Option<HS> {
-    fn get_permissions(&self) -> Option<&UserPermissions> {
+    fn get_permissions(&self) -> Option<UserPermissions> {
         self.as_ref().and_then(HasPermissions::get_permissions)
+    }
+
+    fn user_id(&self) -> Option<i32> {
+        self.as_ref().and_then(HasPermissions::user_id)
     }
 }
 pub trait HasPermissions {
+    fn user_id(&self) -> Option<i32>;
     /// Get the permissions of the user. If the user or not logged in, return None
-    fn get_permissions(&self) -> Option<&UserPermissions>;
+    fn get_permissions(&self) -> Option<UserPermissions>;
     /// Is the user an admin
     #[inline(always)]
     fn is_admin_or_user_manager(&self) -> bool {
@@ -120,56 +115,41 @@ pub trait HasPermissions {
             .map(|p| p.admin || p.storage_manager)
             .unwrap_or(false)
     }
-    /// Can a user edit the repository settings
-    ///
-    /// True if the user is an admin, repository manager, or has the correct permissions
-    fn can_edit_repository(&self, repository: Uuid) -> bool {
+    async fn has_action(
+        &self,
+        action: RepositoryActionOptions,
+        repository: Uuid,
+        db: &PgPool,
+    ) -> Result<bool, sqlx::Error> {
         if self.is_admin_or_repository_manager() {
-            return true;
+            return Ok(true);
         }
-        let Some(permissions) = self.get_permissions() else {
-            return false;
+        let Some(user_id) = self.user_id() else {
+            return Ok(false);
         };
-        permissions
-            .repository_permissions
-            .get(&repository)
-            .map(|p| p.can_edit)
-            .unwrap_or(permissions.default_repository_permissions.can_edit)
-    }
-    /// Can a user write to the repository
-    ///
-    /// True if the user is an admin, repository manager, or has the correct permissions
-    fn can_write_to_repository(&self, repository: Uuid) -> bool {
-        if self.is_admin_or_repository_manager() {
-            return true;
-        }
-        let Some(permissions) = self.get_permissions() else {
-            return false;
-        };
-        permissions
-            .repository_permissions
-            .get(&repository)
-            .map(|p| p.can_edit)
-            .unwrap_or(permissions.default_repository_permissions.can_write)
-    }
-    /// Can a user read from the repository
-    ///
-    /// True if the user is an admin, repository manager, or has the correct permissions
-    fn can_read_repository(&self, repository: Uuid) -> bool {
-        if self.is_admin_or_repository_manager() {
-            return true;
-        }
-        let Some(permissions) = self.get_permissions() else {
-            return false;
-        };
-        permissions
-            .repository_permissions
-            .get(&repository)
-            .map(|p| p.can_edit)
-            .unwrap_or(permissions.default_repository_permissions.can_read)
+        UserRepositoryPermissions::has_repository_action(user_id, repository, action, db).await
     }
 }
-
+/// Checks if the Auth Token has the scope for the action and that the user has permission for it.
+///
+/// Yes this is a big function name
+#[instrument]
+pub async fn does_user_and_token_have_repository_action<T: HasPermissions + Debug>(
+    user: &T,
+    token: &AuthToken,
+    action: RepositoryActionOptions,
+    repository: Uuid,
+    database: &PgPool,
+) -> sqlx::Result<bool> {
+    if !user.has_action(action, repository, database).await? {
+        debug!("User does not have permission for action. Not checking Auth Token");
+        return Ok(false);
+    }
+    trace!("User Has Permission. Checking Auth Token has necessary scope");
+    token
+        .has_repository_action(repository, action, database)
+        .await
+}
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default, ToSchema)]
 pub struct RepositoryActions {
     /// Can the user read/pull from this repository
@@ -179,4 +159,35 @@ pub struct RepositoryActions {
     pub can_write: bool,
     /// Can the user edit this repositories settings
     pub can_edit: bool,
+}
+impl RepositoryActions {
+    pub fn has_action(&self, action: RepositoryActionOptions) -> bool {
+        match action {
+            RepositoryActionOptions::Read => self.can_read,
+            RepositoryActionOptions::Write => self.can_write,
+            RepositoryActionOptions::Edit => self.can_edit,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[sqlx(type_name = "TEXT")]
+pub enum RepositoryActionOptions {
+    Read,
+    Write,
+    Edit,
+}
+impl RepositoryActionOptions {
+    pub fn all() -> Vec<Self> {
+        vec![Self::Read, Self::Write, Self::Edit]
+    }
+}
+impl From<RepositoryActionOptions> for Scopes {
+    fn from(action: RepositoryActionOptions) -> Self {
+        match action {
+            RepositoryActionOptions::Read => Scopes::ReadRepository,
+            RepositoryActionOptions::Write => Scopes::WriteRepository,
+            RepositoryActionOptions::Edit => Scopes::EditRepository,
+        }
+    }
 }

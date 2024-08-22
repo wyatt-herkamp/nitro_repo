@@ -2,9 +2,8 @@ use std::{any::type_name, error::Error};
 
 use crate::{
     app::{
-        authentication::{AuthenticationError, RepositoryAuthentication},
-        responses::RepositoryNotFound,
-        NitroRepo, RepositoryStorageName,
+        authentication::AuthenticationError, responses::RepositoryNotFound, NitroRepo,
+        RepositoryStorageName,
     },
     error::{BadRequestErrors, IllegalStateError},
     repository::Repository,
@@ -30,17 +29,21 @@ use serde::Deserialize;
 use serde_json::Value;
 use tracing::{debug, error, instrument, span, Level};
 mod header;
+mod repo_auth;
 use super::RepositoryHandlerError;
 pub use header::*;
+pub use repo_auth::*;
 #[derive(Debug, From)]
 pub struct RepositoryRequestBody(Body);
 impl RepositoryRequestBody {
+    #[instrument]
     pub async fn body_as_bytes(self) -> Result<Bytes, RepositoryHandlerError> {
         // I am not sure if this error is user fault or server fault. I am going to assume it is a user fault for now
         let body = self.0.collect().await.map_err(BadRequestErrors::from)?;
         let bytes = body.to_bytes();
         Ok(bytes)
     }
+    #[instrument]
     pub async fn body_as_json<T: for<'a> Deserialize<'a>>(
         self,
     ) -> Result<T, RepositoryHandlerError> {
@@ -50,6 +53,12 @@ impl RepositoryRequestBody {
             return Err(BadRequestErrors::Other(message).into());
         }
         serde_json::from_slice(&body).map_err(RepositoryHandlerError::from)
+    }
+    #[instrument]
+    pub async fn body_as_string(self) -> Result<String, RepositoryHandlerError> {
+        let body = self.body_as_bytes().await?;
+        let body = String::from_utf8(body.to_vec()).map_err(BadRequestErrors::from)?;
+        Ok(body)
     }
 }
 #[derive(Debug)]

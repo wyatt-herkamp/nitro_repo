@@ -9,7 +9,7 @@ use axum::{
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
     database::repository::{DBRepository, GenericDBRepositoryConfig},
-    user::permissions::HasPermissions,
+    user::permissions::{HasPermissions, RepositoryActionOptions},
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -137,7 +137,10 @@ pub async fn get_configs_for_repository(
     auth: Authentication,
     Path(repository): Path<Uuid>,
 ) -> Result<Response, InternalError> {
-    if !auth.can_edit_repository(repository) {
+    if !auth
+        .has_action(RepositoryActionOptions::Edit, repository, &site.database)
+        .await?
+    {
         return Ok(MissingPermission::EditRepository(repository).into_response());
     }
     let Some(repository) = site.get_repository(repository) else {
@@ -169,7 +172,10 @@ pub async fn get_config(
     Query(params): Query<GetConfigParams>,
     Path((repository, config)): Path<(Uuid, String)>,
 ) -> Result<Response, InternalError> {
-    if !auth.can_edit_repository(repository) {
+    if !auth
+        .has_action(RepositoryActionOptions::Edit, repository, &site.database)
+        .await?
+    {
         return Ok(MissingPermission::EditRepository(repository).into_response());
     }
     let config = match GenericDBRepositoryConfig::get_config(repository, &config, site.as_ref())
@@ -216,7 +222,10 @@ pub async fn update_config(
     Path((repository, config_key)): Path<(Uuid, String)>,
     Json(config): Json<serde_json::Value>,
 ) -> Result<Response, InternalError> {
-    if !auth.can_edit_repository(repository) {
+    if !auth
+        .has_action(RepositoryActionOptions::Edit, repository, &site.database)
+        .await?
+    {
         return Ok(MissingPermission::EditRepository(repository).into_response());
     }
     let Some(config_type) = site.get_repository_config_type(&config_key) else {

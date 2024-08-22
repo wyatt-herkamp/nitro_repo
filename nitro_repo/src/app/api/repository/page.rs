@@ -9,7 +9,7 @@ use nr_core::{
         repository_page::{RepositoryPage, RepositoryPageType},
         RepositoryConfigType,
     },
-    user::permissions::HasPermissions,
+    user::permissions::{HasPermissions, RepositoryActionOptions},
 };
 use tracing::instrument;
 use uuid::Uuid;
@@ -43,7 +43,14 @@ pub async fn get_repository_page(
         return Ok(RepositoryNotFound::Uuid(repository).into_response());
     };
     if repository.visibility().is_private() {
-        if auth.can_read_repository(repository.id()) {
+        if !auth
+            .has_action(
+                RepositoryActionOptions::Read,
+                repository.id(),
+                &site.database,
+            )
+            .await?
+        {
             return Ok(MissingPermission::EditRepository(repository.id()).into_response());
         }
     }

@@ -3,7 +3,7 @@ use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
 use utoipa::ToSchema;
 
 use crate::user::{
-    permissions::{HasPermissions, UserPermissions},
+    permissions::{HasPermissions, RepositoryActionOptions, UserPermissions},
     Email, Username,
 };
 
@@ -179,8 +179,14 @@ pub struct UserModel {
     pub password: Option<String>,
     pub password_last_changed: Option<DateTime>,
     pub require_password_change: bool,
-
-    pub permissions: Json<UserPermissions>,
+    pub admin: bool,
+    pub user_manager: bool,
+    /// Storage Manager will be able to create and delete storage locations
+    pub storage_manager: bool,
+    /// Repository Manager will be able to create and delete repositories
+    /// Also will have full read/write access to all repositories
+    pub repository_manager: bool,
+    pub default_repository_actions: Vec<RepositoryActionOptions>,
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
@@ -197,23 +203,7 @@ impl UserModel {
         Ok(user_password)
     }
 }
-impl Default for UserModel {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            name: Default::default(),
-            username: Default::default(),
-            email: Default::default(),
-            require_password_change: true,
-            active: true,
-            password_last_changed: None,
-            password: Default::default(),
-            permissions: Default::default(),
-            updated_at: Default::default(),
-            created_at: Default::default(),
-        }
-    }
-}
+
 impl UserType for UserModel {
     fn get_id(&self) -> i32 {
         self.id
@@ -231,8 +221,14 @@ pub struct UserSafeData {
     pub email: Email,
     pub require_password_change: bool,
     pub active: bool,
-    #[schema(value_type= UserPermissions)]
-    pub permissions: Json<UserPermissions>,
+    pub admin: bool,
+    pub user_manager: bool,
+    /// Storage Manager will be able to create and delete storage locations
+    pub storage_manager: bool,
+    /// Repository Manager will be able to create and delete repositories
+    /// Also will have full read/write access to all repositories
+    pub repository_manager: bool,
+    pub default_repository_actions: Vec<RepositoryActionOptions>,
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
@@ -245,7 +241,11 @@ impl UserType for UserSafeData {
             "email",
             "require_password_change",
             "active",
-            "permissions",
+            "admin",
+            "user_manager",
+            "storage_manager",
+            "repository_manager",
+            "default_repository_actions",
             "updated_at",
             "created_at",
         ]
@@ -256,8 +256,19 @@ impl UserType for UserSafeData {
 }
 
 impl HasPermissions for UserSafeData {
-    fn get_permissions(&self) -> Option<&UserPermissions> {
-        Some(self.permissions.as_ref())
+    fn user_id(&self) -> Option<i32> {
+        Some(self.id)
+    }
+
+    fn get_permissions(&self) -> Option<UserPermissions> {
+        Some(UserPermissions {
+            id: self.id,
+            admin: self.admin,
+            user_manager: self.user_manager,
+            storage_manager: self.storage_manager,
+            repository_manager: self.repository_manager,
+            default_repository_actions: self.default_repository_actions.clone(),
+        })
     }
 }
 impl From<UserModel> for UserSafeData {
@@ -269,9 +280,13 @@ impl From<UserModel> for UserSafeData {
             email: user.email,
             require_password_change: user.require_password_change,
             active: user.active,
-            permissions: user.permissions,
             updated_at: user.updated_at,
             created_at: user.created_at,
+            admin: user.admin,
+            user_manager: user.user_manager,
+            storage_manager: user.storage_manager,
+            repository_manager: user.repository_manager,
+            default_repository_actions: user.default_repository_actions,
         }
     }
 }
@@ -283,7 +298,20 @@ mod tests {
     pub fn assert_no_serialize_password() {
         let user = super::UserModel {
             password: Some("password".to_owned()),
-            ..Default::default()
+            id: Default::default(),
+            name: Default::default(),
+            username: Default::default(),
+            email: Default::default(),
+            active: Default::default(),
+            password_last_changed: Default::default(),
+            require_password_change: Default::default(),
+            admin: Default::default(),
+            user_manager: Default::default(),
+            storage_manager: Default::default(),
+            repository_manager: Default::default(),
+            default_repository_actions: Default::default(),
+            updated_at: Default::default(),
+            created_at: Default::default(),
         };
         let json = serde_json::to_value(&user).unwrap();
 
@@ -301,11 +329,7 @@ pub struct NewUserRequest {
     pub password: Option<String>,
 }
 impl NewUserRequest {
-    pub async fn insert(
-        self,
-        permissions: UserPermissions,
-        database: &PgPool,
-    ) -> sqlx::Result<UserModel> {
+    pub async fn insert(self, database: &PgPool) -> sqlx::Result<UserModel> {
         let Self {
             name,
             username,
@@ -313,13 +337,29 @@ impl NewUserRequest {
             password,
         } = self;
         let user = sqlx::query_as(
-            r#"INSERT INTO users (name, username, email, password, permissions) VALUES ($1, $2, $3, $4, $5) RETURNING *"#,
+            r#"INSERT INTO users (name, username, email, password) VALUES ($1, $2, $3, $4) RETURNING *"#,
         )
         .bind(name)
         .bind(username)
         .bind(email)
         .bind(password)
-        .bind(Json(permissions))
+        .fetch_one(database).await?;
+        Ok(user)
+    }
+    pub async fn insert_admin(self, database: &PgPool) -> sqlx::Result<UserModel> {
+        let Self {
+            name,
+            username,
+            email,
+            password,
+        } = self;
+        let user = sqlx::query_as(
+            r#"INSERT INTO users (name, username, email, password, admin, user_manager, storage_manager, repository_manager) VALUES ($1, $2, $3, $4, true, true, true, true) RETURNING *"#,
+        )
+        .bind(name)
+        .bind(username)
+        .bind(email)
+        .bind(password)
         .fetch_one(database).await?;
         Ok(user)
     }
