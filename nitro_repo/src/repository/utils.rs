@@ -1,6 +1,6 @@
 use nr_core::{
     repository::Visibility,
-    user::permissions::{HasPermissions, RepositoryActionOptions},
+    user::permissions::{HasPermissions, RepositoryActions},
 };
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -16,7 +16,7 @@ pub async fn can_read_repository(
     match visibility {
         Visibility::Public => Ok(true),
         Visibility::Private | Visibility::Hidden => Ok(auth
-            .has_action(RepositoryActionOptions::Read, repository_id, database)
+            .has_action(RepositoryActions::Read, repository_id, database)
             .await?),
     }
 }

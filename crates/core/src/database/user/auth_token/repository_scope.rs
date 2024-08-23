@@ -7,7 +7,7 @@ use sqlx::{
 use tracing::{debug, instrument, span};
 use uuid::Uuid;
 
-use crate::{database::DateTime, user::permissions::RepositoryActionOptions};
+use crate::{database::DateTime, user::permissions::RepositoryActions};
 
 use super::{create_token, hash_token};
 /// Represents the actions that can be taken on a repository
@@ -22,7 +22,7 @@ pub struct AuthTokenRepositoryScope {
     pub id: i32,
     pub user_auth_token_id: i32,
     pub repository_id: Uuid,
-    pub action: Vec<RepositoryActionOptions>,
+    pub action: Vec<RepositoryActions>,
     pub created_at: DateTime,
 }
 
@@ -30,7 +30,7 @@ pub struct AuthTokenRepositoryScope {
 pub struct NewRepositoryToken {
     pub user_id: i32,
     pub source: String,
-    pub repositories: Vec<(Uuid, Vec<RepositoryActionOptions>)>,
+    pub repositories: Vec<(Uuid, Vec<RepositoryActions>)>,
     pub expires_at: Option<DateTime>,
 }
 impl NewRepositoryToken {
@@ -38,7 +38,7 @@ impl NewRepositoryToken {
         user_id: i32,
         source: String,
         repository: Uuid,
-        actions: Vec<RepositoryActionOptions>,
+        actions: Vec<RepositoryActions>,
     ) -> Self {
         Self {
             user_id,
@@ -47,11 +47,7 @@ impl NewRepositoryToken {
             expires_at: None,
         }
     }
-    pub fn add_repository(
-        mut self,
-        repository: Uuid,
-        actions: Vec<RepositoryActionOptions>,
-    ) -> Self {
+    pub fn add_repository(mut self, repository: Uuid, actions: Vec<RepositoryActions>) -> Self {
         self.repositories.push((repository, actions));
         self
     }
@@ -92,7 +88,7 @@ impl NewRepositoryToken {
 pub struct NewRepositoryScope {
     pub token_id: i32,
     pub repository: Uuid,
-    pub actions: Vec<RepositoryActionOptions>,
+    pub actions: Vec<RepositoryActions>,
 }
 impl NewRepositoryScope {
     #[instrument]
@@ -103,7 +99,7 @@ impl NewRepositoryScope {
             actions,
         } = self;
         sqlx::query(
-                r#"INSERT INTO user_auth_token_repository_scopes (user_auth_token_id, repository, actions) VALUES ($1, $2, $3)"#,
+                r#"INSERT INTO user_auth_token_repository_scopes (user_auth_token_id, repository_id, actions) VALUES ($1, $2, $3)"#,
             )
             .bind(token_id)
             .bind(repository)

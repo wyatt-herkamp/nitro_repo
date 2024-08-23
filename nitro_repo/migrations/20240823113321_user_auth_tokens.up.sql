@@ -1,3 +1,4 @@
+-- Add up migration script here
 -- This migration creates the tables for user tokens
 CREATE TABLE IF NOT EXISTS user_auth_tokens (
     id SERIAL PRIMARY KEY,
@@ -33,9 +34,9 @@ CREATE TABLE IF NOT EXISTS user_auth_token_repository_scopes(
             FOREIGN KEY (user_auth_token_id)
                 REFERENCES user_auth_tokens (id)
                 ON DELETE CASCADE,
-    repository UUID NOT NULL,
+    repository_id UUID NOT NULL,
         CONSTRAINT fk_user_auth_token_repository_scopes_repository
-            FOREIGN KEY (repository)
+            FOREIGN KEY (repository_id)
                 REFERENCES repositories (id)
                 ON DELETE CASCADE,
     actions TEXT[] NOT NULL,

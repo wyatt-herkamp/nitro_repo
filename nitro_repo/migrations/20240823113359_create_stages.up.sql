@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS stages (
     id                 UUID                     default gen_random_uuid()   not null
         constraint stages_pk
             primary key,
-    repository         UUID                                                 not null
+    repository_id         UUID                                                 not null
         constraint fk_repositories
             references repositories
             on delete cascade,

@@ -1,3 +1,4 @@
+use ahash::HashMap;
 use axum::{
     body::Body,
     extract::{Path, State},
@@ -6,8 +7,10 @@ use axum::{
 };
 use http::StatusCode;
 use serde::Deserialize;
+use sqlx::PgPool;
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
+use uuid::Uuid;
 
 use crate::{
     app::{
@@ -19,10 +22,11 @@ use crate::{
 };
 use nr_core::{
     database::user::{
-        user_utils, ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
+        permissions::FullUserPermissions, user_utils, ChangePasswordNoCheck, NewUserRequest,
+        UserSafeData, UserType as _,
     },
     user::{
-        permissions::{HasPermissions, UpdatePermissions, UserPermissions},
+        permissions::{HasPermissions, RepositoryActions, UpdatePermissions, UserPermissions},
         Email, Username,
     },
 };
@@ -44,6 +48,10 @@ pub fn user_management_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_users))
         .route("/get/:user_id", axum::routing::get(get_user))
+        .route(
+            "/get/:user_id/permissions",
+            axum::routing::get(get_user_permissions),
+        )
         .route("/create", axum::routing::post(create_user))
         .route("/is-taken", axum::routing::post(is_taken))
         .route(
@@ -90,6 +98,31 @@ pub async fn get_user(
         return Ok(MissingPermission::UserManager.into_response());
     }
     let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
+        return Ok(Response::builder()
+            .status(http::StatusCode::NOT_FOUND)
+            .body("User not found".into())
+            .unwrap());
+    };
+    Ok(Json(user).into_response())
+}
+
+#[utoipa::path(
+    get,
+    path = "/get/{user_id}/permissions",
+    responses(
+        (status = 200, description = "User Info", body = UserSafeData),
+        (status = 404, description = "User not found")
+    )
+)]
+pub async fn get_user_permissions(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Path(user_id): Path<i32>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_user_manager() {
+        return Ok(MissingPermission::UserManager.into_response());
+    }
+    let Some(user) = FullUserPermissions::get_by_id(user_id, site.as_ref()).await? else {
         return Ok(Response::builder()
             .status(http::StatusCode::NOT_FOUND)
             .body("User not found".into())
@@ -215,7 +248,9 @@ pub async fn update_permissions(
             .body("User not found".into())
             .unwrap());
     };
-    todo!();
+    permissions
+        .update_permissions(user.id, &site.database)
+        .await?;
     Ok(Response::builder()
         .status(StatusCode::NO_CONTENT)
         .body(Body::empty())

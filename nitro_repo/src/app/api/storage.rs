@@ -52,7 +52,7 @@ pub struct StorageListRequest {
     get,
     path = "/list",
     responses(
-        (status = 200, description = "All Storages registered to the system. Config will be null if you are a repository manager but not a StorageManager", body = [DBStorage]),
+        (status = 200, description = "All Storages registered to the system.", body = [DBStorage]),
         (status = 403, description = "Does not have permission to view storages")
     )
 )]
@@ -62,7 +62,7 @@ pub async fn list_storages(
     auth: Authentication,
     Query(request): Query<StorageListRequest>,
 ) -> Result<Response, InternalError> {
-    if auth.is_admin_or_storage_manager() {
+    if auth.is_admin_or_system_manager() {
         if request.include_config {
             let storages = DBStorage::get_all(&site.database).await?;
             Response::builder().status(200).json_body(&storages)
@@ -70,9 +70,6 @@ pub async fn list_storages(
             let storages = DBStorageNoConfig::get_all(&site.database).await?;
             Response::builder().status(200).json_body(&storages)
         }
-    } else if auth.is_admin_or_repository_manager() {
-        let storages = DBStorageNoConfig::get_all(&site.database).await?;
-        return Response::builder().status(200).json_body(&storages);
     } else {
         Ok(MissingPermission::StorageManager.into_response())
     }
@@ -100,7 +97,7 @@ pub async fn local_storage_path_helper(
     auth: Authentication,
     Json(request): Json<LocalStoragePathHelperRequest>,
 ) -> Result<Response, InternalError> {
-    if !auth.is_admin_or_storage_manager() {
+    if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
     }
     let path = request.path.unwrap_or_default().trim().to_owned();
@@ -166,7 +163,7 @@ pub async fn new_storage(
     Path(storage_type): Path<String>,
     Json(request): Json<NewStorageRequest>,
 ) -> Result<Response, InternalError> {
-    if !auth.is_admin_or_storage_manager() {
+    if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
     }
     if !DBStorage::is_name_available(&request.name, site.as_ref()).await? {
@@ -234,7 +231,7 @@ pub async fn get_storage(
     Path(id): Path<Uuid>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
-    if !auth.is_admin_or_storage_manager() {
+    if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
     }
     let storage = DBStorage::get_by_id(id, &site.database).await?;

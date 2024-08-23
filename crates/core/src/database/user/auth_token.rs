@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     database::DateTime,
-    user::{permissions::RepositoryActionOptions, scopes::Scopes},
+    user::{permissions::RepositoryActions, scopes::Scopes},
 };
 
 use super::ReferencesUser;
@@ -73,7 +73,7 @@ impl AuthToken {
     pub async fn has_repository_action(
         &self,
         repository_id: Uuid,
-        repository_action: RepositoryActionOptions,
+        repository_action: RepositoryActions,
         database: &PgPool,
     ) -> sqlx::Result<bool> {
         // Check if the user has the general scope. See RepositoryActions for more info
@@ -82,7 +82,7 @@ impl AuthToken {
             return Ok(true);
         }
         // TODO condense this into one query
-        let Some(actions) = sqlx::query_scalar::<_, Vec<RepositoryActionOptions>>(
+        let Some(actions) = sqlx::query_scalar::<_, Vec<RepositoryActions>>(
             r#"SELECT actions FROM user_auth_token_repository_scopes WHERE user_auth_token_id = $1 AND repository_id = $2"#,
         )
         .bind(self.id)

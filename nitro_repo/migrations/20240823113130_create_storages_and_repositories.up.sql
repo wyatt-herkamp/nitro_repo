@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS repositories (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     CONSTRAINT fk_repositories_storage_id FOREIGN KEY (storage_id) REFERENCES storages (id) ON DELETE CASCADE,
     CONSTRAINT unique_repository_name UNIQUE (storage_id, name)
 );

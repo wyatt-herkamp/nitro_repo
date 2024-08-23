@@ -9,7 +9,7 @@ use axum::{
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
     database::repository::{DBRepository, GenericDBRepositoryConfig},
-    user::permissions::{HasPermissions, RepositoryActionOptions},
+    user::permissions::{HasPermissions, RepositoryActions},
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -62,7 +62,7 @@ pub async fn new_repository(
     Path(repository_type): Path<String>,
     Json(request): Json<NewRepositoryRequest>,
 ) -> Result<Response, InternalError> {
-    if !auth.is_admin_or_repository_manager() {
+    if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::RepositoryManager.into_response());
     }
     let NewRepositoryRequest {
@@ -138,7 +138,7 @@ pub async fn get_configs_for_repository(
     Path(repository): Path<Uuid>,
 ) -> Result<Response, InternalError> {
     if !auth
-        .has_action(RepositoryActionOptions::Edit, repository, &site.database)
+        .has_action(RepositoryActions::Edit, repository, &site.database)
         .await?
     {
         return Ok(MissingPermission::EditRepository(repository).into_response());
@@ -173,7 +173,7 @@ pub async fn get_config(
     Path((repository, config)): Path<(Uuid, String)>,
 ) -> Result<Response, InternalError> {
     if !auth
-        .has_action(RepositoryActionOptions::Edit, repository, &site.database)
+        .has_action(RepositoryActions::Edit, repository, &site.database)
         .await?
     {
         return Ok(MissingPermission::EditRepository(repository).into_response());
@@ -223,7 +223,7 @@ pub async fn update_config(
     Json(config): Json<serde_json::Value>,
 ) -> Result<Response, InternalError> {
     if !auth
-        .has_action(RepositoryActionOptions::Edit, repository, &site.database)
+        .has_action(RepositoryActions::Edit, repository, &site.database)
         .await?
     {
         return Ok(MissingPermission::EditRepository(repository).into_response());
@@ -274,7 +274,7 @@ pub async fn delete_repository(
     auth: Authentication,
     Path(repository): Path<Uuid>,
 ) -> Result<Response, InternalError> {
-    if !auth.is_admin_or_repository_manager() {
+    if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::RepositoryManager.into_response());
     }
     let Some(db_repository) = DBRepository::get_by_id(repository, site.as_ref()).await? else {

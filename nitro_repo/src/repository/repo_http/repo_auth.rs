@@ -6,7 +6,7 @@ use http::request::Parts;
 use nr_core::{
     database::user::{auth_token::AuthToken, UserSafeData, UserType},
     user::permissions::{
-        does_user_and_token_have_repository_action, HasPermissions, RepositoryActionOptions,
+        does_user_and_token_have_repository_action, HasPermissions, RepositoryActions,
         UserPermissions,
     },
 };
@@ -37,7 +37,7 @@ impl RepositoryAuthentication {
     #[instrument]
     pub async fn can_access_repository(
         &self,
-        action: RepositoryActionOptions,
+        action: RepositoryActions,
         repository_id: Uuid,
         database: &PgPool,
     ) -> Result<bool, AuthenticationError> {
@@ -65,7 +65,7 @@ impl RepositoryAuthentication {
     #[instrument]
     pub async fn get_user_if_has_action(
         &self,
-        action: RepositoryActionOptions,
+        action: RepositoryActions,
         repository_id: Uuid,
         database: &PgPool,
     ) -> Result<Option<&UserSafeData>, AuthenticationError> {

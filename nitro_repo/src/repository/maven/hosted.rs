@@ -24,7 +24,7 @@ use nr_core::{
         Visibility,
     },
     storage::StoragePath,
-    user::permissions::{HasPermissions, RepositoryActionOptions},
+    user::permissions::{HasPermissions, RepositoryActions},
 };
 use nr_storage::{DynStorage, Storage};
 use parking_lot::RwLock;
@@ -163,7 +163,7 @@ impl MavenHosted {
             if authentication.is_no_identification() {
                 return Ok(Some(RepoResponse::www_authenticate("Basic")));
             } else if !(authentication
-                .has_action(RepositoryActionOptions::Read, self.id, self.site.as_ref())
+                .has_action(RepositoryActions::Read, self.id, self.site.as_ref())
                 .await?)
             {
                 return Ok(Some(RepoResponse::forbidden()));
@@ -322,7 +322,7 @@ impl Repository for MavenHosted {
             if file.is_directory()
                 && visibility.is_hidden()
                 && !authentication
-                    .has_action(RepositoryActionOptions::Read, self.id, self.site.as_ref())
+                    .has_action(RepositoryActions::Read, self.id, self.site.as_ref())
                     .await?
             {
                 return Ok(RepoResponse::indexing_not_allowed());
@@ -350,7 +350,7 @@ impl Repository for MavenHosted {
             if file.is_directory()
                 && visibility.is_hidden()
                 && !authentication
-                    .has_action(RepositoryActionOptions::Read, self.id, self.site.as_ref())
+                    .has_action(RepositoryActions::Read, self.id, self.site.as_ref())
                     .await?
             {
                 return Ok(RepoResponse::indexing_not_allowed());
@@ -374,14 +374,14 @@ impl Repository for MavenHosted {
 
         let Some(user) = request
             .authentication
-            .get_user_if_has_action(RepositoryActionOptions::Write, self.id, self.site.as_ref())
+            .get_user_if_has_action(RepositoryActions::Write, self.id, self.site.as_ref())
             .await?
         else {
             info!("No acceptable user authentication provided");
             return Ok(RepoResponse::unauthorized());
         };
         if !user
-            .has_action(RepositoryActionOptions::Write, self.id, self.site.as_ref())
+            .has_action(RepositoryActions::Write, self.id, self.site.as_ref())
             .await?
         {
             info!(?self.id, ?user, "User does not have write permissions");

@@ -13,7 +13,7 @@ use derive_more::derive::Deref;
 use http::StatusCode;
 use nr_core::{
     database::{repository::DBRepository, user::auth_token::NewRepositoryToken},
-    user::permissions::RepositoryActionOptions,
+    user::permissions::RepositoryActions,
 };
 use nr_storage::DynStorage;
 use tracing::{debug, instrument};
@@ -115,7 +115,7 @@ impl Repository for NpmRegistry {
                 user.id,
                 "NPM CLI".to_owned(),
                 self.id,
-                RepositoryActionOptions::all(),
+                RepositoryActions::all(),
             )
             .insert(self.site.as_ref())
             .await?;

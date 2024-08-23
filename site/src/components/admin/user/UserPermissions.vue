@@ -25,17 +25,12 @@
             </template>
             User Manager
           </SwitchInput>
-          <SwitchInput id="storageManager" v-model="userPermissions.storage_manager">
-            <template #comment> Can create, edit, and remove storages </template>
-            Storage Manager
-          </SwitchInput>
-          <SwitchInput id="repositoryManager" v-model="userPermissions.repository_manager">
+          <SwitchInput id="systemManager" v-model="userPermissions.system_manager">
             <template #comment>
-              Can create, edit, and remove repositories.
-              <br />
-              <small>They also can see all storages</small>
+              Can create, edit, and remove storages and repositories. They will also have full read
+              and write access to all repositories
             </template>
-            Repository Manager
+            System Manager
           </SwitchInput>
         </div>
       </div>
@@ -72,7 +67,9 @@
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import SwitchInput from '@/components/form/SwitchInput.vue'
 import http from '@/http'
-import type { User } from '@/types/base'
+import { RepositoryActions, type User } from '@/types/base'
+import { RepositoryActionsType } from '@/types/user'
+import { faL } from '@fortawesome/free-solid-svg-icons'
 import { notify } from '@kyvg/vue3-notification'
 import { computed, ref, watch, type PropType } from 'vue'
 
@@ -83,18 +80,25 @@ const props = defineProps({
   }
 })
 const hasChanged = computed(() => {
-  return !userPermissions.value.equalsRawType(props.user.permissions)
+  if (userPermissions.value.admin !== props.user.admin) {
+    return true
+  }
+  if (userPermissions.value.user_manager !== props.user.user_manager) {
+    return true
+  }
+  if (userPermissions.value.system_manager !== props.user.system_manager) {
+    return true
+  }
+
+  return !userPermissions.value.default_repository_permissions.equalsArray(
+    props.user.default_repository_actions
+  )
 })
 const userPermissions = ref({
   admin: props.user.admin,
   user_manager: props.user.user_manager,
-  storage_manager: props.user.storage_manager,
-  repository_manager: props.user.repository_manager,
-  default_repository_permissions: {
-    can_read: props.user.default_repository_permissions.can_read,
-    can_write: props.user.default_repository_permissions.can_write,
-    can_edit: props.user.default_repository_permissions.can_edit
-  }
+  system_manager: props.user.system_manager,
+  default_repository_permissions: new RepositoryActionsType(props.user.default_repository_actions)
 })
 watch(
   userPermissions,
@@ -108,13 +112,8 @@ async function save() {
   const newPermissions = {
     admin: userPermissions.value.admin,
     user_manager: userPermissions.value.user_manager,
-    storage_manager: userPermissions.value.storage_manager,
-    repository_manager: userPermissions.value.repository_manager,
-    default_repository_permissions: {
-      can_read: userPermissions.value.default_repository_permissions.can_read,
-      can_write: userPermissions.value.default_repository_permissions.can_write,
-      can_edit: userPermissions.value.default_repository_permissions.can_edit
-    }
+    system_manager: userPermissions.value.system_manager,
+    default_repository_actions: userPermissions.value.default_repository_permissions.asArray()
   }
   console.log(`Saving: ${JSON.stringify(newPermissions)}`)
   await http

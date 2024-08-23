@@ -1,4 +1,5 @@
 -- Add up migration script here
+-- Add up migration script here
 create  TABLE IF NOT EXISTS  projects
 (
     id                 UUID                     default gen_random_uuid() not null
@@ -11,7 +12,7 @@ create  TABLE IF NOT EXISTS  projects
     latest_pre_release TEXT,
     description        TEXT,
     tags               TEXT[]                   default array []::text[]  not null,
-    repository         UUID                                               not null
+    repository_id         UUID                                               not null
         constraint fk_repositories
             references repositories
             on delete cascade,
@@ -21,7 +22,7 @@ create  TABLE IF NOT EXISTS  projects
 );
 create TABLE IF NOT EXISTS  project_members
 (
-    id         serial
+    id  serial
         constraint project_members_pk
             primary key,
     project_id UUID                                               not null

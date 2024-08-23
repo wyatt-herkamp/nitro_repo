@@ -31,13 +31,13 @@
         <RepositoryDropdown v-model="newEntry.repository" />
       </div>
       <div class="col">
-        <BaseSwitch v-model="newEntry.can_read" />
+        <BaseSwitch v-model="newEntry.actions.can_read" />
       </div>
       <div class="col">
-        <BaseSwitch v-model="newEntry.can_write" />
+        <BaseSwitch v-model="newEntry.actions.can_write" />
       </div>
       <div class="col">
-        <BaseSwitch v-model="newEntry.can_edit" />
+        <BaseSwitch v-model="newEntry.actions.can_edit" />
       </div>
       <div class="col">
         <button class="actionButton" @click="addRepository" :disabled="!isNewEntryValid">
@@ -49,7 +49,6 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, type PropType } from 'vue'
-import { compareRepositoryActions } from '@/types/user'
 import type { RepositoryActions, User } from '@/types/base'
 import BaseSwitch from '@/components/form/BaseSwitch.vue'
 import { repositoriesStore } from '@/stores/repositories'
@@ -57,12 +56,21 @@ import RepositoryDropdown from '@/components/form/dropdown/RepositoryDropdown.vu
 import { notify } from '@kyvg/vue3-notification'
 import http from '@/http'
 import { watch } from 'vue'
+import { RepositoryActionsType, type FullPermissions } from '@/types/user'
 const props = defineProps({
   user: {
     type: Object as PropType<User>,
     required: true
   }
 })
+const originalPermissions = ref<FullPermissions | undefined>(undefined)
+const repositoryPermissions = ref<
+  {
+    id: string
+    name: string
+    permissions: RepositoryActionsType
+  }[]
+>([])
 const repoStore = repositoriesStore()
 
 const hasChanged = ref(false)
@@ -79,9 +87,7 @@ const isNewEntryValid = computed(() => {
 
 const newEntry = ref({
   repository: '',
-  can_read: false,
-  can_write: false,
-  can_edit: false
+  actions: new RepositoryActionsType([])
 })
 function deleteRepository(repository: string) {
   for (let i = 0; i < repositoryPermissions.value.length; i++) {
@@ -91,13 +97,6 @@ function deleteRepository(repository: string) {
     }
   }
 }
-const repositoryPermissions = ref<
-  {
-    id: string
-    name: string
-    permissions: RepositoryActions
-  }[]
->([])
 
 async function addRepository() {
   if (!isNewEntryValid.value) {
@@ -105,9 +104,7 @@ async function addRepository() {
   }
   for (const repository of repositoryPermissions.value) {
     if (repository.id === newEntry.value.repository) {
-      repository.permissions.can_read = newEntry.value.can_read
-      repository.permissions.can_write = newEntry.value.can_write
-      repository.permissions.can_edit = newEntry.value.can_edit
+      repository.permissions.update(newEntry.value.actions)
       notify({
         type: 'success',
         title: 'Repository Already Exists',
@@ -129,32 +126,51 @@ async function addRepository() {
   repositoryPermissions.value.push({
     id: newEntry.value.repository,
     name: repositoryValue.name,
-    permissions: {
-      can_read: newEntry.value.can_read,
-      can_write: newEntry.value.can_write,
-      can_edit: newEntry.value.can_edit
-    }
+    permissions: new RepositoryActionsType(newEntry.value.actions.asArray())
   })
 
   newEntry.value.repository = ''
-  newEntry.value.can_read = false
-  newEntry.value.can_write = false
-  newEntry.value.can_edit = false
+  newEntry.value.actions.can_read = false
+  newEntry.value.actions.can_write = false
+  newEntry.value.actions.can_edit = false
 }
-
+async function loadUserPermissions() {
+  await http
+    .get<FullPermissions>(`api/user-management/get/${props.user.id}/permissions`)
+    .then((response) => {
+      originalPermissions.value = response.data
+      console.log(`Original Permissions: ${JSON.stringify(originalPermissions)}`)
+    })
+    .catch((error) => {
+      notify({
+        type: 'error',
+        title: 'Error Loading Permissions',
+        text: 'An error occurred while loading permissions.'
+      })
+      console.error(error)
+    })
+}
 async function load() {
-  for (const [repository, permissions] of Object.entries(
-    props.user.permissions.repository_permissions
+  // Load the repository permissions
+  await loadUserPermissions()
+  if (!originalPermissions.value) {
+    console.error('No permissions found')
+    return
+  }
+  // Loop through originalPermissions
+  for (const [repository, actions] of Object.entries(
+    originalPermissions.value.repository_permissions
   )) {
+    console.log(`Loaded Repository: ${repository}`)
     let repositoryValue = await repoStore.getRepositoryById(repository)
+    if (!repositoryValue) {
+      console.error(`Repository ${repository} not found`)
+      continue
+    }
     repositoryPermissions.value.push({
       id: repository,
-      name: repositoryValue?.name ?? 'Unknown',
-      permissions: {
-        can_read: permissions.can_read,
-        can_write: permissions.can_write,
-        can_edit: permissions.can_edit
-      }
+      name: repositoryValue.name,
+      permissions: new RepositoryActionsType(actions)
     })
   }
 }
@@ -162,42 +178,40 @@ load()
 watch(
   repositoryPermissions,
   () => {
+    if (!originalPermissions.value) {
+      return
+    }
     if (
       repositoryPermissions.value.length !==
-      Object.keys(props.user.permissions.repository_permissions).length
+      Object.keys(originalPermissions.value.repository_permissions).length
     ) {
-      console.debug('Length has changed')
+      console.log(
+        'Permissions have changed. repositoryPermissions.length !== originalPermissions.length'
+      )
       hasChanged.value = true
+      return
     }
     for (const repository of repositoryPermissions.value) {
-      let originalRepositoryPermissions =
-        props.user.permissions.repository_permissions[repository.id]
-      if (!originalRepositoryPermissions) {
-        console.debug(`Repository ${repository.id} has changed`)
-        hasChanged.value = true
-        return
-      }
-      console.debug(
-        `Comparing ${JSON.stringify(originalRepositoryPermissions)} to ${JSON.stringify(
-          repository.permissions
-        )}`
-      )
-      if (!compareRepositoryActions(originalRepositoryPermissions, repository.permissions)) {
-        console.debug(`Repository ${repository.id} has changed`)
+      if (
+        !originalPermissions.value.repository_permissions[repository.id] ||
+        !repository.permissions.equalsArray(
+          originalPermissions.value.repository_permissions[repository.id]
+        )
+      ) {
+        console.log('Permissions have changed. repositoryPermissions !== originalPermissions')
         hasChanged.value = true
         return
       }
     }
-
+    console.log('Permissions have not changed')
     hasChanged.value = false
-    console.log('No changes')
   },
   { deep: true }
 )
 async function save() {
-  let repositoryPermissionsValue: Record<string, RepositoryActions> = {}
+  let repositoryPermissionsValue: Record<string, Array<RepositoryActions>> = {}
   for (const repository of repositoryPermissions.value) {
-    repositoryPermissionsValue[repository.id] = repository.permissions
+    repositoryPermissionsValue[repository.id] = repository.permissions.asArray()
   }
   const newPermissions = {
     repository_permissions: repositoryPermissionsValue

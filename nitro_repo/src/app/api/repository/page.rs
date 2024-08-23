@@ -9,7 +9,7 @@ use nr_core::{
         repository_page::{RepositoryPage, RepositoryPageType},
         RepositoryConfigType,
     },
-    user::permissions::{HasPermissions, RepositoryActionOptions},
+    user::permissions::{HasPermissions, RepositoryActions},
 };
 use tracing::instrument;
 use uuid::Uuid;
@@ -45,7 +45,7 @@ pub async fn get_repository_page(
     if repository.visibility().is_private() {
         if !auth
             .has_action(
-                RepositoryActionOptions::Read,
+                RepositoryActions::Read,
                 repository.id(),
                 &site.database,
             )

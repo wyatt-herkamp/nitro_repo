@@ -12,7 +12,7 @@ use nr_core::{
         config::repository_page::{PageType, RepositoryPage},
         Visibility,
     },
-    user::permissions::{HasPermissions, RepositoryActionOptions},
+    user::permissions::{HasPermissions, RepositoryActions},
 };
 
 use tracing::instrument;
@@ -93,7 +93,7 @@ pub async fn get_repository(
     };
     if config.visibility.is_private() {
         if !auth
-            .has_action(RepositoryActionOptions::Read, repository, site.as_ref())
+            .has_action(RepositoryActions::Read, repository, site.as_ref())
             .await?
         {
             return Ok(MissingPermission::ReadRepository(repository).into_response());

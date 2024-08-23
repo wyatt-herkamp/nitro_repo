@@ -8,9 +8,8 @@ export interface User {
   email: string
   admin: boolean
   user_manager: boolean
-  storage_manager: boolean
-  repository_manager: boolean
-  default_repository_actions: RepositoryActions[]
+  system_manager: boolean
+  default_repository_actions: Array<RepositoryActions>
   created_at: Date
 }
 
@@ -56,12 +55,11 @@ export interface PasswordRules {
   require_special: boolean
 }
 
-export interface RepositoryActions {
-  can_read: boolean
-  can_write: boolean
-  can_edit: boolean
+export enum RepositoryActions {
+  Read = 'Read',
+  Write = 'Write',
+  Edit = 'Edit'
 }
-
 export function formatDate(date: Date) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }

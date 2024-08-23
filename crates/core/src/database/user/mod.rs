@@ -3,13 +3,14 @@ use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
 use utoipa::ToSchema;
 
 use crate::user::{
-    permissions::{HasPermissions, RepositoryActionOptions, UserPermissions},
+    permissions::{HasPermissions, RepositoryActions, UserPermissions},
     Email, Username,
 };
 
 use super::DateTime;
 pub mod auth_token;
 pub mod password_reset;
+pub mod permissions;
 pub mod user_utils;
 /// Implements on types that references a user in the database.
 ///
@@ -181,12 +182,10 @@ pub struct UserModel {
     pub require_password_change: bool,
     pub admin: bool,
     pub user_manager: bool,
-    /// Storage Manager will be able to create and delete storage locations
-    pub storage_manager: bool,
     /// Repository Manager will be able to create and delete repositories
     /// Also will have full read/write access to all repositories
-    pub repository_manager: bool,
-    pub default_repository_actions: Vec<RepositoryActionOptions>,
+    pub system_manager: bool,
+    pub default_repository_actions: Vec<RepositoryActions>,
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
@@ -223,12 +222,10 @@ pub struct UserSafeData {
     pub active: bool,
     pub admin: bool,
     pub user_manager: bool,
-    /// Storage Manager will be able to create and delete storage locations
-    pub storage_manager: bool,
     /// Repository Manager will be able to create and delete repositories
     /// Also will have full read/write access to all repositories
-    pub repository_manager: bool,
-    pub default_repository_actions: Vec<RepositoryActionOptions>,
+    pub system_manager: bool,
+    pub default_repository_actions: Vec<RepositoryActions>,
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
@@ -243,8 +240,7 @@ impl UserType for UserSafeData {
             "active",
             "admin",
             "user_manager",
-            "storage_manager",
-            "repository_manager",
+            "system_manager",
             "default_repository_actions",
             "updated_at",
             "created_at",
@@ -265,8 +261,7 @@ impl HasPermissions for UserSafeData {
             id: self.id,
             admin: self.admin,
             user_manager: self.user_manager,
-            storage_manager: self.storage_manager,
-            repository_manager: self.repository_manager,
+            system_manager: self.system_manager,
             default_repository_actions: self.default_repository_actions.clone(),
         })
     }
@@ -284,8 +279,7 @@ impl From<UserModel> for UserSafeData {
             created_at: user.created_at,
             admin: user.admin,
             user_manager: user.user_manager,
-            storage_manager: user.storage_manager,
-            repository_manager: user.repository_manager,
+            system_manager: user.system_manager,
             default_repository_actions: user.default_repository_actions,
         }
     }
@@ -307,8 +301,7 @@ mod tests {
             require_password_change: Default::default(),
             admin: Default::default(),
             user_manager: Default::default(),
-            storage_manager: Default::default(),
-            repository_manager: Default::default(),
+            system_manager: Default::default(),
             default_repository_actions: Default::default(),
             updated_at: Default::default(),
             created_at: Default::default(),
