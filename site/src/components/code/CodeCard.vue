@@ -1,8 +1,8 @@
 <template>
   <div class="nitroEditorParent">
-    <pre class="nitroEditor hljs">
-    <code class="nitroEditor" :class="'language-' + snippetInfo.language" v-html="highlight"/>
-  </pre>
+    <pre class="nitroEditPre hljs betterScroll">
+      <code class="nitroEditorCode" :class="'language-' + code.language" v-html="highlight"/>
+    </pre>
   </div>
 </template>
 
@@ -23,30 +23,24 @@ hljs.registerLanguage('groovy', groovy)
 hljs.registerLanguage('markdown', markdown)
 
 const props = defineProps({
-  snippetInfo: {
+  code: {
     required: true,
     type: Object as () => CodeSnippet
   }
 })
-console.log(props.snippetInfo)
+console.log(props.code)
 const highlight = computed((): string => {
-  return hljs.highlight(props.snippetInfo.code, {
-    language: props.snippetInfo.language,
+  return hljs.highlight(props.code.code, {
+    language: props.code.language,
     ignoreIllegals: true
   }).value
 })
 </script>
-<style>
-pre.nitroEditor {
-  white-space: pre-wrap;
-}
-code.nitroEditor {
-  display: block;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-}
-.nitroEditorParent {
-  height: 100%;
-  overflow-x: scroll;
+<style scoped lang="scss">
+@import '@/assets/styles/scroll.scss';
+
+pre {
+  height: 10rem;
+  overflow: auto;
 }
 </style>

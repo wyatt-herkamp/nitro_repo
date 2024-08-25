@@ -298,6 +298,17 @@ impl RepoResponse {
             .into()
     }
 }
+impl From<Result<Response, http::Error>> for RepoResponse {
+    fn from(result: Result<Response, http::Error>) -> Self {
+        match result {
+            Ok(response) => RepoResponse::Generic(response),
+            Err(err) => {
+                error!(?err, "Failed to create response");
+                RepoResponse::internal_error(err)
+            }
+        }
+    }
+}
 impl From<Option<StorageFile>> for RepoResponse {
     fn from(file: Option<StorageFile>) -> Self {
         match file {
@@ -306,6 +317,7 @@ impl From<Option<StorageFile>> for RepoResponse {
         }
     }
 }
+
 impl From<Option<StorageFileMeta>> for RepoResponse {
     fn from(meta: Option<StorageFileMeta>) -> Self {
         match meta {

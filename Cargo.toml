@@ -66,7 +66,7 @@ http-body-util = "0.1"
 http-body = "1"
 bytes = "1"
 pin-project = "1"
-
+url = "2"
 ## Hashing
 digestible = { version = "0.2", features = ["base64"] }
 digest = { version = "0.10", features = ["std", "alloc"] }

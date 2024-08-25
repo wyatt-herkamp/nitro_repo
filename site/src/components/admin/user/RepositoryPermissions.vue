@@ -4,52 +4,55 @@
       <h2>Repository Permissions</h2>
       <button @click="save" :disabled="!hasChanged">Save</button>
     </div>
-    <div id="header" class="row">
-      <div class="col">Repository</div>
-      <div class="col">Read</div>
-      <div class="col">Write</div>
-      <div class="col">Edit</div>
-      <div class="col action">Action</div>
-    </div>
-    <div class="row item" v-for="repository in repositoryPermissions" :key="repository.id">
-      <div class="col">{{ repository.name }}</div>
-      <div class="col">
-        <BaseSwitch v-model="repository.permissions.can_read" />
+
+    <div v-auto-animate>
+      <div id="header" class="row">
+        <div class="col">Repository</div>
+        <div class="col">Read</div>
+        <div class="col">Write</div>
+        <div class="col">Edit</div>
+        <div class="col action">Action</div>
       </div>
-      <div class="col">
-        <BaseSwitch v-model="repository.permissions.can_write" />
+      <div class="row item" v-for="repository in repositoryPermissions" :key="repository.id">
+        <div class="col">{{ repository.name }}</div>
+        <div class="col">
+          <BaseSwitch v-model="repository.permissions.can_read" />
+        </div>
+        <div class="col">
+          <BaseSwitch v-model="repository.permissions.can_write" />
+        </div>
+        <div class="col">
+          <BaseSwitch v-model="repository.permissions.can_edit" />
+        </div>
+        <div class="col action">
+          <button class="actionButton" @click="deleteRepository(repository.id)">Delete</button>
+        </div>
       </div>
-      <div class="col">
-        <BaseSwitch v-model="repository.permissions.can_edit" />
-      </div>
-      <div class="col action">
-        <button class="actionButton" @click="deleteRepository(repository.id)">Delete</button>
-      </div>
-    </div>
-    <div class="row item" id="create">
-      <div class="col" id="repoDropDown">
-        <RepositoryDropdown v-model="newEntry.repository" />
-      </div>
-      <div class="col">
-        <BaseSwitch v-model="newEntry.actions.can_read" />
-      </div>
-      <div class="col">
-        <BaseSwitch v-model="newEntry.actions.can_write" />
-      </div>
-      <div class="col">
-        <BaseSwitch v-model="newEntry.actions.can_edit" />
-      </div>
-      <div class="col">
-        <button class="actionButton" @click="addRepository" :disabled="!isNewEntryValid">
-          Add
-        </button>
+      <div class="row item" id="create">
+        <div class="col" id="repoDropDown">
+          <RepositoryDropdown v-model="newEntry.repository" />
+        </div>
+        <div class="col">
+          <BaseSwitch v-model="newEntry.actions.can_read" />
+        </div>
+        <div class="col">
+          <BaseSwitch v-model="newEntry.actions.can_write" />
+        </div>
+        <div class="col">
+          <BaseSwitch v-model="newEntry.actions.can_edit" />
+        </div>
+        <div class="col">
+          <button class="actionButton" @click="addRepository" :disabled="!isNewEntryValid">
+            Add
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { computed, ref, type PropType } from 'vue'
-import type { RepositoryActions, User } from '@/types/base'
+import type { RepositoryActions, UserResponseType } from '@/types/base'
 import BaseSwitch from '@/components/form/BaseSwitch.vue'
 import { repositoriesStore } from '@/stores/repositories'
 import RepositoryDropdown from '@/components/form/dropdown/RepositoryDropdown.vue'
@@ -59,7 +62,7 @@ import { watch } from 'vue'
 import { RepositoryActionsType, type FullPermissions } from '@/types/user'
 const props = defineProps({
   user: {
-    type: Object as PropType<User>,
+    type: Object as PropType<UserResponseType>,
     required: true
   }
 })

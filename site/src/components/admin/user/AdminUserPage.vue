@@ -70,7 +70,7 @@ import NewPasswordInput from '@/components/form/text/NewPasswordInput.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
 import UsernameInput from '@/components/form/text/UsernameInput.vue'
 import { siteStore } from '@/stores/site'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 import { ref, type PropType } from 'vue'
 import UserPermissions from './UserPermissions.vue'
 import RepositoryPermissions from './RepositoryPermissions.vue'
@@ -78,7 +78,7 @@ import http from '@/http'
 import { notify } from '@kyvg/vue3-notification'
 const props = defineProps({
   user: {
-    type: Object as PropType<User>,
+    type: Object as PropType<UserResponseType>,
     required: true
   }
 })

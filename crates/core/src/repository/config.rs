@@ -19,6 +19,8 @@ pub enum RepositoryConfigError {
     InvalidConfig(&'static str),
     #[error("Invalid Config: {0}")]
     SerdeError(#[from] serde_json::Error),
+    #[error("Invalid Change: {0}")]
+    InvalidChange(&'static str, &'static str),
 }
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Digestible)]
 pub struct ConfigDescription {

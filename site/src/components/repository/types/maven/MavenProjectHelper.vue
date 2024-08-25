@@ -4,23 +4,30 @@
     <div class="info">
       <div class="codeBlock">
         <h2>Project Info</h2>
-        <CodeMenu :snippets="snippets" />
+        <CodeMenu defaultTab="maven" :snippets="snippets" />
       </div>
       <div class="details">
-        <KeyAndValue :label="'Group Id'" :value="project.scope || 'undefined'" />
-        <KeyAndValue :label="'Artifact Id'" :value="project.name || 'undefined'" />
+        <CopyCode :code="project.scope || 'undefined'">Group Id</CopyCode>
+        <CopyCode :code="project.name || 'undefined'">Artifact Id</CopyCode>
+        <CopyCode v-if="project.latest_pre_release" :code="project.latest_pre_release"
+          >Latest Pre-Release</CopyCode
+        >
+        <CopyCode v-if="project.latest_release" :code="project.latest_release"
+          >Latest Release</CopyCode
+        >
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Project } from '@/types/project'
+import type { Project, ProjectVersion } from '@/types/project'
 import type { RepositoryWithStorageName } from '@/types/repository'
-import type { PropType } from 'vue'
+import { computed, type PropType } from 'vue'
 import { createProjectSnippets } from './MavenRepositoryHelpers'
 import CodeMenu from '@/components/code/CodeMenu.vue'
 import KeyAndValue from '@/components/form/KeyAndValue.vue'
+import CopyCode from '@/components/code/CopyCode.vue'
 
 const props = defineProps({
   project: {
@@ -28,7 +35,7 @@ const props = defineProps({
     required: true
   },
   version: {
-    type: Object,
+    type: Object as PropType<ProjectVersion>,
     required: false
   },
   repository: {
@@ -36,7 +43,21 @@ const props = defineProps({
     required: true
   }
 })
-const snippets = createProjectSnippets(props.project)
+const version = computed(() => {
+  if (props.version) {
+    console.debug('Using version from props')
+    return props.version.version
+  } else if (props.project.latest_release) {
+    console.debug('Using latest release')
+    return props.project.latest_release
+  } else if (props.project.latest_pre_release) {
+    console.debug('Using latest pre-release')
+    return props.project.latest_pre_release
+  } else {
+    return 'latest'
+  }
+})
+const snippets = createProjectSnippets(props.project, version.value)
 </script>
 
 <style lang="scss" scoped>

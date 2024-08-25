@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import router from '@/router'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 import type { RepositoryWithStorageName } from '@/types/repository'
 import type { StorageItem } from '@/types/storage'
 import { notify } from '@kyvg/vue3-notification'

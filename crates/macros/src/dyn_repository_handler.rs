@@ -48,6 +48,13 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
                     )*
                 }
             }
+            fn site(&self) -> NitroRepo{
+                match self {
+                    #(
+                        #ident::#variants(variant) => variant.site(),
+                    )*
+                }
+            }
             fn name(&self) -> String{
                 match self {
                     #(

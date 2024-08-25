@@ -10,8 +10,7 @@
         :id="id"
         v-model="value"
         v-bind="$attrs"
-        :autocomplete="autocomplete"
-      />
+        :autocomplete="autocomplete" />
       <button @click="togglePasswordVisibility">
         <font-awesome-icon icon="fa-solid fa-eye-slash" v-if="showPassword" />
         <font-awesome-icon icon="fa-solid fa-eye" v-else />

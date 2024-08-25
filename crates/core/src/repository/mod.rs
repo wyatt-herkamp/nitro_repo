@@ -12,6 +12,7 @@ use utoipa::ToSchema;
 use crate::utils::validations;
 pub mod config;
 pub mod project;
+pub mod proxy_url;
 #[derive(
     Debug,
     Clone,

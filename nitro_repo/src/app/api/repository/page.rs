@@ -44,11 +44,7 @@ pub async fn get_repository_page(
     };
     if repository.visibility().is_private() {
         if !auth
-            .has_action(
-                RepositoryActions::Read,
-                repository.id(),
-                &site.database,
-            )
+            .has_action(RepositoryActions::Read, repository.id(), &site.database)
             .await?
         {
             return Ok(MissingPermission::EditRepository(repository.id()).into_response());

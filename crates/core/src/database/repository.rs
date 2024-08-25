@@ -187,7 +187,7 @@ impl DBRepositoryConfig<Value> {
         .await?;
         if let Some(config) = config {
             sqlx::query(
-                r#"UPDATE repository_configs SET value = $1, updated = NOW() WHERE id = $2"#,
+                r#"UPDATE repository_configs SET value = $1, updated_at = NOW() WHERE id = $2"#,
             )
             .bind(Json(value))
             .bind(config.id)

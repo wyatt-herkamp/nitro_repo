@@ -1,7 +1,7 @@
 export interface SmallIdentification {
   name: string
 }
-export interface User {
+export interface UserResponseType {
   id: number
   name: string
   username: string
@@ -10,7 +10,7 @@ export interface User {
   user_manager: boolean
   system_manager: boolean
   default_repository_actions: Array<RepositoryActions>
-  created_at: Date
+  created_at: string
 }
 
 export interface PublicUser {
@@ -28,7 +28,7 @@ export interface Session {
 }
 
 export interface Me {
-  user: User
+  user: UserResponseType
   session: Session
 }
 

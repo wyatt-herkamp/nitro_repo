@@ -41,6 +41,7 @@ use crate::repository::{
     DynRepository, RepositoryType, StagingConfig,
 };
 pub mod api;
+pub mod badge;
 pub mod responses;
 pub mod web;
 #[derive(Debug, Serialize, Clone, ToSchema)]

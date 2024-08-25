@@ -79,3 +79,11 @@ function formFieldToInput(field: FormInputType): Input | undefined {
   }
 }
 </script>
+<style scoped lang="scss">
+form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+</style>

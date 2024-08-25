@@ -1,9 +1,6 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use sqlx::{
-    prelude::{FromRow, Type},
-    PgPool,
-};
+use sqlx::{prelude::FromRow, PgPool};
 use tracing::{debug, instrument, span};
 use uuid::Uuid;
 

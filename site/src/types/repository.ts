@@ -1,12 +1,11 @@
 import http from '@/http'
-import MavenConfig from '@/components/admin/repository/configs/MavenConfig.vue'
-import PushRulesConfig from '@/components/admin/repository/configs/PushRulesConfig.vue'
-import SecurityConfig from '@/components/admin/repository/configs/SecurityConfig.vue'
+import MavenConfig from '@/components/repository/types/maven/MavenConfig.vue'
+
 import type { Component } from 'vue'
 import RepositoryPageEditor from '@/components/admin/repository/configs/RepositoryPageEditor.vue'
 import { apiURL } from '@/config'
-import { ApacheMavenIcon } from 'vue3-simple-icons'
-import MavenProjectHelper from '@/components/repository/types/maven/MavenProjectHelper.vue'
+
+import { MavenFrontendDefinition } from '@/components/repository/types/maven/maven'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -37,17 +36,6 @@ export interface ConfigDescription {
   description: string
   documentation_url?: string
 }
-export interface MavenProxyConfigType {
-  goTo: string
-}
-export type MavenConfigType =
-  | {
-      type: 'Hosted'
-    }
-  | {
-      type: 'Proxy'
-      config: MavenProxyConfigType
-    }
 export interface ConfigType {
   name: string
   title: string
@@ -66,6 +54,12 @@ export const configTypes: ConfigType[] = [
     component: RepositoryPageEditor
   }
 ]
+export interface RepositoryIconDef {
+  name: string
+  component: Component
+  url: string
+  props: Record<string, any>
+}
 export interface FrontendRepositoryType {
   name: string
   properName: string
@@ -73,25 +67,9 @@ export interface FrontendRepositoryType {
     component: Component
     props: Record<string, any>
   }
-  icon: {
-    component: Component
-    props: Record<string, any>
-  }
+  icons: Array<RepositoryIconDef>
 }
-export const repositoryTypes: FrontendRepositoryType[] = [
-  {
-    name: 'maven',
-    properName: 'Maven',
-    projectComponent: {
-      component: MavenProjectHelper,
-      props: {}
-    },
-    icon: {
-      component: ApacheMavenIcon,
-      props: {}
-    }
-  }
-]
+export const repositoryTypes: FrontendRepositoryType[] = [MavenFrontendDefinition]
 export function findRepositoryType(name: string): FrontendRepositoryType | undefined {
   return repositoryTypes.find((repositoryType) => repositoryType.name === name)
 }

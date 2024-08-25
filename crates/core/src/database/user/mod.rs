@@ -265,6 +265,12 @@ impl HasPermissions for UserSafeData {
             default_repository_actions: self.default_repository_actions.clone(),
         })
     }
+    fn is_admin_or_system_manager(&self) -> bool {
+        self.admin || self.system_manager
+    }
+    fn is_admin_or_user_manager(&self) -> bool {
+        self.admin || self.user_manager
+    }
 }
 impl From<UserModel> for UserSafeData {
     fn from(user: UserModel) -> Self {

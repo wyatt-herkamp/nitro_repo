@@ -4,6 +4,7 @@ use axum::{
     body::Body,
     extract::{ConnectInfo, State},
     response::{IntoResponse, Response},
+    routing::get,
     Json,
 };
 use axum_extra::{
@@ -16,7 +17,8 @@ use axum_extra::{
 };
 use http::{header::SET_COOKIE, StatusCode};
 use nr_core::database::user::{
-    ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,
+    permissions::FullUserPermissions, ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel,
+    UserSafeData, UserType,
 };
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
@@ -58,6 +60,8 @@ pub struct UserAPI;
 pub fn user_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/me", axum::routing::get(me))
+        .route("/me/permissions", axum::routing::get(me_permissions))
+        .route("/change-password", get(change_password))
         .route("/whoami", axum::routing::get(whoami))
         .route("/login", axum::routing::post(login))
         .route("/sessions", axum::routing::get(get_sessions))
@@ -89,6 +93,26 @@ pub async fn me(auth: Authentication) -> Response {
             response.into_response()
         }
     }
+}
+#[utoipa::path(
+    get,
+    path = "/me/permissions",
+    responses(
+        (status = 200, description = "Get All the permissions for the current user", body = [FullUserPermissions])
+    )
+)]
+#[instrument]
+pub async fn me_permissions(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+) -> Result<Response, InternalError> {
+    let Some(user) = FullUserPermissions::get_by_id(auth.get_id(), site.as_ref()).await? else {
+        return Ok(Response::builder()
+            .status(http::StatusCode::NOT_FOUND)
+            .body("User not found".into())
+            .unwrap());
+    };
+    Ok(Json(user).into_response())
 }
 #[instrument]
 #[utoipa::path(

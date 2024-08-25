@@ -1,19 +1,23 @@
 <template>
   <main v-if="repository" :data-has-page="repositoryPage != undefined">
-    <div class="header">
+    <div class="primaryInfo">
       <h1>{{ repository.storage_name }}/{{ repository.name }}</h1>
-      <div class="openBrowse">
-        <RouterLink
-          :to="{
-            name: 'Browse',
-            params: { id: repository.id, catchAll: '' }
-          }"
-          >Browse</RouterLink
-        >
-      </div>
+      <RouterLink
+        class="openBrowse"
+        :to="{
+          name: 'Browse',
+          params: { id: repository.id, catchAll: '' }
+        }">
+        Browse
+      </RouterLink>
+
+      <CopyURL :code="url"> </CopyURL>
       <div v-if="repositoryType">
-        {{ repositoryType.properName }}
-        <component :is="repositoryType.icon.component" />
+        <RepositoryIcon
+          :name="repositoryType.name"
+          v-for="icon in repositoryType.icons"
+          :key="icon.name"
+          :icon="icon" />
       </div>
     </div>
     <div class="content">
@@ -33,15 +37,18 @@
 
 <script setup lang="ts">
 import AdminUserPage from '@/components/admin/user/AdminUserPage.vue'
+import CopyURL from '@/components/code/CopyCode.vue'
 import ErrorOnRequest from '@/components/ErrorOnRequest.vue'
 import RepositoryHelper from '@/components/repository/RepositoryHelper.vue'
+import RepositoryIcon from '@/components/repository/RepositoryIcon.vue'
 import RepositoryPageViewer from '@/components/repository/RepositoryPageViewer.vue'
 import http from '@/http'
 
 import router from '@/router'
 import { repositoriesStore } from '@/stores/repositories'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 import {
+  createRepositoryRoute,
   findRepositoryType,
   type RepositoryPage,
   type RepositoryWithStorageName
@@ -58,6 +65,12 @@ const repositoryType = computed(() => {
     return findRepositoryType(repository.value.repository_type)
   }
   return undefined
+})
+const url = computed(() => {
+  if (!repository.value) {
+    return ''
+  }
+  return createRepositoryRoute(repository.value)
 })
 async function fetchRepository() {
   await repoStore.getRepositoryById(repositoryId).then((response) => {
@@ -83,46 +96,52 @@ fetchRepository()
 main {
   margin: 0 auto;
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
-.header {
+.primaryInfo {
   display: flex;
   flex-direction: row;
-  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid gray;
+  flex-wrap: wrap;
 
+  align-items: center;
+  border-bottom: 1px solid gray;
   h1 {
     margin: 0;
   }
 }
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 main[data-has-page='true'] {
-  width: 75%;
-  .content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: space-between;
-  }
+  margin: 0 10%;
 }
 #page {
   flex-grow: 3;
   width: 100%;
   border-bottom: 1px solid gray;
+  background-color: $background;
 }
 @media screen and (max-width: 1200px) {
   main[data-has-page='true'] {
-    width: 100%;
+    margin: 0 0;
   }
   #page {
     border-bottom: none;
   }
 }
 .openBrowse {
-  a {
-    text-decoration: none;
-    color: $text;
-  }
+  display: block;
+  padding: 0.5rem;
+  border: 1px solid gray;
+  border-radius: 0.5rem;
+  background-color: $primary-30;
+  color: white;
+  text-decoration: none;
+  text-align: end;
 }
 </style>

@@ -8,7 +8,7 @@ mod new;
 pub mod utils;
 use crate::repository::project::{ReleaseType, VersionData};
 pub use new::*;
-
+pub mod update;
 use super::DateTime;
 /// Implemented on different types of Project query result. Such as ProjectLookupResult
 pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
@@ -41,7 +41,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     ) -> Result<Option<Self>, sqlx::Error> {
         let columns = Self::format_columns(None);
         let project = sqlx::query_as::<_, Self>(&format!(
-            "SELECT {} FROM projects WHERE repository = $1 AND LOWER(project_key) = $2",
+            "SELECT {} FROM projects WHERE repository_id = $1 AND LOWER(project_key) = $2",
             columns
         ))
         .bind(repository)
@@ -58,7 +58,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     ) -> Result<Option<Self>, sqlx::Error> {
         let columns = Self::format_columns(None);
         let project = sqlx::query_as::<_, Self>(&format!(
-            "SELECT {} FROM projects WHERE repository = $1 AND LOWER(storage_path) = $2",
+            "SELECT {} FROM projects WHERE repository_id = $1 AND LOWER(storage_path) = $2",
             columns
         ))
         .bind(repository)
@@ -87,7 +87,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         let columns = Self::format_columns(Some("P"));
         let project = sqlx::query_as::<_, Self>(
             &format!(
-                "SELECT {} FROM projects as P FULL JOIN project_versions as V ON LOWER(V.release_path) = $1 AND V.project_id = P.id WHERE P.repository = $2",
+                "SELECT {} FROM projects as P FULL JOIN project_versions as V ON LOWER(V.release_path) = $1 AND V.project_id = P.id WHERE P.repository_id = $2",
                 columns
             ),
         )
@@ -124,7 +124,7 @@ pub struct DBProject {
     /// Can be empty
     pub tags: Vec<String>,
     /// The repository it belongs to
-    pub repository: Uuid,
+    pub repository_id: Uuid,
     /// Storage Path
     pub storage_path: String,
     /// Last time the project was updated. This is updated when a new version is added
@@ -192,7 +192,7 @@ impl DBProjectVersion {
         database: &PgPool,
     ) -> Result<Option<Self>, sqlx::Error> {
         let version = sqlx::query_as::<_, Self>(
-            r#"SELECT project_versions.* FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository = $1 WHERE LOWER(project_versions.version_path) = $2"#,
+            r#"SELECT project_versions.* FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.version_path) = $2"#,
         )
         .bind(repository_id)
         .bind(directory.to_lowercase())

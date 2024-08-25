@@ -42,7 +42,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 import { sessionStore } from './stores/session'
-import { siteStore } from './stores/site'
+import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 
 const app = createApp(App)
 const vfm = createVfm()
@@ -94,6 +94,6 @@ app.use(createMetaManager())
 app.use(pinia)
 app.component('font-awesome-icon', FontAwesomeIcon)
 app.use(Notifications)
-
+app.use(autoAnimatePlugin)
 app.use(vfm)
 app.mount('#app')

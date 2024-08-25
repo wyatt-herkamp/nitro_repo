@@ -21,3 +21,11 @@ body {
   font-family: Roboto, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: 15px;
 }
+
+a {
+  color: $text;
+  text-decoration: none;
+  &:hover {
+    color: primary;
+  }
+}

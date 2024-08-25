@@ -7,30 +7,26 @@
         id="nameSearch"
         v-model="searchValue"
         autofocus
-        placeholder="Search by Name, Username, or Primary Email Address"
-      />
+        placeholder="Search by Name, Username, or Primary Email Address" />
     </div>
     <div id="users" class="betterScroll">
       <div class="row" id="header">
         <div
           :class="['col', { sorted: sortBy === 'id' }]"
           @click="sortBy = 'id'"
-          title="Sort by ID"
-        >
+          title="Sort by ID">
           ID #
         </div>
         <div
           :class="['col', { sorted: sortBy === 'name' }]"
           @click="sortBy = 'name'"
-          title="Sort by Name"
-        >
+          title="Sort by Name">
           Name
         </div>
         <div
           :class="['col', { sorted: sortBy === 'username' }]"
           @click="sortBy = 'username'"
-          title="Sort by Username"
-        >
+          title="Sort by Username">
           Username
         </div>
       </div>
@@ -38,8 +34,7 @@
         class="row item"
         v-for="account in filteredTable"
         :key="account.id"
-        @click="router.push(`/admin/user/${account.id}`)"
-      >
+        @click="router.push(`/admin/user/${account.id}`)">
         <div class="col">{{ account.id }}</div>
         <div class="col" :title="account.name">{{ account.name }}</div>
         <div class="col" :title="account.username">{{ account.username }}</div>
@@ -50,17 +45,17 @@
 
 <script setup lang="ts">
 import router from '@/router'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 import { notify } from '@kyvg/vue3-notification'
 import { computed, ref, type PropType } from 'vue'
 const searchValue = ref<string>('')
 
 const props = defineProps({
-  users: Array as PropType<User[]>
+  users: Array as PropType<UserResponseType[]>
 })
 const sortBy = ref<string>('id')
 
-function sortList(a: User, b: User) {
+function sortList(a: UserResponseType, b: UserResponseType) {
   switch (sortBy.value) {
     case 'id':
       return a.id - b.id

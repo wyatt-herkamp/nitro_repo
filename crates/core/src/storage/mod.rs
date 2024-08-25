@@ -45,3 +45,31 @@ impl Display for StorageName {
 }
 
 validations::from_impls!(StorageName, InvalidStorageName);
+/// Check if a file is a directory or a file
+///
+/// This trait is implemented for `Option<T>` where `T` implements `FileTypeCheck`. Will return false if `None`
+pub trait FileTypeCheck: Sized {
+    fn is_directory(&self) -> bool;
+    fn is_file(&self) -> bool;
+}
+
+/// Implement `FileTypeCheck` for `Option<T>` where `T` implements `FileTypeCheck`
+/// Will return false if `None`
+impl<T> FileTypeCheck for Option<T>
+where
+    T: FileTypeCheck,
+{
+    fn is_directory(&self) -> bool {
+        match self {
+            Some(t) => t.is_directory(),
+            None => false,
+        }
+    }
+
+    fn is_file(&self) -> bool {
+        match self {
+            Some(t) => t.is_file(),
+            None => false,
+        }
+    }
+}

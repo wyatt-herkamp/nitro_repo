@@ -9,8 +9,7 @@
       @focusout="isFocused = false"
       :id="id"
       v-model="internalValue"
-      v-bind="$attrs"
-    />
+      v-bind="$attrs" />
     <InputRequirements :show="isFocused" :validations="validations" />
   </section>
 </template>

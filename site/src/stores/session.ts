@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
-import type { Me, User, Session } from '@/types/base'
+import type { Me, UserResponseType, Session } from '@/types/base'
 import http from '@/http'
 export const sessionStore = defineStore(
   'sessionStore',
   () => {
     const session: Ref<Session | undefined> = ref(undefined)
-    const user: Ref<User | undefined> = ref(undefined)
+    const user: Ref<UserResponseType | undefined> = ref(undefined)
     function login(me: Me) {
       user.value = me.user
       session.value = me.session
@@ -27,7 +27,7 @@ export const sessionStore = defineStore(
       user.value = undefined
       console.log(`User ${user.value} logged out successfully`)
     }
-    async function updateUser(): Promise<User | undefined> {
+    async function updateUser(): Promise<UserResponseType | undefined> {
       if (session.value == undefined) {
         console.log('No session found')
         return undefined

@@ -3,13 +3,11 @@ use std::sync::{
     Arc,
 };
 
-use axum::response::Response;
 use derive_more::derive::Deref;
-use http::StatusCode;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::{
-        project::{DBProject, DBProjectVersion, NewProjectMember, ProjectDBType},
+        project::{DBProject, DBProjectVersion, ProjectDBType},
         repository::DBRepository,
     },
     repository::{
@@ -28,19 +26,18 @@ use nr_core::{
 };
 use nr_storage::{DynStorage, Storage};
 use parking_lot::RwLock;
-use tokio::io::AsyncReadExt;
 use tracing::{debug, error, info, instrument};
 use uuid::Uuid;
 
 use crate::{
     app::NitroRepo,
     repository::{
-        maven::{MavenError, MavenRepositoryConfigType},
-        Repository, RepositoryFactoryError, RepositoryHandlerError,
+        maven::MavenRepositoryConfigType, Repository, RepositoryFactoryError,
+        RepositoryHandlerError,
     },
 };
 
-use super::{RepoResponse, RepositoryAuthentication, RepositoryRequest};
+use super::{utils::MavenRepositoryExt, RepoResponse, RepositoryRequest};
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
     pub id: Uuid,
@@ -58,6 +55,7 @@ pub struct MavenHostedInner {
 impl MavenHostedInner {}
 #[derive(Debug, Clone, Deref)]
 pub struct MavenHosted(Arc<MavenHostedInner>);
+impl MavenRepositoryExt for MavenHosted {}
 impl MavenHosted {
     #[instrument]
     pub async fn standard_maven_deploy(
@@ -82,31 +80,16 @@ impl MavenHosted {
             }
         }
         info!("Saving File: {}", path);
+
         let body = body.body_as_bytes().await?;
         // TODO: Validate Against Push Rules
-
+        if path.has_extension("pom") {
+            let pom: Pom = self.parse_pom(body.to_vec())?;
+            debug!(?pom, "Parsed POM File");
+            self.post_pom_upload(path.clone(), Some(user_id), pom).await;
+        }
         let (size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
         // Trigger Push Event if it is the .pom file
-        if path.has_extension("pom") {
-            let file = self
-                .storage
-                .open_file(self.id, &path)
-                .await?
-                .and_then(|x| x.file());
-            let Some((mut file, meta)) = file else {
-                return Ok(Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body("Failed to open file".into())
-                    .unwrap()
-                    .into());
-            };
-            let mut pom_file = String::with_capacity(size);
-            file.read_to_string(&mut pom_file).await?;
-            let pom: maven_rs::pom::Pom =
-                maven_rs::quick_xml::de::from_str(&pom_file).map_err(MavenError::from)?;
-            debug!(?pom, "Parsed POM File");
-            self.post_pom_upload(path.clone(), user_id, pom).await;
-        }
         let save_path = format!(
             "/repositories/{}/{}/{}",
             self.storage.storage_config().storage_config.storage_name,
@@ -155,100 +138,35 @@ impl MavenHosted {
         };
         Ok(Self(Arc::new(inner)))
     }
-    pub async fn check_read(
-        &self,
-        authentication: &RepositoryAuthentication,
-    ) -> Result<Option<RepoResponse>, RepositoryHandlerError> {
-        if self.visibility().is_private() {
-            if authentication.is_no_identification() {
-                return Ok(Some(RepoResponse::www_authenticate("Basic")));
-            } else if !(authentication
-                .has_action(RepositoryActions::Read, self.id, self.site.as_ref())
-                .await?)
-            {
-                return Ok(Some(RepoResponse::forbidden()));
-            }
-        }
-        Ok(None)
-    }
-    async fn add_or_update_version(
-        &self,
-        version_directory: StoragePath,
-        project_id: Uuid,
-        publisher: i32,
-        pom: Pom,
-    ) -> Result<(), MavenError> {
-        let db_version = DBProjectVersion::find_by_version_and_project(
-            &pom.version,
-            project_id,
-            &self.site.database,
-        )
-        .await?;
-        if let Some(version) = db_version {
-            info!(?version, "Version already exists");
-            // TODO: Update Version
-        } else {
-            let version = super::pom_to_db_project_version(
-                project_id,
-                version_directory,
-                publisher,
-                pom.clone(),
-            )?;
-            version.insert_no_return(&self.site.database).await?;
-            info!("Created Version");
-        };
-        Ok(())
-    }
-    #[instrument]
-    async fn post_pom_upload_inner(
-        &self,
-        pom_directory: StoragePath,
-        publisher: i32,
-        pom: Pom,
-    ) -> Result<(), MavenError> {
-        let project_key = format!("{}:{}", pom.group_id, pom.artifact_id);
-        let version_directory = pom_directory.clone().parent();
-        let db_project =
-            DBProject::find_by_project_key(&project_key, self.id, &self.site.database).await?;
-        let project_id = if let Some(project) = db_project {
-            project.id
-        } else {
-            let project_directory = version_directory.clone().parent();
-            let project = super::pom_to_db_project(project_directory, self.id, pom.clone())?;
-            let project = project.insert(&self.site.database).await?;
-
-            let new_member = NewProjectMember::new_owner(publisher, project.id);
-            new_member.insert_no_return(&self.site.database).await?;
-            info!(?project, "Created Project");
-            project.id
-        };
-
-        self.add_or_update_version(version_directory, project_id, publisher, pom)
-            .await?;
-        Ok(())
-    }
-
-    pub async fn post_pom_upload(&self, pom_directory: StoragePath, publisher: i32, pom: Pom) {
-        match self
-            .post_pom_upload_inner(pom_directory, publisher, pom)
-            .await
-        {
-            Ok(()) => {}
-            Err(e) => {
-                error!(?e, "Failed to handle POM Upload");
-            }
-        }
-    }
 }
 impl Repository for MavenHosted {
+    #[inline(always)]
+    fn site(&self) -> NitroRepo {
+        self.0.site.clone()
+    }
+    #[inline(always)]
     fn get_storage(&self) -> nr_storage::DynStorage {
         self.0.storage.clone()
     }
+    #[inline(always)]
     fn visibility(&self) -> Visibility {
         self.visibility.read().clone()
     }
+    #[inline(always)]
     fn get_type(&self) -> &'static str {
         "maven"
+    }
+    #[inline(always)]
+    fn name(&self) -> String {
+        self.0.name.clone()
+    }
+    #[inline(always)]
+    fn id(&self) -> Uuid {
+        self.0.id
+    }
+    #[inline(always)]
+    fn is_active(&self) -> bool {
+        self.active.load(atomic::Ordering::Relaxed)
     }
 
     fn config_types(&self) -> Vec<&str> {
@@ -318,17 +236,7 @@ impl Repository for MavenHosted {
         }
         let visibility = self.visibility();
         let file = self.0.storage.open_file(self.id, &path).await?;
-        if let Some(file) = &file {
-            if file.is_directory()
-                && visibility.is_hidden()
-                && !authentication
-                    .has_action(RepositoryActions::Read, self.id, self.site.as_ref())
-                    .await?
-            {
-                return Ok(RepoResponse::indexing_not_allowed());
-            }
-        }
-        Ok(RepoResponse::from(file))
+        return self.indexing_check_option(file, &authentication).await;
     }
     #[instrument(name = "maven_hosted_head")]
     async fn handle_head(
@@ -341,22 +249,11 @@ impl Repository for MavenHosted {
         }: RepositoryRequest,
     ) -> Result<RepoResponse, RepositoryHandlerError> {
         let visibility = self.visibility();
-
         if let Some(err) = self.check_read(&authentication).await? {
             return Ok(err);
         }
         let file = self.storage.get_file_information(self.id, &path).await?;
-        if let Some(file) = &file {
-            if file.is_directory()
-                && visibility.is_hidden()
-                && !authentication
-                    .has_action(RepositoryActions::Read, self.id, self.site.as_ref())
-                    .await?
-            {
-                return Ok(RepoResponse::indexing_not_allowed());
-            }
-        }
-        Ok(RepoResponse::from(file))
+        return self.indexing_check_option(file, &authentication).await;
     }
     #[instrument(name = "maven_hosted_put")]
     async fn handle_put(
@@ -411,17 +308,7 @@ impl Repository for MavenHosted {
         info!(?nitro_deploy_version, "Handling Nitro Deploy Version");
         todo!()
     }
-    fn name(&self) -> String {
-        self.0.name.clone()
-    }
 
-    fn id(&self) -> Uuid {
-        self.0.id
-    }
-
-    fn is_active(&self) -> bool {
-        self.active.load(atomic::Ordering::Relaxed)
-    }
     #[instrument]
     async fn resolve_project_and_version_for_path(
         &self,

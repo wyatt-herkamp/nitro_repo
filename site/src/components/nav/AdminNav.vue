@@ -11,8 +11,7 @@
           :data-active="isActive('UsersList')"
           :to="{
             name: 'UsersList'
-          }"
-        >
+          }">
           <font-awesome-icon icon="fa-solid fa-users" />
           <span>Users</span>
         </RouterLink>
@@ -21,8 +20,7 @@
         <RouterLink
           class="navLink"
           :to="{ name: 'UserCreate' }"
-          :data-active="isActive('UserCreate')"
-        >
+          :data-active="isActive('UserCreate')">
           <font-awesome-icon icon="fa-solid fa-user-plus" />
           <span>Create User</span>
         </RouterLink>
@@ -35,8 +33,7 @@
           :data-active="isActive('StorageList')"
           :to="{
             name: 'StorageList'
-          }"
-        >
+          }">
           <font-awesome-icon icon="fa-solid fa-box-open" />
           <span>Storages</span>
         </RouterLink>
@@ -45,8 +42,7 @@
         <RouterLink
           class="navLink"
           :to="{ name: 'StorageCreate' }"
-          :data-active="isActive('StorageCreate')"
-        >
+          :data-active="isActive('StorageCreate')">
           <font-awesome-icon icon="fa-solid fa-box-open" />
           <span>Create Storage</span>
         </RouterLink>
@@ -57,8 +53,7 @@
         <RouterLink
           class="navLink"
           to="/admin/repositories"
-          :data-active="isActive('RepositoriesList')"
-        >
+          :data-active="isActive('RepositoriesList')">
           <font-awesome-icon icon="fa-solid fa-boxes-packing" />
           <span>Repositories</span>
         </RouterLink>
@@ -67,8 +62,7 @@
         <RouterLink
           class="navLink"
           :to="{ name: 'RepositoryCreate' }"
-          :data-active="isActive('RepositoryCreate')"
-        >
+          :data-active="isActive('RepositoryCreate')">
           <font-awesome-icon icon="fa-solid fa-boxes-packing" />
           <span>Create Repository</span>
         </RouterLink>
@@ -88,9 +82,9 @@ import { RouterLink } from 'vue-router'
 import AdminNavSub from './AdminNavSub.vue'
 import { computed, type PropType } from 'vue'
 import router from '@/router'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 const props = defineProps({
-  user: Object as PropType<User>
+  user: Object as PropType<UserResponseType>
 })
 const isOnUsersPage = computed(() => {
   const name = router.currentRoute.value.path

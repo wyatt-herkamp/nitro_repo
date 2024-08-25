@@ -62,10 +62,7 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
     )
     .await
     .context("Unable to Initialize Website Core")?;
-    let is_installed = {
-        let site = site.instance.lock();
-        site.is_installed
-    };
+
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let app = Router::new()
@@ -85,7 +82,8 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
             "/storages/:storage/:repository",
             any(crate::repository::handle_repo_request),
         )
-        .nest("/api", api::api_routes(is_installed))
+        .nest("/api", api::api_routes())
+        .nest("/badge", super::badge::badge_routes())
         .merge(super::open_api::build_router())
         .with_state(site);
 

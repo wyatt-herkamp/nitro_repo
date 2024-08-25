@@ -5,13 +5,9 @@ use ahash::HashMap;
 use axum::response::IntoResponse;
 use futures::future::BoxFuture;
 use hosted::MavenHosted;
-use maven_rs::pom::Pom;
 use nr_core::{
     database::{
-        project::{
-            NewProject, NewProjectBuilder, NewProjectBuilderError, NewVersion, NewVersionBuilder,
-            NewVersionBuilderError,
-        },
+        project::{NewProjectBuilderError, NewVersionBuilderError},
         repository::{DBRepository, DBRepositoryConfig},
     },
     repository::{
@@ -19,7 +15,7 @@ use nr_core::{
             project::ProjectConfigType, ConfigDescription, PushRulesConfigType,
             RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
         },
-        project::{ReleaseType, VersionDataBuilder, VersionDataBuilderError},
+        project::{ReleaseType, VersionDataBuilderError},
     },
     storage::StoragePath,
 };
@@ -29,17 +25,26 @@ use proxy::{MavenProxy, MavenProxyConfig};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use uuid::Uuid;
 
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
 pub mod nitro_deploy;
 pub mod proxy;
+pub mod utils;
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "config")]
 pub enum MavenRepositoryConfig {
     Hosted,
-    Proxy { proxy_config: MavenProxyConfig },
+    Proxy(MavenProxyConfig),
+}
+impl MavenRepositoryConfig {
+    pub fn is_same_type(&self, other: &MavenRepositoryConfig) -> bool {
+        match (self, other) {
+            (MavenRepositoryConfig::Hosted, MavenRepositoryConfig::Hosted) => true,
+            (MavenRepositoryConfig::Proxy(_), MavenRepositoryConfig::Proxy(_)) => true,
+            _ => false,
+        }
+    }
 }
 #[derive(Debug, Clone, Default)]
 pub struct MavenRepositoryConfigType;
@@ -61,7 +66,17 @@ impl RepositoryConfigType for MavenRepositoryConfigType {
         let config: MavenRepositoryConfig = serde_json::from_value(config)?;
         Ok(())
     }
-
+    fn validate_change(&self, old: Value, new: Value) -> Result<(), RepositoryConfigError> {
+        let new: MavenRepositoryConfig = serde_json::from_value(new)?;
+        let old: MavenRepositoryConfig = serde_json::from_value(old)?;
+        if !old.is_same_type(&new) {
+            return Err(RepositoryConfigError::InvalidChange(
+                "maven",
+                "Cannot change the type of Maven Repository",
+            ));
+        }
+        Ok(())
+    }
     fn default(&self) -> Result<Value, RepositoryConfigError> {
         let config = MavenRepositoryConfig::Hosted;
         Ok(serde_json::to_value(config).unwrap())
@@ -179,7 +194,7 @@ impl MavenRepository {
                 let maven_hosted = MavenHosted::load(repo, storage, website).await?;
                 Ok(MavenRepository::Hosted(maven_hosted))
             }
-            MavenRepositoryConfig::Proxy { proxy_config } => {
+            MavenRepositoryConfig::Proxy(proxy_config) => {
                 let proxy = MavenProxy::load(repo, storage, website, proxy_config).await?;
                 Ok(MavenRepository::Proxy(proxy))
             }
@@ -190,17 +205,37 @@ impl MavenRepository {
 pub enum MavenError {
     #[error("Error with processing Maven request: {0}")]
     MavenRS(#[from] maven_rs::Error),
+    #[error("Storage Error")]
+    Storage(#[from] nr_storage::StorageError),
     #[error("XML Deserialize Error: {0}")]
     XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
     #[error("Database Error: {0}")]
     Database(#[from] sqlx::Error),
-    #[error("New Project Error: {0}")]
-    NewProject(#[from] NewProjectBuilderError),
-    #[error("New Version Error: {0}")]
-    NewVersion(#[from] NewVersionBuilderError),
-    #[error("New Version Error: {0}")]
-    VersionData(#[from] VersionDataBuilderError),
+    #[error("Internal Error. This is a bug in the code: {0}")]
+    InternalBuilderError(String),
+    #[error("Missing From Pom: {0}")]
+    MissingFromPom(&'static str),
+    #[error("Failed to proxy request {0}")]
+    ReqwestError(#[from] reqwest::Error),
+    #[error(transparent)]
+    BadRequest(#[from] BadRequestErrors),
 }
+impl From<NewProjectBuilderError> for MavenError {
+    fn from(e: NewProjectBuilderError) -> Self {
+        MavenError::InternalBuilderError(e.to_string())
+    }
+}
+impl From<NewVersionBuilderError> for MavenError {
+    fn from(e: NewVersionBuilderError) -> Self {
+        MavenError::InternalBuilderError(e.to_string())
+    }
+}
+impl From<VersionDataBuilderError> for MavenError {
+    fn from(e: VersionDataBuilderError) -> Self {
+        MavenError::InternalBuilderError(e.to_string())
+    }
+}
+
 impl IntoResponse for MavenError {
     fn into_response(self) -> axum::http::Response<axum::body::Body> {
         match self {
@@ -216,6 +251,7 @@ impl IntoResponse for MavenError {
                 .status(500)
                 .body(axum::body::Body::from(format!("Maven Error: {}", e)))
                 .unwrap(),
+            MavenError::BadRequest(e) => e.into_response(),
             err => axum::http::Response::builder()
                 .status(500)
                 .body(axum::body::Body::from(format!(
@@ -233,40 +269,4 @@ pub fn get_release_type(version: &str) -> ReleaseType {
     } else {
         ReleaseType::Stable
     }
-}
-
-pub fn pom_to_db_project(
-    project_path: StoragePath,
-    repository: Uuid,
-    pom: Pom,
-) -> Result<NewProject, MavenError> {
-    let result = NewProjectBuilder::default()
-        .project_key(format!("{}:{}", pom.group_id, pom.artifact_id))
-        .scope(Some(pom.group_id))
-        .name(pom.name.unwrap_or(pom.artifact_id))
-        .description(pom.description)
-        .repository(repository)
-        .storage_path(project_path.to_string())
-        .build()?;
-    Ok(result)
-}
-pub fn pom_to_db_project_version(
-    project_id: Uuid,
-    version_path: StoragePath,
-    publisher: i32,
-    pom: Pom,
-) -> Result<NewVersion, MavenError> {
-    let version_data = VersionDataBuilder::default()
-        .description(pom.description)
-        .build()?;
-    let release_type = ReleaseType::release_type_from_version(&pom.version);
-    let result = NewVersionBuilder::default()
-        .project_id(project_id)
-        .version(pom.version)
-        .publisher(publisher)
-        .version_path(version_path.to_string())
-        .release_type(release_type)
-        .extra(version_data)
-        .build()?;
-    Ok(result)
 }

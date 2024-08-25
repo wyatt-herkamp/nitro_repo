@@ -67,7 +67,7 @@
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import SwitchInput from '@/components/form/SwitchInput.vue'
 import http from '@/http'
-import { RepositoryActions, type User } from '@/types/base'
+import { RepositoryActions, type UserResponseType } from '@/types/base'
 import { RepositoryActionsType } from '@/types/user'
 import { faL } from '@fortawesome/free-solid-svg-icons'
 import { notify } from '@kyvg/vue3-notification'
@@ -75,7 +75,7 @@ import { computed, ref, watch, type PropType } from 'vue'
 
 const props = defineProps({
   user: {
-    type: Object as PropType<User>,
+    type: Object as PropType<UserResponseType>,
     required: true
   }
 })

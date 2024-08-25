@@ -7,30 +7,26 @@
         id="nameSearch"
         v-model="searchValue"
         autofocus
-        placeholder="Search by Name, Username, or Primary Email Address"
-      />
+        placeholder="Search by Name, Username, or Primary Email Address" />
     </div>
     <div id="storages" class="betterScroll">
       <div class="row" id="header">
         <div
           :class="['col', { sorted: sortBy === 'id' }]"
           @click="sortBy = 'id'"
-          title="Sort by ID"
-        >
+          title="Sort by ID">
           ID #
         </div>
         <div
           :class="['col', { sorted: sortBy === 'name' }]"
           @click="sortBy = 'name'"
-          title="Sort by Name"
-        >
+          title="Sort by Name">
           Name
         </div>
         <div
           :class="['col', { sorted: sortBy === 'storage-type' }]"
           @click="sortBy = 'storage-type'"
-          title="Sort by Storage Type"
-        >
+          title="Sort by Storage Type">
           Storage Type
         </div>
         <div :class="['col']">Active</div>
@@ -39,8 +35,7 @@
         class="row item"
         v-for="storage in filteredTable"
         :key="storage.id"
-        @click="router.push({ name: 'ViewStorage', params: { id: storage.id } })"
-      >
+        @click="router.push({ name: 'ViewStorage', params: { id: storage.id } })">
         <div class="col">{{ storage.id }}</div>
         <div class="col" :title="storage.name">{{ storage.name }}</div>
         <div class="col" :title="storage.storage_type">{{ storage.storage_type }}</div>
@@ -52,7 +47,7 @@
 
 <script setup lang="ts">
 import router from '@/router'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 import type { StorageItem } from '@/types/storage'
 import { notify } from '@kyvg/vue3-notification'
 import { computed, ref, type PropType } from 'vue'

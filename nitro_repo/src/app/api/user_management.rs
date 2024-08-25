@@ -1,4 +1,3 @@
-use ahash::HashMap;
 use axum::{
     body::Body,
     extract::{Path, State},
@@ -7,10 +6,8 @@ use axum::{
 };
 use http::StatusCode;
 use serde::Deserialize;
-use sqlx::PgPool;
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
-use uuid::Uuid;
 
 use crate::{
     app::{
@@ -26,7 +23,7 @@ use nr_core::{
         UserSafeData, UserType as _,
     },
     user::{
-        permissions::{HasPermissions, RepositoryActions, UpdatePermissions, UserPermissions},
+        permissions::{HasPermissions, UpdatePermissions},
         Email, Username,
     },
 };

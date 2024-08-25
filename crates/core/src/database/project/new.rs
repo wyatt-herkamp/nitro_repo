@@ -55,7 +55,7 @@ impl NewProject {
 
         let insert = sqlx::query_as::<_,DBProject>(
             r#"
-            INSERT INTO projects (scope, project_key, name, latest_release, latest_pre_release, description, tags, repository, storage_path)
+            INSERT INTO projects (scope, project_key, name, latest_release, latest_pre_release, description, tags, repository_id, storage_path)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
             "#
         ).bind(scope)
@@ -120,7 +120,8 @@ pub struct NewVersion {
     /// The path to the release
     pub version_path: String,
     /// The publisher of the version
-    pub publisher: i32,
+    #[builder(default)]
+    pub publisher: Option<i32>,
     /// The version page. Such as a README
     #[builder(default)]
     pub version_page: Option<String>,

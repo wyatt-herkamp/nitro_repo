@@ -1,3 +1,5 @@
+use crate::app::badge::BadgeRoutes;
+
 use super::api;
 use super::api::repository::RepositoryAPI;
 use super::api::storage::StorageAPI;
@@ -8,8 +10,10 @@ use axum::{
     response::{IntoResponse, Response},
     Json, Router,
 };
+use nr_core::database::project::{DBProject, DBProjectMember, DBProjectVersion};
+use nr_core::database::user::permissions::FullUserPermissions;
 use nr_core::database::user::NewUserRequest;
-use nr_core::user::permissions::UserPermissions;
+use nr_core::user::permissions::{RepositoryActions, UserPermissions};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};
 
 use utoipa::{Modify, OpenApi};
@@ -22,6 +26,7 @@ use utoipa::{Modify, OpenApi};
         (path="/api/user-management", api = UserManagementAPI, tags=["user-management"]),
         (path = "/api/storage", api = StorageAPI, tags=["storage"]),
         (path = "/api/repository", api = RepositoryAPI, tags=["repository"]),
+        (path="/badge", api = BadgeRoutes)
     ),
     paths(
         api::info,
@@ -32,7 +37,10 @@ use utoipa::{Modify, OpenApi};
             super::Instance,
             UserPermissions,
             api::InstallRequest,
-            NewUserRequest
+            DBProject,
+            DBProjectMember,
+            DBProjectVersion,
+            NewUserRequest, RepositoryActions, FullUserPermissions
         )
     ),
     tags(

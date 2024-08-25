@@ -1,5 +1,6 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::prelude::Type;
 use strum::{Display, EnumIs, EnumString, IntoStaticStr};
 use utoipa::ToSchema;
@@ -87,6 +88,8 @@ pub struct VersionData {
     pub source: Option<ProjectSource>,
     #[builder(default)]
     pub licence: Option<Licence>,
+    #[builder(default)]
+    pub extra: Option<Value>,
 }
 /// Author of the project
 ///

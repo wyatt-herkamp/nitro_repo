@@ -7,14 +7,16 @@ export function createSnippetsForPulling(
 ): Array<CodeSnippet> {
   return [createMavenSnippet(repository), createGradleKotlinSnippet(repository)]
 }
-export function createProjectSnippets(project: Project): Array<CodeSnippet> {
-  // TODO: Versioning
+export function createProjectSnippets(
+  project: Project,
+  version: string = '{VERSION}'
+): Array<CodeSnippet> {
   return [
-    createMavenProjectSnippet(project, '1.0.0'),
-    createGradleKotlinProjectSnippet(project, '1.0.0')
+    createMavenProjectSnippet(project, version),
+    createGradleKotlinProjectSnippet(project, version)
   ]
 }
-function createMavenProjectSnippet(project: Project, version: string): CodeSnippet {
+export function createMavenProjectSnippet(project: Project, version: string): CodeSnippet {
   return {
     name: 'Maven',
     language: 'xml',
@@ -28,8 +30,20 @@ function createMavenProjectSnippet(project: Project, version: string): CodeSnipp
     `
   }
 }
+export function createBlankLines(length: number): CodeSnippet {
+  let code = ''
+  for (let i = 0; i < length; i++) {
+    code += '\n'
+  }
+  return {
+    name: 'Blank Lines',
+    language: 'xml',
+    key: 'blank-lines',
+    code: code
+  }
+}
 
-function createMavenSnippet(repository: RepositoryWithStorageName): CodeSnippet {
+export function createMavenSnippet(repository: RepositoryWithStorageName): CodeSnippet {
   const url = createRepositoryRoute(repository)
 
   return {
@@ -47,7 +61,7 @@ function createMavenSnippet(repository: RepositoryWithStorageName): CodeSnippet 
   }
 }
 
-function createGradleKotlinSnippet(repository: RepositoryWithStorageName): CodeSnippet {
+export function createGradleKotlinSnippet(repository: RepositoryWithStorageName): CodeSnippet {
   const url = createRepositoryRoute(repository)
   return {
     name: 'Gradle Kotlin DSL',
@@ -58,12 +72,11 @@ repositories {
     maven {
         url = uri("${url}")
     }
-}
-    `
+}`
   }
 }
 
-function createGradleKotlinProjectSnippet(project: Project, version: string): CodeSnippet {
+export function createGradleKotlinProjectSnippet(project: Project, version: string): CodeSnippet {
   return {
     name: 'Gradle Kotlin DSL',
     key: 'gradle-kotlin',

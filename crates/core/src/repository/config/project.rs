@@ -62,7 +62,7 @@ impl Default for BadgeSettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BadgeStyle(Style);
+pub struct BadgeStyle(pub Style);
 impl Default for BadgeStyle {
     fn default() -> Self {
         BadgeStyle(Style::Flat)

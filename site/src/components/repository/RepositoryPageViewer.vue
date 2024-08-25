@@ -1,5 +1,5 @@
 <template>
-  <div v-if="page.page_type == PageType.Markdown">
+  <div v-if="page.page_type == PageType.Markdown" id="pageContent">
     <vue-markdown :source="page.content" />
   </div>
 </template>
@@ -19,3 +19,8 @@ const props = defineProps({
   }
 })
 </script>
+<style lang="scss">
+#pageContent {
+  margin: 1rem;
+}
+</style>

@@ -15,8 +15,7 @@
       type="text"
       :id="haveClearButton ? undefined : id"
       v-model="value"
-      v-bind="$attrs"
-    />
+      v-bind="$attrs" />
   </section>
 </template>
 <script setup lang="ts">

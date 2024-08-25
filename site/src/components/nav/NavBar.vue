@@ -16,11 +16,11 @@
 import { sessionStore } from '@/stores/session'
 import UserDropDown from './UserDropDown.vue'
 import type { PropType } from 'vue'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 
 const props = defineProps({
   user: {
-    type: Object as PropType<User>,
+    type: Object as PropType<UserResponseType>,
     required: false
   }
 })

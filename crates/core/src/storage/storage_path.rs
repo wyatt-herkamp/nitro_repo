@@ -29,6 +29,9 @@ impl StoragePath {
             .map(|v| v.0.ends_with(extension))
             .unwrap_or(false)
     }
+    pub fn push(&mut self, component: &str) {
+        self.0.push(StoragePathComponent(component.to_string()));
+    }
 }
 impl From<StoragePath> for PathBuf {
     fn from(value: StoragePath) -> Self {

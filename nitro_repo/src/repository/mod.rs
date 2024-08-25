@@ -26,7 +26,10 @@ pub use repo_type::*;
 use thiserror::Error;
 use uuid::Uuid;
 pub mod utils;
-use crate::{app::authentication::AuthenticationError, error::BadRequestErrors};
+use crate::{
+    app::{authentication::AuthenticationError, NitroRepo},
+    error::BadRequestErrors,
+};
 pub trait Repository: Send + Sync + Clone {
     fn get_storage(&self) -> DynStorage;
     /// The Repository type. This is used to identify the Repository type in the database
@@ -37,7 +40,8 @@ pub trait Repository: Send + Sync + Clone {
     fn id(&self) -> Uuid;
     fn visibility(&self) -> Visibility;
     fn is_active(&self) -> bool;
-
+    /// Returns a copy of the site that this Repository is associated with
+    fn site(&self) -> NitroRepo;
     fn resolve_project_and_version_for_path(
         &self,
         path: StoragePath,

@@ -103,7 +103,7 @@ pub async fn does_user_and_token_have_repository_action<T: HasPermissions + Debu
         .await
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, ToSchema)]
 #[sqlx(type_name = "TEXT")]
 pub enum RepositoryActions {
     Read,

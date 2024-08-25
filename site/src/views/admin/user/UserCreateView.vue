@@ -13,8 +13,7 @@
           v-if="passwordRules"
           id="password"
           :passwordRules="passwordRules"
-          v-model="password"
-        />
+          v-model="password" />
       </div>
       <SubmitButton>Create User</SubmitButton>
     </form>

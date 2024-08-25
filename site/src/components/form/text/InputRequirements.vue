@@ -5,8 +5,7 @@
         v-for="validation in validations"
         :key="validation.message"
         :data-valid="validation.valid"
-        class="requirement"
-      >
+        class="requirement">
         <font-awesome-icon icon="fa-solid fa-circle-check" v-if="validation.valid" />
         <font-awesome-icon icon="fa-solid fa-circle-xmark" v-else />
         <span>{{ validation.message }}</span>

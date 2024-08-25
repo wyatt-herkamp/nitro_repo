@@ -1,9 +1,9 @@
 use axum::{extract::State, Json};
 use http::StatusCode;
-use nr_core::{database::user::NewUserRequest, user::permissions::UserPermissions};
+use nr_core::database::user::NewUserRequest;
 use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
-use tracing::{error, info, instrument};
+use tracing::{error, instrument};
 use utoipa::ToSchema;
 pub mod repository;
 pub mod storage;
@@ -12,8 +12,8 @@ pub mod user_management;
 use crate::error::InternalError;
 
 use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
-pub fn api_routes(is_installed: bool) -> axum::Router<NitroRepo> {
-    let mut router = axum::Router::new()
+pub fn api_routes() -> axum::Router<NitroRepo> {
+    let router = axum::Router::new()
         .route("/info", axum::routing::get(info))
         .route("/install", axum::routing::post(install))
         .nest("/user", user::user_routes())

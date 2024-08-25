@@ -1,65 +1,41 @@
 <template>
-  <div class="codeMenu">
-    <div class="selector">
-      <div
-        v-for="snippet in snippets"
-        class="tab"
-        :key="snippet.key"
-        @click="currentTab = snippet.key"
-        :data-active="currentTab === snippet.key">
+  <TabsElement :defaultTab="defaultTab" :justifyBetween="false">
+    <template #header>
+      <TabElement :id="snippet.key" v-for="snippet in snippets" :key="snippet.key">
         {{ snippet.name }}
-      </div>
-    </div>
-    <div class="codeBlock" v-if="currentSnippet">
-      <CodeCard :snippetInfo="currentSnippet" />
-    </div>
-  </div>
+      </TabElement>
+    </template>
+    <template #content>
+      <TabContent v-for="snippet in snippets" :tabId="snippet.key" :key="snippet.key">
+        <CodeCard :code="snippet" />
+      </TabContent>
+    </template>
+  </TabsElement>
 </template>
 
-<script lang="ts" setup>
-import { computed, ref, type PropType } from 'vue'
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import type { CodeSnippet } from './code'
+import TabElement from '../core/tabs/TabElement.vue'
+import TabsElement from '../core/tabs/TabsElement.vue'
+import TabContent from '../core/tabs/TabContent.vue'
 import CodeCard from './CodeCard.vue'
 
-const props = defineProps({
+defineProps({
   snippets: {
     type: Array as PropType<CodeSnippet[]>,
     required: true
+  },
+  defaultTab: {
+    type: String,
+    required: true
   }
 })
-const currentTab = ref<string>(props.snippets[0].key)
-const currentSnippet = computed(() => {
-  return props.snippets.find((snippet) => snippet.key === currentTab.value)
-})
 </script>
-<style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
-.codeMenu {
-  width: 100%;
-}
-.codeBlock {
-  height: 9rem;
-  max-height: 9rem;
-  overflow-y: auto;
-  background-color: $background-50;
-}
-.selector {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 1rem;
-  flex-direction: row;
-  border-bottom: 1px solid $accent-50;
-}
-.tab {
-  padding: 1rem;
-  cursor: pointer;
-  border-radius: 0.5rem 0.5rem 0 0;
-  border: 1px solid $primary-50;
-  &:hover {
-    background-color: $accent;
-    color: white;
+<style lang="scss">
+@media screen and (max-width: 600px) {
+  .tabs {
+    max-width: 99%;
   }
 }
 </style>
-<style lang="scss"></style>

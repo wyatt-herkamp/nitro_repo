@@ -10,15 +10,15 @@ import AdminUserPage from '@/components/admin/user/AdminUserPage.vue'
 import ErrorOnRequest from '@/components/ErrorOnRequest.vue'
 import http from '@/http'
 import router from '@/router'
-import type { User } from '@/types/base'
+import type { UserResponseType } from '@/types/base'
 import { computed, ref } from 'vue'
 const userId = router.currentRoute.value.params.id as string
-const user = ref<User | undefined>(undefined)
+const user = ref<UserResponseType | undefined>(undefined)
 const error = ref<string | null>(null)
 const errorCode = ref<number | undefined>(undefined)
 async function fetchUser() {
   await http
-    .get<User>(`/api/user-management/get/${userId}`)
+    .get<UserResponseType>(`/api/user-management/get/${userId}`)
     .then((response) => {
       user.value = response.data
     })

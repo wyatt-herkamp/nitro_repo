@@ -20,6 +20,6 @@
 2. `(storage_name)/*` Can deploy to all repositories in a specific storage
 3. `(storage_name)/(repository)`
 4. `(storage_name)/{"type": "npm"}` can deploy to all npm repos
-5. `(storage_name)/{"policy": "Snapshot"}` can deploy to all Snapshot. Policy can be combined with type. 
+5. `(storage_name)/{"policy": "Snapshot"}` can deploy to all Snapshot. Policy can be combined with type.
 
 Any combination of the rules can be combined so `*/{"policy":"Release", "type": "maven"}` So this will say any storage. But only maven policies set to Release

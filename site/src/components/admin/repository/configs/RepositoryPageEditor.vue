@@ -17,11 +17,10 @@
 </template>
 <script setup lang="ts">
 import DropDown from '@/components/form/dropdown/DropDown.vue'
-import TextInput from '@/components/form/text/TextInput.vue'
 import http from '@/http'
-import { type RepositoryPage, type MavenConfigType, PageType } from '@/types/repository'
+import { type RepositoryPage, PageType } from '@/types/repository'
 import { MilkdownProvider } from '@milkdown/vue'
-import { computed, defineProps, ref, watch } from 'vue'
+import { defineProps, ref, watch } from 'vue'
 import MarkdownEditor from './MarkdownEditor.vue'
 import SubmitButton from '@/components/form/SubmitButton.vue'
 const pageTypes = [
@@ -46,7 +45,7 @@ const input = ref<RepositoryPage>({
   content: '# Hello World'
 })
 
-const value = defineModel<MavenConfigType>()
+const value = defineModel<RepositoryPage>()
 watch(input.value, () => {
   console.log('input changed')
   console.log(input.value.content)

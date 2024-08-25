@@ -11,20 +11,3 @@ Artifact Managers handle the artifacts produced allowing for retrieval and uploa
 
 nitro_repo is a free and open source artifact manager. Common ones such as Jrog cost money. nitro_repo also is simple for common developers not just for big companies. nitro_repo is also written using modern technology such as Vue and Rust giving it a modern feel. Compared to the clunky nature of Nexus.
 
-## Technology Used
-### Backend
-The backend is written in Rust lang. Uses the latest stable 2021 version. 
-
-The backend uses [Actix](https://actix.rs/) as the web server and [Diesel](https://diesel.rs/) for database.
-
-### Frontend
-Lang: Typescript
-
-Frontend Framework: Vue.js 3 with Vite
-
-CSS Design: TailwindCSS
-
-### Other
-Documentation Uses [VitePress](https://vitepress.vuejs.org/)
-
-

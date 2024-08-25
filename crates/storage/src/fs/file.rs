@@ -5,6 +5,7 @@ use crate::{is_hidden_file, FileMeta};
 use super::{utils::MetadataUtils, FileHashes, SerdeMime, StorageFileReader};
 use chrono::{DateTime, FixedOffset, Local};
 
+use nr_core::storage::FileTypeCheck;
 use serde::{Deserialize, Serialize};
 
 use strum::EnumIs;
@@ -23,6 +24,20 @@ pub enum StorageFile {
         meta: StorageFileMeta,
         content: StorageFileReader,
     },
+}
+impl FileTypeCheck for StorageFile {
+    fn is_file(&self) -> bool {
+        match self {
+            StorageFile::File { .. } => true,
+            _ => false,
+        }
+    }
+    fn is_directory(&self) -> bool {
+        match self {
+            StorageFile::Directory { .. } => true,
+            _ => false,
+        }
+    }
 }
 
 impl StorageFile {
@@ -67,6 +82,14 @@ pub struct StorageFileMeta {
     pub modified: DateTime<FixedOffset>,
     /// The first time it was created.
     pub created: DateTime<FixedOffset>,
+}
+impl FileTypeCheck for StorageFileMeta {
+    fn is_file(&self) -> bool {
+        self.file_type.is_file()
+    }
+    fn is_directory(&self) -> bool {
+        self.file_type.is_directory()
+    }
 }
 impl StorageFileMeta {
     #[instrument(name = "StorageFileMeta::new_from_file", skip(path))]

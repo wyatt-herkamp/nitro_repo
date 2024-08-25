@@ -8,9 +8,7 @@ use crate::{
     app::{authentication::verify_login, responses::no_content_response, NitroRepo},
     repository::RepoResponse,
 };
-use axum::response::{IntoResponse, Response};
 use derive_more::derive::Deref;
-use http::StatusCode;
 use nr_core::{
     database::{repository::DBRepository, user::auth_token::NewRepositoryToken},
     user::permissions::RepositoryActions,
@@ -49,6 +47,9 @@ impl NpmRegistry {
 impl Repository for NpmRegistry {
     fn get_storage(&self) -> DynStorage {
         self.0.storage.clone()
+    }
+    fn site(&self) -> NitroRepo {
+        self.0.site.clone()
     }
 
     fn get_type(&self) -> &'static str {

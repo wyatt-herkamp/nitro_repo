@@ -1,0 +1,30 @@
+@import '@/assets/styles/theme.scss';
+
+.tabs {
+}
+.tabsHeader {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid $primary;
+  list-style: none;
+  background-color: $primary-50;
+}
+.tabsHeader[data-jb='true'] {
+  justify-content: space-between;
+}
+.tabsHeader[data-jb='false'] {
+  gap: 1rem;
+}
+.tab {
+  padding: 10px 0;
+  font-size: 16px;
+  color: $text;
+}
+.tab[data-active='true'] {
+  border-bottom: 2px solid $primary;
+}
+
+.tab[data-active='false'] {
+  cursor: pointer;
+}

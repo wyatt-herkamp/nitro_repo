@@ -5,7 +5,6 @@
 </template>
 <script setup lang="ts">
 import { sessionStore } from '@/stores/session'
-import { RouterLink } from 'vue-router'
 import SpinnerElement from '@/components//spinner/SpinnerElement.vue'
 let session = sessionStore()
 async function logout() {

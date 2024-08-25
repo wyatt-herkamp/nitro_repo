@@ -248,10 +248,26 @@ pub async fn update_config(
         }
         .into_response());
     }
-    if let Err(error) = config_type.validate_config(config.clone()) {
-        error!("Error validating config: {}", error);
-        return Ok(InvalidRepositoryConfig::InvalidConfig { config_key, error }.into_response());
-    }
+    match GenericDBRepositoryConfig::get_config(repository.id(), &config_key, site.as_ref()).await?
+    {
+        Some(old) => {
+            if let Err(error) = config_type.validate_change(old.value.0, config.clone()) {
+                error!("Error validating config: {}", error);
+                return Ok(
+                    InvalidRepositoryConfig::InvalidConfig { config_key, error }.into_response()
+                );
+            }
+        }
+        None => {
+            if let Err(error) = config_type.validate_config(config.clone()) {
+                error!("Error validating config: {}", error);
+                return Ok(
+                    InvalidRepositoryConfig::InvalidConfig { config_key, error }.into_response()
+                );
+            }
+        }
+    };
+
     GenericDBRepositoryConfig::add_or_update(db_repository.id, config_key, config, site.as_ref())
         .await?;
     if let Err(err) = repository.reload().await {
