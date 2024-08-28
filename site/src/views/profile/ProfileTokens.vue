@@ -9,7 +9,7 @@
         :data-expanded="expandedToken == token.token.id"
         @click="tokenClicked(token.token.id)">
         <div class="tokenElementLine">
-          <KeyAndValue label="Source" :value="token.token.name || 'No name'" />
+          <KeyAndValue label="Name" :value="token.token.name || 'No name'" />
 
           <KeyAndValue label="Source" :value="token.token.source" />
           <KeyAndValue
@@ -17,13 +17,7 @@
             :value="new Date(token.token.created_at).toLocaleDateString()" />
         </div>
         <div v-if="expandedToken == token.token.id">
-          <div>
-            <h2>Repository Scopes</h2>
-          </div>
-          <div>
-            <h2>Scopes</h2>
-          </div>
-          <button>Delete</button>
+          <SubmitButton @click="deleteToken(token.token.id)">Delete</SubmitButton>
         </div>
       </li>
     </ul>
@@ -31,6 +25,7 @@
 </template>
 <script setup lang="ts">
 import KeyAndValue from '@/components/form/KeyAndValue.vue'
+import SubmitButton from '@/components/form/SubmitButton.vue'
 import http from '@/http'
 import { sessionStore } from '@/stores/session'
 import { type RawAuthTokenFullResponse } from '@/types/user/token'
@@ -46,6 +41,16 @@ function tokenClicked(tokenId: number) {
   } else {
     expandedToken.value = tokenId
   }
+}
+async function deleteToken(id: number) {
+  await http
+    .delete(`/api/user/token/delete/${id}`)
+    .then(() => {
+      getAuthTokens()
+    })
+    .catch((error) => {
+      console.log(error)
+    })
 }
 async function getAuthTokens() {
   if (user == undefined) {
@@ -76,6 +81,7 @@ main {
 }
 
 .tokenElement {
+  border: 1px solid #000;
 }
 .tokenElementLine {
   display: grid;

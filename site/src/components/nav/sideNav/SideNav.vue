@@ -16,28 +16,7 @@ nav {
   flex-direction: column;
   gap: 0.5rem;
 }
-.navLink {
-  text-decoration: none;
-  color: $text;
-  font-weight: bold;
-  padding: 0.5rem;
-  // Align text vertically
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  // Box
-  border-radius: 0.5rem;
-  &:hover {
-    background-color: $primary-70;
-    transition: background-color 0.3s ease;
-  }
-}
-.navLink[data-active='true'] {
-  background-color: $primary-70;
-  &:hover {
-    cursor: default;
-  }
-}
+
 #logoAndHome {
   img {
     width: 2rem;

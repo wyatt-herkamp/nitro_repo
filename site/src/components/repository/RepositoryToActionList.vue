@@ -19,33 +19,26 @@
         <BaseSwitch v-model="entry.actions.can_edit" />
       </div>
       <div class="col">
-        <button
-          type="button"
-          class="actionButton"
-          @click="removeRepositoryScopeEntry(entry.repositoryId)">
+        <button type="button" class="actionButton" @click="removeEntry(entry.repositoryId)">
           Remove
         </button>
       </div>
     </div>
     <div class="row item" id="create">
       <div class="col" id="repoDropDown">
-        <RepositoryDropdown v-model="newRepositoryScopeEntry.repositoryId" />
+        <RepositoryDropdown v-model="newEntry.repositoryId" />
       </div>
       <div class="col">
-        <BaseSwitch v-model="newRepositoryScopeEntry.actions.can_read" />
+        <BaseSwitch v-model="newEntry.actions.can_read" />
       </div>
       <div class="col">
-        <BaseSwitch v-model="newRepositoryScopeEntry.actions.can_write" />
+        <BaseSwitch v-model="newEntry.actions.can_write" />
       </div>
       <div class="col">
-        <BaseSwitch v-model="newRepositoryScopeEntry.actions.can_edit" />
+        <BaseSwitch v-model="newEntry.actions.can_edit" />
       </div>
       <div class="col">
-        <button
-          type="button"
-          class="actionButton"
-          @click="addRepositoryScopeEntry"
-          :disabled="!isNewEntryValid">
+        <button type="button" class="actionButton" @click="addEntry" :disabled="!isNewEntryValid">
           Add
         </button>
       </div>
@@ -69,34 +62,31 @@ function getRepositoryName(repositoryId: string) {
 const repositoryEntries = defineModel<Array<NewAuthTokenRepositoryScope>>({
   required: true
 })
-const newRepositoryScopeEntry = ref<NewAuthTokenRepositoryScope>({
+const newEntry = ref<NewAuthTokenRepositoryScope>({
   repositoryId: '',
   actions: new RepositoryActionsType([])
 })
 const isNewEntryValid = computed(() => {
-  if (
-    !newRepositoryScopeEntry.value.repositoryId ||
-    newRepositoryScopeEntry.value.repositoryId == ''
-  ) {
+  if (!newEntry.value.repositoryId || newEntry.value.repositoryId == '') {
     return false
   }
 
-  if (newRepositoryScopeEntry.value.actions.asArray().length === 0) {
+  if (newEntry.value.actions.asArray().length === 0) {
     return false
   }
   return true
 })
 
-function addRepositoryScopeEntry() {
+function addEntry() {
   for (const repository of repositoryEntries.value) {
-    if (repository.repositoryId === newRepositoryScopeEntry.value.repositoryId) {
-      repository.actions = newRepositoryScopeEntry.value.actions
+    if (repository.repositoryId === newEntry.value.repositoryId) {
+      repository.actions = newEntry.value.actions
       notify({
         type: 'success',
         title: 'Repository Already Exists',
         text: 'Values have been updated.'
       })
-      newRepositoryScopeEntry.value = {
+      newEntry.value = {
         repositoryId: '',
         actions: new RepositoryActionsType([])
       }
@@ -104,16 +94,16 @@ function addRepositoryScopeEntry() {
     }
   }
   repositoryEntries.value.push({
-    repositoryId: newRepositoryScopeEntry.value.repositoryId,
-    actions: newRepositoryScopeEntry.value.actions
+    repositoryId: newEntry.value.repositoryId,
+    actions: newEntry.value.actions
   })
-  newRepositoryScopeEntry.value = {
+  newEntry.value = {
     repositoryId: '',
     actions: new RepositoryActionsType([])
   }
 }
 
-function removeRepositoryScopeEntry(id: string) {
+function removeEntry(id: string) {
   repositoryEntries.value = repositoryEntries.value.filter((entry) => entry.repositoryId !== id)
 }
 </script>

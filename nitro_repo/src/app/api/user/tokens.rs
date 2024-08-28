@@ -1,13 +1,17 @@
 use axum::{
+    body::Body,
     extract::{Path, State},
     response::Response,
-    routing::{get, post},
+    routing::{delete, get, post},
     Json,
 };
 use axum_extra::{headers::UserAgent, TypedHeader};
 use http::StatusCode;
 use nr_core::{
-    database::user::{auth_token::NewAuthToken, UserType},
+    database::user::{
+        auth_token::{AuthToken, NewAuthToken},
+        UserType,
+    },
     user::{permissions::RepositoryActions, scopes::NRScope, token::AuthTokenFullResponse},
 };
 use serde::{Deserialize, Serialize};
@@ -27,6 +31,7 @@ pub fn token_routes() -> axum::Router<NitroRepo> {
         .route("/create", post(create))
         .route("/list", get(list))
         .route("/get/:id", get(get_token))
+        .route("/delete/:id", delete(delete_token))
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -128,4 +133,30 @@ async fn get_token(
     Response::builder()
         .status(StatusCode::OK)
         .json_body(&tokens)
+}
+#[utoipa::path(
+    delete,
+    path = "/token/delete/{id}",
+    responses(
+        (status = 200, description = "Token Deleted"),
+    ),
+)]
+#[instrument]
+async fn delete_token(
+    auth: OnlySessionAllowedAuthentication,
+    Path(id): Path<i32>,
+    State(site): State<NitroRepo>,
+) -> Result<Response, InternalError> {
+    let Some(token) = AuthToken::get_by_id_and_user_id(id, auth.get_id(), site.as_ref()).await?
+    else {
+        return Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::empty())
+            .unwrap());
+    };
+    token.delete(site.as_ref()).await?;
+    Ok(Response::builder()
+        .status(StatusCode::NO_CONTENT)
+        .body(Body::empty())
+        .unwrap())
 }

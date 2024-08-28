@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 
-use chrono::{DateTime, FixedOffset};
 use derive_more::derive::From;
 use nr_core::{
     database::user::auth_token::NewRepositoryToken, user::permissions::RepositoryActions,

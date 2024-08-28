@@ -16,6 +16,7 @@ declare module 'vue-router' {
     requiresRepositoryManager?: boolean
     requiresUserManager?: boolean
     sideBar?: Component
+    tag?: string
   }
 }
 const router = createRouter({

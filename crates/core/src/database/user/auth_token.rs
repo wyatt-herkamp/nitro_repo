@@ -95,6 +95,26 @@ impl AuthToken {
         };
         Ok(actions.contains(&repository_action))
     }
+    pub async fn get_by_id_and_user_id(
+        id: i32,
+        user_id: i32,
+        database: &PgPool,
+    ) -> sqlx::Result<Option<Self>> {
+        let token =
+            sqlx::query_as(r#"SELECT * FROM user_auth_tokens WHERE id = $1 AND user_id = $2"#)
+                .bind(id)
+                .bind(user_id)
+                .fetch_optional(database)
+                .await?;
+        Ok(token)
+    }
+    pub async fn delete(&self, database: &PgPool) -> sqlx::Result<()> {
+        sqlx::query(r#"DELETE FROM user_auth_tokens WHERE id = $1"#)
+            .bind(self.id)
+            .execute(database)
+            .await?;
+        Ok(())
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct NewAuthToken {
