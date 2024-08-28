@@ -41,9 +41,9 @@ pub enum Visibility {
     Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default, EnumIter, JsonSchema, EnumIs,
 )]
 pub enum Policy {
-    #[default]
     Release,
     Snapshot,
+    #[default]
     Mixed,
 }
 #[derive(Debug, Error)]

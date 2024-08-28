@@ -1,4 +1,4 @@
-use std::{any::type_name, error::Error};
+use std::error::Error;
 
 use crate::{
     app::{
@@ -26,7 +26,6 @@ use http_body_util::BodyExt;
 use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
-use serde_json::Value;
 use tracing::{debug, error, instrument, span, Level};
 mod header;
 mod repo_auth;
@@ -49,10 +48,6 @@ impl RepositoryRequestBody {
         self,
     ) -> Result<T, RepositoryHandlerError> {
         let body = self.body_as_bytes().await?;
-        if body.is_empty() {
-            let message = format!("Body is empty. Expected JSON for {}", type_name::<T>());
-            return Err(BadRequestErrors::Other(message).into());
-        }
         serde_json::from_slice(&body).map_err(RepositoryHandlerError::from)
     }
     #[cfg(debug_assertions)]

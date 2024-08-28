@@ -3,91 +3,28 @@ use crate::app::NitroRepo;
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
+pub use configs::*;
 use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
     builder_error,
     database::repository::{DBRepository, DBRepositoryConfig},
     repository::{
-        config::{
-            project::ProjectConfigType, ConfigDescription, PushRulesConfigType,
-            RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
-        },
+        config::{project::ProjectConfigType, RepositoryConfigType},
         project::ReleaseType,
     },
     storage::StoragePath,
 };
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
-use proxy::{MavenProxy, MavenProxyConfig};
-use schemars::{schema_for, JsonSchema};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-
+use proxy::MavenProxy;
+mod configs;
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;
 pub mod nitro_deploy;
 pub mod proxy;
 pub mod utils;
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "type", content = "config")]
-pub enum MavenRepositoryConfig {
-    Hosted,
-    Proxy(MavenProxyConfig),
-}
-impl MavenRepositoryConfig {
-    pub fn is_same_type(&self, other: &MavenRepositoryConfig) -> bool {
-        match (self, other) {
-            (MavenRepositoryConfig::Hosted, MavenRepositoryConfig::Hosted) => true,
-            (MavenRepositoryConfig::Proxy(_), MavenRepositoryConfig::Proxy(_)) => true,
-            _ => false,
-        }
-    }
-}
-#[derive(Debug, Clone, Default)]
-pub struct MavenRepositoryConfigType;
-impl RepositoryConfigType for MavenRepositoryConfigType {
-    fn get_type(&self) -> &'static str {
-        "maven"
-    }
 
-    fn get_type_static() -> &'static str
-    where
-        Self: Sized,
-    {
-        "maven"
-    }
-    fn schema(&self) -> Option<schemars::Schema> {
-        Some(schema_for!(MavenRepositoryConfig))
-    }
-    fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
-        let config: MavenRepositoryConfig = serde_json::from_value(config)?;
-        Ok(())
-    }
-    fn validate_change(&self, old: Value, new: Value) -> Result<(), RepositoryConfigError> {
-        let new: MavenRepositoryConfig = serde_json::from_value(new)?;
-        let old: MavenRepositoryConfig = serde_json::from_value(old)?;
-        if !old.is_same_type(&new) {
-            return Err(RepositoryConfigError::InvalidChange(
-                "maven",
-                "Cannot change the type of Maven Repository",
-            ));
-        }
-        Ok(())
-    }
-    fn default(&self) -> Result<Value, RepositoryConfigError> {
-        let config = MavenRepositoryConfig::Hosted;
-        Ok(serde_json::to_value(config).unwrap())
-    }
-    fn get_description(&self) -> ConfigDescription {
-        ConfigDescription {
-            name: "Maven Repository Config",
-            description: Some("Handles the type of Maven Repository"),
-            documentation_link: None,
-            ..Default::default()
-        }
-    }
-}
 #[derive(Debug, Default)]
 pub struct MavenRepositoryType;
 
@@ -98,8 +35,7 @@ impl RepositoryType for MavenRepositoryType {
 
     fn config_types(&self) -> Vec<&str> {
         vec![
-            PushRulesConfigType::get_type_static(),
-            SecurityConfigType::get_type_static(),
+            MavenPushRulesConfigType::get_type_static(),
             ProjectConfigType::get_type_static(),
         ]
     }
@@ -109,7 +45,7 @@ impl RepositoryType for MavenRepositoryType {
             type_name: "maven",
             name: "Maven",
             description: "A Maven Repository",
-            documentation_url: Some("https://maven.apache.org/"),
+            documentation_url: Some("https://nitro-repo.kingtux.dev/repositoryTypes/maven/"),
             is_stable: true,
             required_configs: vec![MavenRepositoryConfigType::get_type_static()],
         }

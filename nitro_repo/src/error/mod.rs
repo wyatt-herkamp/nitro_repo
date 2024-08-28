@@ -33,8 +33,11 @@ impl IntoResponse for SQLXError {
             .unwrap()
     }
 }
-
+/// Allows creating a response from an error
 pub trait IntoErrorResponse: Error + Send + Sync {
+    /// Converts the error into a response
+    ///
+    /// It must be of type of Box<Self> to allow for dynamic dispatch
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response;
 }
 impl IntoErrorResponse for sqlx::Error {

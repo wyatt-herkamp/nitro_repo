@@ -15,8 +15,7 @@ use nr_core::{
             get_repository_config_or_default,
             project::{ProjectConfig, ProjectConfigType},
             repository_page::RepositoryPageType,
-            PushRulesConfig, PushRulesConfigType, RepositoryConfigType, SecurityConfig,
-            SecurityConfigType,
+            RepositoryConfigType,
         },
         project::ProjectResolution,
         Visibility,
@@ -32,20 +31,20 @@ use uuid::Uuid;
 use crate::{
     app::NitroRepo,
     repository::{
-        maven::MavenRepositoryConfigType, Repository, RepositoryFactoryError,
-        RepositoryHandlerError,
+        maven::{configs::MavenPushRulesConfigType, MavenRepositoryConfigType},
+        utils::RepositoryExt,
+        Repository, RepositoryFactoryError, RepositoryHandlerError,
     },
 };
 
-use super::{utils::MavenRepositoryExt, RepoResponse, RepositoryRequest};
+use super::{configs::MavenPushRules, utils::MavenRepositoryExt, RepoResponse, RepositoryRequest};
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
     pub id: Uuid,
     pub name: String,
     pub active: AtomicBool,
     pub visibility: RwLock<Visibility>,
-    pub push_rules: RwLock<PushRulesConfig>,
-    pub security: RwLock<SecurityConfig>,
+    pub push_rules: RwLock<MavenPushRules>,
     pub project: RwLock<ProjectConfig>,
     #[debug(skip)]
     pub storage: DynStorage,
@@ -56,6 +55,7 @@ impl MavenHostedInner {}
 #[derive(Debug, Clone, Deref)]
 pub struct MavenHosted(Arc<MavenHostedInner>);
 impl MavenRepositoryExt for MavenHosted {}
+impl RepositoryExt for MavenHosted {}
 impl MavenHosted {
     #[instrument]
     pub async fn standard_maven_deploy(
@@ -104,18 +104,11 @@ impl MavenHosted {
         storage: DynStorage,
         site: NitroRepo,
     ) -> Result<Self, RepositoryFactoryError> {
-        let security_db = get_repository_config_or_default::<SecurityConfigType, SecurityConfig>(
-            repository.id,
-            site.as_ref(),
-        )
+        let push_rules_db = get_repository_config_or_default::<
+            MavenPushRulesConfigType,
+            MavenPushRules,
+        >(repository.id, site.as_ref())
         .await?;
-        debug!("Loaded Security Config: {:?}", security_db);
-        let push_rules_db =
-            get_repository_config_or_default::<PushRulesConfigType, PushRulesConfig>(
-                repository.id,
-                site.as_ref(),
-            )
-            .await?;
         debug!("Loaded Push Rules Config: {:?}", push_rules_db);
 
         let project_db = get_repository_config_or_default::<ProjectConfigType, ProjectConfig>(
@@ -131,7 +124,6 @@ impl MavenHosted {
             active: active,
             visibility: RwLock::new(repository.visibility),
             push_rules: RwLock::new(push_rules_db.value.0),
-            security: RwLock::new(security_db.value.0),
             project: RwLock::new(project_db.value.0),
             storage,
             site,
@@ -172,8 +164,7 @@ impl Repository for MavenHosted {
     fn config_types(&self) -> Vec<&str> {
         vec![
             RepositoryPageType::get_type_static(),
-            PushRulesConfigType::get_type_static(),
-            SecurityConfigType::get_type_static(),
+            MavenPushRulesConfigType::get_type_static(),
             ProjectConfigType::get_type_static(),
             MavenRepositoryConfigType::get_type_static(),
         ]
@@ -188,17 +179,12 @@ impl Repository for MavenHosted {
         };
         self.0.active.store(is_active, atomic::Ordering::Relaxed);
 
-        let push_rules_db =
-            get_repository_config_or_default::<PushRulesConfigType, PushRulesConfig>(
-                self.id,
-                self.site.as_ref(),
-            )
-            .await?;
-        let security_db = get_repository_config_or_default::<SecurityConfigType, SecurityConfig>(
-            self.id,
-            self.site.as_ref(),
-        )
+        let push_rules_db = get_repository_config_or_default::<
+            MavenPushRulesConfigType,
+            MavenPushRules,
+        >(self.id, self.site.as_ref())
         .await?;
+
         let project_config_db =
             get_repository_config_or_default::<ProjectConfigType, ProjectConfig>(
                 self.id,
@@ -210,10 +196,7 @@ impl Repository for MavenHosted {
             let mut push_rules = self.push_rules.write();
             *push_rules = push_rules_db.value.0;
         }
-        {
-            let mut security = self.security.write();
-            *security = security_db.value.0;
-        }
+
         {
             let mut project_config = self.project.write();
             *project_config = project_config_db.value.0;
@@ -262,8 +245,8 @@ impl Repository for MavenHosted {
     ) -> Result<RepoResponse, RepositoryHandlerError> {
         info!("Handling PUT Request for Repository: {}", self.id);
         {
-            let security = self.security.read();
-            if security.must_use_auth_token_for_push && !request.authentication.has_auth_token() {
+            let push_rules = self.push_rules.read();
+            if push_rules.must_use_auth_token_for_push && !request.authentication.has_auth_token() {
                 info!("Repository requires an auth token for push");
                 return Ok(RepoResponse::require_auth_token());
             }

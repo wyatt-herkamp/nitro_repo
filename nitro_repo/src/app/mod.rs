@@ -17,8 +17,7 @@ use nr_core::{
         user::user_utils,
     },
     repository::config::{
-        project::ProjectConfigType, repository_page::RepositoryPageType, PushRulesConfigType,
-        RepositoryConfigType, SecurityConfigType,
+        project::ProjectConfigType, repository_page::RepositoryPageType, RepositoryConfigType,
     },
 };
 use nr_storage::{DynStorage, Storage, StorageConfig, StorageFactory, STORAGE_FACTORIES};
@@ -36,7 +35,9 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
-    maven::{MavenRepositoryConfigType, MavenRepositoryType},
+    maven::{
+        MavenPushRules, MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType,
+    },
     npm::{NPMRegistryConfigType, NpmRegistryType},
     DynRepository, RepositoryType, StagingConfig,
 };
@@ -344,11 +345,10 @@ impl NitroRepo {
 pub type NitroRepoState = State<NitroRepo>;
 
 pub static REPOSITORY_CONFIG_TYPES: &'static [&dyn RepositoryConfigType] = &[
-    &PushRulesConfigType,
-    &SecurityConfigType,
     &ProjectConfigType,
     &RepositoryPageType,
     &MavenRepositoryConfigType,
+    &MavenPushRulesConfigType,
     &NPMRegistryConfigType,
 ];
 pub static REPOSITORY_TYPES: &'static [&dyn RepositoryType] =

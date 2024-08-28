@@ -7,11 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::repository::RepoResponse;
 pub mod couch_db;
 pub mod web_login;
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NewLoginResponse {
-    pub done_url: String,
-    pub login_url: String,
-}
+
 #[derive(Debug, From)]
 pub enum LoginResponse {
     ValidCouchDBLogin(CouchDBLoginResponse),
