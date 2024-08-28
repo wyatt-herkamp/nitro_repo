@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS user_auth_tokens (
             FOREIGN KEY (user_id)
                 REFERENCES users (id)
                 ON DELETE CASCADE,
+    name TEXT,
+    description TEXT,
     token TEXT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     source TEXT NOT NULL,

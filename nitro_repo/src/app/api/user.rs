@@ -16,14 +16,19 @@ use axum_extra::{
     TypedHeader,
 };
 use http::{header::SET_COOKIE, StatusCode};
-use nr_core::database::user::{
-    permissions::FullUserPermissions, ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel,
-    UserSafeData, UserType,
+use nr_core::{
+    database::user::{
+        auth_token::{AuthTokenRepositoryScope, AuthTokenScope},
+        permissions::FullUserPermissions,
+        ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,
+    },
+    user::token::{AuthTokenFullResponse, AuthTokenResponse},
 };
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use utoipa::OpenApi;
 mod password_reset;
+mod tokens;
 use crate::{
     app::{
         authentication::{
@@ -45,7 +50,10 @@ use crate::{
         logout,
         password_reset::request_password_reset,
         password_reset::does_exist,
-        password_reset::change_password
+        password_reset::change_password,
+        tokens::create,
+        tokens::list,
+        tokens::get_token
     ),
     components(schemas(
         UserSafeData,
@@ -53,7 +61,11 @@ use crate::{
         Session,
         password_reset::RequestPasswordReset,
         ChangePasswordWithCheck,
-        ChangePasswordNoCheck
+        ChangePasswordNoCheck,
+        AuthTokenFullResponse,
+        AuthTokenResponse,
+        AuthTokenRepositoryScope,
+        AuthTokenScope
     ))
 )]
 pub struct UserAPI;
@@ -67,6 +79,7 @@ pub fn user_routes() -> axum::Router<NitroRepo> {
         .route("/sessions", axum::routing::get(get_sessions))
         .route("/logout", axum::routing::post(logout))
         .nest("/password-reset", password_reset::password_reset_routes())
+        .nest("/token", tokens::token_routes())
 }
 #[utoipa::path(
     get,

@@ -14,6 +14,7 @@ use nr_core::database::project::{DBProject, DBProjectMember, DBProjectVersion};
 use nr_core::database::user::permissions::FullUserPermissions;
 use nr_core::database::user::NewUserRequest;
 use nr_core::user::permissions::{RepositoryActions, UserPermissions};
+use nr_core::user::scopes::{NRScope, ScopeDescription};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};
 
 use utoipa::{Modify, OpenApi};
@@ -31,6 +32,7 @@ use utoipa::{Modify, OpenApi};
     paths(
         api::info,
         api::install,
+        api::scopes,
     ),
     components(
         schemas(
@@ -40,7 +42,7 @@ use utoipa::{Modify, OpenApi};
             DBProject,
             DBProjectMember,
             DBProjectVersion,
-            NewUserRequest, RepositoryActions, FullUserPermissions
+            NewUserRequest, RepositoryActions, FullUserPermissions, ScopeDescription, NRScope
         )
     ),
     tags(

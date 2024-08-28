@@ -1,25 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import InstallView from '@/views/admin/InstallView.vue'
 import BrowseView from '@/views/BrowseView.vue'
-import ProfileView from '@/views/ProfileView.vue'
 import LoginView from '@/views/LoginView.vue'
 import LogoutView from '@/views/LogoutView.vue'
-import AdminHome from '@/views/admin/AdminHome.vue'
-import UserListView from '@/views/admin/user/UserListView.vue'
-import UserCreateView from '@/views/admin/user/UserCreateView.vue'
-import CreateStorageView from '@/views/admin/storage/CreateStorageView.vue'
-import ViewStorage from '@/views/admin/storage/ViewStorage.vue'
-import StorageListView from '@/views/admin/storage/StorageListView.vue'
-import CreateRepositoryView from '@/views/admin/repository/CreateRepositoryView.vue'
-import ViewRepositoryView from '@/views/admin/repository/ViewRepositoryView.vue'
-import RepositoryListView from '@/views/admin/repository/RepositoryListView.vue'
-import UserPage from '@/views/admin/user/UserPage.vue'
+
 import RepositoriesView from '@/views/RepositoriesView.vue'
 import RepositoryPageView from '@/views/RepositoryPageView.vue'
+import type { Component } from 'vue'
+
+import { adminRoutes } from '@/views/admin/adminRoutes'
+import { profileRoutes } from '@/views/profile/profileRoutes'
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
+    requiresRepositoryManager?: boolean
+    requiresUserManager?: boolean
+    sideBar?: Component
   }
 }
 const router = createRouter({
@@ -30,21 +26,13 @@ const router = createRouter({
       name: 'home',
       component: HomeView
     },
-    {
-      path: '/admin/install',
-      name: 'AdminInstall',
-      component: InstallView
-    },
+
     {
       path: '/browse/:id/:catchAll(.*)?',
       name: 'Browse',
       component: BrowseView
     },
-    {
-      path: '/profile',
-      name: 'profile',
-      component: ProfileView
-    },
+
     {
       path: '/login',
       name: 'login',
@@ -65,56 +53,8 @@ const router = createRouter({
       name: 'repository',
       component: RepositoryPageView
     },
-    {
-      path: '/admin',
-      name: 'admin',
-      component: AdminHome
-    },
-    {
-      path: '/admin/users',
-      name: 'UsersList',
-      component: UserListView
-    },
-    {
-      path: '/admin/user/create',
-      name: 'UserCreate',
-      component: UserCreateView
-    },
-    {
-      path: '/admin/user/:id',
-      name: 'ViewUser',
-      component: UserPage
-    },
-    {
-      path: '/admin/repositories',
-      name: 'RepositoriesList',
-      component: RepositoryListView
-    },
-    {
-      path: '/admin/repositories/create',
-      name: 'RepositoryCreate',
-      component: CreateRepositoryView
-    },
-    {
-      path: '/admin/repository/:id',
-      name: 'AdminViewRepository',
-      component: ViewRepositoryView
-    },
-    {
-      path: '/admin/storages',
-      name: 'StorageList',
-      component: StorageListView
-    },
-    {
-      path: '/admin/storage/create',
-      name: 'StorageCreate',
-      component: CreateStorageView
-    },
-    {
-      path: '/admin/storage/:id',
-      name: 'ViewStorage',
-      component: ViewStorage
-    }
+    ...adminRoutes,
+    ...profileRoutes
   ]
 })
 

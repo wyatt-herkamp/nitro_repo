@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     database::DateTime,
-    user::{permissions::RepositoryActions, scopes::Scopes},
+    user::{permissions::RepositoryActions, scopes::NRScope},
 };
 
 use super::ReferencesUser;
@@ -16,12 +16,15 @@ pub use repository_scope::*;
 pub use scope::*;
 pub use utils::*;
 /// Table Name: user_auth_tokens
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
 pub struct AuthToken {
     pub id: i32,
     pub user_id: i32,
+    pub name: Option<String>,
+    pub description: Option<String>,
     pub token: String,
     pub active: bool,
+    pub source: String,
     pub expires_at: Option<DateTime>,
     pub created_at: DateTime,
 }
@@ -50,7 +53,7 @@ impl AuthToken {
                 .await?;
         Ok(token)
     }
-    pub async fn has_scope(&self, scope: Scopes, database: &PgPool) -> sqlx::Result<bool> {
+    pub async fn has_scope(&self, scope: NRScope, database: &PgPool) -> sqlx::Result<bool> {
         let can_read: i64 = sqlx::query_scalar(
             r#"SELECT COUNT(id) FROM user_auth_token_scopes WHERE user_auth_token_id = $1 AND scope = $2"#,
         )
@@ -91,5 +94,57 @@ impl AuthToken {
             return Ok(false);
         };
         Ok(actions.contains(&repository_action))
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct NewAuthToken {
+    pub user_id: i32,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub source: String,
+    pub scopes: Vec<NRScope>,
+    pub repositories: Vec<(Uuid, Vec<RepositoryActions>)>,
+}
+impl NewAuthToken {
+    pub async fn insert(self, database: &PgPool) -> sqlx::Result<(i32, String)> {
+        let (token, hashed_token) = create_token(database).await?;
+        let Self {
+            user_id,
+            name,
+            description,
+            source,
+            scopes,
+            repositories,
+        } = self;
+
+        let token_id: i32 = sqlx::query_scalar(
+            r#"INSERT INTO user_auth_tokens (user_id, name, description, token, source) VALUES ($1, $2, $3, $4, $5) RETURNING id"#,
+        )
+        .bind(user_id)
+        .bind(name)
+        .bind(description)
+        .bind(hashed_token)
+        .bind(source)
+        .fetch_one(database)
+        .await?;
+
+        for scope in scopes {
+            let scope = NewAuthTokenScope {
+                user_auth_token_id: token_id,
+                scope,
+            };
+            scope.insert_no_return(database).await?;
+        }
+
+        for (repository, actions) in repositories {
+            let repository_scope = NewRepositoryScope {
+                token_id,
+                repository,
+                actions,
+            };
+            repository_scope.insert_no_return(database).await?;
+        }
+
+        Ok((token_id, token))
     }
 }

@@ -2,11 +2,13 @@ use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, PgPool};
 use tracing::{debug, instrument, span};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{database::DateTime, user::permissions::RepositoryActions};
 
 use super::{create_token, hash_token};
+/// Table Name: user_auth_token_repository_scopes
 /// Represents the actions that can be taken on a repository
 ///
 /// Repository Scopes can be overridden by having a scope for all repositories
@@ -14,19 +16,34 @@ use super::{create_token, hash_token};
 /// RepositoryActions::Read has Scopes::ReadRepository meaning they can read all repositories that the user has access to
 /// RepositoryActions::Write has Scopes::WriteRepository meaning they can write to all repositories that the user has access to
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct AuthTokenRepositoryScope {
     pub id: i32,
     pub user_auth_token_id: i32,
     pub repository_id: Uuid,
-    pub action: Vec<RepositoryActions>,
+    pub actions: Vec<RepositoryActions>,
     pub created_at: DateTime,
+}
+impl AuthTokenRepositoryScope {
+    pub async fn get_by_token_id(
+        user_auth_token_id: i32,
+        database: &PgPool,
+    ) -> sqlx::Result<Vec<Self>> {
+        let scopes = sqlx::query_as(
+            r#"SELECT * FROM user_auth_token_repository_scopes WHERE user_auth_token_id = $1"#,
+        )
+        .bind(user_auth_token_id)
+        .fetch_all(database)
+        .await?;
+        Ok(scopes)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Builder)]
 pub struct NewRepositoryToken {
     pub user_id: i32,
     pub source: String,
+
     pub repositories: Vec<(Uuid, Vec<RepositoryActions>)>,
     pub expires_at: Option<DateTime>,
 }
@@ -48,10 +65,9 @@ impl NewRepositoryToken {
         self.repositories.push((repository, actions));
         self
     }
-    #[instrument]
+    #[instrument(name = "NewRepositoryToken::insert")]
     pub async fn insert(self, database: &PgPool) -> sqlx::Result<(i32, String)> {
-        let token = create_token(database).await?;
-        let hashed_token = hash_token(&token);
+        let (token, hashed_token) = create_token(database).await?;
         let Self {
             user_id,
             source,
@@ -88,7 +104,7 @@ pub struct NewRepositoryScope {
     pub actions: Vec<RepositoryActions>,
 }
 impl NewRepositoryScope {
-    #[instrument]
+    #[instrument(name = "NewRepositoryScope::insert")]
     pub async fn insert_no_return(self, database: &PgPool) -> sqlx::Result<()> {
         let Self {
             token_id,

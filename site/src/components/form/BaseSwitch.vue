@@ -1,8 +1,8 @@
 <template>
   <div class="switchBox">
     <label class="switch">
-      <input v-model="value" v-bind="$attrs" type="checkbox" />
-      <span class="slider" :data-checked="value ? 'true' : 'false'"></span>
+      <input v-model="innerValue" v-bind="$attrs" type="checkbox" />
+      <span class="slider" :data-checked="innerValue ? 'true' : 'false'"></span>
     </label>
   </div>
 </template>
@@ -10,13 +10,22 @@
 import { ref, watch } from 'vue'
 
 let value = defineModel<boolean>({
-  required: true
+  required: false
 })
+let innerValue = ref(value.value || false)
 const emit = defineEmits<{
   (e: 'change', newValue: boolean): void
+  (e: 'setTrue'): void
+  (e: 'setFalse'): void
 }>()
-watch(value, (newValue) => {
+watch(innerValue, (newValue) => {
+  value.value = newValue
   emit('change', newValue)
+  if (newValue) {
+    emit('setTrue')
+  } else {
+    emit('setFalse')
+  }
 })
 </script>
 

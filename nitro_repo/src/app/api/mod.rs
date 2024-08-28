@@ -1,7 +1,8 @@
-use axum::{extract::State, Json};
+use axum::{extract::State, response::Response, Json};
 use http::StatusCode;
-use nr_core::database::user::NewUserRequest;
+use nr_core::{database::user::NewUserRequest, user::scopes::NRScope};
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
 use utoipa::ToSchema;
@@ -15,6 +16,7 @@ use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
 pub fn api_routes() -> axum::Router<NitroRepo> {
     let router = axum::Router::new()
         .route("/info", axum::routing::get(info))
+        .route("/info/scopes", axum::routing::get(scopes))
         .route("/install", axum::routing::post(install))
         .nest("/user", user::user_routes())
         .nest("/storage", storage::storage_routes())
@@ -38,6 +40,24 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
 pub async fn info(State(site): NitroRepoState) -> Json<Instance> {
     let site = site.instance.lock().clone();
     Json(site)
+}
+#[utoipa::path(
+    get,
+    path = "/api/info/scopes",
+    responses(
+        (status = 200, description = "List of all the scopes", body = [ScopeDescription])
+    )
+)]
+pub async fn scopes() -> Response {
+    let scopes = NRScope::iter()
+        .map(|scope| scope.description())
+        .collect::<Vec<_>>();
+    let scopes = serde_json::to_string(&scopes).unwrap();
+    Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "application/json")
+        .body(scopes.into())
+        .unwrap()
 }
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct InstallRequest {

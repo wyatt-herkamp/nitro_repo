@@ -1,3 +1,9 @@
+export interface ScopeDescription {
+  key: string
+  description: string
+  name: string
+  parent?: string
+}
 export interface SmallIdentification {
   name: string
 }

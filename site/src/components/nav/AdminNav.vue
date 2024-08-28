@@ -1,109 +1,74 @@
 <template>
-  <nav>
-    <router-link to="/" id="logoAndHome" class="navLink">
-      <img src="/icon-128.png" alt="Logo" />
-      <span>Nitro Repository</span>
-    </router-link>
-    <AdminNavSub :isOpen="isOnUsersPage">
+  <SideNav>
+    <ExpandingSideNav :openIfHasTag="adminUserTag">
       <template #button>
-        <RouterLink
-          class="navLink"
-          :data-active="isActive('UsersList')"
-          :to="{
-            name: 'UsersList'
-          }">
+        <SideNavElement to="/admin/users" routeName="UserList">
           <font-awesome-icon icon="fa-solid fa-users" />
           <span>Users</span>
-        </RouterLink>
+        </SideNavElement>
       </template>
       <template #content>
-        <RouterLink
-          class="navLink"
-          :to="{ name: 'UserCreate' }"
-          :data-active="isActive('UserCreate')">
+        <SideNavElement to="/admin/user/create" routeName="UserCreate">
           <font-awesome-icon icon="fa-solid fa-user-plus" />
           <span>Create User</span>
-        </RouterLink>
+        </SideNavElement>
       </template>
-    </AdminNavSub>
-    <AdminNavSub :isOpen="isOnStoragesPage">
+    </ExpandingSideNav>
+    <ExpandingSideNav :openIfHasTag="adminStorageTag">
       <template #button>
-        <RouterLink
-          class="navLink"
-          :data-active="isActive('StorageList')"
-          :to="{
-            name: 'StorageList'
-          }">
+        <SideNavElement to="/admin/storages" routeName="StorageList">
           <font-awesome-icon icon="fa-solid fa-box-open" />
           <span>Storages</span>
-        </RouterLink>
+        </SideNavElement>
       </template>
       <template #content>
-        <RouterLink
-          class="navLink"
-          :to="{ name: 'StorageCreate' }"
-          :data-active="isActive('StorageCreate')">
+        <SideNavElement to="/admin/storage/create" routeName="StorageCreate">
           <font-awesome-icon icon="fa-solid fa-box-open" />
           <span>Create Storage</span>
-        </RouterLink>
+        </SideNavElement>
       </template>
-    </AdminNavSub>
-    <AdminNavSub :isOpen="isOnRepositoriesPage">
+    </ExpandingSideNav>
+    <ExpandingSideNav :openIfHasTag="adminRepositoryTag">
       <template #button>
-        <RouterLink
-          class="navLink"
-          to="/admin/repositories"
-          :data-active="isActive('RepositoriesList')">
+        <SideNavElement to="/admin/repositories" routeName="RepositoriesList">
           <font-awesome-icon icon="fa-solid fa-boxes-packing" />
           <span>Repositories</span>
-        </RouterLink>
+        </SideNavElement>
       </template>
       <template #content>
-        <RouterLink
-          class="navLink"
-          :to="{ name: 'RepositoryCreate' }"
-          :data-active="isActive('RepositoryCreate')">
+        <SideNavElement to="/admin/repositories/create" routeName="RepositoryCreate">
           <font-awesome-icon icon="fa-solid fa-boxes-packing" />
           <span>Create Repository</span>
-        </RouterLink>
+        </SideNavElement>
       </template>
-    </AdminNavSub>
+    </ExpandingSideNav>
 
-    <RouterLink class="navLink" to="/admin/system">
+    <SideNavElement to="/admin/system" routeName="SystemSettings">
       <font-awesome-icon icon="fa-solid fa-gear" />
       <span>System</span>
-    </RouterLink>
-  </nav>
+    </SideNavElement>
+  </SideNav>
 </template>
 
 <script setup lang="ts">
 import { sessionStore } from '@/stores/session'
 import { RouterLink } from 'vue-router'
-import AdminNavSub from './AdminNavSub.vue'
 import { computed, type PropType } from 'vue'
 import router from '@/router'
 import type { UserResponseType } from '@/types/base'
+import { adminRepositoryTag, adminStorageTag, adminUserTag } from '@/views/admin/adminRoutes'
+import SideNav from './sideNav/SideNav.vue'
+import ExpandingSideNav from './sideNav/ExpandingSideNav.vue'
+import SideNavElement from './sideNav/SideNavElement.vue'
 const props = defineProps({
   user: Object as PropType<UserResponseType>
 })
-const isOnUsersPage = computed(() => {
-  const name = router.currentRoute.value.path
-  return name.startsWith('/admin/users') || name.startsWith('/admin/user')
-})
-const isOnStoragesPage = computed(() => {
-  const name = router.currentRoute.value.path
-  return name.startsWith('/admin/storages') || name.startsWith('/admin/storage')
-})
-const isOnRepositoriesPage = computed(() => {
-  const name = router.currentRoute.value.path
-  return name.startsWith('/admin/repositories') || name.startsWith('/admin/repository')
-})
+
 const activeLink = computed(() => {
   return router.currentRoute.value.name
 })
-
-function isActive(name: string) {
-  return router.currentRoute.value.name === name
+function hasTag(tag: string) {
+  return router.currentRoute.value.meta.tag === tag
 }
 </script>
 
@@ -136,12 +101,7 @@ nav {
     transition: background-color 0.3s ease;
   }
 }
-.navLink[data-active='true'] {
-  background-color: $primary-70;
-  &:hover {
-    cursor: default;
-  }
-}
+
 #logoAndHome {
   img {
     width: 2rem;

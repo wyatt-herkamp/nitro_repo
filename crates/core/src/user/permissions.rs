@@ -14,7 +14,7 @@ use crate::database::user::{
     permissions::{NewUserRepositoryPermissions, UserRepositoryPermissions},
 };
 
-use super::scopes::Scopes;
+use super::scopes::NRScope;
 /// User permissions
 ///
 /// Default permissions are allowed to read and write to repositories but nothing else
@@ -115,12 +115,12 @@ impl RepositoryActions {
         vec![Self::Read, Self::Write, Self::Edit]
     }
 }
-impl From<RepositoryActions> for Scopes {
+impl From<RepositoryActions> for NRScope {
     fn from(action: RepositoryActions) -> Self {
         match action {
-            RepositoryActions::Read => Scopes::ReadRepository,
-            RepositoryActions::Write => Scopes::WriteRepository,
-            RepositoryActions::Edit => Scopes::EditRepository,
+            RepositoryActions::Read => NRScope::ReadRepository,
+            RepositoryActions::Write => NRScope::WriteRepository,
+            RepositoryActions::Edit => NRScope::EditRepository,
         }
     }
 }

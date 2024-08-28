@@ -2,6 +2,7 @@ use std::fmt::{Debug, Display};
 use std::ops::Deref;
 
 use axum::async_trait;
+use axum::body::Body;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::response::IntoResponse;
 use axum_extra::extract::cookie::Cookie;
@@ -30,13 +31,21 @@ pub mod session;
 
 #[derive(Error, Debug)]
 pub enum AuthenticationError {
-    #[error("DB error {0}")]
-    DBError(#[from] sqlx::Error),
+    #[error("Error: {0}")]
+    RequestTypeError(Box<dyn IntoErrorResponse>),
     #[error("You are not logged in.")]
     Unauthorized,
     #[error("Password is not able to be verified.")]
     PasswordVerificationError,
+    #[error("No Auth Token Allowed here")]
+    AuthTokenForbidden,
 }
+impl From<sqlx::Error> for AuthenticationError {
+    fn from(err: sqlx::Error) -> Self {
+        AuthenticationError::RequestTypeError(Box::new(err))
+    }
+}
+
 impl IntoErrorResponse for AuthenticationError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         self.into_response()
@@ -44,13 +53,83 @@ impl IntoErrorResponse for AuthenticationError {
 }
 impl IntoResponse for AuthenticationError {
     fn into_response(self) -> axum::response::Response {
-        error!("{}", self);
-        Response::builder()
-            .status(http::StatusCode::UNAUTHORIZED)
-            .body("Unauthorized".into())
-            .unwrap()
+        error!("Authentication Error: {}", self);
+        match self {
+            AuthenticationError::RequestTypeError(err) => err.into_response_boxed(),
+            AuthenticationError::AuthTokenForbidden => Response::builder()
+                .status(http::StatusCode::FORBIDDEN)
+                .body(Body::from(
+                    "This Route Prohibits Auth Tokens as a form of Authentication",
+                ))
+                .unwrap(),
+            other => Response::builder()
+                .status(http::StatusCode::UNAUTHORIZED)
+                .body(Body::from(format!("Authentication Error: {}", other)))
+                .unwrap(),
+        }
     }
 }
+#[derive(Clone, Debug, PartialEq)]
+
+pub struct OnlySessionAllowedAuthentication {
+    pub user: UserSafeData,
+    pub session: Session,
+}
+impl Deref for OnlySessionAllowedAuthentication {
+    type Target = UserSafeData;
+    fn deref(&self) -> &Self::Target {
+        &self.user
+    }
+}
+
+impl HasPermissions for OnlySessionAllowedAuthentication {
+    fn user_id(&self) -> Option<i32> {
+        Some(self.user.id)
+    }
+
+    fn get_permissions(&self) -> Option<UserPermissions> {
+        self.user.get_permissions()
+    }
+}
+#[async_trait]
+impl<S> FromRequestParts<S> for OnlySessionAllowedAuthentication
+where
+    NitroRepo: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = AuthenticationError;
+    #[instrument(
+        name = "api_session_only_from_request",
+        skip(parts, state),
+        fields(project_module = "Authentication")
+    )]
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
+        let repo = NitroRepo::from_ref(state);
+        let Some(raw_auth) = raw_extension else {
+            return Err(AuthenticationError::Unauthorized);
+        };
+        match raw_auth {
+            AuthenticationRaw::NoIdentification => {
+                return Err(AuthenticationError::Unauthorized);
+            }
+            AuthenticationRaw::AuthToken(_) => {
+                return Err(AuthenticationError::AuthTokenForbidden);
+            }
+            AuthenticationRaw::Session(session) => {
+                let user = UserSafeData::get_by_id(session.user_id, &repo.database)
+                    .await?
+                    .ok_or(AuthenticationError::Unauthorized)?;
+                return Ok(OnlySessionAllowedAuthentication { user, session });
+            }
+            other => {
+                warn!("Unknown Authentication Method: {}", other);
+                return Err(AuthenticationError::Unauthorized);
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, EnumIs)]
 pub enum Authentication {
     /// An Auth Token was passed under the Authorization Header
@@ -207,9 +286,8 @@ pub async fn verify_login(
     password: impl AsRef<str>,
     database: &PgPool,
 ) -> Result<UserSafeData, AuthenticationError> {
-    let user_found: Option<UserModel> = UserModel::get_by_username_or_email(username, database)
-        .await
-        .map_err(AuthenticationError::DBError)?;
+    let user_found: Option<UserModel> =
+        UserModel::get_by_username_or_email(username, database).await?;
     let Some(user) = user_found else {
         return Err(AuthenticationError::Unauthorized);
     };
@@ -223,12 +301,10 @@ pub async fn get_user_and_auth_token(
     database: &PgPool,
 ) -> Result<(UserSafeData, AuthToken), AuthenticationError> {
     let auth_token = AuthToken::get_by_token(token, database)
-        .await
-        .map_err(AuthenticationError::DBError)?
+        .await?
         .ok_or(AuthenticationError::Unauthorized)?;
     let user = UserSafeData::get_by_id(auth_token.user_id, database)
-        .await
-        .map_err(AuthenticationError::DBError)?
+        .await?
         .ok_or(AuthenticationError::Unauthorized)?;
     Ok((user, auth_token))
 }

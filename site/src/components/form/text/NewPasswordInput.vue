@@ -33,6 +33,7 @@ import type { PasswordRules, SiteInfo } from '@/types/base'
 import { icon } from '@fortawesome/fontawesome-svg-core'
 import { computed, ref, watch, type PropType, type Ref } from 'vue'
 import InputRequirements from './InputRequirements.vue'
+import { siteStore } from '@/stores/site'
 
 const props = defineProps({
   id: {
@@ -41,8 +42,15 @@ const props = defineProps({
   },
   passwordRules: {
     type: Object as PropType<PasswordRules>,
-    required: true
+    required: false
   }
+})
+const actualPasswordRules = computed(() => {
+  if (props.passwordRules) {
+    return props.passwordRules
+  }
+  const site = siteStore()
+  return site.getPasswordRulesOrDefault()
 })
 const passwordsMatch = ref(false)
 const isFocused = ref(false)
@@ -87,16 +95,16 @@ const validations: Ref<
   }[]
 > = ref([])
 
-if (props.passwordRules.min_length !== 0) {
+if (actualPasswordRules.value.min_length !== 0) {
   validations.value.push({
-    message: `Password must be at least ${props.passwordRules.min_length} characters long`,
+    message: `Password must be at least ${actualPasswordRules.value.min_length} characters long`,
     valid: false,
     test: (value: string) => {
-      return value.length >= props.passwordRules.min_length
+      return value.length >= actualPasswordRules.value.min_length
     }
   })
 }
-if (props.passwordRules.require_uppercase) {
+if (actualPasswordRules.value.require_uppercase) {
   validations.value.push({
     message: 'Password must contain at least one uppercase letter',
     valid: false,
@@ -105,7 +113,7 @@ if (props.passwordRules.require_uppercase) {
     }
   })
 }
-if (props.passwordRules.require_lowercase) {
+if (actualPasswordRules.value.require_lowercase) {
   validations.value.push({
     message: 'Password must contain at least one lowercase letter',
     valid: false,
@@ -114,7 +122,7 @@ if (props.passwordRules.require_lowercase) {
     }
   })
 }
-if (props.passwordRules.require_number) {
+if (actualPasswordRules.value.require_number) {
   validations.value.push({
     message: 'Password must contain at least one number',
     valid: false,
@@ -123,7 +131,7 @@ if (props.passwordRules.require_number) {
     }
   })
 }
-if (props.passwordRules.require_special) {
+if (actualPasswordRules.value.require_special) {
   validations.value.push({
     message: 'Password must contain at least one special character',
     valid: false,

@@ -36,6 +36,9 @@ export const repositoriesStore = defineStore(
       }
       return Object.values(repositories.value)
     }
+    function getRepositoryFromCache(id: string): RepositoryWithStorageName | undefined {
+      return repositories.value[id]
+    }
     async function getRepositoryById(
       id: string,
       resetCache: boolean = true
@@ -137,6 +140,7 @@ export const repositoriesStore = defineStore(
       getConfigSchema,
       getDefaultConfig,
       getStorages,
+      getRepositoryFromCache,
       getRepositories
     }
   },

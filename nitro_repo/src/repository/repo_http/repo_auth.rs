@@ -53,7 +53,7 @@ impl RepositoryAuthentication {
                     database,
                 )
                 .await
-                .map_err(AuthenticationError::DBError)
+                .map_err(AuthenticationError::from)
             }
             RepositoryAuthentication::Session(_, user)
             | RepositoryAuthentication::Basic(None, user) => {
@@ -168,8 +168,7 @@ where
             }
             AuthenticationRaw::Session(session) => {
                 let user = UserSafeData::get_by_id(session.user_id, &repo.database)
-                    .await
-                    .map_err(AuthenticationError::DBError)?
+                    .await?
                     .ok_or(AuthenticationError::Unauthorized)?;
                 Ok(RepositoryAuthentication::Session(session, user))
             }
@@ -196,12 +195,10 @@ async fn get_by_auth_token(
     database: &PgPool,
 ) -> Result<(AuthToken, UserSafeData), AuthenticationError> {
     let token = AuthToken::get_by_token(token, database)
-        .await
-        .map_err(AuthenticationError::DBError)?
+        .await?
         .ok_or(AuthenticationError::Unauthorized)?;
     let user = UserSafeData::get_by_id(token.user_id, database)
-        .await
-        .map_err(AuthenticationError::DBError)?
+        .await?
         .ok_or(AuthenticationError::Unauthorized)?;
     Ok((token, user))
 }

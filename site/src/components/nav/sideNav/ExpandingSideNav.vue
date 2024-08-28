@@ -7,9 +7,26 @@
   </div>
 </template>
 <script setup lang="ts">
+import router from '@/router'
 import { computed, defineProps } from 'vue'
 const props = defineProps({
-  isOpen: Boolean
+  isOpen: {
+    type: Boolean,
+    required: false
+  },
+  openIfHasTag: {
+    type: String
+  }
+})
+const isOpen = computed(() => {
+  if (props.openIfHasTag) {
+    return router.currentRoute.value.meta.tag === props.openIfHasTag
+  }
+  if (props.isOpen !== undefined) {
+    return props.isOpen
+  }
+  console.error('No isOpen or openIfHasTag provided')
+  return false
 })
 </script>
 <style scoped lang="scss">

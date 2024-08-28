@@ -5,6 +5,7 @@ use sqlx::prelude::Type;
 use thiserror::Error;
 use tracing::instrument;
 pub mod scopes;
+pub mod token;
 use crate::utils::validations;
 
 pub mod permissions;

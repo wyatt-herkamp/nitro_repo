@@ -7,6 +7,7 @@ import { apiURL } from '@/config'
 
 import { MavenFrontendDefinition } from '@/components/repository/types/maven/maven'
 import NPMConfig from '@/components/repository/types/npm/NPMConfig.vue'
+import type { RepositoryActionsType } from './user'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -127,4 +128,8 @@ export function createRepositoryRoute(
   } else {
     return `${backend}/repositories/${repository.storage_name}/${repository.name}/${route}`
   }
+}
+export interface RepositoryToActions {
+  repositoryId: string
+  actions: RepositoryActionsType
 }
