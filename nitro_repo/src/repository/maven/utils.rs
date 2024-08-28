@@ -15,10 +15,7 @@ use tracing::{error, info, instrument, trace};
 use uuid::Uuid;
 
 use super::{MavenError, RepoResponse, RepositoryAuthentication, RepositoryHandlerError};
-use crate::{
-    error::{self, BadRequestErrors},
-    repository::Repository,
-};
+use crate::{error::BadRequestErrors, repository::Repository};
 
 /// Utilities for Maven Repositories
 pub trait MavenRepositoryExt: Repository + Debug {
@@ -214,6 +211,7 @@ pub fn pom_to_update_db_project_version(pom: Pom) -> Result<UpdateProjectVersion
     let result = UpdateProjectVersion {
         release_type: Some(release_type),
         extra: Some(extra),
+        ..Default::default()
     };
     Ok(result)
 }

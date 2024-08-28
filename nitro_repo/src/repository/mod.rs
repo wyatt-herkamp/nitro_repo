@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 
-use std::future::Future;
+use std::{fmt::Debug, future::Future};
 
 use axum::{
     body::Body,
@@ -13,6 +13,13 @@ use nr_core::{
     repository::{project::ProjectResolution, Visibility},
     storage::StoragePath,
 };
+pub mod prelude {
+    pub use super::{RepoResponse, Repository, RepositoryHandlerError, RepositoryRequest};
+    pub use crate::app::NitroRepo;
+    pub use axum::response::{IntoResponse, Response};
+    pub use http::StatusCode;
+    pub use nr_core::{repository::project::*, repository::*, storage::*};
+}
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 mod staging;
@@ -28,9 +35,9 @@ use uuid::Uuid;
 pub mod utils;
 use crate::{
     app::{authentication::AuthenticationError, NitroRepo},
-    error::BadRequestErrors,
+    error::{BadRequestErrors, IntoErrorResponse},
 };
-pub trait Repository: Send + Sync + Clone {
+pub trait Repository: Send + Sync + Clone + Debug {
     fn get_storage(&self) -> DynStorage;
     /// The Repository type. This is used to identify the Repository type in the database
     fn get_type(&self) -> &'static str;
@@ -144,7 +151,7 @@ pub trait Repository: Send + Sync + Clone {
 #[derive(Debug, Clone, DynRepositoryHandler)]
 pub enum DynRepository {
     Maven(maven::MavenRepository),
-    NPM(npm::NpmRegistry),
+    NPM(npm::NPMRegistry),
 }
 #[derive(Debug, Error)]
 pub enum RepositoryHandlerError {
@@ -156,15 +163,20 @@ pub enum RepositoryHandlerError {
     MissingBody,
     #[error("Invalid JSON: {0}")]
     InvalidJson(#[from] serde_json::Error),
-    #[error("Bad Request: {0}")]
-    BadRequest(#[from] BadRequestErrors),
-    #[error("Maven Repository Error: {0}")]
-    MavenError(#[from] maven::MavenError),
     #[error("IO Error: {0}")]
     IOError(#[from] std::io::Error),
     #[error("Authentication Error: {0}")]
     AuthenticationError(#[from] AuthenticationError),
+    #[error("{0}")]
+    Other(Box<dyn IntoErrorResponse>),
 }
+
+impl From<BadRequestErrors> for RepositoryHandlerError {
+    fn from(error: BadRequestErrors) -> Self {
+        RepositoryHandlerError::Other(Box::new(error))
+    }
+}
+
 impl IntoResponse for RepositoryHandlerError {
     fn into_response(self) -> Response {
         match self {
@@ -175,8 +187,7 @@ impl IntoResponse for RepositoryHandlerError {
                     error
                 )))
                 .unwrap(),
-            RepositoryHandlerError::MavenError(error) => error.into_response(),
-            RepositoryHandlerError::BadRequest(error) => error.into_response(),
+            RepositoryHandlerError::Other(error) => error.into_response_boxed(),
             other => Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(Body::from(format!(

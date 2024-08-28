@@ -6,16 +6,14 @@ use axum::response::IntoResponse;
 use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
-    database::{
-        project::{NewProjectBuilderError, NewVersionBuilderError},
-        repository::{DBRepository, DBRepositoryConfig},
-    },
+    builder_error,
+    database::repository::{DBRepository, DBRepositoryConfig},
     repository::{
         config::{
             project::ProjectConfigType, ConfigDescription, PushRulesConfigType,
             RepositoryConfigError, RepositoryConfigType, SecurityConfigType,
         },
-        project::{ReleaseType, VersionDataBuilderError},
+        project::ReleaseType,
     },
     storage::StoragePath,
 };
@@ -211,8 +209,8 @@ pub enum MavenError {
     XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
     #[error("Database Error: {0}")]
     Database(#[from] sqlx::Error),
-    #[error("Internal Error. This is a bug in the code: {0}")]
-    InternalBuilderError(String),
+    #[error("Internal Error. {0}")]
+    BuilderError(#[from] builder_error::BuilderError),
     #[error("Missing From Pom: {0}")]
     MissingFromPom(&'static str),
     #[error("Failed to proxy request {0}")]
@@ -220,19 +218,15 @@ pub enum MavenError {
     #[error(transparent)]
     BadRequest(#[from] BadRequestErrors),
 }
-impl From<NewProjectBuilderError> for MavenError {
-    fn from(e: NewProjectBuilderError) -> Self {
-        MavenError::InternalBuilderError(e.to_string())
+
+impl IntoErrorResponse for MavenError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
     }
 }
-impl From<NewVersionBuilderError> for MavenError {
-    fn from(e: NewVersionBuilderError) -> Self {
-        MavenError::InternalBuilderError(e.to_string())
-    }
-}
-impl From<VersionDataBuilderError> for MavenError {
-    fn from(e: VersionDataBuilderError) -> Self {
-        MavenError::InternalBuilderError(e.to_string())
+impl From<MavenError> for RepositoryHandlerError {
+    fn from(e: MavenError) -> Self {
+        RepositoryHandlerError::Other(Box::new(e))
     }
 }
 

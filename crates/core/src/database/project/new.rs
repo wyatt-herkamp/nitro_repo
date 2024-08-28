@@ -1,3 +1,5 @@
+use crate::builder_error::BuilderError;
+use crate::repository::project::{ReleaseType, VersionData};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, PgPool};
@@ -5,10 +7,10 @@ use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::repository::project::{ReleaseType, VersionData};
-
 use super::DBProject;
 #[derive(Debug, Clone, PartialEq, Eq, Builder)]
+#[builder(build_fn(error = "BuilderError"))]
+
 pub struct NewProject {
     #[builder(default)]
     pub scope: Option<String>,
@@ -111,6 +113,8 @@ impl NewProjectMember {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Builder)]
+#[builder(build_fn(error = "BuilderError"))]
+
 pub struct NewVersion {
     pub project_id: Uuid,
     /// The version of the project
@@ -159,7 +163,7 @@ impl NewVersion {
                 sqlx::query(
                     r#"
                     UPDATE projects
-                    SET latest_release = $1 AND latest_pre_release = $1
+                    SET latest_release = $1, latest_pre_release = $1
                     WHERE id = $2
                     "#,
                 )

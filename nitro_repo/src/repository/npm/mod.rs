@@ -1,130 +1,171 @@
 //! NPM Registry Implementation
 //!
 //! Documentation for NPM: https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md
+//!
 
-use std::sync::Arc;
+use std::borrow::Cow;
 
-use crate::{
-    app::{authentication::verify_login, responses::no_content_response, NitroRepo},
-    repository::RepoResponse,
-};
-use derive_more::derive::Deref;
-use nr_core::{
-    database::{repository::DBRepository, user::auth_token::NewRepositoryToken},
-    user::permissions::RepositoryActions,
-};
+use ahash::HashMap;
+use base64::DecodeError;
+use config::RepositoryConfigType;
+use futures::future::BoxFuture;
+use hosted::NPMHostedRegistry;
+use nr_core::database::repository::{DBRepository, DBRepositoryConfig};
+use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
-use tracing::{debug, instrument};
-use types::login::{CouchDBLoginRequest, CouchDBLoginResponse, LoginResponse};
+use tracing::debug;
+use types::InvalidNPMPackageName;
 
-use super::{Repository, RepositoryFactoryError};
-pub mod registry_type;
+pub mod hosted;
+pub mod login;
 pub mod types;
-#[derive(derive_more::Debug)]
-pub struct NpmRegistryInner {
-    #[debug(skip)]
-    pub site: NitroRepo,
-    pub storage: DynStorage,
-    pub id: uuid::Uuid,
-    pub repository: DBRepository,
-}
-#[derive(Debug, Clone, Deref)]
-pub struct NpmRegistry(Arc<NpmRegistryInner>);
-impl NpmRegistry {
-    pub async fn load(
-        site: NitroRepo,
-        storage: DynStorage,
-        repository: DBRepository,
-    ) -> Result<Self, RepositoryFactoryError> {
-        Ok(Self(Arc::new(NpmRegistryInner {
-            site,
-            storage,
-            id: repository.id,
-            repository,
-        })))
-    }
-}
-impl Repository for NpmRegistry {
-    fn get_storage(&self) -> DynStorage {
-        self.0.storage.clone()
-    }
-    fn site(&self) -> NitroRepo {
-        self.0.site.clone()
-    }
+pub mod utils;
+use crate::error::{IntoErrorResponse, SQLXError};
 
+pub use super::prelude::*;
+mod configs;
+use super::{
+    DynRepository, NewRepository, RepositoryFactoryError, RepositoryType, RepositoryTypeDescription,
+};
+pub use configs::*;
+
+#[derive(Debug, Clone, DynRepositoryHandler)]
+pub enum NPMRegistry {
+    Hosted(hosted::NPMHostedRegistry),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum NPMRegistryError {
+    #[error(transparent)]
+    DatabaseError(#[from] sqlx::Error),
+    #[error(transparent)]
+    InvalidName(#[from] InvalidNPMPackageName),
+    #[error(
+        "Invalid tarball. The tarballs location is invalid.
+        This means you used `$BASE_URL/repositories/$STORAGE/$REPO` without a trailing slash.
+        tarbar Route: {tarball_route} Error: {error}"
+    )]
+    InvalidTarball {
+        tarball_route: String,
+        error: Cow<'static, str>,
+    },
+    #[error("Invalid GET request. The requested route is invalid to the NPM Registry. This could be a bug. AS the code is very sketchy")]
+    InvalidGetRequest,
+    #[error("Invalid Package Attachment. Error: {0}")]
+    InvalidPackageAttachment(DecodeError),
+    #[error("Only one release or attachment can be uploaded at a time")]
+    OnlyOneReleaseOrAttachmentAtATime,
+}
+impl IntoErrorResponse for NPMRegistryError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
+    }
+}
+
+impl From<NPMRegistryError> for RepositoryHandlerError {
+    fn from(err: NPMRegistryError) -> Self {
+        RepositoryHandlerError::Other(Box::new(err))
+    }
+}
+
+impl IntoResponse for NPMRegistryError {
+    fn into_response(self) -> Response {
+        match self {
+            NPMRegistryError::DatabaseError(err) => SQLXError(err).into_response(),
+            NPMRegistryError::InvalidGetRequest => Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body("Invalid GET request".into())
+                .unwrap(),
+            bad_request => {
+                debug!("Bad Request: {:?}", bad_request);
+                Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(bad_request.to_string().into())
+                    .unwrap()
+            }
+        }
+    }
+}
+#[derive(Debug, Default)]
+pub struct NpmRegistryType;
+
+impl RepositoryType for NpmRegistryType {
     fn get_type(&self) -> &'static str {
         "npm"
     }
 
     fn config_types(&self) -> Vec<&str> {
-        vec![]
+        vec![NPMRegistryConfigType::get_type_static()]
     }
 
-    fn name(&self) -> String {
-        self.0.repository.name.to_string()
-    }
-
-    fn id(&self) -> uuid::Uuid {
-        self.id
-    }
-
-    fn visibility(&self) -> nr_core::repository::Visibility {
-        nr_core::repository::Visibility::Public
-    }
-
-    fn is_active(&self) -> bool {
-        true
-    }
-
-    #[instrument(name = "NpmRegistry::handle_post")]
-    async fn handle_post(
-        &self,
-        request: super::RepositoryRequest,
-    ) -> Result<super::RepoResponse, super::RepositoryHandlerError> {
-        let headers = request.headers();
-        debug!(?headers, "Handling POST request");
-        let path_as_string = request.path.to_string();
-        if path_as_string.starts_with(r#"-/user/org\.couchdb\.user:"#) {
-            let user_name = path_as_string.replace("-/user/org.couchdb.user:", "");
+    fn get_description(&self) -> RepositoryTypeDescription {
+        RepositoryTypeDescription {
+            type_name: "npm",
+            name: "NPM",
+            description: "A NPM Registry",
+            documentation_url: None,
+            is_stable: true,
+            required_configs: vec![NPMRegistryConfigType::get_type_static()],
         }
-        Ok(no_content_response().into())
     }
-    #[instrument(name = "NpmRegistry::handle_put")]
-    async fn handle_put(
-        &self,
-        request: super::RepositoryRequest,
-    ) -> Result<super::RepoResponse, super::RepositoryHandlerError> {
-        let headers = request.headers();
-        debug!(?headers, "Handling PUT request");
 
-        let path_as_string = request.path.to_string();
-        debug!(?path_as_string, "Handling PUT request");
-        if path_as_string.starts_with(r#"-/user/org.couchdb.user:"#) {
-            let user_name = path_as_string.replace("-/user/org.couchdb.user:", "");
-            let body = request.body.body_as_string().await?;
-            debug!(?user_name, ?body, "Handling PUT request");
-            let login: CouchDBLoginRequest = serde_json::from_str(&body)?;
-            debug!(?login, "Handling PUT request");
-            let message = format!("user '{}' created", login.name);
-            let user = match verify_login(login.name, login.password, self.site.as_ref()).await {
+    fn create_new(
+        &self,
+        name: String,
+        uuid: uuid::Uuid,
+        configs: HashMap<String, serde_json::Value>,
+        storage: nr_storage::DynStorage,
+    ) -> BoxFuture<'static, Result<NewRepository, RepositoryFactoryError>> {
+        Box::pin(async move {
+            let sub_type = configs
+                .get(NPMRegistryConfigType::get_type_static())
+                .ok_or(RepositoryFactoryError::MissingConfig(
+                    NPMRegistryConfigType::get_type_static(),
+                ))?
+                .clone();
+            let maven_config: NPMRegistryConfig = match serde_json::from_value(sub_type) {
                 Ok(ok) => ok,
                 Err(err) => {
-                    return Ok(RepoResponse::forbidden());
+                    return Err(RepositoryFactoryError::InvalidConfig(
+                        NPMRegistryConfigType::get_type_static(),
+                        err.to_string(),
+                    ));
                 }
             };
-            let (_, token) = NewRepositoryToken::new(
-                user.id,
-                "NPM CLI".to_owned(),
-                self.id,
-                RepositoryActions::all(),
+            Ok(NewRepository {
+                name,
+                uuid,
+                repository_type: "npm".to_string(),
+                configs,
+            })
+        })
+    }
+
+    fn load_repo(
+        &self,
+        repo: DBRepository,
+        storage: DynStorage,
+        website: NitroRepo,
+    ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
+        Box::pin(async move {
+            let Some(npm_config_db) = DBRepositoryConfig::<NPMRegistryConfig>::get_config(
+                repo.id,
+                NPMRegistryConfigType::get_type_static(),
+                &website.database,
             )
-            .insert(self.site.as_ref())
-            .await?;
-            return Ok(LoginResponse::ValidCouchDBLogin(CouchDBLoginResponse::from(token)).into());
-        } else if path_as_string.eq("/-/v1/login") {
-            // TODO: Implement the new login system
-            return Ok(LoginResponse::UnsupportedLogin.into());
-        }
-        Ok(no_content_response().into())
+            .await?
+            else {
+                return Err(RepositoryFactoryError::MissingConfig(
+                    NPMRegistryConfigType::get_type_static(),
+                ));
+            };
+            let npm_config = npm_config_db.value.0;
+            match npm_config {
+                NPMRegistryConfig::Hosted => {
+                    let maven_hosted = NPMHostedRegistry::load(website, storage, repo).await?;
+                    Ok(NPMRegistry::Hosted(maven_hosted).into())
+                }
+            }
+        })
     }
 }

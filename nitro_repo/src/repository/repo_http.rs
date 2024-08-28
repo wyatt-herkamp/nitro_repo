@@ -18,7 +18,7 @@ use axum::{
 use bytes::Bytes;
 use derive_more::From;
 use http::{
-    header::{CONTENT_LENGTH, CONTENT_LOCATION, CONTENT_TYPE, ETAG, LAST_MODIFIED},
+    header::{CONTENT_LENGTH, CONTENT_LOCATION, CONTENT_TYPE, ETAG, LAST_MODIFIED, USER_AGENT},
     request::Parts,
     HeaderValue, Method, StatusCode,
 };
@@ -43,6 +43,7 @@ impl RepositoryRequestBody {
         let bytes = body.to_bytes();
         Ok(bytes)
     }
+    #[cfg(not(debug_assertions))]
     #[instrument]
     pub async fn body_as_json<T: for<'a> Deserialize<'a>>(
         self,
@@ -53,6 +54,15 @@ impl RepositoryRequestBody {
             return Err(BadRequestErrors::Other(message).into());
         }
         serde_json::from_slice(&body).map_err(RepositoryHandlerError::from)
+    }
+    #[cfg(debug_assertions)]
+    #[instrument]
+    pub async fn body_as_json<T: for<'a> Deserialize<'a>>(
+        self,
+    ) -> Result<T, RepositoryHandlerError> {
+        let body = self.body_as_string().await?;
+        debug!(?body, "Body as JSON");
+        Ok(serde_json::from_str(&body).map_err(BadRequestErrors::from)?)
     }
     #[instrument]
     pub async fn body_as_string(self) -> Result<String, RepositoryHandlerError> {
@@ -69,7 +79,17 @@ pub struct RepositoryRequest {
     pub path: StoragePath,
     pub authentication: RepositoryAuthentication,
 }
-
+impl RepositoryRequest {
+    pub fn user_agent_as_string(&self) -> Result<Option<&str>, BadRequestErrors> {
+        let Some(header_value) = self.parts.headers.get(USER_AGENT) else {
+            return Ok(None);
+        };
+        header_value
+            .to_str()
+            .map(Some)
+            .map_err(BadRequestErrors::from)
+    }
+}
 impl AsRef<Parts> for RepositoryRequest {
     fn as_ref(&self) -> &Parts {
         &self.parts
@@ -144,10 +164,8 @@ fn response_file(meta: StorageFileMeta, content: StorageFileReader) -> Response<
 #[derive(Debug, From)]
 pub enum RepoResponse {
     FileResponse(StorageFile),
-    /// Should only be used for HEAD requests
     FileMetaResponse(StorageFileMeta),
-    Json(Value, StatusCode),
-    Generic(axum::response::Response),
+    Other(axum::response::Response),
 }
 impl RepoResponse {
     /// Default Response Format
@@ -187,16 +205,7 @@ impl RepoResponse {
                 .body(Body::empty())
                 .unwrap()
             }
-            Self::Json(json, status) => {
-                let body = serde_json::to_string(&json).unwrap();
-                Response::builder()
-                    .status(status)
-                    .header(CONTENT_LENGTH, body.len())
-                    .header(CONTENT_TYPE, mime::APPLICATION_JSON.to_string())
-                    .body(Body::from(body))
-                    .unwrap()
-            }
-            Self::Generic(response) => response,
+            Self::Other(response) => response,
         }
     }
     pub fn put_response(was_created: bool, location: impl AsRef<str>) -> Self {
@@ -301,7 +310,7 @@ impl RepoResponse {
 impl From<Result<Response, http::Error>> for RepoResponse {
     fn from(result: Result<Response, http::Error>) -> Self {
         match result {
-            Ok(response) => RepoResponse::Generic(response),
+            Ok(response) => RepoResponse::Other(response),
             Err(err) => {
                 error!(?err, "Failed to create response");
                 RepoResponse::internal_error(err)
@@ -326,7 +335,6 @@ impl From<Option<StorageFileMeta>> for RepoResponse {
         }
     }
 }
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct RepoRequestPath {

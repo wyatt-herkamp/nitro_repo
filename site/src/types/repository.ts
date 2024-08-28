@@ -6,6 +6,7 @@ import RepositoryPageEditor from '@/components/admin/repository/configs/Reposito
 import { apiURL } from '@/config'
 
 import { MavenFrontendDefinition } from '@/components/repository/types/maven/maven'
+import NPMConfig from '@/components/repository/types/npm/NPMConfig.vue'
 
 export interface RepositoryTypeDescription {
   type_name: string
@@ -52,6 +53,11 @@ export const configTypes: ConfigType[] = [
     name: 'page',
     title: 'Page',
     component: RepositoryPageEditor
+  },
+  {
+    name: 'npm',
+    title: 'NPM',
+    component: NPMConfig
   }
 ]
 export interface RepositoryIconDef {

@@ -138,7 +138,7 @@ impl MavenProxy {
         for file in project_download_files(&pom)? {
             debug!(?file, "Downloading file");
             let mut path = version_dir.clone();
-            path.push(&file);
+            path.push_mut(&file);
             let url = format!("{}/{}", proxy_config.url, path);
             match http_client.get(&url).send().await {
                 Ok(ok) => {

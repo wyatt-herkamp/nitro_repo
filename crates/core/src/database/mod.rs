@@ -1,3 +1,6 @@
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
 pub mod project;
 pub mod repository;
 pub mod storage;

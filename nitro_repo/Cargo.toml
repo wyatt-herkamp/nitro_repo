@@ -6,7 +6,8 @@ edition.workspace = true
 build = "build.rs"
 license.workspace = true
 
-
+[dev-dependencies]
+pretty_assertions = "1.1"
 [dependencies]
 # Web
 axum = { version = "0.7", features = ["macros", "tokio"] }

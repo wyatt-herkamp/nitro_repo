@@ -1,5 +1,3 @@
-use derive_builder::Builder;
-use http::version;
 use sqlx::{types::Json, Execute, PgPool, QueryBuilder};
 use tracing::{info, instrument, warn};
 
@@ -8,10 +6,8 @@ use crate::repository::project::{ReleaseType, VersionData};
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct UpdateProjectVersion {
     pub release_type: Option<ReleaseType>,
-    //#[builder(default)]
-    //pub publisher: Option<i32>,
-    //#[builder(default)]
-    //pub version_page: Option<String>,
+    pub publisher: Option<Option<i32>>,
+    pub version_page: Option<Option<String>>,
     pub extra: Option<VersionData>,
 }
 
@@ -24,13 +20,17 @@ impl UpdateProjectVersion {
             separated.push("release_type = ");
             separated.push_bind_unseparated(release_type);
         }
-        //if let Some(version_page) = self.version_page {
-        //    separated.push("user_manager = ");
-        //    separated.push_bind_unseparated(version_page);
-        //}
         if let Some(extra) = self.extra {
             separated.push("extra = ");
             separated.push_bind_unseparated(Json(extra));
+        }
+        if let Some(version_page) = self.version_page {
+            separated.push("user_manager = ");
+            separated.push_bind_unseparated(version_page);
+        }
+        if let Some(publisher) = self.publisher {
+            separated.push("publisher = ");
+            separated.push_bind_unseparated(publisher);
         }
         query.push(" WHERE id = ");
         query.push_bind(version_id);

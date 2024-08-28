@@ -4,6 +4,8 @@ use axum::response::Response;
 use http::header::ToStrError;
 use http::StatusCode;
 use thiserror::Error;
+
+use super::IntoErrorResponse;
 #[derive(Debug, Error)]
 pub enum BadRequestErrors {
     #[error("Could not Decode Base64: {0}")]
@@ -20,6 +22,15 @@ pub enum BadRequestErrors {
     Other(String),
     #[error(transparent)]
     Axum(#[from] axum::Error),
+    #[error("Missing Header: {0}")]
+    MissingHeader(&'static str),
+    #[error("Invalid Json Request: {0}")]
+    InvalidJson(#[from] serde_json::Error),
+}
+impl IntoErrorResponse for BadRequestErrors {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
+    }
 }
 #[derive(Debug, Error)]
 pub enum InvalidAuthorizationHeader {

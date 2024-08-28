@@ -200,4 +200,15 @@ impl DBProjectVersion {
         .await?;
         Ok(version)
     }
+    pub async fn get_all_versions(
+        project_id: Uuid,
+        database: &PgPool,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let versions =
+            sqlx::query_as::<_, Self>(r#"SELECT * FROM project_versions WHERE project_id = $1"#)
+                .bind(project_id)
+                .fetch_all(database)
+                .await?;
+        Ok(versions)
+    }
 }

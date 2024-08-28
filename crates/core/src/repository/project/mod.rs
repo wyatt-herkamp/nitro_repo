@@ -74,6 +74,8 @@ pub enum ProjectState {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema, Default, Builder)]
 #[serde(default)]
+#[builder(build_fn(error = "crate::builder_error::BuilderError"))]
+
 pub struct VersionData {
     #[builder(default)]
     pub documentation_url: Option<String>,

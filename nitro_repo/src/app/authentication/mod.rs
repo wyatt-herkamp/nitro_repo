@@ -20,6 +20,7 @@ use thiserror::Error;
 use tracing::{error, instrument, warn};
 use utoipa::ToSchema;
 
+use crate::error::IntoErrorResponse;
 use crate::utils::headers::AuthorizationHeader;
 
 use super::NitroRepo;
@@ -35,6 +36,11 @@ pub enum AuthenticationError {
     Unauthorized,
     #[error("Password is not able to be verified.")]
     PasswordVerificationError,
+}
+impl IntoErrorResponse for AuthenticationError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
+    }
 }
 impl IntoResponse for AuthenticationError {
     fn into_response(self) -> axum::response::Response {
