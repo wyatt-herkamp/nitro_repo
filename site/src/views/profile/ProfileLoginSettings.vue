@@ -17,12 +17,13 @@
   </main>
 </template>
 <script setup lang="ts">
-import WorkInProgress from '@/components/core/WorkInProgress.vue'
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import NewPasswordInput from '@/components/form/text/NewPasswordInput.vue'
 import PasswordInput from '@/components/form/text/PasswordInput.vue'
+import http from '@/http'
 import { sessionStore } from '@/stores/session'
 import { siteStore } from '@/stores/site'
+import { notify } from '@kyvg/vue3-notification'
 import { ref } from 'vue'
 const site = siteStore()
 const passwordRules = site.siteInfo?.password_rules
@@ -32,12 +33,30 @@ const oldPassword = ref('')
 const newPassword = ref('')
 
 async function changePassword() {
-  if (!passwordRules) {
-    return
-  }
   if (newPassword.value == undefined || newPassword.value == '') {
     return
   }
+  const request = {
+    old_password: oldPassword.value,
+    new_password: newPassword.value
+  }
+  await http
+    .post('/api/user/change-password', request)
+    .then(() => {
+      oldPassword.value = ''
+      newPassword.value = ''
+      notify({
+        type: 'success',
+        text: 'Password changed successfully'
+      })
+    })
+    .catch((error) => {
+      console.error(error)
+      notify({
+        type: 'error',
+        text: 'Failed to change password'
+      })
+    })
 }
 </script>
 

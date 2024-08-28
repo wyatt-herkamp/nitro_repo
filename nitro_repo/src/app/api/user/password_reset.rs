@@ -34,7 +34,7 @@ pub fn password_reset_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/request", post(request_password_reset))
         .route("/check/:token", get(does_exist))
-        .route("/:token", post(change_password))
+        .route("/:token", post(perform_password_change))
 }
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RequestPasswordReset {
@@ -64,7 +64,7 @@ impl Email for PasswordResetEmail {
 }
 #[utoipa::path(
     post,
-    path = "password-reset/request",
+    path = "/password-reset/request",
     request_body = RequestPasswordReset,
     responses(
         (status = 200, description = "Returns a JSON Schema for the config type")
@@ -109,7 +109,7 @@ async fn request_password_reset(
 }
 #[utoipa::path(
     get,
-    path = "password-reset/check/{token}",
+    path = "/password-reset/check/{token}",
     responses(
         (status = 204, description = "Token Exists"),
         (status = 404, description = "Token Does Not Exist")
@@ -136,13 +136,13 @@ async fn does_exist(
 #[utoipa::path(
     post,
     request_body = ChangePasswordNoCheck,
-    path = "password-reset/{token}",
+    path = "/password-reset/{token}",
     responses(
         (status = 204, description = "Password Changed"),
         (status = 404, description = "Token Does Not Exist")
     ),
 )]
-async fn change_password(
+async fn perform_password_change(
     State(site): State<NitroRepo>,
     Path(token): Path<String>,
     Json(password_reset): Json<ChangePasswordNoCheck>,

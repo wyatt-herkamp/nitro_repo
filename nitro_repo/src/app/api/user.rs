@@ -4,7 +4,7 @@ use axum::{
     body::Body,
     extract::{ConnectInfo, State},
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, post},
     Json,
 };
 use axum_extra::{
@@ -48,9 +48,10 @@ use crate::{
         login,
         get_sessions,
         logout,
+        change_password,
         password_reset::request_password_reset,
         password_reset::does_exist,
-        password_reset::change_password,
+        password_reset::perform_password_change,
         tokens::create,
         tokens::list,
         tokens::get_token
@@ -73,7 +74,7 @@ pub fn user_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/me", axum::routing::get(me))
         .route("/me/permissions", axum::routing::get(me_permissions))
-        .route("/change-password", get(change_password))
+        .route("/change-password", post(change_password))
         .route("/whoami", axum::routing::get(whoami))
         .route("/login", axum::routing::post(login))
         .route("/sessions", axum::routing::get(get_sessions))
