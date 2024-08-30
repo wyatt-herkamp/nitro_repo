@@ -2088,6 +2088,7 @@ dependencies = [
 name = "nr-core"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "badge-maker",
  "base64 0.22.1",
  "chrono",
@@ -2106,7 +2107,10 @@ dependencies = [
  "sqlx",
  "strum 0.26.3",
  "thiserror",
+ "tokio",
  "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
  "url",
  "utoipa",
  "uuid",

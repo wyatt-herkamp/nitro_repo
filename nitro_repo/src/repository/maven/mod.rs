@@ -24,13 +24,13 @@ pub mod hosted;
 pub mod nitro_deploy;
 pub mod proxy;
 pub mod utils;
-
+pub static REPOSITORY_TYPE_ID: &str = "maven";
 #[derive(Debug, Default)]
 pub struct MavenRepositoryType;
 
 impl RepositoryType for MavenRepositoryType {
     fn get_type(&self) -> &'static str {
-        "maven"
+        REPOSITORY_TYPE_ID
     }
 
     fn config_types(&self) -> Vec<&str> {
@@ -101,6 +101,7 @@ impl RepositoryType for MavenRepositoryType {
     }
 }
 #[derive(Debug, Clone, DynRepositoryHandler)]
+#[repository_handler(error=MavenError)]
 pub enum MavenRepository {
     Hosted(MavenHosted),
     Proxy(MavenProxy),
@@ -139,21 +140,37 @@ impl MavenRepository {
 pub enum MavenError {
     #[error("Error with processing Maven request: {0}")]
     MavenRS(#[from] maven_rs::Error),
-    #[error("Storage Error")]
-    Storage(#[from] nr_storage::StorageError),
     #[error("XML Deserialize Error: {0}")]
     XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
-    #[error("Database Error: {0}")]
-    Database(#[from] sqlx::Error),
     #[error("Internal Error. {0}")]
     BuilderError(#[from] builder_error::BuilderError),
     #[error("Missing From Pom: {0}")]
     MissingFromPom(&'static str),
-    #[error("Failed to proxy request {0}")]
-    ReqwestError(#[from] reqwest::Error),
-    #[error(transparent)]
-    BadRequest(#[from] BadRequestErrors),
+    #[error("{0}")]
+    Other(Box<dyn IntoErrorResponse>),
 }
+impl From<MavenError> for DynRepositoryHandlerError {
+    fn from(err: MavenError) -> Self {
+        DynRepositoryHandlerError(Box::new(err))
+    }
+}
+macro_rules! impl_from_error_for_other {
+    ($t:ty) => {
+        impl From<$t> for MavenError {
+            fn from(e: $t) -> Self {
+                MavenError::Other(Box::new(e))
+            }
+        }
+    };
+}
+impl_from_error_for_other!(BadRequestErrors);
+impl_from_error_for_other!(sqlx::Error);
+impl_from_error_for_other!(serde_json::Error);
+impl_from_error_for_other!(std::io::Error);
+impl_from_error_for_other!(AuthenticationError);
+impl_from_error_for_other!(RepositoryHandlerError);
+impl_from_error_for_other!(nr_storage::StorageError);
+impl_from_error_for_other!(reqwest::Error);
 
 impl IntoErrorResponse for MavenError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
@@ -181,7 +198,6 @@ impl IntoResponse for MavenError {
                 .status(500)
                 .body(axum::body::Body::from(format!("Maven Error: {}", e)))
                 .unwrap(),
-            MavenError::BadRequest(e) => e.into_response(),
             err => axum::http::Response::builder()
                 .status(500)
                 .body(axum::body::Body::from(format!(

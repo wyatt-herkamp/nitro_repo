@@ -20,7 +20,10 @@ pub mod hosted;
 pub mod login;
 pub mod types;
 pub mod utils;
-use crate::error::{IntoErrorResponse, SQLXError};
+use crate::{
+    app::authentication::AuthenticationError,
+    error::{BadRequestErrors, IntoErrorResponse},
+};
 
 pub use super::prelude::*;
 mod configs;
@@ -30,14 +33,13 @@ use super::{
 pub use configs::*;
 
 #[derive(Debug, Clone, DynRepositoryHandler)]
+#[repository_handler(error=NPMRegistryError)]
 pub enum NPMRegistry {
     Hosted(hosted::NPMHostedRegistry),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum NPMRegistryError {
-    #[error(transparent)]
-    DatabaseError(#[from] sqlx::Error),
     #[error(transparent)]
     InvalidName(#[from] InvalidNPMPackageName),
     #[error(
@@ -55,27 +57,51 @@ pub enum NPMRegistryError {
     InvalidPackageAttachment(DecodeError),
     #[error("Only one release or attachment can be uploaded at a time")]
     OnlyOneReleaseOrAttachmentAtATime,
+    #[error("{0}")]
+    Other(Box<dyn IntoErrorResponse>),
 }
+impl From<NPMRegistryError> for RepositoryHandlerError {
+    fn from(err: NPMRegistryError) -> Self {
+        RepositoryHandlerError::Other(Box::new(err))
+    }
+}
+macro_rules! impl_from_error_for_other {
+    ($t:ty) => {
+        impl From<$t> for NPMRegistryError {
+            fn from(e: $t) -> Self {
+                NPMRegistryError::Other(Box::new(e))
+            }
+        }
+    };
+}
+impl_from_error_for_other!(BadRequestErrors);
+impl_from_error_for_other!(sqlx::Error);
+impl_from_error_for_other!(serde_json::Error);
+impl_from_error_for_other!(std::io::Error);
+impl_from_error_for_other!(AuthenticationError);
+impl_from_error_for_other!(RepositoryHandlerError);
+impl_from_error_for_other!(nr_storage::StorageError);
+
 impl IntoErrorResponse for NPMRegistryError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         self.into_response()
     }
 }
 
-impl From<NPMRegistryError> for RepositoryHandlerError {
+impl From<NPMRegistryError> for DynRepositoryHandlerError {
     fn from(err: NPMRegistryError) -> Self {
-        RepositoryHandlerError::Other(Box::new(err))
+        DynRepositoryHandlerError(Box::new(err))
     }
 }
 
 impl IntoResponse for NPMRegistryError {
     fn into_response(self) -> Response {
         match self {
-            NPMRegistryError::DatabaseError(err) => SQLXError(err).into_response(),
             NPMRegistryError::InvalidGetRequest => Response::builder()
                 .status(StatusCode::NOT_FOUND)
                 .body("Invalid GET request".into())
                 .unwrap(),
+            NPMRegistryError::Other(other) => other.into_response_boxed(),
             bad_request => {
                 debug!("Bad Request: {:?}", bad_request);
                 Response::builder()

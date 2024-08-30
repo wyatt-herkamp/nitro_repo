@@ -33,11 +33,14 @@ use crate::{
     repository::{
         maven::{configs::MavenPushRulesConfigType, MavenRepositoryConfigType},
         utils::RepositoryExt,
-        Repository, RepositoryFactoryError, RepositoryHandlerError,
+        Repository, RepositoryFactoryError,
     },
 };
 
-use super::{configs::MavenPushRules, utils::MavenRepositoryExt, RepoResponse, RepositoryRequest};
+use super::{
+    configs::MavenPushRules, utils::MavenRepositoryExt, MavenError, RepoResponse,
+    RepositoryRequest, REPOSITORY_TYPE_ID,
+};
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
     pub id: Uuid,
@@ -66,7 +69,7 @@ impl MavenHosted {
             path,
             authentication,
         }: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, MavenError> {
         let user_id = if let Some(user) = authentication.get_user() {
             user.id
         } else {
@@ -132,6 +135,7 @@ impl MavenHosted {
     }
 }
 impl Repository for MavenHosted {
+    type Error = MavenError;
     #[inline(always)]
     fn site(&self) -> NitroRepo {
         self.0.site.clone()
@@ -146,7 +150,7 @@ impl Repository for MavenHosted {
     }
     #[inline(always)]
     fn get_type(&self) -> &'static str {
-        "maven"
+        &REPOSITORY_TYPE_ID
     }
     #[inline(always)]
     fn name(&self) -> String {
@@ -213,7 +217,7 @@ impl Repository for MavenHosted {
             authentication,
             ..
         }: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, MavenError> {
         if let Some(err) = self.check_read(&authentication).await? {
             return Ok(err);
         }
@@ -230,7 +234,7 @@ impl Repository for MavenHosted {
             authentication,
             ..
         }: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, MavenError> {
         let visibility = self.visibility();
         if let Some(err) = self.check_read(&authentication).await? {
             return Ok(err);
@@ -239,10 +243,7 @@ impl Repository for MavenHosted {
         return self.indexing_check_option(file, &authentication).await;
     }
     #[instrument(name = "maven_hosted_put")]
-    async fn handle_put(
-        &self,
-        request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    async fn handle_put(&self, request: RepositoryRequest) -> Result<RepoResponse, MavenError> {
         info!("Handling PUT Request for Repository: {}", self.id);
         {
             let push_rules = self.push_rules.read();
@@ -278,10 +279,7 @@ impl Repository for MavenHosted {
             self.get_type(),
         ))
     }
-    async fn handle_post(
-        &self,
-        request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    async fn handle_post(&self, request: RepositoryRequest) -> Result<RepoResponse, MavenError> {
         let Some(nitro_deploy_version) = request.get_nitro_repo_deploy_header()? else {
             return Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -296,7 +294,7 @@ impl Repository for MavenHosted {
     async fn resolve_project_and_version_for_path(
         &self,
         path: StoragePath,
-    ) -> Result<ProjectResolution, RepositoryHandlerError> {
+    ) -> Result<ProjectResolution, MavenError> {
         let path_as_string = path.to_string();
         let version = DBProjectVersion::find_by_version_directory(
             &path_as_string,

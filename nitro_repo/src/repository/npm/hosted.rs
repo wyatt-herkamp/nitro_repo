@@ -8,8 +8,7 @@ use crate::{
     repository::{
         npm::{types::PublishRequest, NPMRegistryConfigType, NPMRegistryError},
         utils::RepositoryExt,
-        RepoResponse, Repository, RepositoryFactoryError, RepositoryHandlerError,
-        RepositoryRequest,
+        RepoResponse, Repository, RepositoryFactoryError, RepositoryRequest,
     },
 };
 use ahash::{HashMap, HashMapExt};
@@ -53,7 +52,7 @@ impl NPMHostedRegistry {
     async fn handle_publish(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, NPMRegistryError> {
         let Some(user) = request
             .authentication
             .get_user_if_has_action(RepositoryActions::Write, self.id, self.site.as_ref())
@@ -111,6 +110,7 @@ impl NPMHostedRegistry {
 impl NpmRegistryExt for NPMHostedRegistry {}
 impl RepositoryExt for NPMHostedRegistry {}
 impl Repository for NPMHostedRegistry {
+    type Error = NPMRegistryError;
     fn get_storage(&self) -> DynStorage {
         self.0.storage.clone()
     }
@@ -145,7 +145,7 @@ impl Repository for NPMHostedRegistry {
     async fn handle_get(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, NPMRegistryError> {
         let headers = request.headers();
         let path_as_string = request.path.to_string();
         debug!(?headers, ?path_as_string, "Handling NPM GET request");
@@ -281,7 +281,7 @@ impl Repository for NPMHostedRegistry {
     async fn handle_put(
         &self,
         request: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, NPMRegistryError> {
         let path_as_string = request.path.to_string();
         debug!(
             ?path_as_string,

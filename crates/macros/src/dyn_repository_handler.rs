@@ -1,13 +1,52 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DeriveInput, Fields, Result};
+use syn::{
+    parse::{Parse, ParseStream},
+    Data, DeriveInput, Fields, Result,
+};
+mod keywords {
+    use syn::custom_keyword;
+    custom_keyword!(error);
+}
+pub struct ContainerAttributes {
+    pub error: syn::Type,
+}
+impl Parse for ContainerAttributes {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut error: Option<syn::Type> = None;
+        while !input.is_empty() {
+            if input.peek(syn::Token![,]) {
+                let _: syn::Token![,] = input.parse()?;
+            }
+            let lookahead = input.lookahead1();
+            if lookahead.peek(keywords::error) {
+                let _ = input.parse::<keywords::error>()?;
+                let _: syn::Token![=] = input.parse()?;
+                error = Some(input.parse()?);
+            } else {
+                return Err(lookahead.error());
+            }
+        }
+        let attr = Self {
+            error: error.ok_or_else(|| syn::Error::new(input.span(), "Missing error opt"))?,
+        };
+        Ok(attr)
+    }
+}
 pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
-    let DeriveInput { ident, data, .. } = derive_input;
+    let DeriveInput {
+        ident, data, attrs, ..
+    } = derive_input;
 
     let Data::Enum(data_enum) = data else {
         return Err(syn::Error::new(ident.span(), "Expected an enum"));
     };
-
+    let ContainerAttributes { error } = attrs
+        .iter()
+        .find(|v: &&syn::Attribute| v.path().is_ident("repository_handler"))
+        .map(|v| v.parse_args::<ContainerAttributes>())
+        .transpose()?
+        .ok_or_else(|| syn::Error::new(ident.span(), "Missing #[repository_handler]"))?;
     let mut impl_from = Vec::new();
     let mut variants: Vec<_> = Vec::new();
     for variant in data_enum.variants {
@@ -41,6 +80,7 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
         )*
 
         impl Repository for #ident {
+            type Error = #error;
             fn get_storage(&self) -> nr_storage::DynStorage {
                 match self {
                     #(
@@ -108,40 +148,40 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
             async fn resolve_project_and_version_for_path(
                 &self,
                 path: StoragePath,
-            ) -> Result<ProjectResolution, RepositoryHandlerError> {
+            ) -> Result<ProjectResolution, Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.resolve_project_and_version_for_path(path).await,
+                        #ident::#variants(variant) => variant.resolve_project_and_version_for_path(path).await.map_err(Self::Error::from),
                     )*
                 }
             }
             async fn handle_get(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_get(request).await,
+                        #ident::#variants(variant) => variant.handle_get(request).await.map_err(Self::Error::from),
                     )*
                 }
             }
             async fn handle_post(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_post(request).await,
+                        #ident::#variants(variant) => variant.handle_post(request).await.map_err(Self::Error::from),
                     )*
                 }
             }
             async fn handle_put(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_put(request).await,
+                        #ident::#variants(variant) => variant.handle_put(request).await.map_err(Self::Error::from),
                     )*
                 }
             }
@@ -149,40 +189,40 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
             async fn handle_patch(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_patch(request).await,
+                        #ident::#variants(variant) => variant.handle_patch(request).await.map_err(Self::Error::from),
                     )*
                 }
             }
             async fn handle_delete(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_delete(request).await,
+                        #ident::#variants(variant) => variant.handle_delete(request).await.map_err(Self::Error::from),
                     )*
                 }
             }
             async fn handle_head(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_head(request).await,
+                        #ident::#variants(variant) => variant.handle_head(request).await.map_err(Self::Error::from),
                     )*
                 }
             }
             async fn handle_other(
                 &self,
                 request: RepositoryRequest,
-            ) -> Result<RepoResponse, RepositoryHandlerError> {
+            ) -> Result<RepoResponse,  Self::Error> {
                 match self {
                     #(
-                        #ident::#variants(variant) => variant.handle_other(request).await,
+                        #ident::#variants(variant) => variant.handle_other(request).await.map_err(Self::Error::from),
                     )*
                 }
             }

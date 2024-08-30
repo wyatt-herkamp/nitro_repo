@@ -2,3 +2,4 @@ target/
 .vscode/
 test/
 .env
+nr_tests.env

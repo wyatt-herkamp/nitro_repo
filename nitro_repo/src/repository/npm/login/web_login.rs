@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::repository::{
-    npm::utils::NpmRegistryExt, RepoResponse, RepositoryHandlerError, RepositoryRequest,
+    npm::{utils::NpmRegistryExt, NPMRegistryError},
+    RepoResponse, RepositoryHandlerError, RepositoryRequest,
 };
 
 use super::LoginResponse;
@@ -13,7 +14,7 @@ pub struct WebLoginResponse {
 pub async fn perform_login(
     repository: &impl NpmRegistryExt,
     request: RepositoryRequest,
-) -> Result<RepoResponse, RepositoryHandlerError> {
+) -> Result<RepoResponse, NPMRegistryError> {
     // TODO: Implement Web Login
     return Ok(LoginResponse::UnsupportedLogin.into());
 }

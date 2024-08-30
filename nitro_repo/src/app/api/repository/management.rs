@@ -9,17 +9,18 @@ use axum::{
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
     database::repository::{DBRepository, GenericDBRepositoryConfig},
+    repository::Visibility,
     user::permissions::{HasPermissions, RepositoryActions},
 };
 use serde::Deserialize;
 use serde_json::Value;
-use tracing::{error, info, instrument};
+use tracing::{debug, error, info, instrument};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
     app::{
-        authentication::Authentication,
+        authentication::{Authentication, AuthenticationError},
         responses::{
             no_content_response_with_error, InvalidRepositoryConfig, MissingPermission,
             RepositoryNotFound, ResponseBuilderExt,
@@ -27,7 +28,7 @@ use crate::{
         NitroRepo,
     },
     error::InternalError,
-    repository::Repository,
+    repository::{self, Repository},
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
@@ -168,39 +169,50 @@ pub struct GetConfigParams {
 #[instrument]
 pub async fn get_config(
     State(site): State<NitroRepo>,
-    auth: Authentication,
+    auth: Option<Authentication>,
     Query(params): Query<GetConfigParams>,
     Path((repository, config)): Path<(Uuid, String)>,
 ) -> Result<Response, InternalError> {
-    if !auth
+    let repository_visibility = Visibility::Private;
+    let Some(config_type) = site.get_repository_config_type(&config) else {
+        return Ok(InvalidRepositoryConfig::InvalidConfigType(config).into_response());
+    };
+    let config =
+        match GenericDBRepositoryConfig::get_config(repository, &config, site.as_ref()).await? {
+            Some(config) => config.value.0,
+            None => {
+                if params.default {
+                    debug!("Getting default config for config type: {}", config);
+                    config_type.default()?
+                } else {
+                    return Ok(RepositoryNotFound::Uuid(repository).into_response());
+                }
+            }
+        };
+    let config = if auth
         .has_action(RepositoryActions::Edit, repository, &site.database)
         .await?
     {
-        return Ok(MissingPermission::EditRepository(repository).into_response());
-    }
-    let config = match GenericDBRepositoryConfig::get_config(repository, &config, site.as_ref())
-        .await?
-    {
-        Some(config) => config.value.0,
-        None => {
-            if params.default {
-                let Some(config_type) = site.get_repository_config_type(&config) else {
-                    return Ok(InvalidRepositoryConfig::InvalidConfigType(config).into_response());
-                };
-                match config_type.default() {
-                    Ok(ok) => ok,
-                    Err(_) => {
-                        return Ok(RepositoryNotFound::Uuid(repository).into_response());
-                    }
-                }
-            } else {
-                return Ok(RepositoryNotFound::Uuid(repository).into_response());
+        Some(config)
+    } else {
+        // User does not have permission to view the config. Sanitize it
+        // If None is returned, the user does not have permission to view the config
+        debug!("Sanitizing config for public view");
+        match repository_visibility {
+            Visibility::Hidden | Visibility::Public => {
+                config_type.sanitize_for_public_view(config)?
             }
+            _ => None,
         }
     };
-    Response::builder()
-        .status(StatusCode::OK)
-        .json_body(&config)
+    if let Some(config) = config {
+        Ok(Response::builder()
+            .status(StatusCode::OK)
+            .json_body(&config)?)
+    } else {
+
+        Ok(AuthenticationError::Forbidden.into_response())
+    }
 }
 /// Updates a config for a repository
 ///

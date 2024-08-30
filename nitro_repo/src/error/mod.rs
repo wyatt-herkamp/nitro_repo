@@ -1,11 +1,29 @@
 mod bad_requests;
-mod internal_error;
-use std::error::Error;
+use std::{error::Error, fmt::Display, io};
 
-use axum::response::IntoResponse;
+use axum::{body::Body, response::IntoResponse};
 pub use bad_requests::*;
-use derive_more::derive::From;
-pub use internal_error::*;
+use nr_core::repository::config::{RepositoryConfigError, RepositoryConfigType};
+//pub use internal_error::*;
+use nr_storage::StorageError;
+
+/// Allows creating a response from an error
+pub trait IntoErrorResponse: Error + Send + Sync {
+    /// Converts the error into a response
+    ///
+    /// It must be of type of Box<Self> to allow for dynamic dispatch
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response;
+}
+macro_rules! impl_into_error_response_for_axum_into_response {
+    ($t:ty) => {
+        impl IntoErrorResponse for $t {
+            fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+                <Self as axum::response::IntoResponse>::into_response(*self)
+            }
+        }
+    };
+}
+
 #[derive(Debug, thiserror::Error)]
 #[error("Illegal State: {0}")]
 pub struct IllegalStateError(pub &'static str);
@@ -17,40 +35,104 @@ impl IntoResponse for IllegalStateError {
             .unwrap()
     }
 }
-#[derive(Debug, From)]
-pub struct SQLXError(pub sqlx::Error);
-impl IntoResponse for SQLXError {
-    fn into_response(self) -> axum::response::Response {
+impl_into_error_response_for_axum_into_response!(IllegalStateError);
+
+fn internal_error_message(err: impl Error) -> Body {
+    format!(
+        "Internal Service Error. Please Contact the System Admin. Error: {}",
+        err
+    )
+    .into()
+}
+impl IntoErrorResponse for reqwest::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         axum::response::Response::builder()
             .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body(
-                format!(
-                    "Internal Service Error. Please Contact the System Admin. Error: {}",
-                    self.0
-                )
-                .into(),
-            )
+            .body(internal_error_message(self))
             .unwrap()
     }
 }
-/// Allows creating a response from an error
-pub trait IntoErrorResponse: Error + Send + Sync {
-    /// Converts the error into a response
-    ///
-    /// It must be of type of Box<Self> to allow for dynamic dispatch
-    fn into_response_boxed(self: Box<Self>) -> axum::response::Response;
+impl IntoErrorResponse for io::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
+}
+impl IntoErrorResponse for StorageError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
 }
 impl IntoErrorResponse for sqlx::Error {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         axum::response::Response::builder()
             .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-            .body(
-                format!(
-                    "Internal Service Error. Please Contact the System Admin. Error: {}",
-                    self
-                )
-                .into(),
-            )
+            .body(internal_error_message(self))
             .unwrap()
+    }
+}
+impl IntoErrorResponse for serde_json::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
+}
+impl IntoErrorResponse for http::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
+}
+impl IntoErrorResponse for argon2::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
+}
+impl IntoErrorResponse for argon2::password_hash::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
+}
+impl IntoErrorResponse for RepositoryConfigError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        axum::response::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .body(internal_error_message(self))
+            .unwrap()
+    }
+}
+#[derive(Debug)]
+pub struct InternalError(pub Box<dyn IntoErrorResponse>);
+impl Display for InternalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+impl Error for InternalError {}
+
+impl IntoResponse for InternalError {
+    fn into_response(self) -> axum::response::Response {
+        self.0.into_response_boxed()
+    }
+}
+
+impl<T: IntoErrorResponse + 'static> From<T> for InternalError {
+    fn from(err: T) -> Self {
+        InternalError(Box::new(err))
     }
 }

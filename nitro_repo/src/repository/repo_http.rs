@@ -5,7 +5,7 @@ use crate::{
         authentication::AuthenticationError, responses::RepositoryNotFound, NitroRepo,
         RepositoryStorageName,
     },
-    error::{BadRequestErrors, IllegalStateError},
+    error::{BadRequestErrors, IllegalStateError, IntoErrorResponse},
     repository::Repository,
     utils::headers::date_time::date_time_for_header,
 };
@@ -26,12 +26,15 @@ use http_body_util::BodyExt;
 use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
+use thiserror::Error;
 use tracing::{debug, error, instrument, span, Level};
 mod header;
 mod repo_auth;
-use super::RepositoryHandlerError;
 pub use header::*;
 pub use repo_auth::*;
+
+use super::RepositoryHandlerError;
+
 #[derive(Debug, From)]
 pub struct RepositoryRequestBody(Body);
 impl RepositoryRequestBody {

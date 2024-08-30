@@ -39,6 +39,8 @@ pub enum AuthenticationError {
     PasswordVerificationError,
     #[error("No Auth Token Allowed here")]
     AuthTokenForbidden,
+    #[error("Forbidden")]
+    Forbidden,
 }
 impl From<sqlx::Error> for AuthenticationError {
     fn from(err: sqlx::Error) -> Self {

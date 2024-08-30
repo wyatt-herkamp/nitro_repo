@@ -353,7 +353,7 @@ impl NewUserRequest {
             password,
         } = self;
         let user = sqlx::query_as(
-            r#"INSERT INTO users (name, username, email, password, admin, user_manager, storage_manager, repository_manager) VALUES ($1, $2, $3, $4, true, true, true, true) RETURNING *"#,
+            r#"INSERT INTO users (name, username, email, password, admin, user_manager, system_manager) VALUES ($1, $2, $3, $4, true, true, true) RETURNING *"#,
         )
         .bind(name)
         .bind(username)

@@ -7,7 +7,10 @@ use std::{
     },
 };
 
-use crate::app::config::{get_current_directory, Mode};
+use crate::{
+    app::config::{get_current_directory, Mode},
+    error::IntoErrorResponse,
+};
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use http::StatusCode;
@@ -43,6 +46,11 @@ impl IntoResponse for SessionError {
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .body(message.into())
             .unwrap()
+    }
+}
+impl IntoErrorResponse for SessionError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        (*self).into_response()
     }
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]

@@ -1,6 +1,5 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
+#[cfg(feature = "migrations")]
+pub mod migration;
 pub mod project;
 pub mod repository;
 pub mod storage;

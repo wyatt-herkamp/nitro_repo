@@ -124,10 +124,7 @@ impl NitroRepo {
         let database = PgPool::connect_with(database.into())
             .await
             .context("Could not connec to database")?;
-        sqlx::migrate!()
-            .run(&database)
-            .await
-            .context("Failed to run Migrations")?;
+        nr_core::database::migration::run_migrations(&database).await?;
         Ok(database)
     }
     pub async fn new(

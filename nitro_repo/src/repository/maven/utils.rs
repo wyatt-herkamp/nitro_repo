@@ -44,7 +44,7 @@ pub trait MavenRepositoryExt: Repository + Debug {
         &self,
         file_response: T,
         authentication: &RepositoryAuthentication,
-    ) -> Result<RepoResponse, RepositoryHandlerError>
+    ) -> Result<RepoResponse, MavenError>
     where
         RepoResponse: From<T>,
     {
@@ -65,7 +65,7 @@ pub trait MavenRepositoryExt: Repository + Debug {
         &self,
         file_response: Option<T>,
         authentication: &RepositoryAuthentication,
-    ) -> Result<RepoResponse, RepositoryHandlerError>
+    ) -> Result<RepoResponse, MavenError>
     where
         RepoResponse: From<T>,
         RepoResponse: From<Option<T>>,

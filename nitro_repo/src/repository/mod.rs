@@ -2,19 +2,14 @@
 
 use std::{fmt::Debug, future::Future};
 
-use axum::{
-    body::Body,
-    response::{IntoResponse, Response},
-};
-
-use ::http::StatusCode;
-
 use nr_core::{
     repository::{project::ProjectResolution, Visibility},
     storage::StoragePath,
 };
+
 pub mod prelude {
-    pub use super::{RepoResponse, Repository, RepositoryHandlerError, RepositoryRequest};
+    pub use super::{DynRepositoryHandlerError, RepositoryFactoryError, RepositoryHandlerError};
+    pub use super::{RepoResponse, Repository, RepositoryRequest};
     pub use crate::app::NitroRepo;
     pub use axum::response::{IntoResponse, Response};
     pub use http::StatusCode;
@@ -30,14 +25,16 @@ pub mod maven;
 pub mod npm;
 mod repo_type;
 pub use repo_type::*;
-use thiserror::Error;
 use uuid::Uuid;
+mod error;
 pub mod utils;
 use crate::{
     app::{authentication::AuthenticationError, NitroRepo},
     error::{BadRequestErrors, IntoErrorResponse},
 };
+pub use error::*;
 pub trait Repository: Send + Sync + Clone + Debug {
+    type Error: IntoErrorResponse + 'static;
     fn get_storage(&self) -> DynStorage;
     /// The Repository type. This is used to identify the Repository type in the database
     fn get_type(&self) -> &'static str;
@@ -52,7 +49,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn resolve_project_and_version_for_path(
         &self,
         path: StoragePath,
-    ) -> impl Future<Output = Result<ProjectResolution, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<ProjectResolution, Self::Error>> + Send {
         async {
             Ok(ProjectResolution {
                 project: None,
@@ -68,7 +65,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_get(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -80,7 +77,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_post(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -92,7 +89,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_put(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -104,7 +101,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_patch(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -115,7 +112,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_delete(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -127,7 +124,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_head(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -138,7 +135,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn handle_other(
         &self,
         request: RepositoryRequest,
-    ) -> impl Future<Output = Result<RepoResponse, RepositoryHandlerError>> + Send {
+    ) -> impl Future<Output = Result<RepoResponse, Self::Error>> + Send {
         async {
             Ok(RepoResponse::unsupported_method_response(
                 request.parts.method,
@@ -147,54 +144,9 @@ pub trait Repository: Send + Sync + Clone + Debug {
         }
     }
 }
-
 #[derive(Debug, Clone, DynRepositoryHandler)]
+#[repository_handler(error = DynRepositoryHandlerError)]
 pub enum DynRepository {
     Maven(maven::MavenRepository),
     NPM(npm::NPMRegistry),
-}
-#[derive(Debug, Error)]
-pub enum RepositoryHandlerError {
-    #[error("Database Error: {0}")]
-    SQLXError(#[from] sqlx::Error),
-    #[error("Storage Error: {0}")]
-    StorageError(#[from] nr_storage::StorageError),
-    #[error("Unexpected Missing Body")]
-    MissingBody,
-    #[error("Invalid JSON: {0}")]
-    InvalidJson(#[from] serde_json::Error),
-    #[error("IO Error: {0}")]
-    IOError(#[from] std::io::Error),
-    #[error("Authentication Error: {0}")]
-    AuthenticationError(#[from] AuthenticationError),
-    #[error("{0}")]
-    Other(Box<dyn IntoErrorResponse>),
-}
-
-impl From<BadRequestErrors> for RepositoryHandlerError {
-    fn from(error: BadRequestErrors) -> Self {
-        RepositoryHandlerError::Other(Box::new(error))
-    }
-}
-
-impl IntoResponse for RepositoryHandlerError {
-    fn into_response(self) -> Response {
-        match self {
-            RepositoryHandlerError::StorageError(error) => Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::from(format!(
-                    "Error from Internal Storage System. Please contact your admin \n {}",
-                    error
-                )))
-                .unwrap(),
-            RepositoryHandlerError::Other(error) => error.into_response_boxed(),
-            other => Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::from(format!(
-                    "Internal Service Error  Please contact your admin \n {}",
-                    other
-                )))
-                .unwrap(),
-        }
-    }
 }

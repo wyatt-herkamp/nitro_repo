@@ -55,10 +55,12 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
             ..Default::default()
         }
     }
-    /// Sanitizes the config for public view. By default this function returns None which will mean the config is not shown to the public
+    /// Sanitizes the config for public view.
+    ///
+    /// By default this function returns None which will mean the config is not shown to the public
     #[inline(always)]
-    fn sanitize_for_public_view(&self, _: Value) -> Option<Value> {
-        None
+    fn sanitize_for_public_view(&self, _: Value) -> Result<Option<Value>, RepositoryConfigError> {
+        Ok(None)
     }
     /// Validate the config. If the config is invalid this function should return an error
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError>;

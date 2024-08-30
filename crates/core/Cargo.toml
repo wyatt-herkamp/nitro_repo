@@ -26,5 +26,24 @@ derive_more.workspace = true
 digestible.workspace = true
 url.workspace = true
 nr-macros.workspace = true
+
+# Testing
+anyhow = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tracing-subscriber = { version = "0.3", features = [
+    "env-filter",
+    "json",
+], optional = true }
+tracing-appender = { version = "0.2", optional = true }
+[features]
+default = ["migrations", "testing"]
+migrations = []
+testing = [
+    "migrations",
+    "anyhow",
+    "tokio",
+    "tracing-subscriber",
+    "tracing-appender",
+]
 [lints]
 workspace = true

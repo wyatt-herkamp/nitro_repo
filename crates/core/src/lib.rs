@@ -4,4 +4,6 @@ pub mod builder_error;
 pub mod database;
 pub mod repository;
 pub mod storage;
+#[cfg(feature = "testing")]
+pub mod testing;
 pub mod utils;

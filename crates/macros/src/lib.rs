@@ -14,7 +14,7 @@ pub fn repository_config(input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(DynRepositoryHandler)]
+#[proc_macro_derive(DynRepositoryHandler, attributes(repository_handler))]
 pub fn dyn_repository_handler(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     // Check if its an enum

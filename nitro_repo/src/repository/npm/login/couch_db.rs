@@ -11,7 +11,7 @@ use tracing::{debug, instrument};
 use crate::{
     app::authentication::verify_login,
     repository::{
-        npm::{login::LoginResponse, utils::NpmRegistryExt},
+        npm::{login::LoginResponse, utils::NpmRegistryExt, NPMRegistryError},
         RepoResponse, RepositoryHandlerError, RepositoryRequest,
     },
 };
@@ -50,7 +50,7 @@ pub struct CouchDBLoginResponse {
 pub async fn perform_login(
     repository: &impl NpmRegistryExt,
     request: RepositoryRequest,
-) -> Result<RepoResponse, RepositoryHandlerError> {
+) -> Result<RepoResponse, NPMRegistryError> {
     let path_as_string = request.path.to_string();
     let Some(source) = request
         .user_agent_as_string()?

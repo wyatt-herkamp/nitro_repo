@@ -32,8 +32,8 @@ use crate::{app::NitroRepo, repository::Repository};
 
 use super::{
     repo_type::RepositoryFactoryError, utils::MavenRepositoryExt, MavenError,
-    MavenRepositoryConfig, MavenRepositoryConfigType, RepoResponse, RepositoryHandlerError,
-    RepositoryRequest,
+    MavenRepositoryConfig, MavenRepositoryConfigType, RepoResponse, RepositoryRequest,
+    REPOSITORY_TYPE_ID,
 };
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MavenProxyConfig {
@@ -219,6 +219,7 @@ impl MavenProxy {
 }
 
 impl Repository for MavenProxy {
+    type Error = MavenError;
     fn get_storage(&self) -> nr_storage::DynStorage {
         self.0.storage.clone()
     }
@@ -227,7 +228,7 @@ impl Repository for MavenProxy {
     }
 
     fn get_type(&self) -> &'static str {
-        "maven"
+        &REPOSITORY_TYPE_ID
     }
 
     fn config_types(&self) -> Vec<&str> {
@@ -296,7 +297,7 @@ impl Repository for MavenProxy {
             authentication,
             ..
         }: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, MavenError> {
         if let Some(err) = self.check_read(&authentication).await? {
             return Ok(err);
         }
@@ -326,7 +327,7 @@ impl Repository for MavenProxy {
             authentication,
             ..
         }: RepositoryRequest,
-    ) -> Result<RepoResponse, RepositoryHandlerError> {
+    ) -> Result<RepoResponse, MavenError> {
         let visibility = self.visibility();
         // TODO: Proxy HEAD request
         if let Some(err) = self.check_read(&authentication).await? {
