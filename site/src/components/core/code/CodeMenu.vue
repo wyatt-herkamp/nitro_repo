@@ -16,10 +16,11 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import type { CodeSnippet } from './code'
-import TabElement from '../core/tabs/TabElement.vue'
-import TabsElement from '../core/tabs/TabsElement.vue'
-import TabContent from '../core/tabs/TabContent.vue'
+
 import CodeCard from './CodeCard.vue'
+import TabContent from '../tabs/TabContent.vue'
+import TabsElement from '../tabs/TabsElement.vue'
+import TabElement from '../tabs/TabElement.vue'
 
 defineProps({
   snippets: {

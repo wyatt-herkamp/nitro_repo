@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import ErrorOnRequest from '@/components/ErrorOnRequest.vue'
-import PublicRepositoryList from '@/components/repository/PublicRepositoryList.vue'
+import PublicRepositoryList from '@/components/nr/repository/PublicRepositoryList.vue'
 import { repositoriesStore } from '@/stores/repositories'
 import type { RepositoryWithStorageName } from '@/types/repository'
 import { ref } from 'vue'

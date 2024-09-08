@@ -12,9 +12,9 @@
   </main>
 </template>
 <script setup lang="ts">
-import BrowseHeader from '@/components/repository/browse/BrowseHeader.vue'
-import BrowseList from '@/components/repository/browse/BrowseList.vue'
-import BrowseProject from '@/components/repository/project/BrowseProject.vue'
+import BrowseHeader from '@/components/nr/repository/browse/BrowseHeader.vue'
+import BrowseList from '@/components/nr/repository/browse/BrowseList.vue'
+import BrowseProject from '@/components/nr/repository/project/BrowseProject.vue'
 import http from '@/http'
 import router from '@/router'
 import { repositoriesStore } from '@/stores/repositories'

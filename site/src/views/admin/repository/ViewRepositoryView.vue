@@ -36,7 +36,6 @@ import {
   type ConfigDescription,
   type RepositoryWithStorageName
 } from '@/types/repository'
-import { storageTypes, type StorageItem } from '@/types/storage'
 import { computed, ref, watch } from 'vue'
 const repositoryTypesStore = repositoriesStore()
 const repositoryId = router.currentRoute.value.params.id as string

@@ -1,12 +1,12 @@
 import http from '@/http'
-import MavenConfig from '@/components/repository/types/maven/MavenConfig.vue'
+import MavenConfig from '@/components/nr/repository/types/maven/MavenConfig.vue'
 
 import type { Component } from 'vue'
 import RepositoryPageEditor from '@/components/admin/repository/configs/RepositoryPageEditor.vue'
 import { apiURL } from '@/config'
 
-import { MavenFrontendDefinition } from '@/components/repository/types/maven/maven'
-import NPMConfig from '@/components/repository/types/npm/NPMConfig.vue'
+import { MavenFrontendDefinition } from '@/components/nr/repository/types/maven/maven'
+import NPMConfig from '@/components/nr/repository/types/npm/NPMConfig.vue'
 import type { RepositoryActionsType } from './user'
 
 export interface RepositoryTypeDescription {

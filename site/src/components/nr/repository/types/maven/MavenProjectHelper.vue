@@ -25,9 +25,9 @@ import type { Project, ProjectVersion } from '@/types/project'
 import type { RepositoryWithStorageName } from '@/types/repository'
 import { computed, type PropType } from 'vue'
 import { createProjectSnippets } from './MavenRepositoryHelpers'
-import CodeMenu from '@/components/code/CodeMenu.vue'
+import CodeMenu from '@/components/core/code/CodeMenu.vue'
 import KeyAndValue from '@/components/form/KeyAndValue.vue'
-import CopyCode from '@/components/code/CopyCode.vue'
+import CopyCode from '@/components/core/code/CopyCode.vue'
 
 const props = defineProps({
   project: {

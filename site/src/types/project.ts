@@ -1,4 +1,4 @@
-import MavenProjectHelper from '@/components/repository/types/maven/MavenProjectHelper.vue'
+import MavenProjectHelper from '@/components/nr/repository/types/maven/MavenProjectHelper.vue'
 
 export interface RawProject {
   id: string

@@ -1,4 +1,4 @@
-import type { CodeSnippet } from '@/components/code/code'
+import type { CodeSnippet } from '@/components/core/code/code'
 import { apiURL } from '@/config'
 import type { Project } from '@/types/project'
 import { createRepositoryRoute, type RepositoryWithStorageName } from '@/types/repository'

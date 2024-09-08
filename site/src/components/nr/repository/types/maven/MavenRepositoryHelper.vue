@@ -12,7 +12,7 @@ import { createRepositoryRoute, type RepositoryWithStorageName } from '@/types/r
 import { computed, type PropType } from 'vue'
 import { createSnippetsForPulling } from './MavenRepositoryHelpers'
 
-import CodeMenu from '@/components/code/CodeMenu.vue'
+import CodeMenu from '@/components/core/code/CodeMenu.vue'
 
 const props = defineProps({
   repository: {

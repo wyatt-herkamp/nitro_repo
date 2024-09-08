@@ -27,9 +27,9 @@ import DropDown from '@/components/form/dropdown/DropDown.vue'
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
 import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
+import { getStorageType, storageTypes } from '@/components/nr/storage/storageTypes'
 import http from '@/http'
 import router from '@/router'
-import { storageTypes } from '@/types/storage'
 import { notify } from '@kyvg/vue3-notification'
 import { computed, ref } from 'vue'
 const input = ref({
@@ -43,7 +43,7 @@ const storageConfig = computed(() => {
   if (input.value.storageType === '') {
     return undefined
   }
-  const current = storageOptions.value.find((option) => option.value === input.value.storageType)
+  const current = getStorageType(input.value.storageType)
   return current
 })
 async function createStorage() {

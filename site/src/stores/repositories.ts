@@ -1,4 +1,3 @@
-import { type StorageItem } from './../types/storage'
 import { defineStore } from 'pinia'
 import { type Ref, ref } from 'vue'
 import http from '@/http'
@@ -8,6 +7,7 @@ import type {
   RepositoryWithStorageName
 } from '@/types/repository'
 import type { RootSchema } from 'nitro-jsf'
+import type { StorageItem } from '@/components/nr/storage/storageTypes'
 export const repositoriesStore = defineStore(
   'repositories',
   () => {

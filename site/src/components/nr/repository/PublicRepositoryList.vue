@@ -1,15 +1,15 @@
 <template>
-  <div id="storagesBox">
+  <div id="repositoryBox">
     <div id="headerBar">
-      <h2>Storages</h2>
+      <h2>Repositories</h2>
       <input
         type="text"
         id="nameSearch"
         v-model="searchValue"
         autofocus
-        placeholder="Search by Name, Username, or Primary Email Address" />
+        placeholder="Search by Name, Storage Name" />
     </div>
-    <div id="storages" class="betterScroll">
+    <div id="repositories" class="betterScroll">
       <div class="row" id="header">
         <div
           :class="['col', { sorted: sortBy === 'id' }]"
@@ -27,19 +27,21 @@
           :class="['col', { sorted: sortBy === 'storage-type' }]"
           @click="sortBy = 'storage-type'"
           title="Sort by Storage Type">
-          Storage Type
+          Storage Name
         </div>
+        <div :class="['col']">Repository Type</div>
         <div :class="['col']">Active</div>
       </div>
       <div
         class="row item"
-        v-for="storage in filteredTable"
-        :key="storage.id"
-        @click="router.push({ name: 'ViewStorage', params: { id: storage.id } })">
-        <div class="col">{{ storage.id }}</div>
-        <div class="col" :title="storage.name">{{ storage.name }}</div>
-        <div class="col" :title="storage.storage_type">{{ storage.storage_type }}</div>
-        <div class="col">{{ storage.active }}</div>
+        v-for="repository in filteredTable"
+        :key="repository.id"
+        @click="router.push({ name: 'repository', params: { id: repository.id } })">
+        <div class="col">{{ repository.id }}</div>
+        <div class="col" :title="repository.name">{{ repository.name }}</div>
+        <div class="col" :title="repository.storage_name">{{ repository.storage_name }}</div>
+        <div class="col">{{ repository.repository_type }}</div>
+        <div class="col">{{ repository.active }}</div>
       </div>
     </div>
   </div>
@@ -47,18 +49,16 @@
 
 <script setup lang="ts">
 import router from '@/router'
-import type { UserResponseType } from '@/types/base'
-import type { StorageItem } from '@/types/storage'
-import { notify } from '@kyvg/vue3-notification'
+import type { RepositoryWithStorageName } from '@/types/repository'
 import { computed, ref, type PropType } from 'vue'
 const searchValue = ref<string>('')
 
 const props = defineProps({
-  storages: Array as PropType<StorageItem[]>
+  repositories: Array as PropType<RepositoryWithStorageName[]>
 })
 const sortBy = ref<string>('id')
 
-function sortList(a: StorageItem, b: StorageItem) {
+function sortList(a: RepositoryWithStorageName, b: RepositoryWithStorageName) {
   switch (sortBy.value) {
     case 'id':
       return a.name.localeCompare(b.name)
@@ -70,10 +70,10 @@ function sortList(a: StorageItem, b: StorageItem) {
   }
 }
 const filteredTable = computed(() => {
-  if (props.storages == undefined) {
+  if (props.repositories == undefined) {
     return []
   }
-  const users = props.storages.map((user) => user)
+  const users = props.repositories.map((user) => user)
   return users.sort(sortList)
 })
 </script>
@@ -120,7 +120,7 @@ const filteredTable = computed(() => {
 }
 .row {
   display: grid;
-  grid-template-columns: 1fr 0.5fr 0.5fr 0.5fr;
+  grid-template-columns: 1fr 0.5fr 0.5fr 0.5fr 0.5fr;
   grid-template-rows: auto;
   .col {
     padding: 1rem;

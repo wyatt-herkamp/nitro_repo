@@ -7,8 +7,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import StorageListInner from './StorageListInner.vue'
-import type { StorageItem } from '@/types/storage'
 import { repositoriesStore } from '@/stores/repositories'
+import type { StorageItem } from './storageTypes'
 
 const storages = ref<StorageItem[]>([])
 const error = ref<string | null>(null)

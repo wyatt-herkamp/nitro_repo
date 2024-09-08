@@ -26,7 +26,6 @@ use http_body_util::BodyExt;
 use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
-use thiserror::Error;
 use tracing::{debug, error, instrument, span, Level};
 mod header;
 mod repo_auth;
@@ -53,6 +52,7 @@ impl RepositoryRequestBody {
         let body = self.body_as_bytes().await?;
         serde_json::from_slice(&body).map_err(RepositoryHandlerError::from)
     }
+    /// In Debug mode we convert to a string so we can debug it
     #[cfg(debug_assertions)]
     #[instrument]
     pub async fn body_as_json<T: for<'a> Deserialize<'a>>(

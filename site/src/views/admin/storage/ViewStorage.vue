@@ -13,9 +13,9 @@
 import DropDown from '@/components/form/dropdown/DropDown.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
 import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
+import { storageTypes, type StorageItem } from '@/components/nr/storage/storageTypes'
 import http from '@/http'
 import router from '@/router'
-import { storageTypes, type StorageItem } from '@/types/storage'
 import { computed, ref } from 'vue'
 
 const storageId = router.currentRoute.value.params.id as string

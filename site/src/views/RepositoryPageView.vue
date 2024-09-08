@@ -37,11 +37,11 @@
 
 <script setup lang="ts">
 import AdminUserPage from '@/components/admin/user/AdminUserPage.vue'
-import CopyURL from '@/components/code/CopyCode.vue'
+import CopyURL from '@/components/core/code/CopyCode.vue'
 import ErrorOnRequest from '@/components/ErrorOnRequest.vue'
-import RepositoryHelper from '@/components/repository/RepositoryHelper.vue'
-import RepositoryIcon from '@/components/repository/RepositoryIcon.vue'
-import RepositoryPageViewer from '@/components/repository/RepositoryPageViewer.vue'
+import RepositoryHelper from '@/components/nr/repository/RepositoryHelper.vue'
+import RepositoryIcon from '@/components/nr/repository/RepositoryIcon.vue'
+import RepositoryPageViewer from '@/components/nr/repository/RepositoryPageViewer.vue'
 import http from '@/http'
 
 import router from '@/router'

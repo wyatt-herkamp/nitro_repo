@@ -37,13 +37,11 @@
   </main>
 </template>
 <script setup lang="ts">
-import CopyCode from '@/components/code/CopyCode.vue'
-import BaseSwitch from '@/components/form/BaseSwitch.vue'
-import RepositoryDropdown from '@/components/form/dropdown/RepositoryDropdown.vue'
+import CopyCode from '@/components/core/code/CopyCode.vue'
 import ScopesSelector from '@/components/form/ScopesSelector.vue'
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
-import RepositoryToActionList from '@/components/repository/RepositoryToActionList.vue'
+import RepositoryToActionList from '@/components/nr/repository/RepositoryToActionList.vue'
 import http from '@/http'
 import type { RepositoryActions, ScopeDescription } from '@/types/base'
 import type { RepositoryToActions } from '@/types/repository'

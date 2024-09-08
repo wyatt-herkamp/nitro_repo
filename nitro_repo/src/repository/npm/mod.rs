@@ -27,9 +27,7 @@ use crate::{
 
 pub use super::prelude::*;
 mod configs;
-use super::{
-    DynRepository, NewRepository, RepositoryFactoryError, RepositoryType, RepositoryTypeDescription,
-};
+use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
 pub use configs::*;
 
 #[derive(Debug, Clone, DynRepositoryHandler)]
