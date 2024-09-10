@@ -5,7 +5,14 @@
       v-if="site.siteInfo && site.siteInfo.password_rules"
       @submit.prevent="changePassword">
       <h2>Change Password</h2>
-      <PasswordInput v-model="oldPassword" label="Current Password" />
+      <input id="email" type="hidden" name="email" autocomplete="email" :value="user.email" />
+      <input
+        id="username"
+        type="hidden"
+        name="username"
+        autocomplete="username"
+        :value="user.username" />
+      <PasswordInput id="currentPassword" v-model="oldPassword" label="Current Password" />
       <NewPasswordInput
         id="newPassword"
         v-model="newPassword"
@@ -26,7 +33,6 @@ import { siteStore } from '@/stores/site'
 import { notify } from '@kyvg/vue3-notification'
 import { ref } from 'vue'
 const site = siteStore()
-const passwordRules = site.siteInfo?.password_rules
 const session = sessionStore()
 const user = session.user
 const oldPassword = ref('')

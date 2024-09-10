@@ -1,18 +1,19 @@
 <template>
-  <div id="newPasswordInput">
-    <div class="firstPasswordInput">
-      <label :for="id">
-        <slot />
-      </label>
-      <input
-        @focusin="isFocused = true"
-        @focusout="isFocused = false"
-        type="password"
-        :id="id"
-        v-model="internalValue.value"
-        v-bind="$attrs" />
-      <InputRequirements :validations="validations" :show="isFocused || !isValid" />
-    </div>
+  <section class="firstPasswordInput">
+    <label :for="id">
+      <slot />
+    </label>
+    <input
+      @focusin="isFocused = true"
+      @focusout="isFocused = false"
+      type="password"
+      :id="id"
+      autocomplete="new-password"
+      v-model="internalValue.value"
+      v-bind="$attrs" />
+    <InputRequirements :show="isFocused" :validations="validations" :results="validationResults" />
+  </section>
+  <section>
     <label :for="id + '-confirm'" class="confirmPassword">
       Confirm Password
       <span v-if="passwordsMatchMessage">
@@ -24,22 +25,24 @@
     <input
       type="password"
       :id="id + '-confirm'"
+      autocomplete="new-password"
       v-model="internalValue.confirmValue"
       v-bind="$attrs" />
-  </div>
+  </section>
 </template>
 <script setup lang="ts">
 import type { PasswordRules, SiteInfo } from '@/types/base'
-import { icon } from '@fortawesome/fontawesome-svg-core'
 import { computed, ref, watch, type PropType, type Ref } from 'vue'
 import InputRequirements from './InputRequirements.vue'
 import { siteStore } from '@/stores/site'
+import { checkValidations, passwordValidationRules, type SyncValidationType } from './validations'
 
 const props = defineProps({
   id: {
     type: String,
     required: true
   },
+
   passwordRules: {
     type: Object as PropType<PasswordRules>,
     required: false
@@ -73,6 +76,7 @@ const internalValue = ref({
   value: '',
   confirmValue: ''
 })
+const validationResults = ref<Record<string, boolean>>({})
 let value = defineModel<string | undefined>({
   required: true
 })
@@ -87,88 +91,36 @@ watch(
   { immediate: true }
 )
 
-const validations: Ref<
-  {
-    message: string
-    valid: boolean
-    test: (value: string) => boolean
-  }[]
-> = ref([])
-
-if (actualPasswordRules.value.min_length !== 0) {
-  validations.value.push({
-    message: `Password must be at least ${actualPasswordRules.value.min_length} characters long`,
-    valid: false,
-    test: (value: string) => {
-      return value.length >= actualPasswordRules.value.min_length
-    }
-  })
-}
-if (actualPasswordRules.value.require_uppercase) {
-  validations.value.push({
-    message: 'Password must contain at least one uppercase letter',
-    valid: false,
-    test: (value: string) => {
-      return /[A-Z]/.test(value)
-    }
-  })
-}
-if (actualPasswordRules.value.require_lowercase) {
-  validations.value.push({
-    message: 'Password must contain at least one lowercase letter',
-    valid: false,
-    test: (value: string) => {
-      return /[a-z]/.test(value)
-    }
-  })
-}
-if (actualPasswordRules.value.require_number) {
-  validations.value.push({
-    message: 'Password must contain at least one number',
-    valid: false,
-    test: (value: string) => {
-      return /\d/.test(value)
-    }
-  })
-}
-if (actualPasswordRules.value.require_special) {
-  validations.value.push({
-    message: 'Password must contain at least one special character',
-    valid: false,
-    test: (value: string) => {
-      return /[!@#$%^&*(),.?":{}|<>]/.test(value)
-    }
-  })
-}
+const validations: Ref<Array<SyncValidationType>> = ref(
+  passwordValidationRules(actualPasswordRules.value)
+)
 
 watch(
   internalValue,
-  (newValue) => {
-    let valid = true
+  async (newValue) => {
     if (newValue.value !== newValue.confirmValue) {
       passwordsMatch.value = false
     } else {
       passwordsMatch.value = true
     }
     console.log(validations.value)
-    for (const validation of validations.value) {
-      if (!validation.test(newValue.value)) {
-        validation.valid = false
-        valid = false
-      } else {
-        validation.valid = true
-      }
-      console.log(validation)
-    }
-    if (value.value !== newValue.value) {
-      if (valid && passwordsMatch.value) {
-        value.value = newValue.value
-      } else {
-        value.value = undefined
-      }
-    }
+    let { isValid: newIsValid, validationResults: newValidationResults } = await checkValidations(
+      validations.value,
+      internalValue.value.value
+    )
+    validationResults.value = newValidationResults
+    isValid.value = newIsValid
 
-    isValid.value = valid
+    if (value.value === newValue.value) {
+      return
+    }
+    if (newIsValid && passwordsMatch.value) {
+      console.log('Setting value')
+      value.value = newValue.value
+    } else {
+      console.log('Setting value to undefined')
+      value.value = undefined
+    }
   },
   { deep: true }
 )
@@ -176,9 +128,7 @@ watch(
 <style scoped lang="scss">
 @import '@/assets/styles/form.scss';
 @import '@/assets/styles/theme.scss';
-#newPasswordInput {
-  min-width: 25rem;
-}
+
 .inputs {
   display: flex;
   flex-direction: column;

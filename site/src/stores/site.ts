@@ -8,6 +8,7 @@ export const siteStore = defineStore(
     const siteInfo: Ref<SiteInfo | undefined> = ref(undefined)
     const userLookup: Ref<Map<number, PublicUser>> = ref(new Map())
     const scopes: Ref<Array<ScopeDescription>> = ref([])
+    const inUseUsername: Ref<Array<string>> = ref([])
 
     async function getScopes(): Promise<Array<ScopeDescription>> {
       if (scopes.value.length > 0) {

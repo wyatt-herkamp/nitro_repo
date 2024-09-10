@@ -3,10 +3,15 @@
     <h1>Storage Create</h1>
     <form @submit.prevent="createStorage()">
       <TwoByFormBox>
-        <TextInput v-model="input.name" autocomplete="none" required placeholder="Storage Name"
+        <TextInput
+          id="storageName"
+          v-model="input.name"
+          autocomplete="none"
+          required
+          placeholder="Storage Name"
           >Storage Name</TextInput
         >
-        <DropDown v-model="input.storageType" :options="storageOptions" required
+        <DropDown id="storageType" v-model="input.storageType" :options="storageOptions" required
           >Storage Type</DropDown
         >
       </TwoByFormBox>

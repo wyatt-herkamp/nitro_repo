@@ -4,9 +4,9 @@
       <div
         v-for="validation in validations"
         :key="validation.message"
-        :data-valid="validation.valid"
+        :data-valid="isValid(validation)"
         class="requirement">
-        <font-awesome-icon icon="fa-solid fa-circle-check" v-if="validation.valid" />
+        <font-awesome-icon icon="fa-solid fa-circle-check" v-if="isValid(validation)" />
         <font-awesome-icon icon="fa-solid fa-circle-xmark" v-else />
         <span>{{ validation.message }}</span>
       </div>
@@ -15,21 +15,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type PropType } from 'vue'
-interface Validation {
-  message: string
-  valid: boolean
-}
-defineProps({
+import { type PropType } from 'vue'
+import type { BaseValidationType } from './validations'
+const props = defineProps({
   show: {
     type: Boolean,
     required: true
   },
   validations: {
-    type: Array as PropType<Validation[]>,
+    type: Array as PropType<BaseValidationType[]>,
+    required: true
+  },
+  results: {
+    type: Object as PropType<Record<string, boolean>>,
     required: true
   }
 })
+function isValid(validation: BaseValidationType): boolean {
+  if (!props.results) {
+    return true
+  }
+  return props.results[validation.id] ?? false
+}
 </script>
 <style scoped lang="scss">
 @import '@/assets/styles/theme.scss';

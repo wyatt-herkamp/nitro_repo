@@ -1,6 +1,6 @@
 <template>
   <div>
-    <TextInput v-model="model.path" required autocomplete="none" spellcheck="false">
+    <TextInput id="id" v-model="model.path" required autocomplete="none" spellcheck="false">
       Path
     </TextInput>
   </div>

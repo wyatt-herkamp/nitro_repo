@@ -5,8 +5,20 @@
     <p v-if="createError">{{ createError }}</p>
     <form @submit.prevent="create">
       <TextInput v-model="user.name"> Name</TextInput>
-      <NewEmailInput v-model="user.email"> Email</NewEmailInput>
-      <UsernameInput v-model="user.username"> Username</UsernameInput>
+      <ValidatableTextBox
+        id="email"
+        type="email"
+        :validations="EMAIL_VALIDATIONS"
+        v-model="user.email">
+        Email
+      </ValidatableTextBox>
+      <ValidatableTextBox
+        id="username"
+        :validations="USERNAME_VALIDATIONS"
+        :deniedKeys="URL_SAFE_BAD_CHARS"
+        v-model="user.username">
+        Username
+      </ValidatableTextBox>
       <SwitchInput id="setPassword" v-model="setPassword">Set Password</SwitchInput>
       <div v-if="setPassword">
         <NewPasswordInput
@@ -22,10 +34,14 @@
 <script lang="ts" setup>
 import SubmitButton from '@/components/form/SubmitButton.vue'
 import SwitchInput from '@/components/form/SwitchInput.vue'
-import NewEmailInput from '@/components/form/text/NewEmailInput.vue'
 import NewPasswordInput from '@/components/form/text/NewPasswordInput.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
-import UsernameInput from '@/components/form/text/UsernameInput.vue'
+import ValidatableTextBox from '@/components/form/text/ValidatableTextBox.vue'
+import {
+  EMAIL_VALIDATIONS,
+  URL_SAFE_BAD_CHARS,
+  USERNAME_VALIDATIONS
+} from '@/components/form/text/validations'
 import http from '@/http'
 import router from '@/router'
 import { siteStore } from '@/stores/site'

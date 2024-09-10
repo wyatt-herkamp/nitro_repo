@@ -4,16 +4,16 @@
     <form @submit.prevent="login">
       <h4 v-if="failedLogin">Invalid username or password</h4>
       <TextInput
-        id="name"
+        id="username"
         v-model="input.email_or_username"
-        autocomplete="name"
+        autocomplete="username"
+        autocapitalize="false"
         required
-        placeholder="Username or Email"
-        >Username or Email</TextInput
-      >
-      <PasswordInput id="password" v-model="input.password" required :newPassword="true"
-        >Password</PasswordInput
-      >
+        autofocus
+        placeholder="Username or Email">
+        Username or Email
+      </TextInput>
+      <PasswordInput id="password" v-model="input.password" required>Password</PasswordInput>
       <div class="forgotPassword">
         <router-link to="/forgot-password">Forgot Password?</router-link>
       </div>

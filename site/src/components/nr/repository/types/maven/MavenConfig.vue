@@ -1,7 +1,9 @@
 <template>
   <div v-if="!repository">
     <form @submit.prevent="">
-      <DropDown v-model="input.mavenType" :options="mavenTypes" required>Maven Type</DropDown>
+      <DropDown v-model="input.mavenType" :options="mavenTypes" required id="mavenType"
+        >Maven Type</DropDown
+      >
       <div v-if="value && value.type === 'Proxy'">
         <MavenProxyConfig v-model="value.config as MavenProxyConfigType" />
       </div>

@@ -7,13 +7,24 @@
 
     <form @submit.prevent="createRepository()">
       <TwoByFormBox>
-        <TextInput v-model="input.name" autocomplete="none" required placeholder="Repository Name"
+        <TextInput
+          id="repositoryName"
+          v-model="input.name"
+          autocomplete="none"
+          required
+          placeholder="Repository Name"
           >Repository Name</TextInput
         >
-        <DropDown v-model="selectedRepositoryType" :options="repositoryTypeOptions" required
+        <DropDown
+          id="repositoryType"
+          v-model="selectedRepositoryType"
+          :options="repositoryTypeOptions"
+          required
           >Repository Type</DropDown
         >
-        <DropDown v-model="input.storage" :options="storageItemOptions" required>Storage</DropDown>
+        <DropDown id="storage" v-model="input.storage" :options="storageItemOptions" required
+          >Storage</DropDown
+        >
       </TwoByFormBox>
       <div v-for="config in requiredConfigComponents" :key="config.component.name">
         <component

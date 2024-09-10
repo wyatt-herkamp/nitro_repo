@@ -22,13 +22,24 @@
       <div class="tab-content" :data-active="currentTab === 'main'">
         <div id="userMain">
           <form>
-            <TextInput v-model="changeUser.name"> Name</TextInput>
-            <NewEmailInput v-model="changeUser.email" :original-value="user.email">
-              Email</NewEmailInput
-            >
-            <UsernameInput v-model="changeUser.username" :original-value="user.username">
-              Username</UsernameInput
-            >
+            <TextInput id="name" v-model="changeUser.name" autocomplete="name"> Name</TextInput>
+            <ValidatableTextBox
+              id="email"
+              autocomplete="email"
+              :validations="EMAIL_VALIDATIONS"
+              :originalValue="user.email"
+              v-model="changeUser.email">
+              Email
+            </ValidatableTextBox>
+            <ValidatableTextBox
+              id="username"
+              :originalValue="user.username"
+              :validations="USERNAME_VALIDATIONS"
+              :deniedKeys="[' ']"
+              autocomplete="username"
+              v-model="changeUser.username">
+              Username
+            </ValidatableTextBox>
             <SubmitButton>Save</SubmitButton>
           </form>
           <div>
@@ -41,6 +52,8 @@
       </div>
       <div class="tab-content" :data-active="currentTab === 'password'">
         <form id="setPassword" @submit.prevent="changePassword">
+          <input type="hidden" name="email" autocomplete="email" :value="user.email" />
+          <input type="hidden" name="username" autocomplete="username" :value="user.username" />
           <NewPasswordInput
             id="password"
             v-if="passwordRules"
@@ -64,11 +77,8 @@
 <script setup lang="ts">
 import KeyAndValue from '@/components/form/KeyAndValue.vue'
 import SubmitButton from '@/components/form/SubmitButton.vue'
-import EmailInput from '@/components/form/text/EmailInput.vue'
-import NewEmailInput from '@/components/form/text/NewEmailInput.vue'
 import NewPasswordInput from '@/components/form/text/NewPasswordInput.vue'
 import TextInput from '@/components/form/text/TextInput.vue'
-import UsernameInput from '@/components/form/text/UsernameInput.vue'
 import { siteStore } from '@/stores/site'
 import type { UserResponseType } from '@/types/base'
 import { ref, type PropType } from 'vue'
@@ -76,6 +86,8 @@ import UserPermissions from './UserPermissions.vue'
 import RepositoryPermissions from './RepositoryPermissions.vue'
 import http from '@/http'
 import { notify } from '@kyvg/vue3-notification'
+import ValidatableTextBox from '@/components/form/text/ValidatableTextBox.vue'
+import { EMAIL_VALIDATIONS, USERNAME_VALIDATIONS } from '@/components/form/text/validations'
 const props = defineProps({
   user: {
     type: Object as PropType<UserResponseType>,
