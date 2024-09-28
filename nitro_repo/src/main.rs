@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
 
     let command = Command::parse();
 
-    return match command.sub_command {
+    match command.sub_command {
         SubCommands::Start {
             add_defaults_to_config,
             config,
@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
             ExportOptions::RepositoryTypes => exporter::export_repository_types(location),
             ExportOptions::OpenAPI => exporter::export_openapi(location),
         },
-    };
+    }
 }
 
 fn web_start(add_defaults: bool, config_path: PathBuf) -> anyhow::Result<()> {

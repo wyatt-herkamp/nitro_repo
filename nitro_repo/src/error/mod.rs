@@ -3,7 +3,7 @@ use std::{error::Error, fmt::Display, io};
 
 use axum::{body::Body, response::IntoResponse};
 pub use bad_requests::*;
-use nr_core::repository::config::{RepositoryConfigError, RepositoryConfigType};
+use nr_core::repository::config::RepositoryConfigError;
 //pub use internal_error::*;
 use nr_storage::StorageError;
 

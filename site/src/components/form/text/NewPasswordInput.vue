@@ -31,7 +31,7 @@
   </section>
 </template>
 <script setup lang="ts">
-import type { PasswordRules, SiteInfo } from '@/types/base'
+import type { PasswordRules } from '@/types/base'
 import { computed, ref, watch, type PropType, type Ref } from 'vue'
 import InputRequirements from './InputRequirements.vue'
 import { siteStore } from '@/stores/site'

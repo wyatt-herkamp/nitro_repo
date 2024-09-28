@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, PgPool};
 use tracing::instrument;
 use uuid::Uuid;

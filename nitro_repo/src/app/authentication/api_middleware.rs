@@ -83,14 +83,12 @@ where
                     };
                 }
             }
+        } else if let Some(cookie) = cookie_jar.get("session") {
+            debug!("Session Cookie Found");
+            AuthenticationRaw::new_from_cookie(cookie, &self.site)
         } else {
-            if let Some(cookie) = cookie_jar.get("session") {
-                debug!("Session Cookie Found");
-                AuthenticationRaw::new_from_cookie(cookie, &self.site)
-            } else {
-                debug!("No Authorization Header or Session Cookie Found");
-                AuthenticationRaw::NoIdentification
-            }
+            debug!("No Authorization Header or Session Cookie Found");
+            AuthenticationRaw::NoIdentification
         };
 
         parts.extensions.insert(raw);

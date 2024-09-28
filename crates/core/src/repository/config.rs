@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use digestible::Digestible;
-use schemars::{schema_for, JsonSchema, Schema};
+use schemars::Schema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::PgPool;
@@ -22,21 +22,12 @@ pub enum RepositoryConfigError {
     InvalidChange(&'static str, &'static str),
 }
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Digestible)]
+#[derive(Default)]
 pub struct ConfigDescription {
     pub name: &'static str,
     pub description: Option<&'static str>,
     pub documentation_link: Option<&'static str>,
     pub has_public_view: bool,
-}
-impl Default for ConfigDescription {
-    fn default() -> Self {
-        ConfigDescription {
-            name: "",
-            description: None,
-            documentation_link: None,
-            has_public_view: false,
-        }
-    }
 }
 /// A Config Type is a type that should be zero sized and should be used to validate and define the layout of a config for a repository
 ///

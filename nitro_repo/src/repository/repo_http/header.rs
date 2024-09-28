@@ -57,7 +57,7 @@ impl RepositoryRequest {
         trace!(?header, "Found Nitro Repo Deploy Header");
         let header = header
             .to_string()
-            .map_err(|err| BadRequestErrors::from(err))?;
+            .map_err(BadRequestErrors::from)?;
         debug!(?header, "Header Parsed to String");
         let value = NitroRepoDeployHeaderValue::try_from(header)?;
         Ok(Some(value))

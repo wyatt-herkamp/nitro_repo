@@ -14,7 +14,9 @@ use crate::error::InternalError;
 
 use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
 pub fn api_routes() -> axum::Router<NitroRepo> {
-    let router = axum::Router::new()
+    
+
+    axum::Router::new()
         .route("/info", axum::routing::get(info))
         .route("/info/scopes", axum::routing::get(scopes))
         .route("/install", axum::routing::post(install))
@@ -25,9 +27,7 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
             user_management::user_management_routes(),
         )
         .nest("/repository", repository::repository_routes())
-        .layer(CorsLayer::very_permissive());
-
-    router
+        .layer(CorsLayer::very_permissive())
 }
 #[utoipa::path(
     get,

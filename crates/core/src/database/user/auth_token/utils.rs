@@ -34,5 +34,5 @@ pub fn generate_token() -> String {
 pub fn hash_token(token: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(token);
-    base64_utils::encode(&hasher.finalize())
+    base64_utils::encode(hasher.finalize())
 }

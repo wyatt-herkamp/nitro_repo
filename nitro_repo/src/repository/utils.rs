@@ -29,7 +29,7 @@ pub trait RepositoryExt: Repository {
         project_key: &str,
     ) -> Result<Option<DBProject>, RepositoryHandlerError> {
         let project =
-            DBProject::find_by_project_key(project_key, self.id(), &self.site().as_ref()).await?;
+            DBProject::find_by_project_key(project_key, self.id(), self.site().as_ref()).await?;
         Ok(project)
     }
     async fn get_project_version(

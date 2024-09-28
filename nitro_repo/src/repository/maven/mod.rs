@@ -96,7 +96,7 @@ impl RepositoryType for MavenRepositoryType {
         Box::pin(async move {
             MavenRepository::load(repo, storage, website)
                 .await
-                .map(|x| DynRepository::Maven(x))
+                .map(DynRepository::Maven)
         })
     }
 }

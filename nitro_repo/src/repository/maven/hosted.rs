@@ -124,7 +124,7 @@ impl MavenHosted {
         let inner = MavenHostedInner {
             id: repository.id,
             name: repository.name.into(),
-            active: active,
+            active,
             visibility: RwLock::new(repository.visibility),
             push_rules: RwLock::new(push_rules_db.value.0),
             project: RwLock::new(project_db.value.0),
@@ -146,11 +146,11 @@ impl Repository for MavenHosted {
     }
     #[inline(always)]
     fn visibility(&self) -> Visibility {
-        self.visibility.read().clone()
+        *self.visibility.read()
     }
     #[inline(always)]
     fn get_type(&self) -> &'static str {
-        &REPOSITORY_TYPE_ID
+        REPOSITORY_TYPE_ID
     }
     #[inline(always)]
     fn name(&self) -> String {

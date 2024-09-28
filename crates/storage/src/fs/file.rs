@@ -27,16 +27,10 @@ pub enum StorageFile {
 }
 impl FileTypeCheck for StorageFile {
     fn is_file(&self) -> bool {
-        match self {
-            StorageFile::File { .. } => true,
-            _ => false,
-        }
+        matches!(self, StorageFile::File { .. })
     }
     fn is_directory(&self) -> bool {
-        match self {
-            StorageFile::Directory { .. } => true,
-            _ => false,
-        }
+        matches!(self, StorageFile::Directory { .. })
     }
 }
 
@@ -96,7 +90,7 @@ impl StorageFileMeta {
     pub fn new_from_file(path: impl AsRef<Path>) -> Result<Self, io::Error> {
         let path = path.as_ref();
         debug!(?path, "Reading File Meta");
-        let file = File::open(&path)?;
+        let file = File::open(path)?;
         let metadata = file.metadata()?;
         // TODO: If the data is not available in the metadata. We should pull from the .nr-meta file.
         let modified = metadata
@@ -118,12 +112,10 @@ impl StorageFileMeta {
                 }
                 file_count += 1;
             }
-            FileType::Directory {
-                file_count: file_count,
-            }
+            FileType::Directory { file_count }
         } else {
             let mime = super::utils::mime_type_for_file(&file, path.to_path_buf());
-            let meta = FileMeta::get_or_create_local(path.to_path_buf())?;
+            let meta = FileMeta::get_or_create_local(path)?;
 
             FileType::File {
                 file_size: metadata.len(),

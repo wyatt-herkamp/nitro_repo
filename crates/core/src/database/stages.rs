@@ -21,10 +21,10 @@ impl DBStage {
         repository: Uuid,
         database: &sqlx::PgPool,
     ) -> Result<Option<DBStage>, sqlx::Error> {
-        let query = format!("SELECT * FROM stages WHERE id = $1 AND repository = $2");
+        let query = "SELECT * FROM stages WHERE id = $1 AND repository = $2".to_string();
         let stage = sqlx::query_as(&query)
-            .bind(&id)
-            .bind(&repository)
+            .bind(id)
+            .bind(repository)
             .fetch_optional(database)
             .await?;
         Ok(stage)
@@ -33,25 +33,25 @@ impl DBStage {
         &self,
         database: &sqlx::PgPool,
     ) -> Result<Vec<DBStageFile>, sqlx::Error> {
-        let query = format!("SELECT * FROM stage_files WHERE stage = $1");
+        let query = "SELECT * FROM stage_files WHERE stage = $1".to_string();
         let files = sqlx::query_as(&query)
-            .bind(&self.id)
+            .bind(self.id)
             .fetch_all(database)
             .await?;
         Ok(files)
     }
     pub async fn delete_stage(&self, database: &sqlx::PgPool) -> Result<(), sqlx::Error> {
-        let query = format!("DELETE FROM stages WHERE id = $1");
-        sqlx::query(&query).bind(&self.id).execute(database).await?;
+        let query = "DELETE FROM stages WHERE id = $1".to_string();
+        sqlx::query(&query).bind(self.id).execute(database).await?;
         Ok(())
     }
     pub async fn get_all_stages_for_repository(
         repository: Uuid,
         database: &sqlx::PgPool,
     ) -> Result<Vec<DBStage>, sqlx::Error> {
-        let query = format!("SELECT * FROM stages WHERE repository = $1");
+        let query = "SELECT * FROM stages WHERE repository = $1".to_string();
         let stages = sqlx::query_as(&query)
-            .bind(&repository)
+            .bind(repository)
             .fetch_all(database)
             .await?;
         Ok(stages)
@@ -72,13 +72,11 @@ pub struct NewDBStage {
 }
 impl NewDBStage {
     pub async fn insert(&self, database: &sqlx::PgPool) -> Result<DBStage, sqlx::Error> {
-        let query = format!(
-            "INSERT INTO stages (repository, stage_state, created_by) VALUES ($1, $2, $3) RETURNING *"
-        );
+        let query = "INSERT INTO stages (repository, stage_state, created_by) VALUES ($1, $2, $3) RETURNING *".to_string();
         let stage = sqlx::query_as(&query)
-            .bind(&self.repository)
-            .bind(&Json(self.stage_state.clone()))
-            .bind(&self.created_by)
+            .bind(self.repository)
+            .bind(Json(self.stage_state.clone()))
+            .bind(self.created_by)
             .fetch_one(database)
             .await?;
         Ok(stage)
@@ -92,9 +90,9 @@ pub struct NewDBStageFile {
 impl NewDBStageFile {
     pub async fn insert(&self, database: &sqlx::PgPool) -> Result<DBStageFile, sqlx::Error> {
         let query =
-            format!("INSERT INTO stage_files (stage, file_name) VALUES ($1, $2) RETURNING *");
+            "INSERT INTO stage_files (stage, file_name) VALUES ($1, $2) RETURNING *".to_string();
         let stage_file = sqlx::query_as(&query)
-            .bind(&self.stage)
+            .bind(self.stage)
             .bind(&self.file_name)
             .fetch_one(database)
             .await?;

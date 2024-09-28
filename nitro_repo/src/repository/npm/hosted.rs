@@ -70,7 +70,7 @@ impl NPMHostedRegistry {
             other,
         }: PublishRequest = serde_json::from_str(&body)?;
         if versions.len() != 1 {
-            return Err(NPMRegistryError::OnlyOneReleaseOrAttachmentAtATime.into());
+            return Err(NPMRegistryError::OnlyOneReleaseOrAttachmentAtATime);
         }
         let (version, data) = versions.into_iter().next().unwrap();
         {
@@ -201,7 +201,7 @@ impl Repository for NPMHostedRegistry {
                     id: project.project_key.clone(),
                     name: project.name.clone(),
                     description: project.description.clone(),
-                    dist_tags: dist_tags,
+                    dist_tags,
                     versions: versions_map,
                     time: times,
                 };
@@ -304,7 +304,7 @@ impl Repository for NPMHostedRegistry {
             .headers()
             .get(NPM_COMMAND_HEADER)
             .ok_or(InvalidNPMCommand::NoHeaderFound)
-            .and_then(|x| NPMCommand::try_from(x))
+            .and_then(NPMCommand::try_from)
         {
             Ok(ok) => ok,
             Err(err) => return Ok(err.into_response().into()),

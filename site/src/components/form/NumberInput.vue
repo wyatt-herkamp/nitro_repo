@@ -6,7 +6,6 @@
 </template>
 <script setup lang="ts">
 import '@/assets/styles/form.scss'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 defineProps({
   id: String
 })

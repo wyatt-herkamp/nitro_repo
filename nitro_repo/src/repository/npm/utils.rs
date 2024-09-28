@@ -25,7 +25,7 @@ pub trait NpmRegistryExt: Repository {
         if let Some(project) = DBProject::find_by_project_key(
             &release.name.to_string(),
             self.id(),
-            &self.site().as_ref(),
+            self.site().as_ref(),
         )
         .await?
         {
@@ -35,7 +35,7 @@ pub trait NpmRegistryExt: Repository {
 
         match release.new_project(save_path.to_string(), self.id()) {
             Ok(ok) => {
-                let insert = ok.insert(&self.site().as_ref()).await?;
+                let insert = ok.insert(self.site().as_ref()).await?;
                 info!(?insert, "Created new project");
                 Ok(insert)
             }

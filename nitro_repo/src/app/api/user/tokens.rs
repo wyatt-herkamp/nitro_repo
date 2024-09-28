@@ -68,7 +68,7 @@ async fn create(
     Json(new_token): Json<NewAuthTokenRequest>,
 ) -> Result<Response, InternalError> {
     let source = format!("API Request ({})", user_agent);
-    if new_token.repository_scopes.len() == 0 && new_token.scopes.len() == 0 {
+    if new_token.repository_scopes.is_empty() && new_token.scopes.is_empty() {
         return Ok(Response::builder()
             .status(StatusCode::BAD_REQUEST)
             .body("No Scopes Provided".into())
@@ -83,9 +83,9 @@ async fn create(
         user_id: auth.get_id(),
         name: new_token.name,
         description: new_token.description,
-        source: source,
+        source,
         scopes: new_token.scopes,
-        repositories: repositories,
+        repositories,
     };
     let (id, token) = new_token.insert(site.as_ref()).await?;
     let response = NewAuthTokenResponse { id, token };

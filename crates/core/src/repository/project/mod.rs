@@ -30,6 +30,7 @@ pub struct ProjectResolution {
     Type,
 )]
 #[sqlx(type_name = "TEXT")]
+#[derive(Default)]
 pub enum ReleaseType {
     /// Stable Release
     Stable,
@@ -43,14 +44,10 @@ pub enum ReleaseType {
     /// .RC Release
     ReleaseCandidate,
     /// The release type could not be determined
+    #[default]
     Unknown,
 }
 
-impl Default for ReleaseType {
-    fn default() -> Self {
-        ReleaseType::Unknown
-    }
-}
 impl ReleaseType {
     pub fn release_type_from_version(version: &str) -> ReleaseType {
         let version = version.to_lowercase();

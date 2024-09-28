@@ -103,9 +103,9 @@ impl FileMeta {
             return FileMeta::read_meta_file(&meta_path);
         } else {
             debug!(?meta_path, "Meta File does not exist. Generating");
-            let hashes = FileHashes::generate_from_path(&path)?;
+            let hashes = FileHashes::generate_from_path(path)?;
             let (created, modified) = {
-                let file = File::open(&path)?;
+                let file = File::open(path)?;
                 let metadata = file.metadata()?;
                 let modified = metadata.modified_as_chrono_or_now()?;
                 let created = metadata.created_as_chrono_or_now()?;
@@ -133,7 +133,7 @@ impl FileMeta {
             .to_path_buf()
             .add_extension(NITRO_REPO_META_EXTENSION)?;
         debug!(?meta_path);
-        let hashes = FileHashes::generate_from_path(&path)?;
+        let hashes = FileHashes::generate_from_path(path)?;
         let (created, modified) = {
             if meta_path.exists() {
                 let meta = FileMeta::read_meta_file(&meta_path)?;

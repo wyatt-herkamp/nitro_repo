@@ -83,9 +83,7 @@ impl LoggingConfig {
             }
             Mode::Release => "info",
         };
-        let otel_filter = format!(
-            "debug,nitro_repo=trace,nr_storage=trace,nr_core=trace,tower=warn,hyper_util=warn"
-        );
+        let otel_filter = "debug,nitro_repo=trace,nr_storage=trace,nr_core=trace,tower=warn,hyper_util=warn".to_string();
 
         let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| base_filter.into());
         let file_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| base_filter.into());

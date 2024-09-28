@@ -76,10 +76,10 @@ async fn supports_badges(
             .body("Repository does not have a project config".into())
             .unwrap());
     }
-    return Ok(Response::builder()
+    Ok(Response::builder()
         .status(http::StatusCode::NO_CONTENT)
         .body(Body::empty())
-        .unwrap());
+        .unwrap())
 }
 #[derive(Deserialize)]
 struct RepositoryBadgeRequest {
@@ -212,7 +212,7 @@ async fn project_badge(
         .or(project.latest_pre_release.as_deref())
         .unwrap_or("No Release");
 
-    let badge = match generate_badge(&badge_settings, &project.name, &latest_release) {
+    let badge = match generate_badge(&badge_settings, &project.name, latest_release) {
         Ok(ok) => ok,
         Err(err) => {
             return Ok(Response::builder()

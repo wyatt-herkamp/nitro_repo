@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use env_file::EnvFile;
 use sqlx::PgPool;
-use tracing::{debug, error, info};
+use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 pub mod env_file;
 
@@ -72,7 +72,7 @@ impl TestCore {
 
     pub async fn get_test_user(&self) -> anyhow::Result<Option<UserSafeData>> {
         if let Some(user) = UserSafeData::get_by_id(1, &self.db).await? {
-            return Ok(Some(user));
+            Ok(Some(user))
         } else {
             let user = NewUserRequest {
                 name: "Test User".to_string(),
@@ -81,7 +81,7 @@ impl TestCore {
                 password: Some(TEST_USER_PASSWORD_HASHED.to_owned()),
             };
             let user = user.insert_admin(&self.db).await?;
-            return Ok(Some(user.into()));
+            Ok(Some(user.into()))
         }
     }
 }
@@ -115,18 +115,6 @@ impl TestInfoEntry {
             .await?;
         Ok(())
     }
-}
-
-async fn does_table_exist(table_name: &str, db: &PgPool) -> Result<bool, sqlx::Error> {
-    let table_exists: bool = sqlx::query_scalar(
-        r#"
-        SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1) AS table_existence;"#,
-    )
-    .bind(table_name)
-    .fetch_one(db)
-    .await?;
-    info!("Table {} exists: {}", table_name, table_exists);
-    Ok(table_exists)
 }
 
 #[cfg(test)]

@@ -32,7 +32,7 @@ impl PublishAttachment {
         let mut data = Vec::with_capacity(self.length);
         STANDARD
             .decode_vec(self.data, &mut data)
-            .map_err(|e| NPMRegistryError::InvalidPackageAttachment(e))?;
+            .map_err(NPMRegistryError::InvalidPackageAttachment)?;
         Ok(data)
     }
     pub fn new(data: Vec<u8>, content_type: String) -> Self {

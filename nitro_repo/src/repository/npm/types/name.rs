@@ -54,7 +54,7 @@ impl TryFrom<String> for NPMPackageName {
                     reason: "Invalid scope format. Must be @scope/name",
                 });
             }
-            let scope = parts.get(0).map(|s| s.to_string());
+            let scope = parts.first().map(|s| s.to_string());
             let name = parts.get(1).map(|s| s.to_string()).unwrap();
             NPMPackageName::validate_name(&name)?;
             Ok(NPMPackageName { name, scope })

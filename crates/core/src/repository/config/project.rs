@@ -85,11 +85,7 @@ impl schemars::JsonSchema for BadgeStyle {
             map.insert(
                 "enum".to_owned(),
                 serde_json::Value::Array({
-                    let mut enum_values = Vec::new();
-                    enum_values.push(("flat").into());
-                    enum_values.push(("plastic").into());
-                    enum_values.push(("flatquare").into());
-                    enum_values
+                    vec!["flat".into(), "plastic".into(), "flatquare".into()]
                 }),
             );
             schemars::Schema::from(map)

@@ -209,7 +209,7 @@ impl SessionManager {
                 Err(err) => {
                     error!("Failed to parse session: {:?}", err);
                     if !continue_on_err {
-                        return Err(err.into());
+                        return Err(err);
                     }
                     continue;
                 }

@@ -67,8 +67,8 @@ impl PasswordRules {
         true
     }
 }
-impl PasswordRules {
-    pub fn default() -> Self {
+impl Default for PasswordRules {
+    fn default() -> Self {
         Self {
             min_length: 8,
             require_uppercase: true,
@@ -78,6 +78,7 @@ impl PasswordRules {
         }
     }
 }
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(default)]
 pub struct NitroRepoConfig {

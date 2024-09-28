@@ -122,5 +122,5 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
             #result
         }
     };
-    return Ok(wrapped);
+    Ok(wrapped)
 }

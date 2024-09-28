@@ -5,7 +5,7 @@ use crate::{
         authentication::AuthenticationError, responses::RepositoryNotFound, NitroRepo,
         RepositoryStorageName,
     },
-    error::{BadRequestErrors, IllegalStateError, IntoErrorResponse},
+    error::{BadRequestErrors, IllegalStateError},
     repository::Repository,
     utils::headers::date_time::date_time_for_header,
 };

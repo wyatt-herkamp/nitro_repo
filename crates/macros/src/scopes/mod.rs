@@ -15,7 +15,6 @@
 //! ```
 use proc_macro2::TokenStream;
 use quote::quote;
-use quote::ToTokens;
 use syn::Attribute;
 use syn::Data;
 use syn::DeriveInput;
@@ -23,7 +22,6 @@ use syn::Expr;
 use syn::Ident;
 use syn::Lit;
 use syn::LitStr;
-use syn::PatLit;
 use syn::Result;
 mod keywords {
     syn::custom_keyword!(title);
@@ -118,7 +116,7 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
     };
     let mut entries = Vec::new();
     for variant in data_enum.variants {
-        if variant.fields.len() != 0 {
+        if !variant.fields.is_empty() {
             return Err(syn::Error::new_spanned(variant, "Expected a unit variant"));
         }
 

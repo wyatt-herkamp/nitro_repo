@@ -82,15 +82,15 @@ impl From<StorageFileMeta> for BrowseFile {
                 mime_type,
                 file_hash,
             } => BrowseFile::File {
-                name: name,
-                file_size: file_size,
-                mime_type: mime_type,
-                file_hash: file_hash,
-                modified: modified,
-                created: created,
+                name,
+                file_size,
+                mime_type,
+                file_hash,
+                modified,
+                created,
             },
             FileType::Directory { file_count } => BrowseFile::Directory {
-                name: name,
+                name,
                 number_of_files: file_count as usize,
             },
         }

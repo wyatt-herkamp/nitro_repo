@@ -127,9 +127,9 @@ impl PublishVersion {
         let project_key = self.name.to_string();
         let NPMPackageName { name, scope } = self.name.clone();
         Ok(NewProject {
-            scope: scope,
+            scope,
             project_key,
-            name: name,
+            name,
             storage_path: save_path,
             repository: repository_id,
             latest_pre_release: None,
@@ -156,7 +156,7 @@ impl PublishVersion {
             version_path: save_path,
             publisher: Some(publisher),
             version_page: None,
-            extra: extra,
+            extra,
         })
     }
 }
@@ -192,8 +192,8 @@ impl GetPath {
         }
         let name = format!(
             "{}/{}",
-            components[0].to_string(),
-            components[1].to_string()
+            components[0],
+            components[1]
         );
         if length == 2 {
             return Ok(GetPath::GetPackageInfo { name });
@@ -214,7 +214,7 @@ impl GetPath {
             });
         }
         info!(?components, "Invalid path");
-        return Err(NPMRegistryError::InvalidGetRequest);
+        Err(NPMRegistryError::InvalidGetRequest)
     }
     /// Path Types
     ///
@@ -246,7 +246,7 @@ impl GetPath {
             });
         }
         info!(?components, "Invalid path");
-        return Err(NPMRegistryError::InvalidGetRequest);
+        Err(NPMRegistryError::InvalidGetRequest)
     }
 }
 impl TryFrom<StoragePath> for GetPath {
@@ -256,9 +256,9 @@ impl TryFrom<StoragePath> for GetPath {
         let as_string = value.to_string();
         let components: Vec<_> = value.into();
         if as_string.starts_with('@') {
-            return GetPath::scoped_package_call(components);
+            GetPath::scoped_package_call(components)
         } else {
-            return GetPath::unscoped_package_call(components);
+            GetPath::unscoped_package_call(components)
         }
     }
 }

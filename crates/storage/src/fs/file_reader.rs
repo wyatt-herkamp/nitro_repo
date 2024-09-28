@@ -94,7 +94,7 @@ impl Body for StorageFileReaderBody {
             Poll::Ready(Ok(_)) => {
                 let chunk = this.buf.split();
                 let frozen = chunk.freeze();
-                Poll::Ready(Some(Ok(Frame::data(frozen.into()))))
+                Poll::Ready(Some(Ok(Frame::data(frozen))))
             }
         }
     }

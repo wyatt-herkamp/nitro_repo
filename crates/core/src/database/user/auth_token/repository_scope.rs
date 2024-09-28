@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{database::DateTime, user::permissions::RepositoryActions};
 
-use super::{create_token, hash_token};
+use super::create_token;
 /// Table Name: user_auth_token_repository_scopes
 /// Represents the actions that can be taken on a repository
 ///
@@ -87,7 +87,7 @@ impl NewRepositoryToken {
         for (repository_id, actions) in repositories {
             debug!(?repository_id, ?actions, "Inserting scope");
             NewRepositoryScope {
-                token_id: token_id,
+                token_id,
                 repository: repository_id,
                 actions,
             }

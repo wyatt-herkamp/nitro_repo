@@ -44,7 +44,7 @@ impl LocalStorageInner {
         repository: &Uuid,
         location: &StoragePath,
     ) -> Result<PathBuf, StorageError> {
-        let path = self.get_path(&repository, location);
+        let path = self.get_path(repository, location);
         let path = if path.is_dir() {
             let Some(folder_name) = path.file_name() else {
                 return Err(StorageError::IOError(io::Error::new(

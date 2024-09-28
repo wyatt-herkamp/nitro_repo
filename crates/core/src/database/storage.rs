@@ -51,7 +51,7 @@ pub trait StorageDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         Ok(storage)
     }
     async fn delete_self(&self, database: &sqlx::PgPool) -> Result<(), sqlx::Error> {
-        let query = format!("DELETE FROM storages WHERE id = $1");
+        let query = "DELETE FROM storages WHERE id = $1".to_string();
         sqlx::query(&query)
             .bind(self.id())
             .execute(database)

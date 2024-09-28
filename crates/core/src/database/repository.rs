@@ -139,7 +139,7 @@ impl DBRepository {
     pub async fn generate_uuid(database: &PgPool) -> Result<Uuid, sqlx::Error> {
         let mut uuid = Uuid::new_v4();
         while sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM storages WHERE id = $1;")
-            .bind(&uuid)
+            .bind(uuid)
             .fetch_one(database)
             .await?
             > 0

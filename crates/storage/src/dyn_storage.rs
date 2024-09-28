@@ -11,11 +11,9 @@ pub enum DynStorage {
     Local(LocalStorage),
 }
 impl Storage for DynStorage {
-    fn unload(&self) -> impl std::future::Future<Output = Result<(), StorageError>> + Send {
-        async move {
-            match self {
-                DynStorage::Local(storage) => storage.unload().await,
-            }
+    async fn unload(&self) -> Result<(), StorageError> {
+        match self {
+            DynStorage::Local(storage) => storage.unload().await,
         }
     }
 
@@ -96,4 +94,4 @@ impl Storage for DynStorage {
     }
 }
 
-pub static STORAGE_FACTORIES: &'static [&dyn StorageFactory] = &[&LocalStorageFactory];
+pub static STORAGE_FACTORIES: &[&dyn StorageFactory] = &[&LocalStorageFactory];

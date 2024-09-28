@@ -98,7 +98,7 @@ async fn request_password_reset(
     if let Some(user) = user {
         let token = UserPasswordReset::create(user.id, request_details, &site.database).await?;
         let email: PasswordResetEmail = PasswordResetEmail {
-            token: token,
+            token,
             panel_url: origin,
             username: user.username.into(),
             required: false,

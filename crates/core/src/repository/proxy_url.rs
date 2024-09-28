@@ -27,7 +27,7 @@ impl<'de> serde::Deserialize<'de> for ProxyURL {
     {
         let s = String::deserialize(deserializer)?;
 
-        Ok(ProxyURL::try_from(s).map_err(serde::de::Error::custom)?)
+        ProxyURL::try_from(s).map_err(serde::de::Error::custom)
     }
 }
 

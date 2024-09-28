@@ -36,7 +36,7 @@ use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
     maven::{
-        MavenPushRules, MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType,
+        MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType,
     },
     npm::{NPMRegistryConfigType, NpmRegistryType},
     DynRepository, RepositoryType, StagingConfig,
@@ -163,8 +163,8 @@ impl NitroRepo {
         SessionManager::start_cleaner(session_manager.clone());
         let nitro_repo = NitroRepo {
             inner: Arc::new(nitro_repo),
-            session_manager: session_manager,
-            database: database,
+            session_manager,
+            database,
             email_access: Arc::new(email_service),
         };
         nitro_repo.load_storages().await?;
@@ -178,11 +178,11 @@ impl NitroRepo {
         let db_storages = DBStorage::get_all(&self.database).await?;
         let storage_configs = db_storages
             .into_iter()
-            .map(|storage| StorageConfig::try_from(storage))
+            .map(StorageConfig::try_from)
             .collect::<Result<Vec<_>, _>>()?;
 
         for storage_config in storage_configs {
-            let id = storage_config.storage_config.storage_id.clone();
+            let id = storage_config.storage_config.storage_id;
             info!(?storage_config, "Loading storage");
             let Some(factory) =
                 self.get_storage_factory(&storage_config.storage_config.storage_type)
@@ -341,12 +341,12 @@ impl NitroRepo {
 
 pub type NitroRepoState = State<NitroRepo>;
 
-pub static REPOSITORY_CONFIG_TYPES: &'static [&dyn RepositoryConfigType] = &[
+pub static REPOSITORY_CONFIG_TYPES: &[&dyn RepositoryConfigType] = &[
     &ProjectConfigType,
     &RepositoryPageType,
     &MavenRepositoryConfigType,
     &MavenPushRulesConfigType,
     &NPMRegistryConfigType,
 ];
-pub static REPOSITORY_TYPES: &'static [&dyn RepositoryType] =
+pub static REPOSITORY_TYPES: &[&dyn RepositoryType] =
     &[&MavenRepositoryType, &NpmRegistryType];

@@ -12,7 +12,7 @@ use crate::{
     app::authentication::verify_login,
     repository::{
         npm::{login::LoginResponse, utils::NpmRegistryExt, NPMRegistryError},
-        RepoResponse, RepositoryHandlerError, RepositoryRequest,
+        RepoResponse, RepositoryRequest,
     },
 };
 

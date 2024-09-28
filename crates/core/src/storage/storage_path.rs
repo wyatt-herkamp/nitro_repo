@@ -47,13 +47,9 @@ impl AsRef<str> for StoragePathComponent {
 }
 /// A Storage path is a UTF-8 only path. Where the root is the base of the storage.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Default)]
 pub struct StoragePath(Vec<StoragePathComponent>);
 
-impl Default for StoragePath {
-    fn default() -> Self {
-        StoragePath(vec![])
-    }
-}
 impl StoragePath {
     pub fn parent(self) -> Self {
         let mut path = self.0;

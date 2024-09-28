@@ -2,7 +2,6 @@ use axum::response::{IntoResponse, Response};
 use couch_db::CouchDBLoginResponse;
 use derive_more::derive::From;
 use http::StatusCode;
-use serde::{Deserialize, Serialize};
 
 use crate::repository::RepoResponse;
 pub mod couch_db;
@@ -18,16 +17,16 @@ impl IntoResponse for LoginResponse {
     fn into_response(self) -> axum::response::Response {
         match self {
             LoginResponse::ValidCouchDBLogin(login) => {
-                return Response::builder()
+                Response::builder()
                     .status(StatusCode::CREATED)
                     .body(serde_json::to_string(&login).unwrap().into())
-                    .unwrap();
+                    .unwrap()
             }
             LoginResponse::UnsupportedLogin => {
-                return Response::builder()
+                Response::builder()
                     .status(StatusCode::IM_A_TEAPOT)
                     .body("Unsupported Login Type".into())
-                    .unwrap();
+                    .unwrap()
             }
         }
     }

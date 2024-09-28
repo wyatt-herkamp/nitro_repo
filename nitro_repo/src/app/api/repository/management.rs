@@ -28,7 +28,7 @@ use crate::{
         NitroRepo,
     },
     error::InternalError,
-    repository::{self, Repository},
+    repository::{Repository},
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()

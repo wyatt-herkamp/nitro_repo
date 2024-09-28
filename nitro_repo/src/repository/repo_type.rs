@@ -42,8 +42,8 @@ impl NewRepository {
         let repository = sqlx::query_as::<_, DBRepository>(
             r#"INSERT INTO repositories (id, storage_id, name, repository_type, active) VALUES ($1, $2, $3, $4, $5) RETURNING *"#,
         )
-        .bind(&self.uuid)
-        .bind(&storage)
+        .bind(self.uuid)
+        .bind(storage)
         .bind(&self.name)
         .bind(&self.repository_type)
         .bind(true)

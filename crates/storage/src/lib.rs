@@ -21,7 +21,7 @@ pub trait Storage: Send + Sync {
     fn unload(&self) -> impl Future<Output = Result<(), StorageError>> + Send;
 
     fn storage_type(&self) -> BorrowedStorageTypeConfig<'_> {
-        self.storage_config().config.clone()
+        self.storage_config().config
     }
     fn storage_config(&self) -> BorrowedStorageConfig<'_>;
 

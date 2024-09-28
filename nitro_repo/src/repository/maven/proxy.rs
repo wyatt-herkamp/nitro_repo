@@ -228,7 +228,7 @@ impl Repository for MavenProxy {
     }
 
     fn get_type(&self) -> &'static str {
-        &REPOSITORY_TYPE_ID
+        REPOSITORY_TYPE_ID
     }
 
     fn config_types(&self) -> Vec<&str> {

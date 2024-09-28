@@ -205,7 +205,7 @@ pub fn pom_to_update_db_project_version(pom: Pom) -> Result<UpdateProjectVersion
     let release_type = pom
         .get_version()
         .ok_or(MavenError::MissingFromPom("version"))
-        .map(|x| ReleaseType::release_type_from_version(x))?;
+        .map(ReleaseType::release_type_from_version)?;
 
     let extra = pom_to_version_extra_data(pom)?;
     let result = UpdateProjectVersion {

@@ -4,7 +4,7 @@ use axum::{
     body::Body,
     extract::{ConnectInfo, State},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::post,
     Json,
 };
 use axum_extra::{
@@ -96,11 +96,11 @@ pub fn user_routes() -> axum::Router<NitroRepo> {
 pub async fn me(auth: Authentication) -> Response {
     match auth {
         Authentication::AuthToken(_, _) => {
-            let response = Response::builder()
+            
+            Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .body("Use whoami instead of me for Auth Tokens".into())
-                .unwrap();
-            response
+                .unwrap()
         }
         Authentication::Session(session, user) => {
             let response = Json(MeWithSession::from((session, user)));
@@ -277,7 +277,7 @@ pub async fn change_password(
             .body("User password not found".into())
             .unwrap());
     };
-    if let Err(err) = verify_password(&old_password, Some(&user_password.as_str())) {
+    if let Err(err) = verify_password(&old_password, Some(user_password.as_str())) {
         return Ok(err.into_response());
     }
     let Some(new_password) = password::encrypt_password(&new_password) else {

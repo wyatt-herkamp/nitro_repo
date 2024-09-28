@@ -251,15 +251,15 @@ impl AuthenticationRaw {
             }
             AuthorizationHeader::Bearer { token } => AuthenticationRaw::AuthToken(token),
             AuthorizationHeader::Session { session } => {
-                let session = match site.session_manager.get_session(&session) {
+                
+                match site.session_manager.get_session(&session) {
                     Ok(Some(ok)) => AuthenticationRaw::Session(ok),
                     Err(err) => {
                         error!("Failed to get session: {}", err);
                         AuthenticationRaw::NoIdentification
                     }
                     Ok(None) => AuthenticationRaw::NoIdentification,
-                };
-                session
+                }
             }
             AuthorizationHeader::Other { scheme, value } => {
                 AuthenticationRaw::AuthorizationHeaderUnknown(scheme, value)
