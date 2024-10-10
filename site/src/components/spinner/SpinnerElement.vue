@@ -5,7 +5,7 @@
 <script setup lang="ts"></script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 
 .loader,
 .loader:before,
@@ -28,7 +28,7 @@
 .loader:before,
 .loader:after {
   position: absolute;
-  content: '';
+  content: "";
 }
 
 .loader:before {

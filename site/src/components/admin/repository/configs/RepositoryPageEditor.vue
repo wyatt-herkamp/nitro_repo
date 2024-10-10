@@ -1,13 +1,20 @@
 <template>
   <div>
-    <DropDown v-model="input.page_type" :options="pageTypes" required>Page Type</DropDown>
-    <div v-if="input.page_type === PageType.Markdown" id="markdownEditor">
+    <DropDown
+      v-model="input.page_type"
+      :options="pageTypes"
+      required
+      >Page Type</DropDown
+    >
+    <div
+      v-if="input.page_type === PageType.Markdown"
+      id="markdownEditor">
       <MilkdownProvider>
         <MarkdownEditor
           :value="input.content || ''"
           @update="
             (content: string) => {
-              input.content = content
+              input.content = content;
             }
           " />
       </MilkdownProvider>
@@ -16,64 +23,63 @@
   </div>
 </template>
 <script setup lang="ts">
-import DropDown from '@/components/form/dropdown/DropDown.vue'
-import http from '@/http'
-import { type RepositoryPage, PageType } from '@/types/repository'
-import { MilkdownProvider } from '@milkdown/vue'
-import { defineProps, ref, watch } from 'vue'
-import MarkdownEditor from './MarkdownEditor.vue'
-import SubmitButton from '@/components/form/SubmitButton.vue'
+import DropDown from "@/components/form/dropdown/DropDown.vue";
+import http from "@/http";
+import { type RepositoryPage, PageType } from "@/types/repository";
+import { MilkdownProvider } from "@milkdown/vue";
+import { defineProps, ref, watch } from "vue";
+import MarkdownEditor from "./MarkdownEditor.vue";
+import SubmitButton from "@/components/form/SubmitButton.vue";
 const pageTypes = [
   {
     value: PageType.None,
-    label: 'None'
+    label: "None",
   },
   {
     value: PageType.Markdown,
-    label: 'Markdown'
-  }
-]
+    label: "Markdown",
+  },
+];
 const props = defineProps({
   settingName: String,
   repository: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 const input = ref<RepositoryPage>({
   page_type: PageType.None,
-  content: '# Hello World'
-})
+  content: "# Hello World",
+});
 
-const value = defineModel<RepositoryPage>()
 watch(input.value, () => {
-  console.log('input changed')
-  console.log(input.value.content)
-})
+  console.log("input changed");
+  console.log(input.value.content);
+});
 async function load() {
   if (props.repository) {
     await http
       .get(`/api/repository/${props.repository}/config/page`)
       .then((response) => {
-        input.value = response.data
+        input.value = response.data;
       })
       .catch((error) => {
-        console.error(error)
-      })
+        console.error(error);
+      });
   }
 }
-load()
+load();
 
 async function save() {
   if (props.repository) {
     await http
       .put(`/api/repository/${props.repository}/config/page`, input.value)
       .then(() => {
-        console.log('Saved')
+        console.log("Saved");
       })
       .catch((error) => {
-        console.error(error)
-      })
+        console.error(error);
+      });
   }
 }
 </script>

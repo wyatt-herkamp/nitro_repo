@@ -42,9 +42,11 @@ pub async fn get_repository_page(
     let Some(repository) = site.get_repository(repository) else {
         return Ok(RepositoryNotFound::Uuid(repository).into_response());
     };
-    if repository.visibility().is_private() && !auth
+    if repository.visibility().is_private()
+        && !auth
             .has_action(RepositoryActions::Read, repository.id(), &site.database)
-            .await? {
+            .await?
+    {
         return Ok(MissingPermission::EditRepository(repository.id()).into_response());
     }
     if !repository

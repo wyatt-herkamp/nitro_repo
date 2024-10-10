@@ -1,4 +1,4 @@
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 
 .tabs {
 }
@@ -10,10 +10,10 @@
   list-style: none;
   background-color: $primary-50;
 }
-.tabsHeader[data-jb='true'] {
+.tabsHeader[data-jb="true"] {
   justify-content: space-between;
 }
-.tabsHeader[data-jb='false'] {
+.tabsHeader[data-jb="false"] {
   gap: 1rem;
 }
 .tab {
@@ -21,10 +21,10 @@
   font-size: 16px;
   color: $text;
 }
-.tab[data-active='true'] {
+.tab[data-active="true"] {
   border-bottom: 2px solid $primary;
 }
 
-.tab[data-active='false'] {
+.tab[data-active="false"] {
   cursor: pointer;
 }

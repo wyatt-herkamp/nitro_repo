@@ -3,11 +3,24 @@
     <label :for="id">
       <slot />
     </label>
-    <span class="error" v-if="error">{{ error }}</span>
-    <div v-if="haveClearButton" class="input-container">
-      <input type="text" :id="haveClearButton ? id : undefined" v-model="value" v-bind="$attrs" />
+    <span
+      class="error"
+      v-if="error"
+      >{{ error }}</span
+    >
+    <div
+      v-if="haveClearButton"
+      class="input-container">
+      <input
+        type="text"
+        :id="haveClearButton ? id : undefined"
+        v-model="value"
+        v-bind="$attrs" />
       <button>
-        <font-awesome-icon v-if="value" @click="value = ''" icon="x" />
+        <font-awesome-icon
+          v-if="value"
+          @click="value = ''"
+          icon="x" />
       </button>
     </div>
     <input
@@ -19,27 +32,27 @@
   </section>
 </template>
 <script setup lang="ts">
-import '@/assets/styles/form.scss'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import "@/assets/styles/form.scss";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 defineProps({
   id: String,
   haveClearButton: {
     type: Boolean,
-    default: false
+    default: false,
   },
   error: {
     type: String,
-    required: false
-  }
-})
-let value = defineModel<string | undefined>({
-  required: true
-})
+    required: false,
+  },
+});
+const value = defineModel<string | undefined>({
+  required: true,
+});
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
-@import '@/assets/styles/form.scss';
+@import "@/assets/styles/theme.scss";
+@import "@/assets/styles/form.scss";
 
 .input-container {
   position: relative;

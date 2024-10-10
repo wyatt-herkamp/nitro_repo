@@ -28,7 +28,7 @@ use crate::{
         NitroRepo,
     },
     error::InternalError,
-    repository::{Repository},
+    repository::Repository,
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
@@ -210,7 +210,6 @@ pub async fn get_config(
             .status(StatusCode::OK)
             .json_body(&config)?)
     } else {
-
         Ok(AuthenticationError::Forbidden.into_response())
     }
 }

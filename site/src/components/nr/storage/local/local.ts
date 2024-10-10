@@ -1,3 +1,1 @@
-interface LocalStorageConfig{
-
-}
+interface LocalStorageConfig {}

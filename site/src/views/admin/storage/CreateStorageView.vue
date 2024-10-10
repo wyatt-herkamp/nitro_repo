@@ -11,16 +11,24 @@
           placeholder="Storage Name"
           >Storage Name</TextInput
         >
-        <DropDown id="storageType" v-model="input.storageType" :options="storageOptions" required
+        <DropDown
+          id="storageType"
+          v-model="input.storageType"
+          :options="storageOptions"
+          required
           >Storage Type</DropDown
         >
       </TwoByFormBox>
-      <div v-if="storageConfig" class="storageConfig">
+      <div
+        v-if="storageConfig"
+        class="storageConfig">
         <h2>{{ storageConfig.title }}</h2>
         <h3 v-if="error != ''">
           {{ error }}
         </h3>
-        <component :is="storageConfig.component" v-model="input.storageConfigValue"></component>
+        <component
+          :is="storageConfig.component"
+          v-model="input.storageConfigValue"></component>
       </div>
       <SubmitButton v-if="storageConfig">Create</SubmitButton>
     </form>
@@ -28,63 +36,63 @@
 </template>
 
 <script lang="ts" setup>
-import DropDown from '@/components/form/dropdown/DropDown.vue'
-import SubmitButton from '@/components/form/SubmitButton.vue'
-import TextInput from '@/components/form/text/TextInput.vue'
-import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
-import { getStorageType, storageTypes } from '@/components/nr/storage/storageTypes'
-import http from '@/http'
-import router from '@/router'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref } from 'vue'
+import DropDown from "@/components/form/dropdown/DropDown.vue";
+import SubmitButton from "@/components/form/SubmitButton.vue";
+import TextInput from "@/components/form/text/TextInput.vue";
+import TwoByFormBox from "@/components/form/TwoByFormBox.vue";
+import { getStorageType, storageTypes } from "@/components/nr/storage/storageTypes";
+import http from "@/http";
+import router from "@/router";
+import { notify } from "@kyvg/vue3-notification";
+import { computed, ref } from "vue";
 const input = ref({
-  name: '',
-  storageType: '',
-  storageConfigValue: {}
-})
-const error = ref('')
-const storageOptions = ref(storageTypes)
+  name: "",
+  storageType: "",
+  storageConfigValue: {},
+});
+const error = ref("");
+const storageOptions = ref(storageTypes);
 const storageConfig = computed(() => {
-  if (input.value.storageType === '') {
-    return undefined
+  if (input.value.storageType === "") {
+    return undefined;
   }
-  const current = getStorageType(input.value.storageType)
-  return current
-})
+  const current = getStorageType(input.value.storageType);
+  return current;
+});
 async function createStorage() {
-  console.log(input.value)
-  let data = {
+  console.log(input.value);
+  const data = {
     name: input.value.name,
     config: {
       type: input.value.storageType,
-      settings: input.value.storageConfigValue
-    }
-  }
+      settings: input.value.storageConfigValue,
+    },
+  };
 
   await http
     .post(`/api/storage/new/${input.value.storageType}`, data)
     .then((response) => {
-      console.log(response)
+      console.log(response);
       notify({
-        type: 'success',
-        title: 'Storage Created',
-        text: 'The storage has been created.'
-      })
+        type: "success",
+        title: "Storage Created",
+        text: "The storage has been created.",
+      });
       router.push({
-        name: 'ViewStorage',
-        params: { id: response.data.id }
-      })
+        name: "ViewStorage",
+        params: { id: response.data.id },
+      });
     })
     .catch((error) => {
-      console.log(error)
+      console.log(error);
       if (error.response.status === 400) {
-        console.log(error.response.data)
+        console.log(error.response.data);
       }
-    })
+    });
 }
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 form {
   display: flex;
   flex-direction: column;

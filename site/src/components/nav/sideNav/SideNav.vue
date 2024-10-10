@@ -4,7 +4,7 @@
   </nav>
 </template>
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 nav {
   margin: 0.5rem;
   margin-right: 0.5rem;

@@ -9,16 +9,16 @@
 defineProps({
   label: {
     type: String,
-    required: true
+    required: true,
   },
   value: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 </script>
 <style lang="scss" scoped>
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 
 .keyValue {
   display: flex;

@@ -5,17 +5,23 @@
       <span>User</span>
     </button>
     <div class="dropDown-content">
-      <RouterLink class="navLink right" v-if="session.user" :to="{ name: 'profile' }"
+      <RouterLink
+        class="navLink right"
+        v-if="session.user"
+        :to="{ name: 'profile' }"
         >Profile</RouterLink
       >
-      <RouterLink class="navLink right" v-if="session.isAdmin()" :to="{ name: 'admin' }"
+      <RouterLink
+        class="navLink right"
+        v-if="session.isAdmin()"
+        :to="{ name: 'admin' }"
         >Admin</RouterLink
       >
       <RouterLink
         v-if="session.user"
         class="navLink right"
         :to="{
-          name: 'logout'
+          name: 'logout',
         }"
         >Logout</RouterLink
       >
@@ -24,13 +30,13 @@
 </template>
 
 <script setup lang="ts">
-import { sessionStore } from '@/stores/session'
+import { sessionStore } from "@/stores/session";
 
-let session = sessionStore()
+const session = sessionStore();
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 .dropDown-button {
   background-color: inherit;
   border-radius: 0.5rem;

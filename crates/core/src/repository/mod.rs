@@ -55,7 +55,7 @@ pub enum InvalidRepositoryName {
     #[error("Repository name contains invalid character `{0}`. Repository Names can only contain letters, numbers, `_`, and `-`")]
     InvalidCharacter(char),
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Default, Into)]
+#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Default, Into, ToSchema)]
 #[sqlx(transparent)]
 #[as_ref(forward)]
 pub struct RepositoryName(String);

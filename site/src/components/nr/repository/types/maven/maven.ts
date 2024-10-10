@@ -1,44 +1,44 @@
-import { ApacheMavenIcon, GradleIcon } from 'vue3-simple-icons'
-import MavenProjectHelper from './MavenProjectHelper.vue'
+import { ApacheMavenIcon, GradleIcon } from "vue3-simple-icons";
+import MavenProjectHelper from "./MavenProjectHelper.vue";
 export const MavenFrontendDefinition = {
-  name: 'maven',
-  properName: 'Maven',
+  name: "maven",
+  properName: "Maven",
   projectComponent: {
     component: MavenProjectHelper,
-    props: {}
+    props: {},
   },
   icons: [
     {
-      name: 'Apache Maven',
+      name: "Apache Maven",
       component: ApacheMavenIcon,
-      url: 'https://maven.apache.org/',
-      props: {}
+      url: "https://maven.apache.org/",
+      props: {},
     },
     {
-      name: 'Gradle',
+      name: "Gradle",
       component: GradleIcon,
-      url: 'https://gradle.org/',
-      props: {}
-    }
-  ]
-}
+      url: "https://gradle.org/",
+      props: {},
+    },
+  ],
+};
 export interface MavenProxyRoute {
-  url: string
-  name?: string
+  url: string;
+  name?: string;
 }
 export interface MavenProxyConfigType {
-  routes: MavenProxyRoute[]
+  routes: MavenProxyRoute[];
 }
 export function defaultProxy(): MavenProxyConfigType {
   return {
-    routes: []
-  }
+    routes: [],
+  };
 }
 export type MavenConfigType =
   | {
-      type: 'Hosted'
+      type: "Hosted";
     }
   | {
-      type: 'Proxy'
-      config: MavenProxyConfigType
-    }
+      type: "Proxy";
+      config: MavenProxyConfigType;
+    };

@@ -2,18 +2,27 @@
   <div>
     <div id="listHeader">
       <h2>Repository Permissions</h2>
-      <button @click="save" :disabled="!hasChanged">Save</button>
+      <button
+        @click="save"
+        :disabled="!hasChanged">
+        Save
+      </button>
     </div>
 
     <div v-auto-animate>
-      <div id="header" class="row">
+      <div
+        id="header"
+        class="row">
         <div class="col">Repository</div>
         <div class="col">Read</div>
         <div class="col">Write</div>
         <div class="col">Edit</div>
         <div class="col action">Action</div>
       </div>
-      <div class="row item" v-for="repository in repositoryPermissions" :key="repository.id">
+      <div
+        class="row item"
+        v-for="repository in repositoryPermissions"
+        :key="repository.id">
         <div class="col">{{ repository.name }}</div>
         <div class="col">
           <BaseSwitch v-model="repository.permissions.can_read" />
@@ -25,11 +34,19 @@
           <BaseSwitch v-model="repository.permissions.can_edit" />
         </div>
         <div class="col action">
-          <button class="actionButton" @click="deleteRepository(repository.id)">Delete</button>
+          <button
+            class="actionButton"
+            @click="deleteRepository(repository.id)">
+            Delete
+          </button>
         </div>
       </div>
-      <div class="row item" id="create">
-        <div class="col" id="repoDropDown">
+      <div
+        class="row item"
+        id="create">
+        <div
+          class="col"
+          id="repoDropDown">
           <RepositoryDropdown v-model="newEntry.repository" />
         </div>
         <div class="col">
@@ -42,7 +59,10 @@
           <BaseSwitch v-model="newEntry.actions.can_edit" />
         </div>
         <div class="col">
-          <button class="actionButton" @click="addRepository" :disabled="!isNewEntryValid">
+          <button
+            class="actionButton"
+            @click="addRepository"
+            :disabled="!isNewEntryValid">
             Add
           </button>
         </div>
@@ -51,200 +71,200 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, type PropType } from 'vue'
-import type { RepositoryActions, UserResponseType } from '@/types/base'
-import BaseSwitch from '@/components/form/BaseSwitch.vue'
-import { repositoriesStore } from '@/stores/repositories'
-import RepositoryDropdown from '@/components/form/dropdown/RepositoryDropdown.vue'
-import { notify } from '@kyvg/vue3-notification'
-import http from '@/http'
-import { watch } from 'vue'
-import { RepositoryActionsType, type FullPermissions } from '@/types/user'
+import { computed, ref, type PropType } from "vue";
+import type { RepositoryActions, UserResponseType } from "@/types/base";
+import BaseSwitch from "@/components/form/BaseSwitch.vue";
+import { repositoriesStore } from "@/stores/repositories";
+import RepositoryDropdown from "@/components/form/dropdown/RepositoryDropdown.vue";
+import { notify } from "@kyvg/vue3-notification";
+import http from "@/http";
+import { watch } from "vue";
+import { RepositoryActionsType, type FullPermissions } from "@/types/user";
 const props = defineProps({
   user: {
     type: Object as PropType<UserResponseType>,
-    required: true
-  }
-})
-const originalPermissions = ref<FullPermissions | undefined>(undefined)
+    required: true,
+  },
+});
+const originalPermissions = ref<FullPermissions | undefined>(undefined);
 const repositoryPermissions = ref<
   {
-    id: string
-    name: string
-    permissions: RepositoryActionsType
+    id: string;
+    name: string;
+    permissions: RepositoryActionsType;
   }[]
->([])
-const repoStore = repositoriesStore()
+>([]);
+const repoStore = repositoriesStore();
 
-const hasChanged = ref(false)
+const hasChanged = ref(false);
 
 const isNewEntryValid = computed(() => {
   if (!newEntry.value.repository) {
-    return false
+    return false;
   }
   if (newEntry.value.repository.length === 0) {
-    return false
+    return false;
   }
-  return true
-})
+  return true;
+});
 
 const newEntry = ref({
-  repository: '',
-  actions: new RepositoryActionsType([])
-})
+  repository: "",
+  actions: new RepositoryActionsType([]),
+});
 function deleteRepository(repository: string) {
   for (let i = 0; i < repositoryPermissions.value.length; i++) {
     if (repositoryPermissions.value[i].id === repository) {
-      repositoryPermissions.value.splice(i, 1)
-      return
+      repositoryPermissions.value.splice(i, 1);
+      return;
     }
   }
 }
 
 async function addRepository() {
   if (!isNewEntryValid.value) {
-    return
+    return;
   }
   for (const repository of repositoryPermissions.value) {
     if (repository.id === newEntry.value.repository) {
-      repository.permissions.update(newEntry.value.actions)
+      repository.permissions.update(newEntry.value.actions);
       notify({
-        type: 'success',
-        title: 'Repository Already Exists',
-        text: 'Values have been updated.'
-      })
-      return
+        type: "success",
+        title: "Repository Already Exists",
+        text: "Values have been updated.",
+      });
+      return;
     }
   }
-  let repositoryValue = await repoStore.getRepositoryById(newEntry.value.repository)
+  const repositoryValue = await repoStore.getRepositoryById(newEntry.value.repository);
   if (!repositoryValue) {
     notify({
-      type: 'error',
-      title: 'Repository Not Found',
-      text: 'The repository could not be found.'
-    })
-    return
+      type: "error",
+      title: "Repository Not Found",
+      text: "The repository could not be found.",
+    });
+    return;
   }
 
   repositoryPermissions.value.push({
     id: newEntry.value.repository,
     name: repositoryValue.name,
-    permissions: new RepositoryActionsType(newEntry.value.actions.asArray())
-  })
+    permissions: new RepositoryActionsType(newEntry.value.actions.asArray()),
+  });
 
-  newEntry.value.repository = ''
-  newEntry.value.actions.can_read = false
-  newEntry.value.actions.can_write = false
-  newEntry.value.actions.can_edit = false
+  newEntry.value.repository = "";
+  newEntry.value.actions.can_read = false;
+  newEntry.value.actions.can_write = false;
+  newEntry.value.actions.can_edit = false;
 }
 async function loadUserPermissions() {
   await http
     .get<FullPermissions>(`api/user-management/get/${props.user.id}/permissions`)
     .then((response) => {
-      originalPermissions.value = response.data
-      console.log(`Original Permissions: ${JSON.stringify(originalPermissions)}`)
+      originalPermissions.value = response.data;
+      console.log(`Original Permissions: ${JSON.stringify(originalPermissions)}`);
     })
     .catch((error) => {
       notify({
-        type: 'error',
-        title: 'Error Loading Permissions',
-        text: 'An error occurred while loading permissions.'
-      })
-      console.error(error)
-    })
+        type: "error",
+        title: "Error Loading Permissions",
+        text: "An error occurred while loading permissions.",
+      });
+      console.error(error);
+    });
 }
 async function load() {
   // Load the repository permissions
-  await loadUserPermissions()
+  await loadUserPermissions();
   if (!originalPermissions.value) {
-    console.error('No permissions found')
-    return
+    console.error("No permissions found");
+    return;
   }
   // Loop through originalPermissions
   for (const [repository, actions] of Object.entries(
-    originalPermissions.value.repository_permissions
+    originalPermissions.value.repository_permissions,
   )) {
-    console.log(`Loaded Repository: ${repository}`)
-    let repositoryValue = await repoStore.getRepositoryById(repository)
+    console.log(`Loaded Repository: ${repository}`);
+    const repositoryValue = await repoStore.getRepositoryById(repository);
     if (!repositoryValue) {
-      console.error(`Repository ${repository} not found`)
-      continue
+      console.error(`Repository ${repository} not found`);
+      continue;
     }
     repositoryPermissions.value.push({
       id: repository,
       name: repositoryValue.name,
-      permissions: new RepositoryActionsType(actions)
-    })
+      permissions: new RepositoryActionsType(actions),
+    });
   }
 }
-load()
+load();
 watch(
   repositoryPermissions,
   () => {
     if (!originalPermissions.value) {
-      return
+      return;
     }
     if (
       repositoryPermissions.value.length !==
       Object.keys(originalPermissions.value.repository_permissions).length
     ) {
       console.log(
-        'Permissions have changed. repositoryPermissions.length !== originalPermissions.length'
-      )
-      hasChanged.value = true
-      return
+        "Permissions have changed. repositoryPermissions.length !== originalPermissions.length",
+      );
+      hasChanged.value = true;
+      return;
     }
     for (const repository of repositoryPermissions.value) {
       if (
         !originalPermissions.value.repository_permissions[repository.id] ||
         !repository.permissions.equalsArray(
-          originalPermissions.value.repository_permissions[repository.id]
+          originalPermissions.value.repository_permissions[repository.id],
         )
       ) {
-        console.log('Permissions have changed. repositoryPermissions !== originalPermissions')
-        hasChanged.value = true
-        return
+        console.log("Permissions have changed. repositoryPermissions !== originalPermissions");
+        hasChanged.value = true;
+        return;
       }
     }
-    console.log('Permissions have not changed')
-    hasChanged.value = false
+    console.log("Permissions have not changed");
+    hasChanged.value = false;
   },
-  { deep: true }
-)
+  { deep: true },
+);
 async function save() {
-  let repositoryPermissionsValue: Record<string, Array<RepositoryActions>> = {}
+  const repositoryPermissionsValue: Record<string, Array<RepositoryActions>> = {};
   for (const repository of repositoryPermissions.value) {
-    repositoryPermissionsValue[repository.id] = repository.permissions.asArray()
+    repositoryPermissionsValue[repository.id] = repository.permissions.asArray();
   }
   const newPermissions = {
-    repository_permissions: repositoryPermissionsValue
-  }
-  console.log(`Saving: ${JSON.stringify(newPermissions)}`)
+    repository_permissions: repositoryPermissionsValue,
+  };
+  console.log(`Saving: ${JSON.stringify(newPermissions)}`);
   await http
     .put(`/api/user-management/update/${props.user.id}/permissions`, newPermissions)
     .then(() => {
       notify({
-        type: 'success',
-        title: 'Permissions Saved',
-        text: 'Permissions have been saved.'
-      })
+        type: "success",
+        title: "Permissions Saved",
+        text: "Permissions have been saved.",
+      });
     })
     .catch((error) => {
-      let text = 'An error occurred while saving permissions.'
+      let text = "An error occurred while saving permissions.";
       if (error.response.data) {
-        text = error.response.data
+        text = error.response.data;
       }
       notify({
-        type: 'error',
-        title: 'Error Saving Permissions',
-        text: text
-      })
-    })
+        type: "error",
+        title: "Error Saving Permissions",
+        text: text,
+      });
+    });
 }
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr;

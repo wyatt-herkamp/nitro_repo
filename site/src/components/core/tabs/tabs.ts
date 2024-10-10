@@ -1,7 +1,7 @@
-import { type Ref } from 'vue'
+import { type Ref } from "vue";
 
 export interface TabData {
-  changeTab(tab: string): void
-  getTab(): string
-  isTabActive(tab: string): boolean
+  changeTab(tab: string): void;
+  getTab(): string;
+  isTabActive(tab: string): boolean;
 }

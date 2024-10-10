@@ -9,8 +9,12 @@
         autofocus
         placeholder="Search by Name, Username, or Primary Email Address" />
     </div>
-    <div id="users" class="betterScroll">
-      <div class="row" id="header">
+    <div
+      id="users"
+      class="betterScroll">
+      <div
+        class="row"
+        id="header">
         <div
           :class="['col', { sorted: sortBy === 'id' }]"
           @click="sortBy = 'id'"
@@ -36,48 +40,55 @@
         :key="account.id"
         @click="router.push(`/admin/user/${account.id}`)">
         <div class="col">{{ account.id }}</div>
-        <div class="col" :title="account.name">{{ account.name }}</div>
-        <div class="col" :title="account.username">{{ account.username }}</div>
+        <div
+          class="col"
+          :title="account.name">
+          {{ account.name }}
+        </div>
+        <div
+          class="col"
+          :title="account.username">
+          {{ account.username }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import router from '@/router'
-import type { UserResponseType } from '@/types/base'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref, type PropType } from 'vue'
-const searchValue = ref<string>('')
+import router from "@/router";
+import type { UserResponseType } from "@/types/base";
+import { computed, ref, type PropType } from "vue";
+const searchValue = ref<string>("");
 
 const props = defineProps({
-  users: Array as PropType<UserResponseType[]>
-})
-const sortBy = ref<string>('id')
+  users: Array as PropType<UserResponseType[]>,
+});
+const sortBy = ref<string>("id");
 
 function sortList(a: UserResponseType, b: UserResponseType) {
   switch (sortBy.value) {
-    case 'id':
-      return a.id - b.id
-    case 'name':
-      return a.name.localeCompare(b.name)
-    case 'username':
-      return a.username.localeCompare(b.username)
+    case "id":
+      return a.id - b.id;
+    case "name":
+      return a.name.localeCompare(b.name);
+    case "username":
+      return a.username.localeCompare(b.username);
 
     default:
-      return 0
+      return 0;
   }
 }
 const filteredTable = computed(() => {
   if (props.users == undefined) {
-    return []
+    return [];
   }
-  const users = props.users.map((user) => user)
-  return users.sort(sortList)
-})
+  const users = props.users.map((user) => user);
+  return users.sort(sortList);
+});
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 #headerBar {
   display: flex;
   justify-content: space-between;

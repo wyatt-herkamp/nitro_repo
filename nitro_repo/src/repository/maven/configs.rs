@@ -16,11 +16,14 @@ pub enum MavenRepositoryConfig {
 }
 impl MavenRepositoryConfig {
     pub fn is_same_type(&self, other: &MavenRepositoryConfig) -> bool {
-        match (self, other) {
-            (MavenRepositoryConfig::Hosted, MavenRepositoryConfig::Hosted) => true,
-            (MavenRepositoryConfig::Proxy(_), MavenRepositoryConfig::Proxy(_)) => true,
-            _ => false,
-        }
+        matches!(
+            (self, other),
+            (MavenRepositoryConfig::Hosted, MavenRepositoryConfig::Hosted)
+                | (
+                    MavenRepositoryConfig::Proxy(_),
+                    MavenRepositoryConfig::Proxy(_)
+                )
+        )
     }
 }
 #[derive(Debug, Clone, Default)]

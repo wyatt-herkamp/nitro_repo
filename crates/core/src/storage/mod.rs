@@ -6,6 +6,7 @@ use sqlx::Type;
 pub use storage_path::*;
 use thiserror::Error;
 use tracing::instrument;
+use utoipa::ToSchema;
 
 use crate::utils::validations;
 #[derive(Debug, Error)]
@@ -17,9 +18,10 @@ pub enum InvalidStorageName {
     #[error("Storage Name contains invalid character `{0}`. Storage Names can only contain letters, numbers, `_`, and `-`")]
     InvalidCharacter(char),
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Default, Into)]
+#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Default, Into, ToSchema)]
 #[sqlx(transparent)]
 pub struct StorageName(String);
+
 impl StorageName {
     #[instrument(name = "StorageName::new")]
     pub fn new(storage_name: String) -> Result<Self, InvalidStorageName> {

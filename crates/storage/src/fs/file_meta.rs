@@ -9,6 +9,7 @@ use std::{
     path::Path,
 };
 use tracing::{debug, instrument, warn};
+use utoipa::ToSchema;
 pub static HIDDEN_FILE_EXTENSIONS: &[&str] = &["nr-meta", "nr-repository-meta"];
 pub static NITRO_REPO_META_EXTENSION: &str = "nr-meta";
 pub static NITRO_REPO_REPOSITORY_META_EXTENSION: &str = "nr-repository-meta";
@@ -21,7 +22,7 @@ pub fn is_hidden_file(path: &Path) -> bool {
     }
 }
 use crate::utils::{MetadataUtils, PathUtils};
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct FileHashes {
     pub md5: Option<String>,
     pub sha1: Option<String>,

@@ -16,18 +16,14 @@ pub enum LoginResponse {
 impl IntoResponse for LoginResponse {
     fn into_response(self) -> axum::response::Response {
         match self {
-            LoginResponse::ValidCouchDBLogin(login) => {
-                Response::builder()
-                    .status(StatusCode::CREATED)
-                    .body(serde_json::to_string(&login).unwrap().into())
-                    .unwrap()
-            }
-            LoginResponse::UnsupportedLogin => {
-                Response::builder()
-                    .status(StatusCode::IM_A_TEAPOT)
-                    .body("Unsupported Login Type".into())
-                    .unwrap()
-            }
+            LoginResponse::ValidCouchDBLogin(login) => Response::builder()
+                .status(StatusCode::CREATED)
+                .body(serde_json::to_string(&login).unwrap().into())
+                .unwrap(),
+            LoginResponse::UnsupportedLogin => Response::builder()
+                .status(StatusCode::IM_A_TEAPOT)
+                .body("Unsupported Login Type".into())
+                .unwrap(),
         }
     }
 }

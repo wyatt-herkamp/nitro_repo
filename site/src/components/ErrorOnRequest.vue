@@ -8,24 +8,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
 const props = defineProps({
   error: String,
   errorCode: {
     type: Number,
-    required: false
+    required: false,
   },
   cause: {
     type: String,
-    required: false
-  }
-})
+    required: false,
+  },
+});
 const humanMessage = computed(() => {
   if (props.cause) {
-    return props.cause
+    return props.cause;
   } else {
-    return 'Resource'
+    return "Resource";
   }
-})
+});
 </script>

@@ -4,6 +4,7 @@ use derive_more::derive::{AsRef, Deref, Into};
 use sqlx::prelude::Type;
 use thiserror::Error;
 use tracing::instrument;
+use utoipa::ToSchema;
 pub mod scopes;
 pub mod token;
 use crate::utils::validations;
@@ -18,7 +19,7 @@ pub enum InvalidUsername {
     #[error("Username contains invalid character `{0}`. Usernames can only contain letters, numbers, `_`, and `-`")]
     InvalidCharacter(char),
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Into, Default)]
+#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Into, Default, ToSchema)]
 #[sqlx(transparent)]
 #[as_ref(forward)]
 
@@ -54,7 +55,7 @@ pub enum InvalidEmail {
     #[error("Missing @ symbol in email")]
     MissingAt,
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Into, Default)]
+#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Into, Default, ToSchema)]
 #[as_ref(forward)]
 #[sqlx(transparent)]
 

@@ -9,9 +9,13 @@
         :data-expanded="expandedToken == token.token.id"
         @click="tokenClicked(token.token.id)">
         <div class="tokenElementLine">
-          <KeyAndValue label="Name" :value="token.token.name || 'No name'" />
+          <KeyAndValue
+            label="Name"
+            :value="token.token.name || 'No name'" />
 
-          <KeyAndValue label="Source" :value="token.token.source" />
+          <KeyAndValue
+            label="Source"
+            :value="token.token.source" />
           <KeyAndValue
             label="Created On"
             :value="new Date(token.token.created_at).toLocaleDateString()" />
@@ -24,50 +28,50 @@
   </main>
 </template>
 <script setup lang="ts">
-import KeyAndValue from '@/components/form/KeyAndValue.vue'
-import SubmitButton from '@/components/form/SubmitButton.vue'
-import http from '@/http'
-import { sessionStore } from '@/stores/session'
-import { type RawAuthTokenFullResponse } from '@/types/user/token'
-import { ref } from 'vue'
+import KeyAndValue from "@/components/form/KeyAndValue.vue";
+import SubmitButton from "@/components/form/SubmitButton.vue";
+import http from "@/http";
+import { sessionStore } from "@/stores/session";
+import { type RawAuthTokenFullResponse } from "@/types/user/token";
+import { ref } from "vue";
 
-const session = sessionStore()
-const user = session.user
-const authTokens = ref<Array<RawAuthTokenFullResponse>>([])
-const expandedToken = ref<number | undefined>(undefined)
+const session = sessionStore();
+const user = session.user;
+const authTokens = ref<Array<RawAuthTokenFullResponse>>([]);
+const expandedToken = ref<number | undefined>(undefined);
 function tokenClicked(tokenId: number) {
   if (expandedToken.value == tokenId) {
-    expandedToken.value = undefined
+    expandedToken.value = undefined;
   } else {
-    expandedToken.value = tokenId
+    expandedToken.value = tokenId;
   }
 }
 async function deleteToken(id: number) {
   await http
     .delete(`/api/user/token/delete/${id}`)
     .then(() => {
-      getAuthTokens()
+      getAuthTokens();
     })
     .catch((error) => {
-      console.log(error)
-    })
+      console.log(error);
+    });
 }
 async function getAuthTokens() {
   if (user == undefined) {
-    return
+    return;
   }
 
   await http
-    .get<Array<RawAuthTokenFullResponse>>('/api/user/token/list')
+    .get<Array<RawAuthTokenFullResponse>>("/api/user/token/list")
     .then((response) => {
-      console.log(response.data)
-      authTokens.value = response.data
+      console.log(response.data);
+      authTokens.value = response.data;
     })
     .catch((error) => {
-      console.log(error)
-    })
+      console.log(error);
+    });
 }
-getAuthTokens()
+getAuthTokens();
 </script>
 
 <style scoped lang="scss">

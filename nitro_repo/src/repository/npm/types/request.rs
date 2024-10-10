@@ -190,11 +190,7 @@ impl GetPath {
         if length == 1 {
             panic!("Invalid path");
         }
-        let name = format!(
-            "{}/{}",
-            components[0],
-            components[1]
-        );
+        let name = format!("{}/{}", components[0], components[1]);
         if length == 2 {
             return Ok(GetPath::GetPackageInfo { name });
         }

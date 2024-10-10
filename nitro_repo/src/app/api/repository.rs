@@ -91,9 +91,11 @@ pub async fn get_repository(
     else {
         return Ok(RepositoryNotFound::Uuid(repository).into_response());
     };
-    if config.visibility.is_private() && !auth
+    if config.visibility.is_private()
+        && !auth
             .has_action(RepositoryActions::Read, repository, site.as_ref())
-            .await? {
+            .await?
+    {
         return Ok(MissingPermission::ReadRepository(repository).into_response());
     }
     let response = Response::builder()

@@ -22,7 +22,7 @@ use crate::{
         responses::{
             InvalidStorageConfig, InvalidStorageType, MissingPermission, ResponseBuilderExt,
         },
-        NitroRepo,
+        Instance, NitroRepo,
     },
     error::InternalError,
 };

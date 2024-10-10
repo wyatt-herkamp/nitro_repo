@@ -1,36 +1,42 @@
 <template>
   <div class="switchBox">
-    <label :for="id" class="switchBoxText">
+    <label
+      :for="id"
+      class="switchBoxText">
       <slot />
     </label>
-    <span v-if="$slots.comment" class="comment">
+    <span
+      v-if="$slots.comment"
+      class="comment">
       <slot name="comment"></slot>
     </span>
-    <BaseSwitch :id="id" v-model="value" />
+    <BaseSwitch
+      :id="id"
+      v-model="value" />
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import BaseSwitch from './BaseSwitch.vue'
-const props = defineProps({
+import { watch } from "vue";
+import BaseSwitch from "./BaseSwitch.vue";
+defineProps({
   id: {
     type: String,
-    required: true
-  }
-})
-let value = defineModel<boolean>({
-  required: true
-})
+    required: true,
+  },
+});
+const value = defineModel<boolean>({
+  required: true,
+});
 const emit = defineEmits<{
-  (e: 'change', newValue: boolean): void
-}>()
+  (e: "change", newValue: boolean): void;
+}>();
 watch(value, (newValue) => {
-  emit('change', newValue)
-})
+  emit("change", newValue);
+});
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 
 .switchBox {
   margin: 1rem 2rem;
@@ -78,7 +84,7 @@ watch(value, (newValue) => {
 
 .slider:before {
   position: absolute;
-  content: '';
+  content: "";
   height: 26px;
   width: 26px;
   left: 4px;
@@ -87,7 +93,7 @@ watch(value, (newValue) => {
   transition: 0.4s;
 }
 
-.slider[data-checked='true'] {
+.slider[data-checked="true"] {
   background-color: blue;
 }
 

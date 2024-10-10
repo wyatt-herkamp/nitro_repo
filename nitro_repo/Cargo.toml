@@ -16,8 +16,8 @@ axum-extra = { version = "0.9", features = [
     "cookie",
     "typed-header",
 ] }
-tower = { version = "0.4", features = ["limit", "timeout"] }
-tower-http = { version = "0.5", features = ["full"] }
+tower = { version = "0.5", features = ["limit", "timeout"] }
+tower-http = { version = "0.6", features = ["full"] }
 tower-service = "0.3.2"
 hyper.workspace = true
 hyper-util.workspace = true
@@ -73,16 +73,15 @@ semver = { version = "1", features = ["std", "serde"] }
 # Staging
 tempfile = "3"
 # Maven Stuff
-maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git"}
+maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
 zip = { version = "2" }
 current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
 nr-storage.workspace = true
 redb = { version = "2.1" }
-config_types = { git = "https://github.com/wyatt-herkamp/config_types.git", features = [
-    "regex_types",
-    "strum",
+tuxs-config-types = { git = "https://github.com/wyatt-herkamp/tuxs-config-types.git", features = [
+    "chrono",
 ] }
 auto_impl.workspace = true
 digestible.workspace = true
@@ -93,11 +92,11 @@ tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 
 # OpenTelemetry - Tracing framework
-tracing-opentelemetry = "0.25"
-opentelemetry = { version = "0.24", features = [] }
-opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.17", default-features = true }
-lettre = { version = "=0.11.7", features = [
+tracing-opentelemetry = "0.27"
+opentelemetry = { version = "0.26", features = [] }
+opentelemetry_sdk = { version = "0.26", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.26", default-features = true }
+lettre = { version = "0.11.9", features = [
     "builder",
     "tokio1",
     "smtp-transport",

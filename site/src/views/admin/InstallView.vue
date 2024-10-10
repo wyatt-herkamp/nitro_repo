@@ -19,11 +19,19 @@
         >Name</TextInput
       >
 
-      <EmailInput id="email" v-model="input.email" placeholder="admin@nitro-repo.dev" required
+      <EmailInput
+        id="email"
+        v-model="input.email"
+        placeholder="admin@nitro-repo.dev"
+        required
         >Email</EmailInput
       >
       <TwoByFormBox>
-        <PasswordInput id="password" v-model="input.password" required :newPassword="true"
+        <PasswordInput
+          id="password"
+          v-model="input.password"
+          required
+          :newPassword="true"
           >Password</PasswordInput
         >
         <PasswordInput
@@ -34,74 +42,76 @@
           >Confirm Password</PasswordInput
         >
       </TwoByFormBox>
-      <SubmitButton :disabled="formValid != ''" :title="installButtonTitle()">Install</SubmitButton>
+      <SubmitButton
+        :disabled="formValid != ''"
+        :title="installButtonTitle()"
+        >Install</SubmitButton
+      >
     </form>
   </main>
 </template>
 <script setup lang="ts">
-import SubmitButton from '@/components/form/SubmitButton.vue'
-import EmailInput from '@/components/form/text/EmailInput.vue'
-import PasswordInput from '@/components/form/text/PasswordInput.vue'
-import TextInput from '@/components/form/text/TextInput.vue'
-import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
-import http from '@/http'
-import { siteStore } from '@/stores/site'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref } from 'vue'
+import SubmitButton from "@/components/form/SubmitButton.vue";
+import EmailInput from "@/components/form/text/EmailInput.vue";
+import PasswordInput from "@/components/form/text/PasswordInput.vue";
+import TextInput from "@/components/form/text/TextInput.vue";
+import TwoByFormBox from "@/components/form/TwoByFormBox.vue";
+import http from "@/http";
+import { notify } from "@kyvg/vue3-notification";
+import { computed, ref } from "vue";
 const input = ref({
-  username: '',
-  email: '',
-  name: '',
-  password: '',
-  confirmPassword: ''
-})
+  username: "",
+  email: "",
+  name: "",
+  password: "",
+  confirmPassword: "",
+});
 function installButtonTitle() {
-  return formValid.value === '' ? 'Install' : formValid.value
+  return formValid.value === "" ? "Install" : formValid.value;
 }
 const formValid = computed(() => {
-  if (input.value.username === '') {
-    return 'Username is required.'
+  if (input.value.username === "") {
+    return "Username is required.";
   }
-  if (input.value.email === '') {
-    return 'Email is required.'
+  if (input.value.email === "") {
+    return "Email is required.";
   }
-  if (input.value.name === '') {
-    return 'Name is required.'
+  if (input.value.name === "") {
+    return "Name is required.";
   }
-  if (input.value.password === '') {
-    return 'Password is required.'
+  if (input.value.password === "") {
+    return "Password is required.";
   }
   if (input.value.password !== input.value.confirmPassword) {
-    return 'Passwords do not match.'
+    return "Passwords do not match.";
   }
-  return ''
-})
-const site = siteStore()
+  return "";
+});
 async function install() {
   const newUser = {
     username: input.value.username,
     email: input.value.email,
     name: input.value.name,
-    password: input.value.password
-  }
+    password: input.value.password,
+  };
   const install = {
-    user: newUser
-  }
+    user: newUser,
+  };
   await http
-    .post('/api/install', install)
+    .post("/api/install", install)
     .then((response) => {
       if (response.status === 204) {
         // Refresh and redirect to login
       }
     })
     .catch((error) => {
-      console.error(error)
+      console.error(error);
       notify({
-        type: 'error',
-        title: 'Error',
-        text: 'An error occurred while installing the application.'
-      })
-    })
+        type: "error",
+        title: "Error",
+        text: "An error occurred while installing the application.",
+      });
+    });
 }
 </script>
 <style lang="scss" scoped>

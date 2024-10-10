@@ -1,16 +1,17 @@
-use config_types::size_config::{ConfigSize, Unit};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgConnectOptions;
 use std::env;
 use std::path::PathBuf;
 use strum::EnumIs;
+use tuxs_config_types::size_config::{ConfigSize, Unit};
+use utoipa::ToSchema;
 
 use crate::repository::StagingConfig;
 
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
 use super::logging::LoggingConfig;
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, EnumIs)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, EnumIs, ToSchema)]
 pub enum Mode {
     Debug,
     Release,
@@ -39,7 +40,7 @@ impl Default for SecuritySettings {
         }
     }
 }
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
 pub struct PasswordRules {
     pub min_length: usize,
     pub require_uppercase: bool,

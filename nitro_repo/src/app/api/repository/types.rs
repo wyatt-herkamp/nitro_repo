@@ -2,7 +2,10 @@ use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use tracing::instrument;
 
-use crate::app::{responses::ResponseBuilderExt, REPOSITORY_TYPES};
+use crate::{
+    app::{responses::ResponseBuilderExt, REPOSITORY_TYPES},
+    repository::RepositoryTypeDescription,
+};
 
 #[utoipa::path(
     get,

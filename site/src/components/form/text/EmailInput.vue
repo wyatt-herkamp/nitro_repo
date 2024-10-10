@@ -3,17 +3,22 @@
     <label :for="id">
       <slot />
     </label>
-    <input type="email" :id="id" v-model="value" v-bind="$attrs" autocomplete="email" />
+    <input
+      type="email"
+      :id="id"
+      v-model="value"
+      v-bind="$attrs"
+      autocomplete="email" />
   </div>
 </template>
 <script setup lang="ts">
-import '@/assets/styles/form.scss'
+import "@/assets/styles/form.scss";
 defineProps<{
-  id: string
-}>()
-let value = defineModel<string>({
-  required: true
-})
+  id: string;
+}>();
+const value = defineModel<string>({
+  required: true,
+});
 </script>
 
 <style scoped lang="scss"></style>

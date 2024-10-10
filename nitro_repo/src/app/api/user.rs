@@ -26,7 +26,7 @@ use nr_core::{
 };
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
-use utoipa::OpenApi;
+use utoipa::{OpenApi, ToSchema};
 mod password_reset;
 mod tokens;
 use crate::{
@@ -95,13 +95,10 @@ pub fn user_routes() -> axum::Router<NitroRepo> {
 #[instrument]
 pub async fn me(auth: Authentication) -> Response {
     match auth {
-        Authentication::AuthToken(_, _) => {
-            
-            Response::builder()
-                .status(StatusCode::BAD_REQUEST)
-                .body("Use whoami instead of me for Auth Tokens".into())
-                .unwrap()
-        }
+        Authentication::AuthToken(_, _) => Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .body("Use whoami instead of me for Auth Tokens".into())
+            .unwrap(),
         Authentication::Session(session, user) => {
             let response = Json(MeWithSession::from((session, user)));
             response.into_response()
@@ -164,7 +161,7 @@ pub async fn get_sessions(
     let response = Json(sessions).into_response();
     Ok(response)
 }
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct LoginRequest {
     pub email_or_username: String,
     pub password: String,

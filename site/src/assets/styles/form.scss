@@ -1,4 +1,4 @@
-@import 'theme';
+@import "theme";
 
 label {
   font-size: medium;
@@ -41,13 +41,13 @@ select:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-input[data-ok='error'] {
+input[data-ok="error"] {
   border: 1px solid red;
 }
-input[data-ok='ok'] {
+input[data-ok="ok"] {
   border: 1px solid green;
 }
-input[data-ok='warn'] {
+input[data-ok="warn"] {
   border: 1px solid yellow;
 }
 

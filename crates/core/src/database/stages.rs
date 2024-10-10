@@ -11,10 +11,12 @@ use super::DateTime;
 pub struct DBStage {
     pub id: Uuid,
     pub repository: Uuid,
+    #[schema(value_type = crate::utils::utopia::AnyType)]
     pub stage_state: Json<Value>,
     pub created_by: i32,
     pub created_at: DateTime,
 }
+
 impl DBStage {
     pub async fn get_stage_by_id(
         id: Uuid,

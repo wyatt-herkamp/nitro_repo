@@ -11,4 +11,8 @@ proc-macro = true
 [dependencies]
 quote = "1"
 proc-macro2 = "1"
-syn = { version = "2", features = ["full", "extra-traits"] }
+syn = { version = "2", features = ["full", "extra-traits", "parsing"] }
+
+[dev-dependencies]
+prettyplease = "0.2"
+anyhow = "1"

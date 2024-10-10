@@ -164,6 +164,7 @@ pub struct DBProjectVersion {
     /// The version page. Such as a README
     pub version_page: Option<String>,
     /// The version data. More data can be added in the future and the data can be repository dependent
+    #[schema(value_type = VersionData)]
     pub extra: Json<VersionData>,
     /// When the version was created
     pub updated_at: DateTime,

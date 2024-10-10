@@ -1,33 +1,44 @@
 <template>
   <nav>
     <div>
-      <router-link to="/" id="logoAndHome" class="navLink">
-        <img src="/icon-128.png" alt="Logo" />
+      <router-link
+        to="/"
+        id="logoAndHome"
+        class="navLink">
+        <img
+          src="/icon-128.png"
+          alt="Logo" />
         <span>Nitro Repository</span>
       </router-link>
     </div>
 
-    <UserDropDown class="right" v-if="user" />
+    <UserDropDown
+      class="right"
+      v-if="user" />
     <div v-if="user"></div>
-    <RouterLink :to="{ name: 'login' }" class="navLink right" v-else>Login</RouterLink>
+    <RouterLink
+      :to="{ name: 'login' }"
+      class="navLink right"
+      v-else
+      >Login</RouterLink
+    >
   </nav>
 </template>
 <script setup lang="ts">
-import { sessionStore } from '@/stores/session'
-import UserDropDown from './UserDropDown.vue'
-import type { PropType } from 'vue'
-import type { UserResponseType } from '@/types/base'
+import UserDropDown from "./UserDropDown.vue";
+import type { PropType } from "vue";
+import type { UserResponseType } from "@/types/base";
 
-const props = defineProps({
+defineProps({
   user: {
     type: Object as PropType<UserResponseType>,
-    required: false
-  }
-})
+    required: false,
+  },
+});
 </script>
 
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 nav {
   display: flex;
   gap: 1rem;

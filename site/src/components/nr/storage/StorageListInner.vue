@@ -9,8 +9,12 @@
         autofocus
         placeholder="Search by Name, Username, or Primary Email Address" />
     </div>
-    <div id="storages" class="betterScroll">
-      <div class="row" id="header">
+    <div
+      id="storages"
+      class="betterScroll">
+      <div
+        class="row"
+        id="header">
         <div
           :class="['col', { sorted: sortBy === 'id' }]"
           @click="sortBy = 'id'"
@@ -35,10 +39,23 @@
         class="row item"
         v-for="storage in filteredTable"
         :key="storage.id"
-        @click="router.push({ name: 'ViewStorage', params: { id: storage.id } })">
+        @click="
+          router.push({
+            name: 'ViewStorage',
+            params: { id: storage.id },
+          })
+        ">
         <div class="col">{{ storage.id }}</div>
-        <div class="col" :title="storage.name">{{ storage.name }}</div>
-        <div class="col" :title="storage.storage_type">{{ storage.storage_type }}</div>
+        <div
+          class="col"
+          :title="storage.name">
+          {{ storage.name }}
+        </div>
+        <div
+          class="col"
+          :title="storage.storage_type">
+          {{ storage.storage_type }}
+        </div>
         <div class="col">{{ storage.active }}</div>
       </div>
     </div>
@@ -46,39 +63,38 @@
 </template>
 
 <script setup lang="ts">
-import router from '@/router'
-import type { UserResponseType } from '@/types/base'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref, type PropType } from 'vue'
-import type { StorageItem } from './storageTypes'
-const searchValue = ref<string>('')
+import router from "@/router";
+
+import { computed, ref, type PropType } from "vue";
+import type { StorageItem } from "./storageTypes";
+const searchValue = ref<string>("");
 
 const props = defineProps({
-  storages: Array as PropType<StorageItem[]>
-})
-const sortBy = ref<string>('id')
+  storages: Array as PropType<StorageItem[]>,
+});
+const sortBy = ref<string>("id");
 
 function sortList(a: StorageItem, b: StorageItem) {
   switch (sortBy.value) {
-    case 'id':
-      return a.name.localeCompare(b.name)
-    case 'name':
-      return a.name.localeCompare(b.name)
+    case "id":
+      return a.name.localeCompare(b.name);
+    case "name":
+      return a.name.localeCompare(b.name);
 
     default:
-      return 0
+      return 0;
   }
 }
 const filteredTable = computed(() => {
   if (props.storages == undefined) {
-    return []
+    return [];
   }
-  const users = props.storages.map((user) => user)
-  return users.sort(sortList)
-})
+  const users = props.storages.map((user) => user);
+  return users.sort(sortList);
+});
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 #headerBar {
   display: flex;
   justify-content: space-between;

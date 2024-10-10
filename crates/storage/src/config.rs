@@ -9,6 +9,7 @@ pub struct StorageConfigInner {
     pub storage_name: String,
     pub storage_id: Uuid,
     pub storage_type: String,
+    #[schema(value_type =  chrono::DateTime<chrono::FixedOffset>, format = DateTime)]
     pub created_at: ConfigTimeStamp,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

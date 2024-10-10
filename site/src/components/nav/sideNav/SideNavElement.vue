@@ -1,28 +1,31 @@
 <template>
-  <RouterLink :to="to" :data-active="isActive" class="navLink">
+  <RouterLink
+    :to="to"
+    :data-active="isActive"
+    class="navLink">
     <slot />
   </RouterLink>
 </template>
 <script setup lang="ts">
-import { computed, defineProps } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, defineProps } from "vue";
+import { useRouter } from "vue-router";
 const props = defineProps({
   to: {
     type: String,
-    required: true
+    required: true,
   },
   routeName: {
     type: String,
-    required: false
-  }
-})
-const router = useRouter()
+    required: false,
+  },
+});
+const router = useRouter();
 const isActive = computed(() => {
-  return props.routeName === router.currentRoute.value.name
-})
+  return props.routeName === router.currentRoute.value.name;
+});
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 .navLink {
   text-decoration: none;
   color: $text;
@@ -39,7 +42,7 @@ const isActive = computed(() => {
     transition: background-color 0.3s ease;
   }
 }
-.navLink[data-active='true'] {
+.navLink[data-active="true"] {
   background-color: $primary-70;
   &:hover {
     cursor: default;

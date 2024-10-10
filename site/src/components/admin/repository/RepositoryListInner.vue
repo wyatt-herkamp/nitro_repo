@@ -9,8 +9,12 @@
         autofocus
         placeholder="Search by Name, Username, or Primary Email Address" />
     </div>
-    <div id="repositories" class="betterScroll">
-      <div class="row" id="header">
+    <div
+      id="repositories"
+      class="betterScroll">
+      <div
+        class="row"
+        id="header">
         <div
           :class="['col', { sorted: sortBy === 'id' }]"
           @click="sortBy = 'id'"
@@ -36,10 +40,23 @@
         class="row item"
         v-for="repository in filteredTable"
         :key="repository.id"
-        @click="router.push({ name: 'AdminViewRepository', params: { id: repository.id } })">
+        @click="
+          router.push({
+            name: 'AdminViewRepository',
+            params: { id: repository.id },
+          })
+        ">
         <div class="col">{{ repository.id }}</div>
-        <div class="col" :title="repository.name">{{ repository.name }}</div>
-        <div class="col" :title="repository.storage_name">{{ repository.storage_name }}</div>
+        <div
+          class="col"
+          :title="repository.name">
+          {{ repository.name }}
+        </div>
+        <div
+          class="col"
+          :title="repository.storage_name">
+          {{ repository.storage_name }}
+        </div>
         <div class="col">{{ repository.repository_type }}</div>
         <div class="col">{{ repository.active }}</div>
       </div>
@@ -48,39 +65,37 @@
 </template>
 
 <script setup lang="ts">
-import router from '@/router'
-import type { UserResponseType } from '@/types/base'
-import type { RepositoryWithStorageName } from '@/types/repository'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref, type PropType } from 'vue'
-const searchValue = ref<string>('')
+import router from "@/router";
+import type { RepositoryWithStorageName } from "@/types/repository";
+import { computed, ref, type PropType } from "vue";
+const searchValue = ref<string>("");
 
 const props = defineProps({
-  repositories: Array as PropType<RepositoryWithStorageName[]>
-})
-const sortBy = ref<string>('id')
+  repositories: Array as PropType<RepositoryWithStorageName[]>,
+});
+const sortBy = ref<string>("id");
 
 function sortList(a: RepositoryWithStorageName, b: RepositoryWithStorageName) {
   switch (sortBy.value) {
-    case 'id':
-      return a.name.localeCompare(b.name)
-    case 'name':
-      return a.name.localeCompare(b.name)
+    case "id":
+      return a.name.localeCompare(b.name);
+    case "name":
+      return a.name.localeCompare(b.name);
 
     default:
-      return 0
+      return 0;
   }
 }
 const filteredTable = computed(() => {
   if (props.repositories == undefined) {
-    return []
+    return [];
   }
-  const users = props.repositories.map((user) => user)
-  return users.sort(sortList)
-})
+  const users = props.repositories.map((user) => user);
+  return users.sort(sortList);
+});
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 #headerBar {
   display: flex;
   justify-content: space-between;

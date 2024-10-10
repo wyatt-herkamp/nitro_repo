@@ -7,14 +7,14 @@
   </section>
 </template>
 <script setup lang="ts">
-const props = defineProps({
+defineProps({
   id: String,
-  value: String
-})
+  value: String,
+});
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/variables.scss';
-@import '@/assets/styles/form.scss';
+@import "@/assets/styles/variables.scss";
+@import "@/assets/styles/form.scss";
 
 .fakeInput {
   display: inline-block;

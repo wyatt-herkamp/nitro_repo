@@ -11,10 +11,15 @@
       autocomplete="new-password"
       v-model="internalValue.value"
       v-bind="$attrs" />
-    <InputRequirements :show="isFocused" :validations="validations" :results="validationResults" />
+    <InputRequirements
+      :show="isFocused"
+      :validations="validations"
+      :results="validationResults" />
   </section>
   <section>
-    <label :for="id + '-confirm'" class="confirmPassword">
+    <label
+      :for="id + '-confirm'"
+      class="confirmPassword">
       Confirm Password
       <span v-if="passwordsMatchMessage">
         <font-awesome-icon :icon="passwordsMatchMessage.icon" />
@@ -31,103 +36,103 @@
   </section>
 </template>
 <script setup lang="ts">
-import type { PasswordRules } from '@/types/base'
-import { computed, ref, watch, type PropType, type Ref } from 'vue'
-import InputRequirements from './InputRequirements.vue'
-import { siteStore } from '@/stores/site'
-import { checkValidations, passwordValidationRules, type SyncValidationType } from './validations'
+import type { PasswordRules } from "@/types/base";
+import { computed, ref, watch, type PropType, type Ref } from "vue";
+import InputRequirements from "./InputRequirements.vue";
+import { siteStore } from "@/stores/site";
+import { checkValidations, passwordValidationRules, type SyncValidationType } from "./validations";
 
 const props = defineProps({
   id: {
     type: String,
-    required: true
+    required: true,
   },
 
   passwordRules: {
     type: Object as PropType<PasswordRules>,
-    required: false
-  }
-})
+    required: false,
+  },
+});
 const actualPasswordRules = computed(() => {
   if (props.passwordRules) {
-    return props.passwordRules
+    return props.passwordRules;
   }
-  const site = siteStore()
-  return site.getPasswordRulesOrDefault()
-})
-const passwordsMatch = ref(false)
-const isFocused = ref(false)
-const isValid = ref(false)
+  const site = siteStore();
+  return site.getPasswordRulesOrDefault();
+});
+const passwordsMatch = ref(false);
+const isFocused = ref(false);
+const isValid = ref(false);
 const passwordsMatchMessage = computed(() => {
-  if (internalValue.value.value === '' && internalValue.value.confirmValue === '') {
-    return undefined
+  if (internalValue.value.value === "" && internalValue.value.confirmValue === "") {
+    return undefined;
   }
   return passwordsMatch.value
     ? {
-        message: 'Passwords Match',
-        icon: 'fa-solid fa-circle-check'
+        message: "Passwords Match",
+        icon: "fa-solid fa-circle-check",
       }
     : {
-        message: 'Passwords do not match',
-        icon: 'fa-solid fa-circle-xmark'
-      }
-})
+        message: "Passwords do not match",
+        icon: "fa-solid fa-circle-xmark",
+      };
+});
 const internalValue = ref({
-  value: '',
-  confirmValue: ''
-})
-const validationResults = ref<Record<string, boolean>>({})
-let value = defineModel<string | undefined>({
-  required: true
-})
+  value: "",
+  confirmValue: "",
+});
+const validationResults = ref<Record<string, boolean>>({});
+const value = defineModel<string | undefined>({
+  required: true,
+});
 watch(
   value,
   (newValue) => {
     internalValue.value = {
-      value: newValue || '',
-      confirmValue: newValue || ''
-    }
+      value: newValue || "",
+      confirmValue: newValue || "",
+    };
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 const validations: Ref<Array<SyncValidationType>> = ref(
-  passwordValidationRules(actualPasswordRules.value)
-)
+  passwordValidationRules(actualPasswordRules.value),
+);
 
 watch(
   internalValue,
   async (newValue) => {
     if (newValue.value !== newValue.confirmValue) {
-      passwordsMatch.value = false
+      passwordsMatch.value = false;
     } else {
-      passwordsMatch.value = true
+      passwordsMatch.value = true;
     }
-    console.log(validations.value)
-    let { isValid: newIsValid, validationResults: newValidationResults } = await checkValidations(
+    console.log(validations.value);
+    const { isValid: newIsValid, validationResults: newValidationResults } = await checkValidations(
       validations.value,
-      internalValue.value.value
-    )
-    validationResults.value = newValidationResults
-    isValid.value = newIsValid
+      internalValue.value.value,
+    );
+    validationResults.value = newValidationResults;
+    isValid.value = newIsValid;
 
     if (value.value === newValue.value) {
-      return
+      return;
     }
     if (newIsValid && passwordsMatch.value) {
-      console.log('Setting value')
-      value.value = newValue.value
+      console.log("Setting value");
+      value.value = newValue.value;
     } else {
-      console.log('Setting value to undefined')
-      value.value = undefined
+      console.log("Setting value to undefined");
+      value.value = undefined;
     }
   },
-  { deep: true }
-)
+  { deep: true },
+);
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/form.scss';
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/form.scss";
+@import "@/assets/styles/theme.scss";
 
 .inputs {
   display: flex;

@@ -1,12 +1,14 @@
 <template>
-  <main v-if="repository" :data-has-page="repositoryPage != undefined">
+  <main
+    v-if="repository"
+    :data-has-page="repositoryPage != undefined">
     <div class="primaryInfo">
       <h1>{{ repository.storage_name }}/{{ repository.name }}</h1>
       <RouterLink
         class="openBrowse"
         :to="{
           name: 'Browse',
-          params: { id: repository.id, catchAll: '' }
+          params: { id: repository.id, catchAll: '' },
         }">
         Browse
       </RouterLink>
@@ -32,67 +34,68 @@
       </div>
     </div>
   </main>
-  <ErrorOnRequest v-else-if="error" :error="error" :errorCode="errorCode" />
+  <ErrorOnRequest
+    v-else-if="error"
+    :error="error"
+    :errorCode="errorCode" />
 </template>
 
 <script setup lang="ts">
-import AdminUserPage from '@/components/admin/user/AdminUserPage.vue'
-import CopyURL from '@/components/core/code/CopyCode.vue'
-import ErrorOnRequest from '@/components/ErrorOnRequest.vue'
-import RepositoryHelper from '@/components/nr/repository/RepositoryHelper.vue'
-import RepositoryIcon from '@/components/nr/repository/RepositoryIcon.vue'
-import RepositoryPageViewer from '@/components/nr/repository/RepositoryPageViewer.vue'
-import http from '@/http'
+import CopyURL from "@/components/core/code/CopyCode.vue";
+import ErrorOnRequest from "@/components/ErrorOnRequest.vue";
+import RepositoryHelper from "@/components/nr/repository/RepositoryHelper.vue";
+import RepositoryIcon from "@/components/nr/repository/RepositoryIcon.vue";
+import RepositoryPageViewer from "@/components/nr/repository/RepositoryPageViewer.vue";
+import http from "@/http";
 
-import router from '@/router'
-import { repositoriesStore } from '@/stores/repositories'
-import type { UserResponseType } from '@/types/base'
+import router from "@/router";
+import { repositoriesStore } from "@/stores/repositories";
 import {
   createRepositoryRoute,
   findRepositoryType,
   type RepositoryPage,
-  type RepositoryWithStorageName
-} from '@/types/repository'
-import { computed, ref } from 'vue'
-const repositoryId = router.currentRoute.value.params.id as string
-const repository = ref<RepositoryWithStorageName | undefined>(undefined)
-const repositoryPage = ref<RepositoryPage | undefined>(undefined)
-const error = ref<string | null>(null)
-const errorCode = ref<number | undefined>(undefined)
-const repoStore = repositoriesStore()
+  type RepositoryWithStorageName,
+} from "@/types/repository";
+import { computed, ref } from "vue";
+const repositoryId = router.currentRoute.value.params.id as string;
+const repository = ref<RepositoryWithStorageName | undefined>(undefined);
+const repositoryPage = ref<RepositoryPage | undefined>(undefined);
+const error = ref<string | null>(null);
+const errorCode = ref<number | undefined>(undefined);
+const repoStore = repositoriesStore();
 const repositoryType = computed(() => {
   if (repository.value) {
-    return findRepositoryType(repository.value.repository_type)
+    return findRepositoryType(repository.value.repository_type);
   }
-  return undefined
-})
+  return undefined;
+});
 const url = computed(() => {
   if (!repository.value) {
-    return ''
+    return "";
   }
-  return createRepositoryRoute(repository.value)
-})
+  return createRepositoryRoute(repository.value);
+});
 async function fetchRepository() {
   await repoStore.getRepositoryById(repositoryId).then((response) => {
-    repository.value = response
-    console.log(repository.value)
-  })
+    repository.value = response;
+    console.log(repository.value);
+  });
   await http
     .get<RepositoryPage>(`/api/repository/page/${repositoryId}`)
     .then((response) => {
-      console.log(response.data)
-      repositoryPage.value = response.data
+      console.log(response.data);
+      repositoryPage.value = response.data;
     })
     .catch((error) => {
-      console.error(error)
-      errorCode.value = error.response.status
-      error.value = 'Failed to fetch repository'
-    })
+      console.error(error);
+      errorCode.value = error.response.status;
+      error.value = "Failed to fetch repository";
+    });
 }
-fetchRepository()
+fetchRepository();
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 main {
   margin: 0 auto;
   padding: 1rem;
@@ -117,7 +120,7 @@ main {
   flex-direction: column;
   gap: 1rem;
 }
-main[data-has-page='true'] {
+main[data-has-page="true"] {
   margin: 0 10%;
 }
 #page {
@@ -127,7 +130,7 @@ main[data-has-page='true'] {
   background-color: $background;
 }
 @media screen and (max-width: 1200px) {
-  main[data-has-page='true'] {
+  main[data-has-page="true"] {
     margin: 0 0;
   }
   #page {

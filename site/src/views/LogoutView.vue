@@ -4,22 +4,22 @@
   </main>
 </template>
 <script setup lang="ts">
-import { sessionStore } from '@/stores/session'
-import SpinnerElement from '@/components//spinner/SpinnerElement.vue'
-let session = sessionStore()
+import { sessionStore } from "@/stores/session";
+import SpinnerElement from "@/components//spinner/SpinnerElement.vue";
+const session = sessionStore();
 async function logout() {
   // Pause for 1 second to allow the spinner to show
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   session
     .logout()
     .then(() => {
-      window.location.href = '/'
+      window.location.href = "/";
     })
     .catch((error) => {
-      console.log(error)
-    })
+      console.log(error);
+    });
 }
-logout()
+logout();
 </script>
 
 <style lang="scss" scoped>

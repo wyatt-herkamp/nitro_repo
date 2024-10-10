@@ -5,14 +5,14 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
+defineProps({
   tabId: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-import { inject } from 'vue'
-import type { TabData } from './tabs'
-const tabData = inject('tabData') as TabData
+import { inject } from "vue";
+import type { TabData } from "./tabs";
+const tabData = inject("tabData") as TabData;
 </script>

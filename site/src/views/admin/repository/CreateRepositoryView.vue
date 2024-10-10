@@ -22,11 +22,17 @@
           required
           >Repository Type</DropDown
         >
-        <DropDown id="storage" v-model="input.storage" :options="storageItemOptions" required
+        <DropDown
+          id="storage"
+          v-model="input.storage"
+          :options="storageItemOptions"
+          required
           >Storage</DropDown
         >
       </TwoByFormBox>
-      <div v-for="config in requiredConfigComponents" :key="config.component.name">
+      <div
+        v-for="config in requiredConfigComponents"
+        :key="config.component.name">
         <component
           :is="config.component"
           v-bind="config.props"
@@ -39,130 +45,132 @@
 </template>
 
 <script lang="ts" setup>
-import FallBackEditor from '@/components/admin/repository/configs/FallBackEditor.vue'
-import DropDown from '@/components/form/dropdown/DropDown.vue'
-import SubmitButton from '@/components/form/SubmitButton.vue'
-import TextInput from '@/components/form/text/TextInput.vue'
-import TwoByFormBox from '@/components/form/TwoByFormBox.vue'
-import type { StorageItem } from '@/components/nr/storage/storageTypes'
-import http from '@/http'
-import router from '@/router'
-import { repositoriesStore } from '@/stores/repositories'
-import { getConfigType, type RepositoryTypeDescription } from '@/types/repository'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref, watch, type Component } from 'vue'
+import FallBackEditor from "@/components/admin/repository/configs/FallBackEditor.vue";
+import DropDown from "@/components/form/dropdown/DropDown.vue";
+import SubmitButton from "@/components/form/SubmitButton.vue";
+import TextInput from "@/components/form/text/TextInput.vue";
+import TwoByFormBox from "@/components/form/TwoByFormBox.vue";
+import type { StorageItem } from "@/components/nr/storage/storageTypes";
+import http from "@/http";
+import router from "@/router";
+import { repositoriesStore } from "@/stores/repositories";
+import { getConfigType, type RepositoryTypeDescription } from "@/types/repository";
+import { notify } from "@kyvg/vue3-notification";
+import { computed, ref, watch } from "vue";
 const input = ref({
-  name: '',
-  storage: ''
-})
-const repoTypesStore = repositoriesStore()
-const selectedRepositoryType = ref('')
-const error = ref('')
-const repositoryTypes = ref<RepositoryTypeDescription[]>([])
-const storages = ref<StorageItem[]>([])
+  name: "",
+  storage: "",
+});
+const repoTypesStore = repositoriesStore();
+const selectedRepositoryType = ref("");
+const repositoryTypes = ref<RepositoryTypeDescription[]>([]);
+const storages = ref<StorageItem[]>([]);
 const storageItemOptions = computed(() => {
   return storages.value.map((storage) => {
     return {
       value: storage.id,
-      label: `${storage.name} (${storage.storage_type})`
-    }
-  })
-})
+      label: `${storage.name} (${storage.storage_type})`,
+    };
+  });
+});
 const repositoryTypeOptions = computed(() => {
   return repositoryTypes.value.map((type) => {
     return {
       value: type.type_name,
-      label: type.name
-    }
-  })
-})
+      label: type.name,
+    };
+  });
+});
 const currentRepositoryType = computed(() => {
-  return repositoryTypes.value.find((type) => type.type_name === selectedRepositoryType.value)
-})
-const requiredConfigValues = ref<Record<string, any>>({})
+  return repositoryTypes.value.find((type) => type.type_name === selectedRepositoryType.value);
+});
+const requiredConfigValues = ref<Record<string, any>>({});
 watch(selectedRepositoryType, (newValue, old) => {
   if (newValue !== old) {
-    console.log(`Changed repository type to ${newValue} from '${old}'. Resetting required configs`)
-    requiredConfigValues.value = {} as Record<string, any>
+    console.log(`Changed repository type to ${newValue} from '${old}'. Resetting required configs`);
+    requiredConfigValues.value = {} as Record<string, any>;
     for (const config of currentRepositoryType.value?.required_configs || []) {
-      requiredConfigValues.value[config] = {} as any
+      requiredConfigValues.value[config] = {} as any;
     }
   }
-})
+});
 watch(requiredConfigValues, () => {
-  console.log(requiredConfigValues.value)
-})
+  console.log(requiredConfigValues.value);
+});
 const requiredConfigComponents = computed(() => {
   if (!currentRepositoryType.value) {
-    return []
+    return [];
   }
 
   const configs = currentRepositoryType.value?.required_configs.map((config) => {
-    const component = getConfigType(config)
+    const component = getConfigType(config);
     if (component) {
       return {
         component: component.component,
-        configName: config
-      }
+        configName: config,
+      };
     } else {
       return {
         component: FallBackEditor,
         configName: config,
         props: {
-          settingName: config
-        }
-      }
+          settingName: config,
+        },
+      };
     }
-  })
-  console.log(configs)
-  return configs
-})
+  });
+  console.log(configs);
+  return configs;
+});
 
 async function load() {
   await repoTypesStore.getStorages(true).then((response) => {
-    storages.value = response
-  })
+    storages.value = response;
+  });
 
   await repoTypesStore.getRepositoryTypes().then((response) => {
-    repositoryTypes.value = response
-  })
+    repositoryTypes.value = response;
+  });
 }
 
-load()
+load();
 
 async function createRepository() {
   const request = {
     name: input.value.name,
     storage: input.value.storage,
-    configs: {} as any
-  }
+    configs: {} as any,
+  };
   for (const [key, value] of Object.entries(requiredConfigValues.value)) {
-    console.log(`${key} = ${JSON.stringify(value)}`)
-    request.configs[key] = value
+    console.log(`${key} = ${JSON.stringify(value)}`);
+    request.configs[key] = value;
   }
-  console.log(JSON.stringify(request))
+  console.log(JSON.stringify(request));
   await http
     .post(`/api/repository/new/${selectedRepositoryType.value}`, request)
     .then((response) => {
       notify({
-        type: 'success',
-        title: 'Success',
-        text: 'Repository created'
-      })
-      router.push({ name: 'AdminViewRepository', params: { id: response.data.id } })
+        type: "success",
+        title: "Success",
+        text: "Repository created",
+      });
+      router.push({
+        name: "AdminViewRepository",
+        params: { id: response.data.id },
+      });
     })
     .catch((error) => {
       notify({
-        type: 'error',
-        title: 'Error',
-        text: 'Failed to create repository'
-      })
-      console.error(error)
-    })
+        type: "error",
+        title: "Error",
+        text: "Failed to create repository",
+      });
+      console.error(error);
+    });
 }
 </script>
 <style scoped lang="scss">
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 form {
   display: flex;
   flex-direction: column;

@@ -17,7 +17,12 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
-utoipa = { version = "5.0.0-alpha", features = ["chrono", "uuid"] }
+utoipa = { version = "5.0.0-rc.0", features = [
+    "chrono",
+    "uuid",
+    "url",
+    "debug",
+] }
 rand = "0.8"
 
 nr-core = { path = "crates/core" }
@@ -47,12 +52,7 @@ derive_builder = "0.20"
 
 # Error Handling
 schemars = { git = "https://github.com/wyatt-herkamp/schemars.git", branch = "if_for_adjacent" }
-reqwest = { version = "0.12", features = [
-    "stream",
-    "http2",
-    "json",
-    "rustls-tls",
-], default-features = false }
+
 thiserror = "1"
 anyhow = "1"
 badge-maker = { git = "https://github.com/wyatt-herkamp/badge-maker.git", branch = "updates_and_improvements" }
@@ -76,7 +76,7 @@ sha2 = "0.10"
 sha3 = "0.10"
 [workspace.dependencies.sqlx]
 version = "0.8"
-default_features = false
+default-features = false
 features = [
     "runtime-tokio-rustls",
     "macros",
@@ -87,6 +87,10 @@ features = [
     "uuid",
     "migrate",
 ]
+[workspace.dependencies.reqwest]
+version = "0.12"
+features = ["stream", "http2", "json", "rustls-tls"]
+default-features = false
 [workspace.lints.rust]
 async_fn_in_trait = "allow"
 deprecated = "deny"

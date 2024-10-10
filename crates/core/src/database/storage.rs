@@ -118,11 +118,13 @@ pub struct DBStorage {
     /// The configuration for the storage
     /// This is based on the storage type. It is stored as a JSON object.
     ///  Requests should be JSON and the response will be JSON. Please refer to the storage type documentation for the configuration.
+    #[schema(value_type = crate::utils::utopia::AnyType)]
     pub config: Json<Value>,
     pub active: bool,
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
+
 impl StorageDBType for DBStorage {
     fn columns() -> Vec<&'static str> {
         vec![

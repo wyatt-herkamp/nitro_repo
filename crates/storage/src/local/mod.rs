@@ -11,12 +11,41 @@ use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 use tracing::{debug, error, info, instrument, trace, warn};
 use utils::PathUtils;
-use utoipa::ToSchema;
 
 use crate::*;
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LocalConfig {
     pub path: PathBuf,
+}
+impl utoipa::__dev::ComposeSchema for LocalConfig {
+    fn compose(
+        _generics: Vec<utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>>,
+    ) -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        utoipa::openapi::ObjectBuilder::new()
+            .property(
+                "path",
+                utoipa::openapi::ObjectBuilder::new().schema_type(
+                    utoipa::openapi::schema::SchemaType::new(utoipa::openapi::schema::Type::String),
+                ),
+            )
+            .required("path")
+            .into()
+    }
+}
+impl utoipa::ToSchema for LocalConfig {
+    fn name() -> std::borrow::Cow<'static, str> {
+        std::borrow::Cow::Borrowed("LocalConfig")
+    }
+}
+impl utoipa::__dev::SchemaReferences for LocalConfig {
+    fn schemas(
+        schemas: &mut Vec<(
+            String,
+            utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+        )>,
+    ) {
+        schemas.extend([]);
+    }
 }
 #[derive(Debug)]
 pub struct LocalStorageInner {

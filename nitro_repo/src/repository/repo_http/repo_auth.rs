@@ -136,11 +136,10 @@ impl RepositoryAuthentication {
         }
     }
     pub fn has_auth_token(&self) -> bool {
-        match self {
-            RepositoryAuthentication::AuthToken(..)
-            | RepositoryAuthentication::Basic(Some(_), _) => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            RepositoryAuthentication::AuthToken(..) | RepositoryAuthentication::Basic(Some(_), _)
+        )
     }
 }
 #[async_trait]

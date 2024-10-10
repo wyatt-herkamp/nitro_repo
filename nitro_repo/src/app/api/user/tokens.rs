@@ -56,7 +56,7 @@ pub struct NewAuthTokenResponse {
 #[utoipa::path(
     post,
     path = "/token/create",
-    request_body = NewAuthToken,
+    //request_body = NewAuthToken,
     responses(
         (status = 200, description = "A New Auth Token was created"),
     ),

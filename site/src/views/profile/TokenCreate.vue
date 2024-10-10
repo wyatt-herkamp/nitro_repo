@@ -4,8 +4,14 @@
     <form @submit.prevent="createToken">
       <div id="regularProperties">
         <div class="column">
-          <TextInput id="tokenName" v-model="newToken.tokenName">Token Name</TextInput>
-          <TextInput id="tokenDescription" v-model="newToken.tokenDescription">
+          <TextInput
+            id="tokenName"
+            v-model="newToken.tokenName"
+            >Token Name</TextInput
+          >
+          <TextInput
+            id="tokenDescription"
+            v-model="newToken.tokenDescription">
             Token Description
           </TextInput>
         </div>
@@ -37,70 +43,70 @@
   </main>
 </template>
 <script setup lang="ts">
-import CopyCode from '@/components/core/code/CopyCode.vue'
-import ScopesSelector from '@/components/form/ScopesSelector.vue'
-import SubmitButton from '@/components/form/SubmitButton.vue'
-import TextInput from '@/components/form/text/TextInput.vue'
-import RepositoryToActionList from '@/components/nr/repository/RepositoryToActionList.vue'
-import http from '@/http'
-import type { RepositoryActions, ScopeDescription } from '@/types/base'
-import type { RepositoryToActions } from '@/types/repository'
-import { type NewAuthTokenResponse } from '@/types/user/token'
-import { notify } from '@kyvg/vue3-notification'
-import { h, ref } from 'vue'
+import CopyCode from "@/components/core/code/CopyCode.vue";
+import ScopesSelector from "@/components/form/ScopesSelector.vue";
+import SubmitButton from "@/components/form/SubmitButton.vue";
+import TextInput from "@/components/form/text/TextInput.vue";
+import RepositoryToActionList from "@/components/nr/repository/RepositoryToActionList.vue";
+import http from "@/http";
+import type { RepositoryActions, ScopeDescription } from "@/types/base";
+import type { RepositoryToActions } from "@/types/repository";
+import { type NewAuthTokenResponse } from "@/types/user/token";
+import { notify } from "@kyvg/vue3-notification";
+import { ref } from "vue";
 const newToken = ref({
-  tokenName: '',
-  tokenDescription: '',
-  tokenExpiration: ''
-})
-const newResponseTokenResponse = ref<NewAuthTokenResponse | undefined>(undefined)
-const repositoryScopes = ref<Array<RepositoryToActions>>([])
-const scopes = ref<Array<ScopeDescription>>([])
+  tokenName: "",
+  tokenDescription: "",
+  tokenExpiration: "",
+});
+const newResponseTokenResponse = ref<NewAuthTokenResponse | undefined>(undefined);
+const repositoryScopes = ref<Array<RepositoryToActions>>([]);
+const scopes = ref<Array<ScopeDescription>>([]);
 async function createToken() {
   const repositoryScopesRequest = [] as Array<{
-    repository_string: string
-    actions: Array<RepositoryActions>
-  }>
+    repository_string: string;
+    actions: Array<RepositoryActions>;
+  }>;
   for (const repositoryScope of repositoryScopes.value) {
     repositoryScopesRequest.push({
       repository_string: repositoryScope.repositoryId,
-      actions: repositoryScope.actions.asArray()
-    })
+      actions: repositoryScope.actions.asArray(),
+    });
   }
-  const scopesRequest = scopes.value.map((scope) => scope.key)
-  console.log(`Creating Token with Repository scopes ${JSON.stringify(repositoryScopesRequest)}`)
-  console.log(`Creating Token with Scopes ${JSON.stringify(scopesRequest)}`)
+  const scopesRequest = scopes.value.map((scope) => scope.key);
+  console.log(`Creating Token with Repository scopes ${JSON.stringify(repositoryScopesRequest)}`);
+  console.log(`Creating Token with Scopes ${JSON.stringify(scopesRequest)}`);
   const request = {
     name: newToken.value.tokenName,
     description: newToken.value.tokenDescription,
     repository_scopes: repositoryScopesRequest,
-    scopes: scopesRequest
-  }
-  console.log(`Creating Token with Request ${JSON.stringify(request)}`)
+    scopes: scopesRequest,
+  };
+  console.log(`Creating Token with Request ${JSON.stringify(request)}`);
   await http
-    .post<NewAuthTokenResponse>('/api/user/token/create', request)
+    .post<NewAuthTokenResponse>("/api/user/token/create", request)
     .then((response) => {
-      console.log(response.data)
-      newResponseTokenResponse.value = response.data
+      console.log(response.data);
+      newResponseTokenResponse.value = response.data;
       notify({
-        type: 'success',
-        title: 'Token Created',
-        text: 'The token has been created.'
-      })
+        type: "success",
+        title: "Token Created",
+        text: "The token has been created.",
+      });
     })
     .catch((error) => {
-      console.error(error)
+      console.error(error);
       notify({
-        type: 'error',
-        title: 'Error Creating Token',
-        text: 'An error occurred while creating the token.'
-      })
-    })
+        type: "error",
+        title: "Error Creating Token",
+        text: "An error occurred while creating the token.",
+      });
+    });
 }
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 
 #repositoryScopes {
   .row {

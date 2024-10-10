@@ -4,6 +4,7 @@ use http::Uri;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 use tracing::instrument;
+use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct StoragePathComponent(String);
@@ -46,8 +47,8 @@ impl AsRef<str> for StoragePathComponent {
     }
 }
 /// A Storage path is a UTF-8 only path. Where the root is the base of the storage.
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, ToSchema)]
+#[schema(value_type = String)]
 pub struct StoragePath(Vec<StoragePathComponent>);
 
 impl StoragePath {

@@ -9,38 +9,29 @@
   </div>
 </template>
 <script setup lang="ts">
-import { fixCurrentPath, type RawBrowseFile } from '@/types/browse'
-import type { RepositoryWithStorageName } from '@/types/repository'
-import { computed, type PropType } from 'vue'
-import BrowseFile from './BrowseEntry.vue'
-import BrowseEntry from './BrowseEntry.vue'
+import { type RawBrowseFile } from "@/types/browse";
+import type { RepositoryWithStorageName } from "@/types/repository";
+
+import BrowseEntry from "./BrowseEntry.vue";
+import type { PropType } from "vue";
 
 const props = defineProps({
   files: {
     type: Array as PropType<RawBrowseFile[]>,
-    required: true
+    required: true,
   },
   currentPath: {
     type: String,
-    required: true
+    required: true,
   },
   repository: {
     type: Object as PropType<RepositoryWithStorageName>,
-    required: true
-  }
-})
-
-function joinLink(file: RawBrowseFile) {
-  const newPath = fixCurrentPath(props.currentPath)
-  console.log(
-    `Repository ID: ${props.repository.id}, Current Path: ${props.currentPath} (Fixed: ${newPath}), File Name: ${file.value.name}`
-  )
-
-  return `/browse/${props.repository.id}/${newPath}/${file.value.name}`
-}
+    required: true,
+  },
+});
 </script>
 <style lang="scss" scoped>
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/theme.scss";
 #browseList {
   padding: 1rem;
   display: flex;

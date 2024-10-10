@@ -251,7 +251,6 @@ impl AuthenticationRaw {
             }
             AuthorizationHeader::Bearer { token } => AuthenticationRaw::AuthToken(token),
             AuthorizationHeader::Session { session } => {
-                
                 match site.session_manager.get_session(&session) {
                     Ok(Some(ok)) => AuthenticationRaw::Session(ok),
                     Err(err) => {

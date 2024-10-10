@@ -21,8 +21,7 @@ pub enum RepositoryConfigError {
     #[error("Invalid Change: {0}")]
     InvalidChange(&'static str, &'static str),
 }
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Digestible)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Digestible, Default)]
 pub struct ConfigDescription {
     pub name: &'static str,
     pub description: Option<&'static str>,

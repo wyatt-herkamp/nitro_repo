@@ -1,5 +1,8 @@
 <template>
-  <section :id="id + '-section'" class="inputWithRequirements" :data-valid="isValid">
+  <section
+    :id="id + '-section'"
+    class="inputWithRequirements"
+    :data-valid="isValid">
     <label :for="id">
       <slot />
     </label>
@@ -11,89 +14,92 @@
       :id="id"
       v-model="internalValue"
       v-bind="$attrs" />
-    <InputRequirements :show="isFocused" :validations="validations" :results="validationResults" />
+    <InputRequirements
+      :show="isFocused"
+      :validations="validations"
+      :results="validationResults" />
   </section>
 </template>
 <script setup lang="ts">
-import { ref, watch, type PropType } from 'vue'
-import { checkValidations, type KeyPressAction, type ValidationType } from './validations'
-import InputRequirements from './InputRequirements.vue'
+import { ref, watch, type PropType } from "vue";
+import { checkValidations, type KeyPressAction, type ValidationType } from "./validations";
+import InputRequirements from "./InputRequirements.vue";
 
 const props = defineProps({
   id: String,
   originalValue: {
     type: String,
-    required: false
+    required: false,
   },
   type: {
     type: String,
-    required: false
+    required: false,
   },
   validations: {
     type: Array as PropType<ValidationType[]>,
-    required: true
+    required: true,
   },
   deniedKeys: {
     type: Array as PropType<KeyPressAction[]>,
-    required: false
-  }
-})
+    required: false,
+  },
+});
 
 function keyPress(event: KeyboardEvent) {
   if (props.deniedKeys) {
     for (const deniedKey of props.deniedKeys) {
-      if (typeof deniedKey === 'string') {
+      if (typeof deniedKey === "string") {
         if (event.key === deniedKey) {
-          event.preventDefault()
-          return
+          event.preventDefault();
+          return;
         }
       } else {
         if (deniedKey.badKey === event.key) {
-          event.preventDefault()
+          event.preventDefault();
           // Add the replacement character
-          internalValue.value += deniedKey.replacedKey
-          return
+          internalValue.value += deniedKey.replacedKey;
+          return;
         }
       }
     }
   }
 }
-const isFocused = ref(false)
-const validationResults = ref<Record<string, boolean>>({})
+const isFocused = ref(false);
+const validationResults = ref<Record<string, boolean>>({});
 
-const internalValue = ref(props.originalValue ?? '')
-const isValid = ref(false)
-let value = defineModel<string | undefined>({
-  required: true
-})
+const internalValue = ref(props.originalValue ?? "");
+const isValid = ref(false);
+const value = defineModel<string | undefined>({
+  required: true,
+});
 watch(internalValue, async () => {
-  let { isValid: newIsValid, validationResults: newValidationResults } = await checkValidations(
+  const { isValid: newIsValid, validationResults: newValidationResults } = await checkValidations(
     props.validations,
-    internalValue.value
-  )
-  validationResults.value = newValidationResults
+    internalValue.value,
+  );
+  validationResults.value = newValidationResults;
 
   if (newIsValid) {
-    value.value = internalValue.value
+    value.value = internalValue.value;
   } else {
-    value.value = undefined
+    value.value = undefined;
   }
-  isValid.value = newIsValid
-})
+  isValid.value = newIsValid;
+});
 if (props.originalValue) {
-  internalValue.value = props.originalValue
+  internalValue.value = props.originalValue;
   for (const validation of props.validations) {
-    validationResults.value[validation.id] = true
+    validationResults.value[validation.id] = true;
   }
 
-  isValid.value = true
+  isValid.value = true;
 }
 </script>
 <style lang="scss" scoped>
-@import '@/assets/styles/form.scss';
-@import '@/assets/styles/theme.scss';
+@import "@/assets/styles/form.scss";
+@import "@/assets/styles/theme.scss";
 
-.inputWithRequirements[data-valid='false'] {
+.inputWithRequirements[data-valid="false"] {
   input {
     border-color: $invalid-form-field;
   }

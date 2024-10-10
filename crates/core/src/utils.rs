@@ -1,4 +1,5 @@
 pub mod time;
+pub mod utopia;
 pub mod base64_utils {
     use base64::{engine::general_purpose::STANDARD, DecodeError, Engine};
     use tracing::instrument;
@@ -32,7 +33,6 @@ pub mod base64_utils {
         {
             super::encode(data).serialize(serializer)
         }
-        
     }
 }
 pub mod sha256 {

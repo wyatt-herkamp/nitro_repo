@@ -26,8 +26,7 @@ impl EnvFile {
         let mut key_values = HashMap::new();
         for line in file_contents.lines() {
             let (key, value) = line.split_once('=').unwrap();
-            
-            
+
             key_values.insert(key.to_string(), value.to_string());
         }
         Ok(Self { file, key_values })

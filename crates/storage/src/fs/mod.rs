@@ -11,7 +11,9 @@ pub use file_meta::*;
 mod file_reader;
 pub use file_reader::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[derive(Debug, Clone, From, Into, Deref)]
+use utoipa::ToSchema;
+#[derive(Debug, Clone, From, Into, Deref, ToSchema)]
+#[schema(value_type = String)]
 pub struct SerdeMime(pub mime::Mime);
 
 impl Serialize for SerdeMime {

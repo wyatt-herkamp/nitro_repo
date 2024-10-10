@@ -1,36 +1,41 @@
 <template>
   <div class="switchBox">
     <label class="switch">
-      <input v-model="innerValue" v-bind="$attrs" type="checkbox" />
-      <span class="slider" :data-checked="innerValue ? 'true' : 'false'"></span>
+      <input
+        v-model="innerValue"
+        v-bind="$attrs"
+        type="checkbox" />
+      <span
+        class="slider"
+        :data-checked="innerValue ? 'true' : 'false'"></span>
     </label>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch } from "vue";
 
-let value = defineModel<boolean>({
-  required: false
-})
-let innerValue = ref(value.value || false)
+const value = defineModel<boolean>({
+  required: false,
+});
+const innerValue = ref(value.value || false);
 const emit = defineEmits<{
-  (e: 'change', newValue: boolean): void
-  (e: 'setTrue'): void
-  (e: 'setFalse'): void
-}>()
+  (e: "change", newValue: boolean): void;
+  (e: "setTrue"): void;
+  (e: "setFalse"): void;
+}>();
 watch(innerValue, (newValue) => {
-  value.value = newValue
-  emit('change', newValue)
+  value.value = newValue;
+  emit("change", newValue);
   if (newValue) {
-    emit('setTrue')
+    emit("setTrue");
   } else {
-    emit('setFalse')
+    emit("setFalse");
   }
-})
+});
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/theme';
+@import "@/assets/styles/theme";
 
 .switchBox > label {
   margin-right: 1rem;
@@ -70,7 +75,7 @@ watch(innerValue, (newValue) => {
 
 .slider:before {
   position: absolute;
-  content: '';
+  content: "";
   height: 26px;
   width: 26px;
   left: 4px;
@@ -79,7 +84,7 @@ watch(innerValue, (newValue) => {
   transition: 0.4s;
 }
 
-.slider[data-checked='true'] {
+.slider[data-checked="true"] {
   background-color: $switch-slider-checked;
 }
 

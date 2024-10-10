@@ -35,9 +35,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
-    maven::{
-        MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType,
-    },
+    maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
     npm::{NPMRegistryConfigType, NpmRegistryType},
     DynRepository, RepositoryType, StagingConfig,
 };
@@ -101,8 +99,10 @@ pub struct NitroRepoInner {
     pub general_security_settings: SecuritySettings,
     pub staging_config: StagingConfig,
 }
+
 impl Debug for NitroRepo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // TODO: Improve the Debug implementation
         f.debug_struct("NitroRepo")
             .field("instance", &self.inner.instance.lock())
             .field("active_storages", &self.inner.storages.read().len())
@@ -171,6 +171,11 @@ impl NitroRepo {
         nitro_repo.load_repositories().await?;
         Ok(nitro_repo)
     }
+
+    /// # Notes
+    ///
+    /// Lock is held intentionally to prevent anything else touching the storages while they are being loaded
+    #[allow(clippy::await_holding_lock)]
     async fn load_storages(&self) -> anyhow::Result<()> {
         let mut storages = self.storages.write();
         storages.clear();
@@ -199,6 +204,10 @@ impl NitroRepo {
         info!("Loaded {} storages", storages.len());
         Ok(())
     }
+    /// # Notes
+    ///
+    /// Lock is held intentionally to prevent anything else touching the repositories while they are being loaded
+    #[allow(clippy::await_holding_lock)]
     async fn load_repositories(&self) -> anyhow::Result<()> {
         let mut repositories = self.repositories.write();
         repositories.clear();
@@ -348,5 +357,4 @@ pub static REPOSITORY_CONFIG_TYPES: &[&dyn RepositoryConfigType] = &[
     &MavenPushRulesConfigType,
     &NPMRegistryConfigType,
 ];
-pub static REPOSITORY_TYPES: &[&dyn RepositoryType] =
-    &[&MavenRepositoryType, &NpmRegistryType];
+pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[&MavenRepositoryType, &NpmRegistryType];

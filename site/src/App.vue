@@ -2,7 +2,9 @@
   <header>
     <NavBar :user="user" />
   </header>
-  <div class="contentWithSideBar" v-if="hasSideBar">
+  <div
+    class="contentWithSideBar"
+    v-if="hasSideBar">
     <component :is="router.currentRoute.value.meta.sideBar" />
     <RouterView />
   </div>
@@ -10,38 +12,38 @@
   <Notifications />
 </template>
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import { siteStore } from './stores/site'
-import router from './router'
-import NavBar from './components/nav/NavBar.vue'
-import { sessionStore } from './stores/session'
-import { computed } from 'vue'
-import { Notifications } from '@kyvg/vue3-notification'
-const site = siteStore()
-const session = sessionStore()
-const user = computed(() => session.user)
+import { RouterView } from "vue-router";
+import { siteStore } from "./stores/site";
+import router from "./router";
+import NavBar from "./components/nav/NavBar.vue";
+import { sessionStore } from "./stores/session";
+import { computed } from "vue";
+import { Notifications } from "@kyvg/vue3-notification";
+const site = siteStore();
+const session = sessionStore();
+const user = computed(() => session.user);
 const hasSideBar = computed(() => {
-  return router.currentRoute.value.meta.sideBar !== undefined
-})
+  return router.currentRoute.value.meta.sideBar !== undefined;
+});
 async function init() {
-  const info = await site.getInfo()
+  const info = await site.getInfo();
   if (info == undefined) {
-    console.log('info is undefined')
-    return
+    console.log("info is undefined");
+    return;
   }
-  console.log(info)
+  console.log(info);
 
   if (!info?.is_installed) {
-    router.push('/admin/install')
+    router.push("/admin/install");
   }
-  const session = sessionStore()
-  const user = await session.updateUser()
+  const session = sessionStore();
+  const user = await session.updateUser();
   if (user == undefined) {
-    console.log('user is undefined')
-    return
+    console.log("user is undefined");
+    return;
   }
 }
-init()
+init();
 </script>
 <style scoped lang="scss">
 .contentWithSideBar {

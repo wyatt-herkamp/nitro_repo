@@ -2,14 +2,22 @@
   <div>
     <div id="userPermissionsHeader">
       <h1>User Permission</h1>
-      <SubmitButton :disabled="!hasChanged" @click="save">Save</SubmitButton>
+      <SubmitButton
+        :disabled="!hasChanged"
+        @click="save"
+        >Save</SubmitButton
+      >
     </div>
     <div class="staticPermissions">
       <div class="permissionsSection">
         <h2>Primary Permissions</h2>
         <p>General Permissions for Nitro Repo</p>
-        <div id="primaryPermissions" class="twoByGrid">
-          <SwitchInput id="admin" v-model="userPermissions.admin">
+        <div
+          id="primaryPermissions"
+          class="twoByGrid">
+          <SwitchInput
+            id="admin"
+            v-model="userPermissions.admin">
             <template #comment>
               Admins have full control over the system.
               <br />
@@ -17,7 +25,9 @@
             </template>
             Admin
           </SwitchInput>
-          <SwitchInput id="userManager" v-model="userPermissions.user_manager">
+          <SwitchInput
+            id="userManager"
+            v-model="userPermissions.user_manager">
             <template #comment>
               Can create, edit, and remove users.
               <br />
@@ -25,7 +35,9 @@
             </template>
             User Manager
           </SwitchInput>
-          <SwitchInput id="systemManager" v-model="userPermissions.system_manager">
+          <SwitchInput
+            id="systemManager"
+            v-model="userPermissions.system_manager">
             <template #comment>
               Can create, edit, and remove storages and repositories. They will also have full read
               and write access to all repositories
@@ -39,7 +51,9 @@
         <p>
           Default Permissions for a Repository. Used if the person does not have a set permissions
         </p>
-        <div id="defaultRepository" class="twoByGrid">
+        <div
+          id="defaultRepository"
+          class="twoByGrid">
           <SwitchInput
             id="defaultRead"
             v-model="userPermissions.default_repository_permissions.can_read">
@@ -64,78 +78,77 @@
   </div>
 </template>
 <script lang="ts" setup>
-import SubmitButton from '@/components/form/SubmitButton.vue'
-import SwitchInput from '@/components/form/SwitchInput.vue'
-import http from '@/http'
-import { RepositoryActions, type UserResponseType } from '@/types/base'
-import { RepositoryActionsType } from '@/types/user'
-import { faL } from '@fortawesome/free-solid-svg-icons'
-import { notify } from '@kyvg/vue3-notification'
-import { computed, ref, watch, type PropType } from 'vue'
+import SubmitButton from "@/components/form/SubmitButton.vue";
+import SwitchInput from "@/components/form/SwitchInput.vue";
+import http from "@/http";
+import { type UserResponseType } from "@/types/base";
+import { RepositoryActionsType } from "@/types/user";
+import { notify } from "@kyvg/vue3-notification";
+import { computed, ref, watch, type PropType } from "vue";
 
 const props = defineProps({
   user: {
     type: Object as PropType<UserResponseType>,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 const hasChanged = computed(() => {
   if (userPermissions.value.admin !== props.user.admin) {
-    return true
+    return true;
   }
   if (userPermissions.value.user_manager !== props.user.user_manager) {
-    return true
+    return true;
   }
   if (userPermissions.value.system_manager !== props.user.system_manager) {
-    return true
+    return true;
   }
 
   return !userPermissions.value.default_repository_permissions.equalsArray(
-    props.user.default_repository_actions
-  )
-})
+    props.user.default_repository_actions,
+  );
+});
 const userPermissions = ref({
   admin: props.user.admin,
   user_manager: props.user.user_manager,
   system_manager: props.user.system_manager,
-  default_repository_permissions: new RepositoryActionsType(props.user.default_repository_actions)
-})
+  default_repository_permissions: new RepositoryActionsType(props.user.default_repository_actions),
+});
 watch(
   userPermissions,
-  (newValue) => {
-    console.log(`User Permissions: ${JSON.stringify(userPermissions)}`)
+  () => {
+    console.log(`User Permissions: ${JSON.stringify(userPermissions)}`);
   },
-  { deep: true }
-)
+  { deep: true },
+);
 async function save() {
-  console.log('Saving User Permissions')
+  console.log("Saving User Permissions");
   const newPermissions = {
     admin: userPermissions.value.admin,
     user_manager: userPermissions.value.user_manager,
     system_manager: userPermissions.value.system_manager,
-    default_repository_actions: userPermissions.value.default_repository_permissions.asArray()
-  }
-  console.log(`Saving: ${JSON.stringify(newPermissions)}`)
+    default_repository_actions: userPermissions.value.default_repository_permissions.asArray(),
+  };
+  console.log(`Saving: ${JSON.stringify(newPermissions)}`);
   await http
     .put(`/api/user-management/update/${props.user.id}/permissions`, newPermissions)
     .then(() => {
       notify({
-        type: 'success',
-        title: 'Permissions Saved',
-        text: 'Permissions have been saved.'
-      })
+        type: "success",
+        title: "Permissions Saved",
+        text: "Permissions have been saved.",
+      });
     })
     .catch((error) => {
-      let text = 'An error occurred while saving permissions.'
+      let text = "An error occurred while saving permissions.";
       if (error.response.data) {
-        text = error.response.data
+        text = error.response.data;
       }
       notify({
-        type: 'error',
-        title: 'Error Saving Permissions',
-        text: text
-      })
-    })
+        type: "error",
+        title: "Error Saving Permissions",
+        text: text,
+      });
+    });
 }
 </script>
 <style lang="scss" scoped>

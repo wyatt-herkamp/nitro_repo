@@ -1,21 +1,24 @@
 <template>
   <div>
     <label :for="id"><slot /></label>
-    <textarea :id="id" v-model="value" v-bind="$attrs" />
+    <textarea
+      :id="id"
+      v-model="value"
+      v-bind="$attrs" />
   </div>
 </template>
 <script setup lang="ts">
-import '@/assets/styles/form.scss'
+import "@/assets/styles/form.scss";
 defineProps<{
-  id: string
-}>()
-let value = defineModel<string | undefined>({
-  required: true
-})
+  id: string;
+}>();
+const value = defineModel<string | undefined>({
+  required: true,
+});
 </script>
 
 <style scoped lang="scss">
-@import '@/assets/styles/variables';
+@import "@/assets/styles/variables";
 
 label {
   display: block;
