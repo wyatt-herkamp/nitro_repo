@@ -1,13 +1,13 @@
-use std::fmt::Display;
-
-use derive_more::derive::{AsRef, Deref, Into};
+use digestible::Digestible;
+use nr_macros::{NuType, SerdeViaStr};
 use sqlx::prelude::Type;
 use thiserror::Error;
 use tracing::instrument;
-use utoipa::ToSchema;
 pub mod scopes;
 pub mod token;
-use crate::utils::validations;
+use crate::utils::validations::{
+    self, convert_traits_to_new, schema_for_new_type_str, test_validations,
+};
 
 pub mod permissions;
 #[derive(Debug, Error)]
@@ -19,11 +19,11 @@ pub enum InvalidUsername {
     #[error("Username contains invalid character `{0}`. Usernames can only contain letters, numbers, `_`, and `-`")]
     InvalidCharacter(char),
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Into, Default, ToSchema)]
+#[derive(Debug, Type, Clone, Digestible, NuType, SerdeViaStr)]
 #[sqlx(transparent)]
-#[as_ref(forward)]
-
 pub struct Username(String);
+convert_traits_to_new!(Username, InvalidUsername);
+schema_for_new_type_str!(Username, pattern = r#"^([a-zA-Z0-9_\-]{3,32}$)"#);
 impl Username {
     #[instrument(name = "Username::new")]
     pub fn new(username: String) -> Result<Self, InvalidUsername> {
@@ -39,13 +39,24 @@ impl Username {
         Ok(Self(username))
     }
 }
-impl Display for Username {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+test_validations! {
+    mod username_tests for Username {
+        valid: [
+            "test",
+            "test-123",
+            "test_123",
+            "test-123_",
+            "test_123-",
+            "test_123-abc",
+            "test_123-abc_"
+        ],
+        invalid: [
+            "t e",
+            "t"
+        ]
     }
 }
 
-validations::from_impls!(Username, InvalidUsername);
 #[derive(Debug, Error)]
 pub enum InvalidEmail {
     #[error("Username is too short, must be at least 3 got {0} characters")]
@@ -55,11 +66,11 @@ pub enum InvalidEmail {
     #[error("Missing @ symbol in email")]
     MissingAt,
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Into, Default, ToSchema)]
-#[as_ref(forward)]
+#[derive(Debug, Type, Clone, NuType, SerdeViaStr)]
 #[sqlx(transparent)]
 
 pub struct Email(String);
+validations::convert_traits_to_new!(Email, InvalidEmail);
 impl Email {
     #[instrument(name = "Email::new")]
     pub fn new(email: String) -> Result<Self, InvalidEmail> {
@@ -75,8 +86,7 @@ impl Email {
         Ok(Self(email))
     }
 }
-
-validations::from_impls!(Email, InvalidEmail);
+schema_for_new_type_str!(Email, format = Email);
 
 #[cfg(test)]
 mod tests {

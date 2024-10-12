@@ -95,6 +95,7 @@ pub mod validations {
     /// - 0-9
     /// - _
     /// - -
+    ///
     #[inline(always)]
     pub fn valid_name_char(c: char) -> bool {
         c.is_ascii_alphanumeric() || c == '_' || c == '-'
@@ -102,44 +103,118 @@ pub mod validations {
     pub fn valid_name_string(s: &str) -> bool {
         s.chars().all(valid_name_char)
     }
-    macro_rules! from_impls {
+
+    macro_rules! schema_for_new_type_str {
+        ($ty:ty) => {
+            impl utoipa::ToSchema for $ty {
+                fn name() -> std::borrow::Cow<'static, str> {
+                    std::borrow::Cow::Borrowed(stringify!($ty))
+                }
+            }
+            impl utoipa::__dev::SchemaReferences for $ty {
+                fn schemas(
+                    schemas: &mut Vec<(
+                        String,
+                        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+                    )>,
+                ) {
+                    schemas.extend([]);
+                }
+            }
+        };
+        (
+            $ty:ty, format = $format:ident
+        ) => {
+            impl utoipa::__dev::ComposeSchema for $ty {
+                fn compose(
+                    _: Vec<utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>>,
+                ) -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+                    utoipa::openapi::ObjectBuilder::new()
+                        .schema_type(utoipa::openapi::schema::SchemaType::new(
+                            utoipa::openapi::schema::Type::String,
+                        ))
+                        .format(Some(utoipa::openapi::SchemaFormat::KnownFormat(
+                            utoipa::openapi::KnownFormat::$format,
+                        )))
+                        .into()
+                }
+            }
+            crate::utils::validations::schema_for_new_type_str!($ty);
+        };
+        (
+            $ty:ty, pattern = $pattern:literal
+        ) => {
+            impl utoipa::__dev::ComposeSchema for $ty {
+                fn compose(
+                    _: Vec<utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>>,
+                ) -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+                    utoipa::openapi::ObjectBuilder::new()
+                        .schema_type(utoipa::openapi::schema::SchemaType::new(
+                            utoipa::openapi::schema::Type::String,
+                        ))
+                        .pattern(Some($pattern))
+                        .into()
+                }
+            }
+            crate::utils::validations::schema_for_new_type_str!($ty);
+        };
+    }
+
+    macro_rules! convert_traits_to_new {
         ($f:ty, $error:ty) => {
-            impl serde::Serialize for $f {
-                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-                where
-                    S: serde::Serializer,
-                {
-                    self.0.serialize(serializer)
+            const _: () = {
+                impl std::convert::TryFrom<String> for $f {
+                    type Error = $error;
+                    fn try_from(value: String) -> Result<Self, Self::Error> {
+                        Self::new(value)
+                    }
                 }
-            }
-            impl<'de> serde::Deserialize<'de> for $f {
-                fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                where
-                    D: serde::Deserializer<'de>,
-                {
-                    String::deserialize(deserializer)
-                        .and_then(|s| Self::new(s).map_err(|e| serde::de::Error::custom(e)))
+                impl std::convert::TryFrom<&str> for $f {
+                    type Error = $error;
+                    fn try_from(value: &str) -> Result<Self, Self::Error> {
+                        Self::new(value.to_owned())
+                    }
                 }
-            }
-            impl TryFrom<String> for $f {
-                type Error = $error;
-                fn try_from(value: String) -> Result<Self, Self::Error> {
-                    Self::new(value)
+                impl std::str::FromStr for $f {
+                    type Err = $error;
+                    fn from_str(s: &str) -> Result<Self, Self::Err> {
+                        Self::new(s.to_owned())
+                    }
                 }
+            };
+        };
+    }
+    pub(crate) use convert_traits_to_new;
+    pub(crate) use schema_for_new_type_str;
+
+    macro_rules! test_validations {
+        (
+            mod $mod_name:ident for $f:ty {
+                valid: [
+                    $($valid:literal),*
+                ],
+                invalid: [
+                    $($invalid:literal),*
+                ]
             }
-            impl TryFrom<&str> for $f {
-                type Error = $error;
-                fn try_from(value: &str) -> Result<Self, Self::Error> {
-                    Self::new(value.to_string())
+        ) => {
+            #[cfg(test)]
+            mod $mod_name {
+                use super::*;
+                #[test]
+                fn test_valid() {
+                    $(
+                        assert!(<$f>::new($valid.to_owned()).is_ok());
+                    )*
                 }
-            }
-            impl std::str::FromStr for $f {
-                type Err = $error;
-                fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    Self::new(s.to_string())
+                #[test]
+                fn test_invalid() {
+                    $(
+                        assert!(<$f>::new($invalid.to_owned()).is_err());
+                    )*
                 }
             }
         };
     }
-    pub(crate) use from_impls;
+    pub(crate) use test_validations;
 }

@@ -1,14 +1,12 @@
 mod storage_path;
-use std::fmt::Display;
 
-use derive_more::derive::{AsRef, Deref, Into};
+use nr_macros::{NuType, SerdeViaStr};
 use sqlx::Type;
 pub use storage_path::*;
 use thiserror::Error;
 use tracing::instrument;
-use utoipa::ToSchema;
 
-use crate::utils::validations;
+use crate::utils::validations::{self, schema_for_new_type_str, test_validations};
 #[derive(Debug, Error)]
 pub enum InvalidStorageName {
     #[error("Storage Name is too short, must be at least 3 got {0} characters")]
@@ -18,9 +16,11 @@ pub enum InvalidStorageName {
     #[error("Storage Name contains invalid character `{0}`. Storage Names can only contain letters, numbers, `_`, and `-`")]
     InvalidCharacter(char),
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Default, Into, ToSchema)]
+#[derive(Debug, Type, Clone, Default, SerdeViaStr, NuType)]
 #[sqlx(transparent)]
 pub struct StorageName(String);
+schema_for_new_type_str!(StorageName, pattern = r#"^([a-zA-Z0-9_\-]{3,32}$)"#);
+validations::convert_traits_to_new!(StorageName, InvalidStorageName);
 
 impl StorageName {
     #[instrument(name = "StorageName::new")]
@@ -40,13 +40,23 @@ impl StorageName {
         Ok(Self(storage_name))
     }
 }
-impl Display for StorageName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
+test_validations! {
+    mod storage_name_tests for StorageName {
+        valid: [
+            "test",
+            "test-123",
+            "test_123",
+            "test-123_",
+            "test_123-",
+            "test_123-abc",
+            "test_123-abc_"
+        ],
+        invalid: [
+            "t e",
+            "t"
+        ]
     }
 }
-
-validations::from_impls!(StorageName, InvalidStorageName);
 /// Check if a file is a directory or a file
 ///
 /// This trait is implemented for `Option<T>` where `T` implements `FileTypeCheck`. Will return false if `None`

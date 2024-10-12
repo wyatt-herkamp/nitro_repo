@@ -1,5 +1,6 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
+use ahash::{HashMap, HashMapExt};
 use tracing::{debug, info, instrument};
 #[instrument]
 pub fn find_file(dir: PathBuf, file_name: &str) -> Option<PathBuf> {

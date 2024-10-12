@@ -1,5 +1,6 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
+use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{
     prelude::{FromRow, Type},

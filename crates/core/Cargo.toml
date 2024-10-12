@@ -26,7 +26,7 @@ derive_more.workspace = true
 digestible.workspace = true
 url.workspace = true
 nr-macros.workspace = true
-
+ahash.workspace = true
 # Testing
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }

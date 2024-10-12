@@ -1,6 +1,4 @@
-use std::fmt::Display;
-
-use derive_more::derive::{AsRef, Deref, Into};
+use nr_macros::{NuType, SerdeViaStr};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::Type;
@@ -9,7 +7,7 @@ use thiserror::Error;
 use tracing::instrument;
 use utoipa::ToSchema;
 
-use crate::utils::validations;
+use crate::utils::validations::{self};
 pub mod config;
 pub mod project;
 pub mod proxy_url;
@@ -55,10 +53,11 @@ pub enum InvalidRepositoryName {
     #[error("Repository name contains invalid character `{0}`. Repository Names can only contain letters, numbers, `_`, and `-`")]
     InvalidCharacter(char),
 }
-#[derive(Debug, Type, Deref, AsRef, Clone, PartialEq, Eq, Default, Into, ToSchema)]
+#[derive(Debug, Type, Clone, Default, SerdeViaStr, NuType)]
 #[sqlx(transparent)]
-#[as_ref(forward)]
 pub struct RepositoryName(String);
+validations::schema_for_new_type_str!(RepositoryName, pattern = r#"^([a-zA-Z0-9_\-]{3,32}$)"#);
+validations::convert_traits_to_new!(RepositoryName, InvalidRepositoryName);
 impl RepositoryName {
     #[instrument(name = "RepositoryName::new")]
     pub fn new(repository_name: String) -> Result<Self, InvalidRepositoryName> {
@@ -77,10 +76,3 @@ impl RepositoryName {
         Ok(Self(repository_name))
     }
 }
-impl Display for RepositoryName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-
-validations::from_impls!(RepositoryName, InvalidRepositoryName);
