@@ -4,11 +4,12 @@ use sqlx::{postgres::PgRow, prelude::FromRow, types::Json, PgPool};
 use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
-
+mod hostname;
 use crate::{
     repository::{RepositoryName, Visibility},
     storage::StorageName,
 };
+pub use hostname::*;
 
 use super::DateTime;
 pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {

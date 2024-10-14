@@ -12,6 +12,6 @@
   "author": "Wyatt Herkamp",
   "license": "ISC",
   "devDependencies": {
-    "vitepress": "^1.3.3"
+    "vitepress": "^1.4.1"
   }
 }

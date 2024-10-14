@@ -161,15 +161,20 @@ fn response_file(meta: StorageFileMeta, content: StorageFileReader) -> Response<
 
 #[derive(Debug, From)]
 pub enum RepoResponse {
-    FileResponse(StorageFile),
-    FileMetaResponse(StorageFileMeta),
+    FileResponse(Box<StorageFile>),
+    FileMetaResponse(Box<StorageFileMeta>),
     Other(axum::response::Response),
+}
+impl From<StorageFileMeta> for RepoResponse {
+    fn from(meta: StorageFileMeta) -> Self {
+        RepoResponse::FileMetaResponse(Box::new(meta))
+    }
 }
 impl RepoResponse {
     /// Default Response Format
     pub fn into_response_default(self) -> Response {
         match self {
-            Self::FileResponse(file) => match file {
+            Self::FileResponse(file) => match *file {
                 StorageFile::Directory { meta, files } => Response::builder()
                     .status(StatusCode::NOT_IMPLEMENTED)
                     .header(CONTENT_TYPE, mime::TEXT_HTML.to_string())
@@ -316,10 +321,15 @@ impl From<Result<Response, http::Error>> for RepoResponse {
         }
     }
 }
+impl From<StorageFile> for RepoResponse {
+    fn from(file: StorageFile) -> Self {
+        RepoResponse::FileResponse(Box::new(file))
+    }
+}
 impl From<Option<StorageFile>> for RepoResponse {
     fn from(file: Option<StorageFile>) -> Self {
         match file {
-            Some(file) => RepoResponse::FileResponse(file),
+            Some(file) => RepoResponse::FileResponse(Box::new(file)),
             None => RepoResponse::basic_text_response(StatusCode::NOT_FOUND, "File not found"),
         }
     }
@@ -328,7 +338,7 @@ impl From<Option<StorageFile>> for RepoResponse {
 impl From<Option<StorageFileMeta>> for RepoResponse {
     fn from(meta: Option<StorageFileMeta>) -> Self {
         match meta {
-            Some(meta) => RepoResponse::FileMetaResponse(meta),
+            Some(meta) => RepoResponse::FileMetaResponse(Box::new(meta)),
             None => RepoResponse::basic_text_response(StatusCode::NOT_FOUND, "File not found"),
         }
     }

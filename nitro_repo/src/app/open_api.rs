@@ -21,7 +21,6 @@ use utoipa::{Modify, OpenApi};
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),
-
     nest(
         (path = "/api/user", api = UserAPI, tags=["user"]),
         (path="/api/user-management", api = UserManagementAPI, tags=["user-management"]),

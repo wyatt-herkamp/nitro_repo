@@ -69,8 +69,8 @@ impl ScopeEntry {
         };
         scope
     }
-
-    pub fn from_string(&self) -> TokenStream {
+    #[allow(clippy::wrong_self_convention)]
+    pub fn from_string_impl(&self) -> TokenStream {
         let name_as_string = self.name_as_string();
         let ident = &self.ident;
         let scope = quote! {
@@ -142,7 +142,7 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
     }
     let descriptions = entries.iter().map(ScopeEntry::description_tokens);
     let as_str = entries.iter().map(ScopeEntry::as_str);
-    let from_string = entries.iter().map(ScopeEntry::from_string);
+    let from_string = entries.iter().map(ScopeEntry::from_string_impl);
     let result = quote! {
         impl #ident {
             pub fn description(&self) -> ScopeDescription {
