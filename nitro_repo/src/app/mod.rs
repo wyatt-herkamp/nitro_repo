@@ -8,7 +8,7 @@ use axum::extract::State;
 use config::{Mode, PasswordRules, PostgresSettings, SecuritySettings, SiteSetting};
 use derive_more::{derive::Deref, AsRef, Into};
 use email::EmailSetting;
-use email_service::EmailAccess;
+use email_service::{EmailAccess, EmailService};
 use http::Uri;
 use nr_core::{
     database::{
@@ -130,14 +130,16 @@ impl NitroRepo {
     pub async fn new(
         mode: Mode,
         site: SiteSetting,
-        security: SecuritySettings,
-        session_manager: SessionManagerConfig,
-        staging_config: StagingConfig,
-        email_settings: EmailSetting,
+        security: Option<SecuritySettings>,
+        session_manager: Option<SessionManagerConfig>,
+        staging_config: Option<StagingConfig>,
+        email_settings: Option<EmailSetting>,
         database: PostgresSettings,
     ) -> anyhow::Result<Self> {
         let database = Self::load_database(database).await?;
         let is_installed = user_utils::does_user_exist(&database).await?;
+        let security = security.unwrap_or_default();
+        let staging_config = staging_config.unwrap_or_default();
         let instance = Instance {
             mode,
             version: current_semver!(),
@@ -148,7 +150,11 @@ impl NitroRepo {
             is_https: site.is_https,
             password_rules: security.password_rules.clone(),
         };
-        let email_service = email_service::EmailService::start(email_settings).await?;
+        let email_service = if let Some(email_service) = email_settings {
+            EmailService::start(email_service).await?
+        } else {
+            EmailService::no_email()
+        };
         let session_manager = SessionManager::new(session_manager, mode)?;
 
         let nitro_repo = NitroRepoInner {

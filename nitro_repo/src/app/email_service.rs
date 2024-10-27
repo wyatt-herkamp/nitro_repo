@@ -148,6 +148,17 @@ type Transport = AsyncSmtpTransport<lettre::Tokio1Executor>;
 #[derive(Debug)]
 pub struct EmailService;
 impl EmailService {
+    pub fn no_email() -> EmailAccess {
+        let (sender, receiver) = flume::bounded(100);
+        tokio::spawn(async move {
+            Self::run_no_transport(receiver).await;
+        });
+        EmailAccess {
+            queue: sender,
+            message_builder: Message::builder(),
+            email_handlebars: Handlebars::new(),
+        }
+    }
     pub async fn start(email: EmailSetting) -> io::Result<EmailAccess> {
         let transport = Self::build_connection(email.clone()).await;
 

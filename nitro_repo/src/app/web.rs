@@ -1,7 +1,7 @@
 use super::authentication::api_middleware::AuthenticationLayer;
 use super::logging::request_tracing::NitroRepoTracing;
-use super::NitroRepo;
 use super::{api, config::NitroRepoConfig};
+use super::{config, NitroRepo};
 
 use anyhow::Context;
 use axum::extract::DefaultBodyLimit;
@@ -37,13 +37,22 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
         mode,
         sessions,
         tls,
-        staging_config,
+        staging: staging_config,
         site,
         security,
         email,
         ..
     } = NitroRepoConfig::load(config_path, add_defaults)?;
-    log.init(mode)?;
+    let bind_address = bind_address.unwrap_or_else(config::default_bind_address);
+    let max_upload = max_upload
+        .map(|size| size.get_as_bytes())
+        .unwrap_or(100 * 1024 * 1024);
+    let Some(database) = database else {
+        return Err(anyhow::anyhow!("Database Settings are Required"));
+    };
+    let mode = mode.unwrap_or_default();
+    let site = site.unwrap_or_default();
+    log.unwrap_or_default().init(mode)?;
     let tls = tls
         .map(|tls| {
             rustls_server_config(tls.private_key, tls.certificate_chain)
@@ -94,7 +103,7 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
         ))
         .layer(NitroRepoTracing::new_trace_layer())
         .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
-        .layer(DefaultBodyLimit::max(max_upload.get_as_bytes()))
+        .layer(DefaultBodyLimit::max(max_upload))
         .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
         .layer(auth_layer);
     if let Some(tls) = tls {

@@ -155,7 +155,8 @@ impl Debug for SessionManager {
     }
 }
 impl SessionManager {
-    pub fn new(session_config: SessionManagerConfig, mode: Mode) -> Result<Self, Error> {
+    pub fn new(session_config: Option<SessionManagerConfig>, mode: Mode) -> Result<Self, Error> {
+        let session_config = session_config.unwrap_or_default();
         let sessions = if session_config.database_location.exists() {
             let database = Database::open(&session_config.database_location)?;
             if mode == Mode::Debug {

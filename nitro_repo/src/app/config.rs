@@ -80,21 +80,21 @@ impl Default for PasswordRules {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 #[serde(default)]
 pub struct NitroRepoConfig {
-    pub database: PostgresSettings,
-    pub log: LoggingConfig,
-    pub bind_address: String,
-    pub max_upload: ConfigSize,
+    pub database: Option<PostgresSettings>,
+    pub log: Option<LoggingConfig>,
+    pub bind_address: Option<String>,
+    pub max_upload: Option<ConfigSize>,
     pub server_workers: Option<usize>,
-    pub mode: Mode,
-    pub sessions: SessionManagerConfig,
+    pub mode: Option<Mode>,
+    pub sessions: Option<SessionManagerConfig>,
     pub tls: Option<TlsConfig>,
-    pub email: EmailSetting,
-    pub site: SiteSetting,
-    pub security: SecuritySettings,
-    pub staging_config: StagingConfig,
+    pub email: Option<EmailSetting>,
+    pub site: Option<SiteSetting>,
+    pub security: Option<SecuritySettings>,
+    pub staging: Option<StagingConfig>,
 }
 
 impl NitroRepoConfig {
@@ -116,28 +116,10 @@ impl NitroRepoConfig {
         Ok(app)
     }
 }
-
-impl Default for NitroRepoConfig {
-    fn default() -> Self {
-        Self {
-            database: PostgresSettings::default(),
-            log: LoggingConfig::default(),
-            bind_address: "0.0.0.0:6742".to_string(),
-            max_upload: ConfigSize {
-                size: 1024,
-                unit: Unit::Mebibytes,
-            },
-            server_workers: None,
-            mode: Mode::default(),
-            tls: None,
-            sessions: SessionManagerConfig::default(),
-            email: EmailSetting::default(),
-            site: SiteSetting::default(),
-            security: SecuritySettings::default(),
-            staging_config: StagingConfig::default(),
-        }
-    }
+pub fn default_bind_address() -> String {
+    "0.0.0.0:6742".to_string()
 }
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PostgresSettings {
     pub user: String,

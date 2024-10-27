@@ -111,24 +111,12 @@ pub mod validations {
                     std::borrow::Cow::Borrowed(stringify!($ty))
                 }
             }
-            impl utoipa::__dev::SchemaReferences for $ty {
-                fn schemas(
-                    schemas: &mut Vec<(
-                        String,
-                        utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
-                    )>,
-                ) {
-                    schemas.extend([]);
-                }
-            }
         };
         (
             $ty:ty, format = $format:ident
         ) => {
-            impl utoipa::__dev::ComposeSchema for $ty {
-                fn compose(
-                    _: Vec<utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>>,
-                ) -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+            impl utoipa::PartialSchema for $ty {
+                fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
                     utoipa::openapi::ObjectBuilder::new()
                         .schema_type(utoipa::openapi::schema::SchemaType::new(
                             utoipa::openapi::schema::Type::String,
@@ -139,15 +127,14 @@ pub mod validations {
                         .into()
                 }
             }
+
             crate::utils::validations::schema_for_new_type_str!($ty);
         };
         (
             $ty:ty, pattern = $pattern:literal
         ) => {
-            impl utoipa::__dev::ComposeSchema for $ty {
-                fn compose(
-                    _: Vec<utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>>,
-                ) -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+            impl utoipa::PartialSchema for $ty {
+                fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
                     utoipa::openapi::ObjectBuilder::new()
                         .schema_type(utoipa::openapi::schema::SchemaType::new(
                             utoipa::openapi::schema::Type::String,
