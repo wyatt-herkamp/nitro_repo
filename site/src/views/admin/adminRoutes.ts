@@ -10,7 +10,6 @@ import ViewStorage from "@/views/admin/storage/ViewStorage.vue";
 import UserCreateView from "@/views/admin/user/UserCreateView.vue";
 import UserListView from "@/views/admin/user/UserListView.vue";
 import UserPage from "@/views/admin/user/UserPage.vue";
-import path from "path";
 import AdminSystem from "./AdminSystem.vue";
 const defaultAdminMeta = {
   sideBar: AdminNav,

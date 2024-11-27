@@ -48,7 +48,7 @@ derive_builder = "0.20"
 # Error Handling
 schemars = { git = "https://github.com/wyatt-herkamp/schemars.git", branch = "if_for_adjacent" }
 
-thiserror = "1"
+thiserror = "2"
 anyhow = "1"
 badge-maker = { git = "https://github.com/wyatt-herkamp/badge-maker.git", branch = "updates_and_improvements" }
 auto_impl = "1.2"
