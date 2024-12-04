@@ -1026,7 +1026,7 @@ checksum = "0d6ef0072f8a535281e4876be788938b528e9a1d43900b82c2569af7da799125"
 [[package]]
 name = "edit-xml"
 version = "0.1.0"
-source = "git+https://github.com/wyatt-herkamp/edit-xml.git#1b3dae619320834680a7453310fc2b03af4f7bc2"
+source = "git+https://github.com/wyatt-herkamp/edit-xml.git#3f3431bbb0835f6b14913a4ac5b45a23ef622f9f"
 dependencies = [
  "ahash",
  "encoding_rs",
@@ -2019,7 +2019,7 @@ checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 [[package]]
 name = "maven-rs"
 version = "0.1.0"
-source = "git+https://github.com/wyatt-herkamp/maven-rs.git#c729d9e44d49a814268e8c4b5bf16486703cd301"
+source = "git+https://github.com/wyatt-herkamp/maven-rs.git#9f002814ffcf4e3ab7757ee9ee73abc323facef0"
 dependencies = [
  "ahash",
  "chrono",
