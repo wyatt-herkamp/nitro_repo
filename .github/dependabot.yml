@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    labels:
+      - "rust"
+      - "Chore"
+    schedule:
+      interval: "daily"
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+            - "*"   
+        update-types:
+          - "patch"
+          - "minor"
