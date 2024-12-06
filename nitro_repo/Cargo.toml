@@ -94,7 +94,7 @@ tracing-opentelemetry = "0.28"
 opentelemetry = { version = "0.27", features = [] }
 opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.27", default-features = true }
-lettre = { version = "0.11.9", features = [
+lettre = { version = "0.11.11", features = [
     "builder",
     "tokio1",
     "smtp-transport",
