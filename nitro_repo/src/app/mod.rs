@@ -5,7 +5,7 @@ use anyhow::Context;
 use authentication::session::{SessionManager, SessionManagerConfig};
 
 use axum::extract::State;
-use config::{Mode, PasswordRules, PostgresSettings, SecuritySettings, SiteSetting};
+use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
 use derive_more::{derive::Deref, AsRef, Into};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
@@ -15,6 +15,7 @@ use nr_core::{
         repository::DBRepository,
         storage::{DBStorage, StorageDBType},
         user::user_utils,
+        DatabaseConfig,
     },
     repository::config::{
         project::ProjectConfigType, repository_page::RepositoryPageType, RepositoryConfigType,
@@ -120,8 +121,8 @@ pub struct NitroRepo {
     pub email_access: Arc<EmailAccess>,
 }
 impl NitroRepo {
-    async fn load_database(database: PostgresSettings) -> anyhow::Result<PgPool> {
-        let database = PgPool::connect_with(database.into())
+    async fn load_database(database: DatabaseConfig) -> anyhow::Result<PgPool> {
+        let database = PgPool::connect_with(database.try_into()?)
             .await
             .context("Could not connec to database")?;
         nr_core::database::migration::run_migrations(&database).await?;
@@ -130,16 +131,16 @@ impl NitroRepo {
     pub async fn new(
         mode: Mode,
         site: SiteSetting,
-        security: Option<SecuritySettings>,
-        session_manager: Option<SessionManagerConfig>,
-        staging_config: Option<StagingConfig>,
+        security: SecuritySettings,
+        session_manager: SessionManagerConfig,
+        staging_config: StagingConfig,
         email_settings: Option<EmailSetting>,
-        database: PostgresSettings,
+        database: DatabaseConfig,
     ) -> anyhow::Result<Self> {
         let database = Self::load_database(database).await?;
         let is_installed = user_utils::does_user_exist(&database).await?;
-        let security = security.unwrap_or_default();
-        let staging_config = staging_config.unwrap_or_default();
+        let security = security;
+        let staging_config = staging_config;
         let instance = Instance {
             mode,
             version: current_semver!(),

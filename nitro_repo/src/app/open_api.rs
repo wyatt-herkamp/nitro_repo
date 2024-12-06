@@ -72,7 +72,10 @@ impl Modify for SecurityAddon {
     }
 }
 #[cfg(feature = "utoipa-scalar")]
-pub fn build_router() -> axum::Router<crate::app::NitroRepo> {
+pub fn build_router<S>() -> axum::Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
     use utoipa_scalar::{Scalar, Servable};
 
     Router::new()
@@ -80,7 +83,10 @@ pub fn build_router() -> axum::Router<crate::app::NitroRepo> {
         .merge(Scalar::with_url("/scalar", ApiDoc::openapi()))
 }
 #[cfg(not(feature = "utoipa-scalar"))]
-pub fn build_router() -> axum::Router<crate::app::NitroRepo> {
+pub fn build_router<S>() -> axum::Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
     Router::new().route("/open-api-doc-raw", get(api_docs))
 }
 async fn api_docs() -> Response {

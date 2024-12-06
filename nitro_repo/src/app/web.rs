@@ -1,7 +1,8 @@
 use super::authentication::api_middleware::AuthenticationLayer;
+use super::config::{load_config, WebServer};
 use super::logging::request_tracing::NitroRepoTracing;
 use super::{api, config::NitroRepoConfig};
-use super::{config, NitroRepo};
+use super::{open_api, NitroRepo};
 
 use anyhow::Context;
 use axum::extract::DefaultBodyLimit;
@@ -23,42 +24,33 @@ use tokio_rustls::TlsAcceptor;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_service::Service;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
 const POWERED_BY_HEADER: HeaderName = HeaderName::from_static("x-powered-by");
 const POWERED_BY_VALUE: HeaderValue = HeaderValue::from_static("Nitro Repo");
-pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::Result<()> {
+pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     let NitroRepoConfig {
+        web_server,
         database,
         log,
-        bind_address,
-        max_upload,
         mode,
         sessions,
-        tls,
         staging: staging_config,
         site,
         security,
         email,
-        ..
-    } = NitroRepoConfig::load(config_path, add_defaults)?;
-    let bind_address = bind_address.unwrap_or_else(config::default_bind_address);
-    let max_upload = max_upload
-        .map(|size| size.get_as_bytes())
-        .unwrap_or(100 * 1024 * 1024);
-    let Some(database) = database else {
-        return Err(anyhow::anyhow!("Database Settings are Required"));
-    };
-    let mode = mode.unwrap_or_default();
-    let site = site.unwrap_or_default();
-    log.unwrap_or_default().init(mode)?;
-    let tls = tls
-        .map(|tls| {
-            rustls_server_config(tls.private_key, tls.certificate_chain)
-                .context("Failed to create TLS configuration")
-        })
-        .transpose()?;
+    } = load_config(config_path)?;
+    let WebServer {
+        bind_address,
+        max_upload,
+        tls,
+        open_api_routes,
+    } = web_server;
+
+    let mode = mode;
+    let site = site;
+    log.init(mode)?;
 
     let site = NitroRepo::new(
         mode,
@@ -74,7 +66,7 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
 
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
-    let app = Router::new()
+    let mut app = Router::new()
         .route(
             "/repositories/:storage/:repository/*path",
             any(crate::repository::handle_repo_request),
@@ -93,9 +85,13 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
         )
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
-        .merge(super::open_api::build_router())
         .with_state(site);
 
+    if open_api_routes {
+        info!("OpenAPI routes enabled");
+        app = app.merge(open_api::build_router())
+    }
+    let body_limit: DefaultBodyLimit = max_upload.into();
     let app = app
         .layer(SetResponseHeaderLayer::if_not_present(
             POWERED_BY_HEADER,
@@ -103,14 +99,21 @@ pub(crate) async fn start(config_path: PathBuf, add_defaults: bool) -> anyhow::R
         ))
         .layer(NitroRepoTracing::new_trace_layer())
         .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
-        .layer(DefaultBodyLimit::max(max_upload))
+        .layer(body_limit)
         .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
         .layer(auth_layer);
+
     if let Some(tls) = tls {
+        debug!("Starting TLS server");
+        let tls = rustls_server_config(tls.private_key, tls.certificate_chain)
+            .context("Failed to create TLS configuration")?;
         start_app_with_tls(tls, app, bind_address).await?;
     } else {
+        debug!("Starting non-TLS server");
         start_app(app, bind_address, cloned_site).await?;
     }
+
+    info!("Server shutdown... Goodbye!");
 
     Ok(())
 }

@@ -1,21 +1,36 @@
+use nr_core::database::DatabaseConfig;
 use serde::{Deserialize, Serialize};
-use sqlx::postgres::PgConnectOptions;
 use std::env;
+use std::fs::read_to_string;
 use std::path::PathBuf;
 use strum::EnumIs;
-use tuxs_config_types::size_config::{ConfigSize, Unit};
+use tuxs_config_types::size_config::InvalidSizeError;
 use utoipa::ToSchema;
-
-use crate::repository::StagingConfig;
-
+mod max_upload;
+mod security;
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
 use super::logging::LoggingConfig;
+use crate::repository::StagingConfig;
+pub use max_upload::*;
+pub use security::*;
+pub const CONFIG_PREFIX: &str = "NITRO-REPO";
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("Invalid size: {0}")]
+    InvalidSize(#[from] InvalidSizeError),
+    #[error("Invalid max upload size. Expected a valid size or 'unlimited', error: {error}, got: {value}")]
+    InvalidMaxUpload {
+        error: InvalidSizeError,
+        value: String,
+    },
+}
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, EnumIs, ToSchema)]
 pub enum Mode {
     Debug,
     Release,
 }
+
 impl Default for Mode {
     fn default() -> Self {
         #[cfg(debug_assertions)]
@@ -27,138 +42,54 @@ impl Default for Mode {
 pub fn get_current_directory() -> PathBuf {
     env::current_dir().unwrap_or_else(|_| PathBuf::new())
 }
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct SecuritySettings {
-    pub allow_basic_without_tokens: bool,
-    pub password_rules: Option<PasswordRules>,
-}
-impl Default for SecuritySettings {
-    fn default() -> Self {
-        Self {
-            allow_basic_without_tokens: false,
-            password_rules: Some(PasswordRules::default()),
-        }
-    }
-}
-#[derive(Debug, Deserialize, Serialize, Clone, ToSchema)]
-pub struct PasswordRules {
-    pub min_length: usize,
-    pub require_uppercase: bool,
-    pub require_lowercase: bool,
-    pub require_number: bool,
-    pub require_symbol: bool,
-}
-impl PasswordRules {
-    pub fn validate(&self, password: &str) -> bool {
-        if password.len() < self.min_length {
-            return false;
-        }
-        if self.require_uppercase && !password.chars().any(|c| c.is_uppercase()) {
-            return false;
-        }
-        if self.require_lowercase && !password.chars().any(|c| c.is_lowercase()) {
-            return false;
-        }
-        if self.require_number && !password.chars().any(|c| c.is_numeric()) {
-            return false;
-        }
-        if self.require_symbol && !password.chars().any(|c| c.is_ascii_punctuation()) {
-            return false;
-        }
-        true
-    }
-}
-impl Default for PasswordRules {
-    fn default() -> Self {
-        Self {
-            min_length: 8,
-            require_uppercase: true,
-            require_lowercase: true,
-            require_number: true,
-            require_symbol: true,
-        }
-    }
-}
 
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 #[serde(default)]
 pub struct NitroRepoConfig {
-    pub database: Option<PostgresSettings>,
-    pub log: Option<LoggingConfig>,
-    pub bind_address: Option<String>,
-    pub max_upload: Option<ConfigSize>,
-    pub server_workers: Option<usize>,
+    pub mode: Mode,
+    pub web_server: WebServer,
+    pub database: DatabaseConfig,
+    pub log: LoggingConfig,
+    pub sessions: SessionManagerConfig,
+    pub site: SiteSetting,
+    pub security: SecuritySettings,
+    pub staging: StagingConfig,
+    pub email: Option<EmailSetting>,
+}
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+#[serde(default)]
+pub struct ReadConfigType {
     pub mode: Option<Mode>,
+    pub web_server: Option<WebServer>,
+    pub database: Option<DatabaseConfig>,
+    pub log: Option<LoggingConfig>,
     pub sessions: Option<SessionManagerConfig>,
-    pub tls: Option<TlsConfig>,
     pub email: Option<EmailSetting>,
     pub site: Option<SiteSetting>,
     pub security: Option<SecuritySettings>,
     pub staging: Option<StagingConfig>,
 }
-
-impl NitroRepoConfig {
-    pub fn load(config_file: PathBuf, update_config: bool) -> anyhow::Result<Self> {
-        let app = if config_file.exists() {
-            let config = std::fs::read_to_string(&config_file)?;
-            let app: NitroRepoConfig = toml::from_str(&config)?;
-            if update_config {
-                let toml = toml::to_string_pretty(&app)?;
-                std::fs::write(&config_file, &toml)?;
-            }
-            app
-        } else {
-            let default = NitroRepoConfig::default();
-            let config = toml::to_string_pretty(&default)?;
-            std::fs::write(&config_file, &config)?;
-            default
-        };
-        Ok(app)
-    }
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
+pub struct WebServer {
+    pub bind_address: String,
+    /// Should OpenAPI routes be enabled.
+    pub open_api_routes: bool,
+    /// The maximum upload size for the web server.
+    pub max_upload: MaxUpload,
+    /// The TLS configuration for the web server.
+    pub tls: Option<TlsConfig>,
 }
-pub fn default_bind_address() -> String {
-    "0.0.0.0:6742".to_string()
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct PostgresSettings {
-    pub user: String,
-    pub password: String,
-    pub host: String,
-    pub database: String,
-}
-impl Default for PostgresSettings {
+impl Default for WebServer {
     fn default() -> Self {
         Self {
-            user: "postgres".to_string(),
-            password: "password".to_string(),
-            host: "localhost:5432".to_string(),
-            database: "nitro_repo".to_string(),
+            bind_address: "0.0.0.0:6742".to_owned(),
+            open_api_routes: true,
+            max_upload: Default::default(),
+            tls: None,
         }
     }
 }
-impl From<PostgresSettings> for PgConnectOptions {
-    fn from(settings: PostgresSettings) -> Self {
-        let host = settings.host.split(':').collect::<Vec<&str>>();
-        let (host, port) = match host.len() {
-            1 => (host[0], 5432),
-            2 => (host[0], host[1].parse::<u16>().unwrap_or(5432)),
-            _ => ("localhost", 5432),
-        };
-        PgConnectOptions::new()
-            .username(&settings.user)
-            .password(&settings.password)
-            .host(host)
-            .port(port)
-            .database(&settings.database)
-    }
-}
-#[derive(Debug, Deserialize, Serialize, Clone, Default)]
-pub struct TlsConfig {
-    pub private_key: PathBuf,
-    pub certificate_chain: PathBuf,
-}
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(default)]
 pub struct SiteSetting {
@@ -178,4 +109,78 @@ impl Default for SiteSetting {
             is_https: false,
         }
     }
+}
+
+macro_rules! env_or_file_or_default {
+    (
+        $config:ident,
+        $env:ident,
+        $key:ident
+    ) => {
+        $config.$key.or($env.$key).unwrap_or_default()
+    };
+    ( $config:ident, $env:ident, $($key:ident),* ) => {
+        (
+            $(
+                env_or_file_or_default!($config, $env, $key),
+            )*
+        )
+    }
+}
+macro_rules! env_or_file_or_none {
+    (
+        $config:ident,
+        $env:ident,
+        $key:ident
+    ) => {
+        $config.$key.or($env.$key)
+    };
+    ( $config:ident, $env:ident, $($key:ident),* ) => {
+        (
+            $(
+                env_or_file_or_none!($config, $env, $key),
+            )*
+        )
+    }
+}
+/// Load the configuration from the environment or a configuration file.
+///
+/// path: may not exist if it doesn't it will use the environment variables.
+///
+/// Config File gets precedence over environment variables.
+pub fn load_config(path: Option<PathBuf>) -> anyhow::Result<NitroRepoConfig> {
+    let environment: ReadConfigType = serde_env::from_env_with_prefix(CONFIG_PREFIX)?;
+    let config_from_file = if let Some(path) = path.filter(|path| path.exists() && path.is_file()) {
+        let contents = read_to_string(path)?;
+        toml::from_str(&contents)?
+    } else {
+        ReadConfigType::default()
+    };
+    // Merge the environment variables with the configuration file. If neither exists the default values are used.
+    // Environment variables take precedence.
+    let (mode, web_server, database, log, sessions, site, security, staging) = env_or_file_or_default!(
+        config_from_file,
+        environment,
+        mode,
+        web_server,
+        database,
+        log,
+        sessions,
+        site,
+        security,
+        staging
+    );
+    let email = env_or_file_or_none!(config_from_file, environment, email);
+
+    Ok(NitroRepoConfig {
+        mode,
+        web_server,
+        database,
+        log,
+        sessions,
+        site,
+        security,
+        staging,
+        email,
+    })
 }

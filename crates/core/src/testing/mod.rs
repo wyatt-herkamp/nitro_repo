@@ -119,6 +119,7 @@ impl TestInfoEntry {
 
 #[cfg(test)]
 mod tests {
+    #[ignore = "Requires a database"]
     #[tokio::test]
     pub async fn test_test_core() {
         let (core, entry) = super::TestCore::new(format!("{}::test_test_core", module_path!()))

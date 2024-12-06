@@ -38,6 +38,8 @@ sqlx.workspace = true
 # Serde
 serde.workspace = true
 serde_json.workspace = true
+serde-env = "0.2"
+
 toml.workspace = true
 # utils
 futures.workspace = true
@@ -65,7 +67,7 @@ derive_more.workspace = true
 # Badge Stuff
 badge-maker.workspace = true
 pin-project = "1"
-clap = { version = "4", features = ["derive"] }
+clap.workspace = true
 semver = { version = "1", features = ["std", "serde"] }
 
 # Staging
@@ -101,6 +103,7 @@ lettre = { version = "0.11.9", features = [
     "tokio1-rustls-tls",
 ], default-features = false }
 url = "2"
+inquire = "0.7"
 [features]
 default = ["utoipa-scalar"]
 builtin_frontend = []
