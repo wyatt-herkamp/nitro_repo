@@ -33,8 +33,8 @@ use crate::{
 pub fn password_reset_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/request", post(request_password_reset))
-        .route("/check/:token", get(does_exist))
-        .route("/:token", post(perform_password_change))
+        .route("/check/{token}", get(does_exist))
+        .route("/{token}", post(perform_password_change))
 }
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RequestPasswordReset {

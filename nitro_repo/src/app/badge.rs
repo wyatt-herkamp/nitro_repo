@@ -29,15 +29,15 @@ pub struct BadgeRoutes;
 pub fn badge_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route(
-            "/:storage/:repository",
+            "/{storage}/{repository}",
             axum::routing::get(repository_badge),
         )
         .route(
-            "/:storage/:repository/project/:project",
+            "/{storage}/{repository}/project/{project}",
             axum::routing::get(project_badge),
         )
         .route(
-            "/:storage/:repository/supports",
+            "/{storage}/{repository}/supports",
             axum::routing::get(supports_badges),
         )
 }

@@ -1,6 +1,8 @@
+use crate::app::logging::request_logging::layer::AppTracingLayer;
+
 use super::authentication::api_middleware::AuthenticationLayer;
 use super::config::{load_config, WebServer};
-use super::logging::request_tracing::NitroRepoTracing;
+use super::logging::LoggingState;
 use super::{api, config::NitroRepoConfig};
 use super::{open_api, NitroRepo};
 
@@ -50,7 +52,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
 
     let mode = mode;
     let site = site;
-    log.init(mode)?;
+    let logger = super::logging::init(log)?;
 
     let site = NitroRepo::new(
         mode,
@@ -64,28 +66,30 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     .await
     .context("Unable to Initialize Website Core")?;
 
+    site.start_session_cleaner();
+
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let mut app = Router::new()
         .route(
-            "/repositories/:storage/:repository/*path",
+            "/repositories/{storage}/{repository}/{*path}",
             any(crate::repository::handle_repo_request),
         )
         .route_with_tsr(
-            "/repositories/:storage/:repository",
+            "/repositories/{storage}/{repository}",
             any(crate::repository::handle_repo_request),
         )
         .route(
-            "/storages/:storage/:repository/*path",
+            "/storages/{storage}/{repository}/{*path}",
             any(crate::repository::handle_repo_request),
         )
         .route_with_tsr(
-            "/storages/:storage/:repository",
+            "/storages/{storage}/{repository}",
             any(crate::repository::handle_repo_request),
         )
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
-        .with_state(site);
+        .with_state(site.clone());
 
     if open_api_routes {
         info!("OpenAPI routes enabled");
@@ -93,15 +97,15 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     }
     let body_limit: DefaultBodyLimit = max_upload.into();
     let app = app
+        .layer(auth_layer)
         .layer(SetResponseHeaderLayer::if_not_present(
             POWERED_BY_HEADER,
             POWERED_BY_VALUE,
         ))
-        .layer(NitroRepoTracing::new_trace_layer())
         .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
-        .layer(body_limit)
+        .layer(AppTracingLayer(site.clone()))
         .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
-        .layer(auth_layer);
+        .layer(body_limit);
 
     if let Some(tls) = tls {
         debug!("Starting TLS server");
@@ -114,7 +118,8 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     }
 
     info!("Server shutdown... Goodbye!");
-
+    // TODO: Figure out how to properly shutdown the logger
+    drop(logger);
     Ok(())
 }
 async fn start_app(app: Router, bind: String, site: NitroRepo) -> anyhow::Result<()> {
@@ -180,7 +185,6 @@ async fn shutdown_signal(website: NitroRepo) {
             .recv()
             .await;
     };
-
     #[cfg(not(unix))]
     let terminate = std::future::pending::<()>();
 

@@ -86,7 +86,9 @@ fn web_start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
         .thread_name_fn(thread_name)
         .enable_all()
         .build()?;
-    tokio.block_on(app::web::start(config_path))
+     tokio.block_on(app::web::start(config_path))?;
+
+    Ok(())
 }
 fn save_config(config_path: PathBuf, add_defaults: bool) -> anyhow::Result<()> {
     if config_path.exists() && !add_defaults {

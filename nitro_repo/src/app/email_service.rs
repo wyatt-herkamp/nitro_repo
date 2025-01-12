@@ -1,6 +1,7 @@
 use std::{
     fmt::{Debug, Formatter},
     io,
+    sync::{atomic::AtomicBool, Arc},
 };
 
 use flume::{Receiver, Sender};
@@ -13,6 +14,7 @@ use lettre::{
 };
 use rust_embed::RustEmbed;
 use serde::Serialize;
+use tokio::sync::Notify;
 use tracing::{debug, error, info, instrument, log::log_enabled, warn};
 
 #[derive(RustEmbed)]
@@ -146,20 +148,38 @@ impl EmailAccess {
 
 type Transport = AsyncSmtpTransport<lettre::Tokio1Executor>;
 #[derive(Debug)]
-pub struct EmailService;
+pub struct EmailService {
+    pub notify_shutdown: Arc<Notify>,
+    pub handle: tokio::task::JoinHandle<()>,
+}
 impl EmailService {
-    pub fn no_email() -> EmailAccess {
+    pub async fn start(email: Option<EmailSetting>) -> io::Result<(EmailAccess, Self)> {
+        match email {
+            Some(email) => Self::start_inner(email).await,
+            None => Ok(Self::no_email()),
+        }
+    }
+    fn no_email() -> (EmailAccess, Self) {
+        let notify = Arc::new(Notify::new());
+        let service_notify = notify.clone();
         let (sender, receiver) = flume::bounded(100);
-        tokio::spawn(async move {
-            Self::run_no_transport(receiver).await;
+        let handle = tokio::spawn(async move {
+            Self::run_no_transport(receiver, service_notify).await;
         });
-        EmailAccess {
+        let access = EmailAccess {
             queue: sender,
             message_builder: Message::builder(),
             email_handlebars: Handlebars::new(),
-        }
+        };
+        let service = Self {
+            notify_shutdown: notify,
+            handle,
+        };
+        (access, service)
     }
-    pub async fn start(email: EmailSetting) -> io::Result<EmailAccess> {
+    async fn start_inner(email: EmailSetting) -> io::Result<(EmailAccess, Self)> {
+        let notify = Arc::new(Notify::new());
+        let service_notify = notify.clone();
         let transport = Self::build_connection(email.clone()).await;
 
         let mut message_builder = Message::builder().from(email.from.parse().unwrap());
@@ -178,20 +198,26 @@ impl EmailService {
             })?;
 
         let (sender, receiver) = flume::bounded(100);
-        tokio::spawn(async move {
+        let handle = tokio::spawn(async move {
             match transport {
-                Some(transport) => Self::run(transport, receiver).await,
-                None => Self::run_no_transport(receiver).await,
+                Some(transport) => Self::run(transport, receiver, service_notify).await,
+                None => Self::run_no_transport(receiver, service_notify).await,
             }
         });
-        Ok(EmailAccess {
+        let access_point = EmailAccess {
             queue: sender,
             message_builder,
             email_handlebars,
-        })
+        };
+        let service = Self {
+            notify_shutdown: notify,
+            handle,
+        };
+        Ok((access_point, service))
     }
-    async fn run_no_transport(queue: Receiver<EmailRequest>) {
-        let mut shutdown_hook = Box::pin(tokio::signal::ctrl_c().fuse());
+    async fn run_no_transport(queue: Receiver<EmailRequest>, notify: Arc<Notify>) {
+        info!("Either no email transport was configured or there was an error");
+        let mut shutdown_hook = Box::pin(notify.notified().fuse());
         let mut queue_async = queue.stream().fuse();
         loop {
             futures_util::select! {
@@ -219,8 +245,9 @@ impl EmailService {
         }
         info!("Email Service has been stopped")
     }
-    async fn run(connection: Transport, queue: Receiver<EmailRequest>) {
-        let mut shutdown_hook = Box::pin(tokio::signal::ctrl_c().fuse());
+    async fn run(connection: Transport, queue: Receiver<EmailRequest>, notify: Arc<Notify>) {
+        info!("Successfully Connected to Email Server");
+        let mut shutdown_hook = Box::pin(notify.notified().fuse());
         let mut queue_async = queue.stream().fuse();
         loop {
             futures_util::select! {
@@ -252,7 +279,7 @@ impl EmailService {
     async fn send_email_no_transport(value: EmailRequest) {
         let EmailRequest { debug_info, .. } = value;
         if let Some(debug_info) = &debug_info {
-            debug!("Sending Email: {:?}", debug_info);
+            debug!(?debug_info, "Sending Email");
         }
         warn!("Email Transport Not Configured. Email Not Sent");
     }
@@ -263,18 +290,18 @@ impl EmailService {
             message,
         } = value;
         if let Some(debug_info) = &debug_info {
-            debug!("Sending Email: {:?}", debug_info);
+            debug!(?debug_info, "Sending Email");
         }
         match connection.send(message).await {
             Ok(ok) => {
                 if ok.is_positive() {
                     debug!("Email Sent Successfully");
                 } else {
-                    error!("Email Send Error for {:?}", debug_info);
+                    error!(?debug_info, ?ok, "Email did not send successfully");
                 }
             }
             Err(err) => {
-                error!("Email Send Error: {} for {:?}", err, debug_info);
+                error!(?err, ?debug_info, "Error Sending Email");
             }
         }
     }

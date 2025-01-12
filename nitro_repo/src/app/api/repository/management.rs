@@ -1,6 +1,7 @@
 use ahash::HashMap;
 use axum::{
     body::Body,
+    debug_handler,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
@@ -32,11 +33,11 @@ use crate::{
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
-        .route("/:id/configs", get(get_configs_for_repository))
-        .route("/new/:repository_type", post(new_repository))
-        .route("/:id/config/:key", put(update_config))
-        .route("/:id/config/:key", get(get_config))
-        .route("/:id", delete(delete_repository))
+        .route("/{id}/configs", get(get_configs_for_repository))
+        .route("/new/{repository_type}", post(new_repository))
+        .route("/{id}/config/{key}", put(update_config))
+        .route("/{id}/config/{key}", get(get_config))
+        .route("/{id}", delete(delete_repository))
 }
 #[derive(Deserialize, ToSchema, Debug)]
 pub struct NewRepositoryRequest {
@@ -166,6 +167,7 @@ pub struct GetConfigParams {
         (status = 200, description = "Config for the repository"),
     )
 )]
+#[debug_handler]
 #[instrument]
 pub async fn get_config(
     State(site): State<NitroRepo>,

@@ -35,8 +35,8 @@ pub struct StorageAPI;
 pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_storages))
-        .route("/new/:storage_type", axum::routing::post(new_storage))
-        .route("/:id", axum::routing::get(get_storage))
+        .route("/new/{storage_type}", axum::routing::post(new_storage))
+        .route("/{id}", axum::routing::get(get_storage))
         .route(
             "/local-storage-path-helper",
             axum::routing::post(local_storage_path_helper),

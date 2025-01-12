@@ -1,9 +1,8 @@
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 
-use axum::async_trait;
 use axum::body::Body;
-use axum::extract::{FromRef, FromRequestParts};
+use axum::extract::{FromRef, FromRequestParts, OptionalFromRequestParts};
 use axum::response::IntoResponse;
 use axum_extra::extract::cookie::Cookie;
 use derive_more::From;
@@ -93,7 +92,6 @@ impl HasPermissions for OnlySessionAllowedAuthentication {
         self.user.get_permissions()
     }
 }
-#[async_trait]
 impl<S> FromRequestParts<S> for OnlySessionAllowedAuthentication
 where
     NitroRepo: FromRef<S>,
@@ -164,7 +162,6 @@ impl HasPermissions for Authentication {
         }
     }
 }
-#[async_trait]
 impl<S> FromRequestParts<S> for Authentication
 where
     NitroRepo: FromRef<S>,
@@ -204,7 +201,43 @@ where
         Ok(auth)
     }
 }
-
+impl<S> OptionalFromRequestParts<S> for Authentication
+where
+    NitroRepo: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = AuthenticationError;
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &S,
+    ) -> Result<Option<Self>, Self::Rejection> {
+        let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
+        let repo = NitroRepo::from_ref(state);
+        let Some(raw_auth) = raw_extension else {
+            return Ok(None);
+        };
+        let auth = match raw_auth {
+            AuthenticationRaw::NoIdentification => {
+                return Ok(None);
+            }
+            AuthenticationRaw::AuthToken(token) => {
+                let (user, auth_token) = get_user_and_auth_token(&token, &repo.database).await?;
+                Authentication::AuthToken(auth_token, user)
+            }
+            AuthenticationRaw::Session(session) => {
+                let user = UserSafeData::get_by_id(session.user_id, &repo.database)
+                    .await?
+                    .ok_or(AuthenticationError::Unauthorized)?;
+                Authentication::Session(session, user)
+            }
+            other => {
+                warn!("Unknown Authentication Method: {}", other);
+                return Ok(None);
+            }
+        };
+        Ok(Some(auth))
+    }
+}
 #[derive(Debug, Serialize, Clone, From, ToSchema)]
 pub struct MeWithSession {
     session: Session,

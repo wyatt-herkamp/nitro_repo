@@ -10,8 +10,8 @@ license.workspace = true
 pretty_assertions = "1.1"
 [dependencies]
 # Web
-axum = { version = "0.7", features = ["macros", "tokio"] }
-axum-extra = { version = "0.9", features = [
+axum = { version = "0.8", features = ["macros", "tokio"] }
+axum-extra = { version = "0.10", features = [
     "multipart",
     "cookie",
     "typed-header",
@@ -25,7 +25,7 @@ http.workspace = true
 mime.workspace = true
 http-body-util.workspace = true
 utoipa = { workspace = true, features = ["axum_extras"] }
-utoipa-scalar = { version = "0.2.0", features = ["axum"], optional = true }
+utoipa-scalar = { version = "0.2", features = ["axum"], optional = true }
 async-trait = "0.1"
 # TLS
 tokio-rustls = "0.26"
@@ -94,8 +94,18 @@ tracing-appender.workspace = true
 # OpenTelemetry - Tracing framework
 tracing-opentelemetry = "0.28"
 opentelemetry = { version = "0.27", features = [] }
-opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", default-features = true }
+opentelemetry_sdk = { version = "0.27", features = [
+    "rt-tokio",
+    "trace",
+    "metrics",
+    "logs",
+] }
+opentelemetry-otlp = { version = "0.27", default-features = true, features = [
+    "grpc-tonic",
+    "http-proto",
+    "http-json",
+] }
+opentelemetry-appender-tracing = { version = "0.27" }
 lettre = { version = "0.11.9", features = [
     "builder",
     "tokio1",

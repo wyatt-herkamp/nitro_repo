@@ -17,7 +17,7 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
-utoipa = { version = "5.0.0", features = ["chrono", "uuid", "url", "debug"] }
+utoipa = { version = "5", features = ["chrono", "uuid", "url", "debug"] }
 rand = "0.8"
 
 nr-core = { path = "crates/core" }

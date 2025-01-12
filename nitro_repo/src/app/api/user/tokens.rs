@@ -30,8 +30,8 @@ pub fn token_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/create", post(create))
         .route("/list", get(list))
-        .route("/get/:id", get(get_token))
-        .route("/delete/:id", delete(delete_token))
+        .route("/get/{id}", get(get_token))
+        .route("/delete/{id}", delete(delete_token))
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

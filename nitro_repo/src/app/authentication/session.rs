@@ -8,7 +8,10 @@ use std::{
 };
 
 use crate::{
-    app::config::{get_current_directory, Mode},
+    app::{
+        config::{get_current_directory, Mode},
+        NitroRepo,
+    },
     error::IntoErrorResponse,
 };
 use axum::response::{IntoResponse, Response};
@@ -18,7 +21,12 @@ use rand::{distributions::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
 use redb::{CommitError, Database, Error, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use tracing::{debug, error, info, instrument};
+use tokio::task::JoinHandle;
+use tracing::{
+    debug, error,
+    field::{display, Empty},
+    info, instrument, span, Level,
+};
 use utoipa::ToSchema;
 #[derive(Debug, Error)]
 pub enum SessionError {
@@ -250,30 +258,54 @@ impl SessionManager {
         sessions.commit()?;
         Ok(sessions_removed)
     }
-    pub fn start_cleaner(this: Arc<Self>) {
+    pub async fn cleaner_task(this: NitroRepo, how_often: std::time::Duration) {
+        let session_manager = this.session_manager.clone();
+
+        while session_manager.running.load(Ordering::Relaxed) {
+            let sleep_for = {
+                let span = span!(
+                    Level::INFO,
+                    "Session Cleaner",
+                    sessions.removed = Empty,
+                    session.cleaner.error = Empty
+                );
+                let _enter = span.enter();
+
+                info!("Cleaning sessions");
+                match session_manager.clean_inner() {
+                    Ok(value) => {
+                        info!("Cleaned {} sessions", value);
+                        span.record("sessions.removed", value);
+                        how_often
+                    }
+                    Err(err) => {
+                        error!("Failed to clean sessions: {:?}", err);
+                        span.record("session.cleaner.error", display(err));
+                        how_often / 2
+                    }
+                }
+            };
+            if let Ok(number_of_sessions) = session_manager.number_of_sessions() {
+                this.metrics
+                    .active_sessions
+                    .add(number_of_sessions as i64, &[]);
+            }
+            tokio::time::sleep(sleep_for).await
+        }
+    }
+    pub fn start_cleaner(this: NitroRepo) -> Option<JoinHandle<()>> {
         let how_often = this
+            .session_manager
             .config
             .cleanup_interval
             .to_std()
             .expect("Duration is too large");
         debug!("Starting Session Cleaner with interval: {:?}", how_often);
-        tokio::spawn(async move {
+        let result = tokio::spawn(async move {
             let this = this;
-            while this.running.load(Ordering::Relaxed) {
-                info!("Cleaning sessions");
-                let sleep_for = match this.clean_inner() {
-                    Ok(value) => {
-                        info!("Cleaned {} sessions", value);
-                        how_often
-                    }
-                    Err(err) => {
-                        error!("Failed to clean sessions: {:?}", err);
-                        how_often / 2
-                    }
-                };
-                tokio::time::sleep(sleep_for).await
-            }
+            SessionManager::cleaner_task(this, how_often).await;
         });
+        Some(result)
     }
     #[instrument]
     pub fn create_session(

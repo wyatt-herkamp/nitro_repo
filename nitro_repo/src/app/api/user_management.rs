@@ -44,19 +44,19 @@ pub struct UserManagementAPI;
 pub fn user_management_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", axum::routing::get(list_users))
-        .route("/get/:user_id", axum::routing::get(get_user))
+        .route("/get/{user_id}", axum::routing::get(get_user))
         .route(
-            "/get/:user_id/permissions",
+            "/get/{user_id}/permissions",
             axum::routing::get(get_user_permissions),
         )
         .route("/create", axum::routing::post(create_user))
         .route("/is-taken", axum::routing::post(is_taken))
         .route(
-            "/update/:user_id/permissions",
+            "/update/{user_id}/permissions",
             axum::routing::put(update_permissions),
         )
         .route(
-            "/update/:user_id/password",
+            "/update/{user_id}/password",
             axum::routing::put(update_password),
         )
 }

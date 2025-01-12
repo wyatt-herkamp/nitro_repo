@@ -10,6 +10,7 @@ use derive_more::{derive::Deref, AsRef, Into};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
 use http::Uri;
+use logging::LoggingState;
 use nr_core::{
     database::{
         repository::DBRepository,
@@ -22,6 +23,10 @@ use nr_core::{
     },
 };
 use nr_storage::{DynStorage, Storage, StorageConfig, StorageFactory, STORAGE_FACTORIES};
+use opentelemetry::{
+    global,
+    metrics::{Histogram, Meter, UpDownCounter},
+};
 use parking_lot::{Mutex, RwLock};
 use serde::Serialize;
 pub mod authentication;
@@ -31,6 +36,7 @@ pub mod email_service;
 pub mod logging;
 use current_semver::current_semver;
 use sqlx::PgPool;
+use tokio::task::JoinHandle;
 use tracing::{debug, info, instrument, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -92,6 +98,11 @@ impl From<(String, String)> for RepositoryStorageName {
         }
     }
 }
+#[derive(Debug, Default)]
+pub struct InternalServices {
+    pub session_cleaner: Option<JoinHandle<()>>,
+    pub email: Option<EmailService>,
+}
 pub struct NitroRepoInner {
     pub instance: Mutex<Instance>,
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
@@ -99,8 +110,33 @@ pub struct NitroRepoInner {
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
     pub general_security_settings: SecuritySettings,
     pub staging_config: StagingConfig,
+    services: Mutex<InternalServices>,
 }
-
+macro_rules! take_service {
+    ($(
+        $fn_name:ident => $field:ident -> $type:ty
+    ),*) => {
+        $(
+            pub fn $fn_name(&self) -> Option<$type> {
+                let mut services = self.services.lock();
+                services.$field.take()
+            }
+        )*
+    }
+}
+impl NitroRepoInner {
+    take_service! {
+        take_session_cleaner => session_cleaner -> JoinHandle<()>,
+        take_email => email -> EmailService
+    }
+    /// Notifies services that have waiters that the application is shutting down
+    pub fn notify_shutdown(&self) {
+        let services = self.services.lock();
+        if let Some(email) = services.email.as_ref() {
+            email.notify_shutdown.notify_waiters();
+        }
+    }
+}
 impl Debug for NitroRepo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // TODO: Improve the Debug implementation
@@ -112,6 +148,39 @@ impl Debug for NitroRepo {
             .finish()
     }
 }
+#[derive(Debug, Clone)]
+pub struct AppMetrics {
+    pub meter: Meter,
+    pub request_size_bytes: Histogram<u64>,
+    pub response_size_bytes: Histogram<u64>,
+    pub request_duration: Histogram<f64>,
+    pub active_sessions: UpDownCounter<i64>,
+}
+impl Default for AppMetrics {
+    fn default() -> Self {
+        let meter = global::meter("axum-request-metrics");
+
+        Self {
+            active_sessions: meter
+                .i64_up_down_counter("http.server.active_sessions")
+                .with_description("The number of active sessions")
+                .build(),
+            request_size_bytes: meter
+                .u64_histogram("http.server.request.body.size")
+                .with_unit("By")
+                .build(),
+            response_size_bytes: meter
+                .u64_histogram("http.server.response.body.size")
+                .with_unit("By")
+                .build(),
+            request_duration: meter
+                .f64_histogram("http.server.request.duration")
+                .with_unit("s")
+                .build(),
+            meter,
+        }
+    }
+}
 #[derive(Clone, AsRef, Deref)]
 pub struct NitroRepo {
     #[deref(forward)]
@@ -119,12 +188,17 @@ pub struct NitroRepo {
     pub database: PgPool,
     pub session_manager: Arc<SessionManager>,
     pub email_access: Arc<EmailAccess>,
+    pub metrics: AppMetrics,
 }
 impl NitroRepo {
+    #[instrument]
     async fn load_database(database: DatabaseConfig) -> anyhow::Result<PgPool> {
-        let database = PgPool::connect_with(database.try_into()?)
+        info!(?database, "Connecting to database");
+        let options = database.try_into()?;
+        info!(?options, "Database connection options");
+        let database = PgPool::connect_with(options)
             .await
-            .context("Could not connec to database")?;
+            .context("Could not connect to database")?;
         nr_core::database::migration::run_migrations(&database).await?;
         Ok(database)
     }
@@ -151,12 +225,10 @@ impl NitroRepo {
             is_https: site.is_https,
             password_rules: security.password_rules.clone(),
         };
-        let email_service = if let Some(email_service) = email_settings {
-            EmailService::start(email_service).await?
-        } else {
-            EmailService::no_email()
-        };
-        let session_manager = SessionManager::new(session_manager, mode)?;
+        let mut services = InternalServices::default();
+
+        let (email_access, service) = EmailService::start(email_settings).await?;
+        services.email = Some(service);
 
         let nitro_repo = NitroRepoInner {
             instance: Mutex::new(instance),
@@ -165,14 +237,16 @@ impl NitroRepo {
             name_lookup_table: Mutex::new(HashMap::new()),
             general_security_settings: security,
             staging_config,
+            services: Mutex::new(services),
         };
-        let session_manager = Arc::new(session_manager);
-        SessionManager::start_cleaner(session_manager.clone());
+        let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
+
         let nitro_repo = NitroRepo {
             inner: Arc::new(nitro_repo),
             session_manager,
             database,
-            email_access: Arc::new(email_service),
+            email_access: Arc::new(email_access),
+            metrics: AppMetrics::default(),
         };
         nitro_repo.load_storages().await?;
         nitro_repo.load_repositories().await?;
@@ -241,9 +315,9 @@ impl NitroRepo {
             .find(|factory| factory.storage_name() == storage_name)
             .copied()
     }
-    #[instrument]
-    pub async fn close(&self) {
+    pub async fn close(self) {
         self.session_manager.shutdown();
+        self.inner.notify_shutdown();
         //TODO: Close Repositories
         let storages = {
             let mut storages = self.storages.write();
@@ -255,6 +329,18 @@ impl NitroRepo {
             storage.unload().await.unwrap_or_else(|err| {
                 warn!(?id, "Failed to unload storage: {}", err);
             });
+        }
+        info!("Removing Logger");
+
+        info!("Removing Email");
+        let email = self.inner.take_email();
+        info!("Email State has been taken");
+        if let Some(email) = email {
+            email.handle.abort();
+        }
+        let session_cleaner = self.inner.take_session_cleaner();
+        if let Some(handle) = session_cleaner {
+            handle.abort();
         }
     }
     pub fn get_repository_config_type(
@@ -351,6 +437,17 @@ impl NitroRepo {
         {
             let mut lookup_table = self.inner.name_lookup_table.lock();
             lookup_table.retain(|_, value| *value != id);
+        }
+    }
+    fn set_session_cleaner(&self, cleaner: JoinHandle<()>) {
+        let mut services = self.inner.services.lock();
+        services.session_cleaner = Some(cleaner);
+    }
+    fn start_session_cleaner(&self) {
+        let result = SessionManager::start_cleaner(self.clone());
+        if let Some(handle) = result {
+            self.set_session_cleaner(handle);
+            info!("Session cleaner started");
         }
     }
 }

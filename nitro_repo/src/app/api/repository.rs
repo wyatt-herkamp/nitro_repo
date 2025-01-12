@@ -66,8 +66,8 @@ pub struct RepositoryAPI;
 pub fn repository_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", get(list_repositories))
-        .route("/:id", get(get_repository))
-        .route("/page/:id", get(page::get_repository_page))
+        .route("/{id}", get(get_repository))
+        .route("/page/{id}", get(page::get_repository_page))
         .route("/types", get(types::repository_types))
         .merge(browse::browse_routes())
         .merge(management::management_routes())

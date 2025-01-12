@@ -13,14 +13,14 @@ use crate::{
 };
 pub fn config_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
-        .route("/config/:key/schema", axum::routing::get(config_schema))
+        .route("/config/{key}/schema", axum::routing::get(config_schema))
         .route(
-            "/config/:key/validate",
+            "/config/{key}/validate",
             axum::routing::post(config_validate),
         )
-        .route("/config/:key/default", axum::routing::get(config_default))
+        .route("/config/{key}/default", axum::routing::get(config_default))
         .route(
-            "/config/:key/description",
+            "/config/{key}/description",
             axum::routing::get(config_description),
         )
 }

@@ -27,9 +27,9 @@ use crate::{
 };
 pub fn browse_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
-        .route("/browse/:repository_id", get(browse))
-        .route("/browse/:repository_id/", get(browse))
-        .route("/browse/:repository_id/*path", get(browse))
+        .route("/browse/{repository_id}", get(browse))
+        .route("/browse/{repository_id}/", get(browse))
+        .route("/browse/{repository_id}/{*path}", get(browse))
 }
 #[derive(Debug, Deserialize, Clone, ToSchema)]
 #[serde(default)]

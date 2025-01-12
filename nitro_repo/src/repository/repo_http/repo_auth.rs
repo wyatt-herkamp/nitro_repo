@@ -1,7 +1,4 @@
-use axum::{
-    async_trait,
-    extract::{FromRef, FromRequestParts},
-};
+use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use nr_core::{
     database::user::{auth_token::AuthToken, UserSafeData, UserType},
@@ -142,7 +139,6 @@ impl RepositoryAuthentication {
         )
     }
 }
-#[async_trait]
 impl<S> FromRequestParts<S> for RepositoryAuthentication
 where
     NitroRepo: FromRef<S>,
