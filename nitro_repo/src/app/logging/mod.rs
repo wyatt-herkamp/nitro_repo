@@ -1,9 +1,10 @@
 pub mod config;
 pub mod request_logging;
 use config::{
-    AppLogger, AppLoggerType, ConsoleLogger, LoggingConfig, LoggingLevels, MetricsConfig,
-    OtelConfig, RollingFileLogger,
+    AppLogger, AppLoggerType, ConsoleLogger, LoggingConfig, MetricsConfig, OtelConfig,
+    RollingFileLogger,
 };
+use nr_core::logging::LoggingLevels;
 use opentelemetry::{global, trace::TracerProvider as _};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_otlp::{LogExporter, MetricExporter, SpanExporter, WithExportConfig};

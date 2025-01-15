@@ -8,8 +8,11 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
+use tokio::io::AsyncReadExt;
 use tokio::{fs::File, io::AsyncRead};
 use tokio_util::io::poll_read_buf;
+
+use super::FileContentBytes;
 
 /// StorageFileReader is a wrapper around different types of readers.
 #[derive(From)]
@@ -19,7 +22,25 @@ pub enum StorageFileReader {
     File(File),
     /// An Async Reader type. This will be used for remote storage. Such as S3.
     AsyncReader(Pin<Box<dyn tokio::io::AsyncRead + Send>>),
+    /// Content already in memory.
+    Bytes(FileContentBytes),
 }
+impl StorageFileReader {
+    pub async fn read_to_vec(self, size_hint: usize) -> io::Result<Vec<u8>> {
+        let mut buf = Vec::with_capacity(size_hint);
+        match self {
+            StorageFileReader::File(mut file) => {
+                file.read_to_end(&mut buf).await?;
+            }
+            StorageFileReader::AsyncReader(mut reader) => {
+                tokio::io::AsyncReadExt::read_to_end(&mut reader, &mut buf).await?;
+            }
+            StorageFileReader::Bytes(bytes) => return Ok(bytes.into()),
+        }
+        Ok(buf)
+    }
+}
+
 impl From<SyncFile> for StorageFileReader {
     fn from(file: SyncFile) -> Self {
         StorageFileReader::File(File::from_std(file))
@@ -39,6 +60,7 @@ impl Debug for StorageFileReader {
         match self {
             StorageFileReader::File(_) => f.write_str("StorageFileReader::File"),
             StorageFileReader::AsyncReader(_) => f.write_str("StorageFileReader::AsyncReader"),
+            StorageFileReader::Bytes(_) => f.write_str("StorageFileReader::Bytes"),
         }
     }
 }
@@ -51,6 +73,11 @@ impl AsyncRead for StorageFileReader {
         match self.get_mut() {
             StorageFileReader::File(file) => Pin::new(file).poll_read(cx, buf),
             StorageFileReader::AsyncReader(reader) => Pin::new(reader).poll_read(cx, buf),
+            StorageFileReader::Bytes(bytes) => {
+                let len = std::cmp::min(buf.remaining(), bytes.len());
+                buf.put_slice(&bytes.as_ref()[..len]);
+                Poll::Ready(Ok(()))
+            }
         }
     }
 }

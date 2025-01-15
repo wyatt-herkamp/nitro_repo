@@ -10,7 +10,10 @@ use nr_core::{
     database::project::{DBProject, DBProjectVersion},
     storage::StoragePath,
 };
-use nr_storage::{FileHashes, FileType, SerdeMime, Storage, StorageFile, StorageFileMeta};
+use nr_storage::{
+    DirectoryFileType, FileFileType, FileHashes, FileType, SerdeMime, Storage, StorageFile,
+    StorageFileMeta,
+};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, instrument};
 use utoipa::ToSchema;
@@ -67,8 +70,8 @@ pub enum BrowseFile {
         //modified: DateTime<FixedOffset>,
     },
 }
-impl From<StorageFileMeta> for BrowseFile {
-    fn from(meta: StorageFileMeta) -> Self {
+impl From<StorageFileMeta<FileType>> for BrowseFile {
+    fn from(meta: StorageFileMeta<FileType>) -> Self {
         let StorageFileMeta {
             name,
             file_type,
@@ -77,11 +80,11 @@ impl From<StorageFileMeta> for BrowseFile {
             ..
         } = meta;
         match file_type {
-            FileType::File {
+            FileType::File(FileFileType {
                 file_size,
                 mime_type,
                 file_hash,
-            } => BrowseFile::File {
+            }) => BrowseFile::File {
                 name,
                 file_size,
                 mime_type,
@@ -89,10 +92,29 @@ impl From<StorageFileMeta> for BrowseFile {
                 modified,
                 created,
             },
-            FileType::Directory { file_count } => BrowseFile::Directory {
+            FileType::Directory(DirectoryFileType { file_count }) => BrowseFile::Directory {
                 name,
                 number_of_files: file_count as usize,
             },
+        }
+    }
+}
+impl From<StorageFileMeta<FileFileType>> for BrowseFile {
+    fn from(meta: StorageFileMeta<FileFileType>) -> Self {
+        let StorageFileMeta {
+            name,
+            file_type,
+            modified,
+            created,
+            ..
+        } = meta;
+        BrowseFile::File {
+            name,
+            file_size: file_type.file_size,
+            mime_type: file_type.mime_type,
+            file_hash: file_type.file_hash,
+            modified,
+            created,
         }
     }
 }

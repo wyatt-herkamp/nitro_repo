@@ -24,7 +24,7 @@ use http::{
 };
 use http_body_util::BodyExt;
 use nr_core::storage::{InvalidStoragePath, StoragePath};
-use nr_storage::{StorageFile, StorageFileMeta, StorageFileReader};
+use nr_storage::{FileFileType, FileType, StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
 use tracing::{debug, error, instrument, span, Level};
 mod header;
@@ -121,17 +121,17 @@ impl IntoResponse for RepositoryRequestError {
     }
 }
 
-fn response_file(meta: StorageFileMeta, content: StorageFileReader) -> Response<Body> {
+fn response_file(
+    meta: StorageFileMeta<FileFileType>,
+    content: StorageFileReader,
+) -> Response<Body> {
     let last_modified = date_time_for_header(meta.modified());
     // TODO: Handle cache control headers
-    let nr_storage::FileType::File {
+    let FileFileType {
         file_size,
         mime_type,
         file_hash,
-    } = meta.file_type()
-    else {
-        return IllegalStateError("File has metadata of a directory").into_response();
-    };
+    } = meta.file_type();
     let mut response = Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_LENGTH, file_size.to_string())
@@ -162,11 +162,11 @@ fn response_file(meta: StorageFileMeta, content: StorageFileReader) -> Response<
 #[derive(Debug, From)]
 pub enum RepoResponse {
     FileResponse(Box<StorageFile>),
-    FileMetaResponse(Box<StorageFileMeta>),
+    FileMetaResponse(Box<StorageFileMeta<FileType>>),
     Other(axum::response::Response),
 }
-impl From<StorageFileMeta> for RepoResponse {
-    fn from(meta: StorageFileMeta) -> Self {
+impl From<StorageFileMeta<FileType>> for RepoResponse {
+    fn from(meta: StorageFileMeta<FileType>) -> Self {
         RepoResponse::FileMetaResponse(Box::new(meta))
     }
 }
@@ -191,11 +191,11 @@ impl RepoResponse {
                     nr_storage::FileType::Directory { .. } => {
                         response.header(CONTENT_TYPE, mime::TEXT_HTML.to_string())
                     }
-                    nr_storage::FileType::File {
+                    nr_storage::FileType::File(FileFileType {
                         file_hash,
                         file_size,
                         mime_type,
-                    } => {
+                    }) => {
                         if let Some(etag) = &file_hash.sha2_256 {
                             response = response.header(ETAG, etag);
                         }
@@ -335,8 +335,8 @@ impl From<Option<StorageFile>> for RepoResponse {
     }
 }
 
-impl From<Option<StorageFileMeta>> for RepoResponse {
-    fn from(meta: Option<StorageFileMeta>) -> Self {
+impl From<Option<StorageFileMeta<FileType>>> for RepoResponse {
+    fn from(meta: Option<StorageFileMeta<FileType>>) -> Self {
         match meta {
             Some(meta) => RepoResponse::FileMetaResponse(Box::new(meta)),
             None => RepoResponse::basic_text_response(StatusCode::NOT_FOUND, "File not found"),

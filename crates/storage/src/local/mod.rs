@@ -1,16 +1,18 @@
 use std::{
     fs::{self},
-    io::{self},
+    io::{self, ErrorKind},
     ops::Deref,
     path::PathBuf,
     sync::Arc,
 };
 
+pub mod error;
+use error::LocalStorageError;
 use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 use tracing::{debug, error, info, instrument, trace, warn};
-use utils::PathUtils;
+use utils::new_type_arc_type;
 
 use crate::*;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -55,44 +57,51 @@ pub struct LocalStorageInner {
 impl LocalStorageInner {}
 #[derive(Debug, Clone)]
 pub struct LocalStorage(Arc<LocalStorageInner>);
-impl Deref for LocalStorage {
-    type Target = LocalStorageInner;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+new_type_arc_type!(LocalStorage(LocalStorageInner));
+
 impl LocalStorageInner {
+    /// Get the path for a file to be created
+    ///
+    /// # Returns
+    /// ## Ok
+    /// - First value is the path to the file
+    /// - Second is the directory that the file is in
+    pub fn get_path_for_creation(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<(PathBuf, PathBuf), PathCollisionError> {
+        let mut path = self.config.path.join(repository.to_string());
+        let mut parent_directory = path.clone();
+        let mut conflicting_path = StoragePath::default();
+        let mut iter = location.clone().into_iter().peekable();
+        while let Some(part) = iter.next() {
+            if iter.peek().is_none() {
+                parent_directory = path.clone();
+            }
+            path = path.join(part.as_ref());
+            conflicting_path.push_mut(part.as_ref());
+            if path.exists() {
+                if path.is_file() {
+                    return Err(PathCollisionError {
+                        path: location.clone(),
+                        conflicts_with: conflicting_path,
+                    });
+                }
+            }
+        }
+        Ok((path, parent_directory))
+    }
     #[instrument(skip(location))]
     pub fn get_path(&self, repository: &Uuid, location: &StoragePath) -> PathBuf {
         let location: PathBuf = location.into();
         let path = self.config.path.join(repository.to_string());
         path.join(location)
     }
-    pub fn get_repository_meta_path(
-        &self,
-        repository: &Uuid,
-        location: &StoragePath,
-    ) -> Result<PathBuf, StorageError> {
-        let path = self.get_path(repository, location);
-        let path = if path.is_dir() {
-            let Some(folder_name) = path.file_name() else {
-                return Err(StorageError::IOError(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "Path is a directory but has no file name",
-                )));
-            };
-            path.parent_or_err()?
-                .join(folder_name)
-                .add_extension(NITRO_REPO_REPOSITORY_META_EXTENSION)?
-        } else {
-            path.add_extension(NITRO_REPO_REPOSITORY_META_EXTENSION)?
-        };
-        Ok(path)
-    }
 
     #[instrument]
-    pub fn open_file(&self, path: PathBuf) -> Result<StorageFile, StorageError> {
-        let meta = StorageFileMeta::new_from_file(&path)?;
+    pub fn open_file(&self, path: PathBuf) -> Result<StorageFile, LocalStorageError> {
+        let meta = StorageFileMeta::read_from_file(&path)?;
         let file = fs::File::open(&path)?;
         Ok(StorageFile::File {
             meta,
@@ -100,8 +109,8 @@ impl LocalStorageInner {
         })
     }
     #[instrument(skip(path))]
-    pub async fn open_folder(&self, path: PathBuf) -> Result<StorageFile, StorageError> {
-        let mut set = JoinSet::<Result<StorageFileMeta, StorageError>>::new();
+    pub async fn open_folder(&self, path: PathBuf) -> Result<StorageFile, LocalStorageError> {
+        let mut set = JoinSet::<Result<StorageFileMeta<FileType>, LocalStorageError>>::new();
 
         for entry in fs::read_dir(&path)? {
             let entry = entry?;
@@ -112,11 +121,11 @@ impl LocalStorageInner {
                 continue;
             }
             set.spawn_blocking(move || {
-                let meta = StorageFileMeta::new_from_file(&path)?;
+                let meta = StorageFileMeta::read_from_path(&path)?;
                 Ok(meta)
             });
         }
-        let meta = StorageFileMeta::new_from_file(path)?;
+        let meta = StorageFileMeta::read_from_directory(path)?;
 
         let mut files = vec![];
         while let Some(res) = set.join_next().await {
@@ -128,7 +137,7 @@ impl LocalStorageInner {
     }
 }
 impl LocalStorage {
-    pub fn run_post_save_file(self, path: PathBuf) -> Result<(), StorageError> {
+    pub fn run_post_save_file(self, path: PathBuf) -> Result<(), LocalStorageError> {
         tokio::task::spawn_blocking(move || {
             match FileMeta::create_meta_or_update(&path) {
                 Ok(()) => {
@@ -143,6 +152,7 @@ impl LocalStorage {
     }
 }
 impl Storage for LocalStorage {
+    type Error = LocalStorageError;
     fn storage_config(&self) -> BorrowedStorageConfig<'_> {
         BorrowedStorageConfig {
             storage_config: &self.storage_config,
@@ -155,10 +165,8 @@ impl Storage for LocalStorage {
         repository: Uuid,
         content: FileContent,
         location: &StoragePath,
-    ) -> Result<(usize, bool), StorageError> {
-        let path = self.get_path(&repository, location);
-        let parent_directory = path.parent_or_err()?;
-        let new_file = !path.exists();
+    ) -> Result<(usize, bool), LocalStorageError> {
+        let (path, parent_directory) = self.0.get_path_for_creation(repository, location)?;
         if !parent_directory.exists() {
             trace!("Creating Parent Directory");
             fs::create_dir_all(parent_directory)?;
@@ -168,7 +176,8 @@ impl Storage for LocalStorage {
                 io::Error::new(io::ErrorKind::InvalidInput, "Parent Directory is a file").into(),
             );
         }
-
+        let new_file = !path.exists();
+        debug!(?path, "Saving File");
         let mut file = fs::File::create(&path)?;
         let bytes_written = content.write_to(&mut file)?;
         if !is_hidden_file(&path) {
@@ -182,8 +191,12 @@ impl Storage for LocalStorage {
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<(), StorageError> {
+    ) -> Result<bool, LocalStorageError> {
         let path = self.get_path(&repository, location);
+        if !path.exists() {
+            debug!(?path, "File does not exist");
+            return Ok(false);
+        }
         if path.is_dir() {
             info!(?path, "Deleting Directory");
             fs::remove_dir_all(path)?;
@@ -191,21 +204,21 @@ impl Storage for LocalStorage {
             fs::remove_file(&path)?;
             FileMeta::delete_local(path)?;
         }
-        Ok(())
+        Ok(true)
     }
     #[instrument(name = "local_storage_get_info")]
     async fn get_file_information(
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<Option<StorageFileMeta>, StorageError> {
+    ) -> Result<Option<StorageFileMeta<FileType>>, LocalStorageError> {
         let path = self.get_path(&repository, location);
 
         if !path.exists() {
             debug!(?path, "File does not exist");
             return Ok(None);
         }
-        let meta = StorageFileMeta::new_from_file(path)?;
+        let meta = StorageFileMeta::read_from_path(path)?;
         Ok(Some(meta))
     }
     #[instrument(name = "local_storage_open_file")]
@@ -213,7 +226,7 @@ impl Storage for LocalStorage {
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<Option<StorageFile>, StorageError> {
+    ) -> Result<Option<StorageFile>, LocalStorageError> {
         let path = self.get_path(&repository, location);
         if !path.exists() {
             debug!(?path, "File does not exist");
@@ -226,18 +239,19 @@ impl Storage for LocalStorage {
         };
         Ok(Some(file))
     }
-    fn unload(&self) -> impl std::future::Future<Output = Result<(), StorageError>> + Send {
+    async fn unload(&self) -> Result<(), LocalStorageError> {
         info!(?self, "Unloading Local Storage");
         // TODO: Implement Unload
-        async { Ok(()) }
+        Ok(())
     }
 
-    async fn validate_config_change(&self, config: StorageTypeConfig) -> Result<(), StorageError> {
-        let StorageTypeConfig::Local(config) = config else {
-            return Err(StorageError::InvalidConfigType("Local"));
-        };
+    async fn validate_config_change(
+        &self,
+        config: StorageTypeConfig,
+    ) -> Result<(), LocalStorageError> {
+        let config = LocalConfig::from_type_config(config)?;
         if self.config.path != config.path {
-            return Err(StorageError::ConfigError("The path cannot be changed"));
+            return Err(LocalStorageError::PathCannotBeChanged);
         }
         Ok(())
     }
@@ -245,38 +259,80 @@ impl Storage for LocalStorage {
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<Option<Value>, StorageError> {
-        let path = self.get_repository_meta_path(&repository, location)?;
+    ) -> Result<Option<RepositoryMeta>, LocalStorageError> {
+        let path = self.get_path(&repository, location);
         if !path.exists() {
             return Ok(None);
         }
-        let file = fs::File::open(&path)?;
-        let value: Value = serde_json::from_reader(file)?;
-        Ok(Some(value))
+        let meta = FileMeta::get_or_create_local(&path)?;
+        Ok(Some(meta.repository_meta))
     }
     async fn put_repository_meta(
         &self,
         repository: Uuid,
         location: &StoragePath,
-        value: Value,
-    ) -> Result<(), StorageError> {
-        let path = self.get_repository_meta_path(&repository, location)?;
+        value: RepositoryMeta,
+    ) -> Result<(), LocalStorageError> {
+        let path = self.get_path(&repository, location);
 
-        let parent = path.parent_or_err()?;
-        if !parent.exists() {
-            fs::create_dir_all(parent)?;
+        if !path.exists() {
+            return Err(LocalStorageError::IOError(io::Error::new(
+                ErrorKind::NotFound,
+                "File not found",
+            )));
         }
 
-        let file = fs::File::create(&path)?;
-        serde_json::to_writer(file, &value)?;
+        FileMeta::set_repository_meta(path, value)?;
         Ok(())
+    }
+    async fn file_exists(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<bool, LocalStorageError> {
+        let path = self.get_path(&repository, location);
+        Ok(path.exists())
     }
 }
 #[derive(Debug, Default)]
 pub struct LocalStorageFactory;
+impl StaticStorageFactory for LocalStorageFactory {
+    type StorageType = LocalStorage;
+
+    type ConfigType = LocalConfig;
+
+    type Error = LocalStorageError;
+
+    fn storage_type_name() -> &'static str
+    where
+        Self: Sized,
+    {
+        "Local"
+    }
+
+    async fn test_storage_config(_: StorageTypeConfig) -> Result<(), LocalStorageError> {
+        Ok(())
+    }
+
+    async fn create_storage(
+        inner: StorageConfigInner,
+        type_config: Self::ConfigType,
+    ) -> Result<Self::StorageType, LocalStorageError> {
+        if !type_config.path.exists() {
+            fs::create_dir_all(&type_config.path)?;
+        }
+        let inner = LocalStorageInner {
+            config: type_config,
+            storage_config: inner,
+        };
+        let storage = LocalStorage::from(inner);
+
+        Ok(storage)
+    }
+}
 impl StorageFactory for LocalStorageFactory {
     fn storage_name(&self) -> &'static str {
-        "Local"
+        Self::storage_type_name()
     }
 
     fn test_storage_config(
@@ -291,18 +347,34 @@ impl StorageFactory for LocalStorageFactory {
         config: StorageConfig,
     ) -> BoxFuture<'static, Result<DynStorage, StorageError>> {
         Box::pin(async move {
-            let local_config = match config.type_config {
-                StorageTypeConfig::Local(config) => config,
-                _ => return Err(StorageError::InvalidConfigType("Local")),
-            };
-            if !local_config.path.exists() {
-                fs::create_dir_all(&local_config.path)?;
-            }
-            let local = LocalStorageInner {
-                config: local_config,
-                storage_config: config.storage_config,
-            };
-            Ok(DynStorage::Local(LocalStorage(Arc::new(local))))
+            <Self as StaticStorageFactory>::create_storage_from_config(config)
+                .await
+                .map(|storage| DynStorage::Local(storage))
+                .map_err(Into::into)
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tracing::warn;
+
+    use crate::{
+        local::LocalStorageFactory, testing::storage::TestingStorage, StaticStorageFactory,
+    };
+
+    #[tokio::test]
+    pub async fn generic_test() -> anyhow::Result<()> {
+        let Some(config) = crate::testing::start_storage_test("Local")? else {
+            warn!("Local Storage Test Skipped");
+            return Ok(());
+        };
+        let local_storage =
+            <LocalStorageFactory as StaticStorageFactory>::create_storage_from_config(config)
+                .await?;
+        let testing_storage = TestingStorage::new(local_storage);
+        crate::testing::tests::full_test(testing_storage).await?;
+
+        Ok(())
     }
 }

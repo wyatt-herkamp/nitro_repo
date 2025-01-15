@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use tracing::debug;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 pub mod env_file;
-
+pub mod logging;
 use crate::{
     database::{
         user::{NewUserRequest, UserSafeData, UserType},

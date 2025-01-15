@@ -24,7 +24,7 @@ ahash.workspace = true
 http.workspace = true
 utoipa.workspace = true
 http-body.workspace = true
-tokio-util = "0.7"
+tokio-util.workspace = true
 pin-project.workspace = true
 futures.workspace = true
 
@@ -37,5 +37,15 @@ sha3.workspace = true
 digest.workspace = true
 
 postcard = { version = "1.0", features = ["use-std", "alloc"] }
+either.workspace = true
+rust-s3 = "0.35"
+
 [lints]
 workspace = true
+
+[dev-dependencies]
+toml.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+nr-core = { workspace = true, features = ["testing"] }
+anyhow = { workspace = true }

@@ -3,3 +3,4 @@ target/
 test/
 .env
 nr_tests.env
+storage_tests
