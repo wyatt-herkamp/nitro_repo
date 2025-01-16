@@ -1,10 +1,7 @@
 use std::{
     fmt::Debug,
     path::PathBuf,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
+    sync::atomic::{AtomicBool, Ordering},
 };
 
 use crate::{
@@ -301,6 +298,7 @@ impl SessionManager {
             .to_std()
             .expect("Duration is too large");
         debug!("Starting Session Cleaner with interval: {:?}", how_often);
+        this.session_manager.running.store(true, Ordering::Relaxed);
         let result = tokio::spawn(async move {
             let this = this;
             SessionManager::cleaner_task(this, how_often).await;

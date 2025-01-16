@@ -3,9 +3,9 @@ use std::{fmt::Debug, fs::File, io, path::Path};
 use crate::{is_hidden_file, local::error::LocalStorageError, FileMeta};
 
 use super::{
-    utils::MetadataUtils, FileContent, FileContentBytes, FileHashes, SerdeMime, StorageFileReader,
+    FileHashes, SerdeMime, StorageFileReader,
 };
-use chrono::{DateTime, FixedOffset, Local};
+use chrono::{DateTime, FixedOffset};
 
 use derive_more::derive::From;
 use nr_core::storage::FileTypeCheck;

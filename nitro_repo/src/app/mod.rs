@@ -10,7 +10,7 @@ use derive_more::{derive::Deref, AsRef, Into};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
 use http::Uri;
-use logging::LoggingState;
+pub mod frontend;
 use nr_core::{
     database::{
         repository::DBRepository,
@@ -109,6 +109,8 @@ pub struct NitroRepoInner {
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
     pub general_security_settings: SecuritySettings,
+    #[cfg(feature = "frontend")]
+    pub frontend: frontend::HostedFrontend,
     pub staging_config: StagingConfig,
     services: Mutex<InternalServices>,
 }
@@ -238,7 +240,10 @@ impl NitroRepo {
             general_security_settings: security,
             staging_config,
             services: Mutex::new(services),
+            #[cfg(feature = "frontend")]
+            frontend: frontend::HostedFrontend::new(site.frontend_path)?,
         };
+
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
 
         let nitro_repo = NitroRepo {

@@ -3,9 +3,13 @@ use std::{error::Error, fmt::Display, io};
 
 use axum::{body::Body, response::IntoResponse};
 pub use bad_requests::*;
+use http::header::CONTENT_TYPE;
 use nr_core::repository::config::RepositoryConfigError;
 //pub use internal_error::*;
 use nr_storage::StorageError;
+use thiserror::Error;
+
+use crate::utils::TEXT_MEDIA_TYPE;
 
 /// Allows creating a response from an error
 pub trait IntoErrorResponse: Error + Send + Sync {
@@ -134,5 +138,31 @@ impl IntoResponse for InternalError {
 impl<T: IntoErrorResponse + 'static> From<T> for InternalError {
     fn from(err: T) -> Self {
         InternalError(Box::new(err))
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum ResponseBuildError {
+    #[error("Failed to serialize data for response: {0}")]
+    SerdeError(#[from] serde_json::Error),
+    #[error("Failed to build response: {0}")]
+    HttpError(#[from] http::Error),
+    #[error("Invalid Header Response Value: {0}")]
+    HeaderValueError(#[from] http::header::InvalidHeaderValue),
+}
+impl IntoResponse for ResponseBuildError {
+    fn into_response(self) -> axum::response::Response {
+        let message = self.to_string();
+        http::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .header(CONTENT_TYPE, TEXT_MEDIA_TYPE)
+            .body(axum::body::Body::from(message))
+            .unwrap()
+    }
+}
+
+impl IntoErrorResponse for ResponseBuildError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
     }
 }

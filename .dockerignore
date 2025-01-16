@@ -2,3 +2,7 @@ target/
 .vscode/
 test/
 .env
+site/node_modules/
+docs/node_modules/
+nr_tests.env
+storage_tests

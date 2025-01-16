@@ -14,6 +14,8 @@ pub enum ExtensionError {
 }
 
 pub trait PathUtils {
+    /// Gets the parent directory of the path or returns an error if it does not exist.
+    #[allow(unused)]
     fn parent_or_err(&self) -> Result<&Path, ParentDirectoryDoesNotExist>;
     /// Appends an extension to the path.
     fn add_extension(&self, extension: &str) -> Result<PathBuf, ExtensionError>;

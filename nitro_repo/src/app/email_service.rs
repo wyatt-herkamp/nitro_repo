@@ -1,7 +1,7 @@
 use std::{
     fmt::{Debug, Formatter},
     io,
-    sync::{atomic::AtomicBool, Arc},
+    sync::Arc,
 };
 
 use flume::{Receiver, Sender};

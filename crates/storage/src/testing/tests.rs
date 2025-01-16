@@ -1,13 +1,11 @@
-use std::path;
 
 use nr_core::storage::StoragePath;
-use tokio::io::AsyncReadExt;
 use tracing::{debug, info};
 use uuid::Uuid;
 
-use crate::{FileContent, FileType, Storage, StorageError, StorageFile};
+use crate::{FileContent, Storage, StorageError, StorageFile};
 
-use super::{storage::TestingStorage, TestingStorageType};
+use super::storage::TestingStorage;
 pub async fn full_test<ST: Storage>(storage: TestingStorage<ST>) -> anyhow::Result<()> {
     write_then_read(&storage).await?;
     write_multiple_then_list(&storage).await?;

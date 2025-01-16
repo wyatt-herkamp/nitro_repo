@@ -98,6 +98,8 @@ pub struct SiteSetting {
     pub name: String,
     pub description: String,
     pub is_https: bool,
+    #[cfg(feature = "frontend")]
+    pub frontend_path: Option<PathBuf>,
 }
 
 impl Default for SiteSetting {
@@ -107,6 +109,8 @@ impl Default for SiteSetting {
             name: "Nitro Repo".to_string(),
             description: "An Open Source artifact manager.".to_string(),
             is_https: false,
+            #[cfg(feature = "frontend")]
+            frontend_path: None,
         }
     }
 }

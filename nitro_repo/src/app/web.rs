@@ -2,7 +2,6 @@ use crate::app::logging::request_logging::layer::AppTracingLayer;
 
 use super::authentication::api_middleware::AuthenticationLayer;
 use super::config::{load_config, WebServer};
-use super::logging::LoggingState;
 use super::{api, config::NitroRepoConfig};
 use super::{open_api, NitroRepo};
 
@@ -89,6 +88,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
         )
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
+        .fallback(super::frontend::frontend_request)
         .with_state(site.clone());
 
     if open_api_routes {

@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 
 use crate::{
     fs::utils::MetadataUtils,
-    local::{error::LocalStorageError, LocalStorage},
+    local::error::LocalStorageError,
     meta::RepositoryMeta,
     path::PathUtils,
 };

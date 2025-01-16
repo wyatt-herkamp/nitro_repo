@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use ahash::{HashSet, HashSetExt};
+use ahash::HashSet;
 use nr_core::storage::StoragePath;
 use tokio::sync::Mutex;
-use tracing::instrument;
 use uuid::Uuid;
 
 use crate::{meta::RepositoryMeta, FileType, Storage};
@@ -15,7 +14,6 @@ pub struct CreatedFiles {
 #[derive(Debug, Clone, Default)]
 pub struct TestingInternalStorage {
     pub created_files: HashSet<CreatedFiles>,
-    pub created_meta_files: HashSet<CreatedFiles>,
 }
 impl TestingInternalStorage {
     pub fn add_created_file(&mut self, repository: Uuid, path: StoragePath) -> bool {
@@ -23,14 +21,6 @@ impl TestingInternalStorage {
     }
     pub fn remove_created_file(&mut self, repository: Uuid, path: StoragePath) -> bool {
         self.created_files
-            .remove(&CreatedFiles { repository, path })
-    }
-    pub fn add_created_meta_file(&mut self, repository: Uuid, path: StoragePath) -> bool {
-        self.created_meta_files
-            .insert(CreatedFiles { repository, path })
-    }
-    pub fn remove_created_meta_file(&mut self, repository: Uuid, path: StoragePath) -> bool {
-        self.created_meta_files
             .remove(&CreatedFiles { repository, path })
     }
 }
@@ -116,17 +106,17 @@ impl<ST: Storage> Storage for TestingStorage<ST> {
 
     async fn put_repository_meta(
         &self,
-        repository: Uuid,
-        location: &StoragePath,
-        value: RepositoryMeta,
+        _repository: Uuid,
+        _location: &StoragePath,
+        _value: RepositoryMeta,
     ) -> Result<(), Self::Error> {
         todo!()
     }
 
     async fn get_repository_meta(
         &self,
-        repository: Uuid,
-        location: &StoragePath,
+        _repository: Uuid,
+        _location: &StoragePath,
     ) -> Result<Option<RepositoryMeta>, Self::Error> {
         todo!()
     }

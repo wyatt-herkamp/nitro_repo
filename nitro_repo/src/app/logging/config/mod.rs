@@ -5,15 +5,11 @@ use ahash::{HashMap, HashMapExt};
 use nr_core::logging::{LevelSerde, LoggingLevels};
 pub use otel::*;
 use serde::{Deserialize, Serialize};
-use tracing::level_filters::LevelFilter;
 use tracing_appender::rolling::Rotation;
-use tracing_subscriber::{
-    filter::Targets,
-    fmt::{
+use tracing_subscriber::fmt::{
         format::{self, Format},
         time::SystemTime,
-    },
-};
+    };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]

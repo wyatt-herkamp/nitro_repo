@@ -66,6 +66,8 @@ url = "2"
 ## Hashing
 digestible = { git = "https://github.com/wyatt-herkamp/digestible.git", features = [
     "base64",
+    "uuid",
+    "chrono",
 ] }
 digest = { version = "0.10", features = ["std", "alloc"] }
 md-5 = "0.10"

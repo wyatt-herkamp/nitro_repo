@@ -1,10 +1,9 @@
 use axum::{
-    body::Body,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
+    routing::{get, post},
     Json,
 };
-use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
     database::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
     storage::StorageName,
@@ -13,46 +12,61 @@ use nr_core::{
 use nr_storage::{local::LocalConfig, StorageConfig, StorageTypeConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
-use utoipa::{OpenApi, ToSchema};
+use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
-
+mod local;
+mod s3;
 use crate::{
     app::{
         authentication::Authentication,
         responses::{
             InvalidStorageConfig, InvalidStorageType, MissingPermission, ResponseBuilderExt,
         },
-        Instance, NitroRepo,
+        NitroRepo,
     },
     error::InternalError,
+    utils::{response_builder::ResponseBuilder, responses::ConflictResponse},
 };
 #[derive(OpenApi)]
 #[openapi(
-    paths(list_storages, new_storage, get_storage, local_storage_path_helper),
-    components(schemas(DBStorage, NewStorageRequest, StorageTypeConfig, LocalConfig))
+    paths(list_storages, new_storage, get_storage),
+    components(schemas(DBStorage, NewStorageRequest, StorageTypeConfig, LocalConfig)),
+    nest(
+        (path = "/local", api = local::LocalStorageAPI, tags=["local", "storage"]),
+        (path = "/s3", api = s3::S3StorageAPI, tags=["s3", "storage"])
+    ),
+    tags(
+        (name= "local", description = "Local Storage"),
+        (name= "s3", description = "S3 Storage"),
+    )
 )]
 pub struct StorageAPI;
 pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
     axum::Router::new()
-        .route("/list", axum::routing::get(list_storages))
-        .route("/new/{storage_type}", axum::routing::post(new_storage))
-        .route("/{id}", axum::routing::get(get_storage))
-        .route(
-            "/local-storage-path-helper",
-            axum::routing::post(local_storage_path_helper),
-        )
+        .route("/list", get(list_storages))
+        .route("/new/{storage_type}", post(new_storage))
+        .route("/{id}", get(get_storage))
+        .nest("/local", local::local_storage_routes())
+        .nest("/s3", s3::s3_storage_api())
 }
-#[derive(Debug, Default, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Default, Serialize, Deserialize, ToSchema, IntoParams)]
 #[serde(default)]
+#[into_params(parameter_in = Query)]
 pub struct StorageListRequest {
+    /// Include the storage configuration in the response (default: false)
     pub include_config: bool,
+    /// Only include active storages (default: false)
     pub active_only: bool,
 }
 #[utoipa::path(
     get,
     path = "/list",
+    params(
+        StorageListRequest,
+    ),
     responses(
         (status = 200, description = "All Storages registered to the system.", body = [DBStorage]),
+        (status = 200, description = "All the storages without the configs", body = [DBStorageNoConfig]),
         (status = 403, description = "Does not have permission to view storages")
     )
 )]
@@ -62,79 +76,16 @@ pub async fn list_storages(
     auth: Authentication,
     Query(request): Query<StorageListRequest>,
 ) -> Result<Response, InternalError> {
-    if auth.is_admin_or_system_manager() {
-        if request.include_config {
-            let storages = DBStorage::get_all(&site.database).await?;
-            Response::builder().status(200).json_body(&storages)
-        } else {
-            let storages = DBStorageNoConfig::get_all(&site.database).await?;
-            Response::builder().status(200).json_body(&storages)
-        }
-    } else {
-        Ok(MissingPermission::StorageManager.into_response())
-    }
-}
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct LocalStoragePathHelperRequest {
-    pub path: Option<String>,
-}
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-#[serde(tag = "type", content = "value")]
-pub enum LocalStoragePathHelperResponse {
-    CurrentPath(String),
-    Directories(Vec<String>),
-    PathDoesNotExist,
-}
-#[utoipa::path(
-    get,
-    path = "/local-storage-path-helper",
-    responses(
-        (status = 200, description = "information about the Site", body = Instance)
-    )
-)]
-#[instrument]
-pub async fn local_storage_path_helper(
-    auth: Authentication,
-    Json(request): Json<LocalStoragePathHelperRequest>,
-) -> Result<Response, InternalError> {
     if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
     }
-    let path = request.path.unwrap_or_default().trim().to_owned();
-    if path.is_empty() {
-        let working_dir = std::env::current_dir().unwrap();
-        let current_path = working_dir.to_string_lossy().to_string();
-        return Ok(Response::builder()
-            .status(200)
-            .header("Content-Type", "application/json")
-            .body(Body::from(
-                serde_json::to_string(&LocalStoragePathHelperResponse::CurrentPath(current_path))
-                    .unwrap(),
-            ))
-            .unwrap());
-    }
-    let path = std::path::Path::new(&path);
-    let response = if path.exists() {
-        // List directories
-        let mut directories = vec![];
-        for entry in std::fs::read_dir(path).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_dir() {
-                if let Some(file_name) = path.file_name() {
-                    directories.push(file_name.to_string_lossy().to_string());
-                }
-            }
-        }
-        LocalStoragePathHelperResponse::Directories(directories)
+    if request.include_config {
+        let storages = DBStorage::get_all(&site.database).await?;
+        Response::builder().status(200).json_body(&storages)
     } else {
-        LocalStoragePathHelperResponse::PathDoesNotExist
-    };
-    Ok(Response::builder()
-        .status(200)
-        .header("Content-Type", "application/json")
-        .body(Body::from(serde_json::to_string(&response).unwrap()))
-        .unwrap())
+        let storages = DBStorageNoConfig::get_all(&site.database).await?;
+        Response::builder().status(200).json_body(&storages)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -149,7 +100,7 @@ pub struct NewStorageRequest {
     request_body = NewStorageRequest,
     responses(
         (status = 201, description = "Storage Successfully Created", body = DBStorage),
-        (status = 409, description = "Name already in use"),
+        ConflictResponse,
         (status = 400, description = "Invalid Storage Config"),
     ),
     params(
@@ -167,10 +118,7 @@ pub async fn new_storage(
         return Ok(MissingPermission::StorageManager.into_response());
     }
     if !DBStorage::is_name_available(&request.name, site.as_ref()).await? {
-        return Ok(Response::builder()
-            .status(StatusCode::CONFLICT)
-            .body("Name already in use".into())
-            .unwrap());
+        return Ok(ConflictResponse::from("name").into_response());
     }
 
     let Some(storage_factory) = site.get_storage_factory(&storage_type) else {
@@ -183,15 +131,13 @@ pub async fn new_storage(
         error!("Failed to test storage config: {}", error);
         return Ok(InvalidStorageConfig(error).into_response());
     }
+
     let config = serde_json::to_value(request.config).unwrap();
     let storage = NewDBStorage::new(storage_type, request.name, config)
         .insert(&site.database)
         .await?;
     let Some(storage) = storage else {
-        return Ok(Response::builder()
-            .status(StatusCode::CONFLICT)
-            .body("Name already in use".into())
-            .unwrap());
+        return Ok(ConflictResponse::from("name").into_response());
     };
     let id = storage.id;
     let storage_config = match StorageConfig::try_from(storage.clone()) {
@@ -210,11 +156,7 @@ pub async fn new_storage(
             return Err(InternalError::from(err));
         }
     }
-    Ok(Response::builder()
-        .status(StatusCode::CREATED)
-        .header(CONTENT_TYPE, "application/json")
-        .body(Body::from(serde_json::to_string(&storage).unwrap()))
-        .unwrap())
+    Ok(ResponseBuilder::created().json(&storage))
 }
 #[utoipa::path(
     post,
@@ -227,7 +169,6 @@ pub async fn new_storage(
 #[instrument]
 pub async fn get_storage(
     auth: Authentication,
-
     Path(id): Path<Uuid>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
@@ -236,13 +177,7 @@ pub async fn get_storage(
     }
     let storage = DBStorage::get_by_id(id, &site.database).await?;
     match storage {
-        Some(storage) => {
-            let response = Json(storage).into_response();
-            Ok(response)
-        }
-        None => Ok(Response::builder()
-            .status(404)
-            .body("Storage not found".into())
-            .unwrap()),
+        Some(storage) => Ok(ResponseBuilder::ok().json(&storage)),
+        None => Ok(ResponseBuilder::not_found().body("Storage not found")),
     }
 }

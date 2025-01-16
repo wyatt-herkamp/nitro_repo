@@ -66,6 +66,7 @@ impl LocalStorageInner {
     /// ## Ok
     /// - First value is the path to the file
     /// - Second is the directory that the file is in
+    #[instrument(level = "debug")]
     pub fn get_path_for_creation(
         &self,
         repository: Uuid,
@@ -77,12 +78,16 @@ impl LocalStorageInner {
         let mut iter = location.clone().into_iter().peekable();
         while let Some(part) = iter.next() {
             if iter.peek().is_none() {
+                debug!(?part, "Last Part of Path");
                 parent_directory = path.clone();
             }
             path = path.join(part.as_ref());
             conflicting_path.push_mut(part.as_ref());
+            trace!(?path, ?conflicting_path, "Checking Path");
             if path.exists() {
+                trace!(?path, "Path Exists");
                 if path.is_file() {
+                    warn!(?path, "Path is a file");
                     return Err(PathCollisionError {
                         path: location.clone(),
                         conflicts_with: conflicting_path,
@@ -159,7 +164,7 @@ impl Storage for LocalStorage {
             config: BorrowedStorageTypeConfig::Local(&self.config),
         }
     }
-    #[instrument(name = "local_storage_save")]
+    #[instrument(name = "Storage::save_file", fields(storage_type = "local"))]
     async fn save_file(
         &self,
         repository: Uuid,
@@ -186,7 +191,7 @@ impl Storage for LocalStorage {
         }
         Ok((bytes_written, new_file))
     }
-    #[instrument(name = "local_storage_delete")]
+    #[instrument(name = "Storage::delete_file", fields(storage_type = "local"))]
     async fn delete_file(
         &self,
         repository: Uuid,
@@ -206,7 +211,7 @@ impl Storage for LocalStorage {
         }
         Ok(true)
     }
-    #[instrument(name = "local_storage_get_info")]
+    #[instrument(name = "Storage::get_file_information", fields(storage_type = "local"))]
     async fn get_file_information(
         &self,
         repository: Uuid,
@@ -221,7 +226,7 @@ impl Storage for LocalStorage {
         let meta = StorageFileMeta::read_from_path(path)?;
         Ok(Some(meta))
     }
-    #[instrument(name = "local_storage_open_file")]
+    #[instrument(name = "Storage::open_file", fields(storage_type = "local"))]
     async fn open_file(
         &self,
         repository: Uuid,
@@ -239,12 +244,16 @@ impl Storage for LocalStorage {
         };
         Ok(Some(file))
     }
+    #[instrument(name = "Storage::unload", fields(storage_type = "local"))]
     async fn unload(&self) -> Result<(), LocalStorageError> {
         info!(?self, "Unloading Local Storage");
         // TODO: Implement Unload
         Ok(())
     }
-
+    #[instrument(
+        name = "Storage::validate_config_change",
+        fields(storage_type = "local")
+    )]
     async fn validate_config_change(
         &self,
         config: StorageTypeConfig,
@@ -255,6 +264,7 @@ impl Storage for LocalStorage {
         }
         Ok(())
     }
+    #[instrument(name = "Storage::get_repository_meta", fields(storage_type = "local"))]
     async fn get_repository_meta(
         &self,
         repository: Uuid,
@@ -267,6 +277,7 @@ impl Storage for LocalStorage {
         let meta = FileMeta::get_or_create_local(&path)?;
         Ok(Some(meta.repository_meta))
     }
+    #[instrument(name = "Storage::put_repository_meta", fields(storage_type = "local"))]
     async fn put_repository_meta(
         &self,
         repository: Uuid,
@@ -285,6 +296,7 @@ impl Storage for LocalStorage {
         FileMeta::set_repository_meta(path, value)?;
         Ok(())
     }
+    #[instrument(name = "Storage::file_exists", fields(storage_type = "local"))]
     async fn file_exists(
         &self,
         repository: Uuid,

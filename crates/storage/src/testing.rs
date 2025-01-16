@@ -1,6 +1,6 @@
 use std::{env::current_dir, path::PathBuf};
 
-use nr_core::{repository::config, testing::logging::TestingLoggerConfig};
+use nr_core::testing::logging::TestingLoggerConfig;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 use uuid::Uuid;
@@ -8,8 +8,7 @@ pub mod tests;
 use crate::{
     local::{LocalConfig, LocalStorage, LocalStorageFactory},
     s3::{regions::CustomRegion, S3Config, S3Credentials, S3StorageFactory},
-    StaticStorageFactory, StorageConfig, StorageConfigInner, StorageError, StorageFactory,
-    StorageTypeConfig,
+    StaticStorageFactory, StorageConfig, StorageConfigInner, StorageTypeConfig,
 };
 pub mod storage;
 #[derive(Debug, Clone, Serialize, Deserialize)]

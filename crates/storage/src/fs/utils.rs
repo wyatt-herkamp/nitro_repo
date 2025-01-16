@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use chrono::{offset::LocalResult, DateTime, FixedOffset, Local, TimeZone};

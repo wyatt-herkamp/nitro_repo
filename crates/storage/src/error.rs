@@ -1,9 +1,8 @@
-use std::time::SystemTimeError;
 
 use thiserror::Error;
 
 use crate::{
-    local::{error::LocalStorageError, LocalStorage},
+    local::error::LocalStorageError,
     s3::S3StorageError,
     InvalidConfigType, PathCollisionError,
 };

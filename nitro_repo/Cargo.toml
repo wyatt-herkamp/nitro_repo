@@ -23,9 +23,11 @@ hyper.workspace = true
 hyper-util.workspace = true
 http.workspace = true
 mime.workspace = true
+mime_guess.workspace = true
+
 http-body-util.workspace = true
 utoipa = { workspace = true, features = ["axum_extras"] }
-utoipa-scalar = { version = "0.2", features = ["axum"], optional = true }
+utoipa-scalar = { version = "0.3", features = ["axum"], optional = true }
 async-trait = "0.1"
 # TLS
 tokio-rustls = "0.26"
@@ -116,7 +118,15 @@ url = "2"
 inquire = "0.7"
 [features]
 default = ["utoipa-scalar"]
-builtin_frontend = []
+frontend = []
 
 [lints]
 workspace = true
+
+
+[build-dependencies]
+zip = { version = "2.1" }
+
+walkdir = "2"
+anyhow = "1.0"
+camino = "1.1"

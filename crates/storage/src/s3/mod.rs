@@ -1,9 +1,9 @@
-use std::{borrow::Cow, io::SeekFrom, ops::Deref, path, str::FromStr, sync::Arc};
+use std::{borrow::Cow, ops::Deref, str::FromStr, sync::Arc};
 
 use chrono::Local;
 use futures::future::BoxFuture;
 use mime::Mime;
-use nr_core::storage::{self, StoragePath};
+use nr_core::storage::StoragePath;
 use regions::{CustomRegion, S3StorageRegion};
 use s3::{
     creds::{Credentials, Rfc3339OffsetDateTime},
@@ -48,7 +48,7 @@ impl S3StorageError {
     }
 }
 use crate::{
-    error, meta::RepositoryMeta, utils::new_type_arc_type, BorrowedStorageConfig,
+    meta::RepositoryMeta, utils::new_type_arc_type, BorrowedStorageConfig,
     BorrowedStorageTypeConfig, DirectoryFileType, DynStorage, FileContent, FileContentBytes,
     FileFileType, FileHashes, FileType, InvalidConfigType, PathCollisionError, SerdeMime,
     StaticStorageFactory, Storage, StorageConfig, StorageConfigInner, StorageError, StorageFactory,
@@ -302,7 +302,7 @@ impl S3StorageInner {
 
         Ok(Some(meta))
     }
-
+    #[instrument]
     async fn get_object_tagging(&self, path: &str) -> Result<Option<Vec<Tag>>, S3StorageError> {
         let (tags, status_code) = self.bucket.get_object_tagging(path).await?;
         if status_code == 404 {
@@ -317,11 +317,7 @@ impl S3StorageInner {
 
         Ok(Some(tags))
     }
-    async fn is_path_a_directory(&self, path: &str) -> Result<bool, S3StorageError> {
-        let tags = self.get_object_tagging(path).await?;
 
-        Ok(false)
-    }
     async fn get_meta_tags(&self, path: &str) -> Result<Option<S3MetaTags>, S3StorageError> {
         let Some(tags) = self.get_object_tagging(path).await? else {
             return Ok(None);

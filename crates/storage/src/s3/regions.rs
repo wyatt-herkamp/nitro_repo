@@ -1,8 +1,9 @@
 use s3::Region;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 use utoipa::ToSchema;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 pub enum S3StorageRegion {
     /// us-east-1
     UsEast1,
