@@ -41,6 +41,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
         site,
         security,
         email,
+        suggested_local_storage_path,
     } = load_config(config_path)?;
     let WebServer {
         bind_address,
@@ -61,6 +62,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
         staging_config,
         email,
         database,
+        suggested_local_storage_path,
     )
     .await
     .context("Unable to Initialize Website Core")?;

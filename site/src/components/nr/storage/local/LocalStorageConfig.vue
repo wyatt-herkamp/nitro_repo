@@ -16,7 +16,7 @@ import http from "@/http";
 const model = defineModel<any>();
 
 async function getDefaultPath() {
-  await http.post("/api/storage/local-storage-path-helper", {}).then((response) => {
+  await http.post("/api/storage/local/path-helper", {}).then((response) => {
     model.value.path = response.data.value;
   });
 }

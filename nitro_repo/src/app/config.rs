@@ -48,6 +48,7 @@ pub fn get_current_directory() -> PathBuf {
 pub struct NitroRepoConfig {
     pub mode: Mode,
     pub web_server: WebServer,
+    pub suggested_local_storage_path: Option<PathBuf>,
     pub database: DatabaseConfig,
     pub log: LoggingConfig,
     pub sessions: SessionManagerConfig,
@@ -60,6 +61,7 @@ pub struct NitroRepoConfig {
 #[serde(default)]
 pub struct ReadConfigType {
     pub mode: Option<Mode>,
+    pub suggested_local_storage_path: Option<PathBuf>,
     pub web_server: Option<WebServer>,
     pub database: Option<DatabaseConfig>,
     pub log: Option<LoggingConfig>,
@@ -175,7 +177,8 @@ pub fn load_config(path: Option<PathBuf>) -> anyhow::Result<NitroRepoConfig> {
         staging
     );
     let email = env_or_file_or_none!(config_from_file, environment, email);
-
+    let suggested_local_storage_path =
+        env_or_file_or_none!(config_from_file, environment, suggested_local_storage_path);
     Ok(NitroRepoConfig {
         mode,
         web_server,
@@ -186,5 +189,6 @@ pub fn load_config(path: Option<PathBuf>) -> anyhow::Result<NitroRepoConfig> {
         security,
         staging,
         email,
+        suggested_local_storage_path,
     })
 }

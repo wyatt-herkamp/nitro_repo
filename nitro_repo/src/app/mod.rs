@@ -1,4 +1,4 @@
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug, path::PathBuf, sync::Arc};
 
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
@@ -113,6 +113,7 @@ pub struct NitroRepoInner {
     pub frontend: frontend::HostedFrontend,
     pub staging_config: StagingConfig,
     services: Mutex<InternalServices>,
+    pub suggested_local_storage_path: PathBuf,
 }
 macro_rules! take_service {
     ($(
@@ -212,6 +213,7 @@ impl NitroRepo {
         staging_config: StagingConfig,
         email_settings: Option<EmailSetting>,
         database: DatabaseConfig,
+        suggested_local_storage_path: Option<PathBuf>,
     ) -> anyhow::Result<Self> {
         let database = Self::load_database(database).await?;
         let is_installed = user_utils::does_user_exist(&database).await?;
@@ -231,7 +233,11 @@ impl NitroRepo {
 
         let (email_access, service) = EmailService::start(email_settings).await?;
         services.email = Some(service);
-
+        let suggested_local_storage_path = if let Some(path) = suggested_local_storage_path {
+            path
+        } else {
+            std::env::current_dir()?.join("storages")
+        };
         let nitro_repo = NitroRepoInner {
             instance: Mutex::new(instance),
             storages: RwLock::new(HashMap::new()),
@@ -242,6 +248,7 @@ impl NitroRepo {
             services: Mutex::new(services),
             #[cfg(feature = "frontend")]
             frontend: frontend::HostedFrontend::new(site.frontend_path)?,
+            suggested_local_storage_path: suggested_local_storage_path,
         };
 
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);

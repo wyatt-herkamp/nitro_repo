@@ -1,4 +1,5 @@
 use axum::{
+    extract::State,
     response::{IntoResponse, Response},
     routing::post,
     Json,
@@ -47,6 +48,7 @@ pub enum LocalStoragePathHelperResponse {
 #[instrument]
 pub async fn path_helper(
     auth: Authentication,
+    State(site): State<NitroRepo>,
     Json(request): Json<LocalStoragePathHelperRequest>,
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_system_manager() {
@@ -54,8 +56,10 @@ pub async fn path_helper(
     }
     let path = request.path.unwrap_or_default().trim().to_owned();
     if path.is_empty() {
-        let working_dir = std::env::current_dir().unwrap();
-        let current_path = working_dir.to_string_lossy().to_string();
+        let current_path = site
+            .suggested_local_storage_path
+            .to_string_lossy()
+            .to_string();
         return Ok(
             ResponseBuilder::ok().json(&&LocalStoragePathHelperResponse::CurrentPath(current_path))
         );

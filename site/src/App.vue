@@ -19,12 +19,14 @@ import NavBar from "./components/nav/NavBar.vue";
 import { sessionStore } from "./stores/session";
 import { computed } from "vue";
 import { Notifications } from "@kyvg/vue3-notification";
+import { apiURL } from "./config";
 const site = siteStore();
 const session = sessionStore();
 const user = computed(() => session.user);
 const hasSideBar = computed(() => {
   return router.currentRoute.value.meta.sideBar !== undefined;
 });
+console.log(`apiURL: ${apiURL}`);
 async function init() {
   const info = await site.getInfo();
   if (info == undefined) {

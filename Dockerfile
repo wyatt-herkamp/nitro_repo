@@ -32,5 +32,5 @@ RUN mkdir -p /app
 COPY --from=build /home/build/target/release/nitro_repo /app/nitro-repo
 COPY --from=build /home/build/entrypoint.sh /app/entrypoint.sh
 WORKDIR /opt/nitro-repo
-ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 CMD []

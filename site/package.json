@@ -43,7 +43,8 @@
     "vue-meta": "3.0.0-alpha.10",
     "vue-router": "^4.5.0",
     "vue3-simple-icons": "^13.2.0",
-    "eslint-plugin-compat": "^6.0.2"
+    "eslint-plugin-compat": "^6.0.2",
+    "vite-plugin-ejs": "^1.7.0"
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",
