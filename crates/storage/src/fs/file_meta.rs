@@ -147,30 +147,45 @@ impl FileMeta {
         let meta_path = meta_path(&path)?;
         span.record("path.meta", debug(&meta_path));
         if meta_path.exists() {
-            span.record("created", &false);
             trace!(?meta_path, "Meta File exists. Reading");
-            return FileMeta::read_meta_file(&meta_path).map(|meta| (meta, false));
-        } else {
-            span.record("created", &true);
+            match FileMeta::read_meta_file(&meta_path) {
+                Ok(meta) => {
+                    span.record("created", &false);
+                    return Ok((meta, false));
+                }
+                Err(LocalStorageError::Postcard(err)) => {
+                    event!(
+                        Level::ERROR,
+                        ?meta_path,
+                        ?err,
+                        "Meta File is corrupted. Rebuilding"
+                    );
+                }
+                Err(err) => {
+                    return Err(err);
+                }
+            }
+        } else if tracing::enabled!(Level::DEBUG) {
             debug!(?meta_path, "Meta File does not exist. Generating");
-            let (created, modified) = {
-                let file = File::open(&path)?;
-                let metadata = file.metadata()?;
-                let modified = metadata.modified_as_chrono_or_now()?;
-                let created = metadata.created_as_chrono_or_now()?;
-                (created, modified)
-            };
-            let mut meta = FileMeta {
-                hashes: None,
-                created,
-                modified,
-                repository_meta: RepositoryMeta::default(),
-            };
-            meta.update_hashes(&path)?;
-            meta.save_meta(&path)?;
-
-            return Ok((meta, true));
         }
+        span.record("created", &true);
+        let (created, modified) = {
+            let file = File::open(&path)?;
+            let metadata = file.metadata()?;
+            let modified = metadata.modified_as_chrono_or_now()?;
+            let created = metadata.created_as_chrono_or_now()?;
+            (created, modified)
+        };
+        let mut meta = FileMeta {
+            hashes: None,
+            created,
+            modified,
+            repository_meta: RepositoryMeta::default(),
+        };
+        meta.update_hashes(&path)?;
+        meta.save_meta(&path)?;
+
+        return Ok((meta, true));
     }
 
     #[instrument(
