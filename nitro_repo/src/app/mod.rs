@@ -179,6 +179,10 @@ impl Default for AppMetrics {
                 .build(),
             request_duration: meter
                 .f64_histogram("http.server.request.duration")
+                .with_boundaries(vec![
+                    0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1f64, 2.5, 5f64, 7.5,
+                    10f64,
+                ])
                 .with_unit("s")
                 .build(),
             meter,
