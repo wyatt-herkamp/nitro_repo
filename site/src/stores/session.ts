@@ -45,7 +45,6 @@ export const sessionStore = defineStore(
           console.log(`The user is still logged in: ${JSON.stringify(response.data)}`);
           user.value = response.data.user;
           session.value = response.data.session;
-          user;
           return response.data.user;
         })
         .catch(() => {

@@ -1,5 +1,5 @@
 mod bad_requests;
-use std::{error::Error, fmt::Display, io};
+use std::{borrow::Cow, error::Error, fmt::Display, io};
 
 use axum::{body::Body, response::IntoResponse};
 pub use bad_requests::*;
@@ -9,7 +9,9 @@ use nr_core::repository::config::RepositoryConfigError;
 use nr_storage::StorageError;
 use thiserror::Error;
 
-use crate::utils::TEXT_MEDIA_TYPE;
+use crate::utils::{
+    response_builder::ResponseBuilder, responses::APIErrorResponse, TEXT_MEDIA_TYPE,
+};
 
 /// Allows creating a response from an error
 pub trait IntoErrorResponse: Error + Send + Sync {
@@ -164,5 +166,46 @@ impl IntoResponse for ResponseBuildError {
 impl IntoErrorResponse for ResponseBuildError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         self.into_response()
+    }
+}
+
+#[derive(Debug, Error, Clone, Copy)]
+#[error("{0} is missing from extensions")]
+pub struct MissingInternelExtension(pub &'static str);
+impl IntoErrorResponse for MissingInternelExtension {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
+    }
+}
+impl IntoResponse for MissingInternelExtension {
+    fn into_response(self) -> axum::response::Response {
+        let message: APIErrorResponse<&'static str, ()> = APIErrorResponse {
+            message: Cow::Owned(self.to_string()),
+            details: Some(self.0),
+            error: None,
+        };
+        ResponseBuilder::internal_server_error().json(&message)
+    }
+}
+#[derive(Debug, Error)]
+#[error("Internal Error: {0}")]
+pub struct OtherInternalError(pub Box<dyn Error + Send + Sync>);
+impl OtherInternalError {
+    pub fn new<E>(err: E) -> Self
+    where
+        E: Error + Send + Sync + 'static,
+    {
+        OtherInternalError(Box::new(err))
+    }
+}
+
+impl IntoErrorResponse for OtherInternalError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        let response_json = APIErrorResponse {
+            message: Cow::Borrowed("Internal Error"),
+            details: Option::<()>::None,
+            error: Some(self.0),
+        };
+        ResponseBuilder::internal_server_error().json(&response_json)
     }
 }

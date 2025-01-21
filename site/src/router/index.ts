@@ -10,6 +10,7 @@ import type { Component } from "vue";
 
 import { adminRoutes } from "@/views/admin/adminRoutes";
 import { profileRoutes } from "@/views/profile/profileRoutes";
+import { projectRoutes } from "@/views/projects";
 declare module "vue-router" {
   interface RouteMeta {
     requiresAuth?: boolean;
@@ -56,6 +57,7 @@ const router = createRouter({
     },
     ...adminRoutes,
     ...profileRoutes,
+    ...projectRoutes,
   ],
 });
 

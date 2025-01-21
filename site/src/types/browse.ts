@@ -1,9 +1,10 @@
-import type { RawProject } from "./project";
-
 export interface RawBrowseResponse {
   files: RawBrowseFile[];
-  project?: RawProject;
-  version?: any;
+  project_resolution?: ProjectResolution;
+}
+export interface ProjectResolution {
+  project_id?: string;
+  version_id?: number;
 }
 
 export interface RawFile {

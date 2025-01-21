@@ -24,7 +24,7 @@ pub trait Storage: Send + Sync {
     type Error: Into<StorageError> + std::error::Error + Send + Sync + 'static;
     /// Unload the storages
     fn unload(&self) -> impl Future<Output = Result<(), Self::Error>> + Send;
-
+    fn storage_type_name(&self) -> &'static str;
     fn storage_type(&self) -> BorrowedStorageTypeConfig<'_> {
         self.storage_config().config
     }

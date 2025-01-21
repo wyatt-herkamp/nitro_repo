@@ -25,11 +25,12 @@ use nr_core::{
 };
 use nr_storage::{DynStorage, Storage};
 use parking_lot::RwLock;
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, error, event, info, instrument};
 use uuid::Uuid;
 
 use crate::{
     app::NitroRepo,
+    error::OtherInternalError,
     repository::{
         maven::{configs::MavenPushRulesConfigType, MavenRepositoryConfigType},
         utils::RepositoryExt,
@@ -60,7 +61,7 @@ pub struct MavenHosted(Arc<MavenHostedInner>);
 impl MavenRepositoryExt for MavenHosted {}
 impl RepositoryExt for MavenHosted {}
 impl MavenHosted {
-    #[instrument]
+    #[instrument(skip(self))]
     pub async fn standard_maven_deploy(
         &self,
         RepositoryRequest {
@@ -68,6 +69,7 @@ impl MavenHosted {
             body,
             path,
             authentication,
+            ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, MavenError> {
         let user_id = if let Some(user) = authentication.get_user() {
@@ -86,11 +88,12 @@ impl MavenHosted {
 
         let body = body.body_as_bytes().await?;
         // TODO: Validate Against Push Rules
-        if path.has_extension("pom") {
+        let pom = if path.has_extension("pom") {
             let pom: Pom = self.parse_pom(body.to_vec())?;
-            debug!(?pom, "Parsed POM File");
-            self.post_pom_upload(path.clone(), Some(user_id), pom).await;
-        }
+            Some(pom)
+        } else {
+            None
+        };
         let (size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
         // Trigger Push Event if it is the .pom file
         let save_path = format!(
@@ -99,7 +102,10 @@ impl MavenHosted {
             self.name,
             path
         );
-
+        if let Some(pom) = pom {
+            debug!(?pom, "Parsed POM File");
+            self.post_pom_upload(path.clone(), Some(user_id), pom).await;
+        };
         Ok(RepoResponse::put_response(created, save_path))
     }
     pub async fn load(
@@ -152,6 +158,9 @@ impl Repository for MavenHosted {
     fn get_type(&self) -> &'static str {
         REPOSITORY_TYPE_ID
     }
+    fn full_type(&self) -> &'static str {
+        "maven/hosted"
+    }
     #[inline(always)]
     fn name(&self) -> String {
         self.0.name.clone()
@@ -173,7 +182,7 @@ impl Repository for MavenHosted {
             MavenRepositoryConfigType::get_type_static(),
         ]
     }
-
+    #[instrument(fields(repository_type = "maven/hosted"))]
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
         let Some(is_active) = DBRepository::get_active_by_id(self.id, self.site.as_ref()).await?
         else {
@@ -208,13 +217,13 @@ impl Repository for MavenHosted {
 
         Ok(())
     }
-    #[instrument(name = "maven_hosted_get")]
     async fn handle_get(
         &self,
         RepositoryRequest {
             parts,
             path,
             authentication,
+            trace,
             ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, MavenError> {
@@ -225,7 +234,6 @@ impl Repository for MavenHosted {
         let file = self.0.storage.open_file(self.id, &path).await?;
         return self.indexing_check_option(file, &authentication).await;
     }
-    #[instrument(name = "maven_hosted_head")]
     async fn handle_head(
         &self,
         RepositoryRequest {
@@ -242,7 +250,6 @@ impl Repository for MavenHosted {
         let file = self.storage.get_file_information(self.id, &path).await?;
         return self.indexing_check_option(file, &authentication).await;
     }
-    #[instrument(name = "maven_hosted_put")]
     async fn handle_put(&self, request: RepositoryRequest) -> Result<RepoResponse, MavenError> {
         info!("Handling PUT Request for Repository: {}", self.id);
         {
@@ -289,27 +296,63 @@ impl Repository for MavenHosted {
         info!(?nitro_deploy_version, "Handling Nitro Deploy Version");
         todo!()
     }
-
-    #[instrument]
+    #[instrument(fields(repository_type = "maven/hosted"))]
     async fn resolve_project_and_version_for_path(
         &self,
-        path: StoragePath,
+        path: &StoragePath,
     ) -> Result<ProjectResolution, MavenError> {
         let path_as_string = path.to_string();
-        let version = DBProjectVersion::find_by_version_directory(
-            &path_as_string,
-            self.id,
-            self.site.as_ref(),
-        )
-        .await?;
+        event!(
+            tracing::Level::DEBUG,
+            "Resolving Project and Version for Path: {}",
+            path_as_string
+        );
+        let Some(meta) = self.storage.get_repository_meta(self.id, &path).await? else {
+            return Ok(ProjectResolution::default());
+        };
+        if let Some(project_id) = meta.project_id {
+            let version_id = meta.project_version_id;
+            event!(
+                tracing::Level::DEBUG,
+                ?project_id,
+                ?version_id,
+                "Found Project ID in Meta"
+            );
 
-        let project = if let Some(version) = version.as_ref() {
-            DBProject::find_by_id(version.project_id, self.site.as_ref()).await?
-        } else {
+            return Ok(ProjectResolution {
+                project_id: Some(project_id),
+                version_id: version_id,
+            });
+        }
+        event!(
+            tracing::Level::DEBUG,
+            "No Project ID in Meta looking project dirs in DB"
+        );
+        let version =
+            DBProjectVersion::find_ids_by_version_dir(&path_as_string, self.id, self.site.as_ref())
+                .await?;
+        if let Some(version) = version {
+            event!(
+                tracing::Level::DEBUG,
+                "Found Project Version in DB Versions: {:?}",
+                version
+            );
+            return Ok(version.into());
+        }
+        event!(
+            tracing::Level::DEBUG,
+            "No Project Version in DB looking for Project dir"
+        );
+        if let Some(project) =
             DBProject::find_by_project_directory(&path_as_string, self.id, self.site.as_ref())
                 .await?
-        };
+        {
+            return Ok(ProjectResolution {
+                project_id: Some(project.id),
+                version_id: None,
+            });
+        }
 
-        Ok(ProjectResolution { project, version })
+        Ok(ProjectResolution::default())
     }
 }

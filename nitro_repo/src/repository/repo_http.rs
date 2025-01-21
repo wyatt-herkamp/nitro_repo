@@ -1,9 +1,9 @@
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 
 use crate::{
     app::{
-        authentication::AuthenticationError, responses::RepositoryNotFound, NitroRepo,
-        RepositoryStorageName,
+        authentication::AuthenticationError, logging::request_logging::RequestSpan,
+        responses::RepositoryNotFound, NitroRepo, RepositoryStorageName,
     },
     error::{BadRequestErrors, IllegalStateError},
     repository::Repository,
@@ -11,10 +11,11 @@ use crate::{
 };
 use axum::{
     body::Body,
-    debug_handler,
     extract::{Path, Request, State},
     response::{IntoResponse, Response},
 };
+pub mod repo_tracing;
+
 use bytes::Bytes;
 use derive_more::From;
 use http::{
@@ -25,14 +26,15 @@ use http::{
 use http_body_util::BodyExt;
 use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{FileFileType, FileType, StorageFile, StorageFileMeta, StorageFileReader};
+
 use serde::Deserialize;
-use tracing::{debug, error, instrument, span, Level};
+use tracing::{debug, debug_span, error, event, field::Empty, info_span, instrument, Level, Span};
 mod header;
 mod repo_auth;
 pub use header::*;
 pub use repo_auth::*;
 
-use super::RepositoryHandlerError;
+use super::{repo_tracing::RepositoryRequestTracing, DynRepository, RepositoryHandlerError};
 
 #[derive(Debug, From)]
 pub struct RepositoryRequestBody(Body);
@@ -69,6 +71,7 @@ impl RepositoryRequestBody {
         Ok(body)
     }
 }
+
 #[derive(Debug)]
 pub struct RepositoryRequest {
     pub parts: Parts,
@@ -76,6 +79,7 @@ pub struct RepositoryRequest {
     pub body: RepositoryRequestBody,
     pub path: StoragePath,
     pub authentication: RepositoryAuthentication,
+    pub trace: RepositoryRequestTracing,
 }
 impl RepositoryRequest {
     pub fn user_agent_as_string(&self) -> Result<Option<&str>, BadRequestErrors> {
@@ -351,14 +355,23 @@ pub struct RepoRequestPath {
     #[serde(default)]
     path: Option<StoragePath>,
 }
-#[debug_handler]
-#[instrument]
+
 pub async fn handle_repo_request(
     State(site): State<NitroRepo>,
     Path(request_path): Path<RepoRequestPath>,
+    parent_span: Option<RequestSpan>,
     authentication: RepositoryAuthentication,
     request: Request,
 ) -> Result<Response, RepositoryHandlerError> {
+    let parent_span = parent_span.map(|span| span.0).unwrap_or(Span::current());
+    let request_debug = debug_span!(
+        target: "nitro_repo::repository::requests",
+        parent: &parent_span,
+        "Repository Request",
+        request_path = ?request_path,
+        authentication = ?authentication
+    );
+    let entered_guard = request_debug.enter();
     debug!(?request_path, "Repository Request Happening");
     let RepoRequestPath {
         storage,
@@ -378,31 +391,40 @@ pub async fn handle_repo_request(
     }
     let method = request.method().clone();
     let (parts, body) = request.into_parts();
+    let path = path.unwrap_or_default();
+    let trace =
+        RepositoryRequestTracing::new(&repository, &parent_span, site.repository_metrics.clone());
+    trace.path(&path);
     let request = RepositoryRequest {
         parts,
         body: RepositoryRequestBody(body),
-        path: path.unwrap_or_default(),
+        path: path,
         authentication,
+        trace: trace.clone(),
     };
-
+    drop(entered_guard);
     let response = {
-        let span = span!(
-            Level::DEBUG,
-            "Repository Request",
-            "repository_type" = repository.get_type(),
-            ?method,
-            ?request
-        );
-        let _enter = span.enter();
-        match method {
+        let _guard = trace.span.enter();
+        let response = match method {
             Method::GET => repository.handle_get(request).await,
             Method::PUT => repository.handle_put(request).await,
             Method::DELETE => repository.handle_delete(request).await,
             Method::PATCH => repository.handle_patch(request).await,
             Method::HEAD => repository.handle_head(request).await,
             _ => repository.handle_other(request).await,
+        };
+        match &response {
+            Ok(_) => {
+                trace.ok();
+            }
+            Err(err) => {
+                trace.error(err);
+            }
         }
+        event!(Level::DEBUG, "Repository Request Completed");
+        response
     };
+    let _guard = request_debug.entered();
     match response {
         Ok(response) => Ok(response.into_response_default()),
         Err(err) => {

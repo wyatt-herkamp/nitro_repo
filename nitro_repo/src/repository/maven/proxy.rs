@@ -25,7 +25,7 @@ use nr_storage::{DynStorage, FileContent, Storage, StorageFile};
 use parking_lot::RwLock;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, error, instrument, warn};
 use uuid::Uuid;
 
 use crate::{app::NitroRepo, repository::Repository};
@@ -121,7 +121,7 @@ impl MavenProxy {
             .await?;
         Ok(())
     }
-    #[instrument(name = "maven_proxy_project_download")]
+    #[instrument(skip(self), fields(nr.repository.id = %self.id, nr.repository.name = %self.name))]
     pub async fn proxy_project_download(
         &self,
         path: StoragePath,
@@ -157,7 +157,7 @@ impl MavenProxy {
         // TODO: Trigger project indexing
         Ok(())
     }
-    #[instrument(name = "maven_proxy_get_from_proxy")]
+    #[instrument(skip(self), fields(nr.repository.id = %self.id, nr.repository.name = %self.name))]
     pub async fn get_from_proxy(
         &self,
         path: StoragePath,
@@ -211,7 +211,7 @@ impl MavenProxy {
                     .await?;
                 return Ok(self.storage.open_file(self.id, &path).await?);
             } else {
-                info!(?response, ?url_string, "Failed to proxy request");
+                warn!(?response, ?url_string, "Failed to proxy request");
             }
         }
         Ok(None)
@@ -230,7 +230,9 @@ impl Repository for MavenProxy {
     fn get_type(&self) -> &'static str {
         REPOSITORY_TYPE_ID
     }
-
+    fn full_type(&self) -> &'static str {
+        "maven/proxy"
+    }
     fn config_types(&self) -> Vec<&str> {
         vec![
             RepositoryPageType::get_type_static(),
@@ -250,6 +252,7 @@ impl Repository for MavenProxy {
     fn is_active(&self) -> bool {
         self.0.active.load(std::sync::atomic::Ordering::Relaxed)
     }
+    #[instrument(fields(repository_type = "maven/proxy"))]
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
         let project_config_db =
             get_repository_config_or_default::<ProjectConfigType, ProjectConfig>(
@@ -288,7 +291,6 @@ impl Repository for MavenProxy {
         }
         Ok(())
     }
-    #[instrument(name = "maven_proxy_get")]
     async fn handle_get(
         &self,
         RepositoryRequest {
@@ -318,7 +320,6 @@ impl Repository for MavenProxy {
         // TODO: Check file age. If it is older than the configured time then re-download the file.
         return self.indexing_check(file, &authentication).await;
     }
-    #[instrument(name = "maven_proxy_head")]
     async fn handle_head(
         &self,
         RepositoryRequest {

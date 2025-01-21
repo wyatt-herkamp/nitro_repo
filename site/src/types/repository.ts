@@ -74,6 +74,7 @@ export interface FrontendRepositoryType {
     component: Component;
     props: Record<string, any>;
   };
+
   icons: Array<RepositoryIconDef>;
 }
 export const repositoryTypes: FrontendRepositoryType[] = [MavenFrontendDefinition];

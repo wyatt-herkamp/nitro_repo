@@ -11,7 +11,8 @@ use nr_core::{
     user::permissions::{HasPermissions, RepositoryActions},
 };
 
-use tracing::{error, info, instrument, trace};
+use nr_storage::Storage;
+use tracing::{error, event, info, instrument, trace, Level};
 use uuid::Uuid;
 
 use super::{MavenError, RepoResponse, RepositoryAuthentication, RepositoryHandlerError};
@@ -60,6 +61,7 @@ pub trait MavenRepositoryExt: Repository + Debug {
         // File is not a directory, so we can check the permissions
         Ok(RepoResponse::from(file_response))
     }
+
     /// Same as [indexing_check] but for an Option
     async fn indexing_check_option<T: FileTypeCheck>(
         &self,
@@ -97,11 +99,12 @@ pub trait MavenRepositoryExt: Repository + Debug {
         let version_directory = pom_directory.clone().parent();
         let db_project =
             DBProject::find_by_project_key(&project_key, self.id(), &self.site().database).await?;
-        let project_id = if let Some(project) = db_project {
-            project.id
+        let (project_id, project_dir) = if let Some(project) = db_project {
+            (project.id, StoragePath::from(project.storage_path))
         } else {
             let project_directory = version_directory.clone().parent();
-            let project = pom_to_db_project(project_directory, self.id(), pom.clone())?;
+            trace!(?project_directory, "Creating Project");
+            let project = pom_to_db_project(project_directory.clone(), self.id(), pom.clone())?;
             let project = project.insert(&self.site().database).await?;
             if let Some(publisher) = publisher {
                 let new_member = NewProjectMember::new_owner(publisher, project.id);
@@ -110,8 +113,24 @@ pub trait MavenRepositoryExt: Repository + Debug {
                 info!(?db_project, "No publisher provided for project");
             }
             info!(?project, "Created Project");
-            project.id
+            (project.id, project_directory)
         };
+        let mut repository_meta = self
+            .get_storage()
+            .get_repository_meta(self.id(), &project_dir)
+            .await?
+            .unwrap_or_default();
+        repository_meta.set_project_id(project_id);
+
+        event!(
+            Level::DEBUG,
+            ?repository_meta,
+            ?project_dir,
+            "Setting Repository Meta"
+        );
+        self.get_storage()
+            .put_repository_meta(self.id(), &project_dir, repository_meta)
+            .await?;
 
         self.add_or_update_version(version_directory, project_id, publisher, pom)
             .await?;
@@ -145,15 +164,39 @@ pub trait MavenRepositoryExt: Repository + Debug {
             &self.site().database,
         )
         .await?;
-        if let Some(version) = db_version {
+        let version_id = if let Some(version) = db_version {
             let update = pom_to_update_db_project_version(pom)?;
             update.update(version.id, &self.site().database).await?;
+            version
         } else {
-            let version =
-                pom_to_db_project_version(project_id, version_directory, publisher, pom.clone())?;
-            version.insert_no_return(&self.site().database).await?;
-            info!("Created Version");
+            let version = pom_to_db_project_version(
+                project_id,
+                version_directory.clone(),
+                publisher,
+                pom.clone(),
+            )?;
+            let db_version = version.insert(&self.site().database).await?;
+            info!(?db_version, "Created Version");
+            db_version
         };
+
+        let mut repository_meta = self
+            .get_storage()
+            .get_repository_meta(self.id(), &version_directory)
+            .await?
+            .unwrap_or_default();
+
+        repository_meta.set_version_id(version_id.id);
+        repository_meta.set_project_id(project_id);
+        event!(
+            Level::DEBUG,
+            ?repository_meta,
+            ?version_directory,
+            "Setting Repository Meta"
+        );
+        self.get_storage()
+            .put_repository_meta(self.id(), &version_directory, repository_meta)
+            .await?;
         Ok(())
     }
 }

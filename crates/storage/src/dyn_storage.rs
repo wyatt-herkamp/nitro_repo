@@ -20,6 +20,12 @@ impl Storage for DynStorage {
             DynStorage::S3(storage) => storage.unload().await.map_err(Into::into),
         }
     }
+    fn storage_type_name(&self) -> &'static str {
+        match self {
+            DynStorage::Local(storage) => storage.storage_type_name(),
+            DynStorage::S3(storage) => storage.storage_type_name(),
+        }
+    }
 
     fn storage_config(&self) -> crate::BorrowedStorageConfig<'_> {
         match self {

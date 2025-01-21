@@ -1,6 +1,6 @@
-use crate::app::logging::request_logging::layer::AppTracingLayer;
+use crate::app::logging::request_logging::AppTracingLayer;
 
-use super::authentication::api_middleware::AuthenticationLayer;
+use super::authentication::layer::AuthenticationLayer;
 use super::config::{load_config, WebServer};
 use super::{api, config::NitroRepoConfig};
 use super::{open_api, NitroRepo};
@@ -22,12 +22,10 @@ use std::{fs::File, io::BufReader, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio_rustls::TlsAcceptor;
-use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_service::Service;
 use tracing::{debug, error, info, warn};
 
-const REQUEST_ID_HEADER: HeaderName = HeaderName::from_static("x-request-id");
 const POWERED_BY_HEADER: HeaderName = HeaderName::from_static("x-powered-by");
 const POWERED_BY_VALUE: HeaderValue = HeaderValue::from_static("Nitro Repo");
 pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
@@ -104,9 +102,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
             POWERED_BY_HEADER,
             POWERED_BY_VALUE,
         ))
-        .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
         .layer(AppTracingLayer(site.clone()))
-        .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, MakeRequestUuid))
         .layer(body_limit);
 
     if let Some(tls) = tls {

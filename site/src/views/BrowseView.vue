@@ -8,9 +8,9 @@
           :currentPath="catchAll"
           :repository="repository" />
       </div>
-      <div v-if="lastResponse.project">
+      <div v-if="lastResponse.project_resolution">
         <BrowseProject
-          :project="new Project(lastResponse.project)"
+          :projectResolution="lastResponse.project_resolution"
           :repository="repository" />
       </div>
     </div>
@@ -24,7 +24,6 @@ import http from "@/http";
 import router from "@/router";
 import { repositoriesStore } from "@/stores/repositories";
 import type { RawBrowseResponse } from "@/types/browse";
-import { Project } from "@/types/project";
 import { type RepositoryWithStorageName } from "@/types/repository";
 import { ref, watch } from "vue";
 const repoStore = repositoriesStore();

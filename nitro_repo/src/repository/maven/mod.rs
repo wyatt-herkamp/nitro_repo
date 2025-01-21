@@ -1,5 +1,5 @@
 use super::*;
-use crate::app::NitroRepo;
+use crate::{app::NitroRepo, error::OtherInternalError};
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
@@ -171,6 +171,7 @@ impl_from_error_for_other!(AuthenticationError);
 impl_from_error_for_other!(RepositoryHandlerError);
 impl_from_error_for_other!(nr_storage::StorageError);
 impl_from_error_for_other!(reqwest::Error);
+impl_from_error_for_other!(OtherInternalError);
 
 impl IntoErrorResponse for MavenError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {

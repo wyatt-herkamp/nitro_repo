@@ -354,6 +354,10 @@ pub struct S3Storage(Arc<S3StorageInner>);
 new_type_arc_type!(S3Storage(S3StorageInner));
 impl Storage for S3Storage {
     type Error = S3StorageError;
+
+    fn storage_type_name(&self) -> &'static str {
+        "s3"
+    }
     #[instrument(name = "Storage::unload", fields(storage_type = "s3"))]
     async fn unload(&self) -> Result<(), S3StorageError> {
         info!("Unloading S3 Storage");

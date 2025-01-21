@@ -10,6 +10,7 @@ use nr_core::{
     database::repository::{DBRepository, DBRepositoryWithStorageName},
     repository::{
         config::repository_page::{PageType, RepositoryPage},
+        project::ProjectResolution,
         Visibility,
     },
     user::permissions::{HasPermissions, RepositoryActions},
@@ -59,7 +60,8 @@ mod types;
         NewRepositoryRequest,
         PageType,
         BrowseFile,
-        BrowseResponse
+        BrowseResponse,
+        ProjectResolution
     ))
 )]
 pub struct RepositoryAPI;

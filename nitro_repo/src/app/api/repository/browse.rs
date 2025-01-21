@@ -1,32 +1,28 @@
 use axum::{
-    body::Body,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::get,
 };
 use chrono::{DateTime, FixedOffset};
-use http::StatusCode;
-use nr_core::{
-    database::project::{DBProject, DBProjectVersion},
-    storage::StoragePath,
-};
+use nr_core::{repository::project::ProjectResolution, storage::StoragePath};
 use nr_storage::{
     DirectoryFileType, FileFileType, FileHashes, FileType, SerdeMime, Storage, StorageFile,
     StorageFileMeta,
 };
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, instrument};
-use utoipa::ToSchema;
+use tracing::{debug, error, event, instrument, Level};
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 use crate::{
     app::{
         authentication::Authentication,
-        responses::{MissingPermission, RepositoryNotFound, ResponseBuilderExt},
+        responses::{MissingPermission, RepositoryNotFound},
         NitroRepo,
     },
     error::InternalError,
     repository::{utils::can_read_repository, Repository},
+    utils::response_builder::ResponseBuilder,
 };
 pub fn browse_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
@@ -34,9 +30,12 @@ pub fn browse_routes() -> axum::Router<NitroRepo> {
         .route("/browse/{repository_id}/", get(browse))
         .route("/browse/{repository_id}/{*path}", get(browse))
 }
-#[derive(Debug, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Deserialize, Clone, ToSchema, IntoParams)]
 #[serde(default)]
+#[into_params(style = Form, parameter_in = Query)]
 pub struct BrowseParams {
+    #[schema(default = true)]
+    #[param(default = true)]
     pub check_for_project: bool,
 }
 impl Default for BrowseParams {
@@ -122,13 +121,16 @@ impl From<StorageFileMeta<FileFileType>> for BrowseFile {
 pub struct BrowseResponse {
     pub files: Vec<BrowseFile>,
     /// The project contained in the path
-    pub project: Option<DBProject>,
-    /// The version of the project contained in the path
-    pub version: Option<DBProjectVersion>,
+    ///
+    /// None if the check_for_project is false
+    pub project_resolution: Option<ProjectResolution>,
 }
 #[utoipa::path(
     get,
     path = "/browse/{repository_id}/{path}",
+    params(
+        BrowseParams
+    ),
     responses(
         (status = 200, description = "File listing", body = BrowseResponse),
         (status = 404, description = "Repository not found or file not found"),
@@ -158,11 +160,7 @@ async fn browse(
     let repository_storage = repository.get_storage();
     let path = browse_path.path.unwrap_or_default();
     let Some(file) = repository_storage.open_file(repository.id(), &path).await? else {
-        let response = Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(Body::empty())
-            .unwrap();
-        return Ok(response);
+        return Ok(ResponseBuilder::not_found().empty());
     };
     let files = match file {
         StorageFile::Directory { files, .. } => files.into_iter().map(BrowseFile::from).collect(),
@@ -170,22 +168,27 @@ async fn browse(
             vec![BrowseFile::from(meta)]
         }
     };
-    let (project, version) = if params.check_for_project {
-        match repository.resolve_project_and_version_for_path(path).await {
-            Ok(ok) => (ok.project, ok.version),
+    let project_resolution = if params.check_for_project {
+        event!(Level::DEBUG, "Checking for project and version");
+        match repository.resolve_project_and_version_for_path(&path).await {
+            Ok(ok) => Some(ok),
             Err(err) => {
-                error!("Error resolving project and version: {:?}", err);
-                (None, None)
+                event!(
+                    Level::ERROR,
+                    ?err,
+                    ?path,
+                    "Failed to resolve project and version for path"
+                );
+                Some(ProjectResolution::default())
             }
         }
     } else {
-        (None, None)
+        None
     };
+
     let body = BrowseResponse {
         files,
-        project,
-        version,
+        project_resolution,
     };
-    debug!(?body, "Returning browse response");
-    Response::builder().status(StatusCode::OK).json_body(&body)
+    Ok(ResponseBuilder::ok().json(&body))
 }

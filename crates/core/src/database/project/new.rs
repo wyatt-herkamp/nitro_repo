@@ -7,7 +7,7 @@ use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use super::DBProject;
+use super::{DBProject, DBProjectVersion};
 #[derive(Debug, Clone, PartialEq, Eq, Builder)]
 #[builder(build_fn(error = "BuilderError"))]
 
@@ -133,7 +133,7 @@ pub struct NewVersion {
     pub extra: VersionData,
 }
 impl NewVersion {
-    pub async fn insert_no_return(self, db: &PgPool) -> Result<(), sqlx::Error> {
+    pub async fn insert(self, db: &PgPool) -> Result<DBProjectVersion, sqlx::Error> {
         let Self {
             project_id,
             version,
@@ -143,10 +143,10 @@ impl NewVersion {
             version_page,
             extra,
         } = self;
-        sqlx::query(
+        let db_version =  sqlx::query_as(
             r#"
             INSERT INTO project_versions (project_id, version, release_type, version_path, publisher, version_page, extra)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
             "#,
         )
         .bind(project_id)
@@ -156,7 +156,7 @@ impl NewVersion {
         .bind(publisher)
         .bind(version_page)
         .bind(Json(extra))
-        .execute(db)
+        .fetch_one(db)
         .await?;
         match release_type {
             ReleaseType::Stable => {
@@ -190,6 +190,6 @@ impl NewVersion {
             }
         }
 
-        Ok(())
+        Ok(db_version)
     }
 }

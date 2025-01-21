@@ -1,5 +1,3 @@
-import MavenProjectHelper from "@/components/nr/repository/types/maven/MavenProjectHelper.vue";
-
 export interface RawProject {
   id: string;
   scope?: string;
@@ -7,7 +5,7 @@ export interface RawProject {
   project_key: string;
   latest_release?: string;
   latest_pre_release?: string;
-  repository: string;
+  repository_id: string;
   updated_at: string;
   created_at: string;
 }
@@ -26,7 +24,7 @@ export class Project {
   latest_release?: string;
   latest_pre_release?: string;
   project_key?: string;
-  repository: string;
+  repository_id: string;
   updated_at: Date;
   created_at: Date;
   constructor(data: RawProject) {
@@ -36,7 +34,7 @@ export class Project {
     this.latest_release = data.latest_release;
     this.latest_pre_release = data.latest_pre_release;
     this.project_key = data.project_key;
-    this.repository = data.repository;
+    this.repository_id = data.repository_id;
     this.updated_at = new Date(data.updated_at);
     this.created_at = new Date(data.created_at);
   }

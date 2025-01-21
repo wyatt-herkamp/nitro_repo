@@ -44,6 +44,7 @@ pub mod open_api;
 use crate::repository::{
     maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
     npm::{NPMRegistryConfigType, NpmRegistryType},
+    repo_tracing::RepositoryMetricsMeter,
     DynRepository, RepositoryType, StagingConfig,
 };
 pub mod api;
@@ -192,6 +193,7 @@ pub struct NitroRepo {
     pub session_manager: Arc<SessionManager>,
     pub email_access: Arc<EmailAccess>,
     pub metrics: AppMetrics,
+    pub repository_metrics: RepositoryMetricsMeter,
 }
 impl NitroRepo {
     #[instrument]
@@ -259,6 +261,7 @@ impl NitroRepo {
             database,
             email_access: Arc::new(email_access),
             metrics: AppMetrics::default(),
+            repository_metrics: RepositoryMetricsMeter::default(),
         };
         nitro_repo.load_storages().await?;
         nitro_repo.load_repositories().await?;

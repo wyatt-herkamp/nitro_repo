@@ -8,41 +8,22 @@ use axum::{
     body::{Body, HttpBody},
     extract::MatchedPath,
 };
-use derive_more::derive::From;
-use futures::ready;
-use http::{Request, Response};
+use http::{header::InvalidHeaderValue, HeaderValue, Request, Response};
 use opentelemetry::KeyValue;
 use pin_project::pin_project;
-use tower::Layer;
-use tower_http::{
-    classify::{ClassifyResponse, MakeClassifier, ServerErrorsAsFailures, SharedClassifier},
-    trace::HttpMakeClassifier,
-};
+
 use tower_service::Service;
+use tracing::{debug, error, info};
 
 use crate::app::NitroRepo;
 
-#[derive(Debug, Clone, From)]
-pub struct AppTracingLayer(pub NitroRepo);
-
-impl<S> Layer<S> for AppTracingLayer {
-    type Service = AppTraceMiddleware<S>;
-
-    fn layer(&self, inner: S) -> Self::Service {
-        AppTraceMiddleware {
-            inner,
-            site: self.0.clone(),
-            classifier: SharedClassifier::new(ServerErrorsAsFailures::new()),
-        }
-    }
-}
+use super::{request_id::RequestId, response_body::TraceResponseBody, RequestSpan, X_REQUEST_ID};
 
 /// Middleware that handles the authentication of the user
 #[derive(Debug, Clone)]
 pub struct AppTraceMiddleware<S> {
-    inner: S,
-    site: NitroRepo,
-    classifier: HttpMakeClassifier,
+    pub(super) inner: S,
+    pub(super) site: NitroRepo,
 }
 
 impl<S> Service<Request<Body>> for AppTraceMiddleware<S>
@@ -51,24 +32,25 @@ where
     S::Future: Send + 'static,
     S::Error: std::fmt::Display + 'static,
 {
-    type Response = axum::response::Response<Body>;
+    type Response = Response<TraceResponseBody<Body>>;
     type Error = S::Error;
     //type Future = BoxFuture<'static, Result<Self::Response, S::Error>>;
-    type Future = ResponseFuture<S::Future>;
+    type Future = TraceResponseFuture<S::Future>;
     // Async Stuff we can ignore
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, req: Request<Body>) -> Self::Future {
+    fn call(&mut self, mut req: Request<Body>) -> Self::Future {
         let path = req
             .extensions()
             .get::<MatchedPath>()
             .map_or(req.uri().path(), |p| p.as_str());
-
+        let request_id = RequestId::new_random();
         let attributes = vec![
             KeyValue::new("http.route", path.to_owned()),
             KeyValue::new("http.request.method", req.method().as_str().to_string()),
+            KeyValue::new("request_id", request_id.to_string()),
         ];
         let site: NitroRepo = self.site.clone();
         let body_size = req.body().size_hint().lower();
@@ -77,65 +59,86 @@ where
         let mut inner = self.inner.clone();
         let start = std::time::Instant::now();
 
-        let request_span = super::make_span(&req);
-        let classifier = self.classifier.make_classifier(&req);
-        let result = {
-            super::on_request(&req, &request_span);
-            let _enter = request_span.enter();
-            inner.call(req)
-        };
-        ResponseFuture {
+        let request_span = super::make_span(&req, request_id);
+        req.extensions_mut()
+            .insert(RequestSpan(request_span.clone()));
+        req.extensions_mut().insert(request_id);
+
+        super::on_request(&req, &request_span);
+
+        let result = request_span.in_scope(|| inner.call(req));
+        TraceResponseFuture {
             inner: result,
             instant: start,
             state: site,
-            classifier: Some(classifier),
-            span: request_span,
+            span: Some(request_span),
             request_body_size: body_size,
             attributes: attributes,
+            request_id,
         }
     }
 }
 
 #[pin_project]
-pub struct ResponseFuture<F> {
+pub struct TraceResponseFuture<F> {
     #[pin]
     inner: F,
-
     instant: std::time::Instant,
-
     state: NitroRepo,
-
-    classifier: Option<ServerErrorsAsFailures>,
-    span: tracing::Span,
+    span: Option<tracing::Span>,
     request_body_size: u64,
     attributes: Vec<KeyValue>,
+    request_id: RequestId,
 }
 
-impl<F, E> Future for ResponseFuture<F>
+impl<F, E> Future for TraceResponseFuture<F>
 where
     E: std::fmt::Display + 'static,
     F: Future<Output = Result<Response<Body>, E>>,
 {
-    type Output = Result<Response<Body>, E>;
+    type Output = Result<Response<TraceResponseBody<Body>>, E>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
-        let _guard = this.span.enter();
-        let result = ready!(this.inner.poll(cx));
-        let duration = this.instant.elapsed();
+        if this.span.is_none() {
+            panic!("ResponseFuture polled after completion");
+        }
+        // Attempt to poll the inner future
+        let result = {
+            let span_ref = this.span.as_ref().unwrap();
+            match span_ref.in_scope(|| this.inner.poll(cx)) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(result) => result,
+            }
+        };
+        // One it has completed we can take the span and the classifier
+        let span = this.span.take().unwrap();
+        let _guard = span.enter();
 
-        let classifier = this.classifier.take().unwrap();
+        let duration = this.instant.elapsed();
         let state = this.state.clone();
         let request_body_size = *this.request_body_size;
         match result {
-            Ok(response) => {
+            Ok(mut response) => {
+                let request_id_header: Result<HeaderValue, InvalidHeaderValue> =
+                    this.request_id.clone().try_into();
+                match request_id_header {
+                    Ok(header) => {
+                        response.headers_mut().insert(X_REQUEST_ID, header);
+                    }
+                    Err(e) => {
+                        error!("Failed to set request id header: {}", e);
+                    }
+                }
                 this.attributes.push(KeyValue::new(
                     "http.response.status_code",
                     response.status().as_u16().to_string(),
                 ));
-                //let classification = classifier.classify_response(&response);
-                super::on_response(&response, duration, &this.span);
 
+                super::on_response(&response, duration, &span);
+                if response.status().is_server_error() {
+                    super::on_failure(&response.status(), duration, &span);
+                }
                 state
                     .metrics
                     .response_size_bytes
@@ -143,12 +146,19 @@ where
 
                 final_metrics(&state, duration, request_body_size, &this.attributes);
 
-                Poll::Ready(Ok(response))
+                let span = span.clone();
+
+                let res: Response<TraceResponseBody<Body>> =
+                    response.map(|body| TraceResponseBody {
+                        inner: body,
+                        start: *this.instant,
+                        span,
+                    });
+
+                Poll::Ready(Ok(res))
             }
             Err(err) => {
-                let failure_class = classifier.classify_error(&err);
-
-                super::on_failure(failure_class, duration, &this.span);
+                super::on_failure(&err, duration, &span);
 
                 final_metrics(&state, duration, request_body_size, &this.attributes);
 

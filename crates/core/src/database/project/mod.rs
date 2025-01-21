@@ -50,7 +50,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         .await?;
         Ok(project)
     }
-    #[instrument(skip(database), name = "ProjectDBType::find_by_project_directory")]
+    #[instrument(skip(database))]
     async fn find_by_project_directory(
         directory: &str,
         repository: Uuid,
@@ -67,7 +67,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         .await?;
         Ok(project)
     }
-    #[instrument(skip(database), name = "ProjectDBType::find_by_version_directory")]
+    #[instrument(skip(database))]
     async fn get_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
         let columns = Self::format_columns(None);
 
@@ -170,6 +170,11 @@ pub struct DBProjectVersion {
     pub updated_at: DateTime,
     pub created_at: DateTime,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
+pub struct ProjectIds {
+    pub project_id: Uuid,
+    pub version_id: i32,
+}
 impl DBProjectVersion {
     #[instrument(skip(database), name = "DBProjectVersion::find_by_version_and_project")]
     pub async fn find_by_version_and_project(
@@ -194,6 +199,21 @@ impl DBProjectVersion {
     ) -> Result<Option<Self>, sqlx::Error> {
         let version = sqlx::query_as::<_, Self>(
             r#"SELECT project_versions.* FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.version_path) = $2"#,
+        )
+        .bind(repository_id)
+        .bind(directory.to_lowercase())
+        .fetch_optional(database)
+        .await?;
+        Ok(version)
+    }
+    #[instrument(skip(database))]
+    pub async fn find_ids_by_version_dir(
+        directory: &str,
+        repository_id: Uuid,
+        database: &PgPool,
+    ) -> Result<Option<ProjectIds>, sqlx::Error> {
+        let version = sqlx::query_as::<_, ProjectIds>(
+            r#"SELECT project_versions.id as version_id, project_versions.project_id as project_id FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.version_path) = $2"#,
         )
         .bind(repository_id)
         .bind(directory.to_lowercase())

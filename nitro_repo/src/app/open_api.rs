@@ -1,3 +1,4 @@
+use crate::app::api::project::ProjectRoutes;
 use crate::app::badge::BadgeRoutes;
 
 use super::api;
@@ -26,7 +27,8 @@ use utoipa::{Modify, OpenApi};
         (path="/api/user-management", api = UserManagementAPI, tags=["user-management"]),
         (path = "/api/storage", api = StorageAPI, tags=["storage"]),
         (path = "/api/repository", api = RepositoryAPI, tags=["repository"]),
-        (path="/badge", api = BadgeRoutes)
+        (path="/badge", api = BadgeRoutes),
+        (path="/api/project", api = ProjectRoutes, tags= ["project", "repository"]),
     ),
     paths(
         api::info,
@@ -49,7 +51,8 @@ use utoipa::{Modify, OpenApi};
         (name="user-management", description= "User Management. "),
         (name="storage", description= "Storage Management"),
         (name="repository",description= "Repository Management"),
-        (name="config", description = "Repository Config Types")
+        (name="config", description = "Repository Config Types"),
+        (name="project", description = "Project Access"),
     )
 )]
 pub struct ApiDoc;

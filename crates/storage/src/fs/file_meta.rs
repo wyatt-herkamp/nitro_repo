@@ -8,22 +8,29 @@ use std::{
     io::{self, Read},
     path::{Path, PathBuf},
 };
-use tracing::{debug, instrument, warn};
+use tracing::{
+    debug, event,
+    field::{debug, display, Empty},
+    instrument, trace, trace_span, warn, Level, Span,
+};
 use utoipa::ToSchema;
 
 use crate::{
-    fs::utils::MetadataUtils,
-    local::error::LocalStorageError,
-    meta::RepositoryMeta,
+    fs::utils::MetadataUtils, local::error::LocalStorageError, meta::RepositoryMeta,
     path::PathUtils,
 };
 pub static HIDDEN_FILE_EXTENSIONS: &[&str] = &["nr-meta"];
 pub static NITRO_REPO_META_EXTENSION: &str = "nr-meta";
 pub static NITRO_REPO_META_FILE: &str = ".nr-meta";
-
+#[instrument(level = "trace")]
 pub fn is_hidden_file(path: &Path) -> bool {
+    trace!(?path, "Checking if file is hidden");
     if let Some(extension) = path.extension().and_then(|v| v.to_str()) {
+        trace!(?extension, "Checking if file extension is hidden");
         HIDDEN_FILE_EXTENSIONS.contains(&extension)
+    } else if let Some(file_name) = path.file_name().and_then(|v| v.to_str()) {
+        trace!(?file_name, "Checking if file is hidden");
+        file_name.eq(NITRO_REPO_META_FILE)
     } else {
         false
     }
@@ -105,39 +112,46 @@ impl FileMeta {
         }
         Ok(())
     }
-    #[instrument(name = "FileMeta::get_or_create_local", skip(path))]
-    pub fn get_or_create_local(path: impl AsRef<Path>) -> Result<FileMeta, LocalStorageError> {
-        let (mut meta, was_created) = Self::get_or_default_local(&path)?;
-        if !was_created {
-            debug!(path = ?path.as_ref(), "Updating Meta File");
-            meta.update_hashes(&path)?;
-            meta.created = Local::now().into();
-            meta.modified = Local::now().into();
-            meta.save_meta(path)?;
-        }
 
-        Ok(meta)
-    }
-    #[instrument(name = "FileMeta::create_meta_or_update", skip(path))]
+    #[instrument(
+        level = "debug",
+        skip(path),
+        fields(
+            path = ?path.as_ref(),
+        )
+    )]
     pub(crate) fn create_meta_or_update(path: impl AsRef<Path>) -> Result<(), LocalStorageError> {
         let (mut meta, was_created) = Self::get_or_default_local(&path)?;
         if !was_created {
-            debug!(path = ?path.as_ref(), "Updating Meta File");
+            event!(Level::DEBUG, path = ?path.as_ref(), "Updating Meta File");
             meta.update_hashes(&path)?;
             meta.modified = Local::now().into();
             meta.save_meta(path)?;
         }
+
         Ok(())
     }
+    #[instrument(
+        level = "debug",
+        skip(path),
+        fields(
+            path = ?path.as_ref(),
+            path.meta = Empty,
+            created = Empty,
+        )
+    )]
     pub(crate) fn get_or_default_local(
         path: impl AsRef<Path>,
     ) -> Result<(FileMeta, bool), LocalStorageError> {
+        let span = Span::current();
         let meta_path = meta_path(&path)?;
-
-        debug!(?meta_path, path = ?path.as_ref(), "Attempting to read Meta File");
+        span.record("path.meta", debug(&meta_path));
         if meta_path.exists() {
+            span.record("created", &false);
+            trace!(?meta_path, "Meta File exists. Reading");
             return FileMeta::read_meta_file(&meta_path).map(|meta| (meta, false));
         } else {
+            span.record("created", &true);
             debug!(?meta_path, "Meta File does not exist. Generating");
             let (created, modified) = {
                 let file = File::open(&path)?;
@@ -153,45 +167,81 @@ impl FileMeta {
                 repository_meta: RepositoryMeta::default(),
             };
             meta.update_hashes(&path)?;
+            meta.save_meta(&path)?;
+
             return Ok((meta, true));
         }
     }
+
+    #[instrument(
+        level = "debug",
+        skip(path),
+        fields(
+            path = ?path.as_ref(),
+        )
+    )]
     /// Assumes the path is the path to the `.nr-meta` file
-    fn read_meta_file(path: &Path) -> Result<FileMeta, LocalStorageError> {
-        debug!(?path, "Reading Meta File");
+    fn read_meta_file(path: impl AsRef<Path>) -> Result<FileMeta, LocalStorageError> {
         let mut file = File::open(path)?;
+
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes)?;
         let meta: FileMeta = postcard::from_bytes(&bytes)?;
         Ok(meta)
     }
-    #[instrument(skip(path))]
+
+    #[instrument(
+        level = "debug",
+        skip(path),
+        fields(
+            path = ?path.as_ref(),
+            path.meta = Empty,
+        )
+    )]
     pub(crate) fn delete_local(path: impl AsRef<Path>) -> Result<(), LocalStorageError> {
-        let meta_path = path.as_ref().to_path_buf().add_extension("nr-meta")?;
-        debug!(?meta_path, "Deleting Meta File");
+        let meta_path = meta_path(&path)?;
+        Span::current().record("path.meta", debug(&meta_path));
         if !meta_path.exists() {
             warn!(?meta_path, "Meta File does not exist");
             return Ok(());
         }
+        debug!(?meta_path, "Deleting Meta File");
         std::fs::remove_file(meta_path)?;
         Ok(())
     }
+    #[instrument(
+        level = "debug",
+        skip(path),
+        fields(
+            path = ?path.as_ref(),
+            path.meta = Empty,
+            created = Empty,
+        )
+    )]
     pub(crate) fn save_meta(&self, path: impl AsRef<Path>) -> Result<(), LocalStorageError> {
+        let span = Span::current();
         let meta_path = meta_path(path)?;
-        debug!(?meta_path, ?self, "Writing Meta File");
+        span.record("path.meta", debug(&meta_path));
+        span.record("created", !meta_path.exists());
         let file = File::create(meta_path)?;
         postcard::to_io(self, file)?;
+        event!(Level::DEBUG, "Saved Meta File");
         Ok(())
     }
 
-    #[instrument(skip(path))]
+    #[instrument(
+        level = "debug",
+        skip(path),
+        fields(
+            path = ?path.as_ref(),
+        )
+    )]
     pub(crate) fn set_repository_meta(
         path: impl AsRef<Path>,
         repository_meta: RepositoryMeta,
     ) -> Result<(), LocalStorageError> {
-        let mut meta = Self::get_or_create_local(&path)?;
+        let (mut meta, _) = Self::get_or_default_local(&path)?;
         meta.repository_meta = repository_meta;
-
         meta.save_meta(path)
     }
 }

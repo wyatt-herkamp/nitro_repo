@@ -131,6 +131,14 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
                     )*
                 }
             }
+            fn full_type(&self) -> &'static str {
+                match self {
+                    #(
+                        #ident::#variants(variant) => variant.full_type(),
+                    )*
+                }
+            }
+
             fn config_types(&self) -> Vec<&str> {
                 match self {
                     #(
@@ -147,7 +155,7 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
             }
             async fn resolve_project_and_version_for_path(
                 &self,
-                path: StoragePath,
+                path: &StoragePath,
             ) -> Result<ProjectResolution, Self::Error> {
                 match self {
                     #(

@@ -9,6 +9,7 @@ use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
 use utoipa::ToSchema;
+pub mod project;
 pub mod repository;
 pub mod storage;
 pub mod user;
@@ -28,6 +29,7 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
             user_management::user_management_routes(),
         )
         .nest("/repository", repository::repository_routes())
+        .nest("/project", project::project_routes())
         .layer(CorsLayer::very_permissive())
 }
 #[utoipa::path(

@@ -63,7 +63,9 @@ impl<ST: Storage> TestingStorage<ST> {
 }
 impl<ST: Storage> Storage for TestingStorage<ST> {
     type Error = ST::Error;
-
+    fn storage_type_name(&self) -> &'static str {
+        self.storage.storage_type_name()
+    }
     async fn unload(&self) -> Result<(), Self::Error> {
         let files = self.take_testing_storage().await;
 

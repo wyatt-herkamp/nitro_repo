@@ -1,4 +1,7 @@
-use std::{fmt::Display, path::PathBuf};
+use std::{
+    fmt::{Debug, Display},
+    path::PathBuf,
+};
 
 use http::Uri;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -58,10 +61,15 @@ impl AsRef<str> for StoragePathComponent {
 }
 
 /// A Storage path is a UTF-8 only path. Where the root is the base of the repository.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
+#[derive(Clone, Hash, PartialEq, Eq, Default)]
 pub struct StoragePath {
     components: Vec<StoragePathComponent>,
     trailing_slash: Option<bool>,
+}
+impl Debug for StoragePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
 }
 impl utoipa::__dev::ComposeSchema for StoragePath {
     fn compose(

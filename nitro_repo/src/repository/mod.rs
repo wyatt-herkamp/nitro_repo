@@ -21,11 +21,13 @@ mod staging;
 pub use staging::*;
 mod repo_http;
 pub use repo_http::*;
+pub mod commands;
 pub mod maven;
 pub mod npm;
 mod repo_type;
 pub use repo_type::*;
 use uuid::Uuid;
+
 mod error;
 pub mod utils;
 use crate::{
@@ -38,6 +40,10 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn get_storage(&self) -> DynStorage;
     /// The Repository type. This is used to identify the Repository type in the database
     fn get_type(&self) -> &'static str;
+
+    fn full_type(&self) -> &'static str {
+        self.get_type()
+    }
     /// Config types that this Repository type has.
     fn config_types(&self) -> Vec<&str>;
     fn name(&self) -> String;
@@ -48,14 +54,9 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn site(&self) -> NitroRepo;
     fn resolve_project_and_version_for_path(
         &self,
-        path: StoragePath,
+        path: &StoragePath,
     ) -> impl Future<Output = Result<ProjectResolution, Self::Error>> + Send {
-        async {
-            Ok(ProjectResolution {
-                project: None,
-                version: None,
-            })
-        }
+        async { Ok(ProjectResolution::default()) }
     }
 
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {

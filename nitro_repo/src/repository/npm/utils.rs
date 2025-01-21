@@ -64,7 +64,7 @@ pub trait NpmRegistryExt: Repository {
 
         match release.new_version(project.id, save_path.to_string(), publisher) {
             Ok(ok) => {
-                ok.insert_no_return(&self.site().database).await?;
+                ok.insert(&self.site().database).await?;
                 return Ok(());
             }
             Err(err) => {

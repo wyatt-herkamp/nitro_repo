@@ -48,7 +48,7 @@ impl NPMHostedRegistry {
             repository,
         })))
     }
-    #[instrument(name = "NpmRegistry::handle_publish", fields(npm_command = "publish"))]
+    #[instrument]
     async fn handle_publish(
         &self,
         request: RepositoryRequest,
@@ -121,6 +121,9 @@ impl Repository for NPMHostedRegistry {
     fn get_type(&self) -> &'static str {
         "npm"
     }
+    fn full_type(&self) -> &'static str {
+        "npm/hosted"
+    }
 
     fn config_types(&self) -> Vec<&str> {
         vec![NPMRegistryConfigType::get_type_static()]
@@ -141,7 +144,6 @@ impl Repository for NPMHostedRegistry {
     fn is_active(&self) -> bool {
         true
     }
-    #[instrument(name = "NpmRegistry::handle_get", fields(repository_id = %self.id, repository_name = %self.repository.name))]
     async fn handle_get(
         &self,
         request: RepositoryRequest,
@@ -277,7 +279,6 @@ impl Repository for NPMHostedRegistry {
         }
     }
 
-    #[instrument(name = "NpmRegistry::handle_put")]
     async fn handle_put(
         &self,
         request: RepositoryRequest,

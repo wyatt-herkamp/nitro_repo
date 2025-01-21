@@ -13,6 +13,15 @@ pub enum FileContent {
     Content(Vec<u8>),
     Bytes(Bytes),
 }
+impl FileContent {
+    pub fn content_len_or_none(&self) -> Option<u64> {
+        match self {
+            FileContent::Path(path) => path.metadata().ok().map(|m| m.len()),
+            FileContent::Content(content) => Some(content.len() as u64),
+            FileContent::Bytes(bytes) => Some(bytes.len() as u64),
+        }
+    }
+}
 impl<B: AsRef<[u8]>> From<B> for FileContent {
     fn from(bytes: B) -> Self {
         FileContent::Content(bytes.as_ref().to_vec())

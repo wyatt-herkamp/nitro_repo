@@ -4,12 +4,21 @@ use serde_json::Value;
 use sqlx::prelude::Type;
 use strum::{Display, EnumIs, EnumString, IntoStaticStr};
 use utoipa::ToSchema;
+use uuid::Uuid;
 
-use crate::database::project::{DBProject, DBProjectVersion};
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, ToSchema, Builder)]
+use crate::database::project::{DBProject, DBProjectVersion, ProjectIds};
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ToSchema, Builder, Default)]
 pub struct ProjectResolution {
-    pub project: Option<DBProject>,
-    pub version: Option<DBProjectVersion>,
+    pub project_id: Option<Uuid>,
+    pub version_id: Option<i32>,
+}
+impl From<ProjectIds> for ProjectResolution {
+    fn from(ids: ProjectIds) -> Self {
+        ProjectResolution {
+            project_id: Some(ids.project_id),
+            version_id: Some(ids.version_id),
+        }
+    }
 }
 /// Release type of a project
 ///

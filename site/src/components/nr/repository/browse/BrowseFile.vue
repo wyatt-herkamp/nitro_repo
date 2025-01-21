@@ -9,7 +9,7 @@
     </div>
 
     <div>
-      {{ props.file.modified }}
+      {{ new Date(file.modified).toLocaleString() }}
     </div>
   </div>
 </template>

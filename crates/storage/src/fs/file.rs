@@ -2,9 +2,7 @@ use std::{fmt::Debug, fs::File, io, path::Path};
 
 use crate::{is_hidden_file, local::error::LocalStorageError, FileMeta};
 
-use super::{
-    FileHashes, SerdeMime, StorageFileReader,
-};
+use super::{FileHashes, SerdeMime, StorageFileReader};
 use chrono::{DateTime, FixedOffset};
 
 use derive_more::derive::From;
@@ -125,7 +123,7 @@ impl StorageFileMeta<DirectoryFileType> {
                 Some(entry)
             })
             .count() as u64;
-        let file_meta: FileMeta = FileMeta::get_or_create_local(path)?;
+        let file_meta: FileMeta = FileMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
 
         Ok(StorageFileMeta {
             name: get_file_name(path)?,
@@ -145,15 +143,15 @@ impl StorageFileMeta<FileFileType> {
         debug!(?path, "Reading File Meta");
         let file = File::open(path)?;
 
-        let file_meta: FileMeta = FileMeta::get_or_create_local(path)?;
+        let file_meta: FileMeta = FileMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
         let metadata = file.metadata()?;
         let file_type = {
-            let mime = super::utils::mime_type_for_file(&file, path.to_path_buf());
-            let meta = FileMeta::get_or_create_local(path)?;
+            let mime: Option<SerdeMime> =
+                super::utils::mime_type_for_file(&file, path.to_path_buf());
             FileFileType {
                 file_size: metadata.len(),
                 mime_type: mime,
-                file_hash: meta.hashes.unwrap_or_default(),
+                file_hash: file_meta.hashes.unwrap_or_default(),
             }
             .into()
         };

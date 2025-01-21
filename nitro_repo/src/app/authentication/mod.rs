@@ -12,6 +12,7 @@ use http::Response;
 use nr_core::database::user::auth_token::AuthToken;
 use nr_core::database::user::{UserModel, UserSafeData, UserType};
 use nr_core::user::permissions::{HasPermissions, UserPermissions};
+use semver::Op;
 use serde::Serialize;
 use session::Session;
 use sqlx::PgPool;
@@ -25,7 +26,7 @@ use crate::utils::headers::AuthorizationHeader;
 
 use super::NitroRepo;
 
-pub mod api_middleware;
+pub mod layer;
 pub mod session;
 
 #[derive(Error, Debug)]
@@ -257,6 +258,19 @@ pub enum AuthenticationRaw {
     AuthorizationHeaderUnknown(String, String),
     /// Authorization Basic Header
     Basic { username: String, password: String },
+}
+impl AuthenticationRaw {
+    pub fn method_name(&self) -> Option<&str> {
+        match self {
+            AuthenticationRaw::AuthToken(_) => Some("Auth Token"),
+            AuthenticationRaw::Session(_) => Some("Session"),
+            AuthenticationRaw::AuthorizationHeaderUnknown(_, _) => {
+                Some("Authorization Header Unknown")
+            }
+            AuthenticationRaw::Basic { .. } => Some("Basic"),
+            AuthenticationRaw::NoIdentification => None,
+        }
+    }
 }
 impl AsRef<str> for AuthenticationRaw {
     fn as_ref(&self) -> &str {
