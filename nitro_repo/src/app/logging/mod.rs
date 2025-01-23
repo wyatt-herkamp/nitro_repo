@@ -1,5 +1,7 @@
 pub mod config;
 pub mod request_logging;
+use std::time::Duration;
+
 use config::{
     AppLogger, AppLoggerType, ConsoleLogger, LoggingConfig, MetricsConfig, OtelConfig,
     RollingFileLogger,

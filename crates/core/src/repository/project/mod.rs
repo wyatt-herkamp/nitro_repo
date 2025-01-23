@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::project::{DBProject, DBProjectVersion, ProjectIds};
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, ToSchema, Builder, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Builder, Default)]
 pub struct ProjectResolution {
     pub project_id: Option<Uuid>,
     pub version_id: Option<i32>,

@@ -8,6 +8,7 @@ use tracing::instrument;
 use utoipa::ToSchema;
 
 use crate::utils::validations::{self};
+pub mod browse;
 pub mod config;
 pub mod project;
 pub mod proxy_url;

@@ -3,7 +3,7 @@ use std::{borrow::Cow, ops::Deref, str::FromStr, sync::Arc};
 use chrono::Local;
 use futures::future::BoxFuture;
 use mime::Mime;
-use nr_core::storage::StoragePath;
+use nr_core::storage::{FileHashes, SerdeMime, StoragePath};
 use regions::{CustomRegion, S3StorageRegion};
 use s3::{
     creds::{Credentials, Rfc3339OffsetDateTime},
@@ -50,9 +50,9 @@ impl S3StorageError {
 use crate::{
     meta::RepositoryMeta, utils::new_type_arc_type, BorrowedStorageConfig,
     BorrowedStorageTypeConfig, DirectoryFileType, DynStorage, FileContent, FileContentBytes,
-    FileFileType, FileHashes, FileType, InvalidConfigType, PathCollisionError, SerdeMime,
-    StaticStorageFactory, Storage, StorageConfig, StorageConfigInner, StorageError, StorageFactory,
-    StorageFile, StorageFileMeta, StorageTypeConfig, StorageTypeConfigTrait,
+    FileFileType, FileType, InvalidConfigType, PathCollisionError, StaticStorageFactory, Storage,
+    StorageConfig, StorageConfigInner, StorageError, StorageFactory, StorageFile, StorageFileMeta,
+    StorageTypeConfig, StorageTypeConfigTrait,
 };
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct S3Credentials {

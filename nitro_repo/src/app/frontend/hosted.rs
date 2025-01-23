@@ -11,11 +11,7 @@ use handlebars::Handlebars;
 
 use tracing::{debug, instrument, trace, warn};
 
-use crate::{
-    app::NitroRepo,
-    error::InternalError,
-    utils::{response_builder::ResponseBuilder, responses::APIErrorResponse, TEXT_MEDIA_TYPE},
-};
+use crate::{app::NitroRepo, error::InternalError, utils::response_builder::ResponseBuilder};
 
 use super::FrontendError;
 

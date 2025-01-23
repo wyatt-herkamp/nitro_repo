@@ -8,10 +8,18 @@ use std::{
 
 pub mod error;
 use error::LocalStorageError;
+use futures::FutureExt;
 use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
-use tokio::task::JoinSet;
-use tracing::{debug, error, field::debug, info, instrument, trace, warn, Instrument, Span};
+use tokio::{
+    sync::{Mutex, Notify},
+    task::JoinSet,
+};
+use tracing::{
+    debug, debug_span, error, event,
+    field::{debug, Empty},
+    info, info_span, instrument, trace, warn, Level, Span,
+};
 use utils::new_type_arc_type;
 
 use crate::*;
@@ -49,31 +57,79 @@ impl utoipa::__dev::SchemaReferences for LocalConfig {
         schemas.extend([]);
     }
 }
+fn meta_update_task(
+    mut shutdown: tokio::sync::oneshot::Receiver<()>,
+    mut receiver: tokio::sync::mpsc::Receiver<PathBuf>,
+) {
+    tokio::task::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = &mut shutdown => {
+                    break;
+                }
+                path = (&mut receiver).recv() => {
+                    let Some(path) = path else{
+                        break
+                    };
+                    let span = info_span!(
+                        "Meta Update Task",
+                        path = debug(&path),
+                        otel.status_code = Empty,
+                        otel.exception = Empty,
+                    );
+                    let _guard = span.enter();
+                    if !path.exists(){
+                        warn!("Path does not exist");
+                        continue;
+                    }
+                    match  LocationMeta::create_meta_or_update(&path){
+                        Ok(ok) => {
+                            info!(?ok, "Updated Meta");
+                            span.record("otel.status_code", "OK");
+                        }
+                        Err(err) => {
+                            span.record("otel.status_code", "ERROR");
+                            event!(Level::ERROR, ?err, "Error Updating Meta");
+                        }
+                  }
+                }
+            }
+        }
+        receiver.close();
+    });
+}
+
 #[derive(Debug)]
 pub struct LocalStorageInner {
     pub config: LocalConfig,
     pub storage_config: StorageConfigInner,
+    pub shutdown_signal: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
+    pub meta_update_sender: tokio::sync::mpsc::Sender<PathBuf>,
 }
 impl LocalStorageInner {}
 #[derive(Debug, Clone)]
 pub struct LocalStorage(Arc<LocalStorageInner>);
 new_type_arc_type!(LocalStorage(LocalStorageInner));
-
+struct CreatePath {
+    path: PathBuf,
+    parent_directory: PathBuf,
+    /// The point at which the new directory starts
+    ///
+    /// If None, then the directory already exists
+    new_directory_start: Option<PathBuf>,
+}
 impl LocalStorageInner {
     /// Get the path for a file to be created
-    ///
-    /// # Returns
-    /// ## Ok
-    /// - First value is the path to the file
-    /// - Second is the directory that the file is in
+
     #[instrument(level = "debug")]
-    pub fn get_path_for_creation(
+    fn get_path_for_creation(
         &self,
         repository: Uuid,
         location: &StoragePath,
-    ) -> Result<(PathBuf, PathBuf), PathCollisionError> {
+    ) -> Result<CreatePath, LocalStorageError> {
         let mut path = self.config.path.join(repository.to_string());
         let mut parent_directory = path.clone();
+        let mut new_directory_start = None;
         let mut conflicting_path = StoragePath::default();
         let mut iter = location.clone().into_iter().peekable();
         while let Some(part) = iter.next() {
@@ -84,27 +140,43 @@ impl LocalStorageInner {
             path = path.join(part.as_ref());
             conflicting_path.push_mut(part.as_ref());
             trace!(?path, ?conflicting_path, "Checking Path");
-            let Ok(metadata) = path.metadata() else {
-                // Ignore all errors assuming the only one could be that it doesn't exist
-                if tracing::enabled!(tracing::Level::TRACE) {
-                    trace!(?path, "Path does not exist");
-                }
-                continue;
-            };
-            if metadata.is_dir() {
+            if new_directory_start.is_some() {
                 continue;
             }
-            if path.is_file() {
-                if iter.peek().is_some() {
-                    warn!(?path, "Path is a file");
-                    return Err(PathCollisionError {
-                        path: location.clone(),
-                        conflicts_with: conflicting_path,
-                    });
+            let metadata = match path.metadata() {
+                // If the current path is a directory then we can continue as it can have a file inside it
+                Ok(ok) if ok.is_dir() => {
+                    continue;
                 }
+                Ok(ok) => ok,
+                Err(err) if err.kind() == ErrorKind::NotFound => {
+                    // Only Log this in debug mode or testing
+                    #[cfg(any(debug_assertions, test))]
+                    if tracing::enabled!(tracing::Level::TRACE) {
+                        trace!(?path, "Path does not exist");
+                    }
+                    new_directory_start = Some(path.clone());
+                    continue;
+                }
+                Err(err) => return Err(LocalStorageError::IOError(err)),
+            };
+
+            // If the current path is a file and we have more parts to add then we have a collision
+            // Because you can't have a file inside a file
+            if metadata.is_file() && iter.peek().is_some() {
+                warn!(?path, "Path is a file");
+                return Err(PathCollisionError {
+                    path: location.clone(),
+                    conflicts_with: conflicting_path,
+                }
+                .into());
             }
         }
-        Ok((path, parent_directory))
+        Ok(CreatePath {
+            path,
+            parent_directory,
+            new_directory_start,
+        })
     }
     #[instrument(skip(location))]
     pub fn get_path(&self, repository: &Uuid, location: &StoragePath) -> PathBuf {
@@ -122,46 +194,138 @@ impl LocalStorageInner {
             content: StorageFileReader::from(file),
         })
     }
-    #[instrument(skip(path))]
+    #[instrument(skip(path), fields(entries.read, entries.skipped))]
     pub async fn open_folder(&self, path: PathBuf) -> Result<StorageFile, LocalStorageError> {
         let mut set = JoinSet::<Result<StorageFileMeta<FileType>, LocalStorageError>>::new();
-
-        for entry in fs::read_dir(&path)? {
-            let entry = entry?;
+        let current_span = Span::current();
+        let mut files_read = 0;
+        let mut files_skipped = 0;
+        let mut read_dir = tokio::fs::read_dir(&path).await?;
+        while let Some(entry) = read_dir.next_entry().await.transpose() {
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(err) => {
+                    current_span.record("entries.read", &files_read);
+                    current_span.record("entries.skipped", &files_skipped);
+                    error!(?err, "Error reading directory");
+                    set.shutdown().await;
+                    return Err(LocalStorageError::from(err));
+                }
+            };
+            let entry = entry;
             let path = entry.path();
             if path.is_file() && is_hidden_file(&path) {
                 trace!(?path, "Skipping Meta File");
+                files_skipped += 1;
                 // Check if file is a meta file
                 continue;
             }
+            files_read += 1;
+            let span_clone = current_span.clone();
             set.spawn_blocking(move || {
-                let meta = StorageFileMeta::read_from_path(&path)?;
-                Ok(meta)
+                span_clone.in_scope(|| StorageFileMeta::read_from_path(&path))
             });
         }
+        current_span.record("entries.read", &files_read);
+        current_span.record("entries.skipped", &files_skipped);
         let meta = StorageFileMeta::read_from_directory(path)?;
 
         let mut files = vec![];
         while let Some(res) = set.join_next().await {
-            let idx = res.unwrap();
-            files.push(idx?);
+            match res {
+                Ok(Ok(ok)) => files.push(ok),
+                Ok(Err(err)) => {
+                    set.shutdown().await;
+                    return Err(err);
+                }
+                Err(err) => {
+                    error!(?err, "Some unknown error occurred in reading the file!");
+                    set.shutdown().await;
+                    return Err(LocalStorageError::other(err));
+                }
+            }
+        }
+        Ok(StorageFile::Directory { meta, files })
+    }
+
+    pub async fn update_meta_and_parent_metas(
+        &self,
+        path: &PathBuf,
+        greatest_parent: Option<PathBuf>,
+    ) -> Result<usize, LocalStorageError> {
+        let mut metas_updated = 0;
+        if let Some(greatest_parent) = greatest_parent {
+            if let Some(parent) = path.parent() {
+                if parent == self.config.path {
+                    trace!("Do not update root directory");
+                } else {
+                    metas_updated += 1;
+                    self.meta_update_sender
+                        .send(parent.to_path_buf())
+                        .await
+                        .unwrap();
+                }
+            }
+            let mut next_path = greatest_parent.clone();
+            for part in path.strip_prefix(&greatest_parent).unwrap().components() {
+                event!(Level::DEBUG, ?next_path, "Updating Meta");
+                self.meta_update_sender
+                    .send(next_path.clone())
+                    .await
+                    .unwrap();
+                metas_updated += 1;
+                next_path = next_path.join(part);
+            }
+        } else {
+            self.meta_update_sender.send(path.clone()).await.unwrap();
+            metas_updated += 1;
+            let parent = path.parent();
+            if let Some(parent) = parent {
+                metas_updated += 1;
+                self.meta_update_sender
+                    .send(parent.to_path_buf())
+                    .await
+                    .unwrap();
+            }
         }
 
-        Ok(StorageFile::Directory { meta, files })
+        Ok(metas_updated)
     }
 }
 impl LocalStorage {
-    pub fn run_post_save_file(self, path: PathBuf, span: Span) -> Result<(), LocalStorageError> {
-        tokio::task::spawn_blocking(move || {
-            let _guard = span.entered();
-            match FileMeta::create_meta_or_update(&path) {
-                Ok(()) => {
-                    info!(?path, "Meta File Created or Updated");
+    pub fn run_post_save_file(
+        self,
+        path: PathBuf,
+        new_directory_start: Option<PathBuf>,
+        span: Span,
+    ) -> Result<(), LocalStorageError> {
+        let post_save_span = debug_span!(
+            parent: &span,
+            "Post Save File",
+            metas.updated = Empty,
+            file.path = debug(&path),
+            new.dir = ?new_directory_start,
+            otel.exception = Empty,
+            otel.status_code = Empty,
+        );
+        tokio::task::spawn(async move {
+            let _guard = post_save_span.enter();
+            match self
+                .0
+                .update_meta_and_parent_metas(&path, new_directory_start)
+                .await
+            {
+                Ok(ok) => {
+                    post_save_span.record("metas.updated", &ok);
+                    post_save_span.record("otel.status_code", "OK");
+                    debug!(metas.updated = ok, "Updated Metas");
                 }
                 Err(err) => {
-                    error!(?err, "Unable to create or update meta file");
+                    span.record("exception.message", &err.to_string());
+                    span.record("otel.status_code", "ERROR");
+                    event!(Level::ERROR, ?err, "Error Updating Metas");
                 }
-            };
+            }
         });
         Ok(())
     }
@@ -195,15 +359,14 @@ impl Storage for LocalStorage {
         content: FileContent,
         location: &StoragePath,
     ) -> Result<(usize, bool), LocalStorageError> {
-        let (path, parent_directory) = self.0.get_path_for_creation(repository, location)?;
-        if !parent_directory.exists() {
+        let CreatePath {
+            path,
+            parent_directory,
+            new_directory_start,
+        } = self.0.get_path_for_creation(repository, location)?;
+        if new_directory_start.is_some() {
             trace!("Creating Parent Directory");
             fs::create_dir_all(parent_directory)?;
-        } else if parent_directory.is_file() {
-            warn!(?parent_directory, "Parent Directory is a file");
-            return Err(
-                io::Error::new(io::ErrorKind::InvalidInput, "Parent Directory is a file").into(),
-            );
         }
         let current_span = Span::current();
         let new_file = !path.exists();
@@ -214,7 +377,8 @@ impl Storage for LocalStorage {
         let bytes_written = content.write_to(&mut file)?;
         if !is_hidden_file(&path) {
             // Don't run post save file for meta files
-            self.clone().run_post_save_file(path, current_span)?;
+            self.clone()
+                .run_post_save_file(path, new_directory_start, current_span)?;
         }
         Ok((bytes_written, new_file))
     }
@@ -242,7 +406,7 @@ impl Storage for LocalStorage {
             fs::remove_dir_all(path)?;
         } else {
             fs::remove_file(&path)?;
-            FileMeta::delete_local(path)?;
+            LocationMeta::delete_local(path)?;
         }
         Ok(true)
     }
@@ -303,6 +467,12 @@ impl Storage for LocalStorage {
     )]
     async fn unload(&self) -> Result<(), LocalStorageError> {
         info!(?self, "Unloading Local Storage");
+        let shutdown_signal = self.0.shutdown_signal.lock().await.take();
+        if let Some(shutdown_signal) = shutdown_signal {
+            shutdown_signal.send(()).unwrap();
+        } else {
+            error!("Shutdown Signal already sent");
+        }
         // TODO: Implement Unload
         Ok(())
     }
@@ -341,7 +511,7 @@ impl Storage for LocalStorage {
         if !path.exists() {
             return Ok(None);
         }
-        let meta = FileMeta::get_or_default_local(&path).map(|(meta, _)| meta)?;
+        let meta = LocationMeta::get_or_default_local(&path).map(|(meta, _)| meta)?;
         Ok(Some(meta.repository_meta))
     }
     #[instrument(
@@ -367,7 +537,7 @@ impl Storage for LocalStorage {
             )));
         }
 
-        FileMeta::set_repository_meta(path, value)?;
+        LocationMeta::set_repository_meta(path, value)?;
         Ok(())
     }
     #[instrument(
@@ -414,10 +584,15 @@ impl StaticStorageFactory for LocalStorageFactory {
         if !type_config.path.exists() {
             fs::create_dir_all(&type_config.path)?;
         }
+        let (shutdown_signal, shutdown_receiver) = tokio::sync::oneshot::channel();
+        let (meta_update_sender, meta_update_receiver) = tokio::sync::mpsc::channel(100);
         let inner = LocalStorageInner {
             config: type_config,
             storage_config: inner,
+            shutdown_signal: Mutex::new(Some(shutdown_signal)),
+            meta_update_sender,
         };
+        meta_update_task(shutdown_receiver, meta_update_receiver);
         let storage = LocalStorage::from(inner);
 
         Ok(storage)

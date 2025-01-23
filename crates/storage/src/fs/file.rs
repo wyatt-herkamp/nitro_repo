@@ -1,16 +1,19 @@
 use std::{fmt::Debug, fs::File, io, path::Path};
 
-use crate::{is_hidden_file, local::error::LocalStorageError, FileMeta};
+use crate::{is_hidden_file, local::error::LocalStorageError, LocationMeta, LocationTypedMeta};
 
-use super::{FileHashes, SerdeMime, StorageFileReader};
+use super::StorageFileReader;
 use chrono::{DateTime, FixedOffset};
 
 use derive_more::derive::From;
-use nr_core::storage::FileTypeCheck;
+use nr_core::{
+    repository::browse::BrowseFile,
+    storage::{FileHashes, FileTypeCheck, SerdeMime},
+};
 use serde::{Deserialize, Serialize};
 
 use strum::EnumIs;
-use tracing::{debug, instrument};
+use tracing::{debug, error, instrument};
 
 /// Two types of files can be returned from the storage. A Directory or a File.
 #[derive(EnumIs)]
@@ -112,24 +115,17 @@ impl StorageFileMeta<DirectoryFileType> {
         if path.is_file() {
             return Err(LocalStorageError::ExpectedDirectory);
         }
-
-        let file_count = path
-            .read_dir()?
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                if is_hidden_file(&entry.path()) {
-                    return None;
-                }
-                Some(entry)
-            })
-            .count() as u64;
-        let file_meta: FileMeta = FileMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
+        let location_meta: LocationMeta =
+            LocationMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
+        let dir_meta = location_meta.dir_meta_or_err()?;
 
         Ok(StorageFileMeta {
             name: get_file_name(path)?,
-            file_type: DirectoryFileType { file_count },
-            modified: file_meta.modified,
-            created: file_meta.created,
+            file_type: DirectoryFileType {
+                file_count: dir_meta.number_of_files,
+            },
+            modified: location_meta.modified,
+            created: location_meta.created,
         })
     }
 }
@@ -143,15 +139,20 @@ impl StorageFileMeta<FileFileType> {
         debug!(?path, "Reading File Meta");
         let file = File::open(path)?;
 
-        let file_meta: FileMeta = FileMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
+        let file_meta: LocationMeta =
+            LocationMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
         let metadata = file.metadata()?;
+        let LocationTypedMeta::File(file_location_meta) = file_meta.location_typed_meta else {
+            error!(?file_meta, "Expected File Meta");
+            return Err(LocalStorageError::ExpectedFile);
+        };
         let file_type = {
             let mime: Option<SerdeMime> =
                 super::utils::mime_type_for_file(&file, path.to_path_buf());
             FileFileType {
                 file_size: metadata.len(),
                 mime_type: mime,
-                file_hash: file_meta.hashes.unwrap_or_default(),
+                file_hash: file_location_meta.hashes,
             }
             .into()
         };
@@ -255,4 +256,52 @@ fn get_file_name(path: &Path) -> Result<String, io::Error> {
             )
         })?;
     Ok(name)
+}
+impl From<StorageFileMeta<FileType>> for BrowseFile {
+    fn from(meta: StorageFileMeta<FileType>) -> Self {
+        let StorageFileMeta {
+            name,
+            file_type,
+            modified,
+            created,
+            ..
+        } = meta;
+        match file_type {
+            FileType::File(FileFileType {
+                file_size,
+                mime_type,
+                file_hash,
+            }) => BrowseFile::File {
+                name,
+                file_size,
+                mime_type,
+                file_hash,
+                modified,
+                created,
+            },
+            FileType::Directory(DirectoryFileType { file_count }) => BrowseFile::Directory {
+                name,
+                number_of_files: file_count as usize,
+            },
+        }
+    }
+}
+impl From<StorageFileMeta<FileFileType>> for BrowseFile {
+    fn from(meta: StorageFileMeta<FileFileType>) -> Self {
+        let StorageFileMeta {
+            name,
+            file_type,
+            modified,
+            created,
+            ..
+        } = meta;
+        BrowseFile::File {
+            name,
+            file_size: file_type.file_size,
+            mime_type: file_type.mime_type,
+            file_hash: file_type.file_hash,
+            modified,
+            created,
+        }
+    }
 }

@@ -21,4 +21,11 @@ pub enum LocalStorageError {
     PathCannotBeChanged,
     #[error("Expected a config of type Local")]
     InvalidConfigType(#[from] crate::InvalidConfigType),
+    #[error("Internal Unknown Error {0}")]
+    Other(Box<dyn std::error::Error + Send + Sync>),
+}
+impl LocalStorageError {
+    pub fn other(e: impl std::error::Error + Send + Sync + 'static) -> Self {
+        LocalStorageError::Other(Box::new(e))
+    }
 }

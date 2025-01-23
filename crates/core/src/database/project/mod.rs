@@ -8,6 +8,7 @@ mod new;
 pub mod utils;
 use crate::repository::project::{ReleaseType, VersionData};
 pub use new::*;
+pub mod info;
 pub mod update;
 use super::DateTime;
 /// Implemented on different types of Project query result. Such as ProjectLookupResult

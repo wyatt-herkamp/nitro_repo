@@ -2,8 +2,10 @@ use std::{io::Write, path::PathBuf};
 
 use bytes::Bytes;
 use derive_more::derive::From;
+use nr_core::storage::FileHashes;
 
-use super::FileHashes;
+use super::{generate_from_bytes, generate_hashes_from_path};
+
 /// FileContent is a enum that can be used to represent the content of a file.
 ///
 /// This is used from copying files from a request to a storage
@@ -85,9 +87,9 @@ impl TryFrom<FileContent> for Vec<u8> {
 impl FileContent {
     pub fn generate_hashes(&self) -> std::io::Result<FileHashes> {
         let bytes = match self {
-            FileContent::Path(path) => FileHashes::generate_from_path(path)?,
-            FileContent::Content(content) => FileHashes::generate_from_bytes(content),
-            FileContent::Bytes(bytes) => FileHashes::generate_from_bytes(bytes),
+            FileContent::Path(path) => generate_hashes_from_path(path)?,
+            FileContent::Content(content) => generate_from_bytes(content),
+            FileContent::Bytes(bytes) => generate_from_bytes(bytes),
         };
         Ok(bytes)
     }

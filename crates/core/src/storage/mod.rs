@@ -1,10 +1,13 @@
+mod mime;
 mod storage_path;
-
+pub use mime::*;
 use nr_macros::{NuType, SerdeViaStr};
+use serde::{Deserialize, Serialize};
 use sqlx::Type;
 pub use storage_path::*;
 use thiserror::Error;
 use tracing::instrument;
+use utoipa::ToSchema;
 
 use crate::utils::validations::{self, schema_for_new_type_str, test_validations};
 #[derive(Debug, Error)]
@@ -84,4 +87,11 @@ where
             None => false,
         }
     }
+}
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct FileHashes {
+    pub md5: Option<String>,
+    pub sha1: Option<String>,
+    pub sha2_256: Option<String>,
+    pub sha3_256: Option<String>,
 }

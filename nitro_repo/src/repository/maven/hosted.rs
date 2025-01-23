@@ -7,7 +7,7 @@ use derive_more::derive::Deref;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::{
-        project::{DBProject, DBProjectVersion, ProjectDBType},
+        project::{self, info::ProjectInfo, DBProject, DBProjectVersion, ProjectDBType},
         repository::DBRepository,
     },
     repository::{
@@ -23,7 +23,7 @@ use nr_core::{
     storage::StoragePath,
     user::permissions::{HasPermissions, RepositoryActions},
 };
-use nr_storage::{DynStorage, Storage};
+use nr_storage::{DynStorage, Storage, StorageFile};
 use parking_lot::RwLock;
 use tracing::{debug, error, event, info, instrument};
 use uuid::Uuid;
@@ -69,6 +69,7 @@ impl MavenHosted {
             body,
             path,
             authentication,
+            trace,
             ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, MavenError> {
@@ -84,9 +85,32 @@ impl MavenHosted {
                 return Ok(RepoResponse::require_nitro_deploy());
             }
         }
+        let parent_path = path.clone().parent();
+        if let Some(meta) = self
+            .storage
+            .get_repository_meta(self.id, &parent_path)
+            .await?
+        {
+            let project_info = if let Some(version_id) = meta.project_version_id {
+                ProjectInfo::query_from_version_id(version_id, self.site.as_ref()).await?
+            } else if let Some(project_id) = meta.project_id {
+                ProjectInfo::query_from_project_id(project_id, self.site.as_ref()).await?
+            } else {
+                None
+            };
+            if let Some(project) = project_info {
+                trace.set_project(
+                    project.project_scope,
+                    project.project_name,
+                    project.project_key,
+                    project.project_version,
+                );
+            }
+        };
         info!("Saving File: {}", path);
 
         let body = body.body_as_bytes().await?;
+        trace.metrics.project_write_bytes(body.len() as u64);
         // TODO: Validate Against Push Rules
         let pom = if path.has_extension("pom") {
             let pom: Pom = self.parse_pom(body.to_vec())?;
@@ -232,6 +256,31 @@ impl Repository for MavenHosted {
         }
         let visibility = self.visibility();
         let file = self.0.storage.open_file(self.id, &path).await?;
+        if let Some(StorageFile::File { meta, .. }) = &file {
+            trace.metrics.project_access_bytes(meta.file_type.file_size);
+            let parent = path.parent();
+            let meta = self
+                .0
+                .storage
+                .get_repository_meta(self.id, &parent)
+                .await?
+                .unwrap_or_default();
+            let project_info = if let Some(version_id) = meta.project_version_id {
+                ProjectInfo::query_from_version_id(version_id, self.site.as_ref()).await?
+            } else if let Some(project_id) = meta.project_id {
+                ProjectInfo::query_from_project_id(project_id, self.site.as_ref()).await?
+            } else {
+                None
+            };
+            if let Some(project) = project_info {
+                trace.set_project(
+                    project.project_scope,
+                    project.project_name,
+                    project.project_key,
+                    project.project_version,
+                );
+            }
+        }
         return self.indexing_check_option(file, &authentication).await;
     }
     async fn handle_head(

@@ -1,13 +1,8 @@
-use std::{
-    fs::File,
-    io,
-    path::PathBuf,
-};
+use std::{fs::File, io, path::PathBuf};
 
 use chrono::{offset::LocalResult, DateTime, FixedOffset, Local, TimeZone};
+use nr_core::storage::SerdeMime;
 use tracing::{error, instrument, warn};
-
-use super::SerdeMime;
 
 /// Converts a SystemTime to a DateTime<FixedOffset>.
 ///

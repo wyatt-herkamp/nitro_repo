@@ -26,7 +26,7 @@ pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         }
     }
 }
-#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema, Deserialize)]
 
 pub struct DBRepositoryWithStorageName {
     pub id: Uuid,

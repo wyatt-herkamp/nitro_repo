@@ -15,7 +15,7 @@ toml = "0.8"
 
 
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3" }
 tracing-appender = "0.2"
 utoipa = { version = "5", features = ["chrono", "uuid", "url", "debug"] }
 rand = "0.8"
@@ -110,18 +110,4 @@ opt-level = 3
 [profile.dev.package."sha2"]
 opt-level = 3
 [profile.dev.package."sha3"]
-opt-level = 3
-[profile.dev.package."tracing"]
-opt-level = 3
-[profile.dev.package."tracing-subscriber"]
-opt-level = 3
-[profile.dev.package."tracing-appender"]
-opt-level = 3
-[profile.dev.package."tracing-opentelemetry"]
-opt-level = 3
-[profile.dev.package."opentelemetry"]
-opt-level = 3
-[profile.dev.package."opentelemetry_sdk"]
-opt-level = 3
-[profile.dev.package."opentelemetry-otlp"]
 opt-level = 3

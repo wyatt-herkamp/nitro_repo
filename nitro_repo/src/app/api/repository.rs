@@ -3,12 +3,12 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use browse::{BrowseFile, BrowseResponse};
 use http::{header::CONTENT_TYPE, StatusCode};
 use management::NewRepositoryRequest;
 use nr_core::{
     database::repository::{DBRepository, DBRepositoryWithStorageName},
     repository::{
+        browse::{BrowseFile, BrowseResponse},
         config::repository_page::{PageType, RepositoryPage},
         project::ProjectResolution,
         Visibility,
@@ -80,7 +80,7 @@ pub fn repository_routes() -> axum::Router<NitroRepo> {
     get,
     path = "/{repository_id}",
     responses(
-        (status = 200, description = "Repository Types", body = DBRepository),
+        (status = 200, description = "Repository Types", body = DBRepositoryWithStorageName),
     )
 )]
 #[instrument]
