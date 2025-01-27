@@ -6,8 +6,8 @@ use std::sync::{
 use derive_more::derive::Deref;
 use maven_rs::pom::Pom;
 use nr_core::{
-    database::{
-        project::{self, info::ProjectInfo, DBProject, DBProjectVersion, ProjectDBType},
+    database::entities::{
+        project::{info::ProjectInfo, versions::DBProjectVersion, DBProject, ProjectDBType},
         repository::DBRepository,
     },
     repository::{
@@ -30,7 +30,6 @@ use uuid::Uuid;
 
 use crate::{
     app::NitroRepo,
-    error::OtherInternalError,
     repository::{
         maven::{configs::MavenPushRulesConfigType, MavenRepositoryConfigType},
         utils::RepositoryExt,

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use derive_more::derive::From;
 use nr_core::{
-    database::user::auth_token::NewRepositoryToken, user::permissions::RepositoryActions,
+    database::entities::user::auth_token::NewRepositoryToken, user::permissions::RepositoryActions,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

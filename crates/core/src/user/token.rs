@@ -3,10 +3,7 @@ use sqlx::prelude::FromRow;
 use tracing::instrument;
 use utoipa::ToSchema;
 
-use crate::database::{
-    user::auth_token::{AuthTokenRepositoryScope, AuthTokenScope},
-    DateTime,
-};
+use crate::database::entities::user::auth_token::{AuthTokenRepositoryScope, AuthTokenScope};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct AuthTokenResponse {
     pub id: i32,
@@ -15,8 +12,8 @@ pub struct AuthTokenResponse {
     pub description: Option<String>,
     pub active: bool,
     pub source: String,
-    pub expires_at: Option<DateTime>,
-    pub created_at: DateTime,
+    pub expires_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct AuthTokenFullResponse {

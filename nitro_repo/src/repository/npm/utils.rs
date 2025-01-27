@@ -1,5 +1,5 @@
 use nr_core::{
-    database::project::{DBProject, DBProjectVersion, ProjectDBType},
+    database::entities::project::{DBProject, versions::DBProjectVersion, ProjectDBType},
     storage::StoragePath,
 };
 use tracing::{info, instrument};

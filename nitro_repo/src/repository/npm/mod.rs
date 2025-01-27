@@ -10,7 +10,7 @@ use base64::DecodeError;
 use config::RepositoryConfigType;
 use futures::future::BoxFuture;
 use hosted::NPMHostedRegistry;
-use nr_core::database::repository::{DBRepository, DBRepositoryConfig};
+use nr_core::database::entities::repository::{DBRepository, DBRepositoryConfig};
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 use tracing::debug;

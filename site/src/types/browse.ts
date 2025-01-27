@@ -18,6 +18,10 @@ export interface RawDirectory {
   name: string;
   number_of_files: number;
 }
+export interface StreamBrowseHeader {
+  number_of_files: number;
+  project_resolution?: ProjectResolution;
+}
 
 export type RawBrowseFile =
   | {
@@ -38,3 +42,13 @@ export function fixCurrentPath(path: string): string {
   }
   return newPath;
 }
+
+export type WSBrowseResponse =
+  | {
+      type: "DirectoryItem";
+      data: RawBrowseFile;
+    }
+  | {
+      type: "OpenedDirectory";
+      data: StreamBrowseHeader;
+    };

@@ -8,7 +8,7 @@ use bytes::Bytes;
 use http::StatusCode;
 use maven_rs::pom::Pom;
 use nr_core::{
-    database::repository::{DBRepository, DBRepositoryConfig},
+    database::entities::repository::{DBRepository, DBRepositoryConfig},
     repository::{
         config::{
             get_repository_config_or_default,

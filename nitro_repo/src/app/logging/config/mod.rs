@@ -7,9 +7,9 @@ pub use otel::*;
 use serde::{Deserialize, Serialize};
 use tracing_appender::rolling::Rotation;
 use tracing_subscriber::fmt::{
-        format::{self, Format},
-        time::SystemTime,
-    };
+    format::{self, Format},
+    time::SystemTime,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]

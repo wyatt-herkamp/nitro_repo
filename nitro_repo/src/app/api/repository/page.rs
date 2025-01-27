@@ -4,7 +4,7 @@ use axum::{
 };
 use http::StatusCode;
 use nr_core::{
-    database::repository::DBRepositoryConfig,
+    database::entities::repository::DBRepositoryConfig,
     repository::config::{
         repository_page::{RepositoryPage, RepositoryPageType},
         RepositoryConfigType,

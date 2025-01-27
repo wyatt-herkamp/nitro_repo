@@ -22,7 +22,7 @@ pub struct AuthTokenRepositoryScope {
     pub user_auth_token_id: i32,
     pub repository_id: Uuid,
     pub actions: Vec<RepositoryActions>,
-    pub created_at: DateTime,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl AuthTokenRepositoryScope {
     pub async fn get_by_token_id(

@@ -9,7 +9,7 @@ use axum::{
 };
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
-    database::repository::{DBRepository, GenericDBRepositoryConfig},
+    database::entities::repository::{DBRepository, GenericDBRepositoryConfig},
     repository::Visibility,
     user::permissions::{HasPermissions, RepositoryActions},
 };
@@ -33,11 +33,11 @@ use crate::{
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
-        .route("/{id}/configs", get(get_configs_for_repository))
+        .route("/{repository_id}/configs", get(get_configs_for_repository))
         .route("/new/{repository_type}", post(new_repository))
-        .route("/{id}/config/{key}", put(update_config))
-        .route("/{id}/config/{key}", get(get_config))
-        .route("/{id}", delete(delete_repository))
+        .route("/{repository_id}/config/{key}", put(update_config))
+        .route("/{repository_id}/config/{key}", get(get_config))
+        .route("/{repository_id}", delete(delete_repository))
 }
 #[derive(Deserialize, ToSchema, Debug)]
 pub struct NewRepositoryRequest {
@@ -53,6 +53,9 @@ pub struct NewRepositoryRequest {
     post,
     request_body = NewRepositoryRequest,
     path = "/new/{repository_type}",
+    params(
+        ("repository_type" = String, Path, description = "The Repository Type"),
+    ),
     responses(
         (status = 200, description = "Create new Repository", body = DBRepository),
     )
@@ -128,7 +131,10 @@ pub async fn new_repository(
 
 #[utoipa::path(
     get,
-    path = "/{repository}/configs",
+    path = "/{repository_id}/configs",
+    params(
+        ("repository_id" = Uuid, Path,description = "The Repository ID"),
+    ),
     responses(
         (status = 200, description = "List Configs for Repository", body = [String]),
     )
@@ -162,7 +168,11 @@ pub struct GetConfigParams {
 }
 #[utoipa::path(
     get,
-    path = "/{repository}/config/{config_key}",
+    path = "/{repository_id}/config/{config_key}",
+    params(
+        ("repository_id" = Uuid, Path, description = "The Repository ID"),
+        ("config_key" = String, Path, description = "The Config Key"),
+    ),
     responses(
         (status = 200, description = "Config for the repository"),
     )
@@ -221,7 +231,11 @@ pub async fn get_config(
 /// Should be a the message body for the type of config you are updating
 #[utoipa::path(
     put,
-    path = "/{repository}/config/{config_key}",
+    path = "/{repository_id}/config/{config_key}",
+    params(
+        ("repository_id" = Uuid,Path, description = "The Repository ID"),
+        ("config_key" = String,Path, description = "The Config Key"),
+    ),
     responses(
         (status = 204, description = "Updated a config for a repository"),
         (status = 404, description = "Repository not found"),
@@ -294,6 +308,9 @@ pub async fn update_config(
 #[utoipa::path(
     delete,
     path = "/{repository}",
+    params(
+        ("repository_id" = Uuid, description = "The Repository ID"),
+    ),
     responses(
         (status = 204, description = "Repository Deleted"),
     )

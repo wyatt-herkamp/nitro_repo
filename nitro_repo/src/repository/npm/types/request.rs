@@ -4,7 +4,7 @@ use ahash::HashMap;
 use axum::response::{IntoResponse, Response};
 use http::{header::ToStrError, HeaderValue};
 use nr_core::{
-    database::project::{NewProject, NewVersion},
+    database::entities::project::{versions::NewVersion, NewProject},
     repository::project::VersionData,
     storage::{StoragePath, StoragePathComponent},
 };

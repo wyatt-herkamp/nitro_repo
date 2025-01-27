@@ -8,7 +8,7 @@ pub mod env_file;
 pub mod logging;
 use crate::{
     database::{
-        user::{NewUserRequest, UserSafeData, UserType},
+        entities::user::{NewUserRequest, UserSafeData, UserType},
         DateTime,
     },
     user::{Email, Username},

@@ -7,7 +7,6 @@ use crate::user::{
     Email, Username,
 };
 
-use super::DateTime;
 pub mod auth_token;
 pub mod password_reset;
 pub mod permissions;
@@ -178,7 +177,7 @@ pub struct UserModel {
     pub active: bool,
     #[serde(skip_serializing)]
     pub password: Option<String>,
-    pub password_last_changed: Option<DateTime>,
+    pub password_last_changed: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub require_password_change: bool,
     pub admin: bool,
     pub user_manager: bool,
@@ -186,8 +185,8 @@ pub struct UserModel {
     /// Also will have full read/write access to all repositories
     pub system_manager: bool,
     pub default_repository_actions: Vec<RepositoryActions>,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl UserModel {
     pub async fn get_password_by_id(
@@ -226,8 +225,8 @@ pub struct UserSafeData {
     /// Also will have full read/write access to all repositories
     pub system_manager: bool,
     pub default_repository_actions: Vec<RepositoryActions>,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl UserType for UserSafeData {
     fn columns() -> Vec<&'static str> {

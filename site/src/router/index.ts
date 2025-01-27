@@ -11,6 +11,7 @@ import type { Component } from "vue";
 import { adminRoutes } from "@/views/admin/adminRoutes";
 import { profileRoutes } from "@/views/profile/profileRoutes";
 import { projectRoutes } from "@/views/projects";
+import NotFound from "@/views/NotFound.vue";
 declare module "vue-router" {
   interface RouteMeta {
     requiresAuth?: boolean;
@@ -18,47 +19,60 @@ declare module "vue-router" {
     requiresUserManager?: boolean;
     sideBar?: Component;
     tag?: string;
+    skipRoutesJson?: boolean;
   }
 }
+const routes = [
+  {
+    path: "/",
+    name: "home",
+    component: HomeView,
+    meta: {
+      skipRoutesJson: true,
+    },
+  },
+
+  {
+    path: "/browse/:id/:catchAll(.*)?",
+    name: "Browse",
+    component: BrowseView,
+  },
+
+  {
+    path: "/login",
+    name: "login",
+    component: LoginView,
+  },
+  {
+    path: "/logout",
+    name: "logout",
+    component: LogoutView,
+  },
+  {
+    path: "/page/repositories",
+    name: "repositories",
+    component: RepositoriesView,
+  },
+  {
+    path: "/page/repository/:id",
+    name: "repository",
+    component: RepositoryPageView,
+  },
+  ...adminRoutes,
+  ...profileRoutes,
+  ...projectRoutes,
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: NotFound,
+    meta: {
+      skipRoutesJson: true,
+    },
+  },
+];
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: "/",
-      name: "home",
-      component: HomeView,
-    },
-
-    {
-      path: "/browse/:id/:catchAll(.*)?",
-      name: "Browse",
-      component: BrowseView,
-    },
-
-    {
-      path: "/login",
-      name: "login",
-      component: LoginView,
-    },
-    {
-      path: "/logout",
-      name: "logout",
-      component: LogoutView,
-    },
-    {
-      path: "/page/repositories",
-      name: "repositories",
-      component: RepositoriesView,
-    },
-    {
-      path: "/page/repository/:id",
-      name: "repository",
-      component: RepositoryPageView,
-    },
-    ...adminRoutes,
-    ...profileRoutes,
-    ...projectRoutes,
-  ],
+  routes: routes,
 });
 
 export default router;

@@ -70,22 +70,8 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let mut app = Router::new()
-        .route(
-            "/repositories/{storage}/{repository}/{*path}",
-            any(crate::repository::handle_repo_request),
-        )
-        .route_with_tsr(
-            "/repositories/{storage}/{repository}",
-            any(crate::repository::handle_repo_request),
-        )
-        .route(
-            "/storages/{storage}/{repository}/{*path}",
-            any(crate::repository::handle_repo_request),
-        )
-        .route_with_tsr(
-            "/storages/{storage}/{repository}",
-            any(crate::repository::handle_repo_request),
-        )
+        .nest("/repositories", crate::repository::repository_router())
+        .nest("/storages", crate::repository::repository_router())
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
         .fallback(super::frontend::frontend_request)

@@ -1,7 +1,7 @@
 use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use nr_core::{
-    database::user::{auth_token::AuthToken, UserSafeData, UserType},
+    database::entities::user::{auth_token::AuthToken, UserSafeData, UserType},
     user::permissions::{
         does_user_and_token_have_repository_action, HasPermissions, RepositoryActions,
         UserPermissions,

@@ -13,9 +13,12 @@ use axum::{
     body::Body,
     extract::{Path, Request, State},
     response::{IntoResponse, Response},
+    routing::any,
+    Router,
 };
 pub mod repo_tracing;
 
+use axum_extra::routing::RouterExt;
 use bytes::Bytes;
 use derive_more::From;
 use http::{
@@ -28,13 +31,18 @@ use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{FileFileType, FileType, StorageFile, StorageFileMeta, StorageFileReader};
 
 use serde::Deserialize;
-use tracing::{debug, debug_span, error, event, field::Empty, info_span, instrument, Level, Span};
+use tracing::{debug, debug_span, error, event, instrument, Level, Span};
 mod header;
 mod repo_auth;
 pub use header::*;
 pub use repo_auth::*;
 
 use super::{repo_tracing::RepositoryRequestTracing, DynRepository, RepositoryHandlerError};
+pub fn repository_router() -> axum::Router<NitroRepo> {
+    Router::new()
+        .route("/{storage}/{repository}/{*path}", any(handle_repo_request))
+        .route_with_tsr("/{storage}/{repository}", any(handle_repo_request))
+}
 
 #[derive(Debug, From)]
 pub struct RepositoryRequestBody(Body);

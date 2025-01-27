@@ -6,11 +6,23 @@
         class="openBrowse"
         :to="{
           name: 'repository',
-          params: { id: project.repository_id },
+          params: {
+            id: project.repository_id,
+          },
         }">
         Open Repository
       </RouterLink>
-
+      <RouterLink
+        class="openBrowse"
+        :to="{
+          name: 'Browse',
+          params: {
+            id: project.repository_id,
+            catchAll: project.storage_path,
+          },
+        }">
+        Open Browse
+      </RouterLink>
       <CopyURL :code="url"> </CopyURL>
       <div v-if="repositoryType">
         <RepositoryIcon
@@ -21,11 +33,23 @@
       </div>
     </div>
     <div class="content">
-      <div v-if="repositoryHandler">
+      <div v-if="repositoryHandler && repositoryHandler.fullProjectComponent">
+        <component
+          :is="repositoryHandler.fullProjectComponent.component"
+          :project="project"
+          :repository="repository" />
+      </div>
+      <div v-else-if="repositoryHandler && repositoryHandler.projectComponent">
         <component
           :is="repositoryHandler.projectComponent.component"
           :project="project"
           :repository="repository" />
+      </div>
+      <div v-else-if="repositoryHandler">
+        <p>Project type not supported</p>
+      </div>
+      <div v-else>
+        <p>This repository has not been defined in the frontend</p>
       </div>
     </div>
   </main>
@@ -33,6 +57,10 @@
     v-else-if="error"
     :error="error"
     :errorCode="errorCode" />
+
+  <main v-else-if="!project">
+    <p>Project Not Found</p>
+  </main>
 </template>
 
 <script setup lang="ts">
@@ -51,7 +79,7 @@ import {
   type RepositoryWithStorageName,
 } from "@/types/repository";
 import { computed, ref, watch } from "vue";
-const projectId = router.currentRoute.value.params.id as string;
+const projectId = router.currentRoute.value.params.projectId as string;
 const repositoryId = ref<string | undefined>(undefined);
 const repository = ref<RepositoryWithStorageName | undefined>(undefined);
 const project = ref<Project | undefined>(undefined);

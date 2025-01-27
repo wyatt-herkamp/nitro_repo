@@ -8,7 +8,7 @@ use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
     builder_error,
-    database::repository::{DBRepository, DBRepositoryConfig},
+    database::entities::repository::{DBRepository, DBRepositoryConfig},
     repository::{
         config::{project::ProjectConfigType, RepositoryConfigType},
         project::ReleaseType,

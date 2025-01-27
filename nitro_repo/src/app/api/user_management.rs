@@ -18,7 +18,7 @@ use crate::{
     error::InternalError,
 };
 use nr_core::{
-    database::user::{
+    database::entities::user::{
         permissions::FullUserPermissions, user_utils, ChangePasswordNoCheck, NewUserRequest,
         UserSafeData, UserType as _,
     },

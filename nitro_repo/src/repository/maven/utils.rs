@@ -2,9 +2,10 @@ use std::fmt::Debug;
 
 use maven_rs::pom::Pom;
 use nr_core::{
-    database::project::{
-        update::UpdateProjectVersion, DBProject, DBProjectVersion, NewProject, NewProjectBuilder,
-        NewProjectMember, NewVersion, NewVersionBuilder, ProjectDBType,
+    database::entities::project::{
+        update::UpdateProjectVersion, versions::DBProjectVersion, versions::NewVersion,
+        versions::NewVersionBuilder, DBProject, NewProject, NewProjectBuilder, NewProjectMember,
+        ProjectDBType,
     },
     repository::project::{ReleaseType, VersionData, VersionDataBuilder},
     storage::{FileTypeCheck, StoragePath},

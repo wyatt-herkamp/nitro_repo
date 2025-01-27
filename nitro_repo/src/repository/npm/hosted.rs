@@ -16,7 +16,7 @@ use axum::response::{IntoResponse, Response};
 use derive_more::derive::Deref;
 use http::{header::CONTENT_TYPE, StatusCode};
 use nr_core::{
-    database::{project::DBProjectVersion, repository::DBRepository},
+    database::entities::{project::versions::DBProjectVersion, repository::DBRepository},
     repository::config::RepositoryConfigType,
     storage::StoragePath,
     user::permissions::RepositoryActions,

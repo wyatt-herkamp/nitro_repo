@@ -1,0 +1,90 @@
+use std::{path::PathBuf, task::Poll};
+
+use futures::Stream;
+use pin_project::pin_project;
+use tokio::fs::ReadDir;
+use tokio_stream::wrappers::ReadDirStream;
+use tracing::trace;
+
+use crate::{
+    is_hidden_file, local::error::LocalStorageError, streaming::DirectoryListStream,
+    DirectoryFileType, FileType, StorageError, StorageFileMeta,
+};
+
+#[derive(Debug)]
+#[pin_project]
+pub struct LocalDirectoryListStream {
+    #[pin]
+    files: FileOrDirectory,
+    meta: StorageFileMeta<DirectoryFileType>,
+}
+impl LocalDirectoryListStream {
+    pub fn new_directory(read_dir: ReadDir, meta: StorageFileMeta<DirectoryFileType>) -> Self {
+        LocalDirectoryListStream {
+            files: FileOrDirectory::Directory(ReadDirStream::new(read_dir)),
+            meta,
+        }
+    }
+}
+impl DirectoryListStream for LocalDirectoryListStream {
+    fn number_of_files(&self) -> u64 {
+        self.meta.file_type().file_count
+    }
+}
+#[derive(Debug)]
+#[pin_project(project = FileOrDirectoryProj)]
+enum FileOrDirectory {
+    Directory(#[pin] ReadDirStream),
+    File(Option<PathBuf>),
+}
+
+impl Stream for LocalDirectoryListStream {
+    type Item = Result<Option<StorageFileMeta<FileType>>, StorageError>;
+
+    fn poll_next(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        let this = self.project();
+
+        let next_file = {
+            let this_files = this.files.project();
+            match this_files {
+                FileOrDirectoryProj::Directory(read_dir_stream) => {
+                    match read_dir_stream.poll_next(cx) {
+                        Poll::Ready(ready) => ready.map(|entry| entry.map(|entry| entry.path())),
+                        Poll::Pending => return Poll::Pending,
+                    }
+                }
+                FileOrDirectoryProj::File(path_buf) => {
+                    let path = path_buf.take();
+
+                    path.map(Ok)
+                }
+            }
+        };
+        let Some(entry) = next_file else {
+            return std::task::Poll::Ready(None);
+        };
+
+        let path = entry.map_err(LocalStorageError::from)?;
+
+        if path.is_file() && is_hidden_file(&path) {
+            // I am not really sure what to do with hidden files in a stream?
+            // I am guessing if return Poll::Pending now it will just skip the file?
+            trace!(?path, "Skipping Meta File");
+            return Poll::Ready(Some(Ok(None)));
+        }
+        let file_meta = StorageFileMeta::read_from_path(&path)
+            .map(Some)
+            .map_err(StorageError::from);
+        Poll::Ready(Some(file_meta))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (
+            self.meta.file_type().file_count as usize,
+            Some(self.meta.file_type().file_count as usize),
+        )
+    }
+}

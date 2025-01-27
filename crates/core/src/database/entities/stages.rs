@@ -5,8 +5,6 @@ use sqlx::{types::Json, FromRow};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use super::DateTime;
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema)]
 pub struct DBStage {
     pub id: Uuid,
@@ -14,7 +12,7 @@ pub struct DBStage {
     #[schema(value_type = crate::utils::utopia::AnyType)]
     pub stage_state: Json<Value>,
     pub created_by: i32,
-    pub created_at: DateTime,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 
 impl DBStage {
@@ -64,7 +62,7 @@ pub struct DBStageFile {
     pub id: Uuid,
     pub stage: Uuid,
     pub file_name: String,
-    pub created_at: DateTime,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Builder)]
 pub struct NewDBStage {

@@ -18,8 +18,8 @@ pub struct UserRepositoryPermissions {
     pub user_id: i32,
     pub repository_id: Uuid,
     pub actions: Vec<RepositoryActions>,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl UserRepositoryPermissions {
     pub async fn has_repository_action(

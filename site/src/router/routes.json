@@ -1,0 +1,90 @@
+[
+    {
+        "path": "/browse/:id/:catchAll(.*)?",
+        "name": "Browse"
+    },
+    {
+        "path": "/login",
+        "name": "login"
+    },
+    {
+        "path": "/logout",
+        "name": "logout"
+    },
+    {
+        "path": "/page/repositories",
+        "name": "repositories"
+    },
+    {
+        "path": "/page/repository/:id",
+        "name": "repository"
+    },
+    {
+        "path": "/admin/install",
+        "name": "AdminInstall"
+    },
+    {
+        "path": "/admin",
+        "name": "admin"
+    },
+    {
+        "path": "/admin/users",
+        "name": "UsersList"
+    },
+    {
+        "path": "/admin/user/create",
+        "name": "UserCreate"
+    },
+    {
+        "path": "/admin/user/:id",
+        "name": "ViewUser"
+    },
+    {
+        "path": "/admin/repositories",
+        "name": "RepositoriesList"
+    },
+    {
+        "path": "/admin/repository/:id",
+        "name": "AdminViewRepository"
+    },
+    {
+        "path": "/admin/repositories/create",
+        "name": "RepositoryCreate"
+    },
+    {
+        "path": "/admin/storages",
+        "name": "StorageList"
+    },
+    {
+        "path": "/admin/storage/create",
+        "name": "StorageCreate"
+    },
+    {
+        "path": "/admin/storage/:id",
+        "name": "ViewStorage"
+    },
+    {
+        "path": "/admin/system",
+        "name": "SystemSettings"
+    },
+    {
+        "path": "/profile",
+        "name": "profile"
+    },
+    {
+        "path": "/profile/login",
+        "name": "profileLogin"
+    },
+    {
+        "path": "/profile/tokens",
+        "name": "profileTokens"
+    },
+    {
+        "path": "/profile/token/create",
+        "name": "profileTokenCreate"
+    },
+    {
+        "path": "/projects/:id",
+        "name": "ProjectPageView"
+    }
+]

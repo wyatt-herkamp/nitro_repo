@@ -2,10 +2,7 @@ use sqlx::{prelude::FromRow, PgPool};
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{
-    database::DateTime,
-    user::{permissions::RepositoryActions, scopes::NRScope},
-};
+use crate::user::{permissions::RepositoryActions, scopes::NRScope};
 
 use super::ReferencesUser;
 mod repository_scope;
@@ -24,8 +21,8 @@ pub struct AuthToken {
     pub token: String,
     pub active: bool,
     pub source: String,
-    pub expires_at: Option<DateTime>,
-    pub created_at: DateTime,
+    pub expires_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl ReferencesUser for AuthToken {
     fn user_id(&self) -> i32 {

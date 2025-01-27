@@ -17,7 +17,7 @@ use axum_extra::{
 };
 use http::{header::SET_COOKIE, StatusCode};
 use nr_core::{
-    database::user::{
+    database::entities::user::{
         auth_token::{AuthTokenRepositoryScope, AuthTokenScope},
         permissions::FullUserPermissions,
         ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,

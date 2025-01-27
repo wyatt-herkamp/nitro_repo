@@ -1,11 +1,15 @@
-
 use thiserror::Error;
 
 use crate::{
-    local::error::LocalStorageError,
-    s3::S3StorageError,
-    InvalidConfigType, PathCollisionError,
+    local::error::LocalStorageError, s3::S3StorageError, InvalidConfigType, PathCollisionError,
 };
+#[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WrongFileType {
+    #[error("Expected a file, but got a directory")]
+    ExpectedFile,
+    #[error("Expected a directory, but got a file")]
+    ExpectedDirectory,
+}
 
 #[derive(Error, Debug)]
 pub enum StorageError {
@@ -19,6 +23,8 @@ pub enum StorageError {
     InvalidConfigType(#[from] InvalidConfigType),
     #[error(transparent)]
     PathCollision(#[from] PathCollisionError),
+    #[error(transparent)]
+    WrongFileType(#[from] WrongFileType),
 }
 
 impl From<S3StorageError> for StorageError {
@@ -33,6 +39,7 @@ impl From<LocalStorageError> for StorageError {
     fn from(err: LocalStorageError) -> StorageError {
         match err {
             LocalStorageError::PathCollision(err) => StorageError::from(err),
+            LocalStorageError::WrongFileType(err) => StorageError::from(err),
             _ => StorageError::LocalStorageError(err),
         }
     }

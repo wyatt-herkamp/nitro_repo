@@ -6,24 +6,28 @@ use std::{
 };
 
 use http_body::{Body, Frame};
+use opentelemetry::KeyValue;
 use pin_project::pin_project;
 use tracing::Span;
 
+use crate::app::NitroRepo;
+
+use super::request_span;
+
 #[pin_project]
-pub struct TraceResponseBody<B> {
+pub struct TraceResponseBody {
     #[pin]
-    pub(crate) inner: B,
+    pub(crate) inner: axum::body::Body,
     pub(crate) start: Instant,
     pub(crate) span: Span,
+    pub(crate) state: NitroRepo,
+    pub(crate) attributes: Vec<KeyValue>,
+    pub(crate) total_bytes: u64,
 }
 
-impl<B> Body for TraceResponseBody<B>
-where
-    B: Body,
-    B::Error: fmt::Display + 'static,
-{
-    type Data = B::Data;
-    type Error = B::Error;
+impl Body for TraceResponseBody {
+    type Data = axum::body::Bytes;
+    type Error = axum::Error;
 
     fn poll_frame(
         self: Pin<&mut Self>,
@@ -33,13 +37,15 @@ where
         let _guard = this.span.enter();
         let result = ready!(this.inner.poll_frame(cx));
 
-        //let latency = this.start.elapsed();
         *this.start = Instant::now();
 
         match result {
             Some(Ok(frame)) => {
                 let frame = match frame.into_data() {
-                    Ok(chunk) => Frame::data(chunk),
+                    Ok(chunk) => {
+                        *this.total_bytes += chunk.len() as u64;
+                        Frame::data(chunk)
+                    }
                     Err(frame) => frame,
                 };
 
@@ -51,7 +57,14 @@ where
                 Poll::Ready(Some(Ok(frame)))
             }
             Some(Err(err)) => Poll::Ready(Some(Err(err))),
-            None => Poll::Ready(None),
+            None => {
+                this.state
+                    .metrics
+                    .response_size_bytes
+                    .record(*this.total_bytes, &this.attributes);
+                request_span::on_end_of_stream(*this.total_bytes, &this.span);
+                Poll::Ready(None)
+            }
         }
     }
 

@@ -7,8 +7,6 @@ use uuid::Uuid;
 
 use crate::storage::StorageName;
 
-use super::DateTime;
-
 pub trait StorageDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     fn columns() -> Vec<&'static str>;
     fn format_columns(prefix: Option<&str>) -> String {
@@ -91,8 +89,8 @@ pub struct DBStorageNoConfig {
     pub storage_type: String,
     pub name: StorageName,
     pub active: bool,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl StorageDBType for DBStorageNoConfig {
     fn id(&self) -> Uuid {
@@ -121,8 +119,8 @@ pub struct DBStorage {
     #[schema(value_type = crate::utils::utopia::AnyType)]
     pub config: Json<Value>,
     pub active: bool,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 
 impl StorageDBType for DBStorage {

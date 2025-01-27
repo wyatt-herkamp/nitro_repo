@@ -5,7 +5,7 @@ pub mod s3;
 pub use config::*;
 pub use error::StorageError;
 pub use fs::*;
-use futures::future::BoxFuture;
+use futures::{future::BoxFuture, Stream};
 use meta::RepositoryMeta;
 use nr_core::storage::StoragePath;
 pub use uuid::Uuid;
@@ -16,12 +16,14 @@ mod fs;
 pub use dyn_storage::*;
 pub mod local;
 pub mod meta;
+pub(crate) mod streaming;
+pub use streaming::*;
 #[cfg(test)]
 pub(crate) mod testing;
 pub(crate) mod utils;
-
 pub trait Storage: Send + Sync {
     type Error: Into<StorageError> + std::error::Error + Send + Sync + 'static;
+    type DirectoryStream: DirectoryListStream + Send;
     /// Unload the storages
     fn unload(&self) -> impl Future<Output = Result<(), Self::Error>> + Send;
     fn storage_type_name(&self) -> &'static str;
@@ -81,7 +83,11 @@ pub trait Storage: Send + Sync {
         repository: Uuid,
         location: &StoragePath,
     ) -> impl Future<Output = Result<Option<StorageFile>, Self::Error>> + Send;
-
+    fn stream_directory(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> impl Future<Output = Result<Option<Self::DirectoryStream>, Self::Error>> + Send;
     fn validate_config_change(
         &self,
         config: StorageTypeConfig,

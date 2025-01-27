@@ -63,6 +63,7 @@ impl<ST: Storage> TestingStorage<ST> {
 }
 impl<ST: Storage> Storage for TestingStorage<ST> {
     type Error = ST::Error;
+    type DirectoryStream = ST::DirectoryStream;
     fn storage_type_name(&self) -> &'static str {
         self.storage.storage_type_name()
     }
@@ -175,5 +176,12 @@ impl<ST: Storage> Storage for TestingStorage<ST> {
             "Internal Storage did not return the correct value"
         );
         Ok(result)
+    }
+    async fn stream_directory(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Self::DirectoryStream>, Self::Error> {
+        self.storage.stream_directory(repository, location).await
     }
 }

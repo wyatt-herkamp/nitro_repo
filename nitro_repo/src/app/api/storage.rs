@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use nr_core::{
-    database::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
+    database::entities::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
     storage::StorageName,
     user::permissions::HasPermissions,
 };

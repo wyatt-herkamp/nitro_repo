@@ -10,7 +10,7 @@ use tracing::{debug, info, instrument, trace, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::database::user::{
+use crate::database::entities::user::{
     auth_token::AuthToken,
     permissions::{NewUserRepositoryPermissions, UserRepositoryPermissions},
 };

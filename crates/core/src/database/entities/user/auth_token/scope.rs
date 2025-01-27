@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, PgPool};
 use utoipa::ToSchema;
 
-use crate::{database::DateTime, user::scopes::NRScope};
+use crate::user::scopes::NRScope;
 
 /// Table Name: user_auth_token_scopes
 
@@ -11,7 +11,7 @@ pub struct AuthTokenScope {
     pub id: i32,
     pub user_auth_token_id: i32,
     pub scope: NRScope,
-    pub created_at: DateTime,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl AuthTokenScope {
     pub async fn get_by_token_id(

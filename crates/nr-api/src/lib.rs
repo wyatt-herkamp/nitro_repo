@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
 use nr_core::{
-    database::repository::DBRepositoryWithStorageName, repository::browse::BrowseResponse,
+    database::entities::repository::DBRepositoryWithStorageName, repository::browse::BrowseResponse,
 };
 use reqwest::Response;
 use thiserror::Error;
 use uuid::Uuid;
+pub mod browse;
 #[derive(Debug, Error)]
 pub enum NrApiError {
     #[error(transparent)]
@@ -90,6 +91,7 @@ impl NrApi {
         let body = res.text().await?;
         Ok(serde_json::from_str(&body)?)
     }
+
     pub async fn get_file(&self, repo_id: Uuid, path: &str) -> Result<Response, NrApiError> {
         let repository = self.get_repository(repo_id).await?.unwrap();
         let res = self
@@ -135,7 +137,7 @@ mod tests {
         info!("Logger initialized");
         error!("This is an error message");
     }
-    
+
     #[tokio::test]
     async fn tests() -> anyhow::Result<()> {
         init_logger();

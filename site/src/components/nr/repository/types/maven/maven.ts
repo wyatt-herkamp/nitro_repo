@@ -1,11 +1,15 @@
 import { ApacheMavenIcon, GradleIcon } from "vue3-simple-icons";
 import MavenProjectHelper from "./MavenProjectHelper.vue";
+import type { FrontendRepositoryType } from "@/types/repository";
+import MavenFullProject from "./MavenFullProject.vue";
 export const MavenFrontendDefinition = {
   name: "maven",
   properName: "Maven",
   projectComponent: {
     component: MavenProjectHelper,
-    props: {},
+  },
+  fullProjectComponent: {
+    component: MavenFullProject,
   },
   icons: [
     {
@@ -21,7 +25,7 @@ export const MavenFrontendDefinition = {
       props: {},
     },
   ],
-};
+} as FrontendRepositoryType;
 export interface MavenProxyRoute {
   url: string;
   name?: string;

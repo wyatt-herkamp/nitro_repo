@@ -8,9 +8,9 @@
 //!    /// WriteRepository allows the user to write to the repository
 //!    #[scope(title = "Write Repository", parent = "Repository")]
 //!    WriteRepository,
-//!   /// EditRepository allows the user to edit the repository
-//!   #[scope(title = "Edit Repository", parent = "Repository")]
-//!  EditRepository,
+//!    /// EditRepository allows the user to edit the repository
+//!    #[scope(title = "Edit Repository", parent = "Repository")]
+//!    EditRepository,
 //! }
 //! ```
 use proc_macro2::TokenStream;

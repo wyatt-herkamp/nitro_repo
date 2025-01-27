@@ -151,14 +151,14 @@ impl LocationMeta {
         if let LocationTypedMeta::Directory(meta) = &self.location_typed_meta {
             Ok(meta)
         } else {
-            Err(LocalStorageError::ExpectedDirectory)
+            Err(LocalStorageError::expected_directory())
         }
     }
     pub fn file_meta_or_err(&self) -> Result<&FileMeta, LocalStorageError> {
         if let LocationTypedMeta::File(meta) = &self.location_typed_meta {
             Ok(meta)
         } else {
-            Err(LocalStorageError::ExpectedFile)
+            Err(LocalStorageError::expected_file())
         }
     }
     #[instrument(

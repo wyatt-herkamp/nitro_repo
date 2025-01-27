@@ -48,11 +48,11 @@ impl S3StorageError {
     }
 }
 use crate::{
-    meta::RepositoryMeta, utils::new_type_arc_type, BorrowedStorageConfig,
-    BorrowedStorageTypeConfig, DirectoryFileType, DynStorage, FileContent, FileContentBytes,
-    FileFileType, FileType, InvalidConfigType, PathCollisionError, StaticStorageFactory, Storage,
-    StorageConfig, StorageConfigInner, StorageError, StorageFactory, StorageFile, StorageFileMeta,
-    StorageTypeConfig, StorageTypeConfigTrait,
+    meta::RepositoryMeta, streaming::VecDirectoryListStream, utils::new_type_arc_type,
+    BorrowedStorageConfig, BorrowedStorageTypeConfig, DirectoryFileType, DynStorage, FileContent,
+    FileContentBytes, FileFileType, FileType, InvalidConfigType, PathCollisionError,
+    StaticStorageFactory, Storage, StorageConfig, StorageConfigInner, StorageError, StorageFactory,
+    StorageFile, StorageFileMeta, StorageTypeConfig, StorageTypeConfigTrait,
 };
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct S3Credentials {
@@ -354,7 +354,7 @@ pub struct S3Storage(Arc<S3StorageInner>);
 new_type_arc_type!(S3Storage(S3StorageInner));
 impl Storage for S3Storage {
     type Error = S3StorageError;
-
+    type DirectoryStream = VecDirectoryListStream;
     fn storage_type_name(&self) -> &'static str {
         "s3"
     }
@@ -524,6 +524,14 @@ impl Storage for S3Storage {
     ) -> Result<bool, S3StorageError> {
         let path = self.s3_path(&repository, location);
         self.does_path_exist(&path).await
+    }
+
+    async fn stream_directory(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Self::DirectoryStream>, Self::Error> {
+        todo!()
     }
 }
 #[derive(Debug, Default)]

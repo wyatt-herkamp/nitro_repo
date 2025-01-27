@@ -13,7 +13,7 @@ use axum_extra::{
 };
 use http::StatusCode;
 use lettre::Address;
-use nr_core::database::user::{
+use nr_core::database::entities::user::{
     password_reset::{RequestDetails, UserPasswordReset},
     ChangePasswordNoCheck, UserModel, UserSafeData, UserType,
 };

@@ -1,12 +1,14 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::get,
 };
-use http::{header::CONTENT_TYPE, StatusCode};
 use management::NewRepositoryRequest;
 use nr_core::{
-    database::repository::{DBRepository, DBRepositoryWithStorageName},
+    database::entities::repository::{
+        DBRepository, DBRepositoryNames, DBRepositoryNamesWithVisibility,
+        DBRepositoryWithStorageName,
+    },
     repository::{
         browse::{BrowseFile, BrowseResponse},
         config::repository_page::{PageType, RepositoryPage},
@@ -16,18 +18,20 @@ use nr_core::{
     user::permissions::{HasPermissions, RepositoryActions},
 };
 
+use serde::Deserialize;
 use tracing::instrument;
-use utoipa::OpenApi;
+use utoipa::{IntoParams, OpenApi};
 use uuid::Uuid;
 
 use crate::{
     app::{
         authentication::Authentication,
-        responses::{MissingPermission, RepositoryNotFound, ResponseBuilderExt},
+        responses::{MissingPermission, RepositoryNotFound},
         NitroRepo,
     },
     error::InternalError,
     repository::RepositoryTypeDescription,
+    utils::response_builder::ResponseBuilder,
 };
 mod browse;
 mod config;
@@ -39,6 +43,7 @@ mod types;
     paths(
         list_repositories,
         get_repository,
+        get_repository_names,
         types::repository_types,
         config::config_schema,
         config::config_validate,
@@ -61,15 +66,18 @@ mod types;
         PageType,
         BrowseFile,
         BrowseResponse,
-        ProjectResolution
+        ProjectResolution,
+        DBRepositoryNames,
+        DBRepositoryNamesWithVisibility
     ))
 )]
 pub struct RepositoryAPI;
 pub fn repository_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", get(list_repositories))
-        .route("/{id}", get(get_repository))
-        .route("/page/{id}", get(page::get_repository_page))
+        .route("/{repository_id}", get(get_repository))
+        .route("/{repository_id}/names", get(get_repository_names))
+        .route("/page/{repository_id}", get(page::get_repository_page))
         .route("/types", get(types::repository_types))
         .merge(browse::browse_routes())
         .merge(management::management_routes())
@@ -79,6 +87,9 @@ pub fn repository_routes() -> axum::Router<NitroRepo> {
 #[utoipa::path(
     get,
     path = "/{repository_id}",
+    params(
+        ("repository_id" = Uuid,Path, description = "The Repository ID"),
+    ),
     responses(
         (status = 200, description = "Repository Types", body = DBRepositoryWithStorageName),
     )
@@ -100,12 +111,8 @@ pub async fn get_repository(
     {
         return Ok(MissingPermission::ReadRepository(repository).into_response());
     }
-    let response = Response::builder()
-        .status(StatusCode::OK)
-        .header(CONTENT_TYPE, "application/json")
-        .body(serde_json::to_string(&config).unwrap().into())
-        .unwrap();
-    Ok(response)
+
+    Ok(ResponseBuilder::ok().json(&config))
 }
 
 #[utoipa::path(
@@ -128,7 +135,52 @@ pub async fn list_repositories(
             _ => true,
         })
         .collect();
-    Response::builder()
-        .status(StatusCode::OK)
-        .json_body(&repositories)
+    Ok(ResponseBuilder::ok().json(&repositories))
+}
+#[derive(Debug, Clone, Copy, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct QueryRepositoryNames {
+    /// Rather or not to include the visibility of the repository
+    #[serde(default)]
+    #[param(default = false)]
+    pub include_visibility: bool,
+}
+#[utoipa::path(
+    get,
+    path = "/{repository_id}/names",
+    params(
+        QueryRepositoryNames,
+        ("repository_id" = Uuid, Path, description = "The Repository ID"),
+    ),
+    responses(
+        (status = 200, description = "The Storage Name/ID and the Repository Name/ID for the given Repository ID", body = DBRepositoryNames),
+        (status = 200, description = "The Storage Name/ID and the Repository Name/ID for the given Repository ID", body = DBRepositoryNamesWithVisibility),
+        (status = 404, description = "Repository not found"),
+        (status = 403, description = "Missing permission"),
+    )
+)]
+#[instrument]
+pub async fn get_repository_names(
+    State(site): State<NitroRepo>,
+    auth: Option<Authentication>,
+    Query(query): Query<QueryRepositoryNames>,
+    Path(repository_id): Path<Uuid>,
+) -> Result<Response, InternalError> {
+    let Some(repository) =
+        DBRepositoryNamesWithVisibility::get_by_id(repository_id, site.as_ref()).await?
+    else {
+        return Ok(RepositoryNotFound::Uuid(repository_id).into_response());
+    };
+    if repository.visibility.is_private()
+        && !auth
+            .has_action(RepositoryActions::Read, repository_id, site.as_ref())
+            .await?
+    {
+        return Ok(MissingPermission::ReadRepository(repository_id).into_response());
+    }
+    if query.include_visibility {
+        Ok(ResponseBuilder::ok().json(&repository))
+    } else {
+        Ok(ResponseBuilder::ok().json(&DBRepositoryNames::from(repository)))
+    }
 }

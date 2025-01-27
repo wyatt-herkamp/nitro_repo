@@ -14,6 +14,8 @@ chrono.workspace = true
 nr-core.workspace = true
 tracing.workspace = true
 reqwest.workspace = true
+futures.workspace = true
+bytes = "1"
 [dev-dependencies]
 tokio.workspace = true
 anyhow = "1"

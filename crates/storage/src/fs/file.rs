@@ -113,7 +113,7 @@ impl StorageFileMeta<DirectoryFileType> {
     pub fn read_from_directory(path: impl AsRef<Path>) -> Result<Self, LocalStorageError> {
         let path = path.as_ref();
         if path.is_file() {
-            return Err(LocalStorageError::ExpectedDirectory);
+            return Err(LocalStorageError::expected_directory());
         }
         let location_meta: LocationMeta =
             LocationMeta::get_or_default_local(path).map(|(meta, _)| meta)?;
@@ -134,7 +134,7 @@ impl StorageFileMeta<FileFileType> {
     pub fn read_from_file(path: impl AsRef<Path>) -> Result<Self, LocalStorageError> {
         let path = path.as_ref();
         if path.is_dir() {
-            return Err(LocalStorageError::ExpectedFile);
+            return Err(LocalStorageError::expected_file());
         }
         debug!(?path, "Reading File Meta");
         let file = File::open(path)?;
@@ -144,7 +144,7 @@ impl StorageFileMeta<FileFileType> {
         let metadata = file.metadata()?;
         let LocationTypedMeta::File(file_location_meta) = file_meta.location_typed_meta else {
             error!(?file_meta, "Expected File Meta");
-            return Err(LocalStorageError::ExpectedFile);
+            return Err(LocalStorageError::expected_file());
         };
         let file_type = {
             let mime: Option<SerdeMime> =

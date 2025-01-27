@@ -5,13 +5,13 @@ use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 mod hostname;
+use crate::database::prelude::*;
 use crate::{
     repository::{RepositoryName, Visibility},
     storage::StorageName,
 };
 pub use hostname::*;
 
-use super::DateTime;
 pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     fn columns() -> Vec<&'static str>;
     fn format_columns(prefix: Option<&str>) -> String {
@@ -36,8 +36,8 @@ pub struct DBRepositoryWithStorageName {
     pub repository_type: String,
     pub visibility: Visibility,
     pub active: bool,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 impl DBRepositoryWithStorageName {
     pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
@@ -61,7 +61,7 @@ impl DBRepositoryWithStorageName {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema, Columns)]
 pub struct DBRepository {
     pub id: Uuid,
     pub storage_id: Uuid,
@@ -69,8 +69,8 @@ pub struct DBRepository {
     pub repository_type: String,
     pub visibility: Visibility,
     pub active: bool,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: DateTime<FixedOffset>,
+    pub created_at: DateTime<FixedOffset>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
 pub struct RepositoryLookup {
@@ -167,8 +167,8 @@ pub struct DBRepositoryConfig<T> {
     pub key: String,
     /// The Repository Config Value. This is the value that is stored for the key.
     pub value: Json<T>,
-    pub updated_at: DateTime,
-    pub created_at: DateTime,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 pub type GenericDBRepositoryConfig = DBRepositoryConfig<Value>;
 impl DBRepositoryConfig<Value> {
@@ -222,5 +222,57 @@ impl<T: for<'a> Deserialize<'a> + Unpin + Send + 'static> DBRepositoryConfig<T> 
         .fetch_optional(database)
         .await?;
         Ok(config)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema, Deserialize)]
+pub struct DBRepositoryNames {
+    /// The repository ID
+    pub repository_id: Uuid,
+    /// The repository name
+    pub repository_name: RepositoryName,
+    /// The storage ID
+    pub storage_id: Uuid,
+    /// The storage name
+    pub storage_name: StorageName,
+}
+impl From<DBRepositoryNamesWithVisibility> for DBRepositoryNames {
+    fn from(value: DBRepositoryNamesWithVisibility) -> Self {
+        Self {
+            repository_id: value.repository_id,
+            repository_name: value.repository_name,
+            storage_id: value.storage_id,
+            storage_name: value.storage_name,
+        }
+    }
+}
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema, Deserialize)]
+pub struct DBRepositoryNamesWithVisibility {
+    /// The repository ID
+    pub repository_id: Uuid,
+    /// The repository name
+    pub repository_name: RepositoryName,
+    /// The visibility of the repository
+    pub visibility: Visibility,
+    /// The storage ID
+    pub storage_id: Uuid,
+    /// The storage name
+    pub storage_name: StorageName,
+}
+
+impl DBRepositoryNamesWithVisibility {
+    pub async fn get_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let repository = sqlx::query_as(
+            r#"SELECT   r.id AS repository_id,
+                            r.name AS repository_name,
+                            r.visibility AS visibility,
+                            s.id AS storage_id,
+                            s.name AS storage_name
+                FROM repositories r INNER JOIN storages s ON s.id = r.storage_id WHERE r.id = $1"#,
+        )
+        .bind(id)
+        .fetch_optional(database)
+        .await?;
+        Ok(repository)
     }
 }

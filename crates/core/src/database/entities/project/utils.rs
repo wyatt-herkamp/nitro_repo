@@ -135,4 +135,11 @@ impl ProjectkeyLookup {
         }
     }
 }
-impl DBProject {}
+
+pub async fn does_project_id_exist(id: Uuid, database: &PgPool) -> Result<bool, sqlx::Error> {
+    let project = sqlx::query("SELECT id FROM projects WHERE id = $1")
+        .bind(id)
+        .fetch_optional(database)
+        .await?;
+    Ok(project.is_some())
+}

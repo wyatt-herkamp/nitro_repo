@@ -4,7 +4,9 @@ use axum::{
     routing::get,
 };
 use nr_core::{
-    database::project::{DBProject, ProjectDBType},
+    database::entities::project::{
+        utils::does_project_id_exist, versions::DBProjectVersion, DBProject, ProjectDBType,
+    },
     repository::project::ProjectResolution,
 };
 use tracing::instrument;
@@ -18,10 +20,15 @@ use crate::{
 };
 
 #[derive(OpenApi)]
-#[openapi(paths(get_project,), components(schemas(DBProject, ProjectResolution)))]
+#[openapi(
+    paths(get_project, get_project_versions),
+    components(schemas(DBProject, ProjectResolution, DBProjectVersion))
+)]
 pub struct ProjectRoutes;
 pub fn project_routes() -> axum::Router<NitroRepo> {
-    axum::Router::new().route("/{project_id}", get(get_project))
+    axum::Router::new()
+        .route("/{project_id}", get(get_project))
+        .route("/{project_id}/versions", get(get_project_versions))
 }
 
 #[utoipa::path(
@@ -47,4 +54,32 @@ pub async fn get_project(
     };
 
     Ok(ResponseBuilder::ok().json(&project))
+}
+
+#[utoipa::path(
+    get,
+    path = "/{project_id}/versions",
+    params(
+        ("project_id", description = "The project ID")
+    ),
+    responses(
+        (status = 200, description = "File listing", body = Vec<DBProjectVersion>),
+        (status = 404, description = "Project not found"),
+        (status = 403, description = "Missing permission"),
+    ),
+)]
+#[instrument]
+pub async fn get_project_versions(
+    Path(project_id): Path<Uuid>,
+    State(site): State<NitroRepo>,
+    auth: Option<Authentication>,
+) -> Result<Response, InternalError> {
+    let versions = DBProjectVersion::get_all_versions(project_id, site.as_ref()).await?;
+
+    if versions.is_empty() {
+        if !does_project_id_exist(project_id, site.as_ref()).await? {
+            return Ok(ResponseBuilder::not_found().empty());
+        }
+    }
+    Ok(ResponseBuilder::ok().json(&versions))
 }

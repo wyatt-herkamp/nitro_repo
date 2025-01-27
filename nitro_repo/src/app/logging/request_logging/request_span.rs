@@ -81,6 +81,7 @@ pub fn make_span<B>(request: &Request<B>, request_id: RequestId) -> tracing::Spa
         http.status_code = Empty,
         http.referer = Empty,
         http.raw_path = ?request.uri().path(),
+        http.response_size = Empty,
         otel.status_code = Empty,
         otel.name = "HTTP request",
         trace_id = Empty,
@@ -139,6 +140,9 @@ pub fn on_response<B>(
     span.record("http.status_code", response.status().as_u16());
 
     span.record("otel.status_code", "OK");
+}
+pub fn on_end_of_stream(body_size: u64, span: &tracing::Span) {
+    span.record("http.response_size", body_size);
 }
 pub fn on_failure<E>(error: &E, _latency: std::time::Duration, span: &tracing::Span)
 where

@@ -1,20 +1,18 @@
 use std::{
-    fs::{self},
+    fs::{self, Metadata},
     io::{self, ErrorKind},
     ops::Deref,
     path::PathBuf,
     sync::Arc,
 };
-
+pub use stream::*;
 pub mod error;
+mod stream;
 use error::LocalStorageError;
-use futures::FutureExt;
 use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
-use tokio::{
-    sync::{Mutex, Notify},
-    task::JoinSet,
-};
+use tokio::{sync::Mutex, task::JoinSet};
+use tokio_stream::wrappers::ReadDirStream;
 use tracing::{
     debug, debug_span, error, event,
     field::{debug, Empty},
@@ -120,7 +118,6 @@ struct CreatePath {
 }
 impl LocalStorageInner {
     /// Get the path for a file to be created
-
     #[instrument(level = "debug")]
     fn get_path_for_creation(
         &self,
@@ -332,6 +329,7 @@ impl LocalStorage {
 }
 impl Storage for LocalStorage {
     type Error = LocalStorageError;
+    type DirectoryStream = LocalDirectoryListStream;
     fn storage_type_name(&self) -> &'static str {
         "Local"
     }
@@ -473,7 +471,6 @@ impl Storage for LocalStorage {
         } else {
             error!("Shutdown Signal already sent");
         }
-        // TODO: Implement Unload
         Ok(())
     }
     #[instrument(
@@ -555,6 +552,34 @@ impl Storage for LocalStorage {
     ) -> Result<bool, LocalStorageError> {
         let path = self.get_path(&repository, location);
         Ok(path.exists())
+    }
+
+    async fn stream_directory(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Self::DirectoryStream>, Self::Error> {
+        let path = self.get_path(&repository, location);
+        {
+            let meta = path.metadata();
+            match meta {
+                Ok(meta) if meta.is_dir() => {}
+                Ok(_) => return Err(LocalStorageError::expected_directory()),
+                Err(err) if err.kind() == ErrorKind::NotFound => {
+                    return Ok(None);
+                }
+                Err(err) => {
+                    return Err(LocalStorageError::IOError(err));
+                }
+            }
+        }
+
+        let meta = StorageFileMeta::read_from_directory(&path)?;
+
+        let read_dir = tokio::fs::read_dir(&path).await?;
+        let stream = LocalDirectoryListStream::new_directory(read_dir, meta);
+
+        Ok(Some(stream))
     }
 }
 #[derive(Debug, Default)]

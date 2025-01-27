@@ -142,6 +142,16 @@ impl<T: IntoErrorResponse + 'static> From<T> for InternalError {
         InternalError(Box::new(err))
     }
 }
+impl IntoErrorResponse for axum::Error {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        let message = self.to_string();
+        http::Response::builder()
+            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+            .header(CONTENT_TYPE, TEXT_MEDIA_TYPE)
+            .body(axum::body::Body::from(message))
+            .unwrap()
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum ResponseBuildError {

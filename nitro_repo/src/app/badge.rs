@@ -5,7 +5,7 @@ use axum::{
 };
 use http::StatusCode;
 use nr_core::{
-    database::{
+    database::entities::{
         project::{DBProject, ProjectDBType},
         repository::DBRepositoryConfig,
     },

@@ -27,6 +27,7 @@ http.workspace = true
 utoipa.workspace = true
 http-body.workspace = true
 tokio-util.workspace = true
+tokio-stream = { version = "0.1", features = ["fs"] }
 pin-project.workspace = true
 futures.workspace = true
 

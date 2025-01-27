@@ -70,11 +70,14 @@ export interface RepositoryIconDef {
 export interface FrontendRepositoryType {
   name: string;
   properName: string;
-  projectComponent: {
+  projectComponent?: {
     component: Component;
-    props: Record<string, any>;
+    props?: Record<string, any>;
   };
-
+  fullProjectComponent?: {
+    component: Component;
+    props?: Record<string, any>;
+  };
   icons: Array<RepositoryIconDef>;
 }
 export const repositoryTypes: FrontendRepositoryType[] = [MavenFrontendDefinition];
@@ -134,3 +137,5 @@ export interface RepositoryToActions {
   repositoryId: string;
   actions: RepositoryActionsType;
 }
+
+

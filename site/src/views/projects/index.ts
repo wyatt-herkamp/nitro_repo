@@ -2,7 +2,7 @@ import ProjectPageView from "./ProjectPageView.vue";
 
 export const projectRoutes = [
   {
-    path: "/projects/:id",
+    path: "/projects/:projectId/:version?",
 
     name: "ProjectPageView",
     component: ProjectPageView,

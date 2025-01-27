@@ -4,7 +4,7 @@ use ahash::HashMap;
 use auto_impl::auto_impl;
 use digestible::Digestible;
 use futures::future::BoxFuture;
-use nr_core::database::repository::{DBRepository, GenericDBRepositoryConfig};
+use nr_core::database::entities::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_storage::DynStorage;
 use serde::Serialize;
 use serde_json::Value;

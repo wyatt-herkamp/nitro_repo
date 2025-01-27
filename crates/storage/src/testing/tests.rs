@@ -1,4 +1,3 @@
-
 use nr_core::storage::StoragePath;
 use tracing::{debug, info};
 use uuid::Uuid;
@@ -9,7 +8,7 @@ use super::storage::TestingStorage;
 pub async fn full_test<ST: Storage>(storage: TestingStorage<ST>) -> anyhow::Result<()> {
     write_then_read(&storage).await?;
     write_multiple_then_list(&storage).await?;
-     should_conflict(&storage).await?;
+    should_conflict(&storage).await?;
     storage.unload().await?;
     Ok(())
 }

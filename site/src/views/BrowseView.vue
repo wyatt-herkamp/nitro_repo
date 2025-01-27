@@ -1,18 +1,22 @@
 <template>
   <main v-if="repository">
     <BrowseHeader :repository="repository" />
-    <div v-if="lastResponse">
+    <div v-if="files">
       <div class="browse">
         <BrowseList
-          :files="lastResponse.files"
+          :totalFiles="numberOfFiles"
+          :files="files"
           :currentPath="catchAll"
           :repository="repository" />
       </div>
-      <div v-if="lastResponse.project_resolution">
+      <div v-if="projectResolution">
         <BrowseProject
-          :projectResolution="lastResponse.project_resolution"
+          :projectResolution="projectResolution"
           :repository="repository" />
       </div>
+    </div>
+    <div v-else>
+      <p>Loading...</p>
     </div>
   </main>
 </template>
@@ -20,10 +24,11 @@
 import BrowseHeader from "@/components/nr/repository/browse/BrowseHeader.vue";
 import BrowseList from "@/components/nr/repository/browse/BrowseList.vue";
 import BrowseProject from "@/components/nr/repository/project/BrowseProject.vue";
-import http from "@/http";
+import { websocketPath } from "@/config";
+
 import router from "@/router";
 import { repositoriesStore } from "@/stores/repositories";
-import type { RawBrowseResponse } from "@/types/browse";
+import type { ProjectResolution, RawBrowseFile, WSBrowseResponse } from "@/types/browse";
 import { type RepositoryWithStorageName } from "@/types/repository";
 import { ref, watch } from "vue";
 const repoStore = repositoriesStore();
@@ -32,34 +37,55 @@ const catchAll = ref(router.currentRoute.value.params.catchAll as string);
 console.log(`Browsing repository ${repositoryId.value} with catchAll ${catchAll.value}`);
 
 const repository = ref<RepositoryWithStorageName | undefined>(undefined);
-const lastResponse = ref<RawBrowseResponse | undefined>(undefined);
+const websocket = new WebSocket(websocketPath(`api/repository/browse-ws/${repositoryId.value}`));
+
+websocket.onopen = () => {
+  console.log("Websocket opened");
+  changeDirectory(catchAll.value);
+};
+websocket.onmessage = (event) => {
+  const message: WSBrowseResponse = JSON.parse(event.data);
+  console.log(`Received message`, message);
+  if (message.type === "DirectoryItem") {
+    if (files.value === undefined) {
+      files.value = [];
+    }
+    console.log("Adding file", message.data);
+    files.value.push(message.data);
+  } else if (message.type === "OpenedDirectory") {
+    console.log("Opened Directory", message.data);
+    numberOfFiles.value = message.data.number_of_files;
+    files.value = [];
+    projectResolution.value = message.data.project_resolution;
+  } else {
+    console.log(`Unknown message type`, message);
+  }
+};
+const files = ref<RawBrowseFile[] | undefined>(undefined);
+const projectResolution = ref<ProjectResolution | undefined>(undefined);
 async function loadRepository() {
   console.log(`Loading repository ${repositoryId.value}`);
-  await repoStore.getRepositoryById(repositoryId.value).then((response) => {
+  repoStore.getRepositoryById(repositoryId.value).then((response) => {
     repository.value = response;
     console.log("Loaded Repository" + response);
   });
 }
+const numberOfFiles = ref(0);
 
-async function browse() {
-  const apiRoute = `/api/repository/browse/${repositoryId.value}/${catchAll.value}`;
-  console.log(
-    `Browsing repository ${repositoryId.value} with catchAll ${catchAll.value} using ${apiRoute}`,
-  );
-  http.get<RawBrowseResponse>(apiRoute).then((response) => {
-    lastResponse.value = response.data;
-    console.log("Loaded Browse Response" + response.data);
-  });
-}
 loadRepository();
 
-browse();
+function changeDirectory(path: string) {
+  console.log(`Changing directory to ${path}`);
+  websocket.send(JSON.stringify({ type: "ListDirectory", data: path }));
+}
 watch(
   () => router.currentRoute.value.params.catchAll,
   () => {
     console.log("CatchAll changed");
     catchAll.value = router.currentRoute.value.params.catchAll as string;
-    browse();
+    files.value = undefined;
+    projectResolution.value = undefined;
+    changeDirectory(catchAll.value);
   },
 );
 </script>

@@ -25,6 +25,10 @@ pub enum FrontendError {
     HandlebarsError(#[from] handlebars::RenderError),
     #[error(transparent)]
     ZipError(#[from] zip::result::ZipError),
+    #[error(transparent)]
+    JSONError(#[from] serde_json::Error),
+    #[error("Invalid route path {error} in route {path}")]
+    InvalidRoutePath { error: &'static str, path: String },
 }
 impl IntoErrorResponse for FrontendError {
     fn into_response_boxed(self: Box<Self>) -> Response {

@@ -5,6 +5,7 @@ use crate::{
     local::{LocalStorage, LocalStorageFactory},
     meta::RepositoryMeta,
     s3::{S3Storage, S3StorageFactory},
+    streaming::DynDirectoryListStream,
     FileContent, FileType, Storage, StorageError, StorageFactory, StorageTypeConfig,
 };
 #[derive(Debug, Clone)]
@@ -14,6 +15,7 @@ pub enum DynStorage {
 }
 impl Storage for DynStorage {
     type Error = StorageError;
+    type DirectoryStream = DynDirectoryListStream;
     async fn unload(&self) -> Result<(), StorageError> {
         match self {
             DynStorage::Local(storage) => storage.unload().await.map_err(Into::into),
@@ -161,6 +163,24 @@ impl Storage for DynStorage {
             DynStorage::S3(storage) => storage
                 .file_exists(repository, location)
                 .await
+                .map_err(Into::into),
+        }
+    }
+    async fn stream_directory(
+        &self,
+        repository: Uuid,
+        location: &StoragePath,
+    ) -> Result<Option<Self::DirectoryStream>, Self::Error> {
+        match self {
+            DynStorage::Local(storage) => storage
+                .stream_directory(repository, location)
+                .await
+                .map(|x| x.map(DynDirectoryListStream::new))
+                .map_err(Into::into),
+            DynStorage::S3(storage) => storage
+                .stream_directory(repository, location)
+                .await
+                .map(|x| x.map(DynDirectoryListStream::new))
                 .map_err(Into::into),
         }
     }

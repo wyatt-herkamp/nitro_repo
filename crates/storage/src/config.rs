@@ -1,5 +1,5 @@
 use chrono::Utc;
-use nr_core::{database::storage::DBStorage, ConfigTimeStamp};
+use nr_core::{database::entities::storage::DBStorage, ConfigTimeStamp};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use utoipa::ToSchema;

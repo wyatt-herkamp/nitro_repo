@@ -8,7 +8,7 @@ use axum::{
 use axum_extra::{headers::UserAgent, TypedHeader};
 use http::StatusCode;
 use nr_core::{
-    database::user::{
+    database::entities::user::{
         auth_token::{AuthToken, NewAuthToken},
         UserType,
     },

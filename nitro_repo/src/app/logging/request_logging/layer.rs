@@ -32,7 +32,7 @@ where
     S::Future: Send + 'static,
     S::Error: std::fmt::Display + 'static,
 {
-    type Response = Response<TraceResponseBody<Body>>;
+    type Response = Response<TraceResponseBody>;
     type Error = S::Error;
     //type Future = BoxFuture<'static, Result<Self::Response, S::Error>>;
     type Future = TraceResponseFuture<S::Future>;
@@ -85,9 +85,10 @@ pub struct TraceResponseFuture<F> {
     inner: F,
     instant: std::time::Instant,
     state: NitroRepo,
+    attributes: Vec<KeyValue>,
     span: Option<tracing::Span>,
     request_body_size: u64,
-    attributes: Vec<KeyValue>,
+
     request_id: RequestId,
 }
 
@@ -96,7 +97,7 @@ where
     E: std::fmt::Display + 'static,
     F: Future<Output = Result<Response<Body>, E>>,
 {
-    type Output = Result<Response<TraceResponseBody<Body>>, E>;
+    type Output = Result<Response<TraceResponseBody>, E>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
@@ -139,21 +140,19 @@ where
                 if response.status().is_server_error() {
                     super::on_failure(&response.status(), duration, &span);
                 }
-                state
-                    .metrics
-                    .response_size_bytes
-                    .record(response.body().size_hint().lower(), &this.attributes);
 
                 final_metrics(&state, duration, request_body_size, &this.attributes);
 
                 let span = span.clone();
 
-                let res: Response<TraceResponseBody<Body>> =
-                    response.map(|body| TraceResponseBody {
-                        inner: body,
-                        start: *this.instant,
-                        span,
-                    });
+                let res: Response<TraceResponseBody> = response.map(|body| TraceResponseBody {
+                    inner: body,
+                    start: *this.instant,
+                    span,
+                    state: state.clone(),
+                    attributes: this.attributes.clone(),
+                    total_bytes: request_body_size,
+                });
 
                 Poll::Ready(Ok(res))
             }

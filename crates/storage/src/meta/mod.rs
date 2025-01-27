@@ -1,4 +1,4 @@
-use ahash::{HashMap, HashMapExt};
+use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

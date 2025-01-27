@@ -6,6 +6,7 @@ export interface RawProject {
   latest_release?: string;
   latest_pre_release?: string;
   repository_id: string;
+  storage_path: string;
   updated_at: string;
   created_at: string;
 }
@@ -25,8 +26,10 @@ export class Project {
   latest_pre_release?: string;
   project_key?: string;
   repository_id: string;
+  storage_path: string;
   updated_at: Date;
   created_at: Date;
+
   constructor(data: RawProject) {
     this.id = data.id;
     this.scope = data.scope;
@@ -34,6 +37,7 @@ export class Project {
     this.latest_release = data.latest_release;
     this.latest_pre_release = data.latest_pre_release;
     this.project_key = data.project_key;
+    this.storage_path = data.storage_path;
     this.repository_id = data.repository_id;
     this.updated_at = new Date(data.updated_at);
     this.created_at = new Date(data.created_at);

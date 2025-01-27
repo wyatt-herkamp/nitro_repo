@@ -1,7 +1,7 @@
 <template>
   <div v-if="projectResolution.project_id">
     <div v-if="project">
-      <div v-if="projectHandler">
+      <div v-if="projectHandler && projectHandler.projectComponent">
         <component
           :is="projectHandler.projectComponent.component"
           :project="project"

@@ -5,7 +5,7 @@ use bytes::Bytes;
 use chrono::Duration;
 use derive_more::derive::Deref;
 use http::StatusCode;
-use nr_core::database::stages::{
+use nr_core::database::entities::stages::{
     DBStage, NewDBStageBuilderError, NewDBStageFileBuilder, NewDBStageFileBuilderError,
 };
 use redb::Result;

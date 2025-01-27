@@ -13,9 +13,11 @@ use http::Uri;
 pub mod frontend;
 use nr_core::{
     database::{
-        repository::DBRepository,
-        storage::{DBStorage, StorageDBType},
-        user::user_utils,
+        entities::{
+            repository::DBRepository,
+            storage::{DBStorage, StorageDBType},
+            user::user_utils,
+        },
         DatabaseConfig,
     },
     repository::config::{
@@ -26,6 +28,7 @@ use nr_storage::{DynStorage, Storage, StorageConfig, StorageFactory, STORAGE_FAC
 use opentelemetry::{
     global,
     metrics::{Histogram, Meter, UpDownCounter},
+    InstrumentationScope,
 };
 use parking_lot::{Mutex, RwLock};
 use serde::Serialize;
@@ -152,6 +155,7 @@ impl Debug for NitroRepo {
             .finish()
     }
 }
+/// Request Metrics based on [HTTP Server Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#http-server)
 #[derive(Debug, Clone)]
 pub struct AppMetrics {
     pub meter: Meter,
@@ -162,7 +166,10 @@ pub struct AppMetrics {
 }
 impl Default for AppMetrics {
     fn default() -> Self {
-        let meter = global::meter("axum-request-metrics");
+        let scope = InstrumentationScope::builder("nitro-repo")
+        .with_schema_url("https://github.com/open-telemetry/semantic-conventions/blob/v1.29.0/docs/http/http-metrics.md")
+        .with_version(env!("CARGO_PKG_VERSION")).build();
+        let meter = global::meter_with_scope(scope);
 
         Self {
             active_sessions: meter

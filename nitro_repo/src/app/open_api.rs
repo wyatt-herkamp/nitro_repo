@@ -11,9 +11,11 @@ use axum::{
     response::{IntoResponse, Response},
     Json, Router,
 };
-use nr_core::database::project::{DBProject, DBProjectMember, DBProjectVersion};
-use nr_core::database::user::permissions::FullUserPermissions;
-use nr_core::database::user::NewUserRequest;
+use nr_core::database::entities::project::{
+    versions::DBProjectVersion, DBProject, DBProjectMember,
+};
+use nr_core::database::entities::user::permissions::FullUserPermissions;
+use nr_core::database::entities::user::NewUserRequest;
 use nr_core::user::permissions::{RepositoryActions, UserPermissions};
 use nr_core::user::scopes::{NRScope, ScopeDescription};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};

@@ -9,10 +9,9 @@ use derive_more::From;
 
 use http::request::Parts;
 use http::Response;
-use nr_core::database::user::auth_token::AuthToken;
-use nr_core::database::user::{UserModel, UserSafeData, UserType};
+use nr_core::database::entities::user::auth_token::AuthToken;
+use nr_core::database::entities::user::{UserModel, UserSafeData, UserType};
 use nr_core::user::permissions::{HasPermissions, UserPermissions};
-use semver::Op;
 use serde::Serialize;
 use session::Session;
 use sqlx::PgPool;

@@ -1,10 +1,14 @@
-use axum::{extract::State, response::Response, Json};
-use http::StatusCode;
+use axum::{
+    extract::{Request, State},
+    response::Response,
+    Json,
+};
+use http::{StatusCode, Uri};
 use nr_core::{
-    database::user::NewUserRequest,
+    database::entities::user::NewUserRequest,
     user::scopes::{NRScope, ScopeDescription},
 };
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
@@ -14,7 +18,10 @@ pub mod repository;
 pub mod storage;
 pub mod user;
 pub mod user_management;
-use crate::error::InternalError;
+use crate::{
+    error::InternalError,
+    utils::{response_builder::ResponseBuilder, responses::APIErrorResponse},
+};
 
 use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
 pub fn api_routes() -> axum::Router<NitroRepo> {
@@ -30,6 +37,7 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
         )
         .nest("/repository", repository::repository_routes())
         .nest("/project", project::project_routes())
+        .fallback(route_not_found)
         .layer(CorsLayer::very_permissive())
 }
 #[utoipa::path(
@@ -103,4 +111,34 @@ pub async fn install(
         instance.is_installed = true;
     }
     return Ok(StatusCode::NO_CONTENT);
+}
+
+#[derive(Debug)]
+pub struct RouteNotFound {
+    pub uri: Uri,
+    pub method: http::Method,
+}
+impl Serialize for RouteNotFound {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut struct_ser = serializer.serialize_struct("RouteNotFound", 3)?;
+        struct_ser.serialize_field("uri", &self.uri.to_string())?;
+        struct_ser.serialize_field("path", &self.uri.path())?;
+        struct_ser.serialize_field("method", &self.method.to_string())?;
+        struct_ser.end()
+    }
+}
+/// `/api/*` fall back is different than the rest of the site
+async fn route_not_found(request: Request) -> Response {
+    let response: APIErrorResponse<RouteNotFound, ()> = APIErrorResponse {
+        message: "Not Found".into(),
+        details: Some(RouteNotFound {
+            uri: request.uri().clone(),
+            method: request.method().clone(),
+        }),
+        ..Default::default()
+    };
+    ResponseBuilder::not_found().json(&response)
 }
