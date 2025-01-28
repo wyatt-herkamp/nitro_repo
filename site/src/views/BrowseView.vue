@@ -30,7 +30,7 @@ import router from "@/router";
 import { repositoriesStore } from "@/stores/repositories";
 import type { ProjectResolution, RawBrowseFile, WSBrowseResponse } from "@/types/browse";
 import { type RepositoryWithStorageName } from "@/types/repository";
-import { ref, watch } from "vue";
+import { onBeforeUnmount, ref, watch } from "vue";
 const repoStore = repositoriesStore();
 const repositoryId = ref(router.currentRoute.value.params.id as string);
 const catchAll = ref(router.currentRoute.value.params.catchAll as string);
@@ -38,7 +38,10 @@ console.log(`Browsing repository ${repositoryId.value} with catchAll ${catchAll.
 
 const repository = ref<RepositoryWithStorageName | undefined>(undefined);
 const websocket = new WebSocket(websocketPath(`api/repository/browse-ws/${repositoryId.value}`));
-
+onBeforeUnmount(() => {
+  console.log("Closing websocket");
+  websocket.close();
+});
 websocket.onopen = () => {
   console.log("Websocket opened");
   changeDirectory(catchAll.value);

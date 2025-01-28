@@ -27,17 +27,20 @@ fn build_frontend() -> anyhow::Result<()> {
     if !frontend_src.exists() {
         return Err(anyhow::anyhow!("site directory not found"));
     }
+    let frontend_dist = env::var_os("FRONTEND_DIST")
+        .map(|s| manifest_dir.join(s))
+        .unwrap_or_else(|| frontend_src.join("dist"));
+    println!("cargo::rerun-if-changed={}", frontend_dist.display());
 
-    println!("cargo::rerun-if-changed={}", manifest_dir.display());
-    zip_site(frontend_src)?;
+    zip_site(frontend_dist)?;
     Ok(())
 }
 
 /// Bundling files seem to be broken with Android. So as a work around. I will zip the files and include them in the binary.
-fn zip_site(frontend: impl AsRef<Path>) -> anyhow::Result<()> {
+fn zip_site(frontend_dist: impl AsRef<Path>) -> anyhow::Result<()> {
     let out_dir = env::var("OUT_DIR").with_context(|| "OUT_DIR not set")?;
-    let src = frontend.as_ref().join("dist");
-    if !src.exists() {
+    let frontend_src = frontend_dist.as_ref();
+    if !frontend_src.exists() {
         return Err(anyhow::anyhow!("site build directory not found"));
     }
     let dst = PathBuf::from(out_dir).join("frontend.zip");
@@ -46,17 +49,17 @@ fn zip_site(frontend: impl AsRef<Path>) -> anyhow::Result<()> {
     }
     let file = File::create(&dst)?;
 
-    let walkdir = WalkDir::new(&src);
+    let walkdir = WalkDir::new(&frontend_src);
     let it = walkdir.into_iter();
 
     internal_zip_dir(
         &mut it.filter_map(|e| e.ok()),
-        &src,
+        &frontend_src,
         file,
         zip::CompressionMethod::Stored,
     )?;
     println!("cargo:rustc-env=FRONTEND_ZIP={}", dst.display());
-    println!("cargo:rustc-env=FRONTEND_SRC={}", src.display());
+    println!("cargo:rustc-env=FRONTEND_SRC={}", frontend_src.display());
 
     Ok(())
 }

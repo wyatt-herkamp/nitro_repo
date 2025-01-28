@@ -4,16 +4,18 @@ use nr_core::storage::StoragePath;
 use nr_storage::Storage;
 use opentelemetry::{
     global,
-    metrics::{Counter, Histogram, Meter, UpDownCounter},
+    metrics::{Histogram, Meter, UpDownCounter},
     KeyValue,
 };
 use parking_lot::Mutex;
-use tracing::{event, field::Empty, info_span, trace, Level, Span};
+use tracing::{event, field::Empty, info_span, Level, Span};
 
 use crate::repository::Repository;
 
 use super::DynRepository;
 #[derive(Debug, Clone)]
+/// Dead Code is allowed as this stuff is still in development
+#[allow(dead_code)]
 pub struct RepositoryMetricsMeter {
     meter: Meter,
     project_access_bytes: Histogram<u64>,

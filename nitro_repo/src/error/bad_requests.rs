@@ -1,9 +1,11 @@
-use axum::body::Body;
+use std::borrow::Cow;
+
 use axum::response::IntoResponse;
-use axum::response::Response;
 use http::header::ToStrError;
-use http::StatusCode;
 use thiserror::Error;
+
+use crate::utils::response_builder::ResponseBuilder;
+use crate::utils::responses::APIErrorResponse;
 
 use super::IntoErrorResponse;
 #[derive(Debug, Error)]
@@ -46,9 +48,11 @@ pub enum InvalidAuthorizationHeader {
 
 impl IntoResponse for BadRequestErrors {
     fn into_response(self) -> axum::response::Response {
-        Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Body::from(self.to_string()))
-            .unwrap()
+        let error_body = APIErrorResponse {
+            message: Cow::Borrowed("Bad Request"),
+            details: Some(self.to_string()),
+            error: Some(self),
+        };
+        ResponseBuilder::bad_request().json(&error_body)
     }
 }

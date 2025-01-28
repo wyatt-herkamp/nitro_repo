@@ -110,7 +110,7 @@ impl NrApi {
 
 #[cfg(test)]
 mod tests {
-    use core::num;
+
     use std::sync::{atomic::AtomicUsize, Arc};
 
     use nr_core::repository::browse::BrowseFile;
@@ -184,10 +184,7 @@ mod tests {
             debug!(?entry, "Found Entry");
 
             match entry {
-                BrowseFile::Directory {
-                    name,
-                    number_of_files,
-                } => {
+                BrowseFile::Directory { name, .. } => {
                     let next_path = format!("{}/{}", path, name);
                     Box::pin(recursive_browse(
                         api.clone(),

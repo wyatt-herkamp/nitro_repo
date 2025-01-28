@@ -1,6 +1,6 @@
 use std::{fmt::Debug, fs::File, io, path::Path};
 
-use crate::{is_hidden_file, local::error::LocalStorageError, LocationMeta, LocationTypedMeta};
+use crate::{local::error::LocalStorageError, LocationMeta, LocationTypedMeta};
 
 use super::StorageFileReader;
 use chrono::{DateTime, FixedOffset};
@@ -177,7 +177,7 @@ impl StorageFileMeta<FileFileType> {
 }
 
 impl<FT> StorageFileMeta<FT> {
-    fn map_type<T>(self, f: impl FnOnce(FT) -> T) -> StorageFileMeta<T> {
+    pub(crate) fn map_type<T>(self, f: impl FnOnce(FT) -> T) -> StorageFileMeta<T> {
         StorageFileMeta {
             name: self.name,
             file_type: f(self.file_type),

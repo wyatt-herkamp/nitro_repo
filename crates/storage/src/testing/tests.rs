@@ -79,6 +79,7 @@ pub async fn write_multiple_then_list<ST: Storage>(
     for file in files {
         debug!(?file, "Item in directory");
     }
+
     Ok(())
 }
 

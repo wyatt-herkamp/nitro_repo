@@ -5,7 +5,7 @@ pub mod s3;
 pub use config::*;
 pub use error::StorageError;
 pub use fs::*;
-use futures::{future::BoxFuture, Stream};
+use futures::future::BoxFuture;
 use meta::RepositoryMeta;
 use nr_core::storage::StoragePath;
 pub use uuid::Uuid;
@@ -75,14 +75,17 @@ pub trait Storage: Send + Sync {
     ) -> impl Future<Output = Result<Option<StorageFileMeta<FileType>>, Self::Error>> + Send;
 
     /// Gets the File Information and Content
-    ///
-    /// range is ignored for directories
-    /// range is the byte range to read from the file
     fn open_file(
         &self,
         repository: Uuid,
         location: &StoragePath,
     ) -> impl Future<Output = Result<Option<StorageFile>, Self::Error>> + Send;
+    /// Streams a list of files in a directory
+    ///
+    /// # Note
+    /// Calling this on a file will return a stream with a single file
+    ///
+    /// This will not return hidden files
     fn stream_directory(
         &self,
         repository: Uuid,

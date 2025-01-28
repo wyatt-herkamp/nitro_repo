@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, Metadata},
+    fs::{self},
     io::{self, ErrorKind},
     ops::Deref,
     path::PathBuf,
@@ -12,7 +12,6 @@ use error::LocalStorageError;
 use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::Mutex, task::JoinSet};
-use tokio_stream::wrappers::ReadDirStream;
 use tracing::{
     debug, debug_span, error, event,
     field::{debug, Empty},
@@ -560,11 +559,23 @@ impl Storage for LocalStorage {
         location: &StoragePath,
     ) -> Result<Option<Self::DirectoryStream>, Self::Error> {
         let path = self.get_path(&repository, location);
-        {
+        let stream = {
             let meta = path.metadata();
             match meta {
-                Ok(meta) if meta.is_dir() => {}
-                Ok(_) => return Err(LocalStorageError::expected_directory()),
+                Ok(meta) if meta.is_dir() => {
+                    let meta = StorageFileMeta::read_from_directory(&path)?;
+
+                    let read_dir = tokio::fs::read_dir(&path).await?;
+                    LocalDirectoryListStream::new_directory(read_dir, meta)
+                }
+                Ok(_) => {
+                    if is_hidden_file(&path) {
+                        return Ok(None);
+                    }
+                    let meta = StorageFileMeta::read_from_file(&path)?;
+
+                    LocalDirectoryListStream::new_file(path, meta)
+                }
                 Err(err) if err.kind() == ErrorKind::NotFound => {
                     return Ok(None);
                 }
@@ -572,13 +583,7 @@ impl Storage for LocalStorage {
                     return Err(LocalStorageError::IOError(err));
                 }
             }
-        }
-
-        let meta = StorageFileMeta::read_from_directory(&path)?;
-
-        let read_dir = tokio::fs::read_dir(&path).await?;
-        let stream = LocalDirectoryListStream::new_directory(read_dir, meta);
-
+        };
         Ok(Some(stream))
     }
 }

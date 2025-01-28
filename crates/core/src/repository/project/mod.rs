@@ -6,7 +6,7 @@ use strum::{Display, EnumIs, EnumString, IntoStaticStr};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::database::entities::project::{DBProject, ProjectIds};
+use crate::database::entities::project::ProjectIds;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Builder, Default)]
 pub struct ProjectResolution {
     pub project_id: Option<Uuid>,

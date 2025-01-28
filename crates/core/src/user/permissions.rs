@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::database::entities::user::{
     auth_token::AuthToken,
     permissions::{NewUserRepositoryPermissions, UserRepositoryPermissions},
+    UserType,
 };
 
 use super::scopes::NRScope;
@@ -47,6 +48,18 @@ impl<HS: HasPermissions> HasPermissions for Option<HS> {
 
     fn user_id(&self) -> Option<i32> {
         self.as_ref().and_then(HasPermissions::user_id)
+    }
+}
+pub trait HasUserType {
+    type UserType: UserType;
+
+    fn user(&self) -> Option<&Self::UserType>;
+}
+impl<HS: HasUserType> HasUserType for Option<HS> {
+    type UserType = HS::UserType;
+
+    fn user(&self) -> Option<&Self::UserType> {
+        self.as_ref().and_then(HasUserType::user)
     }
 }
 pub trait HasPermissions {

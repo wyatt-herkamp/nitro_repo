@@ -166,6 +166,7 @@ impl Storage for DynStorage {
                 .map_err(Into::into),
         }
     }
+
     async fn stream_directory(
         &self,
         repository: Uuid,

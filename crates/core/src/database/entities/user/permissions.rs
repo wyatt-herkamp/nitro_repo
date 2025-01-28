@@ -1,25 +1,32 @@
 use ahash::{HashMap, HashMapExt};
 
+use crate::database::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, PgPool};
 use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{
-    database::DateTime,
-    user::permissions::{RepositoryActions, UserPermissions},
-};
+use crate::user::permissions::{RepositoryActions, UserPermissions};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow)]
-
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow, Columns)]
 pub struct UserRepositoryPermissions {
     pub id: i32,
     pub user_id: i32,
     pub repository_id: Uuid,
     pub actions: Vec<RepositoryActions>,
-    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
-    pub created_at: chrono::DateTime<chrono::FixedOffset>,
+    pub updated_at: DateTime<FixedOffset>,
+    pub created_at: DateTime<FixedOffset>,
+}
+impl TableType for UserRepositoryPermissions {
+    type Columns = UserRepositoryPermissionsColumn;
+
+    fn table_name() -> &'static str
+    where
+        Self: Sized,
+    {
+        "user_repository_permissions"
+    }
 }
 impl UserRepositoryPermissions {
     pub async fn has_repository_action(
@@ -28,13 +35,16 @@ impl UserRepositoryPermissions {
         action: RepositoryActions,
         database: &PgPool,
     ) -> sqlx::Result<bool> {
-        let Some(actions) = sqlx::query_scalar::<_, Vec<RepositoryActions>>(
-            r#"SELECT * FROM user_repository_permissions WHERE user_id = $1 AND repository_id = $2 "#,
+        let select = SimpleSelectQueryBuilder::new(
+            Self::table_name(),
+            vec![UserRepositoryPermissionsColumn::Actions],
         )
-        .bind(user_id)
-        .bind(repository)
+        .where_equals(UserRepositoryPermissionsColumn::UserId, user_id)
+        .where_equals(UserRepositoryPermissionsColumn::RepositoryId, repository)
+        .query_scalar::<Vec<RepositoryActions>>()
         .fetch_optional(database)
-        .await? else{
+        .await?;
+        let Some(actions) = select else {
             return Ok(false);
         };
         Ok(actions.contains(&action))

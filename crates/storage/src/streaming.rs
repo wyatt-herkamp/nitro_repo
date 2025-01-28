@@ -1,13 +1,12 @@
 use std::{fmt::Debug, pin::Pin};
 
-use futures::Stream;
+use futures::{Stream, StreamExt};
 use pin_project::pin_project;
 
-use crate::{local::LocalStorage, DirectoryFileType, FileType, StorageError, StorageFileMeta};
+use crate::{DirectoryFileType, FileType, StorageError, StorageFileMeta};
 /// Why is it Result<Option<StorageFileMeta<FileType>>>?
 ///
-/// If a file is skipped it will return Ok(None)
-
+/// If a file is a hidden file it will return Ok(None)
 pub trait DirectoryListStream:
     Stream<Item = Result<Option<StorageFileMeta<FileType>>, StorageError>> + Debug + Send
 {
@@ -43,6 +42,10 @@ impl Stream for VecDirectoryListStream {
             None => std::task::Poll::Ready(None),
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.files.len(), Some(self.files.len()))
+    }
 }
 #[derive(Debug)]
 pub struct EmptyDirectoryListStream;
@@ -55,6 +58,9 @@ impl Stream for EmptyDirectoryListStream {
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
         std::task::Poll::Ready(None)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(0))
     }
 }
 impl DirectoryListStream for EmptyDirectoryListStream {
@@ -99,4 +105,20 @@ impl DirectoryListStream for DynDirectoryListStream {
     fn number_of_files(&self) -> u64 {
         self.stream.number_of_files()
     }
+}
+/// Collects all files from a directory stream
+pub async fn collect_directory_stream<Stream>(
+    stream: Stream,
+) -> Result<Vec<StorageFileMeta<FileType>>, StorageError>
+where
+    Stream: DirectoryListStream + Send + 'static,
+{
+    let mut files = Vec::with_capacity(stream.number_of_files() as usize);
+    let mut stream = Box::pin(stream);
+    while let Some(file) = stream.next().await {
+        if let Some(file) = file? {
+            files.push(file);
+        }
+    }
+    Ok(files)
 }

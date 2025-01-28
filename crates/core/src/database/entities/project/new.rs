@@ -1,9 +1,7 @@
 use crate::builder_error::BuilderError;
-use crate::repository::project::{ReleaseType, VersionData};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use sqlx::{types::Json, PgPool};
-use tracing::info;
+use sqlx::PgPool;
 use utoipa::ToSchema;
 use uuid::Uuid;
 

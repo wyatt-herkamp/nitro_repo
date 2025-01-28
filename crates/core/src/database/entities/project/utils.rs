@@ -4,7 +4,7 @@ use sqlx::{prelude::FromRow, PgPool};
 use tracing::debug;
 use uuid::Uuid;
 
-use super::{DBProject, ProjectDBType};
+use super::ProjectDBType;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
 pub struct ProjectLookupResult {

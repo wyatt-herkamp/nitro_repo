@@ -1,19 +1,19 @@
+use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 use std::ops::Deref;
 
-use axum::body::Body;
 use axum::extract::{FromRef, FromRequestParts, OptionalFromRequestParts};
 use axum::response::IntoResponse;
 use axum_extra::extract::cookie::Cookie;
 use derive_more::From;
 
 use http::request::Parts;
-use http::Response;
 use nr_core::database::entities::user::auth_token::AuthToken;
 use nr_core::database::entities::user::{UserModel, UserSafeData, UserType};
+use nr_core::database::DBError;
 use nr_core::user::permissions::{HasPermissions, UserPermissions};
 use serde::Serialize;
-use session::Session;
+use session::{Session, SessionError};
 use sqlx::PgPool;
 use strum::EnumIs;
 use thiserror::Error;
@@ -22,17 +22,20 @@ use utoipa::ToSchema;
 
 use crate::error::IntoErrorResponse;
 use crate::utils::headers::AuthorizationHeader;
+use crate::utils::response_builder::ResponseBuilder;
+use crate::utils::responses::APIErrorResponse;
 
 use super::NitroRepo;
 
 pub mod layer;
 pub mod session;
+pub mod ws;
 
 #[derive(Error, Debug)]
 pub enum AuthenticationError {
-    #[error("Error: {0}")]
-    RequestTypeError(Box<dyn IntoErrorResponse>),
-    #[error("You are not logged in.")]
+    #[error("Internal Authentication Error: {0}")]
+    InternalError(Box<dyn IntoErrorResponse>),
+    #[error("Unable to Authenticate")]
     Unauthorized,
     #[error("Password is not able to be verified.")]
     PasswordVerificationError,
@@ -41,32 +44,66 @@ pub enum AuthenticationError {
     #[error("Forbidden")]
     Forbidden,
 }
-impl From<sqlx::Error> for AuthenticationError {
-    fn from(err: sqlx::Error) -> Self {
-        AuthenticationError::RequestTypeError(Box::new(err))
+impl AuthenticationError {
+    pub fn is_internal_error(&self) -> bool {
+        matches!(self, AuthenticationError::InternalError(_))
     }
 }
-
+macro_rules! internal_errors {
+    (
+        $($error:ty),*
+    ) => {
+        $(
+            impl From<$error> for AuthenticationError {
+                fn from(err: $error) -> Self {
+                    AuthenticationError::InternalError(Box::new(err))
+                }
+            }
+        )*
+    };
+}
+internal_errors!(SessionError, sqlx::Error, DBError);
 impl IntoErrorResponse for AuthenticationError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         self.into_response()
+    }
+
+    fn status_code(&self) -> http::StatusCode {
+        match self {
+            AuthenticationError::InternalError(_) => http::StatusCode::INTERNAL_SERVER_ERROR,
+            AuthenticationError::Unauthorized => http::StatusCode::UNAUTHORIZED,
+            AuthenticationError::PasswordVerificationError => http::StatusCode::UNAUTHORIZED,
+            AuthenticationError::AuthTokenForbidden => http::StatusCode::FORBIDDEN,
+            AuthenticationError::Forbidden => http::StatusCode::FORBIDDEN,
+        }
     }
 }
 impl IntoResponse for AuthenticationError {
     fn into_response(self) -> axum::response::Response {
         error!("Authentication Error: {}", self);
         match self {
-            AuthenticationError::RequestTypeError(err) => err.into_response_boxed(),
-            AuthenticationError::AuthTokenForbidden => Response::builder()
-                .status(http::StatusCode::FORBIDDEN)
-                .body(Body::from(
-                    "This Route Prohibits Auth Tokens as a form of Authentication",
-                ))
-                .unwrap(),
-            other => Response::builder()
-                .status(http::StatusCode::UNAUTHORIZED)
-                .body(Body::from(format!("Authentication Error: {}", other)))
-                .unwrap(),
+            AuthenticationError::InternalError(err) => err.into_response_boxed(),
+            AuthenticationError::AuthTokenForbidden => {
+                let api_error = APIErrorResponse::<(), ()> {
+                    message: Cow::Borrowed(
+                        "This route Forbids Auth Tokens as a form of Authentication",
+                    ),
+                    details: None,
+                    error: None,
+                };
+                ResponseBuilder::forbidden().json(&api_error)
+            }
+            other => {
+                let status_code = other.status_code();
+                let api_error = APIErrorResponse::<(), AuthenticationError> {
+                    message: Cow::Borrowed("Authentication Error"),
+                    details: None,
+                    error: Some(other),
+                };
+                ResponseBuilder::default()
+                    .status(status_code)
+                    .json(&api_error)
+            }
         }
     }
 }
@@ -258,6 +295,7 @@ pub enum AuthenticationRaw {
     /// Authorization Basic Header
     Basic { username: String, password: String },
 }
+
 impl AuthenticationRaw {
     pub fn method_name(&self) -> Option<&str> {
         match self {

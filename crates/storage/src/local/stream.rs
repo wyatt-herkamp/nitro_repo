@@ -8,7 +8,7 @@ use tracing::trace;
 
 use crate::{
     is_hidden_file, local::error::LocalStorageError, streaming::DirectoryListStream,
-    DirectoryFileType, FileType, StorageError, StorageFileMeta,
+    DirectoryFileType, FileFileType, FileType, StorageError, StorageFileMeta,
 };
 
 #[derive(Debug)]
@@ -16,19 +16,28 @@ use crate::{
 pub struct LocalDirectoryListStream {
     #[pin]
     files: FileOrDirectory,
-    meta: StorageFileMeta<DirectoryFileType>,
+    meta: StorageFileMeta<FileType>,
 }
 impl LocalDirectoryListStream {
     pub fn new_directory(read_dir: ReadDir, meta: StorageFileMeta<DirectoryFileType>) -> Self {
         LocalDirectoryListStream {
             files: FileOrDirectory::Directory(ReadDirStream::new(read_dir)),
-            meta,
+            meta: meta.map_type(|directory_file_type| FileType::Directory(directory_file_type)),
+        }
+    }
+    pub fn new_file(file_path: PathBuf, meta: StorageFileMeta<FileFileType>) -> Self {
+        LocalDirectoryListStream {
+            files: FileOrDirectory::File(Some(file_path)),
+            meta: meta.map_type(|meta| FileType::File(meta)),
         }
     }
 }
 impl DirectoryListStream for LocalDirectoryListStream {
     fn number_of_files(&self) -> u64 {
-        self.meta.file_type().file_count
+        match &self.meta.file_type() {
+            FileType::Directory(dir) => dir.file_count,
+            _ => 1,
+        }
     }
 }
 #[derive(Debug)]
@@ -82,9 +91,7 @@ impl Stream for LocalDirectoryListStream {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (
-            self.meta.file_type().file_count as usize,
-            Some(self.meta.file_type().file_count as usize),
-        )
+        let number_of_files = self.number_of_files();
+        (number_of_files as usize, Some(number_of_files as usize))
     }
 }

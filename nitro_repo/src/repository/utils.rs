@@ -6,12 +6,10 @@ use nr_core::{
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::app::authentication::Authentication;
-
 use super::{Repository, RepositoryHandlerError};
 
-pub async fn can_read_repository(
-    auth: Option<Authentication>,
+pub async fn can_read_repository<A: HasPermissions>(
+    auth: &A,
     visibility: Visibility,
     repository_id: Uuid,
     database: &PgPool,

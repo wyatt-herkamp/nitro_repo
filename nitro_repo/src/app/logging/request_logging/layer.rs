@@ -1,5 +1,6 @@
 use std::{
     future::Future,
+    mem,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -13,7 +14,7 @@ use opentelemetry::KeyValue;
 use pin_project::pin_project;
 
 use tower_service::Service;
-use tracing::{debug, error, info};
+use tracing::error;
 
 use crate::app::NitroRepo;
 
@@ -71,7 +72,7 @@ where
             inner: result,
             instant: start,
             state: site,
-            span: Some(request_span),
+            span: request_span,
             request_body_size: body_size,
             attributes: attributes,
             request_id,
@@ -86,7 +87,7 @@ pub struct TraceResponseFuture<F> {
     instant: std::time::Instant,
     state: NitroRepo,
     attributes: Vec<KeyValue>,
-    span: Option<tracing::Span>,
+    span: tracing::Span,
     request_body_size: u64,
 
     request_id: RequestId,
@@ -101,19 +102,16 @@ where
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
-        if this.span.is_none() {
-            panic!("ResponseFuture polled after completion");
-        }
+        let span = this.span.clone();
+
         // Attempt to poll the inner future
         let result = {
-            let span_ref = this.span.as_ref().unwrap();
-            match span_ref.in_scope(|| this.inner.poll(cx)) {
+            match span.in_scope(|| this.inner.poll(cx)) {
                 Poll::Pending => return Poll::Pending,
                 Poll::Ready(result) => result,
             }
         };
         // One it has completed we can take the span and the classifier
-        let span = this.span.take().unwrap();
         let _guard = span.enter();
 
         let duration = this.instant.elapsed();
@@ -144,14 +142,14 @@ where
                 final_metrics(&state, duration, request_body_size, &this.attributes);
 
                 let span = span.clone();
-
+                let attributes = mem::take(this.attributes);
                 let res: Response<TraceResponseBody> = response.map(|body| TraceResponseBody {
                     inner: body,
                     start: *this.instant,
                     span,
                     state: state.clone(),
-                    attributes: this.attributes.clone(),
-                    total_bytes: request_body_size,
+                    attributes,
+                    total_bytes: 0,
                 });
 
                 Poll::Ready(Ok(res))

@@ -7,9 +7,7 @@ use super::{open_api, NitroRepo};
 
 use anyhow::Context;
 use axum::extract::DefaultBodyLimit;
-use axum::routing::any;
 use axum::{extract::Request, Router};
-use axum_extra::routing::RouterExt;
 use futures_util::pin_mut;
 use http::{HeaderName, HeaderValue};
 use hyper::body::Incoming;

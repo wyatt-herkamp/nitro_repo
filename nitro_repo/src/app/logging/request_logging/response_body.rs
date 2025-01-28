@@ -1,5 +1,4 @@
 use std::{
-    fmt,
     pin::Pin,
     task::{ready, Context, Poll},
     time::Instant,
