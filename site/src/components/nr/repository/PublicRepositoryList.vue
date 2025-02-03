@@ -42,7 +42,7 @@
         :key="repository.id"
         @click="
           router.push({
-            name: 'repository_page_by_',
+            name: 'repository_page_by_id',
             params: { repositoryId: repository.id },
           })
         ">
