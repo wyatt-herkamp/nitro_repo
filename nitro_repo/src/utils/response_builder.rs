@@ -1,6 +1,7 @@
 use axum::response::{IntoResponse, Response};
 use digestible::Digestible;
 use http::{header::CONTENT_TYPE, HeaderName, HeaderValue, StatusCode};
+use mime::Mime;
 
 use crate::error::ResponseBuildError;
 
@@ -87,6 +88,10 @@ impl ResponseBuilder {
             None => Ok(self),
         }
     }
+    pub fn content_type(self, content_type: Mime) -> Self {
+        self.header(CONTENT_TYPE, content_type.to_string())
+    }
+
     /// Serialize the data to JSON and return a response or an error
     pub fn json_or_err<T: serde::Serialize>(
         self,
@@ -102,9 +107,7 @@ impl ResponseBuilder {
             Err(err) => err.into_response(),
         }
     }
-    pub fn content_type(self, content_type: &str) -> Self {
-        self.header(CONTENT_TYPE, content_type)
-    }
+
     /// Checks if the data is present and returns a JSON response or a not found response
     pub fn json_or_not_found<T: serde::Serialize>(self, data: &Option<T>) -> Response {
         match data {

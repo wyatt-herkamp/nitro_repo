@@ -14,7 +14,7 @@ use crate::{
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use http::StatusCode;
-use rand::{distributions::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
+use rand::{distr::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
 use redb::{CommitError, Database, Error, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -364,7 +364,7 @@ impl SessionManager {
 
 #[inline(always)]
 pub fn create_session_id(exists_call_back: impl Fn(&str) -> bool) -> String {
-    let mut rand = StdRng::from_entropy();
+    let mut rand = StdRng::from_os_rng();
     loop {
         let session_id: String = (0..7).map(|_| rand.sample(Alphanumeric) as char).collect();
         if !exists_call_back(&session_id) {

@@ -154,7 +154,6 @@ impl StorageFileMeta<FileFileType> {
                 mime_type: mime,
                 file_hash: file_location_meta.hashes,
             }
-            .into()
         };
 
         let name = path

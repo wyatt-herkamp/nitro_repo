@@ -14,7 +14,7 @@
 import SubmitButton from "@/components/form/SubmitButton.vue";
 import http from "@/http";
 import { computed, ref, type PropType } from "vue";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import JsonSchemaForm from "@/components/form/JsonSchemaForm.vue";
 import { createForm, type RootSchema } from "nitro-jsf";
 
@@ -33,7 +33,7 @@ const props = defineProps({
   },
 });
 const model = defineModel<any>();
-const repositoryTypeStore = repositoriesStore();
+const repositoryTypeStore = useRepositoryStore();
 async function load() {
   if (!props.settingName) {
     throw new Error("settingName is required");

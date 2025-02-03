@@ -22,13 +22,13 @@ impl LocalDirectoryListStream {
     pub fn new_directory(read_dir: ReadDir, meta: StorageFileMeta<DirectoryFileType>) -> Self {
         LocalDirectoryListStream {
             files: FileOrDirectory::Directory(ReadDirStream::new(read_dir)),
-            meta: meta.map_type(|directory_file_type| FileType::Directory(directory_file_type)),
+            meta: meta.map_type(FileType::Directory),
         }
     }
     pub fn new_file(file_path: PathBuf, meta: StorageFileMeta<FileFileType>) -> Self {
         LocalDirectoryListStream {
             files: FileOrDirectory::File(Some(file_path)),
-            meta: meta.map_type(|meta| FileType::File(meta)),
+            meta: meta.map_type(FileType::File),
         }
     }
 }

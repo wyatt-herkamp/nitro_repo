@@ -139,7 +139,7 @@ pub trait StaticStorageFactory: StorageFactory {
         Self::Error: From<InvalidConfigType>,
     {
         let inner = config.storage_config;
-        let type_config = Self::ConfigType::from_type_config(config.type_config.into())?;
+        let type_config = Self::ConfigType::from_type_config(config.type_config)?;
         <Self as StaticStorageFactory>::create_storage(inner, type_config).await
     }
 }

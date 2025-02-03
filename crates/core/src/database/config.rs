@@ -50,7 +50,7 @@ impl DatabaseConfig {
                 _ => {
                     // Not in the format host:port. Possibly IPv6 but we don't support that.
                     // If it is IPv6 please specify the port separately.
-                    return Err(DBError::InvalidHost(self.host.clone()));
+                    Err(DBError::InvalidHost(self.host.clone()))
                 }
             }
         }

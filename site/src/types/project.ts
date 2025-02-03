@@ -24,7 +24,7 @@ export class Project {
   name: string;
   latest_release?: string;
   latest_pre_release?: string;
-  project_key?: string;
+  project_key: string;
   repository_id: string;
   storage_path: string;
   updated_at: Date;

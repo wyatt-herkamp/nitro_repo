@@ -23,7 +23,7 @@ use uuid::Uuid;
 use crate::{
     app::{
         authentication::Authentication,
-        logging::request_logging::{RequestId, RequestSpan},
+        logging::request_logging::RequestId,
         responses::{MissingPermission, RepositoryNotFound},
         NitroRepo,
     },

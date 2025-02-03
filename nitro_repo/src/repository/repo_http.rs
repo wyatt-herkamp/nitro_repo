@@ -386,12 +386,9 @@ pub async fn handle_repo_request(
         repository,
         path,
     } = request_path;
-    let Some(repository) = site
-        .get_repository_from_names((storage.as_str(), repository.as_str()))
-        .await?
-    else {
-        let not_found =
-            RepositoryNotFound::from(RepositoryStorageName::from((storage, repository)));
+    let names = RepositoryStorageName::from((storage, repository));
+    let Some(repository) = site.get_repository_from_names(&names).await? else {
+        let not_found = RepositoryNotFound::from(names);
         return Ok(not_found.into_response());
     };
     if !repository.is_active() {
@@ -406,7 +403,7 @@ pub async fn handle_repo_request(
     let request = RepositoryRequest {
         parts,
         body: RepositoryRequestBody(body),
-        path: path,
+        path,
         authentication,
         trace: trace.clone(),
     };

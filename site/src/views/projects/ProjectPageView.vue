@@ -5,9 +5,9 @@
       <RouterLink
         class="openBrowse"
         :to="{
-          name: 'repository',
+          name: 'repository_page_by_id',
           params: {
-            id: project.repository_id,
+            repositoryId: project.repository_id,
           },
         }">
         Open Repository
@@ -70,7 +70,7 @@ import RepositoryIcon from "@/components/nr/repository/RepositoryIcon.vue";
 
 import router from "@/router";
 import { useProjectStore } from "@/stores/project_store";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import type { Project } from "@/types/project";
 import {
   createRepositoryRoute,
@@ -85,7 +85,7 @@ const repository = ref<RepositoryWithStorageName | undefined>(undefined);
 const project = ref<Project | undefined>(undefined);
 const error = ref<string | null>(null);
 const errorCode = ref<number | undefined>(undefined);
-const repoStore = repositoriesStore();
+const repoStore = useRepositoryStore();
 const projectStore = useProjectStore();
 const repositoryHandler = ref<FrontendRepositoryType | undefined>(undefined);
 const repositoryType = computed(() => {
@@ -102,13 +102,38 @@ const url = computed(() => {
 });
 
 async function fetchProject() {
-  await projectStore.getProjectById(projectId).then((response) => {
-    project.value = response;
-    if (project.value) {
-      repositoryId.value = project.value.repository_id;
-      console.debug(`Project ${projectId} is in repository ${repositoryId.value}`);
+  if (router.currentRoute.value.params.projectId) {
+    await projectStore.getProjectById(projectId).then((response) => {
+      project.value = response;
+      if (project.value) {
+        repositoryId.value = project.value.repository_id;
+        console.debug(`Project ${projectId} is in repository ${repositoryId.value}`);
+      }
+    });
+  } else if (
+    router.currentRoute.value.params.storageName &&
+    router.currentRoute.value.params.repositoryName &&
+    router.currentRoute.value.params.projectKey
+  ) {
+    const repositoryIdResponse = await repoStore.getRepositoryIdByNames(
+      router.currentRoute.value.params.storageName as string,
+      router.currentRoute.value.params.repositoryName as string,
+    );
+    if (!repositoryIdResponse) {
+      // TODO: Not Found
+      return;
     }
-  });
+    repositoryId.value = repositoryIdResponse;
+    await projectStore
+      .getProjectByKey(repositoryIdResponse, router.currentRoute.value.params.projectKey as string)
+      .then((response) => {
+        project.value = response;
+        if (project.value) {
+          repositoryId.value = project.value.repository_id;
+          console.debug(`Project ${projectId} is in repository ${repositoryId.value}`);
+        }
+      });
+  }
 }
 watch(repositoryId, () => {
   if (repositoryId.value) {

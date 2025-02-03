@@ -260,8 +260,7 @@ impl S3StorageInner {
                 name: path.to_owned(),
                 file_type: DirectoryFileType {
                     file_count: files.len() as u64,
-                }
-                .into(),
+                },
                 modified: Local::now().fixed_offset(),
                 created: Local::now().fixed_offset(),
             },
@@ -500,7 +499,7 @@ impl Storage for S3Storage {
             created: Local::now().fixed_offset(),
         };
         let result = StorageFile::File {
-            meta: meta,
+            meta,
             content: crate::StorageFileReader::Bytes(response_data.into_bytes().into()),
         };
 
@@ -528,8 +527,8 @@ impl Storage for S3Storage {
 
     async fn stream_directory(
         &self,
-        repository: Uuid,
-        location: &StoragePath,
+        _repository: Uuid,
+        _location: &StoragePath,
     ) -> Result<Option<Self::DirectoryStream>, Self::Error> {
         todo!()
     }
@@ -560,7 +559,7 @@ impl StaticStorageFactory for S3StorageFactory {
         let inner = S3StorageInner {
             config: type_config,
             storage_config: inner,
-            bucket: bucket,
+            bucket,
         };
         let storage = S3Storage::from(inner);
         Ok(storage)
@@ -595,8 +594,8 @@ impl StorageFactory for S3StorageFactory {
             let bucket = S3StorageInner::load_bucket(&s3_config).await?;
             let inner = S3StorageInner {
                 config: s3_config,
-                storage_config: storage_config,
-                bucket: bucket,
+                storage_config,
+                bucket,
             };
             let storage = S3Storage::from(inner);
             Ok(DynStorage::S3(storage))

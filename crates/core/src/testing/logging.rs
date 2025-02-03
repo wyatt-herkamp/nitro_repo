@@ -46,7 +46,7 @@ impl Default for TestingLoggerConfig {
         Self {
             levels: LoggingLevels {
                 default: LevelSerde::Debug,
-                others: others,
+                others,
             },
         }
     }

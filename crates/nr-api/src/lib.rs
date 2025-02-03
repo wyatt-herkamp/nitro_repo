@@ -6,7 +6,6 @@ use nr_core::{
 use reqwest::Response;
 use thiserror::Error;
 use uuid::Uuid;
-pub mod browse;
 #[derive(Debug, Error)]
 pub enum NrApiError {
     #[error(transparent)]
@@ -40,11 +39,11 @@ impl NrApiInner {
         }
     }
     pub fn get(&self, route: &str) -> reqwest::RequestBuilder {
-        self.client.get(&self.api_route(route))
+        self.client.get(self.api_route(route))
     }
 
     pub fn post(&self, route: &str) -> reqwest::RequestBuilder {
-        self.client.post(&self.api_route(route))
+        self.client.post(self.api_route(route))
     }
 }
 #[derive(Clone)]
@@ -97,7 +96,7 @@ impl NrApi {
         let res = self
             .0
             .client
-            .get(&self.0.repository_route(&format!(
+            .get(self.0.repository_route(&format!(
                 "{}/{}{path}",
                 repository.storage_name, repository.name
             )))

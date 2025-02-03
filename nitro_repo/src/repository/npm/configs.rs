@@ -5,7 +5,6 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", content = "config")]
-
 pub enum NPMRegistryConfig {
     Hosted,
 }

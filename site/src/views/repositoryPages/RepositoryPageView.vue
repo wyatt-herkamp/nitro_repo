@@ -49,7 +49,7 @@ import RepositoryPageViewer from "@/components/nr/repository/RepositoryPageViewe
 import http from "@/http";
 
 import router from "@/router";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import {
   createRepositoryRoute,
   findRepositoryType,
@@ -57,12 +57,14 @@ import {
   type RepositoryWithStorageName,
 } from "@/types/repository";
 import { computed, ref } from "vue";
-const repositoryId = router.currentRoute.value.params.id as string;
+const repoStore = useRepositoryStore();
+
+const repositoryId = ref<string | undefined>(undefined);
+
 const repository = ref<RepositoryWithStorageName | undefined>(undefined);
 const repositoryPage = ref<RepositoryPage | undefined>(undefined);
 const error = ref<string | null>(null);
 const errorCode = ref<number | undefined>(undefined);
-const repoStore = repositoriesStore();
 const repositoryType = computed(() => {
   if (repository.value) {
     return findRepositoryType(repository.value.repository_type);
@@ -76,12 +78,16 @@ const url = computed(() => {
   return createRepositoryRoute(repository.value);
 });
 async function fetchRepository() {
-  await repoStore.getRepositoryById(repositoryId).then((response) => {
+  if (!repositoryId.value) {
+    console.error("No repository id");
+    return;
+  }
+  await repoStore.getRepositoryById(repositoryId.value).then((response) => {
     repository.value = response;
     console.log(repository.value);
   });
   await http
-    .get<RepositoryPage>(`/api/repository/page/${repositoryId}`)
+    .get<RepositoryPage>(`/api/repository/page/${repositoryId.value}`)
     .then((response) => {
       console.log(response.data);
       repositoryPage.value = response.data;
@@ -92,7 +98,32 @@ async function fetchRepository() {
       error.value = "Failed to fetch repository";
     });
 }
-fetchRepository();
+console.log(router.currentRoute.value.params);
+if (router.currentRoute.value.params.repositoryId) {
+  repositoryId.value = router.currentRoute.value.params.repositoryId as string;
+  console.debug(`Fetching repository ${repositoryId.value}`);
+  fetchRepository();
+} else if (
+  router.currentRoute.value.params.storageName &&
+  router.currentRoute.value.params.repositoryName
+) {
+  console.debug(
+    `Fetching repository by names ${router.currentRoute.value.params.storageName}/${router.currentRoute.value.params.repositoryName}`,
+  );
+  repoStore
+    .getRepositoryIdByNames(
+      router.currentRoute.value.params.storageName as string,
+      router.currentRoute.value.params.repositoryName as string,
+    )
+    .then((response) => {
+      if (response === null) {
+        error.value = "Repository not found";
+        return;
+      }
+      repositoryId.value = response;
+      fetchRepository();
+    });
+}
 </script>
 <style scoped lang="scss">
 @import "@/assets/styles/theme.scss";

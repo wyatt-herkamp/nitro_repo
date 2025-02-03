@@ -16,8 +16,12 @@
         "name": "repositories"
     },
     {
-        "path": "/page/repository/:id",
-        "name": "repository"
+        "path": "/page/repository/:repositoryId",
+        "name": "repository_page_by_id"
+    },
+    {
+        "path": "/page/repository/:storageName/:repositoryName",
+        "name": "repository_page_by_name"
     },
     {
         "path": "/admin/install",
@@ -84,7 +88,11 @@
         "name": "profileTokenCreate"
     },
     {
-        "path": "/projects/:id",
+        "path": "/projects/:projectId/:version?",
         "name": "ProjectPageView"
+    },
+    {
+        "path": "/projects/:storageName/:repositoryName/:projectKey/:version?",
+        "name": "project-page-by-key"
     }
 ]

@@ -49,12 +49,12 @@ fn zip_site(frontend_dist: impl AsRef<Path>) -> anyhow::Result<()> {
     }
     let file = File::create(&dst)?;
 
-    let walkdir = WalkDir::new(&frontend_src);
+    let walkdir = WalkDir::new(frontend_src);
     let it = walkdir.into_iter();
 
     internal_zip_dir(
         &mut it.filter_map(|e| e.ok()),
-        &frontend_src,
+        frontend_src,
         file,
         zip::CompressionMethod::Stored,
     )?;

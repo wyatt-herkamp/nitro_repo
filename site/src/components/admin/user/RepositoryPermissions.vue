@@ -74,7 +74,7 @@
 import { computed, ref, type PropType } from "vue";
 import type { RepositoryActions, UserResponseType } from "@/types/base";
 import BaseSwitch from "@/components/form/BaseSwitch.vue";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import RepositoryDropdown from "@/components/form/dropdown/RepositoryDropdown.vue";
 import { notify } from "@kyvg/vue3-notification";
 import http from "@/http";
@@ -94,7 +94,7 @@ const repositoryPermissions = ref<
     permissions: RepositoryActionsType;
   }[]
 >([]);
-const repoStore = repositoriesStore();
+const repoStore = useRepositoryStore();
 
 const hasChanged = ref(false);
 

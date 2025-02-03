@@ -1,4 +1,5 @@
 use chrono::Local;
+use rand::{rngs::StdRng, SeedableRng};
 use serde::{Deserialize, Serialize};
 use sqlx::{
     prelude::{FromRow, Type},
@@ -92,10 +93,10 @@ impl UserPasswordReset {
         Ok(row)
     }
     fn generate_token_value() -> String {
-        use rand::distributions::Alphanumeric;
-        use rand::{thread_rng, Rng};
+        use rand::distr::Alphanumeric;
+        use rand::Rng;
 
-        thread_rng()
+        StdRng::from_os_rng()
             .sample_iter(&Alphanumeric)
             .take(32)
             .map(char::from)

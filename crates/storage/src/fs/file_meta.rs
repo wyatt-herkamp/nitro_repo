@@ -198,7 +198,7 @@ impl LocationMeta {
             trace!(?meta_path, "Meta File exists. Reading");
             match LocationMeta::read_meta_file(&meta_path) {
                 Ok(meta) => {
-                    span.record("created", &false);
+                    span.record("created", false);
                     return Ok((meta, false));
                 }
                 Err(LocalStorageError::Postcard(err)) => {
@@ -216,7 +216,7 @@ impl LocationMeta {
         } else if tracing::enabled!(Level::DEBUG) {
             debug!(?meta_path, "Meta File does not exist. Generating");
         }
-        span.record("created", &true);
+        span.record("created", true);
         let (created, modified) = {
             let file = File::open(&path)?;
             let metadata = file.metadata()?;

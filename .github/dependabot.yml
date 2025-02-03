@@ -1,0 +1,25 @@
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+            - "*"   
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "npm"
+    directory: "/site"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+            - "*"   
+        update-types:
+          - "patch"
+          - "minor"

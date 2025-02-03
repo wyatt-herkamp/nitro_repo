@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{Attribute, Expr, Ident, Lit, LitStr};
+#[allow(dead_code)]
 pub fn doc_attr_to_string(attr: &Attribute) -> syn::Result<String> {
     match &attr.meta {
         syn::Meta::NameValue(syn::MetaNameValue { value, .. }) => match value {

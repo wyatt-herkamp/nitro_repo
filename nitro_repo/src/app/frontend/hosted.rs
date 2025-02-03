@@ -10,6 +10,7 @@ use axum::{
 use handlebars::Handlebars;
 
 use http::StatusCode;
+use mime::Mime;
 use serde::Deserialize;
 use tracing::{debug, instrument, trace, warn};
 
@@ -159,17 +160,13 @@ impl HostedFrontend {
         }
         let content_type = Self::guess_mime_type(&path);
         let file = std::fs::read(path)?;
-        Ok(ResponseBuilder::ok().content_type(&content_type).body(file))
+        Ok(ResponseBuilder::ok().content_type(content_type).body(file))
     }
     #[instrument]
-    fn guess_mime_type(path: &Path) -> String {
+    fn guess_mime_type(path: &Path) -> Mime {
         match mime_guess::from_path(path).first() {
-            Some(mime) => {
-                let mime: &str = mime.as_ref();
-                debug!(?mime, "Mime Type");
-                mime.to_owned()
-            }
-            None => "text/plain".to_owned(),
+            Some(mime) => mime,
+            None => mime::TEXT_PLAIN,
         }
     }
 }

@@ -36,6 +36,7 @@ impl IntoResponse for InvalidConfigType {
 
 #[utoipa::path(
     get,
+    summary = "Get Config Schema",
     path = "/config/{key}/schema",
     responses(
         (status = 200, description = "Returns a JSON Schema for the config type")
@@ -70,6 +71,7 @@ pub async fn config_schema(
 #[utoipa::path(
     post,
     request_body = Value,
+    summary = "Validate a Config",
     path = "/config/{key}/validate",
     responses(
         (status = 200, description = "Returns a JSON Schema for the config type")
@@ -104,6 +106,7 @@ pub async fn config_validate(
 }
 #[utoipa::path(
     get,
+    summary = "Get Default Config",
     path = "/config/{key}/default",
     responses(
         (status = 200, description = "Returns the default config for the config type"),
@@ -135,6 +138,7 @@ pub async fn config_default(
 #[utoipa::path(
     get,
     path = "/config/{key}/description",
+    summary = "Get Config Description",
     responses(
         (status = 200, description = "Returns the description for the config type"),
     ),

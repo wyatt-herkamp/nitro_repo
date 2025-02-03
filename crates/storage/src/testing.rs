@@ -24,7 +24,7 @@ impl Default for TestingStorageConfig {
         storage_test_configs.push(S3Config::test_storage_config());
         Self {
             logging: TestingLoggerConfig::default(),
-            storage_test_configs: storage_test_configs,
+            storage_test_configs,
         }
     }
 }
@@ -95,7 +95,7 @@ pub fn get_storage_configs() -> anyhow::Result<Vec<StorageConfig>> {
 
 fn testing_config_file() -> anyhow::Result<TestingStorageConfig> {
     let config_file =
-        if let Some(env) = std::env::var("STORAGE_TEST_CONFIG").map(PathBuf::from).ok() {
+        if let Ok(env) = std::env::var("STORAGE_TEST_CONFIG").map(PathBuf::from) {
             env
         } else {
             testing_storage_directory()?.join("storage_testing_config.toml")

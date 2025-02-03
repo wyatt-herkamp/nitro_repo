@@ -73,7 +73,7 @@ impl BrowseWSState {
             site,
             authentication: None,
             access_status: WSPermissionsStatus::Pending,
-            active_path: active_path,
+            active_path,
         }
     }
 
@@ -94,7 +94,7 @@ impl BrowseWSState {
             Ok(message) => message,
             Err(e) => {
                 span.record("otel.status_code", "ERROR");
-                span.record("exception.message", &e.to_string());
+                span.record("exception.message", e.to_string());
                 let message = WebsocketOutgoingMessage::Error(e.to_string());
                 socket.send(message.into()).await?;
                 return Ok(true);
@@ -102,20 +102,20 @@ impl BrowseWSState {
         };
         let incoming_message = match message {
             Message::Close(_) => {
-                span.record("message.type", &"Close");
+                span.record("message.type", "Close");
                 return Ok(true);
             }
             Message::Ping(_) | Message::Pong(_) => {
-                span.record("message.type", &"Ping/Pong");
+                span.record("message.type", "Ping/Pong");
                 return Ok(false);
             }
             Message::Binary(bytes) => {
-                span.record("message.type", &"Binary");
+                span.record("message.type", "Binary");
                 let message: WebsocketIncomingMessage = match serde_json::from_slice(&bytes) {
                     Ok(message) => message,
                     Err(e) => {
                         span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", &e.to_string());
+                        span.record("exception.message", e.to_string());
                         event!(Level::ERROR, ?e, "Failed to parse message");
                         let message = WebsocketOutgoingMessage::Error(e.to_string());
                         socket.send(message.into()).await?;
@@ -125,12 +125,12 @@ impl BrowseWSState {
                 message
             }
             Message::Text(content) => {
-                span.record("message.type", &"Text");
+                span.record("message.type", "Text");
                 let message: WebsocketIncomingMessage = match serde_json::from_str(&content) {
                     Ok(message) => message,
                     Err(e) => {
                         span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", &e.to_string());
+                        span.record("exception.message", e.to_string());
                         event!(Level::ERROR, ?e, "Failed to parse message");
                         let message = WebsocketOutgoingMessage::Error(e.to_string());
                         socket.send(message.into()).await?;
@@ -171,13 +171,13 @@ impl BrowseWSState {
                     }
                     Err(err) => {
                         span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", &err.to_string());
+                        span.record("exception.message", err.to_string());
                         let message = WebsocketOutgoingMessage::Error(err.to_string());
                         event!(Level::ERROR, ?err, "Failed to open directory");
                         socket.send(message.into()).await?;
                     }
                 }
-                return Ok(false);
+                Ok(false)
             }
             WebsocketIncomingMessage::Authentication(auth) => {
                 let auth = auth.attempt_login(&self.site).await;
@@ -205,15 +205,15 @@ impl BrowseWSState {
                         }
                         let message = WebsocketOutgoingMessage::Authorized;
                         socket.send(message.into()).await?;
-                        return Ok(false);
+                        Ok(false)
                     }
                     Err(err) => {
                         span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", &err.to_string());
+                        span.record("exception.message", err.to_string());
                         event!(Level::ERROR, ?err, "Failed to authenticate");
                         let message = WebsocketOutgoingMessage::Error(err.to_string());
                         socket.send(message.into()).await?;
-                        return Ok(true);
+                        Ok(true)
                     }
                 }
             }
@@ -248,7 +248,7 @@ impl BrowseWSState {
                 let message = WebsocketOutgoingMessage::Error(e.to_string());
                 socket.send(message.into()).await?;
                 span.record("otel.status_code", "ERROR");
-                span.record("exception.message", &e.to_string());
+                span.record("exception.message", e.to_string());
                 return Ok(true);
             }
         }

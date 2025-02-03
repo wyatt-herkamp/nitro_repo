@@ -395,16 +395,20 @@ pub async fn get_user_and_auth_token(
 }
 pub mod password {
     use argon2::{
-        password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+        password_hash::{Salt, SaltString},
+        Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
     };
-    use rand::rngs::OsRng;
+    use rand::{rngs::OsRng, TryRngCore};
     use tracing::{error, instrument};
 
     use crate::app::authentication::AuthenticationError;
     #[instrument(skip(password), fields(project_module = "Authentication"))]
     pub fn encrypt_password(password: &str) -> Option<String> {
-        let salt = SaltString::generate(&mut OsRng);
-
+        let mut bytes = [0u8; Salt::RECOMMENDED_LENGTH];
+        OsRng
+            .try_fill_bytes(&mut bytes)
+            .expect("Failed to generate random bytes");
+        let salt = SaltString::encode_b64(&bytes).expect("Failed to generate salt");
         let argon2 = Argon2::default();
 
         let password = argon2.hash_password(password.as_ref(), &salt);

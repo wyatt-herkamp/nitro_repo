@@ -64,7 +64,7 @@ macro_rules! visit_num {
     }
 struct MaxUploadVisitor;
 
-impl<'de> Visitor<'de> for MaxUploadVisitor {
+impl Visitor<'_> for MaxUploadVisitor {
     type Value = MaxUpload;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

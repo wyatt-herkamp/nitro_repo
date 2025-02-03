@@ -27,11 +27,11 @@ import BrowseProject from "@/components/nr/repository/project/BrowseProject.vue"
 import { websocketPath } from "@/config";
 
 import router from "@/router";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import type { ProjectResolution, RawBrowseFile, WSBrowseResponse } from "@/types/browse";
 import { type RepositoryWithStorageName } from "@/types/repository";
 import { onBeforeUnmount, ref, watch } from "vue";
-const repoStore = repositoriesStore();
+const repoStore = useRepositoryStore();
 const repositoryId = ref(router.currentRoute.value.params.id as string);
 const catchAll = ref(router.currentRoute.value.params.catchAll as string);
 console.log(`Browsing repository ${repositoryId.value} with catchAll ${catchAll.value}`);

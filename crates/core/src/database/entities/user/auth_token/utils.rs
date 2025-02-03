@@ -1,6 +1,7 @@
 use crate::utils::base64_utils;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 /// Creates a new token checking if it already exists
@@ -24,7 +25,7 @@ pub async fn create_token(database: &PgPool) -> Result<(String, String), sqlx::E
 /// Generates a new token for the user
 pub fn generate_token() -> String {
     // TODO: Secure this
-    thread_rng()
+    StdRng::from_os_rng()
         .sample_iter(&Alphanumeric)
         .take(32)
         .map(char::from)

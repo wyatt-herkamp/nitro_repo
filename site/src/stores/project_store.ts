@@ -18,9 +18,28 @@ export const useProjectStore = defineStore(
       }
       return projects.value[id];
     }
+    async function getProjectByKey(
+      repositoryId: string,
+      projectKey: string,
+    ): Promise<Project | undefined> {
+      for (const project of Object.values(projects.value)) {
+        if (project.repository_id === repositoryId && project.project_key === projectKey) {
+          return project;
+        }
+      }
+      return await http
+        .get<RawProject>(`/api/project/by-key/${repositoryId}/${projectKey}`)
+        .then((response) => {
+          return new Project(response.data);
+        })
+        .catch(() => {
+          return undefined;
+        });
+    }
     return {
       projects,
       getProjectById,
+      getProjectByKey,
     };
   },
   {

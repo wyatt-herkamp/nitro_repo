@@ -155,7 +155,7 @@ impl<ST: Storage> Storage for TestingStorage<ST> {
     ) -> Result<Option<crate::StorageFile>, Self::Error> {
         let result = self.storage.open_file(repository, location).await?;
 
-        return Ok(result);
+        Ok(result)
     }
 
     async fn validate_config_change(

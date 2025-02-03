@@ -66,13 +66,13 @@
 <script setup lang="ts">
 import BaseSwitch from "@/components/form/BaseSwitch.vue";
 import RepositoryDropdown from "@/components/form/dropdown/RepositoryDropdown.vue";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import { RepositoryActionsType } from "@/types/user";
 import { type NewAuthTokenRepositoryScope } from "@/types/user/token";
 import { notify } from "@kyvg/vue3-notification";
 import { computed, ref } from "vue";
 
-const repositoryStore = repositoriesStore();
+const repositoryStore = useRepositoryStore();
 function getRepositoryName(repositoryId: string) {
   const repository = repositoryStore.getRepositoryFromCache(repositoryId);
   return repository ? repository.name : repositoryId;

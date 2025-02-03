@@ -6,7 +6,7 @@ use authentication::session::{SessionManager, SessionManagerConfig};
 
 use axum::extract::State;
 use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
-use derive_more::{derive::Deref, AsRef, Into};
+use derive_more::{derive::Deref, AsRef};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
 use http::Uri;
@@ -31,7 +31,7 @@ use opentelemetry::{
     InstrumentationScope,
 };
 use parking_lot::{Mutex, RwLock};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 pub mod authentication;
 pub mod config;
 pub mod email;
@@ -41,7 +41,7 @@ use current_semver::current_semver;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 use tracing::{debug, info, instrument, warn};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
@@ -66,16 +66,19 @@ pub struct Instance {
     pub mode: Mode,
     pub password_rules: Option<PasswordRules>,
 }
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, IntoParams, Deserialize)]
+#[into_params(parameter_in = Path)]
 pub struct RepositoryStorageName {
+    /// The name of the storage
     pub storage_name: String,
+    /// The name of the repository
     pub repository_name: String,
 }
 
 impl RepositoryStorageName {
     pub async fn query_db(&self, database: &PgPool) -> Result<Option<Uuid>, sqlx::Error> {
         let query: Option<Uuid> = sqlx::query_scalar(
-            r#"SELECT repositories.id FROM repositories LEFT JOIN storages
+            r#"SELECT repositories.id FROM repositories INNER JOIN storages
                     ON storages.id = repositories.storage_id AND storages.name = $1
                     WHERE repositories.name = $2"#,
         )
@@ -230,8 +233,6 @@ impl NitroRepo {
     ) -> anyhow::Result<Self> {
         let database = Self::load_database(database).await?;
         let is_installed = user_utils::does_user_exist(&database).await?;
-        let security = security;
-        let staging_config = staging_config;
         let instance = Instance {
             mode,
             version: current_semver!(),
@@ -261,7 +262,7 @@ impl NitroRepo {
             services: Mutex::new(services),
             #[cfg(feature = "frontend")]
             frontend: frontend::HostedFrontend::new(site.frontend_path)?,
-            suggested_local_storage_path: suggested_local_storage_path,
+            suggested_local_storage_path,
         };
 
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
@@ -403,9 +404,8 @@ impl NitroRepo {
     #[instrument(skip(name))]
     pub async fn get_repository_from_names(
         &self,
-        name: impl Into<RepositoryStorageName>,
+        name: &RepositoryStorageName,
     ) -> Result<Option<DynRepository>, sqlx::Error> {
-        let name = name.into();
         let id = {
             let lookup_table = self.inner.name_lookup_table.lock();
             lookup_table.get(&name).cloned()
@@ -438,7 +438,7 @@ impl NitroRepo {
             }
             // Add the name to the lookup table
             let mut lookup_table = self.inner.name_lookup_table.lock();
-            lookup_table.insert(name, id);
+            lookup_table.insert(name.clone(), id);
 
             return Ok(repository);
         }

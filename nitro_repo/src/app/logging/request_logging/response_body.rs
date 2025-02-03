@@ -60,8 +60,8 @@ impl Body for TraceResponseBody {
                 this.state
                     .metrics
                     .response_size_bytes
-                    .record(*this.total_bytes, &this.attributes);
-                request_span::on_end_of_stream(*this.total_bytes, &this.span);
+                    .record(*this.total_bytes, this.attributes);
+                request_span::on_end_of_stream(*this.total_bytes, this.span);
                 Poll::Ready(None)
             }
         }

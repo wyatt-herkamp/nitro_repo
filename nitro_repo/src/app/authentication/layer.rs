@@ -103,14 +103,12 @@ where
             if parts.method == http::Method::OPTIONS {
                 trace!("Options Request");
                 span.record("otel.status_code", "OK");
+            } else if let Err(error) = self.process_from_parts(&mut parts, &span) {
+                span.record("exception.message", error.to_string());
+                span.record("otel.status_code", "ERROR");
+                return ResponseFuture::error(error.0);
             } else {
-                if let Err(error) = self.process_from_parts(&mut parts, &span) {
-                    span.record("exception.message", &error.to_string());
-                    span.record("otel.status_code", "ERROR");
-                    return ResponseFuture::error(error.0);
-                } else {
-                    span.record("otel.status_code", "OK");
-                }
+                span.record("otel.status_code", "OK");
             }
         }
         let request = Request::from_parts(parts, body);

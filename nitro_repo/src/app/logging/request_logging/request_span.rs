@@ -31,8 +31,7 @@ where
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         let extension = parts.extensions.get::<RequestSpan>();
-        extension
-            .map(|r| r.clone())
+        extension.cloned()
             .ok_or(MissingInternelExtension("Request Span"))
     }
 }

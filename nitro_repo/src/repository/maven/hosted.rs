@@ -355,7 +355,7 @@ impl Repository for MavenHosted {
             "Resolving Project and Version for Path: {}",
             path_as_string
         );
-        let Some(meta) = self.storage.get_repository_meta(self.id, &path).await? else {
+        let Some(meta) = self.storage.get_repository_meta(self.id, path).await? else {
             return Ok(ProjectResolution::default());
         };
         if let Some(project_id) = meta.project_id {
@@ -369,7 +369,7 @@ impl Repository for MavenHosted {
 
             return Ok(ProjectResolution {
                 project_id: Some(project_id),
-                version_id: version_id,
+                version_id,
             });
         }
         event!(

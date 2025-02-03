@@ -27,8 +27,8 @@ impl WebSocketAuthenticationMessage {
     ) -> Result<WebSocketAuthentication, AuthenticationError> {
         match self {
             WebSocketAuthenticationMessage::AuthToken(token) => {
-                Span::current().record("login.type", &"auth_token");
-                let (user, auth_token) = get_user_and_auth_token(&token, &site.database).await?;
+                Span::current().record("login.type", "auth_token");
+                let (user, auth_token) = get_user_and_auth_token(token, &site.database).await?;
                 debug!(?user, "User Login Via Auth Token");
                 let result = WebSocketAuthentication::AuthToken {
                     token: auth_token,
@@ -37,7 +37,7 @@ impl WebSocketAuthenticationMessage {
                 Ok(result)
             }
             WebSocketAuthenticationMessage::Session(session) => {
-                Span::current().record("login.type", &"session");
+                Span::current().record("login.type", "session");
                 let Some(session) = site.session_manager.get_session(session)? else {
                     return Err(AuthenticationError::Unauthorized);
                 };

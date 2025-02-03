@@ -209,11 +209,11 @@ impl Repository for NPMHostedRegistry {
                 };
                 debug!(?project_response, "Returning Project");
                 let as_string = serde_json::to_string(&project_response).unwrap();
-                return Ok(Response::builder()
+                Ok(Response::builder()
                     .status(StatusCode::OK)
                     .header(CONTENT_TYPE, "application/json")
                     .body(as_string.into())
-                    .into());
+                    .into())
             }
             GetPath::VersionInfo { name, version } => {
                 let Some(project) = self.get_project_from_key(&name).await? else {
@@ -232,16 +232,16 @@ impl Repository for NPMHostedRegistry {
                 debug!(?version, "Got Version");
                 if let Some(extra) = version.extra.0.extra {
                     let as_string = serde_json::to_string(&extra).unwrap();
-                    return Ok(Response::builder()
+                    Ok(Response::builder()
                         .status(StatusCode::OK)
                         .header(CONTENT_TYPE, "application/json")
                         .body(as_string.into())
-                        .into());
+                        .into())
                 } else {
-                    return Ok(Response::builder()
+                    Ok(Response::builder()
                         .status(StatusCode::INTERNAL_SERVER_ERROR)
                         .body("Invalid NPM Project".into())
-                        .into());
+                        .into())
                 }
             }
             GetPath::GetTar {
@@ -268,13 +268,13 @@ impl Repository for NPMHostedRegistry {
                 debug!(?storage_path, "Getting file");
                 let storage = self.get_storage();
                 let file = storage.open_file(self.id, &storage_path).await?;
-                return Ok(RepoResponse::from(file));
+                Ok(RepoResponse::from(file))
             }
             _ => {
-                return Ok(Response::builder()
+                Ok(Response::builder()
                     .status(StatusCode::NOT_FOUND)
                     .body("Not Found".into())
-                    .into());
+                    .into())
             }
         }
     }

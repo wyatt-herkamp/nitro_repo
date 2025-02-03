@@ -7,4 +7,9 @@ export const projectRoutes = [
     name: "ProjectPageView",
     component: ProjectPageView,
   },
+  {
+    path: "/projects/:storageName/:repositoryName/:projectKey/:version?",
+    name: "project-page-by-key",
+    component: ProjectPageView,
+  },
 ];

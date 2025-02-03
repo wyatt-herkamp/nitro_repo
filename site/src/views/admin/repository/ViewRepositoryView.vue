@@ -36,14 +36,14 @@ import TabElement from "@/components/core/tabs/TabElement.vue";
 import TabsElement from "@/components/core/tabs/TabsElement.vue";
 import http from "@/http";
 import router from "@/router";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import {
   getConfigType,
   type ConfigDescription,
   type RepositoryWithStorageName,
 } from "@/types/repository";
 import { computed, ref, watch } from "vue";
-const repositoryTypesStore = repositoriesStore();
+const repositoryTypesStore = useRepositoryStore();
 const repositoryId = router.currentRoute.value.params.id as string;
 
 const repository = ref<RepositoryWithStorageName | undefined>(undefined);

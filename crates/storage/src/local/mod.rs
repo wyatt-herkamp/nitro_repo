@@ -64,7 +64,7 @@ fn meta_update_task(
                 _ = &mut shutdown => {
                     break;
                 }
-                path = (&mut receiver).recv() => {
+                path = receiver.recv() => {
                     let Some(path) = path else{
                         break
                     };
@@ -201,8 +201,8 @@ impl LocalStorageInner {
             let entry = match entry {
                 Ok(entry) => entry,
                 Err(err) => {
-                    current_span.record("entries.read", &files_read);
-                    current_span.record("entries.skipped", &files_skipped);
+                    current_span.record("entries.read", files_read);
+                    current_span.record("entries.skipped", files_skipped);
                     error!(?err, "Error reading directory");
                     set.shutdown().await;
                     return Err(LocalStorageError::from(err));
@@ -222,8 +222,8 @@ impl LocalStorageInner {
                 span_clone.in_scope(|| StorageFileMeta::read_from_path(&path))
             });
         }
-        current_span.record("entries.read", &files_read);
-        current_span.record("entries.skipped", &files_skipped);
+        current_span.record("entries.read", files_read);
+        current_span.record("entries.skipped", files_skipped);
         let meta = StorageFileMeta::read_from_directory(path)?;
 
         let mut files = vec![];
@@ -312,12 +312,12 @@ impl LocalStorage {
                 .await
             {
                 Ok(ok) => {
-                    post_save_span.record("metas.updated", &ok);
+                    post_save_span.record("metas.updated", ok);
                     post_save_span.record("otel.status_code", "OK");
                     debug!(metas.updated = ok, "Updated Metas");
                 }
                 Err(err) => {
-                    span.record("exception.message", &err.to_string());
+                    span.record("exception.message", err.to_string());
                     span.record("otel.status_code", "ERROR");
                     event!(Level::ERROR, ?err, "Error Updating Metas");
                 }
@@ -367,7 +367,7 @@ impl Storage for LocalStorage {
         }
         let current_span = Span::current();
         let new_file = !path.exists();
-        current_span.record("file.new", &new_file);
+        current_span.record("file.new", new_file);
         current_span.record("file.path", debug(&path));
         debug!(?path, "Saving File");
         let mut file = fs::File::create(&path)?;
@@ -647,7 +647,7 @@ impl StorageFactory for LocalStorageFactory {
         Box::pin(async move {
             <Self as StaticStorageFactory>::create_storage_from_config(config)
                 .await
-                .map(|storage| DynStorage::Local(storage))
+                .map(DynStorage::Local)
                 .map_err(Into::into)
         })
     }

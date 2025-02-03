@@ -1,4 +1,4 @@
-use std::{error::Error, mem, sync::Arc};
+use std::{error::Error, sync::Arc};
 
 use nr_core::storage::StoragePath;
 use nr_storage::Storage;
@@ -30,7 +30,7 @@ impl Default for RepositoryMetricsMeter {
             project_number_of_versions: meter.i64_up_down_counter("nr.project.versions").build(),
             project_write_bytes: meter.u64_histogram("nr.project.write.bytes").build(),
 
-            meter: meter,
+            meter,
         }
     }
 }
@@ -51,11 +51,11 @@ impl Drop for RepositoryMetrics {
         let _guard = self.span.enter();
         let metrics = {
             let mut metrics = self.metrics.lock();
-            mem::replace(&mut *metrics, Default::default())
+            std::mem::take(&mut *metrics)
         };
         let attributes = {
             let mut attributes = self.metric_attributes.lock();
-            mem::replace(&mut *attributes, Default::default())
+            std::mem::take(&mut *attributes)
         };
         if let Some(bytes) = metrics.project_access_bytes {
             event!(Level::TRACE, ?bytes, "Recording project access bytes");
@@ -167,11 +167,11 @@ impl RepositoryRequestTracing {
     }
 
     fn push_metric_and_span(&self, key: &'static str, value: &str) {
-        self.span.record(key, &value);
+        self.span.record(key, value);
         self.metrics.add_attribute(key, value.to_string());
     }
     pub(super) fn error(&self, error: impl Error) {
-        self.span.record("exception.message", &error.to_string());
+        self.span.record("exception.message", error.to_string());
         self.span.record("otel.status_code", "ERROR");
     }
     pub(super) fn ok(&self) {

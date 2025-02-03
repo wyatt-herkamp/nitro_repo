@@ -8,7 +8,7 @@ import type {
 } from "@/types/repository";
 import type { RootSchema } from "nitro-jsf";
 import type { StorageItem } from "@/components/nr/storage/storageTypes";
-export const repositoriesStore = defineStore(
+export const useRepositoryStore = defineStore(
   "repositories",
   () => {
     const configSchemas: Ref<Map<string, RootSchema>> = ref(new Map());
@@ -38,6 +38,23 @@ export const repositoriesStore = defineStore(
     }
     function getRepositoryFromCache(id: string): RepositoryWithStorageName | undefined {
       return repositories.value[id];
+    }
+    async function getRepositoryIdByNames(storageName: string, repositoryName: string) {
+      for (const repo of Object.values(repositories.value)) {
+        if (repo.storage_name === storageName && repo.name === repositoryName) {
+          return repo.id;
+        }
+      }
+      return await http
+        .get<{
+          repository_id: string;
+        }>(`/api/repository/find-id/${storageName}/${repositoryName}`)
+        .then((response) => {
+          return response.data.repository_id;
+        })
+        .catch(() => {
+          return undefined;
+        });
     }
     async function getRepositoryById(
       id: string,
@@ -142,6 +159,7 @@ export const repositoriesStore = defineStore(
       getStorages,
       getRepositoryFromCache,
       getRepositories,
+      getRepositoryIdByNames,
     };
   },
   {

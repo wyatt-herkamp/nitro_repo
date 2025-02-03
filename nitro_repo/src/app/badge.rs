@@ -1,9 +1,8 @@
 use axum::{
     body::Body,
     extract::{Path, State},
-    response::Response,
+    response::{IntoResponse, Response},
 };
-use http::StatusCode;
 use nr_core::{
     database::entities::{
         project::{DBProject, ProjectDBType},
@@ -17,9 +16,11 @@ use nr_core::{
 use serde::Deserialize;
 use utoipa::OpenApi;
 
-use crate::{error::InternalError, repository::Repository};
+use crate::{
+    error::InternalError, repository::Repository, utils::response_builder::ResponseBuilder,
+};
 
-use super::NitroRepo;
+use super::{responses::RepositoryNotFound, NitroRepo, RepositoryStorageName};
 #[derive(OpenApi)]
 #[openapi(
     paths(repository_badge, project_badge, supports_badges),
@@ -57,15 +58,9 @@ async fn supports_badges(
     }): Path<RepositoryBadgeRequest>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
-    let Some(repo) = site
-        .get_repository_from_names((storage, repository))
-        .await
-        .map_err(InternalError::from)?
-    else {
-        return Ok(Response::builder()
-            .status(http::StatusCode::NOT_FOUND)
-            .body("Repository not found".into())
-            .unwrap());
+    let names = RepositoryStorageName::from((storage, repository));
+    let Some(repo) = site.get_repository_from_names(&names).await? else {
+        return Ok(RepositoryNotFound::RepositoryAndNameLookup(names).into_response());
     };
     if !repo
         .config_types()
@@ -100,24 +95,15 @@ async fn repository_badge(
     }): Path<RepositoryBadgeRequest>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
-    let Some(repo) = site
-        .get_repository_from_names((storage, repository))
-        .await
-        .map_err(InternalError::from)?
-    else {
-        return Ok(Response::builder()
-            .status(http::StatusCode::NOT_FOUND)
-            .body("Repository not found".into())
-            .unwrap());
+    let names = RepositoryStorageName::from((storage, repository));
+    let Some(repo) = site.get_repository_from_names(&names).await? else {
+        return Ok(RepositoryNotFound::RepositoryAndNameLookup(names).into_response());
     };
     if !repo
         .config_types()
         .contains(&ProjectConfigType::get_type_static())
     {
-        return Ok(Response::builder()
-            .status(http::StatusCode::BAD_REQUEST)
-            .body("This Repository does not support badges".into())
-            .unwrap());
+        return Ok(ResponseBuilder::bad_request().body("This Repository does not support badges"));
     }
 
     let badge_settings = DBRepositoryConfig::<ProjectConfig>::get_config(
@@ -133,18 +119,14 @@ async fn repository_badge(
     let badge = match generate_badge(&badge_settings, "Repository", &repo.name()) {
         Ok(ok) => ok,
         Err(err) => {
-            return Ok(Response::builder()
-                .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                .body(format!("Error generating badge: {}", err).into())
-                .unwrap());
+            return Ok(ResponseBuilder::internal_server_error()
+                .body(format!("Error generating badge: {}", err)));
         }
     };
 
-    Ok(Response::builder()
-        .header(http::header::CONTENT_TYPE, "image/svg+xml")
-        .status(StatusCode::OK)
-        .body(badge.svg().into())
-        .unwrap())
+    Ok(ResponseBuilder::ok()
+        .content_type(mime::IMAGE_SVG)
+        .body(badge.svg()))
 }
 
 #[derive(Deserialize)]
@@ -168,15 +150,9 @@ async fn project_badge(
     }): Path<ProjectBadgeRequest>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
-    let Some(repo) = site
-        .get_repository_from_names((storage, repository))
-        .await
-        .map_err(InternalError::from)?
-    else {
-        return Ok(Response::builder()
-            .status(http::StatusCode::NOT_FOUND)
-            .body("Repository not found".into())
-            .unwrap());
+    let names = RepositoryStorageName::from((storage, repository));
+    let Some(repo) = site.get_repository_from_names(&names).await? else {
+        return Ok(RepositoryNotFound::RepositoryAndNameLookup(names).into_response());
     };
     if !repo
         .config_types()
@@ -201,10 +177,7 @@ async fn project_badge(
         .await
         .map_err(InternalError::from)?
     else {
-        return Ok(Response::builder()
-            .status(http::StatusCode::NOT_FOUND)
-            .body("Project not found".into())
-            .unwrap());
+        return Ok(ResponseBuilder::not_found().body("Project not found"));
     };
     let latest_release = project
         .latest_release
@@ -215,18 +188,15 @@ async fn project_badge(
     let badge = match generate_badge(&badge_settings, &project.name, latest_release) {
         Ok(ok) => ok,
         Err(err) => {
-            return Ok(Response::builder()
+            return Ok(ResponseBuilder::internal_server_error()
                 .status(http::StatusCode::INTERNAL_SERVER_ERROR)
-                .body(format!("Error generating badge: {}", err).into())
-                .unwrap());
+                .body(format!("Error generating badge: {}", err)));
         }
     };
 
-    Ok(Response::builder()
-        .header(http::header::CONTENT_TYPE, "image/svg+xml")
-        .status(StatusCode::OK)
-        .body(badge.svg().into())
-        .unwrap())
+    Ok(ResponseBuilder::ok()
+        .content_type(mime::IMAGE_SVG)
+        .body(badge.svg()))
 }
 
 fn generate_badge(

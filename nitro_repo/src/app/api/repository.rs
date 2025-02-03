@@ -18,19 +18,20 @@ use nr_core::{
     user::permissions::{HasPermissions, RepositoryActions},
 };
 
-use serde::Deserialize;
+use page::RepositoryPageRoutes;
+use serde::{Deserialize, Serialize};
 use tracing::instrument;
-use utoipa::{IntoParams, OpenApi};
+use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
 
 use crate::{
     app::{
         authentication::Authentication,
         responses::{MissingPermission, RepositoryNotFound},
-        NitroRepo,
+        NitroRepo, RepositoryStorageName,
     },
     error::InternalError,
-    repository::RepositoryTypeDescription,
+    repository::{Repository, RepositoryTypeDescription},
     utils::response_builder::ResponseBuilder,
 };
 mod browse;
@@ -44,6 +45,7 @@ mod types;
         list_repositories,
         get_repository,
         get_repository_names,
+        find_repository_id,
         types::repository_types,
         config::config_schema,
         config::config_validate,
@@ -54,7 +56,6 @@ mod types;
         management::update_config,
         management::get_configs_for_repository,
         management::delete_repository,
-        page::get_repository_page,
         browse::browse,
     ),
     components(schemas(
@@ -69,21 +70,66 @@ mod types;
         ProjectResolution,
         DBRepositoryNames,
         DBRepositoryNamesWithVisibility
-    ))
+    )),
+    nest(
+        (path = "/page", api = RepositoryPageRoutes, tags=["repository", "page"]),
+    )
 )]
 pub struct RepositoryAPI;
 pub fn repository_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/list", get(list_repositories))
+        .route(
+            "/find-id/{storage_name}/{repository_name}",
+            get(find_repository_id),
+        )
         .route("/{repository_id}", get(get_repository))
         .route("/{repository_id}/names", get(get_repository_names))
-        .route("/page/{repository_id}", get(page::get_repository_page))
+        .nest("/page", page::page_apis())
         .route("/types", get(types::repository_types))
         .merge(browse::browse_routes())
         .merge(management::management_routes())
         .merge(config::config_routes())
 }
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RepositoryIdResponse {
+    pub repository_id: Uuid,
+}
 
+#[utoipa::path(
+    get,
+    summary = "Find the Repository Id by the storage and repository name",
+    path = "/find-id/{storage_name}/{repository_name}",
+    params(
+        RepositoryStorageName
+    ),
+    responses(
+        (status = 200, description = "Repository Id", body = RepositoryIdResponse),
+        (status = 403, description = "Missing permission"),
+        (status = 404, description = "Repository not found"),
+    )
+)]
+pub async fn find_repository_id(
+    State(site): State<NitroRepo>,
+    auth: Option<Authentication>,
+
+    Path(names): Path<RepositoryStorageName>,
+) -> Result<Response, InternalError> {
+    let Some(repository) = site.get_repository_from_names(&names).await? else {
+        return Ok(RepositoryNotFound::RepositoryAndNameLookup(names).into_response());
+    };
+    if repository.visibility().is_private()
+        && !auth
+            .has_action(RepositoryActions::Read, repository.id(), site.as_ref())
+            .await?
+    {
+        return Ok(MissingPermission::ReadRepository(repository.id()).into_response());
+    }
+
+    Ok(ResponseBuilder::ok().json(&RepositoryIdResponse {
+        repository_id: repository.id(),
+    }))
+}
 #[utoipa::path(
     get,
     path = "/{repository_id}",

@@ -53,7 +53,7 @@ import TwoByFormBox from "@/components/form/TwoByFormBox.vue";
 import type { StorageItem } from "@/components/nr/storage/storageTypes";
 import http from "@/http";
 import router from "@/router";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import { getConfigType, type RepositoryTypeDescription } from "@/types/repository";
 import { notify } from "@kyvg/vue3-notification";
 import { computed, ref, watch } from "vue";
@@ -61,7 +61,7 @@ const input = ref({
   name: "",
   storage: "",
 });
-const repoTypesStore = repositoriesStore();
+const repoTypesStore = useRepositoryStore();
 const selectedRepositoryType = ref("");
 const repositoryTypes = ref<RepositoryTypeDescription[]>([]);
 const storages = ref<StorageItem[]>([]);

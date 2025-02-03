@@ -74,7 +74,7 @@ where
             state: site,
             span: request_span,
             request_body_size: body_size,
-            attributes: attributes,
+            attributes,
             request_id,
         }
     }
@@ -120,7 +120,7 @@ where
         match result {
             Ok(mut response) => {
                 let request_id_header: Result<HeaderValue, InvalidHeaderValue> =
-                    this.request_id.clone().try_into();
+                    (*this.request_id).try_into();
                 match request_id_header {
                     Ok(header) => {
                         response.headers_mut().insert(X_REQUEST_ID, header);
@@ -139,7 +139,7 @@ where
                     super::on_failure(&response.status(), duration, &span);
                 }
 
-                final_metrics(&state, duration, request_body_size, &this.attributes);
+                final_metrics(&state, duration, request_body_size, this.attributes);
 
                 let span = span.clone();
                 let attributes = mem::take(this.attributes);
@@ -157,7 +157,7 @@ where
             Err(err) => {
                 super::on_failure(&err, duration, &span);
 
-                final_metrics(&state, duration, request_body_size, &this.attributes);
+                final_metrics(&state, duration, request_body_size, this.attributes);
 
                 Poll::Ready(Err(err))
             }

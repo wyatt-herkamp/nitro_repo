@@ -14,10 +14,10 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { type RepositoryWithStorageName } from "@/types/repository";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 
 const repositories = ref<RepositoryWithStorageName[]>([]);
-const repoStore = repositoriesStore();
+const repoStore = useRepositoryStore();
 repoStore.getRepositories().then((repos) => {
   repositories.value = repos;
 });

@@ -7,12 +7,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import StorageListInner from "./StorageListInner.vue";
-import { repositoriesStore } from "@/stores/repositories";
+import { useRepositoryStore } from "@/stores/repositories";
 import type { StorageItem } from "./storageTypes";
 
 const storages = ref<StorageItem[]>([]);
 const error = ref<string | null>(null);
-const repositoriesTypesStore = repositoriesStore();
+const repositoriesTypesStore = useRepositoryStore();
 async function fetchUsers() {
   await repositoriesTypesStore
     .getStorages()

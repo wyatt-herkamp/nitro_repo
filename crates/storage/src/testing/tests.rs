@@ -43,13 +43,11 @@ pub async fn write_multiple_then_list<ST: Storage>(
     storage: &TestingStorage<ST>,
 ) -> anyhow::Result<()> {
     let repository = Uuid::new_v4();
-    let paths = vec![
-        StoragePath::from("/hello/world"),
+    let paths = [StoragePath::from("/hello/world"),
         StoragePath::from("/hello/nitro_repo"),
         StoragePath::from("/hello/there"),
         StoragePath::from("/hello/this/item"),
-        StoragePath::from("/hello/this/storage"),
-    ];
+        StoragePath::from("/hello/this/storage")];
 
     let content = FileContent::from("Hello, World!");
 

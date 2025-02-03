@@ -5,13 +5,13 @@ import LoginView from "@/views/LoginView.vue";
 import LogoutView from "@/views/LogoutView.vue";
 
 import RepositoriesView from "@/views/RepositoriesView.vue";
-import RepositoryPageView from "@/views/RepositoryPageView.vue";
 import type { Component } from "vue";
 
 import { adminRoutes } from "@/views/admin/adminRoutes";
 import { profileRoutes } from "@/views/profile/profileRoutes";
 import { projectRoutes } from "@/views/projects";
 import NotFound from "@/views/NotFound.vue";
+import { repositoryPages } from "@/views/repositoryPages";
 declare module "vue-router" {
   interface RouteMeta {
     requiresAuth?: boolean;
@@ -53,11 +53,7 @@ const routes = [
     name: "repositories",
     component: RepositoriesView,
   },
-  {
-    path: "/page/repository/:id",
-    name: "repository",
-    component: RepositoryPageView,
-  },
+  ...repositoryPages,
   ...adminRoutes,
   ...profileRoutes,
   ...projectRoutes,
