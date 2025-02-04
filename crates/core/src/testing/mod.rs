@@ -3,13 +3,13 @@ use std::str::FromStr;
 use env_file::EnvFile;
 use sqlx::PgPool;
 use tracing::debug;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
+use tracing_subscriber::{EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt};
 pub mod env_file;
 pub mod logging;
 use crate::{
     database::{
-        entities::user::{NewUserRequest, UserSafeData, UserType},
         DateTime,
+        entities::user::{NewUserRequest, UserSafeData, UserType},
     },
     user::{Email, Username},
 };

@@ -16,7 +16,9 @@ pub enum InvalidUsername {
     TooShort(usize),
     #[error("Username is too long, must be less than 32 got {0} characters")]
     TooLong(usize),
-    #[error("Username contains invalid character `{0}`. Usernames can only contain letters, numbers, `_`, and `-`")]
+    #[error(
+        "Username contains invalid character `{0}`. Usernames can only contain letters, numbers, `_`, and `-`"
+    )]
     InvalidCharacter(char),
 }
 #[derive(Debug, Type, Clone, Digestible, NuType, SerdeViaStr)]

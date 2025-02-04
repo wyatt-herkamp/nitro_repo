@@ -51,7 +51,9 @@ pub enum InvalidRepositoryName {
     TooShort(usize),
     #[error("Repository name is too long, must be less than 32 got {0} characters")]
     TooLong(usize),
-    #[error("Repository name contains invalid character `{0}`. Repository Names can only contain letters, numbers, `_`, and `-`")]
+    #[error(
+        "Repository name contains invalid character `{0}`. Repository Names can only contain letters, numbers, `_`, and `-`"
+    )]
     InvalidCharacter(char),
 }
 #[derive(Debug, Type, Clone, Default, SerdeViaStr, NuType)]

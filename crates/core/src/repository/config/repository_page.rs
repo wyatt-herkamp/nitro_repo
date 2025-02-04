@@ -1,4 +1,4 @@
-use schemars::{schema_for, JsonSchema, Schema};
+use schemars::{JsonSchema, Schema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use utoipa::ToSchema;

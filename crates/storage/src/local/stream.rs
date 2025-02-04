@@ -7,8 +7,8 @@ use tokio_stream::wrappers::ReadDirStream;
 use tracing::trace;
 
 use crate::{
-    is_hidden_file, local::error::LocalStorageError, streaming::DirectoryListStream,
-    DirectoryFileType, FileFileType, FileType, StorageError, StorageFileMeta,
+    DirectoryFileType, FileFileType, FileType, StorageError, StorageFileMeta, is_hidden_file,
+    local::error::LocalStorageError, streaming::DirectoryListStream,
 };
 
 #[derive(Debug)]

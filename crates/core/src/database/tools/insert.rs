@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Display};
 
 use sqlx::{
-    query::{Query, QueryAs},
     Arguments, Database, Encode, FromRow, Postgres, Type,
+    query::{Query, QueryAs},
 };
 use tracing::trace;
 

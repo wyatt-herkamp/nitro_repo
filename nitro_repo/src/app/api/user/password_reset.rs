@@ -1,21 +1,21 @@
 use std::{net::SocketAddr, str::FromStr};
 
 use axum::{
+    Json,
     body::Body,
     extract::{ConnectInfo, Path, State},
     response::Response,
     routing::{get, post},
-    Json,
 };
 use axum_extra::{
-    headers::{Origin, UserAgent},
     TypedHeader,
+    headers::{Origin, UserAgent},
 };
 use http::StatusCode;
 use lettre::Address;
 use nr_core::database::entities::user::{
-    password_reset::{RequestDetails, UserPasswordReset},
     ChangePasswordNoCheck, UserModel, UserSafeData, UserType,
+    password_reset::{RequestDetails, UserPasswordReset},
 };
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
@@ -23,9 +23,9 @@ use utoipa::ToSchema;
 
 use crate::{
     app::{
-        authentication::password,
-        email_service::{template, Email, EmailDebug},
         NitroRepo,
+        authentication::password,
+        email_service::{Email, EmailDebug, template},
     },
     error::InternalError,
 };

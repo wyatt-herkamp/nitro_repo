@@ -1,7 +1,7 @@
 pub mod time;
 pub mod utopia;
 pub mod base64_utils {
-    use base64::{engine::general_purpose::STANDARD, DecodeError, Engine};
+    use base64::{DecodeError, Engine, engine::general_purpose::STANDARD};
     use tracing::instrument;
     #[instrument(skip(input), name = "base64_utils::decode")]
     #[inline(always)]

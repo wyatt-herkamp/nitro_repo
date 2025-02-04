@@ -7,7 +7,7 @@ mod where_sql;
 pub use pagination::*;
 pub use select::*;
 use serde::{Deserialize, Serialize};
-use sqlx::{query_builder::Separated, Encode, Postgres, Type};
+use sqlx::{Encode, Postgres, Type, query_builder::Separated};
 use strum::{AsRefStr, Display};
 pub use traits::*;
 use utoipa::ToSchema;

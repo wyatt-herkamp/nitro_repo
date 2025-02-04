@@ -49,7 +49,9 @@ pub enum NPMRegistryError {
         tarball_route: String,
         error: Cow<'static, str>,
     },
-    #[error("Invalid GET request. The requested route is invalid to the NPM Registry. This could be a bug. AS the code is very sketchy")]
+    #[error(
+        "Invalid GET request. The requested route is invalid to the NPM Registry. This could be a bug. AS the code is very sketchy"
+    )]
     InvalidGetRequest,
     #[error("Invalid Package Attachment. Error: {0}")]
     InvalidPackageAttachment(DecodeError),

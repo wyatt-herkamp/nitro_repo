@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::repository::{
-    npm::{utils::NpmRegistryExt, NPMRegistryError},
     RepoResponse, RepositoryRequest,
+    npm::{NPMRegistryError, utils::NpmRegistryExt},
 };
 
 use super::LoginResponse;

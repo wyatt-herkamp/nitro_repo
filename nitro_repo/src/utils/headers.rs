@@ -1,4 +1,4 @@
-use http::{header::ToStrError, HeaderValue};
+use http::{HeaderValue, header::ToStrError};
 use nr_core::utils::base64_utils;
 use tracing::{error, instrument};
 

@@ -15,18 +15,18 @@ use serde::{Deserialize, Serialize};
 use strum::EnumIs;
 use tokio::select;
 use tracing::{
-    debug, debug_span, event,
-    field::{debug, Empty},
-    info, instrument, warn, Level, Span,
+    Level, Span, debug, debug_span, event,
+    field::{Empty, debug},
+    info, instrument, warn,
 };
 
 use crate::{
     app::{
-        authentication::ws::{WebSocketAuthentication, WebSocketAuthenticationMessage},
         NitroRepo,
+        authentication::ws::{WebSocketAuthentication, WebSocketAuthenticationMessage},
     },
     error::InternalError,
-    repository::{utils::can_read_repository, DynRepository, Repository},
+    repository::{DynRepository, Repository, utils::can_read_repository},
 };
 
 use super::BrowseStreamPrimaryData;

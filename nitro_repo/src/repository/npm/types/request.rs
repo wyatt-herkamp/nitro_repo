@@ -2,9 +2,9 @@ use std::{borrow::Cow, str::FromStr};
 
 use ahash::HashMap;
 use axum::response::{IntoResponse, Response};
-use http::{header::ToStrError, HeaderValue};
+use http::{HeaderValue, header::ToStrError};
 use nr_core::{
-    database::entities::project::{versions::NewVersion, NewProject},
+    database::entities::project::{NewProject, versions::NewVersion},
     repository::project::VersionData,
     storage::{StoragePath, StoragePathComponent},
 };

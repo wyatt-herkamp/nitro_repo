@@ -1,5 +1,5 @@
 use badge_maker::Style;
-use schemars::{schema_for, JsonSchema};
+use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 
 use super::RepositoryConfigType;

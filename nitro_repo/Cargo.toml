@@ -3,8 +3,9 @@ name = "nitro_repo"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
-build = "build.rs"
 license.workspace = true
+repository.workspace = true
+build = "build.rs"
 
 [dev-dependencies]
 pretty_assertions = "1.1"

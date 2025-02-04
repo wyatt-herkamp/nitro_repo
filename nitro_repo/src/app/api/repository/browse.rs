@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{any, get},
 };
-use axum_extra::{headers::UserAgent, TypedHeader};
+use axum_extra::{TypedHeader, headers::UserAgent};
 
 use nr_core::{
     repository::{
@@ -16,19 +16,19 @@ use nr_core::{
 };
 use nr_storage::{Storage, StorageFile};
 use serde::{Deserialize, Serialize};
-use tracing::{event, info, info_span, instrument, Level, Span};
+use tracing::{Level, Span, event, info, info_span, instrument};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 use crate::{
     app::{
+        NitroRepo,
         authentication::Authentication,
         logging::request_logging::RequestId,
         responses::{MissingPermission, RepositoryNotFound},
-        NitroRepo,
     },
     error::InternalError,
-    repository::{utils::can_read_repository, Repository},
+    repository::{Repository, utils::can_read_repository},
     utils::response_builder::ResponseBuilder,
 };
 pub fn browse_routes() -> axum::Router<NitroRepo> {

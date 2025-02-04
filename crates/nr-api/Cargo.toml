@@ -4,7 +4,8 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
-
+repository.workspace = true
+description = "A Rust API for Nitro Repo"
 [dependencies]
 thiserror.workspace = true
 serde.workspace = true
@@ -15,7 +16,7 @@ nr-core.workspace = true
 tracing.workspace = true
 reqwest.workspace = true
 futures.workspace = true
-bytes = "1"
+bytes.workspace = true
 [dev-dependencies]
 tokio.workspace = true
 anyhow = "1"

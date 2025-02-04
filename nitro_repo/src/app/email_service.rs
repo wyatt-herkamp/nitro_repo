@@ -8,9 +8,9 @@ use flume::{Receiver, Sender};
 use futures_util::{FutureExt, StreamExt};
 use handlebars::Handlebars;
 use lettre::{
-    message::{header, MessageBuilder, MultiPart, SinglePart},
-    transport::smtp::authentication::Credentials,
     Address, AsyncSmtpTransport, AsyncTransport, Message,
+    message::{MessageBuilder, MultiPart, SinglePart, header},
+    transport::smtp::authentication::Credentials,
 };
 use rust_embed::RustEmbed;
 use serde::Serialize;

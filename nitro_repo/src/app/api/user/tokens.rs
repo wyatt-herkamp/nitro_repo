@@ -1,16 +1,16 @@
 use axum::{
+    Json,
     body::Body,
     extract::{Path, State},
     response::Response,
     routing::{delete, get, post},
-    Json,
 };
-use axum_extra::{headers::UserAgent, TypedHeader};
+use axum_extra::{TypedHeader, headers::UserAgent};
 use http::StatusCode;
 use nr_core::{
     database::entities::user::{
-        auth_token::{AuthToken, NewAuthToken},
         UserType,
+        auth_token::{AuthToken, NewAuthToken},
     },
     user::{permissions::RepositoryActions, scopes::NRScope, token::AuthTokenFullResponse},
 };
@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::{
     app::{
-        authentication::OnlySessionAllowedAuthentication, responses::ResponseBuilderExt, NitroRepo,
+        NitroRepo, authentication::OnlySessionAllowedAuthentication, responses::ResponseBuilderExt,
     },
     error::InternalError,
 };

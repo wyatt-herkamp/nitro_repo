@@ -1,20 +1,20 @@
 use super::types::{
+    NPM_COMMAND_HEADER, NpmRegistryPackageResponse,
     request::{GetPath, InvalidNPMCommand, NPMCommand, PublishVersion},
-    NpmRegistryPackageResponse, NPM_COMMAND_HEADER,
 };
-use super::utils::{npm_time, NpmRegistryExt};
+use super::utils::{NpmRegistryExt, npm_time};
 use crate::{
-    app::{responses::no_content_response, NitroRepo},
+    app::{NitroRepo, responses::no_content_response},
     repository::{
-        npm::{types::PublishRequest, NPMRegistryConfigType, NPMRegistryError},
-        utils::RepositoryExt,
         RepoResponse, Repository, RepositoryFactoryError, RepositoryRequest,
+        npm::{NPMRegistryConfigType, NPMRegistryError, types::PublishRequest},
+        utils::RepositoryExt,
     },
 };
 use ahash::{HashMap, HashMapExt};
 use axum::response::{IntoResponse, Response};
 use derive_more::derive::Deref;
-use http::{header::CONTENT_TYPE, StatusCode};
+use http::{StatusCode, header::CONTENT_TYPE};
 use nr_core::{
     database::entities::{project::versions::DBProjectVersion, repository::DBRepository},
     repository::config::RepositoryConfigType,
@@ -270,12 +270,10 @@ impl Repository for NPMHostedRegistry {
                 let file = storage.open_file(self.id, &storage_path).await?;
                 Ok(RepoResponse::from(file))
             }
-            _ => {
-                Ok(Response::builder()
-                    .status(StatusCode::NOT_FOUND)
-                    .body("Not Found".into())
-                    .into())
-            }
+            _ => Ok(Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body("Not Found".into())
+                .into()),
         }
     }
 

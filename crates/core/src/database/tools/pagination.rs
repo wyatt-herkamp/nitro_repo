@@ -4,7 +4,7 @@ use std::{fmt::Display, ops::Deref};
 
 use derive_more::derive::{From, Into};
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgRow, FromRow, Row};
+use sqlx::{FromRow, Row, postgres::PgRow};
 use tracing::{debug, error, instrument, trace};
 use utoipa::{IntoParams, ToSchema};
 

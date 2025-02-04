@@ -5,7 +5,7 @@ use nr_core::storage::StoragePath;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::{meta::RepositoryMeta, FileType, Storage};
+use crate::{FileType, Storage, meta::RepositoryMeta};
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct CreatedFiles {
     pub repository: Uuid,

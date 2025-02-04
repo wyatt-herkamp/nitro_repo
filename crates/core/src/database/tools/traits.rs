@@ -1,9 +1,9 @@
 use std::future::Future;
 
 use sqlx::{
+    Arguments, Database, Decode, FromRow, Postgres, Type,
     postgres::PgRow,
     query::{Query, QueryAs, QueryScalar},
-    Arguments, Database, Decode, FromRow, Postgres, Type,
 };
 use tracing::trace;
 

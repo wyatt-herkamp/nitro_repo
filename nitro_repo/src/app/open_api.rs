@@ -8,14 +8,14 @@ use super::api::user::UserAPI;
 use super::api::user_management::UserManagementAPI;
 use axum::routing::get;
 use axum::{
-    response::{IntoResponse, Response},
     Json, Router,
+    response::{IntoResponse, Response},
 };
 use nr_core::database::entities::project::{
-    versions::DBProjectVersion, DBProject, DBProjectMember,
+    DBProject, DBProjectMember, versions::DBProjectVersion,
 };
-use nr_core::database::entities::user::permissions::FullUserPermissions;
 use nr_core::database::entities::user::NewUserRequest;
+use nr_core::database::entities::user::permissions::FullUserPermissions;
 use nr_core::user::permissions::{RepositoryActions, UserPermissions};
 use nr_core::user::scopes::{NRScope, ScopeDescription};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::{postgres::PgRow, prelude::FromRow, types::Json, PgPool};
+use sqlx::{PgPool, postgres::PgRow, prelude::FromRow, types::Json};
 use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;

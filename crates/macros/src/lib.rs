@@ -5,7 +5,7 @@ pub(crate) mod repository_config;
 pub(crate) mod serde;
 use proc_macro::TokenStream;
 pub(crate) mod utils;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 pub(crate) mod scopes;
 #[proc_macro_derive(RepositoryConfig, attributes(repository_config))]
 pub fn repository_config(input: TokenStream) -> TokenStream {

@@ -1,6 +1,6 @@
 use std::{
     ops::Deref,
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
 };
 
 use axum::response::Response;
@@ -10,14 +10,13 @@ use maven_rs::pom::Pom;
 use nr_core::{
     database::entities::repository::{DBRepository, DBRepositoryConfig},
     repository::{
+        Visibility,
         config::{
-            get_repository_config_or_default,
+            RepositoryConfigType as _, get_repository_config_or_default,
             project::{ProjectConfig, ProjectConfigType},
             repository_page::RepositoryPageType,
-            RepositoryConfigType as _,
         },
         proxy_url::ProxyURL,
-        Visibility,
     },
     storage::StoragePath,
 };
@@ -31,9 +30,8 @@ use uuid::Uuid;
 use crate::{app::NitroRepo, repository::Repository};
 
 use super::{
-    repo_type::RepositoryFactoryError, utils::MavenRepositoryExt, MavenError,
-    MavenRepositoryConfig, MavenRepositoryConfigType, RepoResponse, RepositoryRequest,
-    REPOSITORY_TYPE_ID,
+    MavenError, MavenRepositoryConfig, MavenRepositoryConfigType, REPOSITORY_TYPE_ID, RepoResponse,
+    RepositoryRequest, repo_type::RepositoryFactoryError, utils::MavenRepositoryExt,
 };
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MavenProxyConfig {

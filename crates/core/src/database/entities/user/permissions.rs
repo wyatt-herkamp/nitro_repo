@@ -2,7 +2,7 @@ use ahash::{HashMap, HashMapExt};
 
 use crate::database::prelude::*;
 use serde::{Deserialize, Serialize};
-use sqlx::{prelude::FromRow, PgPool};
+use sqlx::{PgPool, prelude::FromRow};
 use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;

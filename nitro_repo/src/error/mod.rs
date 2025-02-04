@@ -8,9 +8,7 @@ use nr_core::{database::DBError, repository::config::RepositoryConfigError};
 use nr_storage::StorageError;
 use thiserror::Error;
 
-use crate::utils::{
-    response_builder::ResponseBuilder, responses::APIErrorResponse,
-};
+use crate::utils::{response_builder::ResponseBuilder, responses::APIErrorResponse};
 
 /// Allows creating a response from an error
 pub trait IntoErrorResponse: Error + Send + Sync {

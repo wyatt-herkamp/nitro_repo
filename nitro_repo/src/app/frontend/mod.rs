@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::{
     error::IntoErrorResponse,
-    utils::{response_builder::ResponseBuilder, responses::APIErrorResponse, TEXT_MEDIA_TYPE},
+    utils::{TEXT_MEDIA_TYPE, response_builder::ResponseBuilder, responses::APIErrorResponse},
 };
 #[cfg(feature = "frontend")]
 mod hosted;

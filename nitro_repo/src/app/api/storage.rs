@@ -1,15 +1,15 @@
 use axum::{
+    Json,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json,
 };
 use nr_core::{
     database::entities::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
     storage::StorageName,
     user::permissions::HasPermissions,
 };
-use nr_storage::{local::LocalConfig, StorageConfig, StorageTypeConfig};
+use nr_storage::{StorageConfig, StorageTypeConfig, local::LocalConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use utoipa::{IntoParams, OpenApi, ToSchema};
@@ -18,11 +18,11 @@ mod local;
 mod s3;
 use crate::{
     app::{
+        NitroRepo,
         authentication::Authentication,
         responses::{
             InvalidStorageConfig, InvalidStorageType, MissingPermission, ResponseBuilderExt,
         },
-        NitroRepo,
     },
     error::InternalError,
     utils::{response_builder::ResponseBuilder, responses::ConflictResponse},

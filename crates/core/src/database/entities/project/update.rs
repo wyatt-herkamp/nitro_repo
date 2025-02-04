@@ -1,4 +1,4 @@
-use sqlx::{types::Json, Execute, PgPool, QueryBuilder};
+use sqlx::{Execute, PgPool, QueryBuilder, types::Json};
 use tracing::{info, instrument, warn};
 
 use crate::repository::project::{ReleaseType, VersionData};

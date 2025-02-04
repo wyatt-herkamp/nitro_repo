@@ -11,8 +11,8 @@ use tracing::{debug, instrument};
 use crate::{
     app::authentication::verify_login,
     repository::{
-        npm::{login::LoginResponse, utils::NpmRegistryExt, NPMRegistryError},
         RepoResponse, RepositoryRequest,
+        npm::{NPMRegistryError, login::LoginResponse, utils::NpmRegistryExt},
     },
 };
 

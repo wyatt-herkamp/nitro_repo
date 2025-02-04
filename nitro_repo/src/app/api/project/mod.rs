@@ -5,7 +5,7 @@ use axum::{
 };
 use nr_core::{
     database::entities::project::{
-        utils::does_project_id_exist, versions::DBProjectVersion, DBProject, ProjectDBType,
+        DBProject, ProjectDBType, utils::does_project_id_exist, versions::DBProjectVersion,
     },
     repository::project::ProjectResolution,
 };
@@ -14,7 +14,7 @@ use utoipa::OpenApi;
 use uuid::Uuid;
 
 use crate::{
-    app::{authentication::Authentication, NitroRepo},
+    app::{NitroRepo, authentication::Authentication},
     error::InternalError,
     utils::response_builder::ResponseBuilder,
 };

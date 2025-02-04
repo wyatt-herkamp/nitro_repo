@@ -1,8 +1,8 @@
 use axum::{
+    Json,
     extract::State,
     response::{IntoResponse, Response},
     routing::post,
-    Json,
 };
 use nr_core::user::permissions::HasPermissions;
 use serde::{Deserialize, Serialize};

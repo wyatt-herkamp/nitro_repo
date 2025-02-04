@@ -1,6 +1,6 @@
+use crate::app::NitroRepo;
 use crate::app::authentication::AuthenticationRaw;
 use crate::app::logging::request_logging::{RequestId, RequestSpan};
-use crate::app::NitroRepo;
 use crate::error::InternalError;
 use crate::utils::headers::{AuthorizationHeader, HeaderValueExt};
 use axum::body::Body;
@@ -17,7 +17,7 @@ mod future;
 use tower::Layer;
 use tower_service::Service;
 use tracing::field::Empty;
-use tracing::{debug, info_span, trace, Span};
+use tracing::{Span, debug, info_span, trace};
 #[derive(Debug, Clone, From)]
 pub struct AuthenticationLayer(pub NitroRepo);
 

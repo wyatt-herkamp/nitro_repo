@@ -6,9 +6,9 @@ use tracing::info;
 use uuid::Uuid;
 pub mod tests;
 use crate::{
-    local::{LocalConfig, LocalStorage, LocalStorageFactory},
-    s3::{regions::CustomRegion, S3Config, S3Credentials, S3StorageFactory},
     StaticStorageFactory, StorageConfig, StorageConfigInner, StorageTypeConfig,
+    local::{LocalConfig, LocalStorage, LocalStorageFactory},
+    s3::{S3Config, S3Credentials, S3StorageFactory, regions::CustomRegion},
 };
 pub mod storage;
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,12 +94,11 @@ pub fn get_storage_configs() -> anyhow::Result<Vec<StorageConfig>> {
 }
 
 fn testing_config_file() -> anyhow::Result<TestingStorageConfig> {
-    let config_file =
-        if let Ok(env) = std::env::var("STORAGE_TEST_CONFIG").map(PathBuf::from) {
-            env
-        } else {
-            testing_storage_directory()?.join("storage_testing_config.toml")
-        };
+    let config_file = if let Ok(env) = std::env::var("STORAGE_TEST_CONFIG").map(PathBuf::from) {
+        env
+    } else {
+        testing_storage_directory()?.join("storage_testing_config.toml")
+    };
     if !config_file.exists() {
         let config = TestingStorageConfig::default();
         let toml = toml::to_string(&config)?;

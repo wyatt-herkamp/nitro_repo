@@ -4,8 +4,9 @@ resolver = "3"
 [workspace.package]
 version = "2.0.0-BETA"
 authors = ["Wyatt Jacob Herkamp <wherkamp@gmail.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
+repository = "https://github.com/wyatt-herkamp/nitro_repo"
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["io"] }

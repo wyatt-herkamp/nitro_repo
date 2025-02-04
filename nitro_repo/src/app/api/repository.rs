@@ -10,10 +10,10 @@ use nr_core::{
         DBRepositoryWithStorageName,
     },
     repository::{
+        Visibility,
         browse::{BrowseFile, BrowseResponse},
         config::repository_page::{PageType, RepositoryPage},
         project::ProjectResolution,
-        Visibility,
     },
     user::permissions::{HasPermissions, RepositoryActions},
 };
@@ -26,9 +26,9 @@ use uuid::Uuid;
 
 use crate::{
     app::{
+        NitroRepo, RepositoryStorageName,
         authentication::Authentication,
         responses::{MissingPermission, RepositoryNotFound},
-        NitroRepo, RepositoryStorageName,
     },
     error::InternalError,
     repository::{Repository, RepositoryTypeDescription},

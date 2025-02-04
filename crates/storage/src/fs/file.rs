@@ -1,6 +1,6 @@
 use std::{fmt::Debug, fs::File, io, path::Path};
 
-use crate::{local::error::LocalStorageError, LocationMeta, LocationTypedMeta};
+use crate::{LocationMeta, LocationTypedMeta, local::error::LocalStorageError};
 
 use super::StorageFileReader;
 use chrono::{DateTime, FixedOffset};

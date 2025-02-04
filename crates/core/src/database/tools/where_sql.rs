@@ -253,7 +253,7 @@ mod tests {
     use super::WhereComparison;
     use crate::database::{
         prelude::*,
-        tools::where_sql::{format_where, WhereBuilder, WhereValue},
+        tools::where_sql::{WhereBuilder, WhereValue, format_where},
     };
 
     #[derive(Columns)]

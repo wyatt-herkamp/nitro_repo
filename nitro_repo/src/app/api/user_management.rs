@@ -1,8 +1,8 @@
 use axum::{
+    Json,
     body::Body,
     extract::{Path, State},
     response::{IntoResponse, Response},
-    Json,
 };
 use http::StatusCode;
 use serde::Deserialize;
@@ -11,20 +11,20 @@ use utoipa::{OpenApi, ToSchema};
 
 use crate::{
     app::{
-        authentication::{password, Authentication},
-        responses::MissingPermission,
         NitroRepo,
+        authentication::{Authentication, password},
+        responses::MissingPermission,
     },
     error::InternalError,
 };
 use nr_core::{
     database::entities::user::{
-        permissions::FullUserPermissions, user_utils, ChangePasswordNoCheck, NewUserRequest,
-        UserSafeData, UserType as _,
+        ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
+        permissions::FullUserPermissions, user_utils,
     },
     user::{
-        permissions::{HasPermissions, UpdatePermissions},
         Email, Username,
+        permissions::{HasPermissions, UpdatePermissions},
     },
 };
 

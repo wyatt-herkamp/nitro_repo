@@ -19,7 +19,9 @@ pub const CONFIG_PREFIX: &str = "NITRO-REPO";
 pub enum ConfigError {
     #[error("Invalid size: {0}")]
     InvalidSize(#[from] InvalidSizeError),
-    #[error("Invalid max upload size. Expected a valid size or 'unlimited', error: {error}, got: {value}")]
+    #[error(
+        "Invalid max upload size. Expected a valid size or 'unlimited', error: {error}, got: {value}"
+    )]
     InvalidMaxUpload {
         error: InvalidSizeError,
         value: String,

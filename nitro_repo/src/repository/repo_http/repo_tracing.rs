@@ -3,12 +3,11 @@ use std::{error::Error, sync::Arc};
 use nr_core::storage::StoragePath;
 use nr_storage::Storage;
 use opentelemetry::{
-    global,
+    KeyValue, global,
     metrics::{Histogram, Meter, UpDownCounter},
-    KeyValue,
 };
 use parking_lot::Mutex;
-use tracing::{event, field::Empty, info_span, Level, Span};
+use tracing::{Level, Span, event, field::Empty, info_span};
 
 use crate::repository::Repository;
 

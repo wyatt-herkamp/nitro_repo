@@ -6,29 +6,28 @@ use authentication::session::{SessionManager, SessionManagerConfig};
 
 use axum::extract::State;
 use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
-use derive_more::{derive::Deref, AsRef};
+use derive_more::{AsRef, derive::Deref};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
 use http::Uri;
 pub mod frontend;
 use nr_core::{
     database::{
+        DatabaseConfig,
         entities::{
             repository::DBRepository,
             storage::{DBStorage, StorageDBType},
             user::user_utils,
         },
-        DatabaseConfig,
     },
     repository::config::{
-        project::ProjectConfigType, repository_page::RepositoryPageType, RepositoryConfigType,
+        RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
     },
 };
-use nr_storage::{DynStorage, Storage, StorageConfig, StorageFactory, STORAGE_FACTORIES};
+use nr_storage::{DynStorage, STORAGE_FACTORIES, Storage, StorageConfig, StorageFactory};
 use opentelemetry::{
-    global,
+    InstrumentationScope, global,
     metrics::{Histogram, Meter, UpDownCounter},
-    InstrumentationScope,
 };
 use parking_lot::{Mutex, RwLock};
 use serde::{Deserialize, Serialize};
@@ -45,10 +44,10 @@ use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 pub mod open_api;
 use crate::repository::{
+    DynRepository, RepositoryType, StagingConfig,
     maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
     npm::{NPMRegistryConfigType, NpmRegistryType},
     repo_tracing::RepositoryMetricsMeter,
-    DynRepository, RepositoryType, StagingConfig,
 };
 pub mod api;
 pub mod badge;
@@ -432,7 +431,10 @@ impl NitroRepo {
             debug!(?id, ?name, "Found id in database");
             let repository: Option<DynRepository> = self.get_repository(id);
             if repository.is_none() {
-                warn!(?name, "Unregistered database id found. Repositories in database do not match loaded repositories");
+                warn!(
+                    ?name,
+                    "Unregistered database id found. Repositories in database do not match loaded repositories"
+                );
                 // TODO: Reload Everything
                 return Ok(repository);
             }

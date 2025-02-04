@@ -58,7 +58,7 @@ impl HostedFrontend {
     }
     fn save_frontend(frontend_path: PathBuf) -> Result<(), FrontendError> {
         use std::{
-            fs::{self, remove_dir_all, remove_file, File},
+            fs::{self, File, remove_dir_all, remove_file},
             io,
         };
 

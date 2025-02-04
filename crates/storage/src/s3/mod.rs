@@ -6,10 +6,10 @@ use mime::Mime;
 use nr_core::storage::{FileHashes, SerdeMime, StoragePath};
 use regions::{CustomRegion, S3StorageRegion};
 use s3::{
+    Bucket, Region, Tag,
     creds::{Credentials, Rfc3339OffsetDateTime},
     error::S3Error,
     serde_types::ListBucketResult,
-    Bucket, Region, Tag,
 };
 
 pub mod regions;
@@ -48,11 +48,11 @@ impl S3StorageError {
     }
 }
 use crate::{
-    meta::RepositoryMeta, streaming::VecDirectoryListStream, utils::new_type_arc_type,
     BorrowedStorageConfig, BorrowedStorageTypeConfig, DirectoryFileType, DynStorage, FileContent,
     FileContentBytes, FileFileType, FileType, InvalidConfigType, PathCollisionError,
     StaticStorageFactory, Storage, StorageConfig, StorageConfigInner, StorageError, StorageFactory,
-    StorageFile, StorageFileMeta, StorageTypeConfig, StorageTypeConfigTrait,
+    StorageFile, StorageFileMeta, StorageTypeConfig, StorageTypeConfigTrait, meta::RepositoryMeta,
+    streaming::VecDirectoryListStream, utils::new_type_arc_type,
 };
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct S3Credentials {
@@ -606,7 +606,7 @@ impl StorageFactory for S3StorageFactory {
 mod tests {
     use tracing::warn;
 
-    use crate::{s3::S3StorageFactory, testing::storage::TestingStorage, StaticStorageFactory};
+    use crate::{StaticStorageFactory, s3::S3StorageFactory, testing::storage::TestingStorage};
 
     #[tokio::test]
     pub async fn generic_test() -> anyhow::Result<()> {

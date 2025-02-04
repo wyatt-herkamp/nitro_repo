@@ -3,7 +3,7 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::path::Path;
 
-use digestible::{byteorder::NativeEndian, Digester, Digestible, IntoBase64};
+use digestible::{Digester, Digestible, IntoBase64, byteorder::NativeEndian};
 use http::HeaderValue;
 use rust_embed::RustEmbed;
 use sha2::Digest;

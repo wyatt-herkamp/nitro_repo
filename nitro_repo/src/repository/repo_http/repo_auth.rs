@@ -1,10 +1,10 @@
 use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use nr_core::{
-    database::entities::user::{auth_token::AuthToken, UserSafeData, UserType},
+    database::entities::user::{UserSafeData, UserType, auth_token::AuthToken},
     user::permissions::{
-        does_user_and_token_have_repository_action, HasPermissions, RepositoryActions,
-        UserPermissions,
+        HasPermissions, RepositoryActions, UserPermissions,
+        does_user_and_token_have_repository_action,
     },
 };
 use sqlx::PgPool;
@@ -13,8 +13,8 @@ use tracing::{debug, instrument};
 use uuid::Uuid;
 
 use crate::app::{
-    authentication::{session::Session, verify_login, AuthenticationError, AuthenticationRaw},
     NitroRepo,
+    authentication::{AuthenticationError, AuthenticationRaw, session::Session, verify_login},
 };
 
 #[derive(Clone, Debug, PartialEq, EnumIs)]

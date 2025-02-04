@@ -2,11 +2,11 @@ use nr_core::storage::StoragePath;
 use uuid::Uuid;
 
 use crate::{
+    FileContent, FileType, Storage, StorageError, StorageFactory, StorageTypeConfig,
     local::{LocalStorage, LocalStorageFactory},
     meta::RepositoryMeta,
     s3::{S3Storage, S3StorageFactory},
     streaming::DynDirectoryListStream,
-    FileContent, FileType, Storage, StorageError, StorageFactory, StorageTypeConfig,
 };
 #[derive(Debug, Clone)]
 pub enum DynStorage {

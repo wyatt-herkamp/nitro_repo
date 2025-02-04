@@ -1,11 +1,11 @@
 use chrono::Utc;
-use nr_core::{database::entities::storage::DBStorage, ConfigTimeStamp};
+use nr_core::{ConfigTimeStamp, database::entities::storage::DBStorage};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{local::LocalConfig, s3::S3Config, StorageError};
+use crate::{StorageError, local::LocalConfig, s3::S3Config};
 #[derive(Debug, Clone, Error)]
 #[error("Expected Config Type: {0}, Got: {1}")]
 pub struct InvalidConfigType(&'static str, &'static str);

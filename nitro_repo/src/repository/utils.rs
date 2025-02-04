@@ -1,5 +1,5 @@
 use nr_core::{
-    database::entities::project::{versions::DBProjectVersion, DBProject, ProjectDBType},
+    database::entities::project::{DBProject, ProjectDBType, versions::DBProjectVersion},
     repository::Visibility,
     user::permissions::{HasPermissions, RepositoryActions},
 };

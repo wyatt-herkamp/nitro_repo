@@ -1,14 +1,14 @@
 use axum::{
+    Json,
     extract::{Request, State},
     response::Response,
-    Json,
 };
 use http::{StatusCode, Uri};
 use nr_core::{
     database::entities::user::NewUserRequest,
     user::scopes::{NRScope, ScopeDescription},
 };
-use serde::{ser::SerializeStruct, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser::SerializeStruct};
 use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
@@ -23,7 +23,7 @@ use crate::{
     utils::{response_builder::ResponseBuilder, responses::APIErrorResponse},
 };
 
-use super::{authentication::password, Instance, NitroRepo, NitroRepoState};
+use super::{Instance, NitroRepo, NitroRepoState, authentication::password};
 pub fn api_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/info", axum::routing::get(info))

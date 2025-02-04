@@ -3,7 +3,7 @@ use std::sync::Once;
 use ahash::{HashMap, HashMapExt};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, trace, warn};
-use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt, Layer};
+use tracing_subscriber::{Layer, filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::logging::{LevelSerde, LoggingLevels};
 #[derive(Debug, Clone, Serialize, Deserialize)]

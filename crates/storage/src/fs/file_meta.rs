@@ -10,9 +10,9 @@ use std::{
     path::{Path, PathBuf},
 };
 use tracing::{
-    debug, event,
-    field::{debug, Empty},
-    instrument, trace, warn, Level, Span,
+    Level, Span, debug, event,
+    field::{Empty, debug},
+    instrument, trace, warn,
 };
 
 use crate::{

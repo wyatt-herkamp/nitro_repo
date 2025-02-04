@@ -3,7 +3,7 @@
 use std::{fmt::Debug, future::Future};
 
 use nr_core::{
-    repository::{project::ProjectResolution, Visibility},
+    repository::{Visibility, project::ProjectResolution},
     storage::StoragePath,
 };
 
@@ -31,7 +31,7 @@ use uuid::Uuid;
 mod error;
 pub mod utils;
 use crate::{
-    app::{authentication::AuthenticationError, NitroRepo},
+    app::{NitroRepo, authentication::AuthenticationError},
     error::{BadRequestErrors, IntoErrorResponse},
 };
 pub use error::*;

@@ -9,7 +9,7 @@ use tracing::instrument;
 use utoipa::OpenApi;
 
 use crate::{
-    app::{authentication::Authentication, responses::MissingPermission, NitroRepo},
+    app::{NitroRepo, authentication::Authentication, responses::MissingPermission},
     error::InternalError,
     utils::response_builder::ResponseBuilder,
 };

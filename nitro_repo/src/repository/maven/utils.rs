@@ -3,9 +3,9 @@ use std::fmt::Debug;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::entities::project::{
+        DBProject, NewProject, NewProjectBuilder, NewProjectMember, ProjectDBType,
         update::UpdateProjectVersion, versions::DBProjectVersion, versions::NewVersion,
-        versions::NewVersionBuilder, DBProject, NewProject, NewProjectBuilder, NewProjectMember,
-        ProjectDBType,
+        versions::NewVersionBuilder,
     },
     repository::project::{ReleaseType, VersionData, VersionDataBuilder},
     storage::{FileTypeCheck, StoragePath},
@@ -13,7 +13,7 @@ use nr_core::{
 };
 
 use nr_storage::Storage;
-use tracing::{error, event, info, instrument, trace, Level};
+use tracing::{Level, error, event, info, instrument, trace};
 use uuid::Uuid;
 
 use super::{MavenError, RepoResponse, RepositoryAuthentication, RepositoryHandlerError};

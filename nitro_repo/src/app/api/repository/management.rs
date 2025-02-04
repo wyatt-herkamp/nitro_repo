@@ -1,13 +1,13 @@
 use ahash::HashMap;
 use axum::{
+    Json, Router,
     body::Body,
     debug_handler,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
-    Json, Router,
 };
-use http::{header::CONTENT_TYPE, StatusCode};
+use http::{StatusCode, header::CONTENT_TYPE};
 use nr_core::{
     database::entities::repository::{DBRepository, GenericDBRepositoryConfig},
     repository::Visibility,
@@ -21,12 +21,12 @@ use uuid::Uuid;
 
 use crate::{
     app::{
+        NitroRepo,
         authentication::{Authentication, AuthenticationError},
         responses::{
-            no_content_response_with_error, InvalidRepositoryConfig, MissingPermission,
-            RepositoryNotFound, ResponseBuilderExt,
+            InvalidRepositoryConfig, MissingPermission, RepositoryNotFound, ResponseBuilderExt,
+            no_content_response_with_error,
         },
-        NitroRepo,
     },
     error::InternalError,
     repository::Repository,

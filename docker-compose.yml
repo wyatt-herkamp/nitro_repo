@@ -1,16 +1,18 @@
 version: "3.9"
 services:
   nitro_repo:
-    image: nitro_repo:1.1.0
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # This is a link to the beta builds of the nitro repo
+    image: "git.kingtux.dev/wherkamp/nitro_repo/nitro_repo:latest"
+    # Startup policy
+    restart: unless-stopped
+    env:
+      # Basically it makes the frontend suggest this as the base path for the local storage
+      - SUGGESTED_LOCAL_STORAGE_PATH=/data/storages/
     ports:
       - "6742:6742"
     volumes:
-      - nitro_repo-data:/app/data
-    restart: unless-stopped
-    stdin_open: true
-    tty: true
+      - nitro_repo_data:/data/
+
 volumes:
-  nitro_repo-data: { }
+  nitro_repo_data:
+    name: nitro_repo_data

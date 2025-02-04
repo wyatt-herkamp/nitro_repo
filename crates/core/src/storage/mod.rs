@@ -16,7 +16,9 @@ pub enum InvalidStorageName {
     TooShort(usize),
     #[error("Storage Name is too long, must be less than 32 got {0} characters")]
     TooLong(usize),
-    #[error("Storage Name contains invalid character `{0}`. Storage Names can only contain letters, numbers, `_`, and `-`")]
+    #[error(
+        "Storage Name contains invalid character `{0}`. Storage Names can only contain letters, numbers, `_`, and `-`"
+    )]
     InvalidCharacter(char),
 }
 #[derive(Debug, Type, Clone, Default, SerdeViaStr, NuType)]

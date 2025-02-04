@@ -1,13 +1,13 @@
 use nr_core::{
-    database::entities::user::{auth_token::AuthToken, UserSafeData, UserType},
+    database::entities::user::{UserSafeData, UserType, auth_token::AuthToken},
     user::permissions::{HasPermissions, HasUserType, UserPermissions},
 };
 use serde::{Deserialize, Serialize};
-use tracing::{debug, instrument, Span};
+use tracing::{Span, debug, instrument};
 
 use crate::app::NitroRepo;
 
-use super::{get_user_and_auth_token, session::Session, AuthenticationError};
+use super::{AuthenticationError, get_user_and_auth_token, session::Session};
 /// Authentication Message for Websockets.
 ///
 /// This type should be added to your WebSocket Message Enum to handle Authentication.

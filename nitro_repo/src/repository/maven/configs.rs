@@ -1,8 +1,8 @@
 use nr_core::repository::{
-    config::{ConfigDescription, RepositoryConfigError, RepositoryConfigType},
     Policy,
+    config::{ConfigDescription, RepositoryConfigError, RepositoryConfigType},
 };
-use schemars::{schema_for, JsonSchema, Schema};
+use schemars::{JsonSchema, Schema, schema_for};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

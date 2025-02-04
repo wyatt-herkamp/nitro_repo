@@ -8,9 +8,9 @@ use axum::extract::{
 };
 use derive_more::derive::From;
 use http::{
+    HeaderMap, HeaderName, Request,
     header::{REFERER, USER_AGENT},
     request::Parts,
-    HeaderMap, HeaderName, Request,
 };
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
 use tracing::{field::Empty, info_span};
@@ -31,7 +31,8 @@ where
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         let extension = parts.extensions.get::<RequestSpan>();
-        extension.cloned()
+        extension
+            .cloned()
             .ok_or(MissingInternelExtension("Request Span"))
     }
 }

@@ -18,4 +18,7 @@ jobs:
           node-version-file: "site/.node-version"
       - name: Install Site
         working-directory: site
-        run: npm install && npm run build
+        run: npm install
+      - name: Build Site
+        working-directory: site
+        run: npm run build

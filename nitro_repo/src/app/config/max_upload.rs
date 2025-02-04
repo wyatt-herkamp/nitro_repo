@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use serde::{de::Visitor, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Visitor};
 use tuxs_config_types::size_config::{ConfigSize, Unit as SizeUnit};
 
 use super::ConfigError;

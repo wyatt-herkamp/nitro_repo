@@ -6,23 +6,23 @@ use std::{
 
 use crate::{
     app::{
-        config::{get_current_directory, Mode},
         NitroRepo,
+        config::{Mode, get_current_directory},
     },
     error::IntoErrorResponse,
 };
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use http::StatusCode;
-use rand::{distr::Alphanumeric, rngs::StdRng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::StdRng};
 use redb::{CommitError, Database, Error, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::task::JoinHandle;
 use tracing::{
-    debug, error,
-    field::{display, Empty},
-    info, instrument, span, Level,
+    Level, debug, error,
+    field::{Empty, display},
+    info, instrument, span,
 };
 use utoipa::ToSchema;
 #[derive(Debug, Error)]

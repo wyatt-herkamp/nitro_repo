@@ -1,12 +1,11 @@
 use sqlx::{Database, Postgres};
 
 use super::{
-    concat_columns,
+    ColumnType, HasArguments, PaginationSupportingTool, QueryScalarTool, QueryTool, SQLOrder,
+    WhereableTool, concat_columns,
     query::{QueryOrdering, QueryOrderingColumn},
     rust_unstable_workaround::{HasColumns, HasTableName},
-    where_sql::{format_where, WhereBuilder, WhereColumn, WhereComparison},
-    ColumnType, HasArguments, PaginationSupportingTool, QueryScalarTool, QueryTool, SQLOrder,
-    WhereableTool,
+    where_sql::{WhereBuilder, WhereColumn, WhereComparison, format_where},
 };
 pub struct SelectExists<'table, 'args> {
     table: &'table str,

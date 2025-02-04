@@ -1,12 +1,12 @@
 use nr_core::{
-    database::entities::project::{DBProject, versions::DBProjectVersion, ProjectDBType},
+    database::entities::project::{DBProject, ProjectDBType, versions::DBProjectVersion},
     storage::StoragePath,
 };
 use tracing::{info, instrument};
 
 use crate::repository::Repository;
 
-use super::{types::request::PublishVersion, NPMRegistryError};
+use super::{NPMRegistryError, types::request::PublishVersion};
 
 pub mod npm_time {
     use chrono::{DateTime, FixedOffset};

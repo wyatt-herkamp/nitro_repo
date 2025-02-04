@@ -7,8 +7,8 @@ use http::StatusCode;
 use nr_core::{
     database::entities::repository::DBRepositoryConfig,
     repository::config::{
-        repository_page::{RepositoryPage, RepositoryPageType},
         RepositoryConfigType,
+        repository_page::{RepositoryPage, RepositoryPageType},
     },
     user::permissions::{HasPermissions, RepositoryActions},
 };
@@ -18,11 +18,11 @@ use uuid::Uuid;
 
 use crate::{
     app::{
+        NitroRepo, RepositoryStorageName,
         authentication::Authentication,
         responses::{
             InvalidRepositoryConfig, MissingPermission, RepositoryNotFound, ResponseBuilderExt,
         },
-        NitroRepo, RepositoryStorageName,
     },
     error::InternalError,
     repository::Repository,

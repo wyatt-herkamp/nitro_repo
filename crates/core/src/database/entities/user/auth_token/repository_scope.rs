@@ -1,6 +1,6 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use sqlx::{prelude::FromRow, PgPool};
+use sqlx::{PgPool, prelude::FromRow};
 use tracing::{debug, instrument, span};
 use utoipa::ToSchema;
 use uuid::Uuid;

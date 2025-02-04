@@ -110,7 +110,7 @@ impl NrApi {
 #[cfg(test)]
 mod tests {
 
-    use std::sync::{atomic::AtomicUsize, Arc};
+    use std::sync::{Arc, atomic::AtomicUsize};
 
     use nr_core::repository::browse::BrowseFile;
     use tokio::time::sleep;
@@ -118,7 +118,7 @@ mod tests {
     use uuid::Uuid;
     fn init_logger() {
         use tracing::{error, info, level_filters::LevelFilter};
-        use tracing_subscriber::{filter, layer::SubscriberExt, util::SubscriberInitExt, Layer};
+        use tracing_subscriber::{Layer, filter, layer::SubscriberExt, util::SubscriberInitExt};
         static ONCE: std::sync::Once = std::sync::Once::new();
         ONCE.call_once(|| {
             let stdout_log = tracing_subscriber::fmt::layer().pretty().without_time();

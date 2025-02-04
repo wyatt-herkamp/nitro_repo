@@ -9,8 +9,8 @@ use nr_core::{
         repository::DBRepositoryConfig,
     },
     repository::config::{
-        project::{BadgeSettings, ProjectConfig, ProjectConfigType},
         RepositoryConfigType,
+        project::{BadgeSettings, ProjectConfig, ProjectConfigType},
     },
 };
 use serde::Deserialize;
@@ -20,7 +20,7 @@ use crate::{
     error::InternalError, repository::Repository, utils::response_builder::ResponseBuilder,
 };
 
-use super::{responses::RepositoryNotFound, NitroRepo, RepositoryStorageName};
+use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
 #[derive(OpenApi)]
 #[openapi(
     paths(repository_badge, project_badge, supports_badges),

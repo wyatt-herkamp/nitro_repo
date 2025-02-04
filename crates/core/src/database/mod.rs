@@ -21,9 +21,9 @@ pub enum DBError {
 pub type DBResult<T> = Result<T, DBError>;
 
 pub mod prelude {
-    pub use super::{tools::*, DBError, DBResult};
+    pub use super::{DBError, DBResult, tools::*};
     pub use chrono::{DateTime, FixedOffset, Local, NaiveDate};
     pub use nr_macros::Columns;
-    pub use sqlx::{postgres::PgRow, prelude::*, FromRow, PgPool, Postgres, QueryBuilder};
+    pub use sqlx::{FromRow, PgPool, Postgres, QueryBuilder, postgres::PgRow, prelude::*};
     pub use tracing::{debug, error, info, instrument, trace, warn};
 }

@@ -10,15 +10,15 @@ use opentelemetry::{global, trace::TracerProvider as _};
 use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
 use opentelemetry_otlp::{LogExporter, MetricExporter, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{
+    Resource,
     logs::LoggerProvider,
     metrics::{PeriodicReader, SdkMeterProvider},
     propagation::TraceContextPropagator,
     trace::TracerProvider,
-    Resource,
 };
 use tracing_appender::rolling::RollingFileAppender;
 use tracing_subscriber::{
-    filter::Targets, layer::SubscriberExt, util::SubscriberInitExt, Layer, Registry,
+    Layer, Registry, filter::Targets, layer::SubscriberExt, util::SubscriberInitExt,
 };
 
 struct TracerResult {

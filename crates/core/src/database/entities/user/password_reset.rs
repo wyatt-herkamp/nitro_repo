@@ -1,10 +1,10 @@
 use chrono::Local;
-use rand::{rngs::StdRng, SeedableRng};
+use rand::{SeedableRng, rngs::StdRng};
 use serde::{Deserialize, Serialize};
 use sqlx::{
+    PgPool,
     prelude::{FromRow, Type},
     types::Json,
-    PgPool,
 };
 
 use crate::database::DateTime;
@@ -93,8 +93,8 @@ impl UserPasswordReset {
         Ok(row)
     }
     fn generate_token_value() -> String {
-        use rand::distr::Alphanumeric;
         use rand::Rng;
+        use rand::distr::Alphanumeric;
 
         StdRng::from_os_rng()
             .sample_iter(&Alphanumeric)

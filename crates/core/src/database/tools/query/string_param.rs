@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
 use serde::{
-    de::{Deserialize, Deserializer, Visitor},
     Serialize,
+    de::{Deserialize, Deserializer, Visitor},
 };
 use sqlx::query_builder::Separated;
 use tracing::instrument;

@@ -1,5 +1,5 @@
 use serde::Serialize;
-use sqlx::{types::Json, PgPool};
+use sqlx::{PgPool, types::Json};
 use utoipa::ToSchema;
 use uuid::Uuid;
 mod new;

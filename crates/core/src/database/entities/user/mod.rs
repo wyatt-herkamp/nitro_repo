@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgRow, types::Json, FromRow, PgPool};
+use sqlx::{FromRow, PgPool, postgres::PgRow, types::Json};
 use utoipa::ToSchema;
 
 use crate::user::{
-    permissions::{HasPermissions, RepositoryActions, UserPermissions},
     Email, Username,
+    permissions::{HasPermissions, RepositoryActions, UserPermissions},
 };
 
 pub mod auth_token;

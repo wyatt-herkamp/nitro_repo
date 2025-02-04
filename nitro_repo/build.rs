@@ -2,14 +2,14 @@
 use std::{
     env,
     fs::File,
-    io::{prelude::*, Seek, Write},
+    io::{Seek, Write, prelude::*},
     iter::Iterator,
     path::{Path, PathBuf},
 };
 
 use anyhow::Context;
 use walkdir::{DirEntry, WalkDir};
-use zip::{write::SimpleFileOptions, ZipWriter};
+use zip::{ZipWriter, write::SimpleFileOptions};
 
 fn main() -> anyhow::Result<()> {
     #[cfg(feature = "frontend")]
@@ -17,6 +17,27 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 fn build_frontend() -> anyhow::Result<()> {
+    let frontend_dist = if let Some(frontend_dist) = env::var_os("FRONTEND_DIST").map(PathBuf::from)
+    {
+        if !frontend_dist.exists() {
+            return Err(anyhow::anyhow!(
+                "site build directory which was specified by the env var FRONTEND_DIST not found"
+            ));
+        }
+        frontend_dist
+    } else {
+        let frontend_dist = get_site_dist_dir()?;
+        if !frontend_dist.exists() {
+            return Err(anyhow::anyhow!("site build directory not found."));
+        }
+        frontend_dist
+    };
+    rerun_if_changed(&frontend_dist);
+    zip_site(frontend_dist)?;
+    Ok(())
+}
+
+fn get_site_dist_dir() -> anyhow::Result<PathBuf> {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .with_context(|| "CARGO_MANIFEST_DIR not set")?
@@ -27,15 +48,12 @@ fn build_frontend() -> anyhow::Result<()> {
     if !frontend_src.exists() {
         return Err(anyhow::anyhow!("site directory not found"));
     }
-    let frontend_dist = env::var_os("FRONTEND_DIST")
-        .map(|s| manifest_dir.join(s))
-        .unwrap_or_else(|| frontend_src.join("dist"));
-    println!("cargo::rerun-if-changed={}", frontend_dist.display());
-
-    zip_site(frontend_dist)?;
-    Ok(())
+    Ok(frontend_src.join("dist"))
 }
 
+fn rerun_if_changed(path: &Path) {
+    println!("cargo::rerun-if-changed={}", path.display());
+}
 /// Bundling files seem to be broken with Android. So as a work around. I will zip the files and include them in the binary.
 fn zip_site(frontend_dist: impl AsRef<Path>) -> anyhow::Result<()> {
     let out_dir = env::var("OUT_DIR").with_context(|| "OUT_DIR not set")?;

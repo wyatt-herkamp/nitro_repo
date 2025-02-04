@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{prelude::FromRow, PgPool};
+use sqlx::{PgPool, prelude::FromRow};
 use utoipa::ToSchema;
 
 use crate::user::scopes::NRScope;

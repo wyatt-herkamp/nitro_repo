@@ -1,26 +1,26 @@
 use std::net::SocketAddr;
 
 use axum::{
+    Json,
     body::Body,
     extract::{ConnectInfo, State},
     response::{IntoResponse, Response},
     routing::post,
-    Json,
 };
 use axum_extra::{
+    TypedHeader,
     extract::{
-        cookie::{Cookie, Expiration},
         CookieJar,
+        cookie::{Cookie, Expiration},
     },
     headers::UserAgent,
-    TypedHeader,
 };
-use http::{header::SET_COOKIE, StatusCode};
+use http::{StatusCode, header::SET_COOKIE};
 use nr_core::{
     database::entities::user::{
+        ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,
         auth_token::{AuthTokenRepositoryScope, AuthTokenScope},
         permissions::FullUserPermissions,
-        ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,
     },
     user::token::{AuthTokenFullResponse, AuthTokenResponse},
 };
@@ -31,12 +31,13 @@ mod password_reset;
 mod tokens;
 use crate::{
     app::{
+        NitroRepo,
         authentication::{
+            Authentication, MeWithSession,
             password::{self, verify_password},
             session::{Session, SessionError},
-            verify_login, Authentication, MeWithSession,
+            verify_login,
         },
-        NitroRepo,
     },
     error::InternalError,
 };

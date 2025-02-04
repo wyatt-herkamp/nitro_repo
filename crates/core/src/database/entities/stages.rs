@@ -1,7 +1,7 @@
 use derive_builder::Builder;
 use serde::Serialize;
 use serde_json::Value;
-use sqlx::{types::Json, FromRow};
+use sqlx::{FromRow, types::Json};
 use utoipa::ToSchema;
 use uuid::Uuid;
 

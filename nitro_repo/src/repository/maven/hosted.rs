@@ -1,24 +1,23 @@
 use std::sync::{
-    atomic::{self, AtomicBool},
     Arc,
+    atomic::{self, AtomicBool},
 };
 
 use derive_more::derive::Deref;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::entities::{
-        project::{info::ProjectInfo, versions::DBProjectVersion, DBProject, ProjectDBType},
+        project::{DBProject, ProjectDBType, info::ProjectInfo, versions::DBProjectVersion},
         repository::DBRepository,
     },
     repository::{
+        Visibility,
         config::{
-            get_repository_config_or_default,
+            RepositoryConfigType, get_repository_config_or_default,
             project::{ProjectConfig, ProjectConfigType},
             repository_page::RepositoryPageType,
-            RepositoryConfigType,
         },
         project::ProjectResolution,
-        Visibility,
     },
     storage::StoragePath,
     user::permissions::{HasPermissions, RepositoryActions},
@@ -31,15 +30,15 @@ use uuid::Uuid;
 use crate::{
     app::NitroRepo,
     repository::{
-        maven::{configs::MavenPushRulesConfigType, MavenRepositoryConfigType},
-        utils::RepositoryExt,
         Repository, RepositoryFactoryError,
+        maven::{MavenRepositoryConfigType, configs::MavenPushRulesConfigType},
+        utils::RepositoryExt,
     },
 };
 
 use super::{
-    configs::MavenPushRules, utils::MavenRepositoryExt, MavenError, RepoResponse,
-    RepositoryRequest, REPOSITORY_TYPE_ID,
+    MavenError, REPOSITORY_TYPE_ID, RepoResponse, RepositoryRequest, configs::MavenPushRules,
+    utils::MavenRepositoryExt,
 };
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {

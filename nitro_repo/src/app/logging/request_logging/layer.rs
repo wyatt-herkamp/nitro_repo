@@ -9,7 +9,7 @@ use axum::{
     body::{Body, HttpBody},
     extract::MatchedPath,
 };
-use http::{header::InvalidHeaderValue, HeaderValue, Request, Response};
+use http::{HeaderValue, Request, Response, header::InvalidHeaderValue};
 use opentelemetry::KeyValue;
 use pin_project::pin_project;
 
@@ -18,7 +18,7 @@ use tracing::error;
 
 use crate::app::NitroRepo;
 
-use super::{request_id::RequestId, response_body::TraceResponseBody, RequestSpan, X_REQUEST_ID};
+use super::{RequestSpan, X_REQUEST_ID, request_id::RequestId, response_body::TraceResponseBody};
 
 /// Middleware that handles the authentication of the user
 #[derive(Debug, Clone)]

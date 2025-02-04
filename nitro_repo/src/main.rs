@@ -55,7 +55,9 @@ fn main() -> anyhow::Result<()> {
         .install_default()
         .is_err()
     {
-        eprintln!("Default Crypto Provider already installed. This is not an error. But it should be reported.");
+        eprintln!(
+            "Default Crypto Provider already installed. This is not an error. But it should be reported."
+        );
     }
 
     let command = Command::parse();
@@ -92,7 +94,9 @@ fn web_start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
 }
 fn save_config(config_path: PathBuf, add_defaults: bool) -> anyhow::Result<()> {
     if config_path.exists() && !add_defaults {
-        anyhow::bail!("Config file already exists. Please remove it first. or use the --add-defaults flag to overwrite it.");
+        anyhow::bail!(
+            "Config file already exists. Please remove it first. or use the --add-defaults flag to overwrite it."
+        );
     }
     if config_path.is_dir() {
         anyhow::bail!("Config file is a directory. Please pass a file path.");

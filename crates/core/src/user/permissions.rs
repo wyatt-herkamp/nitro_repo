@@ -3,17 +3,17 @@ use std::fmt::Debug;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{
-    prelude::{FromRow, Type},
     Execute, PgPool, QueryBuilder,
+    prelude::{FromRow, Type},
 };
 use tracing::{debug, info, instrument, trace, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::entities::user::{
+    UserType,
     auth_token::AuthToken,
     permissions::{NewUserRepositoryPermissions, UserRepositoryPermissions},
-    UserType,
 };
 
 use super::scopes::NRScope;

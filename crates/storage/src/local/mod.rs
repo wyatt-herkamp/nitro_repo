@@ -13,9 +13,9 @@ use nr_core::storage::StoragePath;
 use serde::{Deserialize, Serialize};
 use tokio::{sync::Mutex, task::JoinSet};
 use tracing::{
-    debug, debug_span, error, event,
-    field::{debug, Empty},
-    info, info_span, instrument, trace, warn, Level, Span,
+    Level, Span, debug, debug_span, error, event,
+    field::{Empty, debug},
+    info, info_span, instrument, trace, warn,
 };
 use utils::new_type_arc_type;
 
@@ -658,7 +658,7 @@ mod tests {
     use tracing::warn;
 
     use crate::{
-        local::LocalStorageFactory, testing::storage::TestingStorage, StaticStorageFactory,
+        StaticStorageFactory, local::LocalStorageFactory, testing::storage::TestingStorage,
     };
 
     #[tokio::test]

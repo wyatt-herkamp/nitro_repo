@@ -10,7 +10,7 @@ use nr_core::{
     builder_error,
     database::entities::repository::{DBRepository, DBRepositoryConfig},
     repository::{
-        config::{project::ProjectConfigType, RepositoryConfigType},
+        config::{RepositoryConfigType, project::ProjectConfigType},
         project::ReleaseType,
     },
     storage::StoragePath,

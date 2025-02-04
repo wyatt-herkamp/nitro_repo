@@ -2,19 +2,19 @@ use std::error::Error;
 
 use crate::{
     app::{
-        authentication::AuthenticationError, logging::request_logging::RequestSpan,
-        responses::RepositoryNotFound, NitroRepo, RepositoryStorageName,
+        NitroRepo, RepositoryStorageName, authentication::AuthenticationError,
+        logging::request_logging::RequestSpan, responses::RepositoryNotFound,
     },
     error::{BadRequestErrors, IllegalStateError},
     repository::Repository,
     utils::headers::date_time::date_time_for_header,
 };
 use axum::{
+    Router,
     body::Body,
     extract::{Path, Request, State},
     response::{IntoResponse, Response},
     routing::any,
-    Router,
 };
 pub mod repo_tracing;
 
@@ -22,22 +22,22 @@ use axum_extra::routing::RouterExt;
 use bytes::Bytes;
 use derive_more::From;
 use http::{
+    HeaderValue, Method, StatusCode,
     header::{CONTENT_LENGTH, CONTENT_LOCATION, CONTENT_TYPE, ETAG, LAST_MODIFIED, USER_AGENT},
     request::Parts,
-    HeaderValue, Method, StatusCode,
 };
 use http_body_util::BodyExt;
 use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{FileFileType, FileType, StorageFile, StorageFileMeta, StorageFileReader};
 
 use serde::Deserialize;
-use tracing::{debug, debug_span, error, event, instrument, Level, Span};
+use tracing::{Level, Span, debug, debug_span, error, event, instrument};
 mod header;
 mod repo_auth;
 pub use header::*;
 pub use repo_auth::*;
 
-use super::{repo_tracing::RepositoryRequestTracing, DynRepository, RepositoryHandlerError};
+use super::{DynRepository, RepositoryHandlerError, repo_tracing::RepositoryRequestTracing};
 pub fn repository_router() -> axum::Router<NitroRepo> {
     Router::new()
         .route("/{storage}/{repository}/{*path}", any(handle_repo_request))

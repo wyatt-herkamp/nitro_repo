@@ -8,9 +8,9 @@ use axum_extra::extract::cookie::Cookie;
 use derive_more::From;
 
 use http::request::Parts;
+use nr_core::database::DBError;
 use nr_core::database::entities::user::auth_token::AuthToken;
 use nr_core::database::entities::user::{UserModel, UserSafeData, UserType};
-use nr_core::database::DBError;
 use nr_core::user::permissions::{HasPermissions, UserPermissions};
 use serde::Serialize;
 use session::{Session, SessionError};
@@ -395,10 +395,10 @@ pub async fn get_user_and_auth_token(
 }
 pub mod password {
     use argon2::{
-        password_hash::{Salt, SaltString},
         Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+        password_hash::{Salt, SaltString},
     };
-    use rand::{rngs::OsRng, TryRngCore};
+    use rand::{TryRngCore, rngs::OsRng};
     use tracing::{error, instrument};
 
     use crate::app::authentication::AuthenticationError;

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use inquire::{validator::Validation, Text};
+use inquire::{Text, validator::Validation};
 use nr_core::database::DatabaseConfig;
-use sqlx::{postgres::PgConnectOptions, Connection, PgConnection};
+use sqlx::{Connection, PgConnection, postgres::PgConnectOptions};
 
 use crate::app::config::ReadConfigType;
 

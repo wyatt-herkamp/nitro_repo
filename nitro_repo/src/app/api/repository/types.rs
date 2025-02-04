@@ -3,7 +3,7 @@ use http::StatusCode;
 use tracing::instrument;
 
 use crate::{
-    app::{responses::ResponseBuilderExt, REPOSITORY_TYPES},
+    app::{REPOSITORY_TYPES, responses::ResponseBuilderExt},
     repository::RepositoryTypeDescription,
 };
 

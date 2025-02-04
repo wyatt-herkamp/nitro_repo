@@ -5,7 +5,7 @@ use std::{
 };
 
 pub use conflict::*;
-use serde::{ser::SerializeMap, Serialize, Serializer};
+use serde::{Serialize, Serializer, ser::SerializeMap};
 use utoipa::ToSchema;
 
 #[derive(Debug, ToSchema)]

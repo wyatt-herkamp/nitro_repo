@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use utoipa::OpenApi;
 
-use std::fs::{create_dir_all, File};
+use std::fs::{File, create_dir_all};
 
 use crate::app::{REPOSITORY_CONFIG_TYPES, REPOSITORY_TYPES};
 

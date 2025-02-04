@@ -1,6 +1,6 @@
 use derive_builder::Builder;
 use serde::Serialize;
-use sqlx::{postgres::PgRow, FromRow, PgPool};
+use sqlx::{FromRow, PgPool, postgres::PgRow};
 use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;

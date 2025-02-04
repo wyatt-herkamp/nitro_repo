@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use axum::extract::{FromRef, FromRequestParts};
 use derive_more::derive::{From, Into};
-use http::{header::InvalidHeaderValue, request::Parts, HeaderValue};
+use http::{HeaderValue, header::InvalidHeaderValue, request::Parts};
 use sqlx::types::Uuid;
 
 use crate::{app::NitroRepo, error::MissingInternelExtension};
@@ -20,7 +20,8 @@ impl RequestId {
     }
     pub fn extract_from_parts(parts: &Parts) -> Result<Self, MissingInternelExtension> {
         let extension = parts.extensions.get::<RequestId>();
-        extension.copied()
+        extension
+            .copied()
             .ok_or(MissingInternelExtension("Request ID"))
     }
 }

@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::{
-    local::error::LocalStorageError, s3::S3StorageError, InvalidConfigType, PathCollisionError,
+    InvalidConfigType, PathCollisionError, local::error::LocalStorageError, s3::S3StorageError,
 };
 #[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WrongFileType {

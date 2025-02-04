@@ -1,11 +1,11 @@
 use axum::response::{IntoResponse, Response};
 use digestible::Digestible;
-use http::{header::CONTENT_TYPE, HeaderName, HeaderValue, StatusCode};
+use http::{HeaderName, HeaderValue, StatusCode, header::CONTENT_TYPE};
 use mime::Mime;
 
 use crate::error::ResponseBuildError;
 
-use super::{generate_etag, JSON_MEDIA_TYPE};
+use super::{JSON_MEDIA_TYPE, generate_etag};
 macro_rules! new_response_builder {
     (
        $( $fn_name:ident => $status:ident),*

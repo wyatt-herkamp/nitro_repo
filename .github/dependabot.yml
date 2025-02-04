@@ -19,7 +19,19 @@ updates:
       minor-and-patch:
         applies-to: version-updates
         patterns:
-            - "*"   
+            - "*"
+        update-types:
+          - "patch"
+          - "minor"
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+            - "*"
         update-types:
           - "patch"
           - "minor"

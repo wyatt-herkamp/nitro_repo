@@ -1,14 +1,14 @@
 use axum::{
+    Json,
     body::Body,
     extract::{Path, State},
     response::{IntoResponse, Response},
-    Json,
 };
 use http::StatusCode;
 use tracing::instrument;
 
 use crate::{
-    app::{authentication::Authentication, responses::ResponseBuilderExt, NitroRepo},
+    app::{NitroRepo, authentication::Authentication, responses::ResponseBuilderExt},
     error::InternalError,
 };
 pub fn config_routes() -> axum::Router<NitroRepo> {
@@ -131,7 +131,7 @@ pub async fn config_default(
             return Ok(Response::builder()
                 .status(500)
                 .body(Body::from(err.to_string()))
-                .unwrap())
+                .unwrap());
         }
     }
 }

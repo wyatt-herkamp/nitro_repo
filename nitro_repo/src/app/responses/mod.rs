@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use derive_more::derive::From;
-use http::{header::CONTENT_TYPE, HeaderValue, StatusCode};
+use http::{HeaderValue, StatusCode, header::CONTENT_TYPE};
 use mime::Mime;
 use nr_core::repository::config::RepositoryConfigError;
 use nr_storage::StorageError;
