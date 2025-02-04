@@ -46,6 +46,18 @@ impl HostedFrontend {
         frontend.read_routes()?;
         Ok(frontend)
     }
+    pub fn validate() -> anyhow::Result<()> {
+        let temp = tempfile::tempdir()?;
+        Self::save_frontend(temp.path().to_owned())?;
+
+        let frontend = Self::new(Some(temp.path().to_owned()))?;
+
+        if !frontend.does_path_exist("index.html") {
+            return Err(anyhow::anyhow!("index.html not found"));
+        }
+
+        Ok(())
+    }
     fn read_routes(&mut self) -> Result<(), FrontendError> {
         let path = self.frontend_path.join("routes.json");
         if !path.exists() {

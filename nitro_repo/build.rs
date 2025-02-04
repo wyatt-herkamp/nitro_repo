@@ -17,9 +17,17 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 fn build_frontend() -> anyhow::Result<()> {
+    let ignore_dir_not_found = env::var_os("IGNORE_DIR_NOT_FOUND").is_some();
     let frontend_dist = if let Some(frontend_dist) = env::var_os("FRONTEND_DIST").map(PathBuf::from)
     {
         if !frontend_dist.exists() {
+            if ignore_dir_not_found {
+                println!(
+                    "cargo::warning={}",
+                    "site build directory not found - creating empty zip"
+                );
+                return empty_zip();
+            }
             return Err(anyhow::anyhow!(
                 "site build directory which was specified by the env var FRONTEND_DIST not found"
             ));
@@ -28,7 +36,14 @@ fn build_frontend() -> anyhow::Result<()> {
     } else {
         let frontend_dist = get_site_dist_dir()?;
         if !frontend_dist.exists() {
-            return Err(anyhow::anyhow!("site build directory not found."));
+            if ignore_dir_not_found {
+                println!(
+                    "cargo::warning={}",
+                    "site build directory not found - creating empty zip"
+                );
+                return empty_zip();
+            }
+            return Err(anyhow::anyhow!("{} not found", frontend_dist.display()));
         }
         frontend_dist
     };
@@ -117,4 +132,18 @@ where
     }
     zip.finish()?;
     Result::Ok(())
+}
+
+fn empty_zip() -> anyhow::Result<()> {
+    let out_dir = env::var("OUT_DIR").with_context(|| "OUT_DIR not set")?;
+    let dst = PathBuf::from(out_dir).join("frontend.zip");
+    if dst.exists() {
+        std::fs::remove_file(&dst)?;
+    }
+    let file = File::create(&dst)?;
+
+    let zip = ZipWriter::new(file);
+    zip.finish()?;
+    println!("cargo:rustc-env=FRONTEND_ZIP={}", dst.display());
+    Ok(())
 }

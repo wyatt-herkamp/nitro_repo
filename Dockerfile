@@ -13,9 +13,10 @@ COPY --from=frontend /home/frontend/dist /home/build/site-dist
 ENV FRONTEND_DIST=/home/build/site-dist/
 
 # Build Backend
-WORKDIR /home/build/backend
+WORKDIR /home/build/
 RUN  cargo build --release --features frontend
-
+# Make sure the frontend got imported correctly
+RUN /home/build/target/release/nitro_repo validate-frontend
 LABEL org.label-schema.name="nitro_repo" \
     org.label-schema.vendor="wyatt-herkamp" \
     org.label-schema.schema-version="2.0-BETA" \

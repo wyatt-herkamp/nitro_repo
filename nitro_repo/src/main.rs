@@ -14,36 +14,54 @@ pub mod repository;
 pub mod utils;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum ExportOptions {
+    /// The Repository Config Types
     RepositoryConfigTypes,
+    /// Export the repository types
     RepositoryTypes,
+    /// Export the OpenAPI spec
     OpenAPI,
 }
 #[derive(Parser)]
+#[command(
+    version,
+    about = "Nitro Repository Server CLI",
+    long_about = "Github Repository: https://github.com/wyatt-herkamp/nitro_repo",
+    author
+)]
 struct Command {
     #[clap(subcommand)]
     sub_command: SubCommands,
 }
 #[derive(Subcommand, Clone, Debug)]
 enum SubCommands {
+    /// Start the web server
     Start {
-        /// The thd-helper config file
+        /// The nitro-repo config file
         #[clap(short, long)]
         config: Option<PathBuf>,
     },
+    #[cfg(feature = "frontend")]
+    /// Validate the frontend files
+    ///
+    /// Makes sure the index.html file is present routes.json is valid
+    ValidateFrontend,
+    /// Save the default config file
     SaveConfig {
-        /// The thd-helper config file
+        /// The nitro-repo config file
         #[clap(short, long, default_value = "nitro_repo.toml")]
         config: PathBuf,
         /// If it should add defaults if the file already exists.
         #[clap(short, long, default_value = "false")]
         add_defaults: bool,
     },
+    /// Opens an editor to edit the config file
     Config {
-        /// The thd-helper config file
+        /// The nitro-repo  config file
         #[clap(short, long, default_value = "nitro_repo.toml")]
         config: PathBuf,
         section: ConfigSection,
     },
+    /// Export internal information
     Export {
         export: ExportOptions,
         location: PathBuf,
@@ -73,12 +91,24 @@ fn main() -> anyhow::Result<()> {
             ExportOptions::RepositoryTypes => exporter::export_repository_types(location),
             ExportOptions::OpenAPI => exporter::export_openapi(location),
         },
+
         SubCommands::Config { config, section } => {
             let tokio = tokio::runtime::Builder::new_current_thread()
                 .thread_name_fn(thread_name)
                 .enable_all()
                 .build()?;
             tokio.block_on(config_editor::editor(section, config))
+        }
+
+        #[cfg(feature = "frontend")]
+        SubCommands::ValidateFrontend => {
+            if let Err(error) = crate::app::frontend::HostedFrontend::validate() {
+                eprintln!("Frontend Validation Failed: {error}");
+                std::process::exit(1);
+            } else {
+                println!("Frontend Validation Successful");
+            }
+            Ok(())
         }
     }
 }
