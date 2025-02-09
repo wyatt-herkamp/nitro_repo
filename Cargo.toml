@@ -38,7 +38,7 @@ parking_lot = { version = "0.12", features = [] }
 futures-util = "0.3.21"
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-strum = { version = "0.26", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
 mime_guess = "2"
 mime = "0.3"
 either = "1.12"
