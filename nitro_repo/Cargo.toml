@@ -96,20 +96,20 @@ tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 
 # OpenTelemetry - Tracing framework
-tracing-opentelemetry = "0.28"
-opentelemetry = { version = "0.27", features = [] }
-opentelemetry_sdk = { version = "0.27", features = [
+tracing-opentelemetry = "0.29"
+opentelemetry = { version = "0.28", features = [] }
+opentelemetry_sdk = { version = "0.28", features = [
     "rt-tokio",
     "trace",
     "metrics",
     "logs",
 ] }
-opentelemetry-otlp = { version = "0.27", default-features = true, features = [
+opentelemetry-otlp = { version = "0.28", default-features = true, features = [
     "grpc-tonic",
     "http-proto",
     "http-json",
 ] }
-opentelemetry-appender-tracing = { version = "0.27" }
+opentelemetry-appender-tracing = { version = "0.28" }
 lettre = { version = "0.11.9", features = [
     "builder",
     "tokio1",

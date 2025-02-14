@@ -36,7 +36,9 @@ impl From<OtelResourceMap> for opentelemetry_sdk::Resource {
             .into_iter()
             .map(|(k, v)| KeyValue::new(k, Into::<StringValue>::into(v)))
             .collect();
-        opentelemetry_sdk::Resource::new(resources)
+        opentelemetry_sdk::Resource::builder()
+            .with_attributes(resources)
+            .build()
     }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
