@@ -1,16 +1,13 @@
-use crate::builder_error::BuilderError;
-use derive_builder::Builder;
+use pg_extended_sqlx_queries::{DynEncodeType, InsertQueryBuilder, QueryTool, TableType};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+use tracing::{Span, field::display, instrument};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use super::DBProject;
-#[derive(Debug, Clone, PartialEq, Eq, Builder)]
-#[builder(build_fn(error = "BuilderError"))]
-
+use super::{DBProject, DBProjectColumn};
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewProject {
-    #[builder(default)]
     pub scope: Option<String>,
     /// Maven will use something like `{groupId}:{artifactId}`
     /// Cargo will use the `name` field
@@ -21,54 +18,39 @@ pub struct NewProject {
     /// Cargo will use the `name` field
     /// NPM will use the `name` field
     pub name: String,
-    /// Latest stable release
-    #[builder(default)]
-    pub latest_release: Option<String>,
-    /// Release is SNAPSHOT in Maven or Alpha, Beta, on any other repository type
-    /// This is the latest release or pre-release
-    #[builder(default)]
-    pub latest_pre_release: Option<String>,
     /// A short description of the project
-    #[builder(default)]
     pub description: Option<String>,
-    /// Can be empty
-    #[builder(default)]
-    pub tags: Vec<String>,
     /// The repository it belongs to
     pub repository: Uuid,
     /// Storage Path
     pub storage_path: String,
 }
 impl NewProject {
+    #[instrument(fields(project.id), name = "New Project Insert")]
     pub async fn insert(self, db: &sqlx::PgPool) -> Result<DBProject, sqlx::Error> {
         let Self {
             scope,
             project_key,
             name,
-            latest_release,
-            latest_pre_release,
             description,
-            tags,
             repository,
             storage_path,
         } = self;
+        let result: DBProject = InsertQueryBuilder::new(DBProject::table_name())
+            .insert(DBProjectColumn::Scope, scope.value())
+            .insert(DBProjectColumn::Key, project_key.value())
+            .insert(DBProjectColumn::Name, name.value())
+            .insert(DBProjectColumn::Description, description.value())
+            .insert(DBProjectColumn::RepositoryId, repository.value())
+            .insert(DBProjectColumn::Path, storage_path.value())
+            .return_all()
+            .query_as()
+            .fetch_one(db)
+            .await?;
 
-        let insert = sqlx::query_as::<_,DBProject>(
-            r#"
-            INSERT INTO projects (scope, project_key, name, latest_release, latest_pre_release, description, tags, repository_id, storage_path)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
-            "#
-        ).bind(scope)
-        .bind(project_key)
-        .bind(name)
-        .bind(latest_release)
-        .bind(latest_pre_release)
-        .bind(description)
-        .bind(tags)
-        .bind(repository)
-        .bind(storage_path)
-        .fetch_one(db).await?;
-        Ok(insert)
+        Span::current().record("project.id", display(&result.id));
+
+        Ok(result)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]

@@ -333,7 +333,7 @@ mod tests {
     fn random_repo_meta() -> RepositoryMeta {
         let mut meta = RepositoryMeta::default();
         meta.project_id = Some(Uuid::new_v4());
-        meta.project_version_id = Some(1);
+        meta.project_version_id = Some(Uuid::new_v4());
 
         meta.insert("test", "map");
 

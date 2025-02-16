@@ -1305,9 +1305,9 @@ dependencies = [
 
 [[package]]
 name = "equivalent"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
+checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "errno"
@@ -2662,6 +2662,7 @@ dependencies = [
  "mime",
  "nr-macros",
  "once_cell",
+ "pg-extended-sqlx-queries",
  "rand 0.9.0",
  "regex",
  "schemars",
@@ -2827,9 +2828,9 @@ checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
 
 [[package]]
 name = "openssl"
-version = "0.10.70"
+version = "0.10.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61cfb4e166a8bb8c9b55c500bc2308550148ece889be90f609377e58140f42c6"
+checksum = "5e14130c6a98cd258fdcb0fb6d744152343ff729cbfcb28c656a9d12b999fbcd"
 dependencies = [
  "bitflags 2.8.0",
  "cfg-if",
@@ -2859,9 +2860,9 @@ checksum = "d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.105"
+version = "0.9.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b22d5b84be05a8d6947c7cb71f7c849aa0f112acd4bf51c2a7c1c988ac0a9dc"
+checksum = "8bb61ea9811cc39e3c2069f40b8b8e2e70d8569b361f879786cc7ed48b777cdd"
 dependencies = [
  "cc",
  "libc",
@@ -3103,6 +3104,29 @@ dependencies = [
  "once_cell",
  "pest",
  "sha2",
+]
+
+[[package]]
+name = "pg-extended-sqlx-queries"
+version = "0.1.0"
+source = "git+https://github.com/wyatt-herkamp/pg-extended-sqlx-queries.git#c72e63f9d92c5965c9709bb57ec2ff24eea0e9ea"
+dependencies = [
+ "ahash",
+ "pg-extended-sqlx-queries-macros",
+ "sqlformat",
+ "sqlx",
+ "tracing",
+]
+
+[[package]]
+name = "pg-extended-sqlx-queries-macros"
+version = "0.1.0"
+source = "git+https://github.com/wyatt-herkamp/pg-extended-sqlx-queries.git#c72e63f9d92c5965c9709bb57ec2ff24eea0e9ea"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -3359,7 +3383,7 @@ checksum = "3779b94aeb87e8bd4e834cee3650289ee9e0d5677f976ecdb6d219e5f4f6cd94"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.0",
- "zerocopy 0.8.17",
+ "zerocopy 0.8.18",
 ]
 
 [[package]]
@@ -3398,7 +3422,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b08f3c9802962f7e1b25113931d94f43ed9725bebc59db9d0c3e9a23b67e15ff"
 dependencies = [
  "getrandom 0.3.1",
- "zerocopy 0.8.17",
+ "zerocopy 0.8.18",
 ]
 
 [[package]]
@@ -4073,9 +4097,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.13.2"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
+checksum = "7fcf8323ef1faaee30a44a340193b1ac6814fd9b7b4e88e9d4519a3e4abe1cfd"
 dependencies = [
  "serde",
 ]
@@ -4118,6 +4142,16 @@ checksum = "d91ed6c858b01f942cd56b37a94b3e0a1798290327d1236e4d9cf4eaca44d29d"
 dependencies = [
  "base64ct",
  "der",
+]
+
+[[package]]
+name = "sqlformat"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0d7b3e8a3b6f2ee93ac391a0f757c13790caa0147892e3545cd549dd5b54bc0"
+dependencies = [
+ "unicode_categories",
+ "winnow 0.6.26",
 ]
 
 [[package]]
@@ -5011,6 +5045,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
+name = "unicode_categories"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
+
+[[package]]
 name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5592,11 +5632,11 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.8.17"
+version = "0.8.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa91407dacce3a68c56de03abe2760159582b846c6a4acd2f456618087f12713"
+checksum = "79386d31a42a4996e3336b0919ddb90f81112af416270cff95b5f5af22b839c2"
 dependencies = [
- "zerocopy-derive 0.8.17",
+ "zerocopy-derive 0.8.18",
 ]
 
 [[package]]
@@ -5612,9 +5652,9 @@ dependencies = [
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.17"
+version = "0.8.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06718a168365cad3d5ff0bb133aad346959a2074bd4a85c121255a11304a8626"
+checksum = "76331675d372f91bf8d17e13afbd5fe639200b73d01f0fc748bb059f9cca2db7"
 dependencies = [
  "proc-macro2",
  "quote",

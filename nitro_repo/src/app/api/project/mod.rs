@@ -5,7 +5,8 @@ use axum::{
 };
 use nr_core::{
     database::entities::project::{
-        DBProject, ProjectDBType, utils::does_project_id_exist, versions::DBProjectVersion,
+        DBProject, ProjectDBType,
+        versions::{DBProjectVersion, history::VersionHistoryItem},
     },
     repository::project::ProjectResolution,
 };
@@ -22,7 +23,7 @@ use crate::{
 #[derive(OpenApi)]
 #[openapi(
     paths(get_project, get_project_versions, get_project_by_key),
-    components(schemas(DBProject, ProjectResolution, DBProjectVersion))
+    components(schemas(DBProject, ProjectResolution, DBProjectVersion, VersionHistoryItem))
 )]
 pub struct ProjectRoutes;
 pub fn project_routes() -> axum::Router<NitroRepo> {
@@ -54,7 +55,7 @@ pub async fn get_project(
     State(site): State<NitroRepo>,
     auth: Option<Authentication>,
 ) -> Result<Response, InternalError> {
-    let Some(project) = DBProject::get_by_id(project_id, site.as_ref()).await? else {
+    let Some(project) = DBProject::find_by_id(project_id, site.as_ref()).await? else {
         return Ok(ResponseBuilder::not_found().empty());
     };
 
@@ -69,7 +70,7 @@ pub async fn get_project(
         ("project_id" = Uuid, description = "The project ID")
     ),
     responses(
-        (status = 200, description = "File listing", body = Vec<DBProjectVersion>),
+        (status = 200, description = "File listing", body = Vec<VersionHistoryItem>),
         (status = 404, description = "Project not found"),
         (status = 403, description = "Missing permission"),
     ),
@@ -80,11 +81,8 @@ pub async fn get_project_versions(
     State(site): State<NitroRepo>,
     auth: Option<Authentication>,
 ) -> Result<Response, InternalError> {
-    let versions = DBProjectVersion::get_all_versions(project_id, site.as_ref()).await?;
+    let versions = VersionHistoryItem::find_by_project_id(project_id, site.as_ref()).await?;
 
-    if versions.is_empty() && !does_project_id_exist(project_id, site.as_ref()).await? {
-        return Ok(ResponseBuilder::not_found().empty());
-    }
     Ok(ResponseBuilder::ok().json(&versions))
 }
 

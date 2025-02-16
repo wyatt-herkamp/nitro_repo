@@ -8,7 +8,10 @@ use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
     builder_error,
-    database::entities::repository::{DBRepository, DBRepositoryConfig},
+    database::{
+        DBError,
+        entities::repository::{DBRepository, DBRepositoryConfig},
+    },
     repository::{
         config::{RepositoryConfigType, project::ProjectConfigType},
         project::ReleaseType,
@@ -163,6 +166,7 @@ macro_rules! impl_from_error_for_other {
         }
     };
 }
+impl_from_error_for_other!(DBError);
 impl_from_error_for_other!(BadRequestErrors);
 impl_from_error_for_other!(sqlx::Error);
 impl_from_error_for_other!(serde_json::Error);

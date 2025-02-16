@@ -1,51 +1,43 @@
+use crate::database::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{postgres::PgRow, prelude::FromRow, types::Json};
-use tracing::{instrument, trace};
+use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::storage::StorageName;
 
-pub trait StorageDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
-    fn columns() -> Vec<&'static str>;
-    fn format_columns(prefix: Option<&str>) -> String {
-        if let Some(prefix) = prefix {
-            Self::columns()
-                .iter()
-                .map(|column| format!("{}.`{}`", prefix, column))
-                .collect::<Vec<String>>()
-                .join(", ")
-        } else {
-            Self::columns().join(", ")
-        }
-    }
+pub trait StorageDBType:
+    for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync + TableQuery<Table = DBStorage>
+{
     fn id(&self) -> Uuid;
     #[instrument(name = "get_all_storages", skip(database))]
     async fn get_all(database: &sqlx::PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let columns = Self::format_columns(None);
-        let query = format!("SELECT {} FROM storages", columns);
-        trace!(?query);
-        let storages = sqlx::query_as(&query).fetch_all(database).await?;
+        let storages = SelectQueryBuilder::with_columns(DBStorage::table_name(), Self::columns())
+            .query_as()
+            .fetch_all(database)
+            .await?;
         Ok(storages)
     }
     #[instrument(name = "get_active_storages", skip(database))]
     async fn get_all_active(database: &sqlx::PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let columns = Self::format_columns(None);
-        let query = format!("SELECT {} FROM storages WHERE active = true", columns);
-        trace!(?query);
-        let storages = sqlx::query_as(&query).fetch_all(database).await?;
+        let storages = SelectQueryBuilder::with_columns(DBStorage::table_name(), Self::columns())
+            .filter(DBStorageColumn::Active.equals(true.value()))
+            .query_as()
+            .fetch_all(database)
+            .await?;
+
         Ok(storages)
     }
     #[instrument(name = "get_by_id", skip(database))]
     async fn get_by_id(id: Uuid, database: &sqlx::PgPool) -> Result<Option<Self>, sqlx::Error> {
-        let columns = Self::format_columns(None);
-        let query = format!("SELECT {} FROM storages WHERE id = $1", columns);
-        trace!(?query);
-        let storage = sqlx::query_as(&query)
-            .bind(id)
+        let storage = SelectQueryBuilder::with_columns(DBStorage::table_name(), Self::columns())
+            .filter(DBStorageColumn::Id.equals(id.value()))
+            .query_as()
             .fetch_optional(database)
             .await?;
+
         Ok(storage)
     }
     async fn delete_self(&self, database: &sqlx::PgPool) -> Result<(), sqlx::Error> {
@@ -92,23 +84,23 @@ pub struct DBStorageNoConfig {
     pub updated_at: chrono::DateTime<chrono::FixedOffset>,
     pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
+impl TableQuery for DBStorageNoConfig {
+    type Table = DBStorage;
+
+    fn columns() -> Vec<<Self::Table as TableType>::Columns>
+    where
+        Self: Sized,
+    {
+        DBStorage::columns()
+    }
+}
 impl StorageDBType for DBStorageNoConfig {
     fn id(&self) -> Uuid {
         self.id
     }
-    fn columns() -> Vec<&'static str> {
-        vec![
-            "id",
-            "storage_type",
-            "name",
-            "active",
-            "updated_at",
-            "created_at",
-        ]
-    }
 }
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, ToSchema)]
-
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize, FromRow, ToSchema, TableType)]
+#[table(name = "storages")]
 pub struct DBStorage {
     pub id: Uuid,
     pub storage_type: String,
@@ -124,17 +116,6 @@ pub struct DBStorage {
 }
 
 impl StorageDBType for DBStorage {
-    fn columns() -> Vec<&'static str> {
-        vec![
-            "id",
-            "storage_type",
-            "name",
-            "config",
-            "active",
-            "updated_at",
-            "created_at",
-        ]
-    }
     fn id(&self) -> Uuid {
         self.id
     }

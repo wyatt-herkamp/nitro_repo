@@ -9,9 +9,9 @@ create  TABLE IF NOT EXISTS  projects
         constraint fk_repositories
             references repositories
             on delete cascade,
-    CONSTRAINT unique_repository_project_key unique (project_key, repository_id),
-    project_path       TEXT                                               not null,
-    CONSTRAINT unique_repository_project_path  unique (project_path, repository_id),
+    CONSTRAINT unique_repository_project_key unique (key, repository_id),
+    path       TEXT                                               not null,
+    CONSTRAINT unique_repository_project_path  unique (path, repository_id),
     updated_at         TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null,
     created_at         TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null
 );
@@ -38,6 +38,7 @@ create TABLE IF NOT EXISTS  project_members
         constraint fk_user
             references users
             on delete cascade,
+    constraint unique_project_member unique (project_id, user_id),
     can_write  boolean,
     can_manage boolean,
     added_at   TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null
@@ -45,16 +46,19 @@ create TABLE IF NOT EXISTS  project_members
 
 create TABLE IF NOT EXISTS  project_versions
 (
-    id           serial PRIMARY KEY,
+    id                 UUID                     default gen_random_uuid() PRIMARY KEY,
     project_id   uuid
         constraint project_versions_projects_id_fk
             references projects
             on delete cascade,
     version      VARCHAR(255)                                               not null,
-    CONSTRAINT unique_project_version unique (project_id, version),
+        CONSTRAINT unique_project_version unique (project_id, version),
 
     release_type VARCHAR(255)                     default 'Unknown'         not null,
-    version_path TEXT                                               not null,
+    path TEXT                                                       not null,
+
+    CONSTRAINT unique_version_path  unique (path, project_id),
+
     publisher    integer
         constraint project_versions_users_id_fk
             references users
