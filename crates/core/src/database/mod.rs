@@ -1,7 +1,6 @@
 pub mod entities;
 #[cfg(feature = "migrations")]
 pub mod migration;
-pub mod tools;
 pub type DateTime = chrono::DateTime<chrono::FixedOffset>;
 mod config;
 
@@ -21,9 +20,9 @@ pub enum DBError {
 pub type DBResult<T> = Result<T, DBError>;
 
 pub mod prelude {
-    pub use super::{DBError, DBResult, tools::*};
+    pub use super::{DBError, DBResult};
     pub use chrono::{DateTime, FixedOffset, Local, NaiveDate};
-    pub use nr_macros::Columns;
+    pub use pg_extended_sqlx_queries::prelude::*;
     pub use sqlx::{FromRow, PgPool, Postgres, QueryBuilder, postgres::PgRow, prelude::*};
     pub use tracing::{debug, error, info, instrument, trace, warn};
 }

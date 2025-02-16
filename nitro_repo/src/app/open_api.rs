@@ -11,9 +11,8 @@ use axum::{
     Json, Router,
     response::{IntoResponse, Response},
 };
-use nr_core::database::entities::project::{
-    DBProject, DBProjectMember, versions::DBProjectVersion,
-};
+use nr_core::database::entities::project::members::DBProjectMember;
+use nr_core::database::entities::project::{DBProject, versions::DBProjectVersion};
 use nr_core::database::entities::user::NewUserRequest;
 use nr_core::database::entities::user::permissions::FullUserPermissions;
 use nr_core::user::permissions::{RepositoryActions, UserPermissions};

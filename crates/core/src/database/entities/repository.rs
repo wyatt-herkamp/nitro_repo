@@ -63,7 +63,8 @@ impl DBRepositoryWithStorageName {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema, Columns)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema, TableType)]
+#[table(name = "repositories")]
 pub struct DBRepository {
     pub id: Uuid,
     pub storage_id: Uuid,

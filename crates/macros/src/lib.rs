@@ -1,4 +1,3 @@
-pub(crate) mod columns;
 pub(crate) mod dyn_repository_handler;
 pub(crate) mod nu_type;
 pub(crate) mod repository_config;
@@ -53,17 +52,6 @@ pub fn nu_type(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     match nu_type::expand(input) {
         Ok(ok) => ok.into(),
-        Err(err) => err.to_compile_error().into(),
-    }
-}
-
-/// To use Properly each field must be the same name as the column in the database.
-#[proc_macro_derive(Columns)]
-pub fn columns(item: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(item as DeriveInput);
-
-    match columns::expand(input) {
-        Ok(result) => result.into(),
         Err(err) => err.to_compile_error().into(),
     }
 }

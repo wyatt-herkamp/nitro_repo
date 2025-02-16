@@ -10,7 +10,7 @@ use crate::database::entities::project::ProjectIds;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Builder, Default)]
 pub struct ProjectResolution {
     pub project_id: Option<Uuid>,
-    pub version_id: Option<i32>,
+    pub version_id: Option<Uuid>,
 }
 impl From<ProjectIds> for ProjectResolution {
     fn from(ids: ProjectIds) -> Self {

@@ -5,12 +5,15 @@ use axum::{
 };
 use nr_core::{
     database::entities::{
-        project::{DBProject, ProjectDBType},
+        project::{DBProject, ProjectDBType, versions::DBProjectVersion},
         repository::DBRepositoryConfig,
     },
-    repository::config::{
-        RepositoryConfigType,
-        project::{BadgeSettings, ProjectConfig, ProjectConfigType},
+    repository::{
+        config::{
+            RepositoryConfigType,
+            project::{BadgeSettings, ProjectConfig, ProjectConfigType},
+        },
+        project::ReleaseType,
     },
 };
 use serde::Deserialize;
@@ -183,13 +186,18 @@ async fn project_badge(
     else {
         return Ok(ResponseBuilder::not_found().body("Project not found"));
     };
-    let latest_release = project
-        .latest_release
-        .as_deref()
-        .or(project.latest_pre_release.as_deref())
-        .unwrap_or("No Release");
-
-    let badge = match generate_badge(&badge_settings, &project.name, latest_release) {
+    let latest_release: Vec<DBProjectVersion> = project
+        .find_latest_versions(vec![ReleaseType::Stable], site.as_ref())
+        .await?;
+    // TODO: Correctly handle pre-releases
+    let badge = match generate_badge(
+        &badge_settings,
+        &project.name,
+        latest_release
+            .get(0)
+            .map(|v| v.version.as_str())
+            .unwrap_or("No Release"),
+    ) {
         Ok(ok) => ok,
         Err(err) => {
             return Ok(ResponseBuilder::internal_server_error()
