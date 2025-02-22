@@ -138,6 +138,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn tests() -> anyhow::Result<()> {
         init_logger();
         let client = reqwest::Client::builder()

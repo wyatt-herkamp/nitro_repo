@@ -1,4 +1,3 @@
-use derive_builder::Builder;
 use serde::Serialize;
 use sqlx::{FromRow, PgPool, postgres::PgRow};
 use tracing::instrument;
@@ -90,40 +89,56 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync + Tabl
         release_type: ReleaseType,
         database: &PgPool,
     ) -> Result<Option<V>, sqlx::Error> {
-        let version: Option<V> =
-            SelectQueryBuilder::with_columns(DBProjectVersion::table_name(), V::columns())
-                .filter(
-                    DBProjectVersionColumn::ProjectId
-                        .equals(project_id.value())
-                        .and(DBProjectVersionColumn::ReleaseType.equals(release_type.value())),
-                )
-                .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
-                .limit(1)
-                .query_as()
-                .fetch_optional(database)
-                .await?;
+        let version: Option<V> = SelectQueryBuilder::with_columns(
+            <DBProjectVersion as TableType>::table_name(),
+            V::columns(),
+        )
+        .filter(
+            DBProjectVersionColumn::ProjectId
+                .equals(project_id.value())
+                .and(DBProjectVersionColumn::ReleaseType.equals(release_type.value())),
+        )
+        .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
+        .limit(1)
+        .query_as()
+        .fetch_optional(database)
+        .await?;
 
         Ok(version)
     }
-    async fn find_latest_versions<V: ProjectVersionType>(
+    async fn find_version_by_release_type<V: ProjectVersionType>(
         &self,
         release_types: Vec<ReleaseType>,
         database: &PgPool,
     ) -> DBResult<Vec<V>> {
-        let versions: Vec<V> =
-            SelectQueryBuilder::with_columns(DBProjectVersion::table_name(), V::columns())
-                .filter(DBProjectVersionColumn::ProjectId.equals(self.id().value()))
-                .filter(DBProjectVersionColumn::ReleaseType.equals(release_types.value().any()))
-                .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
-                .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
-                .query_as()
-                .fetch_all(database)
-                .await?;
+        let versions: Vec<V> = SelectQueryBuilder::with_columns(
+            <DBProjectVersion as TableType>::table_name(),
+            V::columns(),
+        )
+        .filter(DBProjectVersionColumn::ProjectId.equals(self.id().value()))
+        .filter(DBProjectVersionColumn::ReleaseType.equals(release_types.value().any()))
+        .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
+        .query_as()
+        .fetch_all(database)
+        .await?;
         Ok(versions)
+    }
+    async fn find_latest_version(&self, database: &PgPool) -> DBResult<Option<DBProjectVersion>> {
+        let version: Option<DBProjectVersion> = SelectQueryBuilder::with_columns(
+            DBProjectVersion::table_name(),
+            DBProjectVersion::columns(),
+        )
+        .filter(DBProjectVersionColumn::ProjectId.equals(self.id().value()))
+        .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
+        .limit(1)
+        .query_as()
+        .fetch_optional(database)
+        .await?;
+        Ok(version)
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema, Builder, TableType)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema, TableType)]
 #[table(name = "projects")]
 pub struct DBProject {
     pub id: Uuid,

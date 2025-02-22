@@ -1,16 +1,13 @@
-use crate::builder_error::BuilderError;
 use crate::{
     database::prelude::*,
     repository::project::{ReleaseType, VersionData},
 };
-use derive_builder::Builder;
 use sqlx::types::Json;
 use uuid::Uuid;
 
 use super::{DBProjectVersion, DBProjectVersionColumn};
 
-#[derive(Debug, Clone, PartialEq, Eq, Builder)]
-#[builder(build_fn(error = "BuilderError"))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewVersion {
     pub project_id: Uuid,
     /// The version of the project
@@ -20,10 +17,8 @@ pub struct NewVersion {
     /// The path to the release
     pub version_path: String,
     /// The publisher of the version
-    #[builder(default)]
     pub publisher: Option<i32>,
     /// The version page. Such as a README
-    #[builder(default)]
     pub version_page: Option<String>,
     /// The version data. More data can be added in the future and the data can be repository dependent
     pub extra: VersionData,
@@ -67,23 +62,20 @@ impl UpdateProjectVersion {
     pub async fn update(&self, version_id: Uuid, database: &PgPool) -> DBResult<()> {
         let mut update = UpdateQueryBuilder::new(DBProjectVersion::table_name());
         update
-            .set(DBProjectVersionColumn::Id, version_id.value())
-            .set(
-                DBProjectVersionColumn::UpdatedAt,
-                ExprFunctionBuilder::now(),
-            );
+            .set(DBProjectVersionColumn::Id, version_id)
+            .set(DBProjectVersionColumn::UpdatedAt, SqlFunctionBuilder::now());
 
         if let Some(release_type) = &self.release_type {
-            update.set(DBProjectVersionColumn::ReleaseType, release_type.value());
+            update.set(DBProjectVersionColumn::ReleaseType, release_type);
         }
         if let Some(extra) = &self.extra {
-            update.set(DBProjectVersionColumn::Extra, Json(extra).value());
+            update.set(DBProjectVersionColumn::Extra, Json(extra));
         }
         if let Some(version_page) = &self.version_page {
             update.set(DBProjectVersionColumn::VersionPage, version_page.value());
         }
         if let Some(publisher) = &self.publisher {
-            update.set(DBProjectVersionColumn::Publisher, publisher.value());
+            update.set(DBProjectVersionColumn::Publisher, *publisher);
         }
 
         update.query().execute(database).await?;

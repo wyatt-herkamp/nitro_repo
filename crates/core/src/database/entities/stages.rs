@@ -1,4 +1,3 @@
-use derive_builder::Builder;
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::{FromRow, types::Json};
@@ -64,7 +63,7 @@ pub struct DBStageFile {
     pub file_name: String,
     pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Builder)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewDBStage {
     pub repository: Uuid,
     pub stage_state: Value,
@@ -82,7 +81,7 @@ impl NewDBStage {
         Ok(stage)
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Builder)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewDBStageFile {
     pub stage: Uuid,
     pub file_name: String,

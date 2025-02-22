@@ -1,7 +1,4 @@
-use pg_extended_sqlx_queries::{
-    Aliasable, DynEncodeType, FilterExpr, JoinType, QueryTool, SelectQueryBuilder, TableType,
-    WhereableTool,
-};
+use pg_extended_sqlx_queries::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use uuid::Uuid;
@@ -35,7 +32,7 @@ impl ProjectInfo {
             .join(DBProject::table_name(), JoinType::Full, |join| {
                 join.on(DBProjectVersionColumn::ProjectId.equals(DBProjectColumn::Id))
             })
-            .filter(DBProjectVersionColumn::Id.equals(version_id.value()))
+            .filter(DBProjectVersionColumn::Id.equals(version_id))
             .query_as()
             .fetch_optional(database)
             .await?;
@@ -51,7 +48,7 @@ impl ProjectInfo {
             .select(DBProjectColumn::Scope.alias("project_scope"))
             .select(DBProjectColumn::Name.alias("project_name"))
             .select(DBProjectColumn::Id.alias("project_id"))
-            .filter(DBProjectColumn::Id.equals(project_id.value()))
+            .filter(DBProjectColumn::Id.equals(project_id))
             .query_as()
             .fetch_optional(database)
             .await?;

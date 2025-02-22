@@ -13,7 +13,7 @@ use http::{
     request::Parts,
 };
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
-use tracing::{field::Empty, info_span};
+use tracing::{Level, event, field::Empty, info_span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::{app::NitroRepo, error::MissingInternelExtension};
@@ -50,9 +50,16 @@ where
 }
 pub fn extract_header_as_str(headers: &HeaderMap, header: HeaderName) -> Option<String> {
     headers
-        .get(header)
+        .get(&header)
         .and_then(|v| v.to_str().ok())
-        .map(ToString::to_string)
+        .and_then(|header_value| {
+            if header_value.is_empty() {
+                event!(Level::WARN, ?header, "Empty header Value",);
+                None
+            } else {
+                Some(header_value.to_owned())
+            }
+        })
 }
 
 pub struct HeaderMapCarrier<'a>(pub &'a HeaderMap);
@@ -110,14 +117,19 @@ pub fn on_request<B>(request: &Request<B>, span: &tracing::Span) {
         .get::<MatchedPath>()
         .map_or(request.uri().path(), |p| p.as_str());
     let method = request.method().as_str();
-    let client_ip = extract_header_as_str(request.headers(), X_FORWARDED_FOR_HEADER)
-        .or_else(|| {
-            request
-                .extensions()
-                .get::<ConnectInfo<SocketAddr>>()
-                .map(|ConnectInfo(c)| c.to_string())
-        })
-        .unwrap_or_else(|| "<unknown>".to_string());
+    let client_ip = span.in_scope(|| {
+        extract_header_as_str(request.headers(), X_FORWARDED_FOR_HEADER)
+            .or_else(|| {
+                request
+                    .extensions()
+                    .get::<ConnectInfo<SocketAddr>>()
+                    .map(|ConnectInfo(c)| c.to_string())
+            })
+            .unwrap_or_else(|| {
+                event!(Level::WARN, "Failed to get client IP");
+                "<unknown>".to_string()
+            })
+    });
 
     span.record("http.path", path);
     span.record("otel.name", format!("{method} {path}"));
