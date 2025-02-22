@@ -4,9 +4,9 @@ use maven_rs::pom::Pom;
 use nr_core::{
     database::entities::project::{
         DBProject, NewProject, NewProjectMember, ProjectDBType,
-        versions::{DBProjectVersion, NewVersion, NewVersionBuilder, UpdateProjectVersion},
+        versions::{DBProjectVersion, NewVersion, UpdateProjectVersion},
     },
-    repository::project::{ReleaseType, VersionData, VersionDataBuilder},
+    repository::project::{ReleaseType, VersionData},
     storage::{FileTypeCheck, StoragePath},
     user::permissions::{HasPermissions, RepositoryActions},
 };
@@ -228,20 +228,23 @@ pub fn pom_to_db_project_version(
         .get_version()
         .ok_or(MavenError::MissingFromPom("version"))
         .map(|x| x.to_owned())?;
-    let version_data = VersionDataBuilder::default()
-        .description(pom.description)
-        .build()?;
+    let version_data = VersionData {
+        description: pom.description,
+        ..Default::default()
+    };
 
     let release_type = ReleaseType::release_type_from_version(&version);
-    let result = NewVersionBuilder::default()
-        .project_id(project_id)
-        .version(version)
-        .publisher(publisher)
-        .version_path(version_path.to_string())
-        .release_type(release_type)
-        .extra(version_data)
-        .build()?;
-    Ok(result)
+    let version = NewVersion {
+        project_id,
+        version,
+        publisher,
+        version_path: version_path.to_string(),
+        version_page: None,
+        release_type,
+        extra: version_data,
+    };
+
+    Ok(version)
 }
 
 pub fn pom_to_update_db_project_version(pom: Pom) -> Result<UpdateProjectVersion, MavenError> {
@@ -259,8 +262,9 @@ pub fn pom_to_update_db_project_version(pom: Pom) -> Result<UpdateProjectVersion
     Ok(result)
 }
 pub fn pom_to_version_extra_data(pom: Pom) -> Result<VersionData, MavenError> {
-    let extra = VersionDataBuilder::default()
-        .description(pom.description)
-        .build()?;
+    let extra = VersionData {
+        description: pom.description,
+        ..Default::default()
+    };
     Ok(extra)
 }

@@ -1,11 +1,10 @@
-use pg_extended_sqlx_queries::{DynEncodeType, InsertQueryBuilder, QueryTool, TableType};
+use super::{DBProject, DBProjectColumn};
+use pg_extended_sqlx_queries::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use tracing::{Span, field::display, instrument};
 use utoipa::ToSchema;
 use uuid::Uuid;
-
-use super::{DBProject, DBProjectColumn};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewProject {
     pub scope: Option<String>,

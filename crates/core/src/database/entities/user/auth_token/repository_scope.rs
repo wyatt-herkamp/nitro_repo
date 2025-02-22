@@ -1,4 +1,3 @@
-use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow};
 use tracing::{debug, instrument, span};
@@ -39,7 +38,7 @@ impl AuthTokenRepositoryScope {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Builder)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewRepositoryToken {
     pub user_id: i32,
     pub source: String,

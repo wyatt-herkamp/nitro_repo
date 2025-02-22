@@ -1,3 +1,4 @@
+use pg_extended_sqlx_queries::prelude::*;
 use sqlx::{PgPool, prelude::FromRow};
 use tracing::instrument;
 use uuid::Uuid;
@@ -12,7 +13,8 @@ pub use repository_scope::*;
 pub use scope::*;
 pub use utils::*;
 /// Table Name: user_auth_tokens
-#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, FromRow, TableType)]
+#[table(name = "user_auth_tokens")]
 pub struct AuthToken {
     pub id: i32,
     pub user_id: i32,

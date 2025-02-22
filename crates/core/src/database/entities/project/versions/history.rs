@@ -1,8 +1,6 @@
 use chrono::{DateTime, FixedOffset};
-use pg_extended_sqlx_queries::{
-    DynEncodeType, FilterExpr, QueryTool, SQLOrder, SelectQueryBuilder, TableQuery, TableType,
-    WhereableTool,
-};
+use pg_extended_sqlx_queries::prelude::*;
+
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
@@ -25,7 +23,7 @@ pub struct VersionHistoryItem {
 impl TableQuery for VersionHistoryItem {
     type Table = DBProjectVersion;
 
-    fn columns() -> Vec<<Self::Table as pg_extended_sqlx_queries::TableType>::Columns>
+    fn columns() -> Vec<DBProjectVersionColumn>
     where
         Self: Sized,
     {
@@ -51,7 +49,7 @@ impl VersionHistoryItem {
     ) -> DBResult<Vec<Self>> {
         let versions =
             SelectQueryBuilder::with_columns(DBProjectVersion::table_name(), Self::columns())
-                .filter(DBProjectVersionColumn::ProjectId.equals(project_id.value()))
+                .filter(DBProjectVersionColumn::ProjectId.equals(project_id))
                 .order_by(DBProjectVersionColumn::UpdatedAt, SQLOrder::Descending)
                 .query_as()
                 .fetch_all(database)

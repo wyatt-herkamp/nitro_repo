@@ -7,7 +7,6 @@ pub use configs::*;
 use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
-    builder_error,
     database::{
         DBError,
         entities::repository::{DBRepository, DBRepositoryConfig},
@@ -145,8 +144,7 @@ pub enum MavenError {
     MavenRS(#[from] maven_rs::Error),
     #[error("XML Deserialize Error: {0}")]
     XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
-    #[error("Internal Error. {0}")]
-    BuilderError(#[from] builder_error::BuilderError),
+
     #[error("Missing From Pom: {0}")]
     MissingFromPom(&'static str),
     #[error("{0}")]
