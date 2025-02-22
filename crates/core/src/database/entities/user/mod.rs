@@ -1,3 +1,4 @@
+use pg_extended_sqlx_queries::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, postgres::PgRow, types::Json};
 use utoipa::ToSchema;
@@ -21,36 +22,25 @@ pub trait ReferencesUser {
     where
         Self: Sized;
 }
-pub trait UserType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
+pub trait UserType:
+    for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync + TableQuery<Table = User>
+{
     fn get_id(&self) -> i32;
 
-    fn columns() -> Vec<&'static str>;
-    fn format_columns(prefix: Option<&str>) -> String {
-        if let Some(prefix) = prefix {
-            Self::columns()
-                .iter()
-                .map(|column| format!("{}.{}", prefix, column))
-                .collect::<Vec<String>>()
-                .join(", ")
-        } else {
-            Self::columns().join(", ")
-        }
-    }
     async fn get_by_id(id: i32, database: &PgPool) -> Result<Option<Self>, sqlx::Error>
     where
         Self: Sized,
     {
-        let columns = Self::format_columns(None);
-        let user = sqlx::query_as::<_, Self>(&format!("SELECT {columns} FROM users WHERE id = $1"))
-            .bind(id)
+        let user = SelectQueryBuilder::with_columns(User::table_name(), Self::columns())
+            .filter(UserColumn::Id.equals(id.value()))
+            .query_as()
             .fetch_optional(database)
             .await?;
         Ok(user)
     }
     async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let columns = Self::format_columns(None);
-
-        let users = sqlx::query_as::<_, Self>(&format!("SELECT {columns} FROM users"))
+        let users = SelectQueryBuilder::with_columns(User::table_name(), Self::columns())
+            .query_as()
             .fetch_all(database)
             .await?;
         Ok(users)
@@ -66,13 +56,11 @@ pub trait UserType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         Self::get_by_id(reference.user_id(), database).await
     }
     async fn get_by_email(email: &str, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
-        let columns: String = Self::format_columns(None);
-
-        let user =
-            sqlx::query_as::<_, Self>(&format!("SELECT {columns} FROM users WHERE email = $1"))
-                .bind(email)
-                .fetch_optional(database)
-                .await?;
+        let user = SelectQueryBuilder::with_columns(User::table_name(), Self::columns())
+            .filter(UserColumn::Email.equals(email.value()))
+            .query_as()
+            .fetch_optional(database)
+            .await?;
         Ok(user)
     }
     async fn get_by_username_or_email(
@@ -82,14 +70,15 @@ pub trait UserType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     where
         Self: Sized,
     {
-        let columns: String = Self::format_columns(None);
-
-        let user = sqlx::query_as::<_, Self>(&format!(
-            "SELECT {columns} FROM users WHERE username = $1 OR email = $1"
-        ))
-        .bind(username.as_ref())
-        .fetch_optional(database)
-        .await?;
+        let user = SelectQueryBuilder::with_columns(User::table_name(), Self::columns())
+            .filter(
+                UserColumn::Email
+                    .equals(username.as_ref().value())
+                    .or(UserColumn::Username.equals(username.as_ref().value())),
+            )
+            .query_as()
+            .fetch_optional(database)
+            .await?;
         Ok(user)
     }
 
@@ -168,8 +157,9 @@ pub trait UserType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
         Ok(())
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow)]
-pub struct UserModel {
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, TableType)]
+#[table(name = "users")]
+pub struct User {
     pub id: i32,
     pub name: String,
     pub username: Username,
@@ -188,7 +178,7 @@ pub struct UserModel {
     pub updated_at: chrono::DateTime<chrono::FixedOffset>,
     pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
-impl UserModel {
+impl User {
     pub async fn get_password_by_id(
         id: i32,
         database: &PgPool,
@@ -202,13 +192,9 @@ impl UserModel {
     }
 }
 
-impl UserType for UserModel {
+impl UserType for User {
     fn get_id(&self) -> i32 {
         self.id
-    }
-
-    fn columns() -> Vec<&'static str> {
-        vec!["*"]
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, FromRow, ToSchema)]
@@ -228,23 +214,30 @@ pub struct UserSafeData {
     pub updated_at: chrono::DateTime<chrono::FixedOffset>,
     pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
-impl UserType for UserSafeData {
-    fn columns() -> Vec<&'static str> {
+impl TableQuery for UserSafeData {
+    type Table = User;
+
+    fn columns() -> Vec<<Self::Table as TableType>::Columns>
+    where
+        Self: Sized,
+    {
         vec![
-            "id",
-            "name",
-            "username",
-            "email",
-            "require_password_change",
-            "active",
-            "admin",
-            "user_manager",
-            "system_manager",
-            "default_repository_actions",
-            "updated_at",
-            "created_at",
+            UserColumn::Id,
+            UserColumn::Name,
+            UserColumn::Username,
+            UserColumn::Email,
+            UserColumn::RequirePasswordChange,
+            UserColumn::Active,
+            UserColumn::Admin,
+            UserColumn::UserManager,
+            UserColumn::SystemManager,
+            UserColumn::DefaultRepositoryActions,
+            UserColumn::UpdatedAt,
+            UserColumn::CreatedAt,
         ]
     }
+}
+impl UserType for UserSafeData {
     fn get_id(&self) -> i32 {
         self.id
     }
@@ -271,8 +264,8 @@ impl HasPermissions for UserSafeData {
         self.admin || self.user_manager
     }
 }
-impl From<UserModel> for UserSafeData {
-    fn from(user: UserModel) -> Self {
+impl From<User> for UserSafeData {
+    fn from(user: User) -> Self {
         UserSafeData {
             id: user.id,
             name: user.name,
@@ -295,7 +288,7 @@ mod tests {
     /// Just incase a bug get's introduced from serde where the password is serialized. We want to error out.
     #[test]
     pub fn assert_no_serialize_password() {
-        let user = super::UserModel {
+        let user = super::User {
             password: Some("password".to_owned()),
             id: Default::default(),
             name: Default::default(),
@@ -327,7 +320,7 @@ pub struct NewUserRequest {
     pub password: Option<String>,
 }
 impl NewUserRequest {
-    pub async fn insert(self, database: &PgPool) -> sqlx::Result<UserModel> {
+    pub async fn insert(self, database: &PgPool) -> sqlx::Result<User> {
         let Self {
             name,
             username,
@@ -344,7 +337,7 @@ impl NewUserRequest {
         .fetch_one(database).await?;
         Ok(user)
     }
-    pub async fn insert_admin(self, database: &PgPool) -> sqlx::Result<UserModel> {
+    pub async fn insert_admin(self, database: &PgPool) -> sqlx::Result<User> {
         let Self {
             name,
             username,

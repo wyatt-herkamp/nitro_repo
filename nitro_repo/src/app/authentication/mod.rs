@@ -10,7 +10,7 @@ use derive_more::From;
 use http::request::Parts;
 use nr_core::database::DBError;
 use nr_core::database::entities::user::auth_token::AuthToken;
-use nr_core::database::entities::user::{UserModel, UserSafeData, UserType};
+use nr_core::database::entities::user::{User, UserSafeData, UserType};
 use nr_core::user::permissions::{HasPermissions, UserPermissions};
 use serde::Serialize;
 use session::{Session, SessionError};
@@ -371,8 +371,7 @@ pub async fn verify_login(
     password: impl AsRef<str>,
     database: &PgPool,
 ) -> Result<UserSafeData, AuthenticationError> {
-    let user_found: Option<UserModel> =
-        UserModel::get_by_username_or_email(username, database).await?;
+    let user_found: Option<User> = User::get_by_username_or_email(username, database).await?;
     let Some(user) = user_found else {
         return Err(AuthenticationError::Unauthorized);
     };

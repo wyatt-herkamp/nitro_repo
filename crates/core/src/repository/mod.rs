@@ -26,7 +26,7 @@ pub mod proxy_url;
     EnumIs,
     Type,
 )]
-#[sqlx(type_name = "TEXT")]
+#[sqlx(type_name = "VARCHAR")]
 pub enum Visibility {
     /// Completely public anyone can read to this repository
     #[default]

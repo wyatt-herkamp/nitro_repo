@@ -132,10 +132,7 @@ impl PublishVersion {
             name,
             storage_path: save_path,
             repository: repository_id,
-            latest_pre_release: None,
-            latest_release: None,
             description: None,
-            tags: vec![],
         })
     }
     pub fn new_version(

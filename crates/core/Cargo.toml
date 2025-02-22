@@ -24,14 +24,13 @@ once_cell.workspace = true
 regex.workspace = true
 rand.workspace = true
 http.workspace = true
-derive_builder.workspace = true
 derive_more.workspace = true
 digestible.workspace = true
 url.workspace = true
 nr-macros.workspace = true
 ahash.workspace = true
 mime.workspace = true
-
+pg-extended-sqlx-queries.workspace = true
 # Testing
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
@@ -41,6 +40,8 @@ tracing-subscriber = { version = "0.3", features = [
 ], optional = true }
 tracing-appender = { version = "0.2", optional = true }
 clap.workspace = true
+[dev-dependencies]
+pretty_assertions = "1"
 [features]
 default = ["migrations", "testing"]
 migrations = []

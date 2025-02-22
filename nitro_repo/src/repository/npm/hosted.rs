@@ -176,8 +176,8 @@ impl Repository for NPMHostedRegistry {
                     "modified".to_owned(),
                     npm_time::format_date_time(&project.updated_at),
                 );
-                if let Some(latest) = project.latest_release {
-                    dist_tags.insert("latest".to_string(), latest);
+                if let Some(latest) = versions.first() {
+                    dist_tags.insert("latest".to_string(), latest.version.clone());
                 }
                 let mut versions_map = HashMap::new();
                 for version in versions {
@@ -200,7 +200,7 @@ impl Repository for NPMHostedRegistry {
                     }
                 }
                 let project_response = NpmRegistryPackageResponse {
-                    id: project.project_key.clone(),
+                    id: project.key.clone(),
                     name: project.name.clone(),
                     description: project.description.clone(),
                     dist_tags,
@@ -263,7 +263,7 @@ impl Repository for NPMHostedRegistry {
                         .into());
                 };
                 debug!(?version, "Got Version");
-                let mut storage_path = StoragePath::from(version.version_path.as_str());
+                let mut storage_path = StoragePath::from(version.path.as_str());
                 storage_path.push_mut(&file);
                 debug!(?storage_path, "Getting file");
                 let storage = self.get_storage();

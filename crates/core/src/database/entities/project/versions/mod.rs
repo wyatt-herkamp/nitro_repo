@@ -2,17 +2,23 @@ use serde::Serialize;
 use sqlx::{PgPool, types::Json};
 use utoipa::ToSchema;
 use uuid::Uuid;
-mod new;
+mod update;
 use super::ProjectIds;
 use crate::{
     database::prelude::*,
     repository::project::{ReleaseType, VersionData},
 };
-pub use new::*;
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema, Columns)]
+pub mod history;
+pub use update::*;
+pub trait ProjectVersionType:
+    for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync + TableQuery
+{
+    fn id(&self) -> Uuid;
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema, TableType)]
+#[table(name = "project_versions")]
 pub struct DBProjectVersion {
-    pub id: i32,
+    pub id: Uuid,
     /// A reference to the project
     pub project_id: Uuid,
     /// The version of the project
@@ -20,7 +26,7 @@ pub struct DBProjectVersion {
     /// Release type
     pub release_type: ReleaseType,
     /// The path to the release
-    pub version_path: String,
+    pub path: String,
     /// The publisher of the version
     pub publisher: Option<i32>,
     /// The version page. Such as a README
@@ -32,16 +38,12 @@ pub struct DBProjectVersion {
     pub updated_at: DateTime<FixedOffset>,
     pub created_at: DateTime<FixedOffset>,
 }
-impl TableType for DBProjectVersion {
-    type Columns = DBProjectVersionColumn;
-
-    fn table_name() -> &'static str
-    where
-        Self: Sized,
-    {
-        "project_versions"
+impl ProjectVersionType for DBProjectVersion {
+    fn id(&self) -> Uuid {
+        self.id
     }
 }
+
 impl DBProjectVersion {
     #[instrument(skip(database))]
     pub async fn find_by_version_and_project(
@@ -65,7 +67,7 @@ impl DBProjectVersion {
         database: &PgPool,
     ) -> Result<Option<Self>, sqlx::Error> {
         let version = sqlx::query_as::<_, Self>(
-            r#"SELECT project_versions.* FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.version_path) = $2"#,
+            r#"SELECT project_versions.* FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.path) = $2"#,
         )
         .bind(repository_id)
         .bind(directory.to_lowercase())
@@ -80,7 +82,7 @@ impl DBProjectVersion {
         database: &PgPool,
     ) -> Result<Option<ProjectIds>, sqlx::Error> {
         let version = sqlx::query_as::<_, ProjectIds>(
-            r#"SELECT project_versions.id as version_id, project_versions.project_id as project_id FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.version_path) = $2"#,
+            r#"SELECT project_versions.id as version_id, project_versions.project_id as project_id FROM project_versions FULL JOIN projects ON projects.id = project_versions.project_id AND projects.repository_id = $1 WHERE LOWER(project_versions.path) = $2"#,
         )
         .bind(repository_id)
         .bind(directory.to_lowercase())
@@ -93,8 +95,9 @@ impl DBProjectVersion {
         database: &PgPool,
     ) -> Result<Vec<Self>, sqlx::Error> {
         let versions =
-            sqlx::query_as::<_, Self>(r#"SELECT * FROM project_versions WHERE project_id = $1"#)
-                .bind(project_id)
+            SelectQueryBuilder::with_columns(DBProjectVersion::table_name(), Self::columns())
+                .filter(DBProjectVersionColumn::ProjectId.equals(project_id.value()))
+                .query_as()
                 .fetch_all(database)
                 .await?;
         Ok(versions)

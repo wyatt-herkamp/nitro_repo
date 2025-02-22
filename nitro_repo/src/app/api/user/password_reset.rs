@@ -14,7 +14,7 @@ use axum_extra::{
 use http::StatusCode;
 use lettre::Address;
 use nr_core::database::entities::user::{
-    ChangePasswordNoCheck, UserModel, UserSafeData, UserType,
+    ChangePasswordNoCheck, User, UserSafeData, UserType,
     password_reset::{RequestDetails, UserPasswordReset},
 };
 use serde::{Deserialize, Serialize};
@@ -94,7 +94,7 @@ async fn request_password_reset(
         origin.to_string()
     };
     debug!(?request_details, ?origin, "Requesting password reset");
-    let user = UserModel::get_by_email(&password_reset.email, &site.database).await?;
+    let user = User::get_by_email(&password_reset.email, &site.database).await?;
     if let Some(user) = user {
         let token = UserPasswordReset::create(user.id, request_details, &site.database).await?;
         let email: PasswordResetEmail = PasswordResetEmail {

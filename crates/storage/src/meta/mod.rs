@@ -5,7 +5,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RepositoryMeta {
     pub project_id: Option<Uuid>,
-    pub project_version_id: Option<i32>,
+    pub project_version_id: Option<Uuid>,
     pub extra_meta: HashMap<String, String>,
 }
 impl RepositoryMeta {
@@ -22,7 +22,7 @@ impl RepositoryMeta {
     pub fn set_project_id(&mut self, key: Uuid) {
         self.project_id = Some(key);
     }
-    pub fn set_version_id(&mut self, key: i32) {
+    pub fn set_version_id(&mut self, key: Uuid) {
         self.project_version_id = Some(key);
     }
 }
