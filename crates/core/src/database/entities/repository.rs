@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{PgPool, postgres::PgRow, prelude::FromRow, types::Json};
@@ -209,6 +211,7 @@ impl DBRepositoryConfig<Value> {
 }
 
 impl<T: for<'a> Deserialize<'a> + Unpin + Send + 'static> DBRepositoryConfig<T> {
+    #[tracing::instrument(skip(database, key), fields(key = key.as_ref()))]
     pub async fn get_config(
         uuid: Uuid,
         key: impl AsRef<str>,

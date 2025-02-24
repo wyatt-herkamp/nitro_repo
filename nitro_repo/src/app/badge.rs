@@ -14,6 +14,7 @@ use nr_core::{
     },
 };
 use serde::Deserialize;
+use tracing::instrument;
 use utoipa::OpenApi;
 
 use crate::{
@@ -51,6 +52,7 @@ pub fn badge_routes() -> axum::Router<NitroRepo> {
         (status = 404, description = "Repository not found")
     )
 )]
+#[instrument]
 async fn supports_badges(
     Path(RepositoryBadgeRequest {
         storage,
@@ -88,6 +90,7 @@ struct RepositoryBadgeRequest {
         (status = 200, description = "Generates the Repository Badge", body = String)
     )
 )]
+#[instrument]
 async fn repository_badge(
     Path(RepositoryBadgeRequest {
         storage,
@@ -142,6 +145,7 @@ struct ProjectBadgeRequest {
         (status = 200, description = "Generates the Repository Badge", body = String)
     )
 )]
+#[instrument]
 async fn project_badge(
     Path(ProjectBadgeRequest {
         storage,
@@ -198,7 +202,7 @@ async fn project_badge(
         .content_type(mime::IMAGE_SVG)
         .body(badge.svg()))
 }
-
+#[instrument]
 fn generate_badge(
     settings: &BadgeSettings,
     label: &str,

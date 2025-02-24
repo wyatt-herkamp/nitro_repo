@@ -35,6 +35,7 @@ pub trait ProjectDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
                 .await?;
         Ok(project)
     }
+    #[instrument(skip(database))]
     async fn find_by_project_key(
         project_key: &str,
         repository: Uuid,
