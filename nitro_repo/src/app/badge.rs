@@ -1,3 +1,4 @@
+use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
 use axum::{
     body::Body,
     extract::{Path, Query, State},
@@ -17,10 +18,9 @@ use nr_core::{
     },
 };
 use serde::Deserialize;
+use tracing::instrument;
 use tracing::{Level, event};
 use utoipa::{IntoParams, OpenApi};
-
-use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
 
 use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
 #[derive(OpenApi)]
@@ -132,7 +132,7 @@ async fn repository_badge(
         .content_type(mime::IMAGE_SVG)
         .body(badge.svg()))
 }
-#[derive(Deserialize, IntoParams)]
+#[derive(Debug, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 struct BadgeQuery {
     release_type: Option<Vec<ReleaseType>>,
