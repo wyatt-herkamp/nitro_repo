@@ -118,6 +118,8 @@ lettre = { version = "0.11.9", features = [
 ], default-features = false }
 url = "2"
 inquire = "0.7"
+serde_path_to_error = "0.1"
+
 [features]
 default = ["utoipa-scalar"]
 frontend = []

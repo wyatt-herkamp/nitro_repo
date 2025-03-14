@@ -20,7 +20,7 @@ pub mod user;
 pub mod user_management;
 use crate::{
     error::InternalError,
-    utils::{response_builder::ResponseBuilder, responses::APIErrorResponse},
+    utils::{ResponseBuilder, api_error_response::APIErrorResponse},
 };
 
 use super::{Instance, NitroRepo, NitroRepoState, authentication::password};
@@ -140,5 +140,7 @@ async fn route_not_found(request: Request) -> Response {
         }),
         ..Default::default()
     };
-    ResponseBuilder::not_found().json(&response)
+    ResponseBuilder::not_found()
+        .error_reason("Route not found")
+        .json(&response)
 }

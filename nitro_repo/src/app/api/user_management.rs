@@ -16,6 +16,7 @@ use crate::{
         responses::MissingPermission,
     },
     error::InternalError,
+    utils::{ResponseBuilder, conflict::ConflictResponse, json::JsonBody},
 };
 use nr_core::{
     database::entities::user::{
@@ -138,22 +139,16 @@ pub async fn get_user_permissions(
 pub async fn create_user(
     auth: Authentication,
     State(site): State<NitroRepo>,
-    Json(user): Json<NewUserRequest>,
+    JsonBody(user): JsonBody<NewUserRequest>,
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
     if user_utils::is_username_taken(&user.username, &site.database).await? {
-        return Ok(Response::builder()
-            .status(http::StatusCode::CONFLICT)
-            .body("Username already taken".into())
-            .unwrap());
+        return Ok(ConflictResponse::from("username").into_response());
     }
     if user_utils::is_email_taken(&user.email, &site.database).await? {
-        return Ok(Response::builder()
-            .status(http::StatusCode::CONFLICT)
-            .body("Email already taken".into())
-            .unwrap());
+        return Ok(ConflictResponse::from("email").into_response());
     }
     let user = user.insert(site.as_ref()).await?;
     Ok(Json(user).into_response())
@@ -177,7 +172,7 @@ pub enum IsTaken {
 pub async fn is_taken(
     State(site): State<NitroRepo>,
     auth: Authentication,
-    Json(is_taken): Json<IsTaken>,
+    JsonBody(is_taken): JsonBody<IsTaken>,
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
@@ -234,16 +229,15 @@ pub async fn update_permissions(
     auth: Authentication,
     State(site): State<NitroRepo>,
     Path(user_id): Path<i32>,
-    Json(permissions): Json<UpdatePermissions>,
+    JsonBody(permissions): JsonBody<UpdatePermissions>,
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
     let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
-        return Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body("User not found".into())
-            .unwrap());
+        return Ok(ResponseBuilder::not_found()
+            .error_reason("User not found")
+            .empty());
     };
     permissions
         .update_permissions(user.id, &site.database)
@@ -267,16 +261,15 @@ pub async fn update_password(
     auth: Authentication,
     State(site): State<NitroRepo>,
     Path(user_id): Path<i32>,
-    Json(password_reset): Json<ChangePasswordNoCheck>,
+    JsonBody(password_reset): JsonBody<ChangePasswordNoCheck>,
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
     let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
-        return Ok(Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body("User not found".into())
-            .unwrap());
+        return Ok(ResponseBuilder::not_found()
+            .error_reason("User not found")
+            .empty());
     };
     let Some(encrypted_password) = password::encrypt_password(&password_reset.password) else {
         return Ok(Response::builder()

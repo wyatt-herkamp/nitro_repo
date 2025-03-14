@@ -1,26 +1,13 @@
-mod bad_requests;
 use std::{borrow::Cow, error::Error, fmt::Display, io};
 
 use axum::response::IntoResponse;
-pub use bad_requests::*;
 use nr_core::{database::DBError, repository::config::RepositoryConfigError};
 //pub use internal_error::*;
 use nr_storage::StorageError;
 use thiserror::Error;
 
-use crate::utils::{response_builder::ResponseBuilder, responses::APIErrorResponse};
+use crate::utils::{IntoErrorResponse, ResponseBuilder, api_error_response::APIErrorResponse};
 
-/// Allows creating a response from an error
-pub trait IntoErrorResponse: Error + Send + Sync {
-    /// Converts the error into a response
-    ///
-    /// It must be of type of Box<Self> to allow for dynamic dispatch
-    fn into_response_boxed(self: Box<Self>) -> axum::response::Response;
-
-    fn status_code(&self) -> http::StatusCode {
-        http::StatusCode::INTERNAL_SERVER_ERROR
-    }
-}
 macro_rules! impl_into_error_response_for_axum_into_response {
     ($t:ty) => {
         impl IntoErrorResponse for $t {
@@ -103,50 +90,6 @@ impl<T: IntoErrorResponse + 'static> From<T> for InternalError {
     }
 }
 
-#[derive(Debug, Error)]
-pub enum ResponseBuildError {
-    #[error("Failed to serialize data for response: {0}")]
-    SerdeError(#[from] serde_json::Error),
-    #[error("Failed to build response: {0}")]
-    HttpError(#[from] http::Error),
-    #[error("Invalid Header Response Value: {0}")]
-    HeaderValueError(#[from] http::header::InvalidHeaderValue),
-}
-impl IntoResponse for ResponseBuildError {
-    fn into_response(self) -> axum::response::Response {
-        let message: APIErrorResponse<&str, Self> = APIErrorResponse {
-            message: Cow::Borrowed("Internal Server Error"),
-            details: Some("response-build"),
-            error: Some(self),
-        };
-        ResponseBuilder::internal_server_error().json(&message)
-    }
-}
-
-impl IntoErrorResponse for ResponseBuildError {
-    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
-        self.into_response()
-    }
-}
-
-#[derive(Debug, Error, Clone, Copy)]
-#[error("{0} is missing from extensions")]
-pub struct MissingInternelExtension(pub &'static str);
-impl IntoErrorResponse for MissingInternelExtension {
-    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
-        self.into_response()
-    }
-}
-impl IntoResponse for MissingInternelExtension {
-    fn into_response(self) -> axum::response::Response {
-        let message: APIErrorResponse<&'static str, ()> = APIErrorResponse {
-            message: Cow::Owned(self.to_string()),
-            details: Some(self.0),
-            error: None,
-        };
-        ResponseBuilder::internal_server_error().json(&message)
-    }
-}
 #[derive(Debug, Error)]
 #[error("Internal Error: {0}")]
 pub struct OtherInternalError(pub Box<dyn Error + Send + Sync>);

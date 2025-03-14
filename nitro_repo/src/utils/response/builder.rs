@@ -1,11 +1,14 @@
+use std::any::Any;
+
 use axum::response::{IntoResponse, Response};
-use digestible::Digestible;
+use error::ResponseBuildError;
 use http::{HeaderName, HeaderValue, StatusCode, header::CONTENT_TYPE};
 use mime::Mime;
 
-use crate::error::ResponseBuildError;
+use crate::utils::other::JSON_MEDIA_TYPE;
+pub mod error;
+use super::ErrorReason;
 
-use super::{JSON_MEDIA_TYPE, generate_etag};
 macro_rules! new_response_builder {
     (
        $( $fn_name:ident => $status:ident),*
@@ -36,6 +39,7 @@ impl ResponseBuilder {
     }
     new_response_builder!(
         ok => OK,
+        created => CREATED,
         no_content => NO_CONTENT,
         bad_request => BAD_REQUEST,
         not_found => NOT_FOUND,
@@ -43,8 +47,20 @@ impl ResponseBuilder {
         unauthorized => UNAUTHORIZED,
         forbidden => FORBIDDEN,
         internal_server_error => INTERNAL_SERVER_ERROR,
-        created => CREATED
+        unsupported_media_type => UNSUPPORTED_MEDIA_TYPE
     );
+    pub fn content_type(self, content_type: Mime) -> Self {
+        self.header(CONTENT_TYPE, content_type.to_string())
+    }
+    pub fn error_reason(self, reason: impl Into<ErrorReason>) -> Self {
+        Self(self.0.extension(reason.into()))
+    }
+    pub fn extension<T>(self, extension: T) -> Self
+    where
+        T: Clone + Any + Send + Sync + 'static,
+    {
+        Self(self.0.extension(extension))
+    }
     /// Sets the body if it returns an error it will return a [ResponseBuildError]
     pub fn body_or_err(
         self,
@@ -73,24 +89,6 @@ impl ResponseBuilder {
     {
         Self(self.0.header(key, value))
     }
-    /// Attempts to set the etag header
-    pub fn etag_or_err<D: Digestible>(self, data: &D) -> Result<Self, ResponseBuildError> {
-        let etag = generate_etag(data)?;
-        Ok(self.header(http::header::ETAG, etag))
-    }
-    /// Attempts to set the etag header if the data is present
-    pub fn optional_etag_or_err<D: Digestible>(
-        self,
-        data: &Option<D>,
-    ) -> Result<Self, ResponseBuildError> {
-        match data {
-            Some(data) => self.etag_or_err(data),
-            None => Ok(self),
-        }
-    }
-    pub fn content_type(self, content_type: Mime) -> Self {
-        self.header(CONTENT_TYPE, content_type.to_string())
-    }
 
     /// Serialize the data to JSON and return a response or an error
     pub fn json_or_err<T: serde::Serialize>(
@@ -107,7 +105,6 @@ impl ResponseBuilder {
             Err(err) => err.into_response(),
         }
     }
-
     /// Checks if the data is present and returns a JSON response or a not found response
     pub fn json_or_not_found<T: serde::Serialize>(self, data: &Option<T>) -> Response {
         match data {
@@ -115,7 +112,14 @@ impl ResponseBuilder {
             None => self.status(StatusCode::NOT_FOUND).empty(),
         }
     }
-    pub fn html(self, data: impl Into<axum::body::Body>) -> Response {
-        self.header(CONTENT_TYPE, "text/html").body(data)
+    pub fn html_or_err(self, html: impl Into<Vec<u8>>) -> Result<Response, ResponseBuildError> {
+        self.content_type(mime::TEXT_HTML_UTF_8)
+            .body_or_err(html.into())
+    }
+    pub fn html(self, html: impl Into<Vec<u8>>) -> Response {
+        match self.html_or_err(html) {
+            Ok(ok) => ok,
+            Err(err) => err.into_response(),
+        }
     }
 }

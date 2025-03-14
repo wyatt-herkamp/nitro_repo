@@ -8,8 +8,9 @@ use http::StatusCode;
 use tracing::instrument;
 
 use crate::{
-    app::{NitroRepo, authentication::Authentication, responses::ResponseBuilderExt},
+    app::{NitroRepo, authentication::Authentication},
     error::InternalError,
+    utils::ResponseBuilder,
 };
 pub fn config_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
@@ -126,7 +127,7 @@ pub async fn config_default(
     };
 
     match config_type.default() {
-        Ok(ok) => return Response::builder().status(200).json_body(&ok),
+        Ok(ok) => return Ok(ResponseBuilder::ok().json(&ok)),
         Err(err) => {
             return Ok(Response::builder()
                 .status(500)

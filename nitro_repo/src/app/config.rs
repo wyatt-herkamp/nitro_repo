@@ -10,7 +10,7 @@ mod max_upload;
 mod security;
 use super::authentication::session::SessionManagerConfig;
 use super::email::EmailSetting;
-use super::logging::config::LoggingConfig;
+use crate::logging::config::LoggingConfig;
 use crate::repository::StagingConfig;
 pub use max_upload::*;
 pub use security::*;

@@ -1,18 +1,10 @@
-use std::borrow::Cow;
-use std::fs::OpenOptions;
-use std::io::Read;
-use std::path::Path;
+use std::{borrow::Cow, fs::OpenOptions, io::Read, path::Path};
 
-use digestible::{Digester, Digestible, IntoBase64, byteorder::NativeEndian};
-use http::HeaderValue;
 use rust_embed::RustEmbed;
-use sha2::Digest;
 use tracing::error;
-pub mod response_builder;
-pub mod responses;
-use crate::error::{InternalError, ResponseBuildError};
-pub const JSON_MEDIA_TYPE: HeaderValue = HeaderValue::from_static("application/json");
-pub const TEXT_MEDIA_TYPE: HeaderValue = HeaderValue::from_static("text/plain");
+
+use crate::error::InternalError;
+
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]
 pub struct Resources;
@@ -50,13 +42,4 @@ impl Resources {
                 .data)
         }
     }
-}
-
-pub mod headers;
-
-pub fn generate_etag(data: &impl Digestible) -> Result<HeaderValue, ResponseBuildError> {
-    let hasher = sha2::Sha256::new().into_base64();
-    let result = hasher.digest::<NativeEndian>(data);
-
-    Ok(HeaderValue::try_from(result)?)
 }

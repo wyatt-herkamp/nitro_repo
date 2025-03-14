@@ -4,12 +4,13 @@ use super::types::{
 };
 use super::utils::{NpmRegistryExt, npm_time};
 use crate::{
-    app::{NitroRepo, responses::no_content_response},
+    app::NitroRepo,
     repository::{
         RepoResponse, Repository, RepositoryFactoryError, RepositoryRequest,
         npm::{NPMRegistryConfigType, NPMRegistryError, types::PublishRequest},
         utils::RepositoryExt,
     },
+    utils::ResponseBuilder,
 };
 use ahash::{HashMap, HashMapExt};
 use axum::response::{IntoResponse, Response};
@@ -104,7 +105,7 @@ impl NPMHostedRegistry {
                 .await?;
         }
 
-        Ok(no_content_response().into())
+        Ok(ResponseBuilder::no_content().empty().into())
     }
 }
 impl NpmRegistryExt for NPMHostedRegistry {}

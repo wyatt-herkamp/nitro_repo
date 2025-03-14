@@ -1,10 +1,8 @@
 mod layer;
-mod request_id;
 mod request_span;
 use derive_more::derive::From;
 use http::HeaderName;
 use layer::AppTraceMiddleware;
-pub use request_id::*;
 pub use request_span::*;
 pub mod response_body;
 
@@ -12,8 +10,6 @@ use tower::Layer;
 
 use crate::app::NitroRepo;
 
-#[allow(clippy::declare_interior_mutable_const)]
-const X_FORWARDED_FOR_HEADER: HeaderName = HeaderName::from_static("x-forwarded-for");
 #[allow(clippy::declare_interior_mutable_const)]
 const X_REQUEST_ID: HeaderName = HeaderName::from_static("x-request-id");
 

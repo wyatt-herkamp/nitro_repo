@@ -5,7 +5,7 @@ use derive_more::derive::{From, Into};
 use http::{HeaderValue, header::InvalidHeaderValue, request::Parts};
 use sqlx::types::Uuid;
 
-use crate::{app::NitroRepo, error::MissingInternelExtension};
+use crate::{app::NitroRepo, utils::extensions::MissingInternelExtension};
 
 #[derive(Debug, Clone, Copy, From, Into)]
 pub struct RequestId(pub Uuid);

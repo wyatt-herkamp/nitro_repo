@@ -16,7 +16,7 @@ use tracing::{Level, error, event, info, instrument, trace};
 use uuid::Uuid;
 
 use super::{MavenError, RepoResponse, RepositoryAuthentication, RepositoryHandlerError};
-use crate::{error::BadRequestErrors, repository::Repository};
+use crate::{repository::Repository, utils::bad_request::BadRequestErrors};
 
 /// Utilities for Maven Repositories
 pub trait MavenRepositoryExt: Repository + Debug {

@@ -1,5 +1,4 @@
 pub mod config;
-pub mod request_logging;
 
 use config::{
     AppLogger, AppLoggerType, ConsoleLogger, LoggingConfig, MetricsConfig, OtelConfig,

@@ -17,7 +17,7 @@ use uuid::Uuid;
 use crate::{
     app::{NitroRepo, authentication::Authentication},
     error::InternalError,
-    utils::response_builder::ResponseBuilder,
+    utils::ResponseBuilder,
 };
 
 #[derive(OpenApi)]

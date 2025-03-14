@@ -7,6 +7,7 @@ use axum::response::IntoResponse;
 use axum_extra::extract::cookie::Cookie;
 use derive_more::From;
 
+use header::AuthorizationHeader;
 use http::request::Parts;
 use nr_core::database::DBError;
 use nr_core::database::entities::user::auth_token::AuthToken;
@@ -20,10 +21,10 @@ use thiserror::Error;
 use tracing::{error, instrument, warn};
 use utoipa::ToSchema;
 
-use crate::error::IntoErrorResponse;
-use crate::utils::headers::AuthorizationHeader;
-use crate::utils::response_builder::ResponseBuilder;
-use crate::utils::responses::APIErrorResponse;
+pub mod header;
+
+use crate::utils::api_error_response::APIErrorResponse;
+use crate::utils::{IntoErrorResponse, ResponseBuilder};
 
 use super::NitroRepo;
 
@@ -67,16 +68,6 @@ impl IntoErrorResponse for AuthenticationError {
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
         self.into_response()
     }
-
-    fn status_code(&self) -> http::StatusCode {
-        match self {
-            AuthenticationError::InternalError(_) => http::StatusCode::INTERNAL_SERVER_ERROR,
-            AuthenticationError::Unauthorized => http::StatusCode::UNAUTHORIZED,
-            AuthenticationError::PasswordVerificationError => http::StatusCode::UNAUTHORIZED,
-            AuthenticationError::AuthTokenForbidden => http::StatusCode::FORBIDDEN,
-            AuthenticationError::Forbidden => http::StatusCode::FORBIDDEN,
-        }
-    }
 }
 impl IntoResponse for AuthenticationError {
     fn into_response(self) -> axum::response::Response {
@@ -93,16 +84,29 @@ impl IntoResponse for AuthenticationError {
                 };
                 ResponseBuilder::forbidden().json(&api_error)
             }
-            other => {
-                let status_code = other.status_code();
-                let api_error = APIErrorResponse::<(), AuthenticationError> {
-                    message: Cow::Borrowed("Authentication Error"),
+            AuthenticationError::Unauthorized => {
+                let api_error = APIErrorResponse::<(), ()> {
+                    message: Cow::Borrowed("Unauthorized"),
                     details: None,
-                    error: Some(other),
+                    error: None,
                 };
-                ResponseBuilder::default()
-                    .status(status_code)
-                    .json(&api_error)
+                ResponseBuilder::unauthorized().json(&api_error)
+            }
+            AuthenticationError::PasswordVerificationError => {
+                let api_error = APIErrorResponse::<(), ()> {
+                    message: Cow::Borrowed("Password Verification Error"),
+                    details: None,
+                    error: None,
+                };
+                ResponseBuilder::unauthorized().json(&api_error)
+            }
+            AuthenticationError::Forbidden => {
+                let api_error = APIErrorResponse::<(), ()> {
+                    message: Cow::Borrowed("Forbidden"),
+                    details: None,
+                    error: None,
+                };
+                ResponseBuilder::forbidden().json(&api_error)
             }
         }
     }

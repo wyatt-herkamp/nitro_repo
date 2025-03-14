@@ -1,4 +1,4 @@
-use crate::app::logging::request_logging::AppTracingLayer;
+use crate::app::request_logging::AppTracingLayer;
 
 use super::authentication::layer::AuthenticationLayer;
 use super::config::{WebServer, load_config};
@@ -48,7 +48,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
 
     let mode = mode;
     let site = site;
-    let logger = super::logging::init(log)?;
+    let logger = crate::logging::init(log)?;
 
     let site = NitroRepo::new(
         mode,

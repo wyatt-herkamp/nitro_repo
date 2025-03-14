@@ -4,10 +4,10 @@ use axum::response::IntoResponse;
 use http::header::ToStrError;
 use thiserror::Error;
 
-use crate::utils::response_builder::ResponseBuilder;
-use crate::utils::responses::APIErrorResponse;
+use crate::utils::{
+    ErrorReason, IntoErrorResponse, ResponseBuilder, api_error_response::APIErrorResponse,
+};
 
-use super::IntoErrorResponse;
 #[derive(Debug, Error)]
 pub enum BadRequestErrors {
     #[error("Could not Decode Base64: {0}")]
@@ -48,11 +48,14 @@ pub enum InvalidAuthorizationHeader {
 
 impl IntoResponse for BadRequestErrors {
     fn into_response(self) -> axum::response::Response {
+        let error_reason = ErrorReason::from(self.to_string());
         let error_body = APIErrorResponse {
             message: Cow::Borrowed("Bad Request"),
             details: Some(self.to_string()),
             error: Some(self),
         };
-        ResponseBuilder::bad_request().json(&error_body)
+        ResponseBuilder::bad_request()
+            .error_reason(error_reason)
+            .json(&error_body)
     }
 }

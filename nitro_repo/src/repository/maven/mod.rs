@@ -1,5 +1,5 @@
 use super::*;
-use crate::{app::NitroRepo, error::OtherInternalError};
+use crate::{app::NitroRepo, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;

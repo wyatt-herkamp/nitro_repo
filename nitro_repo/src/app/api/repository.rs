@@ -32,7 +32,7 @@ use crate::{
     },
     error::InternalError,
     repository::{Repository, RepositoryTypeDescription},
-    utils::response_builder::ResponseBuilder,
+    utils::ResponseBuilder,
 };
 mod browse;
 mod config;

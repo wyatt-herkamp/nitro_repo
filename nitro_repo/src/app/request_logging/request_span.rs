@@ -1,66 +1,18 @@
-use std::{
-    fmt::{Debug, Display},
-    net::SocketAddr,
-};
+use std::fmt::Display;
 
-use axum::extract::{
-    ConnectInfo, FromRef, FromRequestParts, MatchedPath, OptionalFromRequestParts,
-};
-use derive_more::derive::From;
+use axum::extract::MatchedPath;
 use http::{
     HeaderMap, HeaderName, Request,
     header::{REFERER, USER_AGENT},
-    request::Parts,
 };
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
-use tracing::{Level, event, field::Empty, info_span};
+use tracing::{field::Empty, info_span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use crate::{app::NitroRepo, error::MissingInternelExtension};
-
-use super::{RequestId, X_FORWARDED_FOR_HEADER};
-
-#[derive(Debug, Clone, From)]
-pub struct RequestSpan(pub tracing::Span);
-impl<S> FromRequestParts<S> for RequestSpan
-where
-    NitroRepo: FromRef<S>,
-    S: Send + Sync,
-{
-    type Rejection = MissingInternelExtension;
-
-    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        let extension = parts.extensions.get::<RequestSpan>();
-        extension
-            .cloned()
-            .ok_or(MissingInternelExtension("Request Span"))
-    }
-}
-impl<S> OptionalFromRequestParts<S> for RequestSpan
-where
-    NitroRepo: FromRef<S>,
-    S: Send + Sync,
-{
-    type Rejection = MissingInternelExtension;
-
-    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Option<Self>, Self::Rejection> {
-        let extension = parts.extensions.get::<RequestSpan>();
-        Ok(extension.cloned())
-    }
-}
-pub fn extract_header_as_str(headers: &HeaderMap, header: HeaderName) -> Option<String> {
-    headers
-        .get(&header)
-        .and_then(|v| v.to_str().ok())
-        .and_then(|header_value| {
-            if header_value.is_empty() {
-                event!(Level::WARN, ?header, "Empty header Value",);
-                None
-            } else {
-                Some(header_value.to_owned())
-            }
-        })
-}
+use crate::{
+    app::NitroRepo,
+    utils::{ErrorReason, header::HeaderMapExt, ip_addr, request_logging::request_id::RequestId},
+};
 
 pub struct HeaderMapCarrier<'a>(pub &'a HeaderMap);
 
@@ -75,7 +27,9 @@ impl Extractor for HeaderMapCarrier<'_> {
 }
 
 pub fn make_span<B>(request: &Request<B>, request_id: RequestId) -> tracing::Span {
-    let user_agent = extract_header_as_str(request.headers(), USER_AGENT)
+    let user_agent = request
+        .headers()
+        .get_string_ignore_empty(&USER_AGENT)
         .unwrap_or_else(|| "<unknown>".to_string());
 
     let span = info_span!(target: "nitro_repo::requests","HTTP request",
@@ -111,31 +65,19 @@ pub fn make_span<B>(request: &Request<B>, request_id: RequestId) -> tracing::Spa
     span
 }
 
-pub fn on_request<B>(request: &Request<B>, span: &tracing::Span) {
+pub fn on_request<B>(request: &Request<B>, span: &tracing::Span, state: &NitroRepo) {
     let path = request
         .extensions()
         .get::<MatchedPath>()
         .map_or(request.uri().path(), |p| p.as_str());
     let method = request.method().as_str();
-    let client_ip = span.in_scope(|| {
-        extract_header_as_str(request.headers(), X_FORWARDED_FOR_HEADER)
-            .or_else(|| {
-                request
-                    .extensions()
-                    .get::<ConnectInfo<SocketAddr>>()
-                    .map(|ConnectInfo(c)| c.to_string())
-            })
-            .unwrap_or_else(|| {
-                event!(Level::WARN, "Failed to get client IP");
-                "<unknown>".to_string()
-            })
-    });
+    let client_ip = ip_addr::extract_ip_as_string(&request, state);
 
     span.record("http.path", path);
     span.record("otel.name", format!("{method} {path}"));
-    span.record("http.client_ip", &client_ip);
+    span.record("http.client_ip", client_ip);
 
-    let referer = extract_header_as_str(request.headers(), REFERER);
+    let referer = request.headers().get_string_ignore_empty(&REFERER);
     if let Some(referer) = referer {
         span.record("http.referer", &referer);
     }
@@ -146,7 +88,12 @@ pub fn on_response<B>(
     span: &tracing::Span,
 ) {
     if response.status().is_client_error() || response.status().is_server_error() {
-        span.record("exception.message", "Unknown error");
+        let reason = response.extensions().get::<ErrorReason>();
+        if let Some(reason) = reason {
+            span.record("exception.message", reason.reason.as_ref());
+        } else {
+            span.record("exception.message", "Unknown error");
+        }
     }
 
     span.record("http.status_code", response.status().as_u16());

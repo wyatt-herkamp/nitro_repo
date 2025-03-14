@@ -9,7 +9,7 @@ use crate::{
         NitroRepo,
         config::{Mode, get_current_directory},
     },
-    error::IntoErrorResponse,
+    utils::IntoErrorResponse,
 };
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};

@@ -32,7 +32,7 @@ mod error;
 pub mod utils;
 use crate::{
     app::{NitroRepo, authentication::AuthenticationError},
-    error::{BadRequestErrors, IntoErrorResponse},
+    utils::IntoErrorResponse,
 };
 pub use error::*;
 pub trait Repository: Send + Sync + Clone + Debug {

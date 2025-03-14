@@ -20,9 +20,7 @@ use serde::Deserialize;
 use tracing::{Level, event};
 use utoipa::{IntoParams, OpenApi};
 
-use crate::{
-    error::InternalError, repository::Repository, utils::response_builder::ResponseBuilder,
-};
+use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
 
 use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
 #[derive(OpenApi)]

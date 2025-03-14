@@ -1,33 +1,7 @@
-use http::{HeaderValue, header::ToStrError};
 use nr_core::utils::base64_utils;
 use tracing::{error, instrument};
 
-use crate::error::{BadRequestErrors, InvalidAuthorizationHeader};
-
-pub trait HeaderValueExt {
-    fn to_string(&self) -> Result<String, ToStrError>;
-    fn to_string_as_option(&self) -> Option<String>;
-    fn parsed<T: TryFrom<String, Error = BadRequestErrors>>(&self) -> Result<T, BadRequestErrors>;
-}
-impl HeaderValueExt for HeaderValue {
-    fn to_string(&self) -> Result<String, ToStrError> {
-        self.to_str().map(|x| x.to_string())
-    }
-
-    fn to_string_as_option(&self) -> Option<String> {
-        self.to_str()
-            .map(|x| x.to_string())
-            .inspect_err(|error| {
-                error!("Failed to convert header value to string: {}", error);
-            })
-            .ok()
-    }
-
-    fn parsed<T: TryFrom<String, Error = BadRequestErrors>>(&self) -> Result<T, BadRequestErrors> {
-        let value = self.to_string()?;
-        T::try_from(value)
-    }
-}
+use crate::utils::bad_request::{BadRequestErrors, InvalidAuthorizationHeader};
 
 #[derive(Debug)]
 pub enum AuthorizationHeader {
@@ -84,22 +58,4 @@ fn parse_basic_header(header: &str) -> Result<AuthorizationHeader, BadRequestErr
         username: username.to_owned(),
         password: password.to_owned(),
     })
-}
-pub mod date_time {
-    use chrono::FixedOffset;
-    use http::HeaderValue;
-
-    use crate::error::BadRequestErrors;
-
-    pub fn date_time_for_header(date_time: &chrono::DateTime<FixedOffset>) -> HeaderValue {
-        let date_time = date_time.with_timezone(&chrono::Utc);
-        let date_time = date_time.format("%a, %d %b %Y %H:%M:%S GMT").to_string();
-        HeaderValue::from_str(date_time.as_str()).expect("Failed to convert date time to header")
-    }
-    pub fn parse_date_time(
-        header_value: &HeaderValue,
-    ) -> Result<chrono::DateTime<FixedOffset>, BadRequestErrors> {
-        let date_time = header_value.to_str()?;
-        chrono::DateTime::parse_from_rfc2822(date_time).map_err(BadRequestErrors::from)
-    }
 }

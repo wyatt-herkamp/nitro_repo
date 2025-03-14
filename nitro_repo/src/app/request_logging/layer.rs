@@ -16,9 +16,12 @@ use pin_project::pin_project;
 use tower_service::Service;
 use tracing::error;
 
-use crate::app::NitroRepo;
+use crate::{
+    app::NitroRepo,
+    utils::request_logging::{request_id::RequestId, request_span::RequestSpan},
+};
 
-use super::{RequestSpan, X_REQUEST_ID, request_id::RequestId, response_body::TraceResponseBody};
+use super::{X_REQUEST_ID, response_body::TraceResponseBody};
 
 /// Middleware that handles the authentication of the user
 #[derive(Debug, Clone)]
@@ -65,7 +68,7 @@ where
             .insert(RequestSpan(request_span.clone()));
         req.extensions_mut().insert(request_id);
 
-        super::on_request(&req, &request_span);
+        super::on_request(&req, &request_span, &site);
 
         let result = request_span.in_scope(|| inner.call(req));
         TraceResponseFuture {
