@@ -1,5 +1,5 @@
 use super::*;
-use crate::{app::NitroRepo, error::OtherInternalError};
+use crate::{app::NitroRepo, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
@@ -7,8 +7,10 @@ pub use configs::*;
 use futures::future::BoxFuture;
 use hosted::MavenHosted;
 use nr_core::{
-    builder_error,
-    database::entities::repository::{DBRepository, DBRepositoryConfig},
+    database::{
+        DBError,
+        entities::repository::{DBRepository, DBRepositoryConfig},
+    },
     repository::{
         config::{RepositoryConfigType, project::ProjectConfigType},
         project::ReleaseType,
@@ -142,8 +144,7 @@ pub enum MavenError {
     MavenRS(#[from] maven_rs::Error),
     #[error("XML Deserialize Error: {0}")]
     XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
-    #[error("Internal Error. {0}")]
-    BuilderError(#[from] builder_error::BuilderError),
+
     #[error("Missing From Pom: {0}")]
     MissingFromPom(&'static str),
     #[error("{0}")]
@@ -163,6 +164,7 @@ macro_rules! impl_from_error_for_other {
         }
     };
 }
+impl_from_error_for_other!(DBError);
 impl_from_error_for_other!(BadRequestErrors);
 impl_from_error_for_other!(sqlx::Error);
 impl_from_error_for_other!(serde_json::Error);

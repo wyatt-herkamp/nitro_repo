@@ -9,7 +9,9 @@ use uuid::Uuid;
 
 use crate::user::permissions::{RepositoryActions, UserPermissions};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow, Columns)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow, TableType)]
+#[table(name = "user_repository_permissions")]
+
 pub struct UserRepositoryPermissions {
     pub id: i32,
     pub user_id: i32,
@@ -18,16 +20,7 @@ pub struct UserRepositoryPermissions {
     pub updated_at: DateTime<FixedOffset>,
     pub created_at: DateTime<FixedOffset>,
 }
-impl TableType for UserRepositoryPermissions {
-    type Columns = UserRepositoryPermissionsColumn;
 
-    fn table_name() -> &'static str
-    where
-        Self: Sized,
-    {
-        "user_repository_permissions"
-    }
-}
 impl UserRepositoryPermissions {
     pub async fn has_repository_action(
         user_id: i32,
@@ -35,12 +28,15 @@ impl UserRepositoryPermissions {
         action: RepositoryActions,
         database: &PgPool,
     ) -> sqlx::Result<bool> {
-        let select = SimpleSelectQueryBuilder::new(
+        let select = SelectQueryBuilder::with_columns(
             Self::table_name(),
             vec![UserRepositoryPermissionsColumn::Actions],
         )
-        .where_equals(UserRepositoryPermissionsColumn::UserId, user_id)
-        .where_equals(UserRepositoryPermissionsColumn::RepositoryId, repository)
+        .filter(
+            UserRepositoryPermissionsColumn::UserId
+                .equals(user_id.value())
+                .and(UserRepositoryPermissionsColumn::RepositoryId.equals(repository.value())),
+        )
         .query_scalar::<Vec<RepositoryActions>>()
         .fetch_optional(database)
         .await?;

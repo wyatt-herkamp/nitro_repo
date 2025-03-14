@@ -5,14 +5,10 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use derive_more::derive::From;
-use http::{HeaderValue, StatusCode, header::CONTENT_TYPE};
-use mime::Mime;
+use http::StatusCode;
 use nr_core::repository::config::RepositoryConfigError;
 use nr_storage::StorageError;
-use redb::Result;
 use tracing::instrument;
-
-use crate::error::InternalError;
 
 use super::RepositoryStorageName;
 #[derive(Debug, From)]
@@ -140,55 +136,4 @@ impl IntoResponse for InvalidRepositoryConfig {
                 .unwrap(),
         }
     }
-}
-pub trait ResponseBuilderExt {
-    /// Adds a `Content-Type: application/json` header and serializes the given body to JSON.
-    /// The type must also implement `Debug` for logging purposes.
-    /// ## Errors
-    /// - If serialization fails
-    /// - If building the response fails
-    fn json_body<T: serde::Serialize + Debug>(self, body: &T) -> Result<Response, InternalError>;
-
-    fn content_type(self, content_type: impl Into<HeaderValue>) -> Self;
-
-    fn mime_type(self, mime: Mime) -> Self;
-}
-const JSON_MIME_TYPE: HeaderValue = HeaderValue::from_static("application/json");
-
-impl ResponseBuilderExt for http::response::Builder {
-    fn json_body<T: serde::Serialize + Debug>(self, body: &T) -> Result<Response, InternalError> {
-        let body: Body = serde_json::to_string(body)
-            .map_err(|error| {
-                tracing::error!(
-                    ?error,
-                    ?body,
-                    "Failed to serialize body for type {}",
-                    std::any::type_name::<T>()
-                );
-                InternalError::from(error)
-            })?
-            .into();
-        self.header(CONTENT_TYPE, JSON_MIME_TYPE)
-            .body(body)
-            .map_err(InternalError::from)
-    }
-
-    fn content_type(self, content_type: impl Into<HeaderValue>) -> Self {
-        self.header(CONTENT_TYPE, content_type)
-    }
-    fn mime_type(self, mime: Mime) -> Self {
-        self.header(CONTENT_TYPE, mime.to_string())
-    }
-}
-pub fn no_content_response() -> Response {
-    Response::builder()
-        .status(StatusCode::NO_CONTENT)
-        .body(Body::empty())
-        .unwrap()
-}
-pub fn no_content_response_with_error<T: From<http::Error>>() -> Result<Response, T> {
-    Response::builder()
-        .status(StatusCode::NO_CONTENT)
-        .body(Body::empty())
-        .map_err(T::from)
 }

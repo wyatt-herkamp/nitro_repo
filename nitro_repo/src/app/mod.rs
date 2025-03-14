@@ -9,8 +9,9 @@ use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
 use derive_more::{AsRef, derive::Deref};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
-use http::Uri;
+use http::{HeaderName, Uri};
 pub mod frontend;
+pub mod resources;
 use nr_core::{
     database::{
         DatabaseConfig,
@@ -35,7 +36,7 @@ pub mod authentication;
 pub mod config;
 pub mod email;
 pub mod email_service;
-pub mod logging;
+pub mod request_logging;
 use current_semver::current_semver;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
@@ -43,11 +44,14 @@ use tracing::{debug, info, instrument, warn};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 pub mod open_api;
-use crate::repository::{
-    DynRepository, RepositoryType, StagingConfig,
-    maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
-    npm::{NPMRegistryConfigType, NpmRegistryType},
-    repo_tracing::RepositoryMetricsMeter,
+use crate::{
+    repository::{
+        DynRepository, RepositoryType, StagingConfig,
+        maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
+        npm::{NPMRegistryConfigType, NpmRegistryType},
+        repo_tracing::RepositoryMetricsMeter,
+    },
+    utils::ip_addr::HasForwardedHeader,
 };
 pub mod api;
 pub mod badge;
@@ -207,6 +211,13 @@ pub struct NitroRepo {
     pub email_access: Arc<EmailAccess>,
     pub metrics: AppMetrics,
     pub repository_metrics: RepositoryMetricsMeter,
+}
+static X_FORWARDED_FOR_HEADER: HeaderName = HeaderName::from_static("x-forwarded-for");
+
+impl HasForwardedHeader for NitroRepo {
+    fn forwarded_header(&self) -> Option<&http::HeaderName> {
+        Some(&X_FORWARDED_FOR_HEADER)
+    }
 }
 impl NitroRepo {
     #[instrument]

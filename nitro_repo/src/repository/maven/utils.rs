@@ -3,11 +3,10 @@ use std::fmt::Debug;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::entities::project::{
-        DBProject, NewProject, NewProjectBuilder, NewProjectMember, ProjectDBType,
-        update::UpdateProjectVersion, versions::DBProjectVersion, versions::NewVersion,
-        versions::NewVersionBuilder,
+        DBProject, NewProject, NewProjectMember, ProjectDBType,
+        versions::{DBProjectVersion, NewVersion, UpdateProjectVersion},
     },
-    repository::project::{ReleaseType, VersionData, VersionDataBuilder},
+    repository::project::{ReleaseType, VersionData},
     storage::{FileTypeCheck, StoragePath},
     user::permissions::{HasPermissions, RepositoryActions},
 };
@@ -17,7 +16,7 @@ use tracing::{Level, error, event, info, instrument, trace};
 use uuid::Uuid;
 
 use super::{MavenError, RepoResponse, RepositoryAuthentication, RepositoryHandlerError};
-use crate::{error::BadRequestErrors, repository::Repository};
+use crate::{repository::Repository, utils::bad_request::BadRequestErrors};
 
 /// Utilities for Maven Repositories
 pub trait MavenRepositoryExt: Repository + Debug {
@@ -101,10 +100,10 @@ pub trait MavenRepositoryExt: Repository + Debug {
         let db_project =
             DBProject::find_by_project_key(&project_key, self.id(), &self.site().database).await?;
         let (project_id, project_dir) = if let Some(project) = db_project {
-            (project.id, StoragePath::from(project.storage_path))
+            (project.id, StoragePath::from(project.path))
         } else {
             let project_directory = version_directory.clone().parent();
-            trace!(?project_directory, "Creating Project");
+            event!(Level::DEBUG, ?project_directory, "Creating Project");
             let project = pom_to_db_project(project_directory.clone(), self.id(), pom.clone())?;
             let project = project.insert(&self.site().database).await?;
             if let Some(publisher) = publisher {
@@ -209,15 +208,15 @@ pub fn pom_to_db_project(
     let group_id = pom
         .get_group_id()
         .ok_or(MavenError::MissingFromPom("groupId"))?;
-    let result = NewProjectBuilder::default()
-        .project_key(format!("{}:{}", group_id, pom.artifact_id))
-        .scope(Some(group_id.to_owned()))
-        .name(pom.name.unwrap_or(pom.artifact_id))
-        .description(pom.description)
-        .repository(repository)
-        .storage_path(project_path.to_string())
-        .build()?;
-    Ok(result)
+
+    Ok(NewProject {
+        project_key: format!("{}:{}", group_id, pom.artifact_id),
+        scope: Some(group_id.to_owned()),
+        name: pom.name.unwrap_or(pom.artifact_id),
+        description: pom.description,
+        repository,
+        storage_path: project_path.to_string(),
+    })
 }
 pub fn pom_to_db_project_version(
     project_id: Uuid,
@@ -229,20 +228,23 @@ pub fn pom_to_db_project_version(
         .get_version()
         .ok_or(MavenError::MissingFromPom("version"))
         .map(|x| x.to_owned())?;
-    let version_data = VersionDataBuilder::default()
-        .description(pom.description)
-        .build()?;
+    let version_data = VersionData {
+        description: pom.description,
+        ..Default::default()
+    };
 
     let release_type = ReleaseType::release_type_from_version(&version);
-    let result = NewVersionBuilder::default()
-        .project_id(project_id)
-        .version(version)
-        .publisher(publisher)
-        .version_path(version_path.to_string())
-        .release_type(release_type)
-        .extra(version_data)
-        .build()?;
-    Ok(result)
+    let version = NewVersion {
+        project_id,
+        version,
+        publisher,
+        version_path: version_path.to_string(),
+        version_page: None,
+        release_type,
+        extra: version_data,
+    };
+
+    Ok(version)
 }
 
 pub fn pom_to_update_db_project_version(pom: Pom) -> Result<UpdateProjectVersion, MavenError> {
@@ -260,8 +262,9 @@ pub fn pom_to_update_db_project_version(pom: Pom) -> Result<UpdateProjectVersion
     Ok(result)
 }
 pub fn pom_to_version_extra_data(pom: Pom) -> Result<VersionData, MavenError> {
-    let extra = VersionDataBuilder::default()
-        .description(pom.description)
-        .build()?;
+    let extra = VersionData {
+        description: pom.description,
+        ..Default::default()
+    };
     Ok(extra)
 }

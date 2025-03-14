@@ -20,10 +20,9 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
-    app::{
-        NitroRepo, authentication::OnlySessionAllowedAuthentication, responses::ResponseBuilderExt,
-    },
+    app::{NitroRepo, authentication::OnlySessionAllowedAuthentication},
     error::InternalError,
+    utils::ResponseBuilder,
 };
 
 pub fn token_routes() -> axum::Router<NitroRepo> {
@@ -90,10 +89,7 @@ async fn create(
     let (id, token) = new_token.insert(site.as_ref()).await?;
     let response = NewAuthTokenResponse { id, token };
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .json_body(&response)
-        .unwrap())
+    Ok(ResponseBuilder::ok().json(&response))
 }
 #[utoipa::path(
     get,
@@ -109,9 +105,7 @@ async fn list(
 ) -> Result<Response, InternalError> {
     let tokens = AuthTokenFullResponse::get_all_for_user(auth.get_id(), site.as_ref()).await?;
 
-    Response::builder()
-        .status(StatusCode::OK)
-        .json_body(&tokens)
+    Ok(ResponseBuilder::ok().json(&tokens))
 }
 #[utoipa::path(
     get,
@@ -129,10 +123,7 @@ async fn get_token(
 ) -> Result<Response, InternalError> {
     let tokens =
         AuthTokenFullResponse::find_by_id_and_user_id(id, auth.get_id(), site.as_ref()).await?;
-
-    Response::builder()
-        .status(StatusCode::OK)
-        .json_body(&tokens)
+    Ok(ResponseBuilder::ok().json(&tokens))
 }
 #[utoipa::path(
     delete,

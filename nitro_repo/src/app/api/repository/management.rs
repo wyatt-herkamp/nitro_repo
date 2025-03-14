@@ -23,13 +23,11 @@ use crate::{
     app::{
         NitroRepo,
         authentication::{Authentication, AuthenticationError},
-        responses::{
-            InvalidRepositoryConfig, MissingPermission, RepositoryNotFound, ResponseBuilderExt,
-            no_content_response_with_error,
-        },
+        responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
     repository::Repository,
+    utils::ResponseBuilder,
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
@@ -157,9 +155,7 @@ pub async fn get_configs_for_repository(
 
     let repository = repository.config_types();
     info!("Repository Configs: {:?}", repository);
-    Response::builder()
-        .status(StatusCode::OK)
-        .json_body(&repository)
+    Ok(ResponseBuilder::ok().json(&repository))
 }
 #[derive(Deserialize, Default, Debug)]
 #[serde(default)]
@@ -218,9 +214,7 @@ pub async fn get_config(
         }
     };
     if let Some(config) = config {
-        Ok(Response::builder()
-            .status(StatusCode::OK)
-            .json_body(&config)?)
+        Ok(ResponseBuilder::ok().json(&config))
     } else {
         Ok(AuthenticationError::Forbidden.into_response())
     }
@@ -303,7 +297,7 @@ pub async fn update_config(
             .body(format!("Failed to reload repository: {}", err).into())
             .unwrap());
     }
-    no_content_response_with_error()
+    Ok(ResponseBuilder::no_content().empty())
 }
 #[utoipa::path(
     delete,

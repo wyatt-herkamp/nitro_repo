@@ -1,25 +1,26 @@
+use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
 use axum::{
     body::Body,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     response::{IntoResponse, Response},
 };
 use nr_core::{
     database::entities::{
-        project::{DBProject, ProjectDBType},
+        project::{DBProject, ProjectDBType, versions::DBProjectVersion},
         repository::DBRepositoryConfig,
     },
-    repository::config::{
-        RepositoryConfigType,
-        project::{BadgeSettings, ProjectConfig, ProjectConfigType},
+    repository::{
+        config::{
+            RepositoryConfigType,
+            project::{BadgeSettings, ProjectConfig, ProjectConfigType},
+        },
+        project::ReleaseType,
     },
 };
 use serde::Deserialize;
 use tracing::instrument;
-use utoipa::OpenApi;
-
-use crate::{
-    error::InternalError, repository::Repository, utils::response_builder::ResponseBuilder,
-};
+use tracing::{Level, event};
+use utoipa::{IntoParams, OpenApi};
 
 use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
 #[derive(OpenApi)]
@@ -131,7 +132,11 @@ async fn repository_badge(
         .content_type(mime::IMAGE_SVG)
         .body(badge.svg()))
 }
-
+#[derive(Debug, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+struct BadgeQuery {
+    release_type: Option<Vec<ReleaseType>>,
+}
 #[derive(Deserialize)]
 struct ProjectBadgeRequest {
     pub storage: String,
@@ -141,6 +146,7 @@ struct ProjectBadgeRequest {
 #[utoipa::path(
     get,
     path = "/{storage}/{repository}/project/{project}",
+    params(BadgeQuery),
     responses(
         (status = 200, description = "Generates the Repository Badge", body = String)
     )
@@ -152,6 +158,7 @@ async fn project_badge(
         repository,
         project,
     }): Path<ProjectBadgeRequest>,
+    Query(query): Query<BadgeQuery>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
     let names = RepositoryStorageName::from((storage, repository));
@@ -183,13 +190,31 @@ async fn project_badge(
     else {
         return Ok(ResponseBuilder::not_found().body("Project not found"));
     };
-    let latest_release = project
-        .latest_release
-        .as_deref()
-        .or(project.latest_pre_release.as_deref())
-        .unwrap_or("No Release");
+    let mut release_types = query
+        .release_type
+        .unwrap_or_else(|| vec![ReleaseType::Stable]);
+    if release_types.is_empty() {
+        release_types.push(ReleaseType::Stable);
+    }
+    let latest_releases: Vec<DBProjectVersion> = project
+        .find_version_by_release_type(release_types, site.as_ref())
+        .await?;
 
-    let badge = match generate_badge(&badge_settings, &project.name, latest_release) {
+    let latest_release = if let Some(version) = latest_releases.get(0) {
+        event!(Level::DEBUG, ?version, "Found latest version");
+        version.version.to_owned()
+    } else if let Some(version) = project.find_latest_version(site.as_ref()).await? {
+        event!(
+            Level::INFO,
+            ?version,
+            "Requested Version not found. Using latest version"
+        );
+        version.version.to_owned()
+    } else {
+        event!(Level::INFO, "No releases found");
+        "No Release".to_owned()
+    };
+    let badge = match generate_badge(&badge_settings, &project.name, &latest_release) {
         Ok(ok) => ok,
         Err(err) => {
             return Ok(ResponseBuilder::internal_server_error()

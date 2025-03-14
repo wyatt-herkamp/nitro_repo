@@ -4,12 +4,13 @@ use super::types::{
 };
 use super::utils::{NpmRegistryExt, npm_time};
 use crate::{
-    app::{NitroRepo, responses::no_content_response},
+    app::NitroRepo,
     repository::{
         RepoResponse, Repository, RepositoryFactoryError, RepositoryRequest,
         npm::{NPMRegistryConfigType, NPMRegistryError, types::PublishRequest},
         utils::RepositoryExt,
     },
+    utils::ResponseBuilder,
 };
 use ahash::{HashMap, HashMapExt};
 use axum::response::{IntoResponse, Response};
@@ -104,7 +105,7 @@ impl NPMHostedRegistry {
                 .await?;
         }
 
-        Ok(no_content_response().into())
+        Ok(ResponseBuilder::no_content().empty().into())
     }
 }
 impl NpmRegistryExt for NPMHostedRegistry {}
@@ -176,8 +177,8 @@ impl Repository for NPMHostedRegistry {
                     "modified".to_owned(),
                     npm_time::format_date_time(&project.updated_at),
                 );
-                if let Some(latest) = project.latest_release {
-                    dist_tags.insert("latest".to_string(), latest);
+                if let Some(latest) = versions.first() {
+                    dist_tags.insert("latest".to_string(), latest.version.clone());
                 }
                 let mut versions_map = HashMap::new();
                 for version in versions {
@@ -200,7 +201,7 @@ impl Repository for NPMHostedRegistry {
                     }
                 }
                 let project_response = NpmRegistryPackageResponse {
-                    id: project.project_key.clone(),
+                    id: project.key.clone(),
                     name: project.name.clone(),
                     description: project.description.clone(),
                     dist_tags,
@@ -263,7 +264,7 @@ impl Repository for NPMHostedRegistry {
                         .into());
                 };
                 debug!(?version, "Got Version");
-                let mut storage_path = StoragePath::from(version.version_path.as_str());
+                let mut storage_path = StoragePath::from(version.path.as_str());
                 storage_path.push_mut(&file);
                 debug!(?storage_path, "Getting file");
                 let storage = self.get_storage();

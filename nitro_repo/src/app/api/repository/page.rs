@@ -3,7 +3,6 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use http::StatusCode;
 use nr_core::{
     database::entities::repository::DBRepositoryConfig,
     repository::config::{
@@ -20,12 +19,11 @@ use crate::{
     app::{
         NitroRepo, RepositoryStorageName,
         authentication::Authentication,
-        responses::{
-            InvalidRepositoryConfig, MissingPermission, RepositoryNotFound, ResponseBuilderExt,
-        },
+        responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
     repository::Repository,
+    utils::ResponseBuilder,
 };
 #[derive(OpenApi)]
 #[openapi(
@@ -86,7 +84,7 @@ pub async fn get_repository_page_by_id(
     .await?
     .map(|x| x.value.0)
     .unwrap_or_default();
-    Response::builder().status(StatusCode::OK).json_body(&page)
+    Ok(ResponseBuilder::ok().json(&page))
 }
 #[utoipa::path(
     get,
@@ -135,5 +133,5 @@ pub async fn get_repository_page_by_names(
     .await?
     .map(|x| x.value.0)
     .unwrap_or_default();
-    Response::builder().status(StatusCode::OK).json_body(&page)
+    Ok(ResponseBuilder::ok().json(&page))
 }

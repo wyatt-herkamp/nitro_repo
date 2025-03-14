@@ -11,7 +11,7 @@ use utoipa::OpenApi;
 use crate::{
     app::{NitroRepo, authentication::Authentication, responses::MissingPermission},
     error::InternalError,
-    utils::response_builder::ResponseBuilder,
+    utils::ResponseBuilder,
 };
 
 #[derive(OpenApi)]

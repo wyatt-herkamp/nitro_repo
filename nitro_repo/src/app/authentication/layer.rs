@@ -1,8 +1,9 @@
 use crate::app::NitroRepo;
 use crate::app::authentication::AuthenticationRaw;
-use crate::app::logging::request_logging::{RequestId, RequestSpan};
 use crate::error::InternalError;
-use crate::utils::headers::{AuthorizationHeader, HeaderValueExt};
+use crate::utils::header::HeaderValueExt;
+use crate::utils::request_logging::request_id::RequestId;
+use crate::utils::request_logging::request_span::RequestSpan;
 use axum::body::Body;
 use axum_extra::extract::CookieJar;
 use derive_more::derive::From;
@@ -18,6 +19,8 @@ use tower::Layer;
 use tower_service::Service;
 use tracing::field::Empty;
 use tracing::{Span, debug, info_span, trace};
+
+use super::header::AuthorizationHeader;
 #[derive(Debug, Clone, From)]
 pub struct AuthenticationLayer(pub NitroRepo);
 
@@ -45,7 +48,7 @@ impl<S> AuthenticationMiddleware<S> {
         let authorization_header = parts
             .headers
             .get(AUTHORIZATION)
-            .map(|header| header.parsed::<AuthorizationHeader>())
+            .map(|header| header.parsed::<AuthorizationHeader, _>())
             .transpose()?;
         let raw = if let Some(authorization_header) = authorization_header {
             AuthenticationRaw::new_from_header(authorization_header, &self.site)

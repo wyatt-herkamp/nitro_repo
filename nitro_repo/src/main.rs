@@ -10,6 +10,7 @@ pub mod app;
 mod config_editor;
 pub mod error;
 mod exporter;
+pub mod logging;
 pub mod repository;
 pub mod utils;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]

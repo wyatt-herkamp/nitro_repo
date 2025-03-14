@@ -24,12 +24,11 @@ use crate::{
     app::{
         NitroRepo,
         authentication::Authentication,
-        logging::request_logging::RequestId,
         responses::{MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
     repository::{Repository, utils::can_read_repository},
-    utils::response_builder::ResponseBuilder,
+    utils::{ResponseBuilder, request_logging::request_id::RequestId},
 };
 pub fn browse_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()

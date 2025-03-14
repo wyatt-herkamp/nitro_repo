@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::{
     app::authentication::AuthenticationError,
-    error::{BadRequestErrors, IntoErrorResponse},
+    utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
 
 #[derive(Debug, Error)]

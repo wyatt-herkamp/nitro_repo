@@ -5,9 +5,7 @@ use bytes::Bytes;
 use chrono::Duration;
 use derive_more::derive::Deref;
 use http::StatusCode;
-use nr_core::database::entities::stages::{
-    DBStage, NewDBStageBuilderError, NewDBStageFileBuilder, NewDBStageFileBuilderError,
-};
+use nr_core::database::entities::stages::{DBStage, NewDBStageFile};
 use redb::Result;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -21,10 +19,6 @@ pub enum StagingManagerError {
     DBError(#[from] sqlx::Error),
     #[error("IO Error")]
     IOError(#[from] std::io::Error),
-    #[error("Invalid New Stage File")]
-    StageFileBuilderError(#[from] NewDBStageFileBuilderError),
-    #[error("Invalid New Stage ")]
-    StageBuilderError(#[from] NewDBStageBuilderError),
 }
 impl IntoResponse for StagingManagerError {
     fn into_response(self) -> axum::response::Response {
@@ -90,10 +84,10 @@ impl StagingManager {
         let file_path = staging_dir.join(&file_name);
         std::fs::write(file_path, file)?;
 
-        let new_stage_file = NewDBStageFileBuilder::default()
-            .stage(stage_id)
-            .file_name(file_name)
-            .build()?;
+        let new_stage_file = NewDBStageFile {
+            stage: stage_id,
+            file_name,
+        };
         debug!(?new_stage_file, "Adding file to stage");
         let new_file = new_stage_file.insert(&self.site.database).await?;
         debug!(?new_file, "File added to stage");

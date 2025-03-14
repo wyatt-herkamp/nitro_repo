@@ -22,7 +22,7 @@ pub mod types;
 pub mod utils;
 use crate::{
     app::authentication::AuthenticationError,
-    error::{BadRequestErrors, IntoErrorResponse},
+    utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
 
 pub use super::prelude::*;

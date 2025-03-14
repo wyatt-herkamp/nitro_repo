@@ -18,7 +18,7 @@ use axum_extra::{
 use http::{StatusCode, header::SET_COOKIE};
 use nr_core::{
     database::entities::user::{
-        ChangePasswordNoCheck, ChangePasswordWithCheck, UserModel, UserSafeData, UserType,
+        ChangePasswordNoCheck, ChangePasswordWithCheck, User, UserSafeData, UserType,
         auth_token::{AuthTokenRepositoryScope, AuthTokenScope},
         permissions::FullUserPermissions,
     },
@@ -269,7 +269,7 @@ pub async fn change_password(
         old_password,
         new_password,
     } = change_password;
-    let Some(user_password) = UserModel::get_password_by_id(user.id, &site.database).await? else {
+    let Some(user_password) = User::get_password_by_id(user.id, &site.database).await? else {
         return Ok(Response::builder()
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .body("User password not found".into())

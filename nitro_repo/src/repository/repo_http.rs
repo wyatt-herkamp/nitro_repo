@@ -3,11 +3,14 @@ use std::error::Error;
 use crate::{
     app::{
         NitroRepo, RepositoryStorageName, authentication::AuthenticationError,
-        logging::request_logging::RequestSpan, responses::RepositoryNotFound,
+        responses::RepositoryNotFound,
     },
-    error::{BadRequestErrors, IllegalStateError},
+    error::IllegalStateError,
     repository::Repository,
-    utils::headers::date_time::date_time_for_header,
+    utils::{
+        bad_request::BadRequestErrors, header::date_time::date_time_for_header,
+        request_logging::request_span::RequestSpan,
+    },
 };
 use axum::{
     Router,

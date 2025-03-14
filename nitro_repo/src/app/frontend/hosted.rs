@@ -14,7 +14,7 @@ use mime::Mime;
 use serde::Deserialize;
 use tracing::{debug, instrument, trace, warn};
 
-use crate::{app::NitroRepo, error::InternalError, utils::response_builder::ResponseBuilder};
+use crate::{app::NitroRepo, error::InternalError, utils::ResponseBuilder};
 
 use super::FrontendError;
 

@@ -20,12 +20,10 @@ use crate::{
     app::{
         NitroRepo,
         authentication::Authentication,
-        responses::{
-            InvalidStorageConfig, InvalidStorageType, MissingPermission, ResponseBuilderExt,
-        },
+        responses::{InvalidStorageConfig, InvalidStorageType, MissingPermission},
     },
     error::InternalError,
-    utils::{response_builder::ResponseBuilder, responses::ConflictResponse},
+    utils::{ResponseBuilder, conflict::ConflictResponse},
 };
 #[derive(OpenApi)]
 #[openapi(
@@ -81,10 +79,10 @@ pub async fn list_storages(
     }
     if request.include_config {
         let storages = DBStorage::get_all(&site.database).await?;
-        Response::builder().status(200).json_body(&storages)
+        Ok(ResponseBuilder::ok().json(&storages))
     } else {
         let storages = DBStorageNoConfig::get_all(&site.database).await?;
-        Response::builder().status(200).json_body(&storages)
+        Ok(ResponseBuilder::ok().json(&storages))
     }
 }
 

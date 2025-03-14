@@ -1,6 +1,12 @@
+use pg_extended_sqlx_queries::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use uuid::Uuid;
+
+use super::{
+    DBProject, DBProjectColumn,
+    versions::{DBProjectVersion, DBProjectVersionColumn},
+};
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct ProjectInfo {
     pub project_id: Uuid,
@@ -10,46 +16,43 @@ pub struct ProjectInfo {
     #[sqlx(default)]
     pub project_version: Option<String>,
     #[sqlx(default)]
-    pub version_id: Option<i32>,
+    pub version_id: Option<Uuid>,
 }
 impl ProjectInfo {
     pub async fn query_from_version_id(
-        version_id: i32,
+        version_id: Uuid,
         database: &sqlx::PgPool,
     ) -> Result<Option<Self>, sqlx::Error> {
-        let project_info = sqlx::query_as::<_, Self>(
-            r#"SELECT projects.id as project_id,
-                         projects.project_key as project_key,
-                         projects.scope as project_scope,
-                         projects.name as project_name,
-                         project_versions.id as version_id,
-                         project_versions.version as project_version
-                         FROM project_versions
-                            FULL JOIN projects ON projects.id = project_versions.project_id
-                        WHERE project_versions.id = $1"#,
-        )
-        .bind(version_id)
-        .fetch_optional(database)
-        .await?;
-        Ok(project_info)
+        let result = SelectQueryBuilder::new(DBProjectVersion::table_name())
+            .select(DBProjectColumn::Key.alias("project_key"))
+            .select(DBProjectColumn::Scope.alias("project_scope"))
+            .select(DBProjectColumn::Name.alias("project_name"))
+            .select(DBProjectVersionColumn::Id.alias("project_id"))
+            .select(DBProjectVersionColumn::Version.alias("project_version"))
+            .join(DBProject::table_name(), JoinType::Full, |join| {
+                join.on(DBProjectVersionColumn::ProjectId.equals(DBProjectColumn::Id))
+            })
+            .filter(DBProjectVersionColumn::Id.equals(version_id))
+            .query_as()
+            .fetch_optional(database)
+            .await?;
+        Ok(result)
     }
 
     pub async fn query_from_project_id(
         project_id: Uuid,
         database: &sqlx::PgPool,
     ) -> Result<Option<Self>, sqlx::Error> {
-        let project_info = sqlx::query_as::<_, Self>(
-            r#"SELECT
-                        projects.id as project_id,
-                         projects.project_key as project_key,
-                         projects.scope as project_scope,
-                         projects.name as project_name
-                         FROM projects
-                         WHERE projects.id = $1"#,
-        )
-        .bind(project_id)
-        .fetch_optional(database)
-        .await?;
+        let project_info = SelectQueryBuilder::new(DBProject::table_name())
+            .select(DBProjectColumn::Key.alias("project_key"))
+            .select(DBProjectColumn::Scope.alias("project_scope"))
+            .select(DBProjectColumn::Name.alias("project_name"))
+            .select(DBProjectColumn::Id.alias("project_id"))
+            .filter(DBProjectColumn::Id.equals(project_id))
+            .query_as()
+            .fetch_optional(database)
+            .await?;
+
         Ok(project_info)
     }
 }

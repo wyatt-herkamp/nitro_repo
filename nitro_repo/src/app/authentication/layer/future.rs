@@ -9,7 +9,7 @@ use futures::ready;
 use http_body_util::Either;
 use pin_project::pin_project;
 
-use crate::error::IntoErrorResponse;
+use crate::utils::IntoErrorResponse;
 
 use super::ServiceResponse;
 

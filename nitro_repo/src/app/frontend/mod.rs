@@ -2,16 +2,17 @@ use axum::response::Response;
 use http::header::CONTENT_TYPE;
 use thiserror::Error;
 
-use crate::{
-    error::IntoErrorResponse,
-    utils::{TEXT_MEDIA_TYPE, response_builder::ResponseBuilder, responses::APIErrorResponse},
-};
 #[cfg(feature = "frontend")]
 mod hosted;
 #[cfg(feature = "frontend")]
 pub use hosted::*;
 #[cfg(not(feature = "frontend"))]
 pub use no_frontend::*;
+
+use crate::utils::{
+    IntoErrorResponse, ResponseBuilder, api_error_response::APIErrorResponse,
+    other::PLAIN_TEXT_MEDIA_TYPE,
+};
 
 #[derive(Debug, Error)]
 pub enum FrontendError {
@@ -41,7 +42,7 @@ impl IntoErrorResponse for FrontendError {
         let response_text = response.to_string();
 
         ResponseBuilder::internal_server_error()
-            .header(CONTENT_TYPE, TEXT_MEDIA_TYPE)
+            .header(CONTENT_TYPE, PLAIN_TEXT_MEDIA_TYPE)
             .body(response_text)
     }
 }
@@ -49,7 +50,7 @@ impl IntoErrorResponse for FrontendError {
 mod no_frontend {
     use axum::extract::{Request, State};
 
-    use crate::{app::NitroRepo, utils::response_builder::ResponseBuilder};
+    use crate::{app::NitroRepo, utils::response::ResponseBuilder};
 
     pub async fn frontend_request(
         State(_): State<NitroRepo>,

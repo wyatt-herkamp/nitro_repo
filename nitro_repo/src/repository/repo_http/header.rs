@@ -2,7 +2,8 @@ use http::HeaderName;
 use tracing::{debug, instrument, trace, warn};
 
 use crate::{
-    error::BadRequestErrors, repository::RepositoryHandlerError, utils::headers::HeaderValueExt,
+    repository::RepositoryHandlerError,
+    utils::{bad_request::BadRequestErrors, header::HeaderValueExt},
 };
 
 use super::RepositoryRequest;

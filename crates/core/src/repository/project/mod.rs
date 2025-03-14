@@ -1,4 +1,4 @@
-use derive_builder::Builder;
+use pg_extended_sqlx_queries::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::prelude::Type;
@@ -7,10 +7,10 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::database::entities::project::ProjectIds;
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Builder, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Default)]
 pub struct ProjectResolution {
     pub project_id: Option<Uuid>,
-    pub version_id: Option<i32>,
+    pub version_id: Option<Uuid>,
 }
 impl From<ProjectIds> for ProjectResolution {
     fn from(ids: ProjectIds) -> Self {
@@ -37,6 +37,7 @@ impl From<ProjectIds> for ProjectResolution {
     Display,
     EnumString,
     Type,
+    ValueExprType,
 )]
 #[sqlx(type_name = "TEXT")]
 #[derive(Default)]
@@ -78,25 +79,17 @@ pub enum ProjectState {
     Active,
     Deprecated,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema, Default, Builder)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema, Default)]
 #[serde(default)]
-#[builder(build_fn(error = "crate::builder_error::BuilderError"))]
 
 pub struct VersionData {
-    #[builder(default)]
     pub documentation_url: Option<String>,
-    #[builder(default)]
     pub website: Option<String>,
     #[serde(default)]
-    #[builder(default)]
     pub authors: Vec<Author>,
-    #[builder(default)]
     pub description: Option<String>,
-    #[builder(default)]
     pub source: Option<ProjectSource>,
-    #[builder(default)]
     pub licence: Option<Licence>,
-    #[builder(default)]
     pub extra: Option<Value>,
 }
 /// Author of the project

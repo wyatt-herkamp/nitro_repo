@@ -13,7 +13,7 @@ use utoipa::{OpenApi, ToSchema};
 use crate::{
     app::{api::storage, authentication::Authentication, responses::MissingPermission},
     error::InternalError,
-    utils::response_builder::ResponseBuilder,
+    utils::ResponseBuilder,
 };
 #[derive(OpenApi)]
 #[openapi(
