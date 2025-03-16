@@ -12,7 +12,9 @@ use http::header::AUTHORIZATION;
 use http::request::Parts;
 use http::{Request, Response};
 use http_body_util::Either;
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
+use std::borrow::Cow;
 use std::task::{Context, Poll};
 mod future;
 use tower::Layer;
@@ -84,34 +86,26 @@ where
             .get::<RequestSpan>()
             .map(|span| span.0.clone())
             .unwrap_or_else(Span::current);
-        let request_id = req
-            .extensions()
-            .get::<RequestId>()
-            .map(|id| id.to_string())
-            .unwrap_or_else(|| "<unknown>".to_string());
         let (mut parts, body) = req.into_parts();
 
         {
             let span = info_span!(
                 parent: &parent_span,
                 "Authentication Middleware",
-                project_module = "Authentication",
                 otel.status_code = Empty,
-                exception.message = Empty,
                 auth.method = Empty,
-                trace_id = Empty,
-                request_id = request_id,
             );
             let _guard = span.enter();
             if parts.method == http::Method::OPTIONS {
                 trace!("Options Request");
-                span.record("otel.status_code", "OK");
+                span.set_status(opentelemetry::trace::Status::Ok);
             } else if let Err(error) = self.process_from_parts(&mut parts, &span) {
-                span.record("exception.message", error.to_string());
-                span.record("otel.status_code", "ERROR");
+                span.set_status(opentelemetry::trace::Status::Error {
+                    description: Cow::Owned(error.to_string()),
+                });
                 return ResponseFuture::error(error.0);
             } else {
-                span.record("otel.status_code", "OK");
+                span.set_status(opentelemetry::trace::Status::Ok);
             }
         }
         let request = Request::from_parts(parts, body);

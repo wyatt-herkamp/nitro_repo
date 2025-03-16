@@ -63,12 +63,12 @@ where
         let mut inner = self.inner.clone();
         let start = std::time::Instant::now();
 
-        let request_span = super::make_span(&req, request_id);
+        let request_span = super::make_span(&req, request_id, &site);
         req.extensions_mut()
             .insert(RequestSpan(request_span.clone()));
         req.extensions_mut().insert(request_id);
 
-        super::on_request(&req, &request_span, &site);
+        super::on_request(&req, &request_span, Some(body_size));
 
         let result = request_span.in_scope(|| inner.call(req));
         TraceResponseFuture {
@@ -137,7 +137,7 @@ where
                     response.status().as_u16().to_string(),
                 ));
 
-                super::on_response(&response, duration, &span);
+                super::on_response(&response, duration, &span, Some(request_body_size));
                 if response.status().is_server_error() {
                     super::on_failure(&response.status(), duration, &span);
                 }
@@ -159,7 +159,6 @@ where
             }
             Err(err) => {
                 super::on_failure(&err, duration, &span);
-
                 final_metrics(&state, duration, request_body_size, this.attributes);
 
                 Poll::Ready(Err(err))
