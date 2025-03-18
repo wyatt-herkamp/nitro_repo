@@ -129,7 +129,7 @@ workspace = true
 
 
 [build-dependencies]
-zip = { version = "2.1" }
+zip = { version = "2.3" }
 
 walkdir = "2"
 anyhow = "1.0"
