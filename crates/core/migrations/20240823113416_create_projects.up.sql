@@ -16,15 +16,6 @@ create  TABLE IF NOT EXISTS  projects
     created_at         TIMESTAMP WITH TIME ZONE default CURRENT_TIMESTAMP not null
 );
 
-CREATE TABLE IF NOT EXISTS project_tags (
-    id                 serial  PRIMARY KEY,
-    project_id         UUID                                               not null
-        constraint fk_project
-            references projects
-            on delete cascade,
-    tag                TEXT                                               not null,
-    CONSTRAINT unique_project_tag unique (project_id, tag)
-);
 create TABLE IF NOT EXISTS  project_members
 (
     id  serial
