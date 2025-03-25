@@ -2,7 +2,6 @@ use crate::app::NitroRepo;
 use crate::app::authentication::AuthenticationRaw;
 use crate::error::InternalError;
 use crate::utils::header::HeaderValueExt;
-use crate::utils::request_logging::request_id::RequestId;
 use crate::utils::request_logging::request_span::RequestSpan;
 use axum::body::Body;
 use axum_extra::extract::CookieJar;
@@ -92,7 +91,6 @@ where
             let span = info_span!(
                 parent: &parent_span,
                 "Authentication Middleware",
-                otel.status_code = Empty,
                 auth.method = Empty,
             );
             let _guard = span.enter();
