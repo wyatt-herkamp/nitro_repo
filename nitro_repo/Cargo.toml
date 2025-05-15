@@ -78,7 +78,7 @@ semver = { version = "1", features = ["std", "serde"] }
 tempfile = "3"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
-zip = { version = "2" }
+zip = { version = "3" }
 current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
@@ -129,7 +129,7 @@ workspace = true
 
 
 [build-dependencies]
-zip = { version = "2" }
+zip = { version = "3" }
 
 walkdir = "2"
 anyhow = "1.0"

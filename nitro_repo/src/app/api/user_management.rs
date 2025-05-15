@@ -121,12 +121,11 @@ pub async fn get_user_permissions(
         return Ok(MissingPermission::UserManager.into_response());
     }
     let Some(user) = FullUserPermissions::get_by_id(user_id, site.as_ref()).await? else {
-        return Ok(Response::builder()
-            .status(http::StatusCode::NOT_FOUND)
-            .body("User not found".into())
-            .unwrap());
+        return Ok(ResponseBuilder::not_found()
+            .error_reason("User not found")
+            .body("User not found"));
     };
-    Ok(Json(user).into_response())
+    Ok(ResponseBuilder::ok().json(&user))
 }
 #[utoipa::path(
     post,
@@ -151,7 +150,7 @@ pub async fn create_user(
         return Ok(ConflictResponse::from("email").into_response());
     }
     let user = user.insert(site.as_ref()).await?;
-    Ok(Json(user).into_response())
+    Ok(ResponseBuilder::ok().json(&user))
 }
 #[derive(Deserialize, ToSchema)]
 #[serde(tag = "type", content = "value")]
@@ -166,7 +165,7 @@ pub enum IsTaken {
     request_body = IsTaken,
     responses(
         (status = 204, description = "Value is available"),
-        (status = 409, description = "Value is Taken"),
+        (status = 409, description = "Value is Taken", body = String, content_type = "text/plain"),
     )
 )]
 pub async fn is_taken(
@@ -204,15 +203,11 @@ pub async fn is_taken(
         }
     };
     if taken {
-        Ok(Response::builder()
-            .status(StatusCode::CONFLICT)
-            .body(format!("{} is Taken", what).into())
-            .unwrap())
+        Ok(ResponseBuilder::conflict()
+            .content_type(mime::TEXT_PLAIN_UTF_8)
+            .body(format!("{} is Taken", what)))
     } else {
-        Ok(Response::builder()
-            .status(StatusCode::NO_CONTENT)
-            .body("".into())
-            .unwrap())
+        Ok(ResponseBuilder::no_content().empty())
     }
 }
 
@@ -242,10 +237,7 @@ pub async fn update_permissions(
     permissions
         .update_permissions(user.id, &site.database)
         .await?;
-    Ok(Response::builder()
-        .status(StatusCode::NO_CONTENT)
-        .body(Body::empty())
-        .unwrap())
+    Ok(ResponseBuilder::no_content().empty())
 }
 
 #[utoipa::path(
@@ -272,17 +264,11 @@ pub async fn update_password(
             .empty());
     };
     let Some(encrypted_password) = password::encrypt_password(&password_reset.password) else {
-        return Ok(Response::builder()
-            .status(400)
-            .body("Failed to encrypt password".into())
-            .unwrap());
+        return Ok(ResponseBuilder::bad_request().body("Failed to encrypt password"));
     };
     user.update_password(Some(encrypted_password), &site.database)
         .await?;
-    Ok(Response::builder()
-        .status(StatusCode::NO_CONTENT)
-        .body(Body::empty())
-        .unwrap())
+    Ok(ResponseBuilder::no_content().empty())
 }
 pub struct AdminUpdateUserRequest {
     pub username: Option<String>,
