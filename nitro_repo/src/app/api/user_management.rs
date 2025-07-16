@@ -1,6 +1,5 @@
 use axum::{
     Json,
-    body::Body,
     extract::{Path, State},
     response::{IntoResponse, Response},
 };

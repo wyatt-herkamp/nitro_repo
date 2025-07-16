@@ -10,6 +10,7 @@ use nr_storage::{
     DirectoryListStream, DynDirectoryListStream, DynStorage, EmptyDirectoryListStream, FileType,
     Storage, StorageFileMeta,
 };
+use opentelemetry::trace::Status;
 use pin_project::pin_project;
 use serde::{Deserialize, Serialize};
 use strum::EnumIs;
@@ -19,6 +20,7 @@ use tracing::{
     field::{Empty, debug},
     info, instrument, warn,
 };
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::{
     app::{
@@ -86,15 +88,12 @@ impl BrowseWSState {
             "Handle message",
             message = debug(&message),
             "message.type" = Empty,
-            otel.status_code = Empty,
-            exception.message = Empty,
         );
         let _guard = span.enter();
         let message = match message {
             Ok(message) => message,
             Err(e) => {
-                span.record("otel.status_code", "ERROR");
-                span.record("exception.message", e.to_string());
+                span.set_status(Status::error(e.to_string()));
                 let message = WebsocketOutgoingMessage::Error(e.to_string());
                 socket.send(message.into()).await?;
                 return Ok(true);
@@ -114,8 +113,7 @@ impl BrowseWSState {
                 let message: WebsocketIncomingMessage = match serde_json::from_slice(&bytes) {
                     Ok(message) => message,
                     Err(e) => {
-                        span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", e.to_string());
+                        span.set_status(Status::error(e.to_string()));
                         event!(Level::ERROR, ?e, "Failed to parse message");
                         let message = WebsocketOutgoingMessage::Error(e.to_string());
                         socket.send(message.into()).await?;
@@ -129,8 +127,7 @@ impl BrowseWSState {
                 let message: WebsocketIncomingMessage = match serde_json::from_str(&content) {
                     Ok(message) => message,
                     Err(e) => {
-                        span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", e.to_string());
+                        span.set_status(Status::error(e.to_string()));
                         event!(Level::ERROR, ?e, "Failed to parse message");
                         let message = WebsocketOutgoingMessage::Error(e.to_string());
                         socket.send(message.into()).await?;
@@ -170,8 +167,7 @@ impl BrowseWSState {
                         socket.send(message.into()).await?;
                     }
                     Err(err) => {
-                        span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", err.to_string());
+                        span.set_status(Status::error(err.to_string()));
                         let message = WebsocketOutgoingMessage::Error(err.to_string());
                         event!(Level::ERROR, ?err, "Failed to open directory");
                         socket.send(message.into()).await?;
@@ -208,8 +204,7 @@ impl BrowseWSState {
                         Ok(false)
                     }
                     Err(err) => {
-                        span.record("otel.status_code", "ERROR");
-                        span.record("exception.message", err.to_string());
+                        span.set_status(Status::error(err.to_string()));
                         event!(Level::ERROR, ?err, "Failed to authenticate");
                         let message = WebsocketOutgoingMessage::Error(err.to_string());
                         socket.send(message.into()).await?;
@@ -227,8 +222,6 @@ impl BrowseWSState {
         let span = debug_span!(
             "Handle Next Item",
             next_item = debug(&next_item),
-            otel.status_code = Empty,
-            exception.message = Empty,
         );
         let _guard = span.enter();
         match next_item {
@@ -236,19 +229,18 @@ impl BrowseWSState {
                 let message = WebsocketOutgoingMessage::DirectoryItem(file.into());
                 debug!(?message, "Sending message");
                 socket.send(message.into()).await?;
-                span.record("otel.status_code", "OK");
+                span.set_status(Status::Ok);
             }
             Ok(None) => {
                 let message = WebsocketOutgoingMessage::EndOfDirectory;
                 socket.send(message.into()).await?;
-                span.record("otel.status_code", "OK");
+                span.set_status(Status::Ok);
             }
             Err(e) => {
                 event!(Level::ERROR, ?e, "Failed to get next item");
                 let message = WebsocketOutgoingMessage::Error(e.to_string());
                 socket.send(message.into()).await?;
-                span.record("otel.status_code", "ERROR");
-                span.record("exception.message", e.to_string());
+                span.set_status(Status::error(e.to_string()));
                 return Ok(true);
             }
         }

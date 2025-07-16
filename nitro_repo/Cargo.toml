@@ -78,7 +78,7 @@ semver = { version = "1", features = ["std", "serde"] }
 tempfile = "3"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
-zip = { version = "3" }
+zip = { version = "4" }
 current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
@@ -96,20 +96,20 @@ tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 
 # OpenTelemetry - Tracing framework
-tracing-opentelemetry = "0.30"
-opentelemetry = { version = "0.29", features = [] }
-opentelemetry_sdk = { version = "0.29", features = [
+tracing-opentelemetry = "0.31"
+opentelemetry = { version = "0.30", features = [] }
+opentelemetry_sdk = { version = "0.30", features = [
     "rt-tokio",
     "trace",
     "metrics",
     "logs",
 ] }
-opentelemetry-otlp = { version = "0.29", default-features = true, features = [
+opentelemetry-otlp = { version = "0.30", default-features = true, features = [
     "grpc-tonic",
     "http-proto",
     "http-json",
 ] }
-opentelemetry-appender-tracing = { version = "0.29" }
+opentelemetry-appender-tracing = { version = "0.30" }
 lettre = { version = "0.11", features = [
     "builder",
     "tokio1",
@@ -119,7 +119,6 @@ lettre = { version = "0.11", features = [
 url = "2"
 inquire = "0.7"
 serde_path_to_error = "0.1"
-
 [features]
 default = ["utoipa-scalar"]
 frontend = []
@@ -129,7 +128,7 @@ workspace = true
 
 
 [build-dependencies]
-zip = { version = "3" }
+zip = { version = "4" }
 
 walkdir = "2"
 anyhow = "1.0"

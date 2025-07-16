@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
 };
-use http::{StatusCode, header::CONTENT_TYPE};
+use http::{StatusCode};
 use nr_core::{
     database::entities::repository::{DBRepository, GenericDBRepositoryConfig},
     repository::Visibility,
@@ -27,7 +27,7 @@ use crate::{
     },
     error::InternalError,
     repository::Repository,
-    utils::ResponseBuilder,
+    utils::{ResponseBuilder, conflict::ConflictResponse},
 };
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
@@ -84,10 +84,7 @@ pub async fn new_repository(
             .unwrap());
     };
     if DBRepository::does_name_exist_for_storage(request.storage, &name, &site.database).await? {
-        return Ok(Response::builder()
-            .status(StatusCode::CONFLICT)
-            .body("Name already in use".into())
-            .unwrap());
+        return Ok(ConflictResponse::from("name").into_response());
     }
 
     let uuid = DBRepository::generate_uuid(&site.database).await?;
@@ -120,11 +117,7 @@ pub async fn new_repository(
                 .unwrap());
         }
     }
-    Ok(Response::builder()
-        .header(CONTENT_TYPE, "application/json")
-        .status(StatusCode::CREATED)
-        .body(serde_json::to_string(&db_repository).unwrap().into())
-        .unwrap())
+    Ok(ResponseBuilder::created().json(&db_repository))
 }
 
 #[utoipa::path(

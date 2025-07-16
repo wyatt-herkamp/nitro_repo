@@ -84,7 +84,7 @@ pub struct InstallRequest {
         (status = 404, description = "Site is already installed"),
     )
 )]
-#[instrument]
+#[instrument(skip(site, request))]
 pub async fn install(
     State(site): NitroRepoState,
     Json(request): Json<InstallRequest>,

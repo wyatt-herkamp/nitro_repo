@@ -183,7 +183,7 @@ impl HostedFrontend {
     }
 }
 
-#[instrument]
+#[instrument(skip(site, request), fields(path = %request.uri().path()))]
 pub async fn frontend_request(
     State(site): State<NitroRepo>,
     request: Request,
