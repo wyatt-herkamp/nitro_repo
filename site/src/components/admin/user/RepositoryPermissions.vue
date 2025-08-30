@@ -114,7 +114,7 @@ const newEntry = ref({
 });
 function deleteRepository(repository: string) {
   for (let i = 0; i < repositoryPermissions.value.length; i++) {
-    if (repositoryPermissions.value[i].id === repository) {
+    if (repositoryPermissions.value[i]?.id === repository) {
       repositoryPermissions.value.splice(i, 1);
       return;
     }
@@ -218,7 +218,7 @@ watch(
       if (
         !originalPermissions.value.repository_permissions[repository.id] ||
         !repository.permissions.equalsArray(
-          originalPermissions.value.repository_permissions[repository.id],
+          originalPermissions.value.repository_permissions[repository.id] as Array<RepositoryActions>,
         )
       ) {
         console.log("Permissions have changed. repositoryPermissions !== originalPermissions");
