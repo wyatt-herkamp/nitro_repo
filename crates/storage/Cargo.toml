@@ -42,8 +42,8 @@ digest.workspace = true
 
 postcard = { version = "1.0", features = ["use-std", "alloc"] }
 either.workspace = true
-rust-s3 = "0.35"
-
+tux-io-s3 = { git = "https://github.com/wyatt-herkamp/tux-io-s3-lib.git" }
+url = { version = "2.4", features = ["serde"] }
 [lints]
 workspace = true
 

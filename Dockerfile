@@ -24,7 +24,7 @@ LABEL org.label-schema.name="nitro_repo" \
     org.label-schema.description="An open source artifact manager. Written in Rust back end and an Vue front end to create a fast and modern experience"
 
 # The Final Image
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 RUN apt-get update -y && apt-get -y install libssl-dev openssl
 RUN mkdir -p /opt/nitro-repo

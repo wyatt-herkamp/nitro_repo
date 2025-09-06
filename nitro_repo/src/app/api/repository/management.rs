@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
 };
-use http::{StatusCode};
+use http::StatusCode;
 use nr_core::{
     database::entities::repository::{DBRepository, GenericDBRepositoryConfig},
     repository::Visibility,

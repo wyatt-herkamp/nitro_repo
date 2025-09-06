@@ -1,9 +1,10 @@
-use s3::Region;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
+use tux_io_s3::types::region::{CustomRegion as TuxIoCustomRegion, OfficialRegion};
+use url::Url;
 use utoipa::ToSchema;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
+#[derive(Clone, Debug, Eq, Copy, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 pub enum S3StorageRegion {
     /// us-east-1
     UsEast1,
@@ -53,42 +54,6 @@ pub enum S3StorageRegion {
     MeSouth1,
     /// sa-east-1
     SaEast1,
-    /// Digital Ocean nyc3
-    DoNyc3,
-    /// Digital Ocean ams3
-    DoAms3,
-    /// Digital Ocean sgp1
-    DoSgp1,
-    /// Digital Ocean fra1
-    DoFra1,
-    /// Yandex Object Storage
-    Yandex,
-    /// Wasabi us-east-1
-    WaUsEast1,
-    /// Wasabi us-east-2
-    WaUsEast2,
-    /// Wasabi us-central-1
-    WaUsCentral1,
-    /// Wasabi us-west-1
-    WaUsWest1,
-    /// Wasabi ca-central-1
-    WaCaCentral1,
-    /// Wasabi eu-central-1
-    WaEuCentral1,
-    /// Wasabi eu-central-2
-    WaEuCentral2,
-    /// Wasabi eu-west-1
-    WaEuWest1,
-    /// Wasabi eu-west-2
-    WaEuWest2,
-    /// Wasabi ap-northeast-1
-    WaApNortheast1,
-    /// Wasabi ap-northeast-2
-    WaApNortheast2,
-    /// Wasabi ap-southeast-1
-    WaApSoutheast1,
-    /// Wasabi ap-southeast-2
-    WaApSoutheast2,
 }
 macro_rules! into_region {
     (
@@ -96,11 +61,11 @@ macro_rules! into_region {
             $variant:ident => $region:ident
         ),*
     ) => {
-        impl From<S3StorageRegion> for Region{
+        impl From<S3StorageRegion> for OfficialRegion{
             fn from(value: S3StorageRegion) -> Self {
                 match value {
                     $(
-                        S3StorageRegion::$variant => Region::$region,
+                        S3StorageRegion::$variant => OfficialRegion::$region,
                     )*
                 }
             }
@@ -132,39 +97,17 @@ into_region!(
     EuWest3 => EuWest3,
     IlCentral1 => IlCentral1,
     MeSouth1 => MeSouth1,
-    SaEast1 => SaEast1,
-    DoNyc3 => DoNyc3,
-    DoAms3 => DoAms3,
-    DoSgp1 => DoSgp1,
-    DoFra1 => DoFra1,
-    Yandex => Yandex,
-    WaUsEast1 => WaUsEast1,
-    WaUsEast2 => WaUsEast2,
-    WaUsCentral1 => WaUsCentral1,
-    WaUsWest1 => WaUsWest1,
-    WaCaCentral1 => WaCaCentral1,
-    WaEuCentral1 => WaEuCentral1,
-    WaEuCentral2 => WaEuCentral2,
-    WaEuWest1 => WaEuWest1,
-    WaEuWest2 => WaEuWest2,
-    WaApNortheast1 => WaApNortheast1,
-    WaApNortheast2 => WaApNortheast2,
-    WaApSoutheast1 => WaApSoutheast1,
-    WaApSoutheast2 => WaApSoutheast2
-
-
+    SaEast1 => SaEast1
 );
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct CustomRegion {
     pub custom_region: Option<String>,
-    pub endpoint: String,
+    pub endpoint: Url,
 }
-impl From<CustomRegion> for Region {
+impl From<CustomRegion> for TuxIoCustomRegion {
     fn from(value: CustomRegion) -> Self {
-        Region::Custom {
-            region: value
-                .custom_region
-                .unwrap_or_else(|| "custom-region".to_string()),
+        TuxIoCustomRegion {
+            name: value.custom_region,
             endpoint: value.endpoint,
         }
     }

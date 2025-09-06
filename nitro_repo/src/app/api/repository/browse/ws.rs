@@ -219,10 +219,7 @@ impl BrowseWSState {
         socket: &mut WebSocket,
         next_item: Result<Option<StorageFileMeta<FileType>>, InternalError>,
     ) -> Result<bool, InternalError> {
-        let span = debug_span!(
-            "Handle Next Item",
-            next_item = debug(&next_item),
-        );
+        let span = debug_span!("Handle Next Item", next_item = debug(&next_item),);
         let _guard = span.enter();
         match next_item {
             Ok(Some(file)) => {

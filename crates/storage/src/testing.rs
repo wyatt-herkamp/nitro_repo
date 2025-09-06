@@ -71,7 +71,7 @@ impl TestingStorageType for S3Config {
             region: None,
             custom_region: Some(CustomRegion {
                 custom_region: Some("minio-instance".to_owned()),
-                endpoint: "http://localhost:9000".into(),
+                endpoint: "http://localhost:9000".parse().unwrap(),
             }),
             credentials: S3Credentials::new_access_key("MY_ACCESS_KEY", "MY_SECRET_KEY"),
             path_style: true,
