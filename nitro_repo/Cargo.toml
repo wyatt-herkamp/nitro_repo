@@ -78,12 +78,12 @@ semver = { version = "1", features = ["std", "serde"] }
 tempfile = "3"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
-zip = { version = "4" }
+zip = { version = "5" }
 current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
 nr-storage.workspace = true
-redb = { version = "2.1" }
+redb = { version = "3" }
 tuxs-config-types = { git = "https://github.com/wyatt-herkamp/tuxs-config-types.git", features = [
     "chrono",
 ] }
@@ -128,7 +128,7 @@ workspace = true
 
 
 [build-dependencies]
-zip = { version = "4" }
+zip = { version = "5" }
 
 walkdir = "2"
 anyhow = "1.0"

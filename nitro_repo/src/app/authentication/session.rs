@@ -15,7 +15,7 @@ use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use http::StatusCode;
 use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::StdRng};
-use redb::{CommitError, Database, Error, ReadableTable, ReadableTableMetadata, TableDefinition};
+use redb::{CommitError, Database, Error, ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::task::JoinHandle;
