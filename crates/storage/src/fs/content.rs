@@ -58,6 +58,9 @@ impl FileContentBytes {
             FileContentBytes::Bytes(bytes) => bytes.len(),
         }
     }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 impl AsRef<[u8]> for FileContentBytes {
     fn as_ref(&self) -> &[u8] {

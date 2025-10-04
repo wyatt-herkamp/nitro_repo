@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::{borrow::Cow, ops::Deref, str::FromStr, sync::Arc};
 
 use bytes::Bytes;
@@ -15,7 +16,6 @@ use tux_io_s3::{
     InvalidResponseHeader, S3Error,
     client::{BucketClient, S3ClientBuilder},
     command::{
-        S3CommandBody,
         delete::DeleteObject,
         list::ListObjectsV2,
         put::{PutHeaders, PutObject},
@@ -24,7 +24,7 @@ use tux_io_s3::{
         credentials::Credentials,
         list::v2::ListBucketResult,
         region::S3Region,
-        tag::{OwnedTag, Tagging},
+        tag::OwnedTag,
     },
 };
 use utoipa::ToSchema;
@@ -117,7 +117,7 @@ impl S3Config {
             return Ok(S3Region::Custom(custom.clone().into()));
         }
         if let Some(region) = &self.region {
-            return Ok(S3Region::Official(region.clone().into()));
+            return Ok(S3Region::Official((*region).into()));
         }
         Err(S3StorageError::NoRegionSpecified)
     }
@@ -186,7 +186,7 @@ impl S3StorageInner {
         result: &'result ListBucketResult,
         path: &str,
     ) -> (bool, Option<&'result str>) {
-        let is_contents_empty = result.contents.as_ref().map_or(true, |c| c.is_empty());
+        let is_contents_empty = result.contents.as_ref().is_none_or(|c| c.is_empty());
         if is_contents_empty && result.common_prefixes.is_none() {
             return (true, None);
         }
@@ -195,15 +195,14 @@ impl S3StorageInner {
         }
         let path_with_slash = format!("{}/", path);
 
-        if let Some(common) = &result.common_prefixes {
-            if let Some(directory) = common
+        if let Some(common) = &result.common_prefixes
+            && let Some(directory) = common
                 .prefix
                 .iter()
                 .find(|prefix| *prefix == &path_with_slash)
             {
                 return (true, Some(directory.as_str()));
             }
-        }
         (false, None)
     }
 
@@ -458,11 +457,10 @@ impl Storage for S3Storage {
             return Ok(None);
         };
         let headers = get.headers();
-        if let Some(content_type) = headers.get("content-type") {
-            if content_type == "application/x-directory" {
+        if let Some(content_type) = headers.get("content-type")
+            && content_type == "application/x-directory" {
                 return self.index_directory(&path).await;
             }
-        }
         let meta = StorageFileMeta::<FileFileType> {
             name: location.to_string(),
             file_type: FileFileType {

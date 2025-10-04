@@ -179,8 +179,8 @@ pub fn init(config: LoggingConfig) -> anyhow::Result<LoggingState> {
     }
     let subscriber = Registry::default().with(layers);
     subscriber.init();
-    if let Some(metrics_config) = metrics_config {
-        if metrics_config.enabled {
+    if let Some(metrics_config) = metrics_config
+        && metrics_config.enabled {
             let provider = metrics(metrics_config)?;
             global::set_meter_provider(provider.clone());
             state.items.push(NamedLogger {
@@ -188,7 +188,6 @@ pub fn init(config: LoggingConfig) -> anyhow::Result<LoggingState> {
                 logger: LoggingStateItem::Meter(provider),
             });
         }
-    }
     Ok(state)
 }
 

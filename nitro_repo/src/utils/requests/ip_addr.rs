@@ -52,7 +52,7 @@ where
             let forwarded_ip = parts
                 .headers
                 .get_str_ignore_empty(header)
-                .map(|x| IpAddr::from_str(x))
+                .map(IpAddr::from_str)
                 .transpose()
                 .map_err(|e| {
                     error!(?e, "Failed to parse IP address from header");
@@ -95,7 +95,7 @@ where
             let forwarded_ip = parts
                 .headers
                 .get_str_ignore_empty(header)
-                .map(|x| IpAddr::from_str(x))
+                .map(IpAddr::from_str)
                 .transpose()
                 .map_err(|e| {
                     event!(Level::ERROR, ?e, "Failed to parse IP address from header");
@@ -142,9 +142,9 @@ where
     } else {
         None
     };
-    return forwarded_ip.or_else(|| {
+    forwarded_ip.or_else(|| {
         req.extensions()
             .get::<ConnectInfo<SocketAddr>>()
             .map(|ConnectInfo(c)| c.ip().to_string())
-    });
+    })
 }

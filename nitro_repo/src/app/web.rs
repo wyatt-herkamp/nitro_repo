@@ -53,8 +53,6 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
         open_api_routes,
     } = web_server;
 
-    let mode = mode;
-    let site = site;
     let logger = crate::logging::init(log)?;
 
     let site = NitroRepo::new(

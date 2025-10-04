@@ -199,7 +199,7 @@ async fn project_badge(
         .find_version_by_release_type(release_types, site.as_ref())
         .await?;
 
-    let latest_release = if let Some(version) = latest_releases.get(0) {
+    let latest_release = if let Some(version) = latest_releases.first() {
         event!(Level::DEBUG, ?version, "Found latest version");
         version.version.to_owned()
     } else if let Some(version) = project.find_latest_version(site.as_ref()).await? {

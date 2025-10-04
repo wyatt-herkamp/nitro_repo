@@ -191,8 +191,7 @@ impl EmailService {
         email_handlebars
             .register_embed_templates::<EmailTemplates>()
             .map_err(|e| {
-                io::Error::new(
-                    io::ErrorKind::Other,
+                io::Error::other(
                     format!("Email Handlebars Error: {:?}", e),
                 )
             })?;

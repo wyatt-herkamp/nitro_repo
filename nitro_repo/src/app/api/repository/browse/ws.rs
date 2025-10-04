@@ -366,7 +366,7 @@ impl StoragePathStream {
 
         Ok(data)
     }
-    pub fn next_item(&mut self) -> NextItem {
+    pub fn next_item(&mut self) -> NextItem<'_> {
         NextItem {
             stream: &mut self.current,
             sent_end_of_dir: &mut self.sent_end_of_directory,

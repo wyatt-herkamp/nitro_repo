@@ -23,8 +23,7 @@ fn build_frontend() -> anyhow::Result<()> {
         if !frontend_dist.exists() {
             if ignore_dir_not_found {
                 println!(
-                    "cargo::warning={}",
-                    "site build directory not found - creating empty zip"
+                    "cargo::warning=site build directory not found - creating empty zip"
                 );
                 return empty_zip();
             }
@@ -38,8 +37,7 @@ fn build_frontend() -> anyhow::Result<()> {
         if !frontend_dist.exists() {
             if ignore_dir_not_found {
                 println!(
-                    "cargo::warning={}",
-                    "site build directory not found - creating empty zip"
+                    "cargo::warning=site build directory not found - creating empty zip"
                 );
                 return empty_zip();
             }

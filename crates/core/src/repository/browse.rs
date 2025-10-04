@@ -7,6 +7,7 @@ use crate::storage::{FileHashes, SerdeMime};
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(tag = "type", content = "value")]
+#[allow(clippy::large_enum_variant)]
 pub enum BrowseFile {
     File {
         name: String,

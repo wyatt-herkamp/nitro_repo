@@ -12,7 +12,6 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow, TableType)]
 #[table(name = "user_repository_permissions")]
-
 pub struct UserRepositoryPermissions {
     pub id: i32,
     pub user_id: i32,

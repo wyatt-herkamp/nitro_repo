@@ -15,6 +15,7 @@ use crate::{LocationMeta, LocationTypedMeta, local::error::LocalStorageError};
 
 /// Two types of files can be returned from the storage. A Directory or a File.
 #[derive(EnumIs)]
+#[allow(clippy::large_enum_variant)]
 pub enum StorageFile {
     /// A Directory will contain a list of files.
     Directory {
@@ -198,7 +199,7 @@ impl<FT> StorageFileMeta<FT> {
 }
 impl StorageFileMeta<FileFileType> {
     pub fn file_extension(&self) -> Option<&str> {
-        self.name.split('.').last()
+        self.name.split('.').next_back()
     }
 }
 #[derive(Serialize, Deserialize, Clone, Debug, EnumIs, From)]

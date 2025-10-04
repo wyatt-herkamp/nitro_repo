@@ -2,7 +2,7 @@ use std::{
     fs::{self},
     io::{self, ErrorKind},
     ops::Deref,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::Arc,
 };
 
@@ -247,7 +247,7 @@ impl LocalStorageInner {
 
     pub async fn update_meta_and_parent_metas(
         &self,
-        path: &PathBuf,
+        path: &Path,
         greatest_parent: Option<PathBuf>,
     ) -> Result<usize, LocalStorageError> {
         let mut metas_updated = 0;
@@ -274,7 +274,7 @@ impl LocalStorageInner {
                 next_path = next_path.join(part);
             }
         } else {
-            self.meta_update_sender.send(path.clone()).await.unwrap();
+            self.meta_update_sender.send(path.to_path_buf()).await.unwrap();
             metas_updated += 1;
             let parent = path.parent();
             if let Some(parent) = parent {

@@ -230,6 +230,7 @@ impl NitroRepo {
         nr_core::database::migration::run_migrations(&database).await?;
         Ok(database)
     }
+    #[allow(clippy::too_many_arguments)]
     pub async fn new(
         mode: Mode,
         site: SiteSetting,
@@ -417,7 +418,7 @@ impl NitroRepo {
     ) -> Result<Option<DynRepository>, sqlx::Error> {
         let id = {
             let lookup_table = self.inner.name_lookup_table.lock();
-            lookup_table.get(&name).cloned()
+            lookup_table.get(name).cloned()
         };
         if let Some(id) = id {
             debug!(?id, ?name, "Found id in lookup table");
@@ -426,7 +427,7 @@ impl NitroRepo {
                 warn!(?name, "Unregistered database id found in lookup table");
                 {
                     let mut lookup_table = self.inner.name_lookup_table.lock();
-                    lookup_table.remove(&name);
+                    lookup_table.remove(name);
                 }
                 return Ok(repository);
             }

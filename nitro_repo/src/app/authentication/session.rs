@@ -134,7 +134,7 @@ impl Session {
         };
         Ok(session)
     }
-    pub fn as_tuple_ref(&self) -> SessionTuple {
+    pub fn as_tuple_ref(&self) -> SessionTuple<'_> {
         (
             self.user_id,
             self.session_id.as_str(),

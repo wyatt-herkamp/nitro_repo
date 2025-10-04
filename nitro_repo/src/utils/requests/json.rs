@@ -63,10 +63,10 @@ fn is_json_content_type(headers: &HeaderMap) -> bool {
         return false;
     };
     event!(Level::TRACE, content_type = %content_type, "Parsed `Content-Type` header");
-    let is_json_content_type = mime.type_() == "application"
-        && (mime.subtype() == "json" || mime.suffix().is_some_and(|name| name == "json"));
+    
 
-    is_json_content_type
+    mime.type_() == "application"
+        && (mime.subtype() == "json" || mime.suffix().is_some_and(|name| name == "json"))
 }
 
 impl<T> JsonBody<T>

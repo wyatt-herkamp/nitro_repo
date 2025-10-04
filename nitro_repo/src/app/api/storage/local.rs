@@ -71,11 +71,10 @@ pub async fn path_helper(
         for entry in std::fs::read_dir(path).unwrap() {
             let entry = entry.unwrap();
             let path = entry.path();
-            if path.is_dir() {
-                if let Some(file_name) = path.file_name() {
+            if path.is_dir()
+                && let Some(file_name) = path.file_name() {
                     directories.push(file_name.to_string_lossy().to_string());
                 }
-            }
         }
         LocalStoragePathHelperResponse::Directories(directories)
     } else {

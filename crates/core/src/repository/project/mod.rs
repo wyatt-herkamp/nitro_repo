@@ -81,7 +81,6 @@ pub enum ProjectState {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema, Default)]
 #[serde(default)]
-
 pub struct VersionData {
     pub documentation_url: Option<String>,
     pub website: Option<String>,

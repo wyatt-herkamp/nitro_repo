@@ -238,7 +238,7 @@ impl LocationMeta {
         };
         meta.save_meta(&path)?;
 
-        return Ok((meta, true));
+        Ok((meta, true))
     }
 
     #[instrument(

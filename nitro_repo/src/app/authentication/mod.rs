@@ -358,15 +358,15 @@ impl AuthenticationRaw {
         }
     }
     pub fn new_from_cookie(cookie: &Cookie<'static>, site: &NitroRepo) -> Self {
-        let session = match site.session_manager.get_session(cookie.value()) {
+        
+        match site.session_manager.get_session(cookie.value()) {
             Ok(Some(ok)) => AuthenticationRaw::Session(ok),
             Err(err) => {
                 error!("Failed to get session: {}", err);
                 AuthenticationRaw::NoIdentification
             }
             Ok(None) => AuthenticationRaw::NoIdentification,
-        };
-        session
+        }
     }
 }
 #[inline(always)]

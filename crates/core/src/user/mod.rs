@@ -70,7 +70,6 @@ pub enum InvalidEmail {
 }
 #[derive(Debug, Type, Clone, NuType, SerdeViaStr)]
 #[sqlx(transparent)]
-
 pub struct Email(String);
 validations::convert_traits_to_new!(Email, InvalidEmail);
 impl Email {
