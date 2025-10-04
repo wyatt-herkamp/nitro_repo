@@ -1,4 +1,3 @@
-use crate::database::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{postgres::PgRow, prelude::FromRow, types::Json};
@@ -6,7 +5,7 @@ use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::storage::StorageName;
+use crate::{database::prelude::*, storage::StorageName};
 
 pub trait StorageDBType:
     for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync + TableQuery<Table = DBStorage>

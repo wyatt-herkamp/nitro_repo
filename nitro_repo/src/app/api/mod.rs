@@ -18,12 +18,11 @@ pub mod repository;
 pub mod storage;
 pub mod user;
 pub mod user_management;
+use super::{Instance, NitroRepo, NitroRepoState, authentication::password};
 use crate::{
     error::InternalError,
     utils::{ResponseBuilder, api_error_response::APIErrorResponse},
 };
-
-use super::{Instance, NitroRepo, NitroRepoState, authentication::password};
 pub fn api_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/info", axum::routing::get(info))

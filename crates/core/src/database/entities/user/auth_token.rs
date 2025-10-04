@@ -3,9 +3,8 @@ use sqlx::{PgPool, prelude::FromRow};
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::user::{permissions::RepositoryActions, scopes::NRScope};
-
 use super::ReferencesUser;
+use crate::user::{permissions::RepositoryActions, scopes::NRScope};
 mod repository_scope;
 mod scope;
 mod utils;

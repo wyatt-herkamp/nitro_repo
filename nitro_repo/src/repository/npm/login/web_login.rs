@@ -1,11 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use super::LoginResponse;
 use crate::repository::{
     RepoResponse, RepositoryRequest,
     npm::{NPMRegistryError, utils::NpmRegistryExt},
 };
-
-use super::LoginResponse;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WebLoginResponse {
     pub done_url: String,

@@ -1,15 +1,18 @@
-use bytes::{Bytes, BytesMut};
-use derive_more::derive::From;
-use http_body::{Body, Frame};
-use std::fs::File as SyncFile;
 use std::{
     fmt::Debug,
+    fs::File as SyncFile,
     io,
     pin::Pin,
     task::{Context, Poll},
 };
-use tokio::io::AsyncReadExt;
-use tokio::{fs::File, io::AsyncRead};
+
+use bytes::{Bytes, BytesMut};
+use derive_more::derive::From;
+use http_body::{Body, Frame};
+use tokio::{
+    fs::File,
+    io::{AsyncRead, AsyncReadExt},
+};
 use tokio_util::io::poll_read_buf;
 
 use super::FileContentBytes;

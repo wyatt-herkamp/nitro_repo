@@ -4,18 +4,14 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use crate::{
-    app::{
-        NitroRepo,
-        config::{Mode, get_current_directory},
-    },
-    utils::IntoErrorResponse,
-};
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use http::StatusCode;
 use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::StdRng};
-use redb::{CommitError, Database, Error, ReadableDatabase, ReadableTable, ReadableTableMetadata, TableDefinition};
+use redb::{
+    CommitError, Database, Error, ReadableDatabase, ReadableTable, ReadableTableMetadata,
+    TableDefinition,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::task::JoinHandle;
@@ -25,6 +21,14 @@ use tracing::{
     info, instrument, span,
 };
 use utoipa::ToSchema;
+
+use crate::{
+    app::{
+        NitroRepo,
+        config::{Mode, get_current_directory},
+    },
+    utils::IntoErrorResponse,
+};
 #[derive(Debug, Error)]
 pub enum SessionError {
     #[error("Session not found")]

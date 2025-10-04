@@ -3,7 +3,6 @@ use std::{fmt::Debug, path::PathBuf, sync::Arc};
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
 use authentication::session::{SessionManager, SessionManagerConfig};
-
 use axum::extract::State;
 use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
 use derive_more::{AsRef, derive::Deref};

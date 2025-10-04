@@ -1,13 +1,14 @@
 use ahash::{HashMap, HashMapExt};
-
-use crate::database::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, prelude::FromRow};
 use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::user::permissions::{RepositoryActions, UserPermissions};
+use crate::{
+    database::prelude::*,
+    user::permissions::{RepositoryActions, UserPermissions},
+};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, ToSchema, FromRow, TableType)]
 #[table(name = "user_repository_permissions")]

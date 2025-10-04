@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use axum::{body::Body, response::IntoResponse, response::Response};
+use axum::{
+    body::Body,
+    response::{IntoResponse, Response},
+};
 use http::StatusCode;
 use thiserror::Error;
 

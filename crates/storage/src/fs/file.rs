@@ -1,19 +1,17 @@
 use std::{fmt::Debug, fs::File, io, path::Path};
 
-use crate::{LocationMeta, LocationTypedMeta, local::error::LocalStorageError};
-
-use super::StorageFileReader;
 use chrono::{DateTime, FixedOffset};
-
 use derive_more::derive::From;
 use nr_core::{
     repository::browse::BrowseFile,
     storage::{FileHashes, FileTypeCheck, SerdeMime},
 };
 use serde::{Deserialize, Serialize};
-
 use strum::EnumIs;
 use tracing::{debug, error, instrument};
+
+use super::StorageFileReader;
+use crate::{LocationMeta, LocationTypedMeta, local::error::LocalStorageError};
 
 /// Two types of files can be returned from the storage. A Directory or a File.
 #[derive(EnumIs)]

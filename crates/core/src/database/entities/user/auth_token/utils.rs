@@ -1,9 +1,8 @@
-use crate::utils::base64_utils;
-use rand::distr::Alphanumeric;
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::StdRng};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
+
+use crate::utils::base64_utils;
 /// Creates a new token checking if it already exists
 ///
 /// Returns a tuple with the token and the hashed token

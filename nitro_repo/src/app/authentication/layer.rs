@@ -1,25 +1,25 @@
-use crate::app::NitroRepo;
-use crate::app::authentication::AuthenticationRaw;
-use crate::error::InternalError;
-use crate::utils::header::HeaderValueExt;
-use crate::utils::request_logging::request_span::RequestSpan;
+use std::{
+    borrow::Cow,
+    task::{Context, Poll},
+};
+
 use axum::body::Body;
 use axum_extra::extract::CookieJar;
 use derive_more::derive::From;
 use future::ResponseFuture;
-use http::header::AUTHORIZATION;
-use http::request::Parts;
-use http::{Request, Response};
+use http::{Request, Response, header::AUTHORIZATION, request::Parts};
 use http_body_util::Either;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use std::borrow::Cow;
-use std::task::{Context, Poll};
+use crate::{
+    app::{NitroRepo, authentication::AuthenticationRaw},
+    error::InternalError,
+    utils::{header::HeaderValueExt, request_logging::request_span::RequestSpan},
+};
 mod future;
 use tower::Layer;
 use tower_service::Service;
-use tracing::field::Empty;
-use tracing::{Span, debug, info_span, trace};
+use tracing::{Span, debug, field::Empty, info_span, trace};
 
 use super::header::AuthorizationHeader;
 #[derive(Debug, Clone, From)]

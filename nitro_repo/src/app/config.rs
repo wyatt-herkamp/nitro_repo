@@ -1,19 +1,17 @@
+use std::{env, fs::read_to_string, path::PathBuf};
+
 use nr_core::database::DatabaseConfig;
 use serde::{Deserialize, Serialize};
-use std::env;
-use std::fs::read_to_string;
-use std::path::PathBuf;
 use strum::EnumIs;
 use tuxs_config_types::size_config::InvalidSizeError;
 use utoipa::ToSchema;
 mod max_upload;
 mod security;
-use super::authentication::session::SessionManagerConfig;
-use super::email::EmailSetting;
-use crate::logging::config::LoggingConfig;
-use crate::repository::StagingConfig;
 pub use max_upload::*;
 pub use security::*;
+
+use super::{authentication::session::SessionManagerConfig, email::EmailSetting};
+use crate::{logging::config::LoggingConfig, repository::StagingConfig};
 pub const CONFIG_PREFIX: &str = "NITRO-REPO";
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {

@@ -1,11 +1,11 @@
-use crate::{
-    database::prelude::*,
-    repository::project::{ReleaseType, VersionData},
-};
 use sqlx::types::Json;
 use uuid::Uuid;
 
 use super::{DBProjectVersion, DBProjectVersionColumn};
+use crate::{
+    database::prelude::*,
+    repository::project::{ReleaseType, VersionData},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewVersion {

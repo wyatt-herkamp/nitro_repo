@@ -4,6 +4,16 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use http::StatusCode;
+use nr_core::{
+    database::entities::user::{
+        ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
+        permissions::FullUserPermissions, user_utils,
+    },
+    user::{
+        Email, Username,
+        permissions::{HasPermissions, UpdatePermissions},
+    },
+};
 use serde::Deserialize;
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
@@ -16,16 +26,6 @@ use crate::{
     },
     error::InternalError,
     utils::{ResponseBuilder, conflict::ConflictResponse, json::JsonBody},
-};
-use nr_core::{
-    database::entities::user::{
-        ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
-        permissions::FullUserPermissions, user_utils,
-    },
-    user::{
-        Email, Username,
-        permissions::{HasPermissions, UpdatePermissions},
-    },
 };
 
 #[derive(OpenApi)]

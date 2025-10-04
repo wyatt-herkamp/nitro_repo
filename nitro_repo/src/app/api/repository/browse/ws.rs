@@ -22,6 +22,7 @@ use tracing::{
 };
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
+use super::BrowseStreamPrimaryData;
 use crate::{
     app::{
         NitroRepo,
@@ -30,8 +31,6 @@ use crate::{
     error::InternalError,
     repository::{DynRepository, Repository, utils::can_read_repository},
 };
-
-use super::BrowseStreamPrimaryData;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum WebsocketIncomingMessage {

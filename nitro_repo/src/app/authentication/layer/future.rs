@@ -9,9 +9,8 @@ use futures::ready;
 use http_body_util::Either;
 use pin_project::pin_project;
 
-use crate::utils::IntoErrorResponse;
-
 use super::ServiceResponse;
+use crate::utils::IntoErrorResponse;
 
 #[pin_project]
 pub struct ResponseFuture<F> {

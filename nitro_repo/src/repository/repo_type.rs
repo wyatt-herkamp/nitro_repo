@@ -12,9 +12,8 @@ use thiserror::Error;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{app::NitroRepo, error::InternalError};
-
 use super::DynRepository;
+use crate::{app::NitroRepo, error::InternalError};
 
 #[derive(Debug, Clone, Serialize, ToSchema, Digestible)]
 pub struct RepositoryTypeDescription {

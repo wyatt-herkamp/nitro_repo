@@ -6,7 +6,6 @@ use axum::{
     routing::{any, get},
 };
 use axum_extra::{TypedHeader, headers::UserAgent};
-
 use nr_core::{
     repository::{
         browse::{BrowseFile, BrowseResponse},

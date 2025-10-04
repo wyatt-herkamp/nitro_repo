@@ -248,9 +248,10 @@ impl TryFrom<Uri> for StoragePath {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::StoragePath;
     use pretty_assertions::assert_eq;
     use serde::{Deserialize, Serialize};
+
+    use crate::storage::StoragePath;
     #[test]
     fn prefix_slash() {
         let path = StoragePath::from("/test");

@@ -5,6 +5,7 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
+
 pub use stream::*;
 pub mod error;
 mod stream;

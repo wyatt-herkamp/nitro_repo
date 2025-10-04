@@ -2,9 +2,8 @@ use nr_core::storage::StoragePath;
 use tracing::{debug, info};
 use uuid::Uuid;
 
-use crate::{FileContent, Storage, StorageError, StorageFile};
-
 use super::storage::TestingStorage;
+use crate::{FileContent, Storage, StorageError, StorageFile};
 pub async fn full_test<ST: Storage>(storage: TestingStorage<ST>) -> anyhow::Result<()> {
     write_then_read(&storage).await?;
     write_multiple_then_list(&storage).await?;

@@ -1,14 +1,15 @@
+use std::{
+    fs::File,
+    io::{self, Read},
+    path::{Path, PathBuf},
+};
+
 use chrono::{DateTime, FixedOffset, Local};
 use derive_more::derive::From;
 use digest::Digest;
 use mime::Mime;
 use nr_core::{storage::FileHashes, utils::base64_utils};
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::File,
-    io::{self, Read},
-    path::{Path, PathBuf},
-};
 use tracing::{
     Level, Span, debug, event,
     field::{Empty, debug},
@@ -327,9 +328,8 @@ fn meta_path(path: impl AsRef<Path>) -> Result<PathBuf, LocalStorageError> {
 mod tests {
     use uuid::Uuid;
 
-    use crate::meta::RepositoryMeta;
-
     use super::LocationMeta;
+    use crate::meta::RepositoryMeta;
     fn random_repo_meta() -> RepositoryMeta {
         let mut meta = RepositoryMeta::default();
         meta.project_id = Some(Uuid::new_v4());

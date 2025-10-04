@@ -6,8 +6,9 @@ use uuid::Uuid;
 use versions::{DBProjectVersion, DBProjectVersionColumn, ProjectVersionType};
 mod new;
 pub mod utils;
-use crate::{database::prelude::*, repository::project::ReleaseType};
 pub use new::*;
+
+use crate::{database::prelude::*, repository::project::ReleaseType};
 pub mod info;
 pub mod members;
 pub mod update;

@@ -1,18 +1,24 @@
-use std::borrow::Cow;
-use std::fmt::{Debug, Display};
-use std::ops::Deref;
+use std::{
+    borrow::Cow,
+    fmt::{Debug, Display},
+    ops::Deref,
+};
 
-use axum::extract::{FromRef, FromRequestParts, OptionalFromRequestParts};
-use axum::response::IntoResponse;
+use axum::{
+    extract::{FromRef, FromRequestParts, OptionalFromRequestParts},
+    response::IntoResponse,
+};
 use axum_extra::extract::cookie::Cookie;
 use derive_more::From;
-
 use header::AuthorizationHeader;
 use http::request::Parts;
-use nr_core::database::DBError;
-use nr_core::database::entities::user::auth_token::AuthToken;
-use nr_core::database::entities::user::{User, UserSafeData, UserType};
-use nr_core::user::permissions::{HasPermissions, UserPermissions};
+use nr_core::{
+    database::{
+        DBError,
+        entities::user::{User, UserSafeData, UserType, auth_token::AuthToken},
+    },
+    user::permissions::{HasPermissions, UserPermissions},
+};
 use serde::Serialize;
 use session::{Session, SessionError};
 use sqlx::PgPool;
@@ -23,10 +29,8 @@ use utoipa::ToSchema;
 
 pub mod header;
 
-use crate::utils::api_error_response::APIErrorResponse;
-use crate::utils::{IntoErrorResponse, ResponseBuilder};
-
 use super::NitroRepo;
+use crate::utils::{IntoErrorResponse, ResponseBuilder, api_error_response::APIErrorResponse};
 
 pub mod layer;
 pub mod session;

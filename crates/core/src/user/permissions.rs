@@ -10,13 +10,12 @@ use tracing::{debug, info, instrument, trace, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use super::scopes::NRScope;
 use crate::database::entities::user::{
     UserType,
     auth_token::AuthToken,
     permissions::{NewUserRepositoryPermissions, UserRepositoryPermissions},
 };
-
-use super::scopes::NRScope;
 /// User permissions
 ///
 /// Default permissions are allowed to read and write to repositories but nothing else

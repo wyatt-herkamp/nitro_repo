@@ -15,14 +15,7 @@
 //! ```
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Attribute;
-use syn::Data;
-use syn::DeriveInput;
-use syn::Expr;
-use syn::Ident;
-use syn::Lit;
-use syn::LitStr;
-use syn::Result;
+use syn::{Attribute, Data, DeriveInput, Expr, Ident, Lit, LitStr, Result};
 mod keywords {
     syn::custom_keyword!(title);
     syn::custom_keyword!(parent);

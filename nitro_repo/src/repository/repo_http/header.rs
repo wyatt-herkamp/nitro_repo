@@ -1,12 +1,11 @@
 use http::HeaderName;
 use tracing::{debug, instrument, trace, warn};
 
+use super::RepositoryRequest;
 use crate::{
     repository::RepositoryHandlerError,
     utils::{bad_request::BadRequestErrors, header::HeaderValueExt},
 };
-
-use super::RepositoryRequest;
 /// Nitro Repo Deploy is a custom header used to identify that the request is coming from a Nitro Repo Deploy Client
 pub const NITRO_REPO_DEPLOY_HEADER: HeaderName = HeaderName::from_static("x-nitro-repo-deploy");
 /// Header Structure for Nitro Repo Deploy

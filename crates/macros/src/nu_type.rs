@@ -1,8 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Data;
-use syn::DeriveInput;
-use syn::Result;
+use syn::{Data, DeriveInput, Result};
 pub(crate) fn expand(input: DeriveInput) -> Result<TokenStream> {
     let name = &input.ident;
     let Data::Struct(struct_data) = &input.data else {

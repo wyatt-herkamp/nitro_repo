@@ -2,9 +2,8 @@ use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::storage::{FileHashes, SerdeMime};
-
 use super::project::ProjectResolution;
+use crate::storage::{FileHashes, SerdeMime};
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(tag = "type", content = "value")]

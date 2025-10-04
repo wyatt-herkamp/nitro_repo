@@ -1,6 +1,5 @@
-use crate::error::WrongFileType;
-
 use super::{ExtensionError, ParentDirectoryDoesNotExist, PathCollisionError};
+use crate::error::WrongFileType;
 
 #[derive(Debug, thiserror::Error)]
 pub enum LocalStorageError {

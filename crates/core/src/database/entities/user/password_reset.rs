@@ -93,8 +93,7 @@ impl UserPasswordReset {
         Ok(row)
     }
     fn generate_token_value() -> String {
-        use rand::Rng;
-        use rand::distr::Alphanumeric;
+        use rand::{Rng, distr::Alphanumeric};
 
         StdRng::from_os_rng()
             .sample_iter(&Alphanumeric)

@@ -27,6 +27,10 @@ use parking_lot::RwLock;
 use tracing::{debug, error, event, info, instrument};
 use uuid::Uuid;
 
+use super::{
+    MavenError, REPOSITORY_TYPE_ID, RepoResponse, RepositoryRequest, configs::MavenPushRules,
+    utils::MavenRepositoryExt,
+};
 use crate::{
     app::NitroRepo,
     repository::{
@@ -34,11 +38,6 @@ use crate::{
         maven::{MavenRepositoryConfigType, configs::MavenPushRulesConfigType},
         utils::RepositoryExt,
     },
-};
-
-use super::{
-    MavenError, REPOSITORY_TYPE_ID, RepoResponse, RepositoryRequest, configs::MavenPushRules,
-    utils::MavenRepositoryExt,
 };
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {

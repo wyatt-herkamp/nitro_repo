@@ -1,4 +1,3 @@
-use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
 use axum::{
     body::Body,
     extract::{Path, Query, State},
@@ -18,11 +17,11 @@ use nr_core::{
     },
 };
 use serde::Deserialize;
-use tracing::instrument;
-use tracing::{Level, event};
+use tracing::{Level, event, instrument};
 use utoipa::{IntoParams, OpenApi};
 
 use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
+use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
 #[derive(OpenApi)]
 #[openapi(
     paths(repository_badge, project_badge, supports_badges),

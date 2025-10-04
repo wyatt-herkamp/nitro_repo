@@ -9,9 +9,8 @@ use opentelemetry::KeyValue;
 use pin_project::pin_project;
 use tracing::Span;
 
-use crate::app::NitroRepo;
-
 use super::request_span;
+use crate::app::NitroRepo;
 
 #[pin_project]
 pub struct TraceResponseBody {

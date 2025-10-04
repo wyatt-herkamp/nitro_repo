@@ -4,9 +4,8 @@ use nr_core::{
 };
 use tracing::{info, instrument};
 
-use crate::repository::Repository;
-
 use super::{NPMRegistryError, types::request::PublishVersion};
+use crate::repository::Repository;
 
 pub mod npm_time {
     use chrono::{DateTime, FixedOffset};

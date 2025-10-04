@@ -17,7 +17,6 @@ use nr_core::{
     },
     user::permissions::{HasPermissions, RepositoryActions},
 };
-
 use page::RepositoryPageRoutes;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;

@@ -9,9 +9,8 @@ use opentelemetry::{
 use parking_lot::Mutex;
 use tracing::{Level, Span, event, field::Empty, info_span};
 
-use crate::repository::Repository;
-
 use super::DynRepository;
+use crate::repository::Repository;
 #[derive(Debug, Clone)]
 /// Dead Code is allowed as this stuff is still in development
 #[allow(dead_code)]

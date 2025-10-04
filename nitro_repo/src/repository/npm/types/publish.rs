@@ -5,9 +5,8 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::repository::npm::NPMRegistryError;
-
 use super::request::PublishVersion;
+use crate::repository::npm::NPMRegistryError;
 
 #[derive(Deserialize, Serialize, Clone, PartialEq)]
 pub struct PublishAttachment {

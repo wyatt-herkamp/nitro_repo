@@ -1,5 +1,3 @@
-use super::*;
-use crate::{app::NitroRepo, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 use ::http::status::StatusCode;
 use ahash::HashMap;
 use axum::response::IntoResponse;
@@ -20,6 +18,9 @@ use nr_core::{
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 use proxy::MavenProxy;
+
+use super::*;
+use crate::{app::NitroRepo, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 mod configs;
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod hosted;

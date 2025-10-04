@@ -1,25 +1,31 @@
-use crate::app::api::project::ProjectRoutes;
-use crate::app::badge::BadgeRoutes;
-
-use super::api;
-use super::api::repository::RepositoryAPI;
-use super::api::storage::StorageAPI;
-use super::api::user::UserAPI;
-use super::api::user_management::UserManagementAPI;
-use axum::routing::get;
 use axum::{
     Json, Router,
     response::{IntoResponse, Response},
+    routing::get,
 };
-use nr_core::database::entities::project::members::DBProjectMember;
-use nr_core::database::entities::project::{DBProject, versions::DBProjectVersion};
-use nr_core::database::entities::user::NewUserRequest;
-use nr_core::database::entities::user::permissions::FullUserPermissions;
-use nr_core::user::permissions::{RepositoryActions, UserPermissions};
-use nr_core::user::scopes::{NRScope, ScopeDescription};
-use utoipa::openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme};
+use nr_core::{
+    database::entities::{
+        project::{DBProject, members::DBProjectMember, versions::DBProjectVersion},
+        user::{NewUserRequest, permissions::FullUserPermissions},
+    },
+    user::{
+        permissions::{RepositoryActions, UserPermissions},
+        scopes::{NRScope, ScopeDescription},
+    },
+};
+use utoipa::{
+    Modify, OpenApi,
+    openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme},
+};
 
-use utoipa::{Modify, OpenApi};
+use super::{
+    api,
+    api::{
+        repository::RepositoryAPI, storage::StorageAPI, user::UserAPI,
+        user_management::UserManagementAPI,
+    },
+};
+use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),

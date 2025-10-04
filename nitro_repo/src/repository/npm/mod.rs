@@ -20,15 +20,15 @@ pub mod hosted;
 pub mod login;
 pub mod types;
 pub mod utils;
+pub use super::prelude::*;
 use crate::{
     app::authentication::AuthenticationError,
     utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
-
-pub use super::prelude::*;
 mod configs;
-use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
 pub use configs::*;
+
+use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
 
 #[derive(Debug, Clone, DynRepositoryHandler)]
 #[repository_handler(error=NPMRegistryError)]

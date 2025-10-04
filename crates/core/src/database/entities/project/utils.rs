@@ -1,5 +1,4 @@
 use pg_extended_sqlx_queries::prelude::*;
-
 use sqlx::PgPool;
 use uuid::Uuid;
 

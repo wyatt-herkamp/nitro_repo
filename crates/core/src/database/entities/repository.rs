@@ -7,12 +7,13 @@ use tracing::info;
 use utoipa::ToSchema;
 use uuid::Uuid;
 mod hostname;
-use crate::database::prelude::*;
+pub use hostname::*;
+
 use crate::{
+    database::prelude::*,
     repository::{RepositoryName, Visibility},
     storage::StorageName,
 };
-pub use hostname::*;
 
 pub trait RepositoryDBType: for<'r> FromRow<'r, PgRow> + Unpin + Send + Sync {
     fn columns() -> Vec<&'static str>;

@@ -14,9 +14,8 @@ use strum::{Display, EnumString};
 use tracing::{debug, info};
 use uuid::Uuid;
 
-use crate::repository::{maven::get_release_type, npm::NPMRegistryError};
-
 use super::NPMPackageName;
+use crate::repository::{maven::get_release_type, npm::NPMRegistryError};
 
 #[derive(Debug, Display, EnumString)]
 pub enum NPMCommand {

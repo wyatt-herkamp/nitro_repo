@@ -27,12 +27,11 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, error, instrument, warn};
 use uuid::Uuid;
 
-use crate::{app::NitroRepo, repository::Repository};
-
 use super::{
     MavenError, MavenRepositoryConfig, MavenRepositoryConfigType, REPOSITORY_TYPE_ID, RepoResponse,
     RepositoryRequest, repo_type::RepositoryFactoryError, utils::MavenRepositoryExt,
 };
+use crate::{app::NitroRepo, repository::Repository};
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct MavenProxyConfig {
     pub routes: Vec<MavenProxyRepositoryRoute>,

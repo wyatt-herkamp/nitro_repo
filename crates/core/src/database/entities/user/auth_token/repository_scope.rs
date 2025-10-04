@@ -4,9 +4,8 @@ use tracing::{debug, instrument, span};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{database::DateTime, user::permissions::RepositoryActions};
-
 use super::create_token;
+use crate::{database::DateTime, user::permissions::RepositoryActions};
 /// Table Name: user_auth_token_repository_scopes
 /// Represents the actions that can be taken on a repository
 ///

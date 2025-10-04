@@ -8,15 +8,13 @@ use axum::{
     response::Response,
 };
 use handlebars::Handlebars;
-
 use http::StatusCode;
 use mime::Mime;
 use serde::Deserialize;
 use tracing::{debug, instrument, trace, warn};
 
-use crate::{app::NitroRepo, error::InternalError, utils::ResponseBuilder};
-
 use super::FrontendError;
+use crate::{app::NitroRepo, error::InternalError, utils::ResponseBuilder};
 
 #[cfg(feature = "frontend")]
 static FRONTEND_DATA: &[u8] = include_bytes!(env!("FRONTEND_ZIP"));

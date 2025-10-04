@@ -1,17 +1,15 @@
 use chrono::{DateTime, FixedOffset};
 use pg_extended_sqlx_queries::prelude::*;
-
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use super::{DBProjectVersion, ProjectVersionType};
 use crate::{
     database::{DBResult, entities::project::versions::DBProjectVersionColumn},
     repository::project::ReleaseType,
 };
-
-use super::{DBProjectVersion, ProjectVersionType};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema)]
 pub struct VersionHistoryItem {
     pub id: Uuid,
