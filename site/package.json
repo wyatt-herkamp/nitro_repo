@@ -32,7 +32,7 @@
     "@milkdown/vue": "^7.6.4",
     "@types/highlightjs": "^9.12.6",
     "@vueuse/core": "^13.8.0",
-    "axios": "^1.11.0",
+    "axios": "^1.13.5",
     "highlight.js": "^11.11.1",
     "nitro-jsf": "0.0.1",
     "pinia": "^3.0.3",
