@@ -2,13 +2,16 @@
   <RouterLink
     :to="to"
     :data-active="isActive"
+    :aria-current="isActive ? 'page' : undefined"
     class="navLink">
     <slot />
   </RouterLink>
 </template>
+
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+
 const props = defineProps({
   to: {
     type: String,
@@ -19,33 +22,40 @@ const props = defineProps({
     required: false,
   },
 });
+
 const router = useRouter();
-const isActive = computed(() => {
-  return props.routeName === router.currentRoute.value.name;
-});
+const isActive = computed(() => props.routeName === router.currentRoute.value.name);
 </script>
+
 <style scoped lang="scss">
-@import "@/assets/styles/theme.scss";
 .navLink {
-  text-decoration: none;
-  color: $text;
-  font-weight: bold;
-  padding: 0.5rem;
-  // Align text vertically
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  // Box
-  border-radius: 0.5rem;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+
   &:hover {
-    background-color: $primary-70;
-    transition: background-color 0.3s ease;
+    color: var(--text);
+    background-color: var(--surface-hover);
+  }
+
+  // A fixed width so the labels line up whatever glyph each item uses.
+  :deep(svg) {
+    width: 1rem;
+    flex-shrink: 0;
   }
 }
+
 .navLink[data-active="true"] {
-  background-color: $primary-70;
-  &:hover {
-    cursor: default;
-  }
+  color: var(--accent);
+  background-color: var(--accent-muted);
+  cursor: default;
 }
 </style>

@@ -35,3 +35,6 @@ coverage
 
 /storybook-static
 /node_modules
+
+# Generated from the OpenAPI document; regenerate with `npm run export-openapi`.
+openapi.json

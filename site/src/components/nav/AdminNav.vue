@@ -1,11 +1,22 @@
 <template>
   <SideNav>
+    <span class="sectionLabel">Administration</span>
+
+    <SideNavElement
+      to="/admin"
+      routeName="admin">
+      <font-awesome-icon icon="gauge-high" />
+      <span>Overview</span>
+    </SideNavElement>
+
     <ExpandingSideNav :openIfHasTag="adminUserTag">
       <template #button>
+        <!-- `routeName` was "UserList"; the route is named "UsersList", so this item never
+             highlighted on the page it links to. -->
         <SideNavElement
           to="/admin/users"
-          routeName="UserList">
-          <font-awesome-icon icon="fa-solid fa-users" />
+          routeName="UsersList">
+          <font-awesome-icon icon="users" />
           <span>Users</span>
         </SideNavElement>
       </template>
@@ -13,17 +24,18 @@
         <SideNavElement
           to="/admin/user/create"
           routeName="UserCreate">
-          <font-awesome-icon icon="fa-solid fa-user-plus" />
-          <span>Create User</span>
+          <font-awesome-icon icon="user-plus" />
+          <span>Create user</span>
         </SideNavElement>
       </template>
     </ExpandingSideNav>
+
     <ExpandingSideNav :openIfHasTag="adminStorageTag">
       <template #button>
         <SideNavElement
           to="/admin/storages"
           routeName="StorageList">
-          <font-awesome-icon icon="fa-solid fa-box-open" />
+          <font-awesome-icon icon="database" />
           <span>Storages</span>
         </SideNavElement>
       </template>
@@ -31,17 +43,18 @@
         <SideNavElement
           to="/admin/storage/create"
           routeName="StorageCreate">
-          <font-awesome-icon icon="fa-solid fa-box-open" />
-          <span>Create Storage</span>
+          <font-awesome-icon icon="plus" />
+          <span>Create storage</span>
         </SideNavElement>
       </template>
     </ExpandingSideNav>
+
     <ExpandingSideNav :openIfHasTag="adminRepositoryTag">
       <template #button>
         <SideNavElement
           to="/admin/repositories"
           routeName="RepositoriesList">
-          <font-awesome-icon icon="fa-solid fa-boxes-packing" />
+          <font-awesome-icon icon="boxes-packing" />
           <span>Repositories</span>
         </SideNavElement>
       </template>
@@ -49,8 +62,8 @@
         <SideNavElement
           to="/admin/repositories/create"
           routeName="RepositoryCreate">
-          <font-awesome-icon icon="fa-solid fa-boxes-packing" />
-          <span>Create Repository</span>
+          <font-awesome-icon icon="plus" />
+          <span>Create repository</span>
         </SideNavElement>
       </template>
     </ExpandingSideNav>
@@ -58,7 +71,7 @@
     <SideNavElement
       to="/admin/system"
       routeName="SystemSettings">
-      <font-awesome-icon icon="fa-solid fa-gear" />
+      <font-awesome-icon icon="gear" />
       <span>System</span>
     </SideNavElement>
   </SideNav>
@@ -71,51 +84,27 @@ import { adminRepositoryTag, adminStorageTag, adminUserTag } from "@/views/admin
 import SideNav from "./sideNav/SideNav.vue";
 import ExpandingSideNav from "./sideNav/ExpandingSideNav.vue";
 import SideNavElement from "./sideNav/SideNavElement.vue";
+
 defineProps({
   user: Object as PropType<UserResponseType>,
 });
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/styles/theme.scss";
-nav {
-  margin: 0.5rem;
-  margin-right: 0.5rem;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  width: 200px;
-  background-color: $primary-50;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.navLink {
-  text-decoration: none;
-  color: $text;
-  font-weight: bold;
-  padding: 0.5rem;
-  // Align text vertically
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  // Box
-  border-radius: 0.5rem;
-  &:hover {
-    background-color: $primary-70;
-    transition: background-color 0.3s ease;
-  }
+// This file used to repeat SideNav's and SideNavElement's entire stylesheets, which did nothing
+// those components were not already doing.
+.sectionLabel {
+  padding: var(--space-1) var(--space-3) var(--space-2);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-subtle);
 }
 
-#logoAndHome {
-  img {
-    width: 2rem;
-    height: 2rem;
+@media (max-width: 48rem) {
+  .sectionLabel {
+    display: none;
   }
-  span {
-    color: $text;
-  }
-}
-.bottom {
-  margin-top: auto;
 }
 </style>

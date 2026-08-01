@@ -61,6 +61,7 @@ import {
   faDatabase,
   faCube,
   faKey,
+  faGaugeHigh,
   // The repository browser's file-type icons (#497).
   faBoxArchive,
   faFileCode,
@@ -147,6 +148,7 @@ library.add(faTriangleExclamation);
 library.add(faDatabase);
 library.add(faCube);
 library.add(faKey);
+library.add(faGaugeHigh);
 library.add(faBoxArchive);
 library.add(faFileCode);
 library.add(faFileLines);
