@@ -38,7 +38,7 @@ parking_lot = { version = "0.12", features = [] }
 futures-util = "0.3.21"
 uuid = { version = "1", features = ["v4", "v5", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-strum = { version = "0.27", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }
 mime_guess = "2"
 mime = "0.3"
 either = "1.12"
@@ -68,7 +68,7 @@ digestible = { git = "https://github.com/wyatt-herkamp/digestible.git", features
     "base64",
     "uuid",
     "chrono",
-] }
+], rev = "01daa10dc50cd6b1de46ac0381fddcc33d4b8412" }
 digest = { version = "0.10", features = ["std", "alloc"] }
 md-5 = "0.10"
 sha1 = "0.10"

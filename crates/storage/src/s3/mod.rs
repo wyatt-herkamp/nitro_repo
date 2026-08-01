@@ -21,10 +21,7 @@ use tux_io_s3::{
         put::{PutHeaders, PutObject},
     },
     types::{
-        credentials::Credentials,
-        list::v2::ListBucketResult,
-        region::S3Region,
-        tag::OwnedTag,
+        credentials::Credentials, list::v2::ListBucketResult, region::S3Region, tag::OwnedTag,
     },
 };
 use utoipa::ToSchema;
@@ -85,10 +82,8 @@ impl S3Credentials {
     }
     pub fn credentials(&self) -> Result<Credentials, S3StorageError> {
         Ok(Credentials {
-            access_key: self.access_key.clone(),
-            secret_key: self.secret_key.clone(),
-            security_token: None,
-            session_token: None,
+            access_key: self.access_key.clone().expect("todo"),
+            secret_key: self.secret_key.clone().expect("todo"),
         })
     }
 }
@@ -146,7 +141,7 @@ impl S3StorageInner {
         };
         let builder = S3ClientBuilder::default()
             .with_region(region)
-            .with_credentials(credentials)
+            .with_credentials(Arc::new(credentials.into()))
             .with_access_type(access_type)
             .bucket_client(config.bucket_name.clone())?;
 
@@ -200,9 +195,9 @@ impl S3StorageInner {
                 .prefix
                 .iter()
                 .find(|prefix| *prefix == &path_with_slash)
-            {
-                return (true, Some(directory.as_str()));
-            }
+        {
+            return (true, Some(directory.as_str()));
+        }
         (false, None)
     }
 
@@ -389,6 +384,7 @@ impl Storage for S3Storage {
             headers: PutHeaders {
                 content_type: content_type.into(),
                 metadata: Default::default(),
+                ..Default::default()
             },
             tags: None,
         };
@@ -458,9 +454,10 @@ impl Storage for S3Storage {
         };
         let headers = get.headers();
         if let Some(content_type) = headers.get("content-type")
-            && content_type == "application/x-directory" {
-                return self.index_directory(&path).await;
-            }
+            && content_type == "application/x-directory"
+        {
+            return self.index_directory(&path).await;
+        }
         let meta = StorageFileMeta::<FileFileType> {
             name: location.to_string(),
             file_type: FileFileType {
