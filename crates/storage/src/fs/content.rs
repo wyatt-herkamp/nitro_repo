@@ -3,7 +3,6 @@ use std::{io::Write, path::PathBuf};
 use bytes::Bytes;
 use derive_more::derive::From;
 use nr_core::storage::FileHashes;
-use tux_io_s3::command::S3CommandBody;
 
 use super::{generate_from_bytes, generate_hashes_from_path};
 
@@ -35,11 +34,11 @@ pub enum FileContentBytes {
     Content(Vec<u8>),
     Bytes(Bytes),
 }
-impl From<FileContentBytes> for S3CommandBody {
+impl From<FileContentBytes> for Bytes {
     fn from(value: FileContentBytes) -> Self {
         match value {
-            FileContentBytes::Content(content) => S3CommandBody::from(content),
-            FileContentBytes::Bytes(bytes) => S3CommandBody::from(bytes),
+            FileContentBytes::Content(content) => Bytes::from(content),
+            FileContentBytes::Bytes(bytes) => bytes,
         }
     }
 }

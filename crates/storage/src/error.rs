@@ -20,6 +20,8 @@ pub enum StorageError {
     #[error(transparent)]
     S3StorageError(S3StorageError),
     #[error(transparent)]
+    FsV2StorageError(crate::fs_v2::error::FsV2StorageError),
+    #[error(transparent)]
     InvalidConfigType(#[from] InvalidConfigType),
     #[error(transparent)]
     PathCollision(#[from] PathCollisionError),
