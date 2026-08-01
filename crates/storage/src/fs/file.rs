@@ -175,6 +175,24 @@ impl StorageFileMeta<FileFileType> {
 }
 
 impl<FT> StorageFileMeta<FT> {
+    /// Builds file metadata.
+    ///
+    /// The struct is `#[non_exhaustive]`, so a struct literal only works inside this crate. Without
+    /// a constructor nothing downstream could build one at all — which made the type impossible to
+    /// use in a test outside `nr-storage`.
+    pub fn new(
+        name: impl Into<String>,
+        file_type: FT,
+        modified: DateTime<FixedOffset>,
+        created: DateTime<FixedOffset>,
+    ) -> Self {
+        StorageFileMeta {
+            name: name.into(),
+            file_type,
+            modified,
+            created,
+        }
+    }
     pub(crate) fn map_type<T>(self, f: impl FnOnce(FT) -> T) -> StorageFileMeta<T> {
         StorageFileMeta {
             name: self.name,

@@ -20,6 +20,10 @@ pub mod hosted;
 pub mod login;
 pub mod types;
 pub mod utils;
+use nr_core::repository::config::{
+    project::ProjectConfigType, repository_page::RepositoryPageType,
+};
+
 pub use super::prelude::*;
 use crate::{
     app::authentication::AuthenticationError,
@@ -121,7 +125,11 @@ impl RepositoryType for NpmRegistryType {
     }
 
     fn config_types(&self) -> Vec<&str> {
-        vec![NPMRegistryConfigType::get_type_static()]
+        vec![
+            NPMRegistryConfigType::get_type_static(),
+            RepositoryPageType::get_type_static(),
+            ProjectConfigType::get_type_static(),
+        ]
     }
 
     fn get_description(&self) -> RepositoryTypeDescription {

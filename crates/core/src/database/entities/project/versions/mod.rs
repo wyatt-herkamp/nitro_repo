@@ -90,6 +90,15 @@ impl DBProjectVersion {
         .await?;
         Ok(version)
     }
+    /// Every version of a project, newest first.
+    ///
+    /// The ordering is load bearing, not cosmetic. This had no `ORDER BY`, so the row Postgres
+    /// happened to return first became npm's `dist-tags.latest` — which meant "latest" could
+    /// change between two identical requests.
+    ///
+    /// Ordered by creation rather than by parsing the version string: the correct ordering for a
+    /// version depends on the ecosystem's own rules (semver, Maven's, RPM's), which this layer
+    /// does not know. Publication order is the one thing that is true for all of them.
     pub async fn get_all_versions(
         project_id: Uuid,
         database: &PgPool,
@@ -97,6 +106,7 @@ impl DBProjectVersion {
         let versions =
             SelectQueryBuilder::with_columns(DBProjectVersion::table_name(), Self::columns())
                 .filter(DBProjectVersionColumn::ProjectId.equals(project_id.value()))
+                .order_by(DBProjectVersionColumn::CreatedAt, SQLOrder::Descending)
                 .query_as()
                 .fetch_all(database)
                 .await?;

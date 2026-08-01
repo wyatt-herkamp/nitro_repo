@@ -10,7 +10,9 @@ use nr_core::{
         entities::repository::{DBRepository, DBRepositoryConfig},
     },
     repository::{
-        config::{RepositoryConfigType, project::ProjectConfigType},
+        config::{
+            RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
+        },
         project::ReleaseType,
     },
     storage::StoragePath,
@@ -36,9 +38,16 @@ impl RepositoryType for MavenRepositoryType {
         REPOSITORY_TYPE_ID
     }
 
+    /// Every config key a Maven repository accepts.
+    ///
+    /// This omitted `MavenRepositoryConfigType` — the key it declares as *required* — and the page
+    /// config, while the per-instance `Repository::config_types` listed all four. The two are read
+    /// by different call sites, so they disagreed about what a Maven repository supports.
     fn config_types(&self) -> Vec<&str> {
         vec![
+            MavenRepositoryConfigType::get_type_static(),
             MavenPushRulesConfigType::get_type_static(),
+            RepositoryPageType::get_type_static(),
             ProjectConfigType::get_type_static(),
         ]
     }

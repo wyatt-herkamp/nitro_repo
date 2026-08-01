@@ -6,7 +6,9 @@ use derive_more::derive::Deref;
 use http::{StatusCode, header::CONTENT_TYPE};
 use nr_core::{
     database::entities::{project::versions::DBProjectVersion, repository::DBRepository},
-    repository::config::RepositoryConfigType,
+    repository::config::{
+        RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
+    },
     storage::StoragePath,
     user::permissions::RepositoryActions,
 };
@@ -130,8 +132,17 @@ impl Repository for NPMHostedRegistry {
         "npm/hosted"
     }
 
+    /// Every config key this registry accepts.
+    ///
+    /// `page` and `project` were missing, and both `management.rs` and `page.rs` gate on this list
+    /// — so `/api/repository/page/...` answered `RepositoryTypeDoesntSupportConfig` for every npm
+    /// repository, and an npm repository could not have badge settings or a landing page at all.
     fn config_types(&self) -> Vec<&str> {
-        vec![NPMRegistryConfigType::get_type_static()]
+        vec![
+            NPMRegistryConfigType::get_type_static(),
+            RepositoryPageType::get_type_static(),
+            ProjectConfigType::get_type_static(),
+        ]
     }
 
     fn name(&self) -> String {
