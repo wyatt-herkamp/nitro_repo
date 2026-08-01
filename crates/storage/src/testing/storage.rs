@@ -109,19 +109,21 @@ impl<ST: Storage> Storage for TestingStorage<ST> {
 
     async fn put_repository_meta(
         &self,
-        _repository: Uuid,
-        _location: &StoragePath,
-        _value: RepositoryMeta,
+        repository: Uuid,
+        location: &StoragePath,
+        value: RepositoryMeta,
     ) -> Result<(), Self::Error> {
-        todo!()
+        self.storage
+            .put_repository_meta(repository, location, value)
+            .await
     }
 
     async fn get_repository_meta(
         &self,
-        _repository: Uuid,
-        _location: &StoragePath,
+        repository: Uuid,
+        location: &StoragePath,
     ) -> Result<Option<RepositoryMeta>, Self::Error> {
-        todo!()
+        self.storage.get_repository_meta(repository, location).await
     }
 
     async fn delete_file(

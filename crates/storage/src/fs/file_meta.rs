@@ -148,6 +148,54 @@ impl FileMeta {
     }
 }
 impl LocationMeta {
+    /// Encodes the metadata for storage next to the object it describes.
+    ///
+    /// Postcard, the same encoding the local backend's `.nr-meta` sidecars use, so every backend
+    /// reads and writes one format — an S3 sidecar object and a local sidecar file are byte
+    /// identical for the same metadata.
+    pub fn to_postcard(&self) -> Result<Vec<u8>, postcard::Error> {
+        postcard::to_allocvec(self)
+    }
+    /// Decodes metadata written by [LocationMeta::to_postcard].
+    pub fn from_postcard(bytes: &[u8]) -> Result<Self, postcard::Error> {
+        postcard::from_bytes(bytes)
+    }
+    /// Metadata for a file whose content is already in hand.
+    ///
+    /// For backends that do not have a filesystem to interrogate — the hashes come from the bytes
+    /// being written rather than from a path.
+    pub fn for_file(
+        created: DateTime<FixedOffset>,
+        modified: DateTime<FixedOffset>,
+        hashes: FileHashes,
+    ) -> Self {
+        LocationMeta {
+            created,
+            modified,
+            location_typed_meta: LocationTypedMeta::File(FileMeta { hashes }),
+            repository_meta: RepositoryMeta::default(),
+        }
+    }
+    /// Metadata for a directory with a known entry count.
+    pub fn for_directory(
+        created: DateTime<FixedOffset>,
+        modified: DateTime<FixedOffset>,
+        number_of_files: u64,
+    ) -> Self {
+        LocationMeta {
+            created,
+            modified,
+            location_typed_meta: LocationTypedMeta::Directory(DirectoryMeta { number_of_files }),
+            repository_meta: RepositoryMeta::default(),
+        }
+    }
+    /// The hashes recorded for a file, or an empty set for a directory.
+    pub fn hashes(&self) -> FileHashes {
+        match &self.location_typed_meta {
+            LocationTypedMeta::File(meta) => meta.hashes.clone(),
+            LocationTypedMeta::Directory(_) => FileHashes::default(),
+        }
+    }
     pub fn dir_meta_or_err(&self) -> Result<&DirectoryMeta, LocalStorageError> {
         if let LocationTypedMeta::Directory(meta) = &self.location_typed_meta {
             Ok(meta)

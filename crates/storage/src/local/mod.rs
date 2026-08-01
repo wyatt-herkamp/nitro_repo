@@ -685,7 +685,7 @@ mod tests {
 
     #[tokio::test]
     pub async fn generic_test() -> anyhow::Result<()> {
-        let Some(config) = crate::testing::start_storage_test("Local")? else {
+        let Some(config) = crate::testing::start_storage_test("Local").await? else {
             warn!("Local Storage Test Skipped");
             return Ok(());
         };
