@@ -501,3 +501,46 @@ pub static REPOSITORY_CONFIG_TYPES: &[&dyn RepositoryConfigType] = &[
     &NPMRegistryConfigType,
 ];
 pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[&MavenRepositoryType, &NpmRegistryType];
+
+#[cfg(test)]
+mod registry_tests {
+    use super::*;
+
+    /// Every config key a repository type advertises must actually be registered.
+    ///
+    /// `get_repository_config_type` is a linear scan over `REPOSITORY_CONFIG_TYPES`, and a miss is
+    /// just `None` — so a type advertising a key nobody registered fails at request time with a
+    /// confusing error rather than at startup.
+    #[test]
+    fn advertised_config_types_are_registered() {
+        for repository_type in REPOSITORY_TYPES {
+            for key in repository_type.config_types() {
+                assert!(
+                    REPOSITORY_CONFIG_TYPES
+                        .iter()
+                        .any(|config| config.get_type().eq_ignore_ascii_case(key)),
+                    "`{}` advertises config `{key}`, which is not in REPOSITORY_CONFIG_TYPES",
+                    repository_type.get_type()
+                );
+            }
+        }
+    }
+
+    /// A config that must be supplied at creation has to be one the type actually supports.
+    ///
+    /// These were separate hand-maintained lists and had already drifted: Maven's `config_types`
+    /// omitted `maven`, the very key its `required_configs` demanded.
+    #[test]
+    fn required_configs_are_a_subset_of_supported_ones() {
+        for repository_type in REPOSITORY_TYPES {
+            let supported = repository_type.config_types();
+            for required in repository_type.get_description().required_configs {
+                assert!(
+                    supported.contains(&required),
+                    "`{}` requires config `{required}` but does not list it in config_types: {supported:?}",
+                    repository_type.get_type()
+                );
+            }
+        }
+    }
+}

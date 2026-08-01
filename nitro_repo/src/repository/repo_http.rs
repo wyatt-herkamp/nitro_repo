@@ -20,6 +20,7 @@ use crate::{
         request_logging::request_span::RequestSpan,
     },
 };
+pub mod directory_index;
 pub mod repo_tracing;
 
 use axum_extra::routing::RouterExt;
@@ -27,7 +28,10 @@ use bytes::Bytes;
 use derive_more::From;
 use http::{
     HeaderValue, Method, StatusCode,
-    header::{CONTENT_LENGTH, CONTENT_LOCATION, CONTENT_TYPE, ETAG, LAST_MODIFIED, USER_AGENT},
+    header::{
+        CONTENT_LENGTH, CONTENT_LOCATION, CONTENT_TYPE, ETAG, IF_MODIFIED_SINCE, IF_NONE_MATCH,
+        LAST_MODIFIED, USER_AGENT,
+    },
     request::Parts,
 };
 use http_body_util::BodyExt;
@@ -136,17 +140,58 @@ impl IntoResponse for RepositoryRequestError {
     }
 }
 
+/// Redirects a directory request that arrived without a trailing slash.
+///
+/// Returns `None` when the path already ends in `/`, or is the repository root (which the router
+/// reaches by a path that is empty rather than one that needs a slash appended).
+///
+/// The `Location` is relative — `kingtux/` from `/repositories/s/r/dev/kingtux` resolves to
+/// `/repositories/s/r/dev/kingtux/` — so this does not need to know the URL prefix it was mounted
+/// under, which the response layer has no access to.
+fn redirect_directory_to_slash(path: &StoragePath) -> Option<Response<Body>> {
+    if path.is_directory() || path.number_of_components() == 0 {
+        return None;
+    }
+    let last = path.clone().into_iter().next_back()?;
+    let location = format!("{}/", last.as_ref());
+    let location = HeaderValue::from_str(&location).ok()?;
+    Some(
+        Response::builder()
+            .status(StatusCode::MOVED_PERMANENTLY)
+            .header(http::header::LOCATION, location)
+            .body(Body::empty())
+            .unwrap(),
+    )
+}
+
 fn response_file(
     meta: StorageFileMeta<FileFileType>,
     content: StorageFileReader,
+    context: &ResponseContext,
 ) -> Response<Body> {
     let last_modified = date_time_for_header(meta.modified());
-    // TODO: Handle cache control headers
     let FileFileType {
         file_size,
         mime_type,
         file_hash,
     } = meta.file_type();
+
+    // An artifact at a given coordinate is normally immutable, so a client that already has it
+    // should not pull it again. Nothing answered conditional requests before, which meant every
+    // `mvn` run re-downloaded everything it had already cached.
+    if context.is_fresh(
+        file_hash.sha2_256.as_deref(),
+        last_modified.to_str().unwrap_or_default(),
+    ) {
+        let mut response = Response::builder()
+            .status(StatusCode::NOT_MODIFIED)
+            .header(LAST_MODIFIED, &last_modified);
+        if let Some(etag) = &file_hash.sha2_256 {
+            response = response.header(ETAG, etag);
+        }
+        return response.body(Body::empty()).unwrap();
+    }
+
     let mut response = Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_LENGTH, file_size.to_string())
@@ -174,6 +219,56 @@ fn response_file(
     response.body(body).unwrap()
 }
 
+/// What the response needs to know about the request that produced it.
+///
+/// [RepoResponse] is built by a repository handler that has already consumed the request, but
+/// rendering it correctly needs two things from the original: the path (so a directory listing can
+/// link relative to it) and the cache validators (so an unchanged artifact can answer `304`).
+#[derive(Debug, Clone, Default)]
+pub struct ResponseContext {
+    pub path: StoragePath,
+    if_none_match: Option<String>,
+    if_modified_since: Option<String>,
+}
+
+impl ResponseContext {
+    pub fn new(path: StoragePath, parts: &Parts) -> Self {
+        let header = |name: &http::HeaderName| {
+            parts
+                .headers
+                .get(name)
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned)
+        };
+        Self {
+            path,
+            if_none_match: header(&IF_NONE_MATCH),
+            if_modified_since: header(&IF_MODIFIED_SINCE),
+        }
+    }
+
+    /// Whether the client already holds this exact version.
+    ///
+    /// `If-None-Match` wins over `If-Modified-Since` when both are sent, per RFC 9110: an ETag is
+    /// an exact identity, a timestamp only has one-second resolution and cannot see a file that
+    /// was rewritten within the same second.
+    fn is_fresh(&self, etag: Option<&str>, last_modified: &str) -> bool {
+        if let Some(if_none_match) = &self.if_none_match {
+            let Some(etag) = etag else {
+                return false;
+            };
+            return if_none_match == "*"
+                || if_none_match
+                    .split(',')
+                    .map(|candidate| candidate.trim().trim_start_matches("W/").trim_matches('"'))
+                    .any(|candidate| candidate == etag.trim_matches('"'));
+        }
+        self.if_modified_since
+            .as_deref()
+            .is_some_and(|since| since == last_modified)
+    }
+}
+
 #[derive(Debug, From)]
 pub enum RepoResponse {
     FileResponse(Box<StorageFile>),
@@ -186,16 +281,33 @@ impl From<StorageFileMeta<FileType>> for RepoResponse {
     }
 }
 impl RepoResponse {
-    /// Default Response Format
+    /// Response format used when a handler does not build one itself.
     pub fn into_response_default(self) -> Response {
+        self.into_response_with(&ResponseContext::default())
+    }
+
+    /// Renders the response, using the request context for cache validation and directory links.
+    pub fn into_response_with(self, context: &ResponseContext) -> Response {
         match self {
             Self::FileResponse(file) => match *file {
-                StorageFile::Directory { meta, files } => Response::builder()
-                    .status(StatusCode::NOT_IMPLEMENTED)
-                    .header(CONTENT_TYPE, mime::TEXT_HTML.to_string())
-                    .body(Body::from("Build HTML Page listing"))
-                    .unwrap(),
-                StorageFile::File { meta, content } => response_file(meta, content),
+                StorageFile::Directory { meta, files } => {
+                    // Entry links are relative, so a URL that does not end in `/` would resolve
+                    // them against the *parent* directory. Redirect to the canonical form first,
+                    // which is what nginx and Apache do for exactly this reason.
+                    if let Some(redirect) = redirect_directory_to_slash(&context.path) {
+                        return redirect;
+                    }
+                    // Used to be `501 Not Implemented` with the body "Build HTML Page listing".
+                    // Maven walks directory listings to resolve version ranges and LATEST/RELEASE.
+                    let body = directory_index::render(&context.path, &meta, &files);
+                    Response::builder()
+                        .status(StatusCode::OK)
+                        .header(CONTENT_TYPE, mime::TEXT_HTML_UTF_8.to_string())
+                        .header(LAST_MODIFIED, date_time_for_header(meta.modified()))
+                        .body(Body::from(body))
+                        .unwrap()
+                }
+                StorageFile::File { meta, content } => response_file(meta, content, context),
             },
             Self::FileMetaResponse(meta) => {
                 let last_modified = date_time_for_header(meta.modified());
@@ -400,6 +512,7 @@ pub async fn handle_repo_request(
     let method = request.method().clone();
     let (parts, body) = request.into_parts();
     let path = path.unwrap_or_default();
+    let response_context = ResponseContext::new(path.clone(), &parts);
     let trace =
         RepositoryRequestTracing::new(&repository, &parent_span, site.repository_metrics.clone());
     trace.path(&path);
@@ -435,7 +548,7 @@ pub async fn handle_repo_request(
     };
     let _guard = request_debug.entered();
     match response {
-        Ok(response) => Ok(response.into_response_default()),
+        Ok(response) => Ok(response.into_response_with(&response_context)),
         Err(err) => {
             error!(?err, "Failed to handle request");
             Ok(err.into_response())
