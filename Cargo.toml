@@ -24,6 +24,7 @@ rand = "0.9"
 nr-core = { path = "crates/core" }
 nr-macros = { path = "crates/macros" }
 nr-storage = { path = "crates/storage" }
+nr-aql = { path = "crates/aql" }
 # Rust Utilities
 futures = "0.3"
 derive_more = { version = "2.0", features = [

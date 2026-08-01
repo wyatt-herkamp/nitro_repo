@@ -472,6 +472,16 @@ impl NitroRepo {
             .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
             .copied()
     }
+    /// Drops any cached name that resolves to this repository.
+    ///
+    /// The lookup table is filled lazily and never invalidated, so after a rename the old name
+    /// would keep resolving from cache — the repository would answer on both names until a
+    /// restart. Dropping every entry for the id is enough: the next request for the new name
+    /// misses, queries the database and re-caches.
+    pub fn forget_repository_names(&self, id: Uuid) {
+        let mut lookup_table = self.inner.name_lookup_table.lock();
+        lookup_table.retain(|_, value| *value != id);
+    }
     pub fn remove_repository(&self, id: Uuid) {
         {
             let mut repositories = self.repositories.write();

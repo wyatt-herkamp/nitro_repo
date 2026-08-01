@@ -40,6 +40,68 @@ pub fn management_routes() -> Router<NitroRepo> {
         .route("/{repository_id}/config/{key}", put(update_config))
         .route("/{repository_id}/config/{key}", get(get_config))
         .route("/{repository_id}", delete(delete_repository))
+        .route("/{repository_id}", put(update_repository))
+        .route("/{repository_id}/all-configs", get(get_all_configs))
+}
+
+/// Every config a repository has, in one request.
+///
+/// #506 calls the config API verbose, and it is: rendering a repository's settings meant one
+/// request to list the config keys and then one more per key, each round trip re-doing the same
+/// permission check. This returns them together, keyed by config type, with the same sanitization
+/// rule the single-key route applies.
+#[utoipa::path(
+    get,
+    path = "/{repository_id}/all-configs",
+    params(("repository_id" = Uuid, Path, description = "The Repository ID")),
+    responses(
+        (status = 200, description = "Every config for the repository, keyed by type"),
+        (status = 404, description = "Repository not found"),
+    )
+)]
+#[instrument]
+pub async fn get_all_configs(
+    State(site): State<NitroRepo>,
+    auth: Option<Authentication>,
+    Path(repository): Path<Uuid>,
+) -> Result<Response, InternalError> {
+    let Some(db_repository) = DBRepository::get_by_id(repository, site.as_ref()).await? else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+    let Some(loaded) = site.get_repository(repository) else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+    let can_edit = auth
+        .has_action(RepositoryActions::Edit, repository, &site.database)
+        .await?;
+
+    let mut configs: HashMap<String, Value> = HashMap::default();
+    for key in loaded.config_types() {
+        let Some(config_type) = site.get_repository_config_type(key) else {
+            continue;
+        };
+        let stored =
+            match GenericDBRepositoryConfig::get_config(repository, key, site.as_ref()).await? {
+                Some(config) => config.value.0,
+                // A config that has never been written still has a shape worth showing, and the
+                // single-key route already serves the default on request.
+                None => config_type.default()?,
+            };
+        let visible = if can_edit {
+            Some(stored)
+        } else {
+            match db_repository.visibility {
+                Visibility::Hidden | Visibility::Public => {
+                    config_type.sanitize_for_public_view(stored)?
+                }
+                Visibility::Private => None,
+            }
+        };
+        if let Some(value) = visible {
+            configs.insert(key.to_owned(), value);
+        }
+    }
+    Ok(ResponseBuilder::ok().json(&configs))
 }
 #[derive(Deserialize, ToSchema, Debug)]
 pub struct NewRepositoryRequest {
@@ -309,6 +371,93 @@ pub async fn update_config(
     }
     Ok(ResponseBuilder::no_content().empty())
 }
+/// What may be changed about an existing repository.
+///
+/// Omitted fields are left alone, so a rename does not have to restate the visibility.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdateRepositoryRequest {
+    pub name: Option<String>,
+    pub visibility: Option<Visibility>,
+    pub active: Option<bool>,
+}
+
+/// Renames a repository, or changes its visibility.
+///
+/// There was no update path — a repository's name was fixed at creation. Renaming is not
+/// cosmetic: the name is in every artifact URL, so anything already pointing at the old name
+/// stops resolving. That is the caller's decision to make, but it is worth them knowing.
+#[utoipa::path(
+    put,
+    path = "/{repository_id}",
+    request_body = UpdateRepositoryRequest,
+    params(("repository_id" = Uuid, Path, description = "The Repository ID")),
+    responses(
+        (status = 200, description = "The updated repository", body = DBRepository),
+        (status = 400, description = "The name is not valid"),
+        (status = 404, description = "Repository not found"),
+        (status = 409, description = "That name is already used in this storage"),
+    )
+)]
+#[instrument]
+pub async fn update_repository(
+    State(site): State<NitroRepo>,
+    auth: Authentication,
+    Path(repository): Path<Uuid>,
+    Json(request): Json<UpdateRepositoryRequest>,
+) -> Result<Response, InternalError> {
+    if !auth
+        .has_action(RepositoryActions::Edit, repository, &site.database)
+        .await?
+    {
+        return Ok(MissingPermission::EditRepository(repository).into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::EditRepository, &site).await? {
+        return Ok(denied);
+    }
+    let Some(existing) = DBRepository::get_by_id(repository, site.as_ref()).await? else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+
+    let name = match request.name {
+        Some(name) if name != existing.name.as_ref() => {
+            let name = match nr_core::repository::RepositoryName::new(name) {
+                Ok(name) => name,
+                Err(err) => return Ok(ResponseBuilder::bad_request().body(err.to_string())),
+            };
+            // Checked before writing so this reports a conflict rather than a constraint
+            // violation; the unique index is still what makes it correct under a race.
+            if DBRepository::does_name_exist_for_storage(existing.storage_id, &name, &site.database)
+                .await?
+            {
+                return Ok(ConflictResponse::from("name").into_response());
+            }
+            Some(name)
+        }
+        _ => None,
+    };
+
+    DBRepository::update_details(
+        repository,
+        name.as_ref(),
+        request.visibility,
+        request.active,
+        site.as_ref(),
+    )
+    .await?;
+
+    // The loaded repository caches its name and visibility, so it has to be told. Without this a
+    // rename takes effect in the database and the running instance keeps serving the old name.
+    if let Some(loaded) = site.get_repository(repository)
+        && let Err(error) = loaded.reload().await
+    {
+        error!(?error, "Renamed the repository but failed to reload it");
+    }
+    site.forget_repository_names(repository);
+
+    let updated = DBRepository::get_by_id(repository, site.as_ref()).await?;
+    Ok(ResponseBuilder::ok().json(&updated))
+}
+
 #[utoipa::path(
     delete,
     path = "/{repository}",

@@ -12,6 +12,7 @@ import { profileRoutes } from "@/views/profile/profileRoutes";
 import { projectRoutes } from "@/views/projects";
 import NotFound from "@/views/NotFound.vue";
 import NpmLoginView from "@/views/NpmLoginView.vue";
+import SearchView from "@/views/SearchView.vue";
 import { repositoryPages } from "@/views/repositoryPages";
 declare module "vue-router" {
   interface RouteMeta {
@@ -59,6 +60,11 @@ const routes = [
     path: "/npm/login/:session",
     name: "npmLogin",
     component: NpmLoginView,
+  },
+  {
+    path: "/search",
+    name: "search",
+    component: SearchView,
   },
   ...repositoryPages,
   ...adminRoutes,

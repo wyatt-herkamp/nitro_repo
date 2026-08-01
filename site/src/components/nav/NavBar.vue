@@ -12,6 +12,12 @@
       </router-link>
     </div>
 
+    <RouterLink
+      :to="{ name: 'search' }"
+      class="navLink"
+      >Search</RouterLink
+    >
+
     <UserDropDown
       class="right"
       v-if="user" />

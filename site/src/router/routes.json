@@ -1,102 +1,106 @@
 [
-    {
-        "path": "/browse/:id/:catchAll(.*)?",
-        "name": "Browse"
-    },
-    {
-        "path": "/login",
-        "name": "login"
-    },
-    {
-        "path": "/logout",
-        "name": "logout"
-    },
-    {
-        "path": "/page/repositories",
-        "name": "repositories"
-    },
-    {
-        "path": "/npm/login/:session",
-        "name": "npmLogin"
-    },
-    {
-        "path": "/page/repository/:repositoryId",
-        "name": "repository_page_by_id"
-    },
-    {
-        "path": "/page/repository/:storageName/:repositoryName",
-        "name": "repository_page_by_name"
-    },
-    {
-        "path": "/admin/install",
-        "name": "AdminInstall"
-    },
-    {
-        "path": "/admin",
-        "name": "admin"
-    },
-    {
-        "path": "/admin/users",
-        "name": "UsersList"
-    },
-    {
-        "path": "/admin/user/create",
-        "name": "UserCreate"
-    },
-    {
-        "path": "/admin/user/:id",
-        "name": "ViewUser"
-    },
-    {
-        "path": "/admin/repositories",
-        "name": "RepositoriesList"
-    },
-    {
-        "path": "/admin/repository/:id",
-        "name": "AdminViewRepository"
-    },
-    {
-        "path": "/admin/repositories/create",
-        "name": "RepositoryCreate"
-    },
-    {
-        "path": "/admin/storages",
-        "name": "StorageList"
-    },
-    {
-        "path": "/admin/storage/create",
-        "name": "StorageCreate"
-    },
-    {
-        "path": "/admin/storage/:id",
-        "name": "ViewStorage"
-    },
-    {
-        "path": "/admin/system",
-        "name": "SystemSettings"
-    },
-    {
-        "path": "/profile",
-        "name": "profile"
-    },
-    {
-        "path": "/profile/login",
-        "name": "profileLogin"
-    },
-    {
-        "path": "/profile/tokens",
-        "name": "profileTokens"
-    },
-    {
-        "path": "/profile/token/create",
-        "name": "profileTokenCreate"
-    },
-    {
-        "path": "/projects/:projectId/:version?",
-        "name": "ProjectPageView"
-    },
-    {
-        "path": "/projects/:storageName/:repositoryName/:projectKey/:version?",
-        "name": "project-page-by-key"
-    }
+  {
+    "path": "/browse/:id/:catchAll(.*)?",
+    "name": "Browse"
+  },
+  {
+    "path": "/login",
+    "name": "login"
+  },
+  {
+    "path": "/logout",
+    "name": "logout"
+  },
+  {
+    "path": "/page/repositories",
+    "name": "repositories"
+  },
+  {
+    "path": "/npm/login/:session",
+    "name": "npmLogin"
+  },
+  {
+    "path": "/search",
+    "name": "search"
+  },
+  {
+    "path": "/page/repository/:repositoryId",
+    "name": "repository_page_by_id"
+  },
+  {
+    "path": "/page/repository/:storageName/:repositoryName",
+    "name": "repository_page_by_name"
+  },
+  {
+    "path": "/admin/install",
+    "name": "AdminInstall"
+  },
+  {
+    "path": "/admin",
+    "name": "admin"
+  },
+  {
+    "path": "/admin/users",
+    "name": "UsersList"
+  },
+  {
+    "path": "/admin/user/create",
+    "name": "UserCreate"
+  },
+  {
+    "path": "/admin/user/:id",
+    "name": "ViewUser"
+  },
+  {
+    "path": "/admin/repositories",
+    "name": "RepositoriesList"
+  },
+  {
+    "path": "/admin/repository/:id",
+    "name": "AdminViewRepository"
+  },
+  {
+    "path": "/admin/repositories/create",
+    "name": "RepositoryCreate"
+  },
+  {
+    "path": "/admin/storages",
+    "name": "StorageList"
+  },
+  {
+    "path": "/admin/storage/create",
+    "name": "StorageCreate"
+  },
+  {
+    "path": "/admin/storage/:id",
+    "name": "ViewStorage"
+  },
+  {
+    "path": "/admin/system",
+    "name": "SystemSettings"
+  },
+  {
+    "path": "/profile",
+    "name": "profile"
+  },
+  {
+    "path": "/profile/login",
+    "name": "profileLogin"
+  },
+  {
+    "path": "/profile/tokens",
+    "name": "profileTokens"
+  },
+  {
+    "path": "/profile/token/create",
+    "name": "profileTokenCreate"
+  },
+  {
+    "path": "/projects/:projectId/:version?",
+    "name": "ProjectPageView"
+  },
+  {
+    "path": "/projects/:storageName/:repositoryName/:projectKey/:version?",
+    "name": "project-page-by-key"
+  }
 ]
