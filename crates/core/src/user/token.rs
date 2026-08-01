@@ -13,6 +13,10 @@ pub struct AuthTokenResponse {
     pub active: bool,
     pub source: String,
     pub expires_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    /// When the token last authenticated a request. `None` means it never has.
+    ///
+    /// Recorded at most once an hour, so this is "used recently", not an exact timestamp.
+    pub last_used_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     pub created_at: chrono::DateTime<chrono::FixedOffset>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
@@ -28,8 +32,10 @@ impl AuthTokenFullResponse {
         user_id: i32,
         database: &sqlx::PgPool,
     ) -> Result<Option<AuthTokenFullResponse>, sqlx::Error> {
+        // The `AND` was missing, so this was not valid SQL and every call to it failed at the
+        // database rather than returning a token.
         let Some(base) = sqlx::query_as::<_, AuthTokenResponse>(
-            r#"SELECT * FROM user_auth_tokens WHERE id = $1 user_id = $2"#,
+            r#"SELECT * FROM user_auth_tokens WHERE id = $1 AND user_id = $2"#,
         )
         .bind(id)
         .bind(user_id)

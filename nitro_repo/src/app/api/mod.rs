@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{Request, State},
-    response::Response,
+    response::{IntoResponse, Response},
 };
 use http::{StatusCode, Uri};
 use nr_core::{
@@ -24,6 +24,32 @@ use crate::{
     error::InternalError,
     utils::{ResponseBuilder, api_error_response::APIErrorResponse},
 };
+/// Refuses a request whose token does not carry `scope`.
+///
+/// Returns `Some(response)` when the caller should be turned away, so a route reads as:
+///
+/// ```rust,ignore
+/// if let Some(denied) = require_scope(&auth, NRScope::CreateRepository, &site).await? {
+///     return Ok(denied);
+/// }
+/// ```
+///
+/// This is a *second* gate, not a replacement for the permission check. A scope bounds what a
+/// token may do; whether the user may do it at all is still decided by their permissions, and both
+/// have to pass.
+pub async fn require_scope(
+    auth: &super::authentication::Authentication,
+    scope: NRScope,
+    site: &NitroRepo,
+) -> Result<Option<Response>, InternalError> {
+    if auth.has_scope(scope, site.as_ref()).await? {
+        return Ok(None);
+    }
+    Ok(Some(
+        crate::app::responses::MissingPermission::Scope(scope).into_response(),
+    ))
+}
+
 pub fn api_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/info", axum::routing::get(info))

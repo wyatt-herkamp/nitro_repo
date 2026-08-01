@@ -7,7 +7,7 @@ use axum::{
 use nr_core::{
     database::entities::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
     storage::StorageName,
-    user::permissions::HasPermissions,
+    user::{permissions::HasPermissions, scopes::NRScope},
 };
 use nr_storage::{StorageConfig, StorageTypeConfig, fs_v2::FileSystemV2Config, local::LocalConfig};
 use serde::{Deserialize, Serialize};
@@ -19,6 +19,7 @@ mod s3;
 use crate::{
     app::{
         NitroRepo,
+        api::require_scope,
         authentication::Authentication,
         responses::{InvalidStorageConfig, InvalidStorageType, MissingPermission},
     },
@@ -83,6 +84,9 @@ pub async fn list_storages(
     if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
     }
+    if let Some(denied) = require_scope(&auth, NRScope::ReadStorage, &site).await? {
+        return Ok(denied);
+    }
     if request.include_config {
         let storages = DBStorage::get_all(&site.database).await?;
         Ok(ResponseBuilder::ok().json(&storages))
@@ -120,6 +124,9 @@ pub async fn new_storage(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::ManageStorage, &site).await? {
+        return Ok(denied);
     }
     if !DBStorage::is_name_available(&request.name, site.as_ref()).await? {
         return Ok(ConflictResponse::from("name").into_response());
@@ -178,6 +185,9 @@ pub async fn get_storage(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::StorageManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::ReadStorage, &site).await? {
+        return Ok(denied);
     }
     let storage = DBStorage::get_by_id(id, &site.database).await?;
     match storage {

@@ -191,6 +191,36 @@ impl Deref for Authentication {
         }
     }
 }
+impl Authentication {
+    /// Whether this caller may perform an action requiring `scope`.
+    ///
+    /// A scope is a ceiling on what a *token* may do, not a grant. A session is the user acting
+    /// directly through the UI, so it is bounded only by their permissions — asking a browser
+    /// session to also carry scopes would mean the UI could do less than the user can.
+    ///
+    /// Nothing outside repository access consulted scopes at all before this, so a token minted to
+    /// let CI publish one artifact could equally delete repositories, create users and rewrite
+    /// system settings.
+    pub async fn has_scope(
+        &self,
+        scope: nr_core::user::scopes::NRScope,
+        database: &PgPool,
+    ) -> Result<bool, AuthenticationError> {
+        match self {
+            Authentication::Session(_, _) => Ok(true),
+            Authentication::AuthToken(token, _) => Ok(token.has_scope(scope, database).await?),
+        }
+    }
+
+    /// The `AuthToken` behind this authentication, if it came from one.
+    pub fn auth_token(&self) -> Option<&AuthToken> {
+        match self {
+            Authentication::AuthToken(token, _) => Some(token),
+            Authentication::Session(_, _) => None,
+        }
+    }
+}
+
 impl HasPermissions for Authentication {
     fn user_id(&self) -> Option<i32> {
         match self {
@@ -397,6 +427,11 @@ pub async fn get_user_and_auth_token(
     let user = UserSafeData::get_by_id(auth_token.user_id, database)
         .await?
         .ok_or(AuthenticationError::Unauthorized)?;
+    // Best effort, and deliberately not fatal: failing to record that a token was used is not a
+    // reason to refuse a request that is otherwise authenticated.
+    if let Err(error) = auth_token.touch_last_used(database).await {
+        warn!(?error, "Failed to record token usage");
+    }
     Ok((user, auth_token))
 }
 pub mod password {

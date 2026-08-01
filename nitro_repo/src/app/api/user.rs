@@ -22,7 +22,10 @@ use nr_core::{
         auth_token::{AuthTokenRepositoryScope, AuthTokenScope},
         permissions::FullUserPermissions,
     },
-    user::token::{AuthTokenFullResponse, AuthTokenResponse},
+    user::{
+        scopes::NRScope,
+        token::{AuthTokenFullResponse, AuthTokenResponse},
+    },
 };
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
@@ -32,6 +35,7 @@ mod tokens;
 use crate::{
     app::{
         NitroRepo,
+        api::require_scope,
         authentication::{
             Authentication, MeWithSession,
             password::{self, verify_password},
@@ -40,6 +44,7 @@ use crate::{
         },
     },
     error::InternalError,
+    utils::ResponseBuilder,
 };
 #[derive(OpenApi)]
 #[openapi(
@@ -118,6 +123,9 @@ pub async fn me_permissions(
     auth: Authentication,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
+    if let Some(denied) = require_scope(&auth, NRScope::ReadSelf, &site).await? {
+        return Ok(denied);
+    }
     let Some(user) = FullUserPermissions::get_by_id(auth.get_id(), site.as_ref()).await? else {
         return Ok(Response::builder()
             .status(http::StatusCode::NOT_FOUND)
@@ -138,11 +146,15 @@ pub async fn me_permissions(
         ("session" = [])
     )
 )]
-pub async fn whoami(auth: Authentication) -> Json<UserSafeData> {
-    match auth {
-        Authentication::AuthToken(_, user) => Json(user),
-        Authentication::Session(_, user) => Json(user),
+pub async fn whoami(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+) -> Result<Response, InternalError> {
+    if let Some(denied) = require_scope(&auth, NRScope::ReadSelf, &site).await? {
+        return Ok(denied);
     }
+    let user: &UserSafeData = &auth;
+    Ok(ResponseBuilder::ok().json(user))
 }
 #[utoipa::path(
     get,
