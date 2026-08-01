@@ -9,6 +9,7 @@ pub mod utils;
 pub use new::*;
 
 use crate::{database::prelude::*, repository::project::ReleaseType};
+pub mod dist_tags;
 pub mod info;
 pub mod members;
 pub mod update;
@@ -173,6 +174,21 @@ pub struct DBProject {
 impl ProjectDBType for DBProject {
     fn id(&self) -> Uuid {
         self.id
+    }
+}
+
+impl DBProject {
+    /// Removes a project and, by cascade, its versions, members and dist-tags.
+    ///
+    /// Needed by `npm unpublish` when the last version of a package goes away — npm removes the
+    /// package entirely at that point rather than leaving an empty packument behind.
+    #[instrument(skip(database))]
+    pub async fn delete_by_id(id: Uuid, database: &PgPool) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM projects WHERE id = $1")
+            .bind(id)
+            .execute(database)
+            .await?;
+        Ok(())
     }
 }
 

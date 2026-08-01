@@ -1,6 +1,14 @@
 import { NpmIcon } from "vue3-simple-icons";
 import NPMProjectHelper from "./NPMProjectHelper.vue";
-export const MavenFrontendDefinition = {
+import type { FrontendRepositoryType } from "@/types/repository";
+
+/**
+ * This was exported as `MavenFrontendDefinition` — a copy-paste from `maven.ts` — and was never
+ * imported anywhere, so `repositoryTypes` listed only Maven. `findRepositoryType("npm")` returned
+ * `undefined`, which is why every npm project page rendered "This repository has not been defined
+ * in the frontend".
+ */
+export const NPMFrontendDefinition = {
   name: "npm",
   properName: "npm",
   projectComponent: {
@@ -9,19 +17,20 @@ export const MavenFrontendDefinition = {
   },
   icons: [
     {
-      name: "NPM",
+      name: "npm",
       component: NpmIcon,
       url: "https://www.npmjs.com/",
       props: {},
     },
   ],
-};
-export interface MavenProxyRoute {
+} as FrontendRepositoryType;
+
+export interface NPMProxyRoute {
   url: string;
   name?: string;
 }
 export interface NPMProxyConfigType {
-  routes: MavenProxyRoute[];
+  routes: NPMProxyRoute[];
 }
 export function defaultProxy(): NPMProxyConfigType {
   return {

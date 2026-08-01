@@ -40,6 +40,7 @@ pub enum MissingPermission {
     RepositoryManager,
     EditRepository(uuid::Uuid),
     ReadRepository(uuid::Uuid),
+    WriteRepository(uuid::Uuid),
     StorageManager,
 }
 impl IntoResponse for MissingPermission {
@@ -66,6 +67,13 @@ impl IntoResponse for MissingPermission {
                 .status(StatusCode::FORBIDDEN)
                 .body(Body::from(format!(
                     "You do not have permission to read repository: {}",
+                    id
+                )))
+                .unwrap(),
+            Self::WriteRepository(id) => Response::builder()
+                .status(StatusCode::FORBIDDEN)
+                .body(Body::from(format!(
+                    "You do not have permission to write to repository: {}",
                     id
                 )))
                 .unwrap(),

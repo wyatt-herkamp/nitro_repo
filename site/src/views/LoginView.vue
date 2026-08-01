@@ -35,19 +35,28 @@ import router from "@/router";
 import { sessionStore } from "@/stores/session";
 import { notify } from "@kyvg/vue3-notification";
 import { ref } from "vue";
+import { useRoute } from "vue-router";
 const failedLogin = ref(false);
 const input = ref({
   email_or_username: "",
   password: "",
 });
 const session = sessionStore();
+const route = useRoute();
 async function login() {
   http
     .post("/api/user/login", input.value)
     .then((response) => {
-      console.log(response);
       session.login(response.data);
-      router.push("/");
+      // Anything that redirects here to sign in — the npm browser login, for one — needs the user
+      // to come back rather than land on the home page. Only a relative path is honoured, so a
+      // crafted `?redirect=https://…` cannot bounce someone off-site after they authenticate.
+      const redirect = route.query.redirect;
+      const target =
+        typeof redirect === "string" && redirect.startsWith("/") && !redirect.startsWith("//")
+          ? redirect
+          : "/";
+      router.push(target);
     })
     .catch((error) => {
       if (error.response.status === 401) {

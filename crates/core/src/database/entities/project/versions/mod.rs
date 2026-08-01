@@ -90,6 +90,28 @@ impl DBProjectVersion {
         .await?;
         Ok(version)
     }
+    /// Removes one version. Used by `npm unpublish` for a single version of a package.
+    #[instrument(skip(database))]
+    pub async fn delete_by_id(id: Uuid, database: &PgPool) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM project_versions WHERE id = $1")
+            .bind(id)
+            .execute(database)
+            .await?;
+        Ok(())
+    }
+    /// How many versions a project has, so a caller can tell whether it is removing the last one.
+    #[instrument(skip(database))]
+    pub async fn count_for_project(
+        project_id: Uuid,
+        database: &PgPool,
+    ) -> Result<i64, sqlx::Error> {
+        let count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM project_versions WHERE project_id = $1")
+                .bind(project_id)
+                .fetch_one(database)
+                .await?;
+        Ok(count)
+    }
     /// Every version of a project, newest first.
     ///
     /// The ordering is load bearing, not cosmetic. This had no `ORDER BY`, so the row Postgres
