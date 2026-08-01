@@ -2869,6 +2869,7 @@ dependencies = [
  "inquire",
  "lettre",
  "maven-rs",
+ "md-5 0.10.6",
  "mime",
  "mime_guess",
  "nr-core",

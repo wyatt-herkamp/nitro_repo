@@ -71,6 +71,14 @@ impl RepositoryConfigType for MavenRepositoryConfigType {
     }
 }
 
+/// Rules applied to every deploy.
+///
+/// `require_nitro_deploy` used to live here. Nitro Deploy was never implemented — its types were
+/// referenced by nothing, `handle_post` was a `todo!()`, and a PUT carrying the header returned
+/// 405 — so setting the flag made a repository **undeployable**: every push got a 400 and there
+/// was no combination of client settings that would work. Removed rather than left as a switch
+/// whose only effect is to brick a repository. `#[serde(default)]` means existing config rows
+/// that still carry the field simply ignore it.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct MavenPushRules {
@@ -86,8 +94,6 @@ pub struct MavenPushRules {
     /// If a project exists the user must be a member of the project to push.
     #[schemars(title = "Project Members can only push")]
     pub must_be_project_member: bool,
-    #[schemars(title = "Require Nitro Deploy")]
-    pub require_nitro_deploy: bool,
     #[schemars(title = "Require Auth Token for Push")]
     /// If the repository requires an auth token to be used
     pub must_use_auth_token_for_push: bool,
@@ -99,7 +105,6 @@ impl Default for MavenPushRules {
             yanking_allowed: true,
             allow_overwrite: true,
             must_be_project_member: Default::default(),
-            require_nitro_deploy: false,
             must_use_auth_token_for_push: false,
         }
     }

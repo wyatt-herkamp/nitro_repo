@@ -61,6 +61,8 @@ sha2.workspace = true
 # npm publishes a `shasum` (hex sha1) alongside the sha512 `integrity` string, and both are
 # verified against the uploaded tarball.
 sha1.workspace = true
+# Maven uploads `.md5` beside every artifact, and asks for one back.
+md-5.workspace = true
 schemars.workspace = true
 reqwest.workspace = true
 bytes.workspace = true

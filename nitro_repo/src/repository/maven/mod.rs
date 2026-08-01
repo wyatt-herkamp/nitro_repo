@@ -25,9 +25,11 @@ use super::*;
 use crate::{app::NitroRepo, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 mod configs;
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
+pub mod checksum;
 pub mod hosted;
-pub mod nitro_deploy;
+pub mod metadata;
 pub mod proxy;
+pub mod push_rules;
 pub mod utils;
 pub static REPOSITORY_TYPE_ID: &str = "maven";
 #[derive(Debug, Default)]
@@ -154,6 +156,10 @@ pub enum MavenError {
     MavenRS(#[from] maven_rs::Error),
     #[error("XML Deserialize Error: {0}")]
     XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
+    /// Only reachable when generating a `maven-metadata.xml` we built ourselves, so it is a bug
+    /// here rather than anything the client did.
+    #[error("XML Serialize Error: {0}")]
+    XMLSerialize(#[from] maven_rs::quick_xml::SeError),
 
     #[error("Missing From Pom: {0}")]
     MissingFromPom(&'static str),

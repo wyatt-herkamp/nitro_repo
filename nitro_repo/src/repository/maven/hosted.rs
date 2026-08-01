@@ -4,10 +4,14 @@ use std::sync::{
 };
 
 use derive_more::derive::Deref;
+use http::StatusCode;
 use maven_rs::pom::Pom;
 use nr_core::{
     database::entities::{
-        project::{DBProject, ProjectDBType, info::ProjectInfo, versions::DBProjectVersion},
+        project::{
+            DBProject, ProjectDBType, info::ProjectInfo, members::DBProjectMember,
+            versions::DBProjectVersion,
+        },
         repository::DBRepository,
     },
     repository::{
@@ -22,14 +26,14 @@ use nr_core::{
     storage::StoragePath,
     user::permissions::{HasPermissions, RepositoryActions},
 };
-use nr_storage::{DynStorage, Storage, StorageFile};
+use nr_storage::{DynStorage, FileType, Storage, StorageFile};
 use parking_lot::RwLock;
-use tracing::{debug, error, event, info, instrument, warn};
+use tracing::{debug, error, event, info, instrument};
 use uuid::Uuid;
 
 use super::{
-    MavenError, REPOSITORY_TYPE_ID, RepoResponse, RepositoryRequest, configs::MavenPushRules,
-    utils::MavenRepositoryExt,
+    MavenError, REPOSITORY_TYPE_ID, RepoResponse, RepositoryRequest, checksum,
+    configs::MavenPushRules, metadata, push_rules, utils::MavenRepositoryExt,
 };
 use crate::{
     app::NitroRepo,
@@ -38,6 +42,7 @@ use crate::{
         maven::{MavenRepositoryConfigType, configs::MavenPushRulesConfigType},
         utils::RepositoryExt,
     },
+    utils::ResponseBuilder,
 };
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
@@ -76,12 +81,14 @@ impl MavenHosted {
             return Ok(RepoResponse::unauthorized());
         };
 
-        {
-            let push_rules = self.push_rules.read();
-            if push_rules.require_nitro_deploy {
-                return Ok(RepoResponse::require_nitro_deploy());
-            }
+        if let Some(rejection) = self.check_push_rules(&path, user_id).await? {
+            info!(?rejection, %path, "Refused a deploy");
+            return Ok(RepoResponse::basic_text_response(
+                StatusCode::FORBIDDEN,
+                rejection.to_string(),
+            ));
         }
+
         let parent_path = path.clone().parent();
         if let Some(meta) = self
             .storage
@@ -108,14 +115,33 @@ impl MavenHosted {
 
         let body = body.body_as_bytes().await?;
         trace.metrics.project_write_bytes(body.len() as u64);
-        // TODO: Validate Against Push Rules
+
+        // A checksum upload is checked against the artifact it describes rather than stored as an
+        // opaque blob. Maven uploads the artifact first, so it is already here to compare against.
+        if let Some((artifact_path, kind)) = checksum::split_checksum_path(&path)
+            && let Some(rejection) = self
+                .verify_uploaded_checksum(&artifact_path, kind, &body)
+                .await?
+        {
+            return Ok(rejection);
+        }
+
         let pom = if path.has_extension("pom") {
             let pom: Pom = self.parse_pom(body.to_vec())?;
+            // Checked once the POM is parsed, because the coordinates it declares are what the
+            // path has to agree with.
+            if let Some(rejection) = push_rules::check_pom_matches_path(&pom, &path) {
+                info!(?rejection, %path, "Refused a deploy");
+                return Ok(RepoResponse::basic_text_response(
+                    StatusCode::BAD_REQUEST,
+                    rejection.to_string(),
+                ));
+            }
             Some(pom)
         } else {
             None
         };
-        let (size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
+        let (_size, created) = self.storage.save_file(self.id, body.into(), &path).await?;
         // Trigger Push Event if it is the .pom file
         let save_path = format!(
             "/repositories/{}/{}/{}",
@@ -125,9 +151,276 @@ impl MavenHosted {
         );
         if let Some(pom) = pom {
             debug!(?pom, "Parsed POM File");
-            self.post_pom_upload(path.clone(), Some(user_id), pom).await;
+            // A failure here used to be logged and swallowed, so a deploy whose project or version
+            // row could not be written still answered `201` and the artifact became invisible to
+            // browse, badges and search with nothing to say why.
+            if let Err(error) = self
+                .post_pom_upload_inner(path.clone(), Some(user_id), pom)
+                .await
+            {
+                error!(?error, %path, "Failed to register the deployed POM");
+                return Err(error);
+            }
         };
         Ok(RepoResponse::put_response(created, save_path))
+    }
+
+    /// Applies the repository's push rules to a deploy.
+    async fn check_push_rules(
+        &self,
+        path: &StoragePath,
+        user_id: i32,
+    ) -> Result<Option<push_rules::PushRejection>, MavenError> {
+        let (push_policy, allow_overwrite, must_be_project_member) = {
+            let rules = self.push_rules.read();
+            (
+                rules.push_policy.clone(),
+                rules.allow_overwrite,
+                rules.must_be_project_member,
+            )
+        };
+        let require_semver = self.project.read().require_semver;
+        let version = push_rules::version_directory_of(path);
+
+        if let Some(rejection) = push_rules::check_policy(push_policy, version.as_deref()) {
+            return Ok(Some(rejection));
+        }
+        if let Some(version) = version.as_deref()
+            && let Some(rejection) = push_rules::check_semver(require_semver, version)
+        {
+            return Ok(Some(rejection));
+        }
+        if !allow_overwrite
+            && !push_rules::is_rewritable(path)
+            && self.storage.file_exists(self.id, path).await?
+        {
+            return Ok(Some(push_rules::PushRejection::OverwriteNotAllowed(
+                path.to_string(),
+            )));
+        }
+        if must_be_project_member {
+            // Only meaningful once the project exists — the first push is what creates it, and
+            // that pusher is made an owner.
+            let project_directory = path.clone().parent().parent();
+            if let Some(project) = DBProject::find_by_project_directory(
+                &project_directory.to_string(),
+                self.id,
+                self.site.as_ref(),
+            )
+            .await?
+                && !DBProjectMember::can_write(project.id, user_id, self.site.as_ref()).await?
+            {
+                return Ok(Some(push_rules::PushRejection::NotAProjectMember));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Compares an uploaded checksum against the artifact it names.
+    async fn verify_uploaded_checksum(
+        &self,
+        artifact_path: &StoragePath,
+        kind: checksum::ChecksumKind,
+        body: &[u8],
+    ) -> Result<Option<RepoResponse>, MavenError> {
+        let Ok(text) = std::str::from_utf8(body) else {
+            return Ok(Some(RepoResponse::basic_text_response(
+                StatusCode::BAD_REQUEST,
+                "Checksum file is not valid UTF-8",
+            )));
+        };
+        let Some(expected) = checksum::parse_checksum_body(text) else {
+            return Ok(Some(RepoResponse::basic_text_response(
+                StatusCode::BAD_REQUEST,
+                "Checksum file does not contain a hex digest",
+            )));
+        };
+        let Some(actual) = self.checksum_for(artifact_path, kind).await? else {
+            // The artifact is not here yet. Maven uploads it first, so this normally means the
+            // client is uploading a checksum for something it never sent — but refusing would
+            // break any client that reorders them, so it is stored and left alone.
+            debug!(%artifact_path, "Checksum uploaded before its artifact");
+            return Ok(None);
+        };
+        if actual != expected {
+            info!(
+                %artifact_path,
+                ?kind,
+                "Uploaded checksum does not match the stored artifact"
+            );
+            return Ok(Some(RepoResponse::basic_text_response(
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The uploaded {} does not match the artifact: expected {actual}, got {expected}",
+                    kind.extension()
+                ),
+            )));
+        }
+        Ok(None)
+    }
+
+    /// Answers a request for `maven-metadata.xml`, or one of its checksums.
+    ///
+    /// `None` means the path is not a metadata request, or there is nothing to describe — the
+    /// caller falls through to storage, which is what serves a metadata file for an artifact this
+    /// repository does not know about.
+    #[instrument(skip(self))]
+    async fn serve_metadata(&self, path: &StoragePath) -> Result<Option<RepoResponse>, MavenError> {
+        let Some((request, suffix)) = metadata::MetadataRequest::parse(path) else {
+            return Ok(None);
+        };
+        let document = match request {
+            metadata::MetadataRequest::Artifact(directory) => {
+                let Some(project) = DBProject::find_by_project_directory(
+                    &directory.to_string(),
+                    self.id,
+                    self.site.as_ref(),
+                )
+                .await?
+                else {
+                    return Ok(None);
+                };
+                let versions =
+                    DBProjectVersion::get_all_versions(project.id, self.site.as_ref()).await?;
+                if versions.is_empty() {
+                    return Ok(None);
+                }
+                metadata::to_xml(&metadata::artifact_metadata(&project, &versions)?)?
+            }
+            metadata::MetadataRequest::Snapshot(directory) => {
+                let Some(document) = self.snapshot_metadata_for(&directory).await? else {
+                    return Ok(None);
+                };
+                document
+            }
+        };
+
+        // The checksums are derived from the same bytes that are about to be served, so they
+        // cannot disagree with the document the way a stored pair can.
+        let body = match suffix {
+            "" => document,
+            other => {
+                let Some(kind) =
+                    checksum::ChecksumKind::from_extension(other.trim_start_matches('.'))
+                else {
+                    return Ok(None);
+                };
+                kind.compute(document.as_bytes())
+            }
+        };
+        let content_type = if suffix.is_empty() {
+            "application/xml"
+        } else {
+            "text/plain"
+        };
+        Ok(Some(RepoResponse::Other(
+            ResponseBuilder::ok()
+                .header(http::header::CONTENT_TYPE, content_type)
+                .body(body),
+        )))
+    }
+
+    /// Builds the snapshot document for a version directory by reading what is in it.
+    ///
+    /// The individual timestamped builds are files, not rows — nothing in the database knows about
+    /// build number 3 of `1.0.0-SNAPSHOT` — so the directory listing is the only source.
+    async fn snapshot_metadata_for(
+        &self,
+        directory: &StoragePath,
+    ) -> Result<Option<String>, MavenError> {
+        let Some(project) = DBProject::find_by_project_directory(
+            &directory.clone().parent().to_string(),
+            self.id,
+            self.site.as_ref(),
+        )
+        .await?
+        else {
+            return Ok(None);
+        };
+        let Some((group_id, artifact_id)) = project.key.split_once(':') else {
+            return Ok(None);
+        };
+        let Some(version) = directory.clone().into_iter().next_back() else {
+            return Ok(None);
+        };
+        let version = version.as_ref().to_owned();
+        let base_version = version
+            .strip_suffix("-SNAPSHOT")
+            .or_else(|| version.strip_suffix("-snapshot"))
+            .unwrap_or(&version)
+            .to_owned();
+
+        let Some(StorageFile::Directory { files, .. }) =
+            self.storage.open_file(self.id, directory).await?
+        else {
+            return Ok(None);
+        };
+        let builds: Vec<_> = files
+            .iter()
+            .filter_map(|file| {
+                metadata::parse_snapshot_file(&file.name, artifact_id, &base_version)
+            })
+            .collect();
+
+        let Some(document) = metadata::snapshot_metadata(
+            group_id.to_owned(),
+            artifact_id.to_owned(),
+            version,
+            &builds,
+        ) else {
+            return Ok(None);
+        };
+        Ok(Some(metadata::to_xml(&document)?))
+    }
+
+    /// Generates a checksum file for an artifact that has one computed but never stored.
+    ///
+    /// A `GET` for `foo.jar.sha1` was a 404 unless a client had uploaded one, even though the
+    /// storage layer had been computing the digest all along.
+    async fn serve_generated_checksum(
+        &self,
+        path: &StoragePath,
+    ) -> Result<Option<RepoResponse>, MavenError> {
+        let Some((artifact_path, kind)) = checksum::split_checksum_path(path) else {
+            return Ok(None);
+        };
+        let Some(value) = self.checksum_for(&artifact_path, kind).await? else {
+            return Ok(None);
+        };
+        Ok(Some(RepoResponse::Other(
+            ResponseBuilder::ok()
+                .header(http::header::CONTENT_TYPE, "text/plain")
+                .body(value),
+        )))
+    }
+
+    /// The checksum of a stored artifact, preferring what the storage layer already recorded.
+    async fn checksum_for(
+        &self,
+        artifact_path: &StoragePath,
+        kind: checksum::ChecksumKind,
+    ) -> Result<Option<String>, MavenError> {
+        let Some(meta) = self
+            .storage
+            .get_file_information(self.id, artifact_path)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let FileType::File(file) = &meta.file_type else {
+            return Ok(None);
+        };
+        if let Some(stored) = kind.from_stored(&file.file_hash) {
+            return Ok(Some(stored));
+        }
+        // sha512 is not among the hashes the storage layer keeps, so it costs a read.
+        let Some(StorageFile::File { content, .. }) =
+            self.storage.open_file(self.id, artifact_path).await?
+        else {
+            return Ok(None);
+        };
+        let bytes = content.read_to_vec(file.file_size as usize).await?;
+        Ok(Some(kind.compute(&bytes)))
     }
     pub async fn load(
         repository: DBRepository,
@@ -251,8 +544,19 @@ impl Repository for MavenHosted {
         if let Some(err) = self.check_read(&authentication).await? {
             return Ok(err);
         }
-        let visibility = self.visibility();
+        // Generated ahead of storage: a `maven-metadata.xml` uploaded by a client is a snapshot of
+        // what that one client knew, and serving it back would hide versions deployed from
+        // anywhere else.
+        if let Some(response) = self.serve_metadata(&path).await? {
+            return Ok(response);
+        }
         let file = self.0.storage.open_file(self.id, &path).await?;
+        // A checksum that was never uploaded is generated from the artifact rather than 404d.
+        if file.is_none()
+            && let Some(response) = self.serve_generated_checksum(&path).await?
+        {
+            return Ok(response);
+        }
         if let Some(StorageFile::File { meta, .. }) = &file {
             trace.metrics.project_access_bytes(meta.file_type.file_size);
             let parent = path.parent();
@@ -322,33 +626,7 @@ impl Repository for MavenHosted {
             return Ok(RepoResponse::forbidden());
         }
 
-        let Some(nitro_deploy_version) = request.get_nitro_repo_deploy_header()? else {
-            return self.standard_maven_deploy(request).await;
-        };
-        info!(?nitro_deploy_version, "Handling Nitro Deploy Version");
-
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
-    }
-    async fn handle_post(&self, request: RepositoryRequest) -> Result<RepoResponse, MavenError> {
-        let Some(nitro_deploy_version) = request.get_nitro_repo_deploy_header()? else {
-            return Ok(RepoResponse::unsupported_method_response(
-                request.parts.method,
-                self.get_type(),
-            ));
-        };
-        // Nitro Deploy is not implemented yet. This used to be `todo!()`, which was harmless only
-        // because POST never reached a repository handler; now that it does, it has to answer.
-        warn!(
-            ?nitro_deploy_version,
-            "Nitro Deploy was requested but is not implemented"
-        );
-        Ok(RepoResponse::unsupported_method_response(
-            request.parts.method,
-            self.get_type(),
-        ))
+        self.standard_maven_deploy(request).await
     }
     #[instrument(fields(repository_type = "maven/hosted"))]
     async fn resolve_project_and_version_for_path(

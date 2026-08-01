@@ -39,9 +39,7 @@ use nr_core::storage::{InvalidStoragePath, StoragePath};
 use nr_storage::{FileFileType, FileType, StorageFile, StorageFileMeta, StorageFileReader};
 use serde::Deserialize;
 use tracing::{Level, Span, debug, debug_span, error, event, instrument};
-mod header;
 mod repo_auth;
-pub use header::*;
 pub use repo_auth::*;
 
 use super::{DynRepository, RepositoryHandlerError, repo_tracing::RepositoryRequestTracing};
@@ -97,6 +95,10 @@ pub struct RepositoryRequest {
     pub trace: RepositoryRequestTracing,
 }
 impl RepositoryRequest {
+    #[inline(always)]
+    pub fn headers(&self) -> &http::HeaderMap {
+        &self.parts.headers
+    }
     pub fn user_agent_as_string(&self) -> Result<Option<&str>, BadRequestErrors> {
         let Some(header_value) = self.parts.headers.get(USER_AGENT) else {
             return Ok(None);
@@ -359,12 +361,6 @@ impl RepoResponse {
             .body(Body::empty())
             .unwrap()
             .into()
-    }
-    pub fn require_nitro_deploy() -> Self {
-        Self::basic_text_response(
-            StatusCode::BAD_REQUEST,
-            "This repository requires Nitro Deploy to push",
-        )
     }
     pub fn internal_error(error: impl Error) -> Self {
         error!(?error, "Internal Error");
