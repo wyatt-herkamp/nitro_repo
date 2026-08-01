@@ -60,7 +60,7 @@ pub trait RepositoryConfigType: Send + Sync + Debug {
     }
     /// Get the default config. Errors are usually a bug in the code
     fn default(&self) -> Result<Value, RepositoryConfigError>;
-    
+
     /// Schema for the config
     fn schema(&self) -> Option<Schema> {
         None

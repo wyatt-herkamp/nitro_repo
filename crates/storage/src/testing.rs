@@ -113,6 +113,13 @@ pub async fn start_storage_test(storage_type: &str) -> anyhow::Result<Option<Sto
         .into_iter()
         .find(|config| config.storage_config.storage_type == storage_type)
     else {
+        if require_all_storage_tests() {
+            anyhow::bail!(
+                "No test config for `{storage_type}` and STORAGE_TESTS_REQUIRE_ALL is set. \
+                 A config file that predates this backend will not name it — delete it and let \
+                 the defaults regenerate."
+            );
+        }
         info!(storage_type, "No test config for this storage type");
         return Ok(None);
     };

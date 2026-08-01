@@ -358,7 +358,6 @@ impl AuthenticationRaw {
         }
     }
     pub fn new_from_cookie(cookie: &Cookie<'static>, site: &NitroRepo) -> Self {
-        
         match site.session_manager.get_session(cookie.value()) {
             Ok(Some(ok)) => AuthenticationRaw::Session(ok),
             Err(err) => {
