@@ -16,6 +16,10 @@
         "name": "repositories"
     },
     {
+        "path": "/npm/login/:session",
+        "name": "npmLogin"
+    },
+    {
         "path": "/page/repository/:repositoryId",
         "name": "repository_page_by_id"
     },

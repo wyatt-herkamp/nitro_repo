@@ -1,5 +1,7 @@
 use nr_core::{
-    database::entities::project::{DBProject, ProjectDBType, versions::DBProjectVersion},
+    database::entities::project::{
+        DBProject, ProjectDBType, update::UpdateProject, versions::DBProjectVersion,
+    },
     storage::StoragePath,
 };
 use tracing::{info, instrument};
@@ -28,47 +30,57 @@ pub trait NpmRegistryExt: Repository {
         )
         .await?
         {
-            // TODO: Update
+            // A re-publish carrying a changed description used to be dropped on the floor — there
+            // was a `// TODO: Update` here because `UpdateProject` was an empty file. The rest of
+            // the row is derived from the package name and path, which cannot change without
+            // being a different project.
+            let description = release.description();
+            let update = UpdateProject {
+                description: (description != project.description.as_deref())
+                    .then(|| description.map(str::to_owned)),
+                ..Default::default()
+            };
+            if !update.is_empty() {
+                update.update(project.id, self.site().as_ref()).await?;
+            }
             return Ok(project);
         }
 
-        match release.new_project(save_path.to_string(), self.id()) {
-            Ok(ok) => {
-                let insert = ok.insert(self.site().as_ref()).await?;
-                info!(?insert, "Created new project");
-                Ok(insert)
-            }
-            Err(err) => {
-                return Err(err);
-            }
-        }
+        let new_project = release.new_project(save_path.to_string(), self.id())?;
+        let insert = new_project.insert(self.site().as_ref()).await?;
+        info!(?insert, "Created new project");
+        Ok(insert)
     }
+
+    /// Records a newly published version.
+    ///
+    /// Re-publishing an existing version is refused, which is what npm's own registry does. It
+    /// previously returned `Ok` without touching the database while the caller went on to
+    /// overwrite the tarball anyway — so the stored file and the recorded metadata described
+    /// different builds, and `dist.integrity` in the packument no longer matched what was served.
     #[instrument]
-    async fn create_or_update_version(
+    async fn create_version(
         &self,
         publisher: i32,
         save_path: &StoragePath,
         project: &DBProject,
         release: &PublishVersion,
     ) -> Result<(), NPMRegistryError> {
-        if let Some(version) = DBProjectVersion::find_by_version_and_project(
+        if DBProjectVersion::find_by_version_and_project(
             &release.version,
             project.id,
             &self.site().database,
         )
         .await?
+        .is_some()
         {
-            return Ok(());
+            return Err(NPMRegistryError::VersionAlreadyExists {
+                version: release.version.clone(),
+            });
         }
 
-        match release.new_version(project.id, save_path.to_string(), publisher) {
-            Ok(ok) => {
-                ok.insert(&self.site().database).await?;
-                return Ok(());
-            }
-            Err(err) => {
-                return Err(err);
-            }
-        }
+        let new_version = release.new_version(project.id, save_path.to_string(), publisher)?;
+        new_version.insert(&self.site().database).await?;
+        Ok(())
     }
 }

@@ -6,6 +6,7 @@ import RepositoryPageEditor from "@/components/admin/repository/configs/Reposito
 import { apiURL } from "@/config";
 
 import { MavenFrontendDefinition } from "@/components/nr/repository/types/maven/maven";
+import { NPMFrontendDefinition } from "@/components/nr/repository/types/npm/npm";
 import NPMConfig from "@/components/nr/repository/types/npm/NPMConfig.vue";
 import type { RepositoryActionsType } from "./user";
 
@@ -80,7 +81,10 @@ export interface FrontendRepositoryType {
   };
   icons: Array<RepositoryIconDef>;
 }
-export const repositoryTypes: FrontendRepositoryType[] = [MavenFrontendDefinition];
+export const repositoryTypes: FrontendRepositoryType[] = [
+  MavenFrontendDefinition,
+  NPMFrontendDefinition,
+];
 export function findRepositoryType(name: string): FrontendRepositoryType | undefined {
   return repositoryTypes.find((repositoryType) => repositoryType.name === name);
 }
@@ -137,5 +141,3 @@ export interface RepositoryToActions {
   repositoryId: string;
   actions: RepositoryActionsType;
 }
-
-

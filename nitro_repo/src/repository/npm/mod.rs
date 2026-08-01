@@ -17,7 +17,9 @@ use tracing::debug;
 use types::InvalidNPMPackageName;
 
 pub mod hosted;
+pub mod integrity;
 pub mod login;
+pub mod search;
 pub mod types;
 pub mod utils;
 use nr_core::repository::config::{
@@ -61,6 +63,19 @@ pub enum NPMRegistryError {
     InvalidPackageAttachment(DecodeError),
     #[error("Only one release or attachment can be uploaded at a time")]
     OnlyOneReleaseOrAttachmentAtATime,
+    /// npm's own registry refuses this, and so does this one. Overwriting in place used to leave
+    /// the stored tarball and the recorded metadata describing different things.
+    #[error(
+        "You cannot publish over the previously published versions: {version}. \
+         Unpublish it first, or publish a new version."
+    )]
+    VersionAlreadyExists { version: String },
+    #[error(transparent)]
+    Integrity(#[from] integrity::IntegrityError),
+    #[error("{message}")]
+    NotFound { message: String },
+    #[error("The `{0}` command is not supported by this registry")]
+    UnsupportedCommand(String),
     #[error("{0}")]
     Other(Box<dyn IntoErrorResponse>),
 }
@@ -80,6 +95,7 @@ macro_rules! impl_from_error_for_other {
 }
 impl_from_error_for_other!(BadRequestErrors);
 impl_from_error_for_other!(sqlx::Error);
+impl_from_error_for_other!(nr_core::database::DBError);
 impl_from_error_for_other!(serde_json::Error);
 impl_from_error_for_other!(std::io::Error);
 impl_from_error_for_other!(AuthenticationError);
@@ -98,6 +114,17 @@ impl From<NPMRegistryError> for DynRepositoryHandlerError {
     }
 }
 
+/// The error shape npm expects. The CLI prints `error` verbatim, so a plain-text body reaches the
+/// user as an unhelpful "Unexpected token" instead of the message.
+fn npm_error(status: StatusCode, message: &str) -> Response {
+    let body = serde_json::json!({ "error": message }).to_string();
+    Response::builder()
+        .status(status)
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(body.into())
+        .unwrap()
+}
+
 impl IntoResponse for NPMRegistryError {
     fn into_response(self) -> Response {
         match self {
@@ -105,6 +132,16 @@ impl IntoResponse for NPMRegistryError {
                 .status(StatusCode::NOT_FOUND)
                 .body("Invalid GET request".into())
                 .unwrap(),
+            // npm reads the `error` field out of the JSON body and shows it to the user, so these
+            // are worth answering in the shape the client expects rather than as bare text.
+            NPMRegistryError::NotFound { ref message } => npm_error(StatusCode::NOT_FOUND, message),
+            NPMRegistryError::VersionAlreadyExists { .. } => {
+                npm_error(StatusCode::CONFLICT, &self.to_string())
+            }
+            NPMRegistryError::Integrity(_) => npm_error(StatusCode::BAD_REQUEST, &self.to_string()),
+            NPMRegistryError::UnsupportedCommand(_) => {
+                npm_error(StatusCode::NOT_IMPLEMENTED, &self.to_string())
+            }
             NPMRegistryError::Other(other) => other.into_response_boxed(),
             bad_request => {
                 debug!("Bad Request: {:?}", bad_request);

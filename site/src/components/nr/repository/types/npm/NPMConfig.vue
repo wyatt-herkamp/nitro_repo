@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!repository">
+  <div v-if="isCreate">
     <form @submit.prevent="">
       <DropDown
         v-model="input.npmTypes"
@@ -10,32 +10,33 @@
     </form>
   </div>
   <div v-else-if="value">
-    <form @submit.prevent="save">
-      <TextInput
-        v-model="value.type"
-        required
-        disabled
-        >Repository Type</TextInput
-      >
-    </form>
+    <TextInput
+      v-model="value.type"
+      required
+      disabled
+      >Repository Type</TextInput
+    >
+    <p class="note">
+      A hosted npm registry has nothing else to configure. The registry type cannot be changed after
+      the repository is created.
+    </p>
   </div>
 </template>
 <script setup lang="ts">
 import DropDown from "@/components/form/dropdown/DropDown.vue";
 import TextInput from "@/components/form/text/TextInput.vue";
+import { type NPMConfigType } from "./npm";
 import http from "@/http";
-import { defaultProxy, type NPMConfigType } from "./npm";
-import { computed, defineProps, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { notify } from "@kyvg/vue3-notification";
 
+// `Proxy` was offered here, but `NPMRegistryConfig` on the backend has only a `Hosted` variant, so
+// choosing it produced a repository the server refused to validate. It comes back when the npm
+// proxy does.
 const npmTypes = [
   {
     value: "Hosted",
     label: "Hosted",
-  },
-  {
-    value: "Proxy",
-    label: "Proxy",
   },
 ];
 const props = defineProps({
@@ -53,32 +54,24 @@ const isCreate = computed(() => {
 });
 const value = defineModel<NPMConfigType>();
 watch(input.value, () => {
-  console.log(input.value);
-
   if (input.value.npmTypes === "") {
     return;
   }
-  if (isCreate.value) {
-    if (input.value.npmTypes === "Hosted") {
-      console.log("Setting Hosted");
-      value.value = {
-        type: "Hosted",
-      };
-    } else if (input.value.npmTypes === "Proxy") {
-      value.value = {
-        type: "Proxy",
-        config: defaultProxy(),
-      };
-    } else {
-      notify({
-        type: "error",
-        title: "Error",
-        text: "Invalid maven type",
-      });
-      input.value.npmTypes = "";
-    }
+  if (!isCreate.value) {
+    return;
   }
-  console.log(value.value);
+  if (input.value.npmTypes === "Hosted") {
+    value.value = {
+      type: "Hosted",
+    };
+  } else {
+    notify({
+      type: "error",
+      title: "Error",
+      text: "Invalid npm registry type",
+    });
+    input.value.npmTypes = "";
+  }
 });
 async function load() {
   if (props.repository) {
@@ -93,16 +86,10 @@ async function load() {
   }
 }
 load();
-async function save() {
-  if (props.repository) {
-    await http
-      .put(`/api/repository/${props.repository}/config/npm`, value.value)
-      .then(() => {
-        console.log("Saved");
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
-}
 </script>
+<style scoped lang="scss">
+.note {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+</style>

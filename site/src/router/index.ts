@@ -11,6 +11,7 @@ import { adminRoutes } from "@/views/admin/adminRoutes";
 import { profileRoutes } from "@/views/profile/profileRoutes";
 import { projectRoutes } from "@/views/projects";
 import NotFound from "@/views/NotFound.vue";
+import NpmLoginView from "@/views/NpmLoginView.vue";
 import { repositoryPages } from "@/views/repositoryPages";
 declare module "vue-router" {
   interface RouteMeta {
@@ -52,6 +53,12 @@ const routes = [
     path: "/page/repositories",
     name: "repositories",
     component: RepositoriesView,
+  },
+  {
+    // Where `npm login` sends the browser. The registry hands npm this URL as `loginUrl`.
+    path: "/npm/login/:session",
+    name: "npmLogin",
+    component: NpmLoginView,
   },
   ...repositoryPages,
   ...adminRoutes,

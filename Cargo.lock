@@ -2894,6 +2894,8 @@ dependencies = [
  "serde-env",
  "serde_json",
  "serde_path_to_error",
+ "serde_urlencoded",
+ "sha1 0.10.7",
  "sha2 0.10.9",
  "sqlx",
  "strum 0.28.0",

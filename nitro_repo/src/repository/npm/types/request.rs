@@ -17,10 +17,29 @@ use uuid::Uuid;
 use super::NPMPackageName;
 use crate::repository::{maven::get_release_type, npm::NPMRegistryError};
 
-#[derive(Debug, Display, EnumString)]
+/// The value of the `npm-command` header.
+///
+/// Only `publish` existed, so every other client command fell through to a 400 — `npm deprecate`,
+/// `npm dist-tag`, `npm unpublish`, `npm access` and friends all failed with "Invalid command"
+/// regardless of whether the route behind them worked.
+#[derive(Debug, Display, EnumString, PartialEq, Eq, Clone, Copy)]
 pub enum NPMCommand {
     #[strum(serialize = "publish")]
     Publish,
+    #[strum(serialize = "unpublish")]
+    Unpublish,
+    #[strum(serialize = "deprecate")]
+    Deprecate,
+    #[strum(serialize = "dist-tag")]
+    DistTag,
+    #[strum(serialize = "access")]
+    Access,
+    #[strum(serialize = "owner")]
+    Owner,
+    #[strum(serialize = "star")]
+    Star,
+    #[strum(serialize = "adduser", serialize = "login")]
+    AddUser,
 }
 impl TryFrom<&HeaderValue> for NPMCommand {
     type Error = InvalidNPMCommand;
@@ -118,12 +137,23 @@ impl PublishDist {
     }
 }
 impl PublishVersion {
+    /// `description` from the published `package.json`.
+    ///
+    /// It arrives in `extra` because everything outside the named fields is flattened there.
+    pub fn description(&self) -> Option<&str> {
+        self.extra.get("description").and_then(Value::as_str)
+    }
+    /// A field from the published `package.json` that this type does not name explicitly.
+    pub fn extra_field(&self, key: &str) -> Option<&Value> {
+        self.extra.get(key)
+    }
     pub fn new_project(
         &self,
         save_path: String,
         repository_id: Uuid,
     ) -> Result<NewProject, NPMRegistryError> {
         let project_key = self.name.to_string();
+        let description = self.description().map(str::to_owned);
         let NPMPackageName { name, scope } = self.name.clone();
         Ok(NewProject {
             scope,
@@ -131,7 +161,9 @@ impl PublishVersion {
             name,
             storage_path: save_path,
             repository: repository_id,
-            description: None,
+            // Was hardcoded `None`, so a package's description never reached the database and the
+            // project page and packument both showed nothing.
+            description,
         })
     }
     pub fn new_version(
@@ -158,8 +190,22 @@ impl PublishVersion {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GetPath {
+    /// `GET /` — the registry root. npm probes this to decide whether a registry is alive.
     RegistryBase,
+    /// `GET /-/ping`
+    Ping,
+    /// `GET /-/whoami`
+    Whoami,
+    /// `GET /-/v1/search`. The query itself arrives in the URI query string, not the path.
     Search,
+    /// `GET /-/v1/done/{session}` — the `doneUrl` npm polls during a browser login.
+    LoginDone {
+        session: String,
+    },
+    /// `GET /-/package/{name}/dist-tags`
+    DistTags {
+        name: String,
+    },
     GetPackageInfo {
         name: String,
     },
@@ -200,8 +246,8 @@ impl GetPath {
         }
         if length == 5 {
             let file = components[4].to_string();
-            let version =
-                extract_version_from_file(&file).ok_or(NPMRegistryError::InvalidGetRequest)?;
+            let version = extract_version_from_file(&file, &name)
+                .ok_or(NPMRegistryError::InvalidGetRequest)?;
             return Ok(GetPath::GetTar {
                 name,
                 version,
@@ -232,8 +278,8 @@ impl GetPath {
         }
         if length == 3 {
             let file = components[2].to_string();
-            let version =
-                extract_version_from_file(&file).ok_or(NPMRegistryError::InvalidGetRequest)?;
+            let version = extract_version_from_file(&file, &name)
+                .ok_or(NPMRegistryError::InvalidGetRequest)?;
             return Ok(GetPath::GetTar {
                 name,
                 version,
@@ -243,6 +289,30 @@ impl GetPath {
         info!(?components, "Invalid path");
         Err(NPMRegistryError::InvalidGetRequest)
     }
+
+    /// Routes under `/-/`, which npm reserves for registry endpoints rather than packages.
+    ///
+    /// A name can appear here in either form: npm percent-encodes the separator in a scoped name
+    /// for these routes, and axum decodes it back, so `@scope/pkg` arrives as two components.
+    fn registry_call(components: &[StoragePathComponent]) -> Result<Self, NPMRegistryError> {
+        let rest: Vec<String> = components[1..].iter().map(|c| c.to_string()).collect();
+        let as_str: Vec<&str> = rest.iter().map(String::as_str).collect();
+        match as_str.as_slice() {
+            ["ping"] => Ok(GetPath::Ping),
+            ["whoami"] => Ok(GetPath::Whoami),
+            ["v1", "search"] => Ok(GetPath::Search),
+            ["v1", "done", session] => Ok(GetPath::LoginDone {
+                session: (*session).to_owned(),
+            }),
+            ["package", rest @ .., "dist-tags"] if !rest.is_empty() => Ok(GetPath::DistTags {
+                name: rest.join("/"),
+            }),
+            _ => {
+                info!(?components, "Unhandled registry route");
+                Err(NPMRegistryError::InvalidGetRequest)
+            }
+        }
+    }
 }
 impl TryFrom<StoragePath> for GetPath {
     type Error = NPMRegistryError;
@@ -250,6 +320,12 @@ impl TryFrom<StoragePath> for GetPath {
     fn try_from(value: StoragePath) -> Result<Self, Self::Error> {
         let as_string = value.to_string();
         let components: Vec<_> = value.into();
+        if components.is_empty() {
+            return Ok(GetPath::RegistryBase);
+        }
+        if components[0].as_ref() == "-" {
+            return GetPath::registry_call(&components);
+        }
         if as_string.starts_with('@') {
             GetPath::scoped_package_call(components)
         } else {
@@ -257,20 +333,119 @@ impl TryFrom<StoragePath> for GetPath {
         }
     }
 }
-pub fn extract_version_from_file(file: &str) -> Option<String> {
-    let parts: Vec<_> = file.split('-').collect();
-    if let Some(version) = parts.last() {
-        let version = version.trim_end_matches(".tgz");
-        return Some(version.to_string());
+
+/// Pulls the version out of a tarball filename.
+///
+/// This used to be `file.split('-').last()`, which is only right when neither the package name nor
+/// the version contains a hyphen. `mylib-1.0.0-beta.1.tgz` yielded `beta.1`, so every prerelease
+/// resolved to a version that does not exist — and a hyphenated name like `npm-check-updates` only
+/// worked by luck, because the version happened to be the final segment.
+///
+/// The filename is `{unscoped name}-{version}.tgz`, so the name is what tells us where the version
+/// starts. A filename that does not match the package it was requested under is rejected rather
+/// than guessed at.
+pub fn extract_version_from_file(file: &str, package_name: &str) -> Option<String> {
+    let unscoped = package_name.rsplit('/').next()?;
+    let version = file
+        .strip_suffix(".tgz")?
+        .strip_prefix(unscoped)?
+        .strip_prefix('-')?;
+    if version.is_empty() {
+        return None;
     }
-    None
+    Some(version.to_owned())
 }
 
 #[cfg(test)]
 pub mod tests {
     use nr_core::storage::StoragePath;
 
-    use super::GetPath;
+    use super::{GetPath, extract_version_from_file};
+
+    /// A hyphen in the version is the common case for a prerelease, and a hyphen in the name is
+    /// the common case for everything else.
+    #[test]
+    pub fn versions_with_hyphens() {
+        let cases = [
+            ("mylib-1.0.0.tgz", "mylib", Some("1.0.0")),
+            // `split('-').last()` gave `beta.1` here.
+            ("mylib-1.0.0-beta.1.tgz", "mylib", Some("1.0.0-beta.1")),
+            (
+                "npm-check-updates-11.0.3.tgz",
+                "npm-check-updates",
+                Some("11.0.3"),
+            ),
+            (
+                "npm-check-updates-11.0.3-rc.2.tgz",
+                "npm-check-updates",
+                Some("11.0.3-rc.2"),
+            ),
+            // The tarball for a scoped package is named without the scope.
+            ("mylib-1.0.0.tgz", "@nr/mylib", Some("1.0.0")),
+            // Belongs to a different package — not ours to guess at.
+            ("other-1.0.0.tgz", "mylib", None),
+            ("mylib-1.0.0.tar.gz", "mylib", None),
+            ("mylib-.tgz", "mylib", None),
+        ];
+        for (file, name, expected) in cases {
+            assert_eq!(
+                extract_version_from_file(file, name).as_deref(),
+                expected,
+                "{file} under {name}"
+            );
+        }
+    }
+
+    /// The bug that made scoped packages unusable: publish stored the key that
+    /// `NPMPackageName` produced, GET looked up the key that `GetPath` produced, and for a scoped
+    /// package the two were `@@nr/mylib` and `@nr/mylib`. They never matched, so a scoped package
+    /// could be published and then never resolved.
+    #[test]
+    pub fn published_and_requested_keys_agree() {
+        use crate::repository::npm::types::NPMPackageName;
+
+        for name in ["@nr/mylib", "mylib", "@babel/core"] {
+            let published = NPMPackageName::try_from(name).unwrap().to_string();
+            let requested = match GetPath::try_from(StoragePath::from(name)).unwrap() {
+                GetPath::GetPackageInfo { name } => name,
+                other => panic!("`{name}` parsed as {other:?}"),
+            };
+            assert_eq!(
+                published, requested,
+                "publish and fetch disagree for {name}"
+            );
+        }
+    }
+
+    #[test]
+    pub fn registry_routes() {
+        let cases = [
+            ("", GetPath::RegistryBase),
+            ("-/ping", GetPath::Ping),
+            ("-/whoami", GetPath::Whoami),
+            // Declared but never constructed, so a search was parsed as a tarball fetch and 404d
+            // with a message about a missing package.
+            ("-/v1/search", GetPath::Search),
+            (
+                "-/package/mylib/dist-tags",
+                GetPath::DistTags {
+                    name: "mylib".to_owned(),
+                },
+            ),
+            (
+                "-/package/@nr/mylib/dist-tags",
+                GetPath::DistTags {
+                    name: "@nr/mylib".to_owned(),
+                },
+            ),
+        ];
+        for (path, expected) in cases {
+            let parsed = GetPath::try_from(StoragePath::from(path))
+                .unwrap_or_else(|err| panic!("`{path}` failed to parse: {err}"));
+            assert_eq!(parsed, expected, "for path `{path}`");
+        }
+    }
+
     #[test]
     pub fn tests() {
         let tests = vec![

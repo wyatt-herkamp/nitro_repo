@@ -47,7 +47,7 @@ use crate::{
     repository::{
         DynRepository, RepositoryType, StagingConfig,
         maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
-        npm::{NPMRegistryConfigType, NpmRegistryType},
+        npm::{NPMRegistryConfigType, NpmRegistryType, login::web_login::NpmWebLoginManager},
         repo_tracing::RepositoryMetricsMeter,
     },
     utils::ip_addr::HasForwardedHeader,
@@ -123,6 +123,9 @@ pub struct NitroRepoInner {
     pub staging_config: StagingConfig,
     services: Mutex<InternalServices>,
     pub suggested_local_storage_path: PathBuf,
+    /// npm browser-login sessions awaiting approval. In memory on purpose — see
+    /// [`crate::repository::npm::login::web_login`].
+    pub npm_web_logins: NpmWebLoginManager,
 }
 macro_rules! take_service {
     ($(
@@ -273,6 +276,7 @@ impl NitroRepo {
             #[cfg(feature = "frontend")]
             frontend: frontend::HostedFrontend::new(site.frontend_path)?,
             suggested_local_storage_path,
+            npm_web_logins: NpmWebLoginManager::default(),
         };
 
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
