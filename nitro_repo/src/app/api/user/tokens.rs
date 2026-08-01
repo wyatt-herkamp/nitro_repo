@@ -31,6 +31,34 @@ pub fn token_routes() -> axum::Router<NitroRepo> {
         .route("/list", get(list))
         .route("/get/{id}", get(get_token))
         .route("/delete/{id}", delete(delete_token))
+        .route("/revoke-all", delete(revoke_all))
+}
+
+/// Revokes every token belonging to the caller.
+///
+/// There was no way to do this. After a leak the only recourse was deleting tokens one at a time
+/// through the UI, and only the ones you could still see.
+#[utoipa::path(
+    delete,
+    path = "/token/revoke-all",
+    responses(
+        (status = 200, description = "How many tokens were revoked", body = RevokedTokensResponse),
+    ),
+)]
+#[instrument]
+async fn revoke_all(
+    auth: OnlySessionAllowedAuthentication,
+    State(site): State<NitroRepo>,
+) -> Result<Response, InternalError> {
+    // A session is required for this route, so the token being used cannot revoke itself out from
+    // under the request.
+    let revoked = AuthToken::delete_all_for_user(auth.get_id(), site.as_ref()).await?;
+    Ok(ResponseBuilder::ok().json(&RevokedTokensResponse { revoked }))
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct RevokedTokensResponse {
+    pub revoked: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -41,6 +69,12 @@ pub struct NewAuthTokenRequest {
     pub scopes: Vec<NRScope>,
     #[serde(default)]
     pub repository_scopes: Vec<NewRepositoryScope>,
+    /// How many days until the token stops working. Omit for a token that never expires.
+    ///
+    /// The column has always existed; nothing ever wrote it, and the profile UI showed a disabled
+    /// field reading "Not implemented".
+    #[serde(default)]
+    pub expires_in_days: Option<i64>,
 }
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct NewRepositoryScope {
@@ -73,6 +107,14 @@ async fn create(
             .body("No Scopes Provided".into())
             .unwrap());
     }
+    let expires_at = match new_token.expires_in_days {
+        Some(days) if days <= 0 => {
+            return Ok(ResponseBuilder::bad_request()
+                .body("Expiry must be at least one day in the future"));
+        }
+        Some(days) => Some(chrono::Local::now().fixed_offset() + chrono::Duration::days(days)),
+        None => None,
+    };
     let repositories: Vec<(Uuid, Vec<RepositoryActions>)> = new_token
         .repository_scopes
         .into_iter()
@@ -85,6 +127,7 @@ async fn create(
         source,
         scopes: new_token.scopes,
         repositories,
+        expires_at,
     };
     let (id, token) = new_token.insert(site.as_ref()).await?;
     let response = NewAuthTokenResponse { id, token };

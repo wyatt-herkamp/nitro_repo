@@ -172,14 +172,26 @@ pub async fn list_repositories(
     auth: Option<Authentication>,
     State(site): State<NitroRepo>,
 ) -> Result<Response, InternalError> {
-    let repositories: Vec<_> = DBRepositoryWithStorageName::get_all(site.as_ref())
-        .await?
-        .into_iter()
-        .filter(|repo| match repo.visibility {
-            Visibility::Private | Visibility::Public => true, // TODO FIX
-            _ => true,
-        })
-        .collect();
+    // Both arms of this filter returned `true`, so it did nothing and every private repository in
+    // the instance was listed to anonymous callers — names, storage names and visibility included.
+    //
+    // A private repository is only listed to someone who can read it. Hidden means "do not
+    // advertise", which is what a listing is, so it is treated the same way here; it is still
+    // reachable directly by anyone with the URL.
+    let all = DBRepositoryWithStorageName::get_all(site.as_ref()).await?;
+    let mut repositories = Vec::with_capacity(all.len());
+    for repository in all {
+        let visible = match repository.visibility {
+            Visibility::Public => true,
+            Visibility::Private | Visibility::Hidden => {
+                auth.has_action(RepositoryActions::Read, repository.id, site.as_ref())
+                    .await?
+            }
+        };
+        if visible {
+            repositories.push(repository);
+        }
+    }
     Ok(ResponseBuilder::ok().json(&repositories))
 }
 #[derive(Debug, Clone, Copy, Deserialize, IntoParams)]

@@ -16,12 +16,12 @@
           </TextInput>
         </div>
         <div class="column">
-          <TextInput
+          <NumberInput
             id="tokenExpiration"
-            v-model="newToken.tokenExpiration"
-            :disabled="true"
-            placeholder="Not implemented"
-            >Token Expiration</TextInput
+            v-model="newToken.expiresInDays"
+            :min="1"
+            placeholder="Leave empty for a token that never expires"
+            >Expires after (days)</NumberInput
           >
         </div>
       </div>
@@ -38,7 +38,7 @@
   </main>
   <main v-else>
     <CopyCode :code="newResponseTokenResponse.token"
-      >Your Token. Save not or its gone forever</CopyCode
+      >Your token. Copy it now — it is not shown again.</CopyCode
     >
   </main>
 </template>
@@ -47,46 +47,48 @@ import CopyCode from "@/components/core/code/CopyCode.vue";
 import ScopesSelector from "@/components/form/ScopesSelector.vue";
 import SubmitButton from "@/components/form/SubmitButton.vue";
 import TextInput from "@/components/form/text/TextInput.vue";
+import NumberInput from "@/components/form/NumberInput.vue";
 import RepositoryToActionList from "@/components/nr/repository/RepositoryToActionList.vue";
 import http from "@/http";
-import type { RepositoryActions, ScopeDescription } from "@/types/base";
+import type { ScopeDescription } from "@/types/base";
 import type { RepositoryToActions } from "@/types/repository";
-import { type NewAuthTokenResponse } from "@/types/user/token";
+import {
+  type NewAuthTokenRepositoryScopeRequest,
+  type NewAuthTokenResponse,
+} from "@/types/user/token";
 import { notify } from "@kyvg/vue3-notification";
 import { ref } from "vue";
-const newToken = ref({
+const newToken = ref<{
+  tokenName: string;
+  tokenDescription: string;
+  expiresInDays: number | undefined;
+}>({
   tokenName: "",
   tokenDescription: "",
-  tokenExpiration: "",
+  expiresInDays: undefined,
 });
 const newResponseTokenResponse = ref<NewAuthTokenResponse | undefined>(undefined);
 const repositoryScopes = ref<Array<RepositoryToActions>>([]);
 const scopes = ref<Array<ScopeDescription>>([]);
 async function createToken() {
-  const repositoryScopesRequest = [] as Array<{
-    repository_string: string;
-    actions: Array<RepositoryActions>;
-  }>;
-  for (const repositoryScope of repositoryScopes.value) {
-    repositoryScopesRequest.push({
-      repository_string: repositoryScope.repositoryId,
-      actions: repositoryScope.actions.asArray(),
-    });
-  }
+  // `repository_string`/`actions` are not the field names the API reads — it wants
+  // `repository_id`/`scopes` — so a token created with any repository scope was rejected outright.
+  const repositoryScopesRequest: Array<NewAuthTokenRepositoryScopeRequest> =
+    repositoryScopes.value.map((repositoryScope) => ({
+      repository_id: repositoryScope.repositoryId,
+      scopes: repositoryScope.actions.asArray(),
+    }));
   const scopesRequest = scopes.value.map((scope) => scope.key);
-  console.log(`Creating Token with Repository scopes ${JSON.stringify(repositoryScopesRequest)}`);
-  console.log(`Creating Token with Scopes ${JSON.stringify(scopesRequest)}`);
   const request = {
     name: newToken.value.tokenName,
     description: newToken.value.tokenDescription,
     repository_scopes: repositoryScopesRequest,
     scopes: scopesRequest,
+    expires_in_days: newToken.value.expiresInDays,
   };
-  console.log(`Creating Token with Request ${JSON.stringify(request)}`);
   await http
     .post<NewAuthTokenResponse>("/api/user/token/create", request)
     .then((response) => {
-      console.log(response.data);
       newResponseTokenResponse.value = response.data;
       notify({
         type: "success",

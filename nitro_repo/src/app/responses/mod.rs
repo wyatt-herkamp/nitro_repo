@@ -42,6 +42,12 @@ pub enum MissingPermission {
     ReadRepository(uuid::Uuid),
     WriteRepository(uuid::Uuid),
     StorageManager,
+    /// The user is allowed to do this, but the token they used is not.
+    ///
+    /// Kept distinct from the permission failures above because the fix is different: the caller
+    /// needs a new token, not a new role, and saying "forbidden" without that detail sends people
+    /// looking in the wrong place.
+    Scope(nr_core::user::scopes::NRScope),
 }
 impl IntoResponse for MissingPermission {
     #[inline(always)]
@@ -80,6 +86,12 @@ impl IntoResponse for MissingPermission {
             Self::StorageManager => Response::builder()
                 .status(StatusCode::FORBIDDEN)
                 .body(Body::from("You are not a storage manager or admin"))
+                .unwrap(),
+            Self::Scope(scope) => Response::builder()
+                .status(StatusCode::FORBIDDEN)
+                .body(Body::from(format!(
+                    "The token used does not carry the `{scope}` scope"
+                )))
                 .unwrap(),
         }
     }

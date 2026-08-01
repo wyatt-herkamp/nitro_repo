@@ -6,12 +6,13 @@ use axum::{
 use http::StatusCode;
 use nr_core::{
     database::entities::user::{
-        ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _,
+        ChangePasswordNoCheck, NewUserRequest, UserSafeData, UserType as _, auth_token::AuthToken,
         permissions::FullUserPermissions, user_utils,
     },
     user::{
         Email, Username,
         permissions::{HasPermissions, UpdatePermissions},
+        scopes::NRScope,
     },
 };
 use serde::Deserialize;
@@ -21,6 +22,7 @@ use utoipa::{OpenApi, ToSchema};
 use crate::{
     app::{
         NitroRepo,
+        api::require_scope,
         authentication::{Authentication, password},
         responses::MissingPermission,
     },
@@ -36,7 +38,8 @@ use crate::{
         create_user,
         is_taken,
         update_permissions,
-        update_password
+        update_password,
+        revoke_user_tokens
     ),
     components(schemas(IsTaken, UpdatePermissions))
 )]
@@ -59,6 +62,10 @@ pub fn user_management_routes() -> axum::Router<NitroRepo> {
             "/update/{user_id}/password",
             axum::routing::put(update_password),
         )
+        .route(
+            "/{user_id}/tokens/revoke-all",
+            axum::routing::delete(revoke_user_tokens),
+        )
 }
 #[utoipa::path(
     get,
@@ -74,6 +81,9 @@ pub async fn list_users(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::ReadUser, &site).await? {
+        return Ok(denied);
     }
     let users = UserSafeData::get_all(&site.database).await?;
     Ok(Json(users).into_response())
@@ -93,6 +103,9 @@ pub async fn get_user(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::ReadUser, &site).await? {
+        return Ok(denied);
     }
     let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
         return Ok(Response::builder()
@@ -119,6 +132,9 @@ pub async fn get_user_permissions(
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
+    if let Some(denied) = require_scope(&auth, NRScope::ReadUser, &site).await? {
+        return Ok(denied);
+    }
     let Some(user) = FullUserPermissions::get_by_id(user_id, site.as_ref()).await? else {
         return Ok(ResponseBuilder::not_found()
             .error_reason("User not found")
@@ -141,6 +157,9 @@ pub async fn create_user(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::CreateUser, &site).await? {
+        return Ok(denied);
     }
     if user_utils::is_username_taken(&user.username, &site.database).await? {
         return Ok(ConflictResponse::from("username").into_response());
@@ -228,6 +247,9 @@ pub async fn update_permissions(
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
+    if let Some(denied) = require_scope(&auth, NRScope::EditUser, &site).await? {
+        return Ok(denied);
+    }
     let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
         return Ok(ResponseBuilder::not_found()
             .error_reason("User not found")
@@ -257,6 +279,9 @@ pub async fn update_password(
     if !auth.is_admin_or_user_manager() {
         return Ok(MissingPermission::UserManager.into_response());
     }
+    if let Some(denied) = require_scope(&auth, NRScope::EditUser, &site).await? {
+        return Ok(denied);
+    }
     let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
         return Ok(ResponseBuilder::not_found()
             .error_reason("User not found")
@@ -273,4 +298,43 @@ pub struct AdminUpdateUserRequest {
     pub username: Option<String>,
     pub email: Option<String>,
     pub name: Option<String>,
+}
+
+#[derive(Debug, serde::Serialize, Deserialize, ToSchema)]
+pub struct RevokedTokensResponse {
+    pub revoked: u64,
+}
+
+/// Revokes every API token belonging to a user.
+///
+/// The admin surface had no way to do this — "revoke" appeared nowhere in the codebase — so a
+/// leaked token could only be dealt with by the user who owned it, assuming they still could.
+#[utoipa::path(
+    delete,
+    path = "/{user_id}/tokens/revoke-all",
+    responses(
+        (status = 200, description = "How many tokens were revoked", body = RevokedTokensResponse),
+        (status = 404, description = "User not found"),
+    )
+)]
+#[instrument]
+pub async fn revoke_user_tokens(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Path(user_id): Path<i32>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_user_manager() {
+        return Ok(MissingPermission::UserManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::EditUser, &site).await? {
+        return Ok(denied);
+    }
+    let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
+        return Ok(ResponseBuilder::not_found()
+            .error_reason("User not found")
+            .empty());
+    };
+    let revoked = AuthToken::delete_all_for_user(user.id, site.as_ref()).await?;
+    tracing::info!(?user_id, revoked, "Revoked every token for a user");
+    Ok(ResponseBuilder::ok().json(&RevokedTokensResponse { revoked }))
 }

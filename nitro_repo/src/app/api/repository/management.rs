@@ -11,7 +11,10 @@ use http::StatusCode;
 use nr_core::{
     database::entities::repository::{DBRepository, GenericDBRepositoryConfig},
     repository::Visibility,
-    user::permissions::{HasPermissions, RepositoryActions},
+    user::{
+        permissions::{HasPermissions, RepositoryActions},
+        scopes::NRScope,
+    },
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -22,6 +25,7 @@ use uuid::Uuid;
 use crate::{
     app::{
         NitroRepo,
+        api::require_scope,
         authentication::{Authentication, AuthenticationError},
         responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
     },
@@ -67,6 +71,9 @@ pub async fn new_repository(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::RepositoryManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::CreateRepository, &site).await? {
+        return Ok(denied);
     }
     let NewRepositoryRequest {
         name,
@@ -174,7 +181,14 @@ pub async fn get_config(
     Query(params): Query<GetConfigParams>,
     Path((repository, config)): Path<(Uuid, String)>,
 ) -> Result<Response, InternalError> {
-    let repository_visibility = Visibility::Private;
+    // Read from the database. This was `let repository_visibility = Visibility::Private;` —
+    // unconditional — so the `Hidden | Public` branch below was dead, `sanitize_for_public_view`
+    // never ran, and every non-editor got a 403 on every config read regardless of how public the
+    // repository was.
+    let Some(db_repository) = DBRepository::get_by_id(repository, site.as_ref()).await? else {
+        return Ok(RepositoryNotFound::Uuid(repository).into_response());
+    };
+    let repository_visibility = db_repository.visibility;
     let Some(config_type) = site.get_repository_config_type(&config) else {
         return Ok(InvalidRepositoryConfig::InvalidConfigType(config).into_response());
     };
@@ -241,6 +255,9 @@ pub async fn update_config(
         .await?
     {
         return Ok(MissingPermission::EditRepository(repository).into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::EditRepository, &site).await? {
+        return Ok(denied);
     }
     let Some(config_type) = site.get_repository_config_type(&config_key) else {
         return Ok(InvalidRepositoryConfig::InvalidConfigType(config_key).into_response());
@@ -309,6 +326,9 @@ pub async fn delete_repository(
 ) -> Result<Response, InternalError> {
     if !auth.is_admin_or_system_manager() {
         return Ok(MissingPermission::RepositoryManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::DeleteRepository, &site).await? {
+        return Ok(denied);
     }
     let Some(db_repository) = DBRepository::get_by_id(repository, site.as_ref()).await? else {
         return Ok(RepositoryNotFound::Uuid(repository).into_response());

@@ -9,6 +9,8 @@ export interface RawAuthTokenResponse {
   active: boolean;
   source: string;
   expires_at?: string;
+  /** When the token last authenticated a request. Recorded at most once an hour. */
+  last_used_at?: string;
   created_at: string;
 }
 
@@ -38,4 +40,15 @@ export interface NewAuthTokenResponse {
 export interface NewAuthTokenRepositoryScope {
   repositoryId: string;
   actions: RepositoryActionsType;
+}
+
+/**
+ * The shape the API actually accepts for a repository scope.
+ *
+ * The create form was sending `{ repository_string, actions }`, which has neither field the server
+ * looks for, so any token created with a repository scope was rejected as a bad request.
+ */
+export interface NewAuthTokenRepositoryScopeRequest {
+  repository_id: string;
+  scopes: Array<RepositoryActions>;
 }

@@ -21,9 +21,12 @@ pub async fn create_token(database: &PgPool) -> Result<(String, String), sqlx::E
     };
     Ok((token, hashed))
 }
-/// Generates a new token for the user
+/// Generates a new token for the user.
+///
+/// 32 alphanumeric characters from the OS entropy source, stored only as a SHA-256 hash. The
+/// `// TODO: Secure this` that sat here predated that and had been true of an earlier
+/// implementation; leaving it read as an open hole that was not one.
 pub fn generate_token() -> String {
-    // TODO: Secure this
     StdRng::from_os_rng()
         .sample_iter(&Alphanumeric)
         .take(32)

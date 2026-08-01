@@ -48,14 +48,28 @@ const app = createApp(App);
 const vfm = createVfm();
 router.beforeEach((to) => {
   const store = sessionStore(pinia);
-  if (to.meta.requiresAuth && store.session === undefined) {
-    return {
-      name: "login",
-    };
-  } else if (to.meta.requiresIdentity === true && store.session === undefined) {
-    return {
-      name: "login",
-    };
+  const signedIn = store.session !== undefined;
+  if ((to.meta.requiresAuth || to.meta.requiresIdentity === true) && !signedIn) {
+    // Carry where they were going, so signing in lands them there rather than on the home page.
+    return { name: "login", query: { redirect: to.fullPath } };
+  }
+  // `requiresUserManager` and `requiresRepositoryManager` were declared on routes and in the
+  // `RouteMeta` augmentation, and nothing ever read them — every admin route rendered for any
+  // signed-in user. The server is still the real check; this stops the UI from offering pages it
+  // knows will be refused.
+  if (to.meta.requiresUserManager || to.meta.requiresRepositoryManager) {
+    if (!signedIn) {
+      return { name: "login", query: { redirect: to.fullPath } };
+    }
+    const user = store.user;
+    const permitted =
+      user !== undefined &&
+      (user.admin ||
+        (to.meta.requiresUserManager === true && user.user_manager) ||
+        (to.meta.requiresRepositoryManager === true && user.system_manager));
+    if (!permitted) {
+      return { name: "home" };
+    }
   }
 });
 

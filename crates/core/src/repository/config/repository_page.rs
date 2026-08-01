@@ -43,6 +43,20 @@ impl RepositoryConfigType for RepositoryPageType {
         Some(schema_for!(RepositoryPage))
     }
 
+    /// The landing page is what a repository shows visitors, so there is nothing in it to hide.
+    ///
+    /// Every config type inherits the trait's `Ok(None)` default, which means "not visible to
+    /// anyone but an editor". That is the right default, but it left the public branch in
+    /// `get_config` with nothing to return even once it became reachable — a repository page could
+    /// not be read by the people it is written for.
+    fn sanitize_for_public_view(
+        &self,
+        config: Value,
+    ) -> Result<Option<Value>, RepositoryConfigError> {
+        let _page: RepositoryPage = serde_json::from_value(config.clone())?;
+        Ok(Some(config))
+    }
+
     fn get_type_static() -> &'static str
     where
         Self: Sized,

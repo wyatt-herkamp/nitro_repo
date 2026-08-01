@@ -19,11 +19,20 @@ use syn::{Attribute, Data, DeriveInput, Expr, Ident, Lit, LitStr, Result};
 mod keywords {
     syn::custom_keyword!(title);
     syn::custom_keyword!(parent);
+    syn::custom_keyword!(requires_user_manager);
+    syn::custom_keyword!(requires_admin);
+    syn::custom_keyword!(requires_system);
 }
 #[derive(Debug)]
 pub struct ScopeAttribute {
     title: LitStr,
     parent: Option<LitStr>,
+    /// Bare flags. `ScopeDescription` already carried these fields, but the generated
+    /// `description()` filled them from `Default`, so every one of them was always `false` and the
+    /// UI had no way to tell an administrative scope from an ordinary one.
+    requires_user_manager: bool,
+    requires_admin: bool,
+    requires_system: bool,
 }
 pub struct ScopeEntry {
     ident: Ident,
@@ -37,7 +46,13 @@ impl ScopeEntry {
             attribute,
             docs,
         } = self;
-        let ScopeAttribute { title, parent } = attribute;
+        let ScopeAttribute {
+            title,
+            parent,
+            requires_user_manager,
+            requires_admin,
+            requires_system,
+        } = attribute;
         let parent = if let Some(parent) = parent {
             quote! { Some(#parent) }
         } else {
@@ -49,7 +64,9 @@ impl ScopeEntry {
                 description: #docs,
                 name: #title,
                 parent: #parent,
-                ..std::default::Default::default()
+                requires_user_manager: #requires_user_manager,
+                requires_admin: #requires_admin,
+                requires_system: #requires_system,
             },
         };
         scope
@@ -80,6 +97,9 @@ impl syn::parse::Parse for ScopeAttribute {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut title = None;
         let mut parent = None;
+        let mut requires_user_manager = false;
+        let mut requires_admin = false;
+        let mut requires_system = false;
         while !input.is_empty() {
             let lookahead = input.lookahead1();
             if lookahead.peek(keywords::title) {
@@ -90,6 +110,15 @@ impl syn::parse::Parse for ScopeAttribute {
                 input.parse::<keywords::parent>()?;
                 input.parse::<syn::Token![=]>()?;
                 parent = Some(input.parse()?);
+            } else if lookahead.peek(keywords::requires_user_manager) {
+                input.parse::<keywords::requires_user_manager>()?;
+                requires_user_manager = true;
+            } else if lookahead.peek(keywords::requires_admin) {
+                input.parse::<keywords::requires_admin>()?;
+                requires_admin = true;
+            } else if lookahead.peek(keywords::requires_system) {
+                input.parse::<keywords::requires_system>()?;
+                requires_system = true;
             } else {
                 return Err(lookahead.error());
             }
@@ -98,7 +127,13 @@ impl syn::parse::Parse for ScopeAttribute {
             }
         }
         let title = title.ok_or_else(|| input.error("No title found"))?;
-        Ok(Self { title, parent })
+        Ok(Self {
+            title,
+            parent,
+            requires_user_manager,
+            requires_admin,
+            requires_system,
+        })
     }
 }
 

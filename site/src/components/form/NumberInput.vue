@@ -13,12 +13,12 @@ import "@/assets/styles/form.scss";
 defineProps({
   id: String,
 });
-const value = defineModel<number>({
-  required: true,
-});
+// Optional, so this can back a field that may legitimately be left blank.
+const value = defineModel<number | undefined>();
 </script>
 
 <style scoped lang="scss">
-@import "@/assets/styles/variables.scss";
+// This used to also `@import "@/assets/styles/variables.scss"`, which does not exist. The build
+// only survived because nothing imported this component; referencing it broke the build.
 @import "@/assets/styles/form.scss";
 </style>
