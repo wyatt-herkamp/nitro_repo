@@ -256,37 +256,54 @@ impl LocalStorageInner {
                 if parent == self.config.path {
                     trace!("Do not update root directory");
                 } else {
-                    metas_updated += 1;
-                    self.meta_update_sender
-                        .send(parent.to_path_buf())
-                        .await
-                        .unwrap();
+                    metas_updated += self.queue_meta_update(parent.to_path_buf()).await;
                 }
             }
+            // `greatest_parent` is the topmost directory `save_file` had to create, so `path`
+            // always sits underneath it. Degrade to updating just the file's own meta if that
+            // ever stops holding rather than panicking in a background task.
+            let Ok(relative) = path.strip_prefix(&greatest_parent) else {
+                warn!(
+                    ?path,
+                    ?greatest_parent,
+                    "Path is not below the directory that was created for it"
+                );
+                metas_updated += self.queue_meta_update(path.to_path_buf()).await;
+                return Ok(metas_updated);
+            };
             let mut next_path = greatest_parent.clone();
-            for part in path.strip_prefix(&greatest_parent).unwrap().components() {
+            for part in relative.components() {
                 event!(Level::DEBUG, ?next_path, "Updating Meta");
-                self.meta_update_sender
-                    .send(next_path.clone())
-                    .await
-                    .unwrap();
-                metas_updated += 1;
+                metas_updated += self.queue_meta_update(next_path.clone()).await;
                 next_path = next_path.join(part);
             }
         } else {
-            self.meta_update_sender.send(path.to_path_buf()).await.unwrap();
-            metas_updated += 1;
-            let parent = path.parent();
-            if let Some(parent) = parent {
-                metas_updated += 1;
-                self.meta_update_sender
-                    .send(parent.to_path_buf())
-                    .await
-                    .unwrap();
+            metas_updated += self.queue_meta_update(path.to_path_buf()).await;
+            if let Some(parent) = path.parent() {
+                metas_updated += self.queue_meta_update(parent.to_path_buf()).await;
             }
         }
 
         Ok(metas_updated)
+    }
+
+    /// Queues a path for the background meta writer, returning how many updates were queued.
+    ///
+    /// The receiver is dropped by [Storage::unload], and these calls run from a detached task that
+    /// can outlive it. A send failure therefore means "the storage is shutting down", which is not
+    /// worth aborting a background task over — these used to `unwrap`, turning an ordinary
+    /// shutdown race into a panic.
+    async fn queue_meta_update(&self, path: PathBuf) -> usize {
+        match self.meta_update_sender.send(path).await {
+            Ok(()) => 1,
+            Err(err) => {
+                debug!(
+                    path = ?err.0,
+                    "Storage is unloaded; dropping queued meta update"
+                );
+                0
+            }
+        }
     }
 }
 impl LocalStorage {
@@ -467,7 +484,11 @@ impl Storage for LocalStorage {
         info!(?self, "Unloading Local Storage");
         let shutdown_signal = self.0.shutdown_signal.lock().await.take();
         if let Some(shutdown_signal) = shutdown_signal {
-            shutdown_signal.send(()).unwrap();
+            // The meta task exits on its own once the channel closes, so a receiver that is
+            // already gone means the job is done — not a reason to panic during shutdown.
+            if shutdown_signal.send(()).is_err() {
+                debug!("Meta update task had already stopped");
+            }
         } else {
             error!("Shutdown Signal already sent");
         }

@@ -52,6 +52,9 @@ pub enum S3StorageError {
     #[error("Missing Tag: {0}")]
     MissingTag(Cow<'static, str>),
 
+    #[error("S3 storage is missing its {0}")]
+    MissingCredential(&'static str),
+
     #[error(transparent)]
     PathCollision(#[from] PathCollisionError),
 }
@@ -80,10 +83,21 @@ impl S3Credentials {
             secret_key: Some(secret_key.into()),
         }
     }
+    /// The keys are optional in the config, so a storage can be saved without them. Reject that
+    /// here rather than unwrapping — this runs while loading storages at boot and on every config
+    /// test, and a panic there takes the whole server down.
     pub fn credentials(&self) -> Result<Credentials, S3StorageError> {
+        let access_key = self
+            .access_key
+            .clone()
+            .ok_or(S3StorageError::MissingCredential("access key"))?;
+        let secret_key = self
+            .secret_key
+            .clone()
+            .ok_or(S3StorageError::MissingCredential("secret key"))?;
         Ok(Credentials {
-            access_key: self.access_key.clone().expect("todo"),
-            secret_key: self.secret_key.clone().expect("todo"),
+            access_key,
+            secret_key,
         })
     }
 }
@@ -462,12 +476,18 @@ impl Storage for S3Storage {
             name: location.to_string(),
             file_type: FileFileType {
                 file_size: get.content_length()?.unwrap_or_default(),
+                // A bucket can hold objects put there by anything, so a malformed `Content-Type`
+                // is a property of the data, not a bug. Report the file without a mime type
+                // rather than panicking on it.
                 mime_type: get
                     .content_type()?
-                    .map(|ct| Mime::from_str(ct.as_str()))
-                    .transpose()
-                    .unwrap()
-                    .map(SerdeMime),
+                    .and_then(|ct| match Mime::from_str(ct.as_str()) {
+                        Ok(mime) => Some(SerdeMime(mime)),
+                        Err(err) => {
+                            warn!(?err, content_type = ?ct, ?path, "Ignoring unparsable content type");
+                            None
+                        }
+                    }),
                 file_hash: FileHashes::default(),
             },
             modified: Local::now().fixed_offset(),
@@ -476,7 +496,7 @@ impl Storage for S3Storage {
         let body: Bytes = get.0.bytes().await.map_err(S3Error::from)?;
         let result = StorageFile::File {
             meta,
-            content: crate::StorageFileReader::Bytes(FileContentBytes::Bytes(body)),
+            content: crate::StorageFileReader::from(FileContentBytes::Bytes(body)),
         };
 
         Ok(Some(result))

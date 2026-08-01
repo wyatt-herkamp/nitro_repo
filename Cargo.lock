@@ -2360,6 +2360,7 @@ dependencies = [
  "futures",
  "http",
  "http-body",
+ "http-body-util",
  "md-5",
  "mime",
  "mime_guess",

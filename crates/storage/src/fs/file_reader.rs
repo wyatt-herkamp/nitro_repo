@@ -26,7 +26,16 @@ pub enum StorageFileReader {
     /// An Async Reader type. This will be used for remote storage. Such as S3.
     AsyncReader(Pin<Box<dyn tokio::io::AsyncRead + Send>>),
     /// Content already in memory.
-    Bytes(FileContentBytes),
+    ///
+    /// Held in a cursor because [AsyncRead::poll_read] has to remember how much it has already
+    /// handed out. Without that the reader copies the same prefix on every poll and never reports
+    /// end-of-stream, so a response body built from it never terminates.
+    Bytes(io::Cursor<FileContentBytes>),
+}
+impl From<FileContentBytes> for StorageFileReader {
+    fn from(bytes: FileContentBytes) -> Self {
+        StorageFileReader::Bytes(io::Cursor::new(bytes))
+    }
 }
 impl StorageFileReader {
     pub async fn read_to_vec(self, size_hint: usize) -> io::Result<Vec<u8>> {
@@ -38,7 +47,17 @@ impl StorageFileReader {
             StorageFileReader::AsyncReader(mut reader) => {
                 tokio::io::AsyncReadExt::read_to_end(&mut reader, &mut buf).await?;
             }
-            StorageFileReader::Bytes(bytes) => return Ok(bytes.into()),
+            StorageFileReader::Bytes(cursor) => {
+                // Reads from wherever the cursor is, so this stays consistent with `poll_read`
+                // if anything has already been taken from the reader.
+                let position = cursor.position() as usize;
+                let inner = cursor.into_inner();
+                if position == 0 {
+                    return Ok(inner.into());
+                }
+                let remaining = inner.as_ref();
+                return Ok(remaining[position.min(remaining.len())..].to_vec());
+            }
         }
         Ok(buf)
     }
@@ -76,11 +95,7 @@ impl AsyncRead for StorageFileReader {
         match self.get_mut() {
             StorageFileReader::File(file) => Pin::new(file).poll_read(cx, buf),
             StorageFileReader::AsyncReader(reader) => Pin::new(reader).poll_read(cx, buf),
-            StorageFileReader::Bytes(bytes) => {
-                let len = std::cmp::min(buf.remaining(), bytes.len());
-                buf.put_slice(&bytes.as_ref()[..len]);
-                Poll::Ready(Ok(()))
-            }
+            StorageFileReader::Bytes(cursor) => Pin::new(cursor).poll_read(cx, buf),
         }
     }
 }
@@ -136,5 +151,46 @@ impl Body for StorageFileReaderBody {
         // Capacity should be the size of the response.
         hint.set_lower(self.capacity as u64);
         hint
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use http_body_util::BodyExt;
+
+    use super::*;
+
+    /// An in-memory reader must yield its content once and then stop.
+    ///
+    /// `poll_read` used to copy from the front of the buffer on every call without advancing, so
+    /// a reader never reached end-of-stream and the body repeated the same bytes forever. A small
+    /// body capacity here forces several polls, which is what exposes it.
+    #[tokio::test]
+    async fn bytes_reader_terminates() {
+        let content = b"Hello, World! This content is longer than one chunk.".to_vec();
+        let reader = StorageFileReader::from(FileContentBytes::Content(content.clone()));
+
+        let collected = reader.into_body(8).collect().await.unwrap().to_bytes();
+
+        assert_eq!(collected.as_ref(), content.as_slice());
+    }
+
+    /// Reading straight to a `Vec` must agree with streaming it.
+    #[tokio::test]
+    async fn bytes_reader_read_to_vec() {
+        let content = b"Hello, World!".to_vec();
+        let reader = StorageFileReader::from(FileContentBytes::Content(content.clone()));
+
+        assert_eq!(reader.read_to_vec(content.len()).await.unwrap(), content);
+    }
+
+    /// An empty body should produce no frames rather than hanging.
+    #[tokio::test]
+    async fn empty_bytes_reader_terminates() {
+        let reader = StorageFileReader::from(FileContentBytes::Content(Vec::new()));
+
+        let collected = reader.into_body(8).collect().await.unwrap().to_bytes();
+
+        assert!(collected.is_empty());
     }
 }

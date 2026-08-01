@@ -24,7 +24,7 @@ use nr_core::{
 };
 use nr_storage::{DynStorage, Storage, StorageFile};
 use parking_lot::RwLock;
-use tracing::{debug, error, event, info, instrument};
+use tracing::{debug, error, event, info, instrument, warn};
 use uuid::Uuid;
 
 use super::{
@@ -339,8 +339,16 @@ impl Repository for MavenHosted {
                 self.get_type(),
             ));
         };
-        info!(?nitro_deploy_version, "Handling Nitro Deploy Version");
-        todo!()
+        // Nitro Deploy is not implemented yet. This used to be `todo!()`, which was harmless only
+        // because POST never reached a repository handler; now that it does, it has to answer.
+        warn!(
+            ?nitro_deploy_version,
+            "Nitro Deploy was requested but is not implemented"
+        );
+        Ok(RepoResponse::unsupported_method_response(
+            request.parts.method,
+            self.get_type(),
+        ))
     }
     #[instrument(fields(repository_type = "maven/hosted"))]
     async fn resolve_project_and_version_for_path(

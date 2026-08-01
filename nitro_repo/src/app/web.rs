@@ -73,8 +73,11 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     let cloned_site = site.clone();
     let auth_layer = AuthenticationLayer::from(site.clone());
     let mut app = Router::new()
+        // `/repositories/{storage}/{repository}/{*path}` is the canonical artifact URL — it is what
+        // `repositoryUrl()` in the frontend hands to Maven and npm. `/storages` used to be nested
+        // with the identical router, which served every artifact under a second URL that nothing
+        // generated and that reads as if it addressed the storage API.
         .nest("/repositories", crate::repository::repository_router())
-        .nest("/storages", crate::repository::repository_router())
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
         .fallback(super::frontend::frontend_request)

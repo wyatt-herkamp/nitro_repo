@@ -32,12 +32,17 @@ pub struct NewRepository {
     pub configs: HashMap<String, Value>,
 }
 impl NewRepository {
-    // TODO: Transactions
+    /// Creates the repository and all of its configs as one unit.
+    ///
+    /// A repository is only usable once its required configs exist — `load_repo` reads them to
+    /// decide which sub-handler to build. These used to be separate statements, so a config that
+    /// failed to insert left behind a repository row that could never be loaded.
     pub async fn insert(
         self,
         storage: Uuid,
         database: &sqlx::PgPool,
     ) -> Result<DBRepository, InternalError> {
+        let mut transaction = database.begin().await?;
         let repository = sqlx::query_as::<_, DBRepository>(
             r#"INSERT INTO repositories (id, storage_id, name, repository_type, active) VALUES ($1, $2, $3, $4, $5) RETURNING *"#,
         )
@@ -46,10 +51,12 @@ impl NewRepository {
         .bind(&self.name)
         .bind(&self.repository_type)
         .bind(true)
-        .fetch_one( database).await?;
+        .fetch_one(&mut *transaction).await?;
         for (key, value) in self.configs {
-            GenericDBRepositoryConfig::add_or_update(repository.id, key, value, database).await?;
+            GenericDBRepositoryConfig::add_or_update(repository.id, key, value, &mut *transaction)
+                .await?;
         }
+        transaction.commit().await?;
         Ok(repository)
     }
 }

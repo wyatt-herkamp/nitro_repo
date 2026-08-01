@@ -331,9 +331,11 @@ mod tests {
     use super::LocationMeta;
     use crate::meta::RepositoryMeta;
     fn random_repo_meta() -> RepositoryMeta {
-        let mut meta = RepositoryMeta::default();
-        meta.project_id = Some(Uuid::new_v4());
-        meta.project_version_id = Some(Uuid::new_v4());
+        let mut meta = RepositoryMeta {
+            project_id: Some(Uuid::new_v4()),
+            project_version_id: Some(Uuid::new_v4()),
+            ..Default::default()
+        };
 
         meta.insert("test", "map");
 
