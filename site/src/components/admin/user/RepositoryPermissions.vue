@@ -218,7 +218,9 @@ watch(
       if (
         !originalPermissions.value.repository_permissions[repository.id] ||
         !repository.permissions.equalsArray(
-          originalPermissions.value.repository_permissions[repository.id] as Array<RepositoryActions>,
+          originalPermissions.value.repository_permissions[
+            repository.id
+          ] as Array<RepositoryActions>,
         )
       ) {
         console.log("Permissions have changed. repositoryPermissions !== originalPermissions");

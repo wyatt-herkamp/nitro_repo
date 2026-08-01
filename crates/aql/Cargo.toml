@@ -1,0 +1,18 @@
+[package]
+name = "nr-aql"
+description = "The artifact query language nitro-repo searches with"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Deliberately minimal. #411 asks for this to be pushed out as a separate library, and a query
+# language that drags in a web framework or a database driver cannot be.
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1"
+serde_json = { workspace = true }

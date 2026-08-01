@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    response::Response,
+    response::{IntoResponse, Response},
     routing::get,
 };
 use nr_core::{
@@ -8,17 +8,50 @@ use nr_core::{
         DBProject, ProjectDBType,
         versions::{DBProjectVersion, history::VersionHistoryItem},
     },
-    repository::project::ProjectResolution,
+    repository::{Visibility, project::ProjectResolution},
+    user::permissions::{HasPermissions, RepositoryActions},
 };
 use tracing::instrument;
 use utoipa::OpenApi;
 use uuid::Uuid;
 
 use crate::{
-    app::{NitroRepo, authentication::Authentication},
+    app::{NitroRepo, authentication::Authentication, responses::MissingPermission},
     error::InternalError,
     utils::ResponseBuilder,
 };
+
+/// Refuses a read of a project belonging to a repository the caller cannot see.
+///
+/// All three routes below took an `auth` argument and never looked at it, so every project and
+/// every version list in a private repository was readable by anyone who could guess — or
+/// enumerate — an id.
+async fn check_can_read(
+    auth: &Option<Authentication>,
+    repository_id: Uuid,
+    site: &NitroRepo,
+) -> Result<Option<Response>, InternalError> {
+    let Some(repository) = nr_core::database::entities::repository::DBRepository::get_by_id(
+        repository_id,
+        site.as_ref(),
+    )
+    .await?
+    else {
+        return Ok(Some(ResponseBuilder::not_found().empty()));
+    };
+    if matches!(repository.visibility, Visibility::Public) {
+        return Ok(None);
+    }
+    if auth
+        .has_action(RepositoryActions::Read, repository_id, site.as_ref())
+        .await?
+    {
+        return Ok(None);
+    }
+    Ok(Some(
+        MissingPermission::ReadRepository(repository_id).into_response(),
+    ))
+}
 
 #[derive(OpenApi)]
 #[openapi(
@@ -58,6 +91,9 @@ pub async fn get_project(
     let Some(project) = DBProject::find_by_id(project_id, site.as_ref()).await? else {
         return Ok(ResponseBuilder::not_found().empty());
     };
+    if let Some(denied) = check_can_read(&auth, project.repository_id, &site).await? {
+        return Ok(denied);
+    }
 
     Ok(ResponseBuilder::ok().json(&project))
 }
@@ -81,6 +117,12 @@ pub async fn get_project_versions(
     State(site): State<NitroRepo>,
     auth: Option<Authentication>,
 ) -> Result<Response, InternalError> {
+    let Some(project) = DBProject::find_by_id(project_id, site.as_ref()).await? else {
+        return Ok(ResponseBuilder::not_found().empty());
+    };
+    if let Some(denied) = check_can_read(&auth, project.repository_id, &site).await? {
+        return Ok(denied);
+    }
     let versions = VersionHistoryItem::find_by_project_id(project_id, site.as_ref()).await?;
 
     Ok(ResponseBuilder::ok().json(&versions))
@@ -106,6 +148,9 @@ pub async fn get_project_by_key(
     State(site): State<NitroRepo>,
     auth: Option<Authentication>,
 ) -> Result<Response, InternalError> {
+    if let Some(denied) = check_can_read(&auth, repository_id, &site).await? {
+        return Ok(denied);
+    }
     let Some(project) =
         DBProject::find_by_project_key(&project_key, repository_id, site.as_ref()).await?
     else {

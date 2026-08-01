@@ -82,6 +82,40 @@ pub struct RepositoryLookup {
     pub repository_id: Uuid,
 }
 impl DBRepository {
+    /// Renames a repository, and updates its visibility if asked.
+    ///
+    /// There was no update path at all — a repository's name was fixed at creation, which is
+    /// #506's first item. The name is part of every artifact URL, so this is not a cosmetic
+    /// change: anything already pointing at the old name stops resolving, and the caller is
+    /// responsible for warning about that.
+    ///
+    /// Uniqueness is enforced by `unique_repository_name_per_storage`, so a concurrent rename to
+    /// the same name fails on the constraint rather than being lost.
+    #[instrument(skip(database))]
+    pub async fn update_details(
+        id: Uuid,
+        name: Option<&RepositoryName>,
+        visibility: Option<Visibility>,
+        active: Option<bool>,
+        database: &PgPool,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"UPDATE repositories
+               SET name = COALESCE($2, name),
+                   visibility = COALESCE($3, visibility),
+                   active = COALESCE($4, active),
+                   updated_at = NOW()
+               WHERE id = $1"#,
+        )
+        .bind(id)
+        .bind(name)
+        .bind(visibility)
+        .bind(active)
+        .execute(database)
+        .await?;
+        Ok(())
+    }
+
     pub async fn get_active_by_id(
         id: Uuid,
         database: &PgPool,

@@ -2872,6 +2872,7 @@ dependencies = [
  "md-5 0.10.6",
  "mime",
  "mime_guess",
+ "nr-aql",
  "nr-core",
  "nr-macros",
  "nr-storage",
@@ -2948,6 +2949,16 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "nr-aql"
+version = "2.0.0-BETA"
+dependencies = [
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
