@@ -1,0 +1,236 @@
+// Design tokens.
+//
+// These are CSS custom properties rather than Sass variables on purpose. The old `theme.scss` was
+// compile-time Sass, which made a light theme structurally impossible — a Sass variable is resolved
+// when the stylesheet is built, so there is no way for a `[data-theme]` attribute to change one.
+// Everything visual now flows through here, and `theme.scss` maps the historical `$name` variables
+// onto these so the components that have not been migrated yet keep working.
+//
+// The direction: an instrument panel. Nitro Repo is infrastructure — people look at it while a
+// deploy is failing, and they read version strings, coordinates and hashes far more than they read
+// prose. So: dense over airy, hairline borders over drop shadows, tight radii, monospace for
+// anything a machine produced, and exactly one signal colour so that "this is interactive" and
+// "this is a warning" can never be confused with each other.
+
+:root {
+  // ---- Type ---------------------------------------------------------------
+  // IBM Plex is a superfamily built for technical products; using the sans and mono together means
+  // a version string in a table cell and the column header above it feel like one system.
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  // Uppercase micro-labels (table headers, field labels, section eyebrows) need loosening or they
+  // set as a solid block.
+  --tracking-label: 0.06em;
+
+  // ---- Space --------------------------------------------------------------
+  // A 4px base. Named by step rather than by t-shirt size so the rhythm stays obvious at a glance.
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  // ---- Radius -------------------------------------------------------------
+  // Deliberately tight. Soft pill shapes read as consumer software; this is a tool.
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  // ---- Motion -------------------------------------------------------------
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  // ---- Layout -------------------------------------------------------------
+  --container: 78rem;
+  --container-narrow: 46rem;
+  --nav-height: 3.25rem;
+  --sidebar-width: 15rem;
+
+  --z-dropdown: 100;
+  --z-nav: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+}
+
+// ---- Dark theme (the default) ---------------------------------------------
+//
+// Warm-neutral charcoal rather than the previous near-black navy: at this size a blue-black
+// background tints every neutral on top of it, and greys that should read as neutral come out cold.
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #101215;
+  --bg-sunken: #0a0c0e;
+  --surface: #16191d;
+  --surface-raised: #1c2026;
+  --surface-hover: #22262d;
+  --surface-active: #282d35;
+
+  --border: #262b31;
+  --border-strong: #363d45;
+
+  --text: #e6e9ec;
+  --text-muted: #9aa3ad;
+  --text-subtle: #6b747e;
+  --text-inverse: #101215;
+
+  // Phosphor teal. Chosen over the amber an instrument panel would suggest because amber is needed
+  // for the snapshot/warning state below, and an accent that doubles as a warning makes every
+  // button look like a caution.
+  --accent: #3ddbd9;
+  --accent-hover: #61e5e3;
+  --accent-active: #2cc0be;
+  --accent-muted: #{rgba(#3ddbd9, 0.14)};
+  --accent-border: #{rgba(#3ddbd9, 0.4)};
+  --accent-contrast: #06201f;
+
+  --success: #42be65;
+  --success-muted: #{rgba(#42be65, 0.14)};
+  --warning: #f1c21b;
+  --warning-muted: #{rgba(#f1c21b, 0.14)};
+  --danger: #fa4d56;
+  --danger-hover: #ff6b73;
+  --danger-muted: #{rgba(#fa4d56, 0.14)};
+  --danger-contrast: #ffffff;
+  --info: #4589ff;
+  --info-muted: #{rgba(#4589ff, 0.14)};
+
+  // Borders carry the structure, so shadows stay subtle — they exist to say "this floats above",
+  // not to draw a box.
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  --overlay: rgba(6, 8, 10, 0.72);
+  --scrollbar-thumb: #333941;
+  --scrollbar-thumb-hover: #454c56;
+}
+
+// ---- Light theme ----------------------------------------------------------
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f4f5f7;
+  --bg-sunken: #e9ebee;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-hover: #f2f4f6;
+  --surface-active: #e8ebee;
+
+  --border: #dde1e6;
+  --border-strong: #c1c7cd;
+
+  --text: #121619;
+  --text-muted: #5a636c;
+  --text-subtle: #7c858e;
+  --text-inverse: #ffffff;
+
+  // The dark theme's teal fails contrast on white, so light mode takes the darker end of the ramp
+  // rather than reusing one value and hoping.
+  --accent: #00807c;
+  --accent-hover: #009793;
+  --accent-active: #006663;
+  --accent-muted: #{rgba(#00807c, 0.1)};
+  --accent-border: #{rgba(#00807c, 0.35)};
+  --accent-contrast: #ffffff;
+
+  --success: #157f3d;
+  --success-muted: #{rgba(#157f3d, 0.1)};
+  --warning: #8c6800;
+  --warning-muted: #{rgba(#8c6800, 0.12)};
+  --danger: #c72a33;
+  --danger-hover: #a81f27;
+  --danger-muted: #{rgba(#c72a33, 0.1)};
+  --danger-contrast: #ffffff;
+  --info: #0f5fd6;
+  --info-muted: #{rgba(#0f5fd6, 0.1)};
+
+  --shadow-sm: 0 1px 2px rgba(16, 22, 26, 0.08);
+  --shadow-md: 0 4px 12px rgba(16, 22, 26, 0.1);
+  --shadow-lg: 0 12px 32px rgba(16, 22, 26, 0.14);
+
+  --overlay: rgba(16, 22, 26, 0.4);
+  --scrollbar-thumb: #c1c7cd;
+  --scrollbar-thumb-hover: #a6adb4;
+}
+
+// Someone who has never touched the toggle should still get the theme their OS asked for. The
+// explicit `[data-theme]` attributes above win over this because they are set on the same element
+// with equal specificity but appear later in the cascade only for dark — so light is re-stated here
+// to keep the media query from overriding an explicit dark choice.
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+
+    --bg: #f4f5f7;
+    --bg-sunken: #e9ebee;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-hover: #f2f4f6;
+    --surface-active: #e8ebee;
+
+    --border: #dde1e6;
+    --border-strong: #c1c7cd;
+
+    --text: #121619;
+    --text-muted: #5a636c;
+    --text-subtle: #7c858e;
+    --text-inverse: #ffffff;
+
+    --accent: #00807c;
+    --accent-hover: #009793;
+    --accent-active: #006663;
+    --accent-muted: #{rgba(#00807c, 0.1)};
+    --accent-border: #{rgba(#00807c, 0.35)};
+    --accent-contrast: #ffffff;
+
+    --success: #157f3d;
+    --success-muted: #{rgba(#157f3d, 0.1)};
+    --warning: #8c6800;
+    --warning-muted: #{rgba(#8c6800, 0.12)};
+    --danger: #c72a33;
+    --danger-hover: #a81f27;
+    --danger-muted: #{rgba(#c72a33, 0.1)};
+    --danger-contrast: #ffffff;
+    --info: #0f5fd6;
+    --info-muted: #{rgba(#0f5fd6, 0.1)};
+
+    --shadow-sm: 0 1px 2px rgba(16, 22, 26, 0.08);
+    --shadow-md: 0 4px 12px rgba(16, 22, 26, 0.1);
+    --shadow-lg: 0 12px 32px rgba(16, 22, 26, 0.14);
+
+    --overlay: rgba(16, 22, 26, 0.4);
+    --scrollbar-thumb: #c1c7cd;
+    --scrollbar-thumb-hover: #a6adb4;
+  }
+}

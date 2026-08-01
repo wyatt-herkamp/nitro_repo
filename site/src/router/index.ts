@@ -1,87 +1,14 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import BrowseView from "@/views/BrowseView.vue";
-import LoginView from "@/views/LoginView.vue";
-import LogoutView from "@/views/LogoutView.vue";
+import { routes } from "./routes";
 
-import RepositoriesView from "@/views/RepositoriesView.vue";
-import type { Component } from "vue";
-
-import { adminRoutes } from "@/views/admin/adminRoutes";
-import { profileRoutes } from "@/views/profile/profileRoutes";
-import { projectRoutes } from "@/views/projects";
-import NotFound from "@/views/NotFound.vue";
-import NpmLoginView from "@/views/NpmLoginView.vue";
-import SearchView from "@/views/SearchView.vue";
-import { repositoryPages } from "@/views/repositoryPages";
-declare module "vue-router" {
-  interface RouteMeta {
-    requiresAuth?: boolean;
-    requiresRepositoryManager?: boolean;
-    requiresUserManager?: boolean;
-    sideBar?: Component;
-    tag?: string;
-    skipRoutesJson?: boolean;
-  }
-}
-const routes = [
-  {
-    path: "/",
-    name: "home",
-    component: HomeView,
-    meta: {
-      skipRoutesJson: true,
-    },
-  },
-
-  {
-    path: "/browse/:id/:catchAll(.*)?",
-    name: "Browse",
-    component: BrowseView,
-  },
-
-  {
-    path: "/login",
-    name: "login",
-    component: LoginView,
-  },
-  {
-    path: "/logout",
-    name: "logout",
-    component: LogoutView,
-  },
-  {
-    path: "/page/repositories",
-    name: "repositories",
-    component: RepositoriesView,
-  },
-  {
-    // Where `npm login` sends the browser. The registry hands npm this URL as `loginUrl`.
-    path: "/npm/login/:session",
-    name: "npmLogin",
-    component: NpmLoginView,
-  },
-  {
-    path: "/search",
-    name: "search",
-    component: SearchView,
-  },
-  ...repositoryPages,
-  ...adminRoutes,
-  ...profileRoutes,
-  ...projectRoutes,
-  {
-    path: "/:pathMatch(.*)*",
-    name: "not-found",
-    component: NotFound,
-    meta: {
-      skipRoutesJson: true,
-    },
-  },
-];
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: routes,
+  routes,
+  // Navigating to a new page should start at the top of it, and going back should return to where
+  // you were.
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition ?? { top: 0 };
+  },
 });
 
 export default router;

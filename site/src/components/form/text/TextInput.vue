@@ -32,7 +32,6 @@
   </section>
 </template>
 <script setup lang="ts">
-import "@/assets/styles/form.scss";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 defineProps({
   id: String,
@@ -52,7 +51,6 @@ const value = defineModel<string | undefined>({
 
 <style scoped lang="scss">
 @import "@/assets/styles/theme.scss";
-@import "@/assets/styles/form.scss";
 
 .input-container {
   position: relative;

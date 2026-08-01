@@ -1,68 +1,128 @@
-@import "theme";
+// Form element styling.
+//
+// Imported once from `main.scss`. It used to be pulled in by ten components — some through a JS
+// `import` (which made it global) and some through an `@import` inside a `<style scoped>` block
+// (which scoped the same element selectors to that one component). So the same rules were emitted a
+// dozen times and applied inconsistently depending on which mechanism a given component had picked.
+// These are all element selectors; they belong in one global place.
 
 label {
-  font-size: medium;
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-muted);
 }
-input {
-  margin-top: 0.5rem;
+
+input,
+select,
+textarea {
   width: 100%;
-  padding: 0.5rem;
-  border: 2px solid $secondary;
-  border-radius: 0.5rem;
-  background-color: $secondary-90;
-  color: $text;
-  font-weight: bold;
+  padding: 0.5rem 0.625rem;
+  font-family: inherit;
+  font-size: var(--text-base);
+  color: var(--text);
+  background-color: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+
   &::placeholder {
-    color: $text-50;
-    font-weight: bold;
+    color: var(--text-subtle);
   }
+
+  &:hover:not(:disabled):not([readonly]) {
+    border-color: var(--text-subtle);
+  }
+
   &:focus {
-    outline: none !important;
-    border: 2px solid $accent;
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-muted);
+  }
+
+  &:disabled {
+    color: var(--text-subtle);
+    background-color: var(--bg-sunken);
+    cursor: not-allowed;
+  }
+
+  &[readonly] {
+    background-color: var(--bg-sunken);
+    color: var(--text-muted);
   }
 }
-form {
-  button {
-    margin-top: 0.5rem;
+
+textarea {
+  min-height: 6rem;
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  accent-color: var(--accent);
+}
+
+input[type="color"] {
+  padding: 0.125rem;
+  height: 2.25rem;
+  cursor: pointer;
+}
+
+select {
+  cursor: pointer;
+
+  option {
+    background-color: var(--surface);
+    color: var(--text);
   }
 }
+
+// Set by the validating text inputs as they type.
+input[data-ok="ok"] {
+  border-color: var(--success);
+}
+input[data-ok="warn"] {
+  border-color: var(--warning);
+}
+input[data-ok="error"] {
+  border-color: var(--danger);
+
+  &:focus {
+    box-shadow: 0 0 0 3px var(--danger-muted);
+  }
+}
+
+// Chrome paints autofilled fields with its own opaque yellow, which on a dark surface is unreadable.
+// There is no property that turns it off, so this is the standard workaround: cover it with an inset
+// shadow and delay the background transition past any plausible page lifetime.
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
-textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,
-select:-webkit-autofill,
-select:-webkit-autofill:hover,
-select:-webkit-autofill:focus {
-  border: 2px solid $secondary-30;
-  -webkit-text-fill-color: $text;
-  -webkit-box-shadow: 0 0 0px 1000px $secondary-50 inset;
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  caret-color: var(--text);
   transition: background-color 5000s ease-in-out 0s;
 }
 
-input[data-ok="error"] {
-  border: 1px solid red;
-}
-input[data-ok="ok"] {
-  border: 1px solid green;
-}
-input[data-ok="warn"] {
-  border: 1px solid yellow;
+// A field with its label — the shape almost every form in the app wants.
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-input[readonly] {
-  font-weight: bold;
+.field-hint {
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
 }
-select {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  border: 2px solid $secondary;
-  border-radius: 0.5rem;
-  background-color: $secondary-90;
-  color: $text;
-  option {
-    background-color: $secondary-90;
-    color: $text;
-  }
+
+.field-error {
+  font-size: var(--text-xs);
+  color: var(--danger);
 }

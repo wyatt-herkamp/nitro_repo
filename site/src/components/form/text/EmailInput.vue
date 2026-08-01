@@ -12,7 +12,6 @@
   </div>
 </template>
 <script setup lang="ts">
-import "@/assets/styles/form.scss";
 defineProps<{
   id: string;
 }>();

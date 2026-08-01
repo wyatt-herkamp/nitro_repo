@@ -14,7 +14,6 @@ defineProps({
 </script>
 <style scoped lang="scss">
 @import "@/assets/styles/variables.scss";
-@import "@/assets/styles/form.scss";
 
 .fakeInput {
   display: inline-block;

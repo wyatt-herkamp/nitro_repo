@@ -131,7 +131,6 @@ watch(
 );
 </script>
 <style scoped lang="scss">
-@import "@/assets/styles/form.scss";
 @import "@/assets/styles/theme.scss";
 
 .inputs {

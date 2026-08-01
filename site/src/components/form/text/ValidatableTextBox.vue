@@ -96,7 +96,6 @@ if (props.originalValue) {
 }
 </script>
 <style lang="scss" scoped>
-@import "@/assets/styles/form.scss";
 @import "@/assets/styles/theme.scss";
 
 .inputWithRequirements[data-valid="false"] {

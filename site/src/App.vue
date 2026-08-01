@@ -1,16 +1,18 @@
 <template>
-  <header>
-    <NavBar :user="user" />
-  </header>
+  <NavBar :user="user" />
+
   <div
-    class="contentWithSideBar"
-    v-if="hasSideBar">
+    v-if="hasSideBar"
+    class="withSidebar">
     <component :is="router.currentRoute.value.meta.sideBar" />
     <RouterView />
   </div>
   <RouterView v-else />
-  <Notifications />
+
+  <ModalsContainer />
+  <Notifications position="bottom right" />
 </template>
+
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import { siteStore } from "./stores/site";
@@ -19,64 +21,34 @@ import NavBar from "./components/nav/NavBar.vue";
 import { sessionStore } from "./stores/session";
 import { computed } from "vue";
 import { Notifications } from "@kyvg/vue3-notification";
-import { apiURL } from "./config";
-import routesJson from "../src/router/routes.json";
+import { ModalsContainer } from "vue-final-modal";
 
 const site = siteStore();
 const session = sessionStore();
 const user = computed(() => session.user);
-const hasSideBar = computed(() => {
-  return router.currentRoute.value.meta.sideBar !== undefined;
-});
+const hasSideBar = computed(() => router.currentRoute.value.meta.sideBar !== undefined);
 
-if (import.meta.env.MODE === "development") {
-  const routes: Array<{ path: string; name: string }> = [];
-
-  for (const route of router.options.routes) {
-    if (route.meta?.skipRoutesJson === true) {
-      continue;
-    }
-    routes.push({ path: route.path, name: route.name as string });
-  }
-  for (const route of routes) {
-    const foundRoute = routesJson.find((r) => r.path === route.path && (route.name = r.name));
-    if (!foundRoute) {
-      console.error(`route not found: ${route.path} update routes.json`);
-    } else {
-      console.log(`route found: ${route.path}`);
-    }
-  }
-  console.log("");
-  console.log(JSON.stringify(routes));
-}
-console.log(`apiURL: ${apiURL}`);
 async function init() {
   const info = await site.getInfo();
-  if (info == undefined) {
-    console.log("info is undefined");
+  if (info === undefined) {
     return;
   }
-  console.log(info);
-
-  if (!info?.is_installed) {
+  if (!info.is_installed) {
     router.push("/admin/install");
   }
-  const session = sessionStore();
-  const user = await session.updateUser();
-  if (user == undefined) {
-    console.log("user is undefined");
-    return;
-  }
+  await session.updateUser();
 }
 init();
 </script>
+
 <style scoped lang="scss">
-.contentWithSideBar {
+// The shell used to be `height: 90vh` here with several views setting `height: 100vh` inside it, so
+// content was clipped on short pages and double-scrolled on long ones. The sidebar and the content
+// now grow with the page, and `body` owns the scrolling.
+.withSidebar {
   display: flex;
-  height: 90vh;
-  main {
-    flex: 1;
-    padding: 1rem;
-  }
+  flex: 1;
+  align-items: stretch;
+  min-height: 0;
 }
 </style>

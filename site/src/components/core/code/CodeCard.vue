@@ -1,6 +1,6 @@
 <template>
   <div class="nitroEditorParent">
-    <pre class="nitroEditPre hljs betterScroll">
+    <pre class="nitroEditPre hljs">
       <code class="nitroEditorCode" :class="'language-' + code.language" v-html="highlight"/>
     </pre>
   </div>
@@ -62,8 +62,6 @@ function escapeHtml(value: string): string {
 }
 </script>
 <style scoped lang="scss">
-@import "@/assets/styles/scroll.scss";
-
 pre {
   // Was a fixed `height: 10rem`, so a one-line `npm install` got the same 160px box as a ten-line
   // Maven block. The rest of #498 (trimmed templates, `createBlankLines`, cross-browser
