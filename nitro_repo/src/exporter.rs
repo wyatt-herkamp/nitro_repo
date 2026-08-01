@@ -3,9 +3,8 @@ use std::{
     path::PathBuf,
 };
 
+use nitro_repo::app::{REPOSITORY_CONFIG_TYPES, REPOSITORY_TYPES};
 use utoipa::OpenApi;
-
-use crate::app::{REPOSITORY_CONFIG_TYPES, REPOSITORY_TYPES};
 
 pub fn export_repository_configs(path: PathBuf) -> anyhow::Result<()> {
     if !path.exists() {
@@ -73,7 +72,7 @@ pub fn export_openapi(path: PathBuf) -> anyhow::Result<()> {
         path
     };
 
-    let open_api = crate::app::open_api::ApiDoc::openapi();
+    let open_api = nitro_repo::app::open_api::ApiDoc::openapi();
     let file = File::create(&path)?;
     serde_json::to_writer_pretty(file, &open_api)?;
     println!("Exported OpenAPI to {}", path.display());

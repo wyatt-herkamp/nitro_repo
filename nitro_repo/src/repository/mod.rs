@@ -23,7 +23,7 @@ pub mod prelude {
 }
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
-mod staging;
+pub mod staging;
 pub use staging::*;
 mod repo_http;
 pub use repo_http::*;

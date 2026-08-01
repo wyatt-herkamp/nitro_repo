@@ -43,6 +43,11 @@ jobs:
         run: cargo test --all
         env:
           STORAGE_TESTS_REQUIRE_ALL: 1
+          # The integration tests skip when there is no database, so that a developer without one
+          # is not blocked. Postgres is up here, so make a skip an error — otherwise the end-to-end
+          # suite silently stops running and nobody notices.
+          NITRO_TESTS_REQUIRE_DB: 1
+          NITRO_TEST_DATABASE_URL: postgres://postgres:password@localhost/nr_tests
       - name: Service logs
         if: failure()
         run: docker compose -f docker-compose.dev.yml logs

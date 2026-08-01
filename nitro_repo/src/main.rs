@@ -3,17 +3,13 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use app::config::NitroRepoConfig;
 use clap::{Parser, Subcommand};
 use config_editor::ConfigSection;
-pub mod app;
+// The application itself lives in the library target; this file is only the CLI.
+use nitro_repo::{app, app::config::NitroRepoConfig, seed};
+
 mod config_editor;
-pub mod error;
 mod exporter;
-pub mod logging;
-pub mod repository;
-mod seed;
-pub mod utils;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum ExportOptions {
     /// The Repository Config Types

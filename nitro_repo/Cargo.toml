@@ -8,7 +8,10 @@ repository.workspace = true
 build = "build.rs"
 
 [dev-dependencies]
+http-body-util.workspace = true
 pretty_assertions = "1.4"
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }
 [dependencies]
 # Web
 axum = { version = "0.8", features = ["macros", "tokio", "ws"] }
