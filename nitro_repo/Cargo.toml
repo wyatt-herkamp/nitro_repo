@@ -98,7 +98,7 @@ tracing-appender.workspace = true
 # OpenTelemetry - Tracing framework
 tracing-opentelemetry = "0.31"
 opentelemetry = { version = "0.30", features = [] }
-opentelemetry_sdk = { version = "0.30", features = [
+opentelemetry_sdk = { version = "0.32", features = [
     "rt-tokio",
     "trace",
     "metrics",
