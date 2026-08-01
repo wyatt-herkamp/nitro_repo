@@ -176,38 +176,34 @@ pub struct DBRepositoryConfig<T> {
 }
 pub type GenericDBRepositoryConfig = DBRepositoryConfig<Value>;
 impl DBRepositoryConfig<Value> {
-    pub async fn add_or_update(
+    /// Writes a config value, replacing any value already stored under the same key.
+    ///
+    /// Generic over the executor so this can run inside a transaction — creating a repository
+    /// writes the repository row and each of its configs, and those have to land together.
+    ///
+    /// A single upsert rather than select-then-insert-or-update: the old form could have two
+    /// concurrent writers both observe "no row" and race on the `unique_repository_config_key`
+    /// constraint, with one of them failing on what looks like an ordinary write.
+    pub async fn add_or_update<'c, E>(
         uuid: Uuid,
         key: String,
         value: Value,
-        database: &PgPool,
-    ) -> Result<(), sqlx::Error> {
-        // Check if the config already exists
-        let config = sqlx::query_as::<_, DBRepositoryConfig<Value>>(
-            r#"SELECT * FROM repository_configs WHERE repository_id = $1 AND key = $2"#,
+        database: E,
+    ) -> Result<(), sqlx::Error>
+    where
+        E: sqlx::Executor<'c, Database = Postgres>,
+    {
+        sqlx::query(
+            r#"INSERT INTO repository_configs (repository_id, key, value)
+               VALUES ($1, $2, $3)
+               ON CONFLICT (repository_id, key)
+               DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()"#,
         )
         .bind(uuid)
         .bind(&key)
-        .fetch_optional(database)
+        .bind(Json(value))
+        .execute(database)
         .await?;
-        if let Some(config) = config {
-            sqlx::query(
-                r#"UPDATE repository_configs SET value = $1, updated_at = NOW() WHERE id = $2"#,
-            )
-            .bind(Json(value))
-            .bind(config.id)
-            .execute(database)
-            .await?;
-        } else {
-            sqlx::query(
-                r#"INSERT INTO repository_configs (repository_id, key, value) VALUES ($1, $2, $3)"#,
-            )
-            .bind(uuid)
-            .bind(&key)
-            .bind(Json(value))
-            .execute(database)
-            .await?;
-        }
         Ok(())
     }
 }

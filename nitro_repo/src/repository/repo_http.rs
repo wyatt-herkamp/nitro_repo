@@ -415,6 +415,7 @@ pub async fn handle_repo_request(
         let _guard = trace.span.enter();
         let response = match method {
             Method::GET => repository.handle_get(request).await,
+            Method::POST => repository.handle_post(request).await,
             Method::PUT => repository.handle_put(request).await,
             Method::DELETE => repository.handle_delete(request).await,
             Method::PATCH => repository.handle_patch(request).await,

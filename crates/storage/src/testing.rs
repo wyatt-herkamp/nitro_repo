@@ -19,9 +19,10 @@ pub struct TestingStorageConfig {
 
 impl Default for TestingStorageConfig {
     fn default() -> Self {
-        let mut storage_test_configs = Vec::new();
-        storage_test_configs.push(LocalStorage::test_storage_config());
-        storage_test_configs.push(S3Config::test_storage_config());
+        let storage_test_configs = vec![
+            LocalStorage::test_storage_config(),
+            S3Config::test_storage_config(),
+        ];
         Self {
             logging: TestingLoggerConfig::default(),
             storage_test_configs,

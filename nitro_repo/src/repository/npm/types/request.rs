@@ -183,8 +183,11 @@ impl GetPath {
         components: Vec<StoragePathComponent>,
     ) -> Result<Self, NPMRegistryError> {
         let length = components.len();
-        if length == 1 {
-            panic!("Invalid path");
+        if length < 2 {
+            // `GET /{storage}/{repository}/@scope` — a scope with no package after it. This used
+            // to `panic!`, which took the handler task down on a request anyone could make.
+            info!(?components, "Scoped path is missing a package name");
+            return Err(NPMRegistryError::InvalidGetRequest);
         }
         let name = format!("{}/{}", components[0], components[1]);
         if length == 2 {
