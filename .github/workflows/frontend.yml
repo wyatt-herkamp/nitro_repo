@@ -2,13 +2,21 @@ name: Frontend Push or PR
 
 on:
   push:
-    branches: main
+    branches: [main]
   pull_request:
-    branches: main
-env:
-  CARGO_TERM_COLOR: always
+    branches: [main]
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+defaults:
+  run:
+    working-directory: site
+
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,9 +24,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: "site/.node-version"
-      - name: Install Site
-        working-directory: site
-        run: npm install
-      - name: Build Site
-        working-directory: site
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install
+        # `ci` rather than `install`: it installs exactly what the lockfile pins and fails if the
+        # two have drifted, instead of quietly resolving something else.
+        run: npm ci
+      - name: Lint
+        # Nothing ran eslint in CI before, so a lint error could only be found by hand.
+        run: npm run lint
+      - name: Build
+        # `build` runs the type check and the bundle together.
         run: npm run build
