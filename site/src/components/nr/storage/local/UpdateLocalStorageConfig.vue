@@ -15,5 +15,4 @@
 import TextInput from "@/components/form/text/TextInput.vue";
 
 const model = defineModel<any>();
-console.log(model);
 </script>

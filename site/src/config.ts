@@ -20,7 +20,3 @@ export function websocketPath(path: string): string {
 
   return `${ws_url}/${path}`;
 }
-
-console.log("API URL: ", apiURL);
-console.log("Websocket URL: ", websocketUrl());
-console.log("Document base URI: ", document.baseURI);

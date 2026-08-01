@@ -2,6 +2,7 @@
   <div class="tabs">
     <ul
       class="tabsHeader"
+      role="tablist"
       :data-jb="justifyBetween">
       <slot name="header" />
     </ul>
@@ -10,9 +11,12 @@
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
 import { provide, ref, type Ref } from "vue";
 import "./tabs.scss";
+import type { TabData } from "./tabs";
+
 const props = defineProps({
   defaultTab: {
     type: String,
@@ -22,29 +26,16 @@ const props = defineProps({
     default: true,
   },
 });
-import { useSlots } from "vue";
-import type { TabData } from "./tabs";
-const backupDefaultSlot = ref("");
-const slots = useSlots();
-if (slots) {
-  console.log("slots.header", slots.header);
-  console.log("slots.content", slots.content);
-}
-const currentTab: Ref<string> = ref(props.defaultTab || backupDefaultSlot.value);
-const changeTab = (tab: string) => {
-  currentTab.value = tab;
+
+const currentTab: Ref<string> = ref(props.defaultTab ?? "");
+
+const tabData: TabData = {
+  changeTab: (tab: string) => {
+    currentTab.value = tab;
+  },
+  getTab: () => currentTab.value,
+  isTabActive: (tab: string) => currentTab.value === tab,
 };
-const getTab = () => {
-  return currentTab.value;
-};
-const isTabActive = (tab: string) => {
-  return currentTab.value === tab;
-};
-const tabData = {
-  changeTab,
-  getTab,
-  isTabActive,
-} as TabData;
 
 provide("tabData", tabData);
 </script>

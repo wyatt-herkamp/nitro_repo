@@ -37,7 +37,6 @@ const storageComponent = computed(() => {
   if (!storage.value) {
     return undefined;
   }
-  console.log("Value " + JSON.stringify(storage.value.config.settings));
   return storageTypes.find((type) => type.value === storage.value?.storage_type)?.updateComponent;
 });
 async function getStorage() {

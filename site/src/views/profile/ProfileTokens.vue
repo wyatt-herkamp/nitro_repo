@@ -1,208 +1,382 @@
 <template>
-  <main>
-    <div class="header">
-      <h1>API Tokens</h1>
-      <SubmitButton
-        v-if="authTokens.length > 0"
-        class="dangerButton"
-        @click="revokeAll"
-        >Revoke all tokens</SubmitButton
-      >
+  <main class="container">
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1>API tokens</h1>
+        <p>Tokens authenticate `mvn`, `npm` and CI against this instance.</p>
+      </div>
+      <div class="page-header-actions">
+        <NButton
+          variant="primary"
+          icon="plus"
+          :to="{ name: 'profileTokenCreate' }">
+          New token
+        </NButton>
+        <NButton
+          v-if="tokens.length > 0"
+          variant="danger"
+          @click="confirmingRevokeAll = true">
+          Revoke all
+        </NButton>
+      </div>
     </div>
-    <p v-if="authTokens.length === 0">You have no API tokens.</p>
-    <ul class="tokenList">
-      <li
-        v-for="token in authTokens"
-        :key="token.token.id"
-        class="tokenElement"
-        :data-token-active="token.token.active"
-        :data-expanded="expandedToken == token.token.id"
-        @click="tokenClicked(token.token.id)">
-        <div class="tokenElementLine">
-          <KeyAndValue
-            label="Name"
-            :value="token.token.name || 'No name'" />
-          <KeyAndValue
-            label="Source"
-            :value="token.token.source" />
-          <KeyAndValue
-            label="Created On"
-            :value="formatDate(token.token.created_at)" />
-          <KeyAndValue
-            label="Expires"
-            :value="expiryLabel(token.token)" />
-          <KeyAndValue
-            label="Last Used"
-            :value="token.token.last_used_at ? formatDate(token.token.last_used_at) : 'Never'" />
-        </div>
-        <div
-          v-if="expandedToken == token.token.id"
-          class="tokenDetail">
-          <div v-if="token.token.description">
-            <h3>Description</h3>
-            <p>{{ token.token.description }}</p>
+
+    <NCard flush>
+      <NEmptyState
+        v-if="!loading && tokens.length === 0"
+        title="No API tokens"
+        description="Create one to publish or pull from a private repository without your password."
+        icon="key">
+        <NButton
+          variant="primary"
+          :to="{ name: 'profileTokenCreate' }"
+          >Create a token</NButton
+        >
+      </NEmptyState>
+
+      <ul
+        v-else
+        class="tokenList">
+        <li
+          v-for="entry in tokens"
+          :key="entry.token.id"
+          class="tokenItem">
+          <button
+            type="button"
+            class="tokenSummary"
+            :aria-expanded="expanded === entry.token.id"
+            @click="toggle(entry.token.id)">
+            <span class="tokenName">
+              {{ entry.token.name || "Unnamed token" }}
+              <NBadge
+                v-if="isExpired(entry.token)"
+                variant="danger"
+                >Expired</NBadge
+              >
+              <NBadge
+                v-else-if="!entry.token.active"
+                variant="neutral"
+                >Inactive</NBadge
+              >
+            </span>
+
+            <span class="tokenFacts">
+              <span class="fact">
+                <span class="factLabel">Source</span>
+                <span>{{ entry.token.source }}</span>
+              </span>
+              <span class="fact">
+                <span class="factLabel">Created</span>
+                <span>{{ formatDate(entry.token.created_at) }}</span>
+              </span>
+              <span class="fact">
+                <span class="factLabel">Expires</span>
+                <span>{{
+                  entry.token.expires_at ? formatDate(entry.token.expires_at) : "Never"
+                }}</span>
+              </span>
+              <span class="fact">
+                <span class="factLabel">Last used</span>
+                <span>{{ formatRelative(entry.token.last_used_at) }}</span>
+              </span>
+            </span>
+          </button>
+
+          <div
+            v-if="expanded === entry.token.id"
+            class="tokenDetail">
+            <p
+              v-if="entry.token.description"
+              class="description">
+              {{ entry.token.description }}
+            </p>
+
+            <div class="detailSection">
+              <span class="label">Scopes</span>
+              <div
+                v-if="entry.scopes.length > 0"
+                class="badges">
+                <NBadge
+                  v-for="scope in entry.scopes"
+                  :key="scope.id"
+                  variant="accent">
+                  {{ scopeLabel(scope.scope) }}
+                </NBadge>
+              </div>
+              <p
+                v-else
+                class="muted">
+                No account-wide scopes.
+              </p>
+            </div>
+
+            <div class="detailSection">
+              <span class="label">Repository access</span>
+              <div
+                v-if="entry.repository_scopes.length > 0"
+                class="repositoryScopes">
+                <div
+                  v-for="scope in entry.repository_scopes"
+                  :key="scope.id"
+                  class="repositoryScope">
+                  <span class="mono">{{ repositoryName(String(scope.repository_id)) }}</span>
+                  <div class="badges">
+                    <NBadge
+                      v-for="action in scope.actions"
+                      :key="action"
+                      >{{ action }}</NBadge
+                    >
+                  </div>
+                </div>
+              </div>
+              <p
+                v-else
+                class="muted">
+                No repository-specific access.
+              </p>
+            </div>
+
+            <NButton
+              variant="danger"
+              size="sm"
+              icon="trash"
+              @click="askDelete(entry)">
+              Delete this token
+            </NButton>
           </div>
-          <div>
-            <h3>Scopes</h3>
-            <ul
-              v-if="token.scopes.length > 0"
-              class="scopeList">
-              <li
-                v-for="scope in token.scopes"
-                :key="scope.id">
-                {{ scopeLabel(scope.scope) }}
-              </li>
-            </ul>
-            <p v-else>No account-wide scopes.</p>
-          </div>
-          <div>
-            <h3>Repository Access</h3>
-            <ul
-              v-if="token.repository_scopes.length > 0"
-              class="scopeList">
-              <li
-                v-for="repositoryScope in token.repository_scopes"
-                :key="repositoryScope.id">
-                {{ repositoryScope.repository_id }} — {{ repositoryScope.actions.join(", ") }}
-              </li>
-            </ul>
-            <p v-else>No repository-specific access.</p>
-          </div>
-          <SubmitButton @click.stop="deleteToken(token.token.id)">Delete</SubmitButton>
-        </div>
-      </li>
-    </ul>
+        </li>
+      </ul>
+    </NCard>
+
+    <NConfirmDialog
+      v-model="confirmingDelete"
+      title="Delete this token?"
+      :message="`Anything still authenticating with ${pendingDelete?.token.name || 'this token'} stops working immediately.`"
+      confirm-label="Delete token"
+      destructive
+      :loading="deleting"
+      @confirm="deleteToken" />
+
+    <NConfirmDialog
+      v-model="confirmingRevokeAll"
+      title="Revoke every token?"
+      message="Every API token on your account stops working immediately — CI jobs, a local mvn or npm, anything holding one."
+      confirm-label="Revoke all tokens"
+      destructive
+      confirm-text="revoke"
+      :loading="revoking"
+      @confirm="revokeAll" />
   </main>
 </template>
+
 <script setup lang="ts">
-import KeyAndValue from "@/components/form/KeyAndValue.vue";
-import SubmitButton from "@/components/form/SubmitButton.vue";
+/**
+ * The API returns scopes, expiry and last-used for every token, and none of it used to be shown —
+ * so there was no way to tell what a token could do or whether anything still used it. Deleting one
+ * also fired straight from the click handler with no confirmation.
+ */
+import { ref } from "vue";
+import { notify } from "@kyvg/vue3-notification";
+import NCard from "@/components/core/ui/NCard.vue";
+import NButton from "@/components/core/ui/NButton.vue";
+import NBadge from "@/components/core/ui/NBadge.vue";
+import NEmptyState from "@/components/core/ui/NEmptyState.vue";
+import NConfirmDialog from "@/components/core/ui/NConfirmDialog.vue";
 import http from "@/http";
+import { formatDate, formatRelative } from "@/utils/format";
+import { useRepositoryStore } from "@/stores/repositories";
 import { sessionStore } from "@/stores/session";
 import type { ScopeDescription } from "@/types/base";
-import { type RawAuthTokenFullResponse, type RawAuthTokenResponse } from "@/types/user/token";
-import { notify } from "@kyvg/vue3-notification";
-import { ref } from "vue";
+import type { RawAuthTokenFullResponse, RawAuthTokenResponse } from "@/types/user/token";
 
 const session = sessionStore();
-const user = session.user;
-const authTokens = ref<Array<RawAuthTokenFullResponse>>([]);
-const scopeDescriptions = ref<Array<ScopeDescription>>([]);
-const expandedToken = ref<number | undefined>(undefined);
+const repositoryStore = useRepositoryStore();
 
-function tokenClicked(tokenId: number) {
-  expandedToken.value = expandedToken.value == tokenId ? undefined : tokenId;
+const tokens = ref<Array<RawAuthTokenFullResponse>>([]);
+const scopeDescriptions = ref<Array<ScopeDescription>>([]);
+const expanded = ref<number | undefined>(undefined);
+const loading = ref(true);
+
+const confirmingDelete = ref(false);
+const confirmingRevokeAll = ref(false);
+const pendingDelete = ref<RawAuthTokenFullResponse | undefined>(undefined);
+const deleting = ref(false);
+const revoking = ref(false);
+
+function toggle(id: number) {
+  expanded.value = expanded.value === id ? undefined : id;
 }
-function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+
+function isExpired(token: RawAuthTokenResponse): boolean {
+  return token.expires_at !== undefined && new Date(token.expires_at).getTime() < Date.now();
 }
-// The API returns scopes, expiry and last-used for every token; none of it was displayed, which
-// left no way to tell what a token could do or whether it was still in use.
-function expiryLabel(token: RawAuthTokenResponse): string {
-  if (!token.expires_at) {
-    return "Never";
-  }
-  const expires = new Date(token.expires_at);
-  return expires.getTime() < Date.now()
-    ? `Expired ${formatDate(token.expires_at)}`
-    : formatDate(token.expires_at);
-}
+
 function scopeLabel(key: string): string {
   return scopeDescriptions.value.find((scope) => scope.key === key)?.name ?? key;
 }
 
-async function deleteToken(id: number) {
-  await http
-    .delete(`/api/user/token/delete/${id}`)
-    .then(() => getAuthTokens())
-    .catch((error) => console.error(error));
+// A repository scope stores an id; showing the id alone gives no idea which repository it grants.
+function repositoryName(id: string): string {
+  return repositoryStore.getRepositoryFromCache(id)?.name ?? id;
 }
+
+function askDelete(entry: RawAuthTokenFullResponse) {
+  pendingDelete.value = entry;
+  confirmingDelete.value = true;
+}
+
+async function deleteToken() {
+  const target = pendingDelete.value;
+  if (!target) return;
+
+  deleting.value = true;
+  try {
+    await http.delete(`/api/user/token/delete/${target.token.id}`);
+    notify({ type: "success", title: "Token deleted" });
+    await load();
+  } catch {
+    notify({ type: "error", title: "Could not delete the token" });
+  } finally {
+    deleting.value = false;
+    confirmingDelete.value = false;
+    pendingDelete.value = undefined;
+  }
+}
+
 async function revokeAll() {
-  if (
-    !window.confirm(
-      "Revoke every API token on your account? Anything using one — CI, a local `mvn` or `npm` — stops working immediately.",
-    )
-  ) {
-    return;
-  }
-  await http
-    .delete<{ revoked: number }>("/api/user/token/revoke-all")
-    .then((response) => {
-      notify({
-        type: "success",
-        title: "Tokens revoked",
-        text: `${response.data.revoked} token(s) revoked.`,
-      });
-      getAuthTokens();
-    })
-    .catch((error) => {
-      console.error(error);
-      notify({
-        type: "error",
-        title: "Could not revoke tokens",
-        text: "An error occurred while revoking your tokens.",
-      });
+  revoking.value = true;
+  try {
+    const response = await http.delete<{ revoked: number }>("/api/user/token/revoke-all");
+    notify({
+      type: "success",
+      title: "Tokens revoked",
+      text: `${response.data.revoked} token(s) revoked.`,
     });
-}
-async function getAuthTokens() {
-  if (user == undefined) {
-    return;
+    await load();
+  } catch {
+    notify({ type: "error", title: "Could not revoke tokens" });
+  } finally {
+    revoking.value = false;
+    confirmingRevokeAll.value = false;
   }
-  await http
-    .get<Array<RawAuthTokenFullResponse>>("/api/user/token/list")
-    .then((response) => {
-      authTokens.value = response.data;
-    })
-    .catch((error) => console.error(error));
 }
-async function getScopeDescriptions() {
-  await http
-    .get<Array<ScopeDescription>>("/api/info/scopes")
-    .then((response) => {
-      scopeDescriptions.value = response.data;
-    })
-    .catch((error) => console.error(error));
+
+async function load() {
+  if (session.user === undefined) return;
+  try {
+    const [tokenResponse, scopeResponse] = await Promise.all([
+      http.get<Array<RawAuthTokenFullResponse>>("/api/user/token/list"),
+      http.get<Array<ScopeDescription>>("/api/info/scopes"),
+    ]);
+    tokens.value = tokenResponse.data;
+    scopeDescriptions.value = scopeResponse.data;
+    // Populates the cache the repository-scope labels read from.
+    await repositoryStore.getRepositories(false);
+  } catch {
+    notify({ type: "error", title: "Could not load your tokens" });
+  } finally {
+    loading.value = false;
+  }
 }
-getAuthTokens();
-getScopeDescriptions();
+load();
 </script>
 
 <style scoped lang="scss">
-main {
-  padding: 1rem;
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
 .tokenList {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-.tokenElement {
-  border: 1px solid #000;
+.tokenItem {
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
-.tokenElementLine {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  padding: 0.5rem;
-  gap: 1rem;
+
+.tokenSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+
   &:hover {
-    cursor: pointer;
+    background-color: var(--surface-hover);
   }
 }
+
+.tokenName {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.tokenFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-sm);
+}
+
+.factLabel {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
 .tokenDetail {
-  padding: 0 0.5rem 0.5rem;
-  h3 {
-    margin-bottom: 0.25rem;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
 }
-.scopeList {
-  margin: 0;
-  padding-left: 1.25rem;
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.repositoryScopes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.repositoryScope {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
 }
 </style>

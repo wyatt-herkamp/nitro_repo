@@ -84,12 +84,10 @@ async function fetchRepository() {
   }
   await repoStore.getRepositoryById(repositoryId.value).then((response) => {
     repository.value = response;
-    console.log(repository.value);
   });
   await http
     .get<RepositoryPage>(`/api/repository/page/${repositoryId.value}`)
     .then((response) => {
-      console.log(response.data);
       repositoryPage.value = response.data;
     })
     .catch((error) => {
@@ -98,18 +96,13 @@ async function fetchRepository() {
       error.value = "Failed to fetch repository";
     });
 }
-console.log(router.currentRoute.value.params);
 if (router.currentRoute.value.params.repositoryId) {
   repositoryId.value = router.currentRoute.value.params.repositoryId as string;
-  console.debug(`Fetching repository ${repositoryId.value}`);
   fetchRepository();
 } else if (
   router.currentRoute.value.params.storageName &&
   router.currentRoute.value.params.repositoryName
 ) {
-  console.debug(
-    `Fetching repository by names ${router.currentRoute.value.params.storageName}/${router.currentRoute.value.params.repositoryName}`,
-  );
   repoStore
     .getRepositoryIdByNames(
       router.currentRoute.value.params.storageName as string,

@@ -67,7 +67,6 @@ async function login() {
           text: "Invalid username or password",
         });
       } else {
-        console.log(error);
         notify({
           type: "error",
           title: "Login Failed",

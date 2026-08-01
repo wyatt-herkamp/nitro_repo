@@ -1,92 +1,45 @@
 <template>
-  <div class="browsePath">
-    <span
-      @click="goToHome()"
-      class="browsePathPlace"
-      id="base">
-      {{ props.repository.storage_name }} / {{ props.repository.name }}
-    </span>
-    <span
-      v-for="(path, index) in pathElements"
-      :key="index"
-      class="browsePathPlace"
-      :data-clickable="path.path !== undefined"
-      @click="goTo(path.path)">
-      {{ path.name }}
-    </span>
-  </div>
+  <NBreadcrumb :items="crumbs" />
 </template>
 
 <script setup lang="ts">
-import router from "@/router";
+/**
+ * The path trail above the browser.
+ *
+ * `buildPath` used to be an unguarded `(route.params.catchAll as string).split("/")`, which throws
+ * on a root browse — where there is no `catchAll` at all — taking the page down with it. It also
+ * pushed a separate `{ name: "/" }` entry between every segment, making the separator a list item
+ * rather than presentation, and logged the whole trail on every navigation.
+ */
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import NBreadcrumb, { type Crumb } from "@/components/core/ui/NBreadcrumb.vue";
 import type { RepositoryWithStorageName } from "@/types/repository";
-import { ref, watch, type PropType } from "vue";
 
-const props = defineProps({
-  repository: {
-    type: Object as PropType<RepositoryWithStorageName>,
-    required: true,
-  },
+const props = defineProps<{ repository: RepositoryWithStorageName }>();
+
+const route = useRoute();
+
+const crumbs = computed<Array<Crumb>>(() => {
+  const items: Array<Crumb> = [
+    {
+      label: `${props.repository.storage_name}/${props.repository.name}`,
+      to: `/browse/${props.repository.id}`,
+    },
+  ];
+
+  const catchAll = route.params.catchAll;
+  const path = Array.isArray(catchAll) ? catchAll.join("/") : (catchAll ?? "");
+
+  let accumulated = "";
+  for (const segment of path.split("/").filter(Boolean)) {
+    accumulated += `${segment}/`;
+    items.push({
+      label: segment,
+      to: `/browse/${props.repository.id}/${accumulated}`,
+    });
+  }
+
+  return items;
 });
-function goTo(path?: string) {
-  if (path) {
-    router.push(`/browse/${props.repository.id}/${path}`);
-  }
-}
-function goToHome() {
-  router.push(`/browse/${props.repository.id}`);
-}
-interface PathElement {
-  name: string;
-  path?: string;
-}
-const pathElements = ref<PathElement[]>([]);
-function buildPath() {
-  pathElements.value = [];
-  const pathSplit = (router.currentRoute.value.params.catchAll as string).split("/");
-  let path = "";
-  for (const element of pathSplit) {
-    pathElements.value.push({
-      name: "/",
-    });
-    path += element + "/";
-    pathElements.value.push({
-      name: element,
-      path: path,
-    });
-  }
-  console.log(pathElements.value);
-}
-watch(
-  () => router.currentRoute.value.params.catchAll,
-  () => {
-    buildPath();
-  },
-);
-buildPath();
 </script>
-<style scoped lang="scss">
-@import "@/assets/styles/theme.scss";
-.browsePath {
-  display: flex;
-  gap: 0.5rem;
-  padding: 1rem;
-  background-color: $background;
-  span {
-    display: flex;
-    align-items: center;
-  }
-}
-.browsePathPlace[data-clickable="true"] {
-  cursor: pointer;
-  &:hover {
-    text-decoration: underline;
-  }
-}
-#base {
-  font-weight: bold;
-  &:hover {
-    cursor: pointer;
-  }
-}
-</style>

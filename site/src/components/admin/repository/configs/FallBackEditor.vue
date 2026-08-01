@@ -40,7 +40,6 @@ async function load() {
   }
   await repositoryTypeStore.getConfigSchema(props.settingName).then((response) => {
     schema.value = response as RootSchema;
-    console.log(schema.value);
   });
   if (props.repository) {
     await http

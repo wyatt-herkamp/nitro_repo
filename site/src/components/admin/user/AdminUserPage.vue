@@ -139,14 +139,9 @@ const newPassword = ref("");
 
 const passwordRules = siteStore().siteInfo?.password_rules;
 async function changePassword() {
-  console.log("Changing Password");
-
   if (!newPassword.value) {
-    console.log("Password is required");
     return;
   }
-
-  console.log("Password is valid");
 
   http
     .put(`/api/user-management/update/${props.user.id}/password`, {
@@ -159,7 +154,6 @@ async function changePassword() {
         text: "Password has been changed",
       });
       newPassword.value = "";
-      console.log("Password Changed");
     })
     .catch((error) => {
       console.error(error);

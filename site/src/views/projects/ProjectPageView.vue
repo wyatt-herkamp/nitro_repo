@@ -107,7 +107,6 @@ async function fetchProject() {
       project.value = response;
       if (project.value) {
         repositoryId.value = project.value.repository_id;
-        console.debug(`Project ${projectId} is in repository ${repositoryId.value}`);
       }
     });
   } else if (
@@ -130,7 +129,6 @@ async function fetchProject() {
         project.value = response;
         if (project.value) {
           repositoryId.value = project.value.repository_id;
-          console.debug(`Project ${projectId} is in repository ${repositoryId.value}`);
         }
       });
   }

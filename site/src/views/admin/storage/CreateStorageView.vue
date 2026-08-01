@@ -60,7 +60,6 @@ const storageConfig = computed(() => {
   return current;
 });
 async function createStorage() {
-  console.log(input.value);
   const data = {
     name: input.value.name,
     config: {
@@ -72,7 +71,6 @@ async function createStorage() {
   await http
     .post(`/api/storage/new/${input.value.storageType}`, data)
     .then((response) => {
-      console.log(response);
       notify({
         type: "success",
         title: "Storage Created",
@@ -84,9 +82,7 @@ async function createStorage() {
       });
     })
     .catch((error) => {
-      console.log(error);
       if (error.response.status === 400) {
-        console.log(error.response.data);
       }
     });
 }

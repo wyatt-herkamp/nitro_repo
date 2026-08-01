@@ -86,11 +86,55 @@ impl schemars::JsonSchema for BadgeStyle {
             map.insert("type".to_owned(), "string".into());
             map.insert(
                 "enum".to_owned(),
+                // These must match `badge_maker::Style`'s `Display`/`FromStr`, which is what the
+                // newtype's `Serialize`/`Deserialize` delegate to. "flatquare" was a typo for
+                // "flatsquare", so the schema advertised a style that `Style::from_str` rejects —
+                // picking it in the generated form produced a `BadStyleChoice` on save.
                 serde_json::Value::Array({
-                    vec!["flat".into(), "plastic".into(), "flatquare".into()]
+                    vec!["flat".into(), "plastic".into(), "flatsquare".into()]
                 }),
             );
             schemars::Schema::from(map)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The schema is hand-written, so nothing but this stops it drifting from what `BadgeStyle`
+    /// will actually accept. It already had: the schema offered "flatquare", which
+    /// `Style::from_str` rejects, so choosing that style in the generated form failed on save.
+    #[test]
+    fn every_advertised_badge_style_deserializes() {
+        let schema =
+            <BadgeStyle as JsonSchema>::json_schema(&mut schemars::SchemaGenerator::default());
+        let advertised = schema
+            .as_value()
+            .get("enum")
+            .and_then(|value| value.as_array())
+            .expect("BadgeStyle's schema should advertise an enum")
+            .clone();
+
+        assert!(!advertised.is_empty());
+
+        for style in advertised {
+            let parsed: Result<BadgeStyle, _> = serde_json::from_value(style.clone());
+            assert!(
+                parsed.is_ok(),
+                "the schema offers {style} but BadgeStyle refuses to deserialize it"
+            );
+        }
+    }
+
+    /// The other direction: a style the config round-trips must still be offered by the schema, or
+    /// an existing repository's setting cannot be re-selected in the form.
+    #[test]
+    fn the_default_badge_style_round_trips() {
+        let settings = BadgeSettings::default();
+        let encoded = serde_json::to_value(&settings).expect("serializes");
+        let decoded: BadgeSettings = serde_json::from_value(encoded).expect("round-trips");
+        assert_eq!(decoded.style.0, Style::Flat);
     }
 }

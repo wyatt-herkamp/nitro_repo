@@ -36,7 +36,6 @@ export async function checkValidations(
   let isCompletelyValid = true;
   for (const validation of validations) {
     if (validation.ignoreIfOthersFailed && !isCompletelyValid) {
-      console.debug(`Ignoring validation ${validation.id} because others have failed`);
       continue;
     }
     let isValid;
@@ -48,12 +47,10 @@ export async function checkValidations(
     if (isCompletelyValid && !isValid) {
       isCompletelyValid = false;
     }
-    console.debug(`Validation ${validation.id} is ${isValid}`);
     validationResults[validation.id] = isValid;
   }
   // Time taken to validate
   const timeToValidate = Date.now() - startTime;
-  console.log(`Time taken to validate: ${timeToValidate}ms`);
   return {
     isValid: isCompletelyValid,
     validationResults: validationResults,

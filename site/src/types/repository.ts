@@ -8,6 +8,7 @@ import { apiURL } from "@/config";
 import { MavenFrontendDefinition } from "@/components/nr/repository/types/maven/maven";
 import { NPMFrontendDefinition } from "@/components/nr/repository/types/npm/npm";
 import NPMConfig from "@/components/nr/repository/types/npm/NPMConfig.vue";
+import BadgeConfig from "@/components/nr/repository/configs/BadgeConfig.vue";
 import type { RepositoryActionsType } from "./user";
 
 export interface RepositoryTypeDescription {
@@ -60,6 +61,13 @@ export const configTypes: ConfigType[] = [
     name: "npm",
     title: "NPM",
     component: NPMConfig,
+  },
+  {
+    // Missing entirely, which is why badge settings rendered through the generic JSON-schema
+    // fallback — raw hex text fields with no preview. (#501)
+    name: "project",
+    title: "Badge",
+    component: BadgeConfig,
   },
 ];
 export interface RepositoryIconDef {

@@ -41,10 +41,3 @@ defineProps({
   },
 });
 </script>
-<style lang="scss">
-@media screen and (max-width: 600px) {
-  .tabs {
-    max-width: 99%;
-  }
-}
-</style>

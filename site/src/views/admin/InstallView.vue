@@ -59,6 +59,11 @@ import TwoByFormBox from "@/components/form/TwoByFormBox.vue";
 import http from "@/http";
 import { notify } from "@kyvg/vue3-notification";
 import { computed, ref } from "vue";
+import router from "@/router";
+import { siteStore } from "@/stores/site";
+
+// Re-fetched after installing so `App.vue` stops bouncing every navigation back to /admin/install.
+const site = siteStore();
 const input = ref({
   username: "",
   email: "",
@@ -99,9 +104,17 @@ async function install() {
   };
   await http
     .post("/api/install", install)
-    .then((response) => {
-      if (response.status === 204) {
-        // Refresh and redirect to login
+    .then(async (response) => {
+      if (response.status === 204 || response.status === 200) {
+        // This branch used to be an empty `// Refresh and redirect to login` comment, so a
+        // successful install left the form sitting there as if nothing had happened.
+        notify({
+          type: "success",
+          title: "Installed",
+          text: "Sign in with the account you just created.",
+        });
+        await site.getInfo();
+        router.push({ name: "login" });
       }
     })
     .catch((error) => {

@@ -3,6 +3,7 @@ import type { Component } from "vue";
 import BrowseView from "@/views/BrowseView.vue";
 import LoginView from "@/views/LoginView.vue";
 import LogoutView from "@/views/LogoutView.vue";
+import ForgotPasswordView from "@/views/ForgotPasswordView.vue";
 import NotFound from "@/views/NotFound.vue";
 import NpmLoginView from "@/views/NpmLoginView.vue";
 import RepositoriesView from "@/views/RepositoriesView.vue";
@@ -58,6 +59,12 @@ export const routes = [
     path: "/logout",
     name: "logout",
     component: LogoutView,
+  },
+  {
+    // The login page has linked here since before this route existed, so the link 404'd.
+    path: "/forgot-password",
+    name: "forgotPassword",
+    component: ForgotPasswordView,
   },
   {
     path: "/page/repositories",

@@ -52,10 +52,7 @@ const input = ref<RepositoryPage>({
   content: "# Hello World",
 });
 
-watch(input.value, () => {
-  console.log("input changed");
-  console.log(input.value.content);
-});
+watch(input.value, () => {});
 async function load() {
   if (props.repository) {
     await http
@@ -74,9 +71,7 @@ async function save() {
   if (props.repository) {
     await http
       .put(`/api/repository/${props.repository}/config/page`, input.value)
-      .then(() => {
-        console.log("Saved");
-      })
+      .then(() => {})
       .catch((error) => {
         console.error(error);
       });

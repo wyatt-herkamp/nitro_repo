@@ -162,7 +162,6 @@ async function loadUserPermissions() {
     .get<FullPermissions>(`api/user-management/get/${props.user.id}/permissions`)
     .then((response) => {
       originalPermissions.value = response.data;
-      console.log(`Original Permissions: ${JSON.stringify(originalPermissions)}`);
     })
     .catch((error) => {
       notify({
@@ -184,7 +183,6 @@ async function load() {
   for (const [repository, actions] of Object.entries(
     originalPermissions.value.repository_permissions,
   )) {
-    console.log(`Loaded Repository: ${repository}`);
     const repositoryValue = await repoStore.getRepositoryById(repository);
     if (!repositoryValue) {
       console.error(`Repository ${repository} not found`);
@@ -208,9 +206,6 @@ watch(
       repositoryPermissions.value.length !==
       Object.keys(originalPermissions.value.repository_permissions).length
     ) {
-      console.log(
-        "Permissions have changed. repositoryPermissions.length !== originalPermissions.length",
-      );
       hasChanged.value = true;
       return;
     }
@@ -223,12 +218,10 @@ watch(
           ] as Array<RepositoryActions>,
         )
       ) {
-        console.log("Permissions have changed. repositoryPermissions !== originalPermissions");
         hasChanged.value = true;
         return;
       }
     }
-    console.log("Permissions have not changed");
     hasChanged.value = false;
   },
   { deep: true },
@@ -241,7 +234,6 @@ async function save() {
   const newPermissions = {
     repository_permissions: repositoryPermissionsValue,
   };
-  console.log(`Saving: ${JSON.stringify(newPermissions)}`);
   await http
     .put(`/api/user-management/update/${props.user.id}/permissions`, newPermissions)
     .then(() => {

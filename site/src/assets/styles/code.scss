@@ -1,0 +1,119 @@
+// Syntax highlighting colours for highlight.js.
+//
+// Hand-written rather than importing one of highlight.js's stylesheets, because every one of those
+// commits to a single background and a single set of literal hex colours. `atom-one-dark` was
+// imported before, which meant light mode would have rendered dark-theme token colours on a white
+// card. These are tokens, so both themes get a readable palette from one source.
+
+:root {
+  --code-keyword: #c792ea;
+  --code-string: #c3e88d;
+  --code-number: #f78c6c;
+  --code-comment: #6b747e;
+  --code-function: #82aaff;
+  --code-type: #ffcb6b;
+  --code-tag: #f07178;
+  --code-attr: #ffcb6b;
+  --code-meta: #89ddff;
+}
+
+:root[data-theme="light"] {
+  --code-keyword: #7c3faf;
+  --code-string: #2e7d32;
+  --code-number: #b4501a;
+  --code-comment: #7c858e;
+  --code-function: #1a56b8;
+  --code-type: #8a6100;
+  --code-tag: #b3245b;
+  --code-attr: #8a6100;
+  --code-meta: #00707a;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --code-keyword: #7c3faf;
+    --code-string: #2e7d32;
+    --code-number: #b4501a;
+    --code-comment: #7c858e;
+    --code-function: #1a56b8;
+    --code-type: #8a6100;
+    --code-tag: #b3245b;
+    --code-attr: #8a6100;
+    --code-meta: #00707a;
+  }
+}
+
+.hljs {
+  color: var(--text);
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--code-comment);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-name {
+  color: var(--code-keyword);
+}
+
+.hljs-string,
+.hljs-addition,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--code-string);
+}
+
+.hljs-number,
+.hljs-deletion {
+  color: var(--code-number);
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-section {
+  color: var(--code-function);
+}
+
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: var(--code-type);
+}
+
+.hljs-tag {
+  color: var(--text-muted);
+}
+
+.hljs-tag .hljs-name {
+  color: var(--code-tag);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable {
+  color: var(--code-attr);
+}
+
+.hljs-meta,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-link,
+.hljs-regexp {
+  color: var(--code-meta);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: var(--weight-semibold);
+}

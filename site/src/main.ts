@@ -60,6 +60,14 @@ import {
   faTriangleExclamation,
   faDatabase,
   faCube,
+  faKey,
+  // The repository browser's file-type icons (#497).
+  faBoxArchive,
+  faFileCode,
+  faFileLines,
+  faFilePdf,
+  faFileShield,
+  faFingerprint,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { sessionStore } from "./stores/session";
@@ -138,6 +146,13 @@ library.add(faInbox);
 library.add(faTriangleExclamation);
 library.add(faDatabase);
 library.add(faCube);
+library.add(faKey);
+library.add(faBoxArchive);
+library.add(faFileCode);
+library.add(faFileLines);
+library.add(faFilePdf);
+library.add(faFileShield);
+library.add(faFingerprint);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 app.use(createMetaManager());

@@ -63,8 +63,6 @@ const isCreate = computed(() => {
 });
 const value = defineModel<MavenConfigType>();
 watch(input.value, () => {
-  console.log(input.value);
-
   if (input.value.mavenType === "") {
     return;
   }
@@ -87,7 +85,6 @@ watch(input.value, () => {
       input.value.mavenType = "";
     }
   }
-  console.log(value.value);
 });
 async function load() {
   if (props.repository) {
@@ -106,9 +103,7 @@ async function save() {
   if (props.repository) {
     await http
       .put(`/api/repository/${props.repository}/config/maven`, value.value)
-      .then(() => {
-        console.log("Saved");
-      })
+      .then(() => {})
       .catch((error) => {
         console.error(error);
       });

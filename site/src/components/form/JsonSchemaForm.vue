@@ -60,7 +60,6 @@ function formFieldToInput(field: FormInputType): Input | undefined {
           value: value.value,
         };
       });
-      console.log(options);
       return {
         component: DropDown,
         label: enumField.title() ?? enumField.key(),

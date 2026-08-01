@@ -8,7 +8,8 @@
       :repository="repository" />
     <SkeletonEntry
       v-for="i in skeletons"
-      :key="i" />
+      :key="i"
+      :index="i" />
   </div>
 </template>
 <script setup lang="ts">
@@ -45,8 +46,9 @@ const skeletons = computed(() => {
   return skeletonsArray;
 });
 const sortedFiles = computed(() => {
-  const files = props.files;
-  return files.sort((a, b) => {
+  // A copy: `Array.prototype.sort` mutates, and sorting the prop array in place mutates the parent's
+  // state from inside a computed.
+  return [...props.files].sort((a, b) => {
     if (a.type === "Directory" && b.type === "File") {
       return -1;
     } else if (a.type === "File" && b.type === "Directory") {
@@ -58,11 +60,14 @@ const sortedFiles = computed(() => {
 });
 </script>
 <style lang="scss" scoped>
-@import "@/assets/styles/theme.scss";
+// Rows sit flush against each other, separated by their own hairline borders — a file listing, not
+// a stack of cards.
 #browseList {
-  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 </style>

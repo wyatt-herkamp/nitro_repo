@@ -1,20 +1,28 @@
 <template>
-  <div
-    @click="click"
+  <RouterLink
     class="browseItem"
-    data-type="folder">
-    <div class="itemAndName">
-      <font-awesome-icon icon="fa-solid fa-folder" />
-      {{ props.file.name }}
-    </div>
-  </div>
+    data-type="folder"
+    :to="browseRoute">
+    <span class="itemAndName">
+      <font-awesome-icon
+        icon="folder"
+        class="itemIcon"
+        :style="{ color: 'var(--file-folder)' }" />
+      <span class="itemName">{{ file.name }}</span>
+    </span>
+
+    <span class="itemMeta itemSize">
+      {{ file.number_of_files }} {{ file.number_of_files === 1 ? "item" : "items" }}
+    </span>
+    <span class="itemMeta itemModified" />
+  </RouterLink>
 </template>
 
 <script setup lang="ts">
-import router from "@/router";
 import { fixCurrentPath, type RawDirectory } from "@/types/browse";
 import { type RepositoryWithStorageName } from "@/types/repository";
 import { type PropType } from "vue";
+import { RouterLink } from "vue-router";
 import "./browse.scss";
 
 const props = defineProps({
@@ -31,10 +39,7 @@ const props = defineProps({
     required: true,
   },
 });
+
 const fixedPath = fixCurrentPath(props.currentPath);
 const browseRoute = `/browse/${props.repository.id}/${fixedPath}/${props.file.name}`;
-
-function click() {
-  router.push(browseRoute);
-}
 </script>
