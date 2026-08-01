@@ -13,6 +13,7 @@ mod config;
 mod dyn_storage;
 mod error;
 mod fs;
+pub mod fs_v2;
 pub use dyn_storage::*;
 pub mod local;
 pub mod meta;

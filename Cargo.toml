@@ -46,6 +46,20 @@ either = "1.12"
 
 base64 = "0.22"
 
+# Storage backends
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-s3 = "1"
+aws-smithy-types = { version = "1", features = ["byte-stream-poll-next"] }
+aws-smithy-runtime-api = "1"
+tux-io-encoding = { git = "https://github.com/wyatt-herkamp/tux-io-encoding.git", features = [
+    "tokio",
+    "chrono",
+    "uuid",
+    "bytes",
+    "zstd",
+    "gzip",
+] }
+
 # Error Handling
 schemars = { git = "https://github.com/wyatt-herkamp/schemars.git", branch = "if_for_adjacent" }
 

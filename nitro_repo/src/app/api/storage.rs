@@ -9,7 +9,7 @@ use nr_core::{
     storage::StorageName,
     user::permissions::HasPermissions,
 };
-use nr_storage::{StorageConfig, StorageTypeConfig, local::LocalConfig};
+use nr_storage::{StorageConfig, StorageTypeConfig, fs_v2::FileSystemV2Config, local::LocalConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use utoipa::{IntoParams, OpenApi, ToSchema};
@@ -28,7 +28,13 @@ use crate::{
 #[derive(OpenApi)]
 #[openapi(
     paths(list_storages, new_storage, get_storage),
-    components(schemas(DBStorage, NewStorageRequest, StorageTypeConfig, LocalConfig)),
+    components(schemas(
+        DBStorage,
+        NewStorageRequest,
+        StorageTypeConfig,
+        LocalConfig,
+        FileSystemV2Config
+    )),
     nest(
         (path = "/local", api = local::LocalStorageAPI, tags=["local", "storage"]),
         (path = "/s3", api = s3::S3StorageAPI, tags=["s3", "storage"])

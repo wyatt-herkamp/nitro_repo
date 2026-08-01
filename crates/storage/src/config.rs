@@ -5,7 +5,7 @@ use thiserror::Error;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{StorageError, local::LocalConfig, s3::S3Config};
+use crate::{StorageError, fs_v2::FileSystemV2Config, local::LocalConfig, s3::S3Config};
 #[derive(Debug, Clone, Error)]
 #[error("Expected Config Type: {0}, Got: {1}")]
 pub struct InvalidConfigType(&'static str, &'static str);
@@ -133,5 +133,6 @@ macro_rules! storage_type_config {
 }
 storage_type_config! {
     Local(LocalConfig),
-    S3(S3Config)
+    S3(S3Config),
+    FileSystemV2(FileSystemV2Config)
 }
