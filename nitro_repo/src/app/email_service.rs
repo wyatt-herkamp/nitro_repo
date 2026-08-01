@@ -190,11 +190,7 @@ impl EmailService {
         let mut email_handlebars = Handlebars::new();
         email_handlebars
             .register_embed_templates::<EmailTemplates>()
-            .map_err(|e| {
-                io::Error::other(
-                    format!("Email Handlebars Error: {:?}", e),
-                )
-            })?;
+            .map_err(|e| io::Error::other(format!("Email Handlebars Error: {:?}", e)))?;
 
         let (sender, receiver) = flume::bounded(100);
         let handle = tokio::spawn(async move {

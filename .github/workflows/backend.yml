@@ -1,32 +1,81 @@
 name: Backend Push or PR
 on:
   push:
-    branches: main
+    branches: [main]
   pull_request:
-    branches: main
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
+  # Backtraces on a failing test are the difference between a usable CI log and a re-run.
+  RUST_BACKTRACE: 1
+
+# A push that lands while an earlier run is still going makes that run irrelevant. Pushes to main
+# are exempt, so the record of what passed on main stays complete.
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
-  build:
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
+        # No `toolchain:` input — rust-toolchain.toml pins the channel. This used to request
+        # `beta` from an action tagged `stable`, so CI tested a toolchain nobody develops against.
         uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: beta
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: Start backing services
+        # The same compose file developers use, so a passing local run means the same thing here.
+        # The daemons are waited on for health; `minio-bucket` is a one-shot that creates the test
+        # bucket and exits, which `--wait` would report as a failed service, so it runs separately
+        # in the foreground and its exit code is the step's.
+        run: |
+          docker compose -f docker-compose.dev.yml --profile postgres up -d --wait postgres minio
+          docker compose -f docker-compose.dev.yml up --exit-code-from minio-bucket minio-bucket
       - name: Test
+        # The storage suite skips a backend whose service is unreachable, so a developer without a
+        # MinIO is not blocked by a failure in something they are not working on. The services are
+        # up here, so make a skip an error instead — otherwise a broken backend passes silently.
         run: cargo test --all
+        env:
+          STORAGE_TESTS_REQUIRE_ALL: 1
+      - name: Service logs
+        if: failure()
+        run: docker compose -f docker-compose.dev.yml logs
+
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: beta
+          components: clippy
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
       - name: Cargo Check
-        run: cargo check --all
+        run: cargo check --all --all-targets
       - name: Cargo Clippy
-        run: cargo clippy --all -- -D warnings
+        # `--all-targets` so test code is linted too. Without it a warning can sit in a test module
+        # indefinitely, which is exactly where the two that existed were sitting.
+        run: cargo clippy --all --all-targets -- -D warnings
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        # rustfmt.toml sets `imports_granularity` and `group_imports`, both nightly-only. Stable
+        # rustfmt ignores them silently, so `cargo fmt` produces different output depending on who
+        # ran it. Formatting is pinned to nightly so there is one answer.
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - name: Cargo Format
+        run: cargo fmt --all --check

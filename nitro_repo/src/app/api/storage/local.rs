@@ -72,9 +72,10 @@ pub async fn path_helper(
             let entry = entry.unwrap();
             let path = entry.path();
             if path.is_dir()
-                && let Some(file_name) = path.file_name() {
-                    directories.push(file_name.to_string_lossy().to_string());
-                }
+                && let Some(file_name) = path.file_name()
+            {
+                directories.push(file_name.to_string_lossy().to_string());
+            }
         }
         LocalStoragePathHelperResponse::Directories(directories)
     } else {

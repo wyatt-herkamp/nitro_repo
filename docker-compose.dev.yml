@@ -10,6 +10,10 @@ services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    # Behind a profile because `nr_tests.env` points at localhost:5432 and plenty of developers
+    # already run a Postgres there — starting a second one just fails to bind the port. Opt in with
+    # `--profile postgres` (which is what CI does, since a runner has nothing on 5432).
+    profiles: ["postgres"]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
