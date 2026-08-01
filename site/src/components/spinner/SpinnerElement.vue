@@ -1,65 +1,68 @@
 <template>
-  <div class="loader"></div>
+  <div
+    class="spinner"
+    :class="`is-${size}`"
+    role="status"
+    :aria-label="label">
+    <span class="visually-hidden">{{ label }}</span>
+  </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+/**
+ * A spinner sized by its container.
+ *
+ * The previous one was a fixed `10em` square with `margin: 55px auto` baked in, so it could only
+ * ever be a full-page loader — putting one inside a button was not possible.
+ */
+withDefaults(
+  defineProps<{
+    size?: "inline" | "sm" | "md" | "lg";
+    label?: string;
+  }>(),
+  { size: "inline", label: "Loading" },
+);
+</script>
 
 <style scoped lang="scss">
-@import "@/assets/styles/theme";
-
-.loader,
-.loader:before,
-.loader:after {
+.spinner {
+  display: inline-block;
+  flex-shrink: 0;
   border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
 }
 
-.loader {
-  color: $text;
-  font-size: 11px;
-  text-indent: -99999em;
-  margin: 55px auto;
-  position: relative;
-  width: 10em;
-  height: 10em;
-  box-shadow: inset 0 0 0 1em;
-  transform: translateZ(0);
+// Matches the surrounding text, which is what a button or a table cell wants.
+.is-inline {
+  width: 1em;
+  height: 1em;
+  border-width: 1.5px;
+}
+.is-sm {
+  width: 1rem;
+  height: 1rem;
+}
+.is-md {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.is-lg {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-width: 3px;
 }
 
-.loader:before,
-.loader:after {
-  position: absolute;
-  content: "";
-}
-
-.loader:before {
-  width: 5.2em;
-  height: 10.2em;
-  background: $background;
-  border-radius: 10.2em 0 0 10.2em;
-  top: -0.1em;
-  left: -0.1em;
-  transform-origin: 5.1em 5.1em;
-  animation: load2 2s infinite ease 1.5s;
-}
-
-.loader:after {
-  width: 5.2em;
-  height: 10.2em;
-  background: $background;
-  border-radius: 0 10.2em 10.2em 0;
-  top: -0.1em;
-  left: 4.9em;
-  transform-origin: 0.1em 5.1em;
-  animation: load2 2s infinite ease;
-}
-
-@keyframes load2 {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
+@keyframes spin {
+  to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.6s;
   }
 }
 </style>

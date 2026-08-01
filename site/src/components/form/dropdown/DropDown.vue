@@ -16,7 +16,6 @@
 
 <script setup lang="ts">
 import { computed, type PropType } from "vue";
-import "@/assets/styles/form.scss";
 
 const props = defineProps({
   options: {

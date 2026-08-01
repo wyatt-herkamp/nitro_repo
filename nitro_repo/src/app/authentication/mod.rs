@@ -439,14 +439,14 @@ pub mod password {
         Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
         password_hash::{Salt, SaltString},
     };
-    use rand::{TryRngCore, rngs::OsRng};
+    use rand::{TryRng, rngs::SysRng};
     use tracing::{error, instrument};
 
     use crate::app::authentication::AuthenticationError;
     #[instrument(skip(password), fields(project_module = "Authentication"))]
     pub fn encrypt_password(password: &str) -> Option<String> {
         let mut bytes = [0u8; Salt::RECOMMENDED_LENGTH];
-        OsRng
+        SysRng
             .try_fill_bytes(&mut bytes)
             .expect("Failed to generate random bytes");
         let salt = SaltString::encode_b64(&bytes).expect("Failed to generate salt");

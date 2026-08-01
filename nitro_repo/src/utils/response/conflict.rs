@@ -5,7 +5,10 @@ use serde::Serialize;
 use serde_json::Value;
 use utoipa::ToSchema;
 
-use super::{ErrorReason, ResponseBuilder, api_error_response::APIErrorResponse};
+use super::{
+    ErrorReason, ResponseBuilder,
+    api_error_response::{APIErrorResponse, APIErrorResponseSchema},
+};
 
 #[derive(Serialize, ToSchema)]
 pub struct ConflictResponse {
@@ -18,7 +21,7 @@ impl utoipa::IntoResponses for ConflictResponse {
         String,
         utoipa::openapi::RefOr<utoipa::openapi::response::Response>,
     > {
-        let missing_permission_response = APIErrorResponse::<&str, ()>::name();
+        let conflict_schema = APIErrorResponseSchema::name();
         utoipa::openapi::response::ResponsesBuilder::new()
             .responses_from_iter([(
                 "409",
@@ -29,7 +32,7 @@ impl utoipa::IntoResponses for ConflictResponse {
                         utoipa::openapi::content::ContentBuilder::new()
                             .schema(Some(
                                 utoipa::openapi::schema::RefBuilder::new()
-                                    .ref_location_from_schema_name(missing_permission_response),
+                                    .ref_location_from_schema_name(conflict_schema),
                             ))
                             .example(Some(example()))
                             .into(),

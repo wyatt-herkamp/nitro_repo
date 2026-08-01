@@ -7,7 +7,7 @@ use std::{
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Duration, FixedOffset, Local};
 use http::StatusCode;
-use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::StdRng};
+use rand::{RngExt, distr::Alphanumeric};
 use redb::{
     CommitError, Database, Error, ReadableDatabase, ReadableTable, ReadableTableMetadata,
     TableDefinition,
@@ -368,7 +368,9 @@ impl SessionManager {
 
 #[inline(always)]
 pub fn create_session_id(exists_call_back: impl Fn(&str) -> bool) -> String {
-    let mut rand = StdRng::from_os_rng();
+    // `StdRng::from_os_rng()` went away in rand 0.10. `rand::rng()` is a ChaCha12 CSPRNG seeded
+    // from the OS, which is what a session id needs.
+    let mut rand = rand::rng();
     loop {
         let session_id: String = (0..7).map(|_| rand.sample(Alphanumeric) as char).collect();
         if !exists_call_back(&session_id) {

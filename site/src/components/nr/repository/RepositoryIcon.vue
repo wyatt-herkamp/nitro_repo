@@ -9,7 +9,7 @@
 </template>
 <script setup lang="ts">
 import type { RepositoryIconDef } from "@/types/repository";
-import { defineProps, type PropType } from "vue";
+import { type PropType } from "vue";
 defineProps({
   icon: {
     type: Object as PropType<RepositoryIconDef>,

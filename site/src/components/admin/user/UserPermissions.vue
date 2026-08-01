@@ -113,22 +113,14 @@ const userPermissions = ref({
   system_manager: props.user.system_manager,
   default_repository_permissions: new RepositoryActionsType(props.user.default_repository_actions),
 });
-watch(
-  userPermissions,
-  () => {
-    console.log(`User Permissions: ${JSON.stringify(userPermissions)}`);
-  },
-  { deep: true },
-);
+watch(userPermissions, () => {}, { deep: true });
 async function save() {
-  console.log("Saving User Permissions");
   const newPermissions = {
     admin: userPermissions.value.admin,
     user_manager: userPermissions.value.user_manager,
     system_manager: userPermissions.value.system_manager,
     default_repository_actions: userPermissions.value.default_repository_permissions.asArray(),
   };
-  console.log(`Saving: ${JSON.stringify(newPermissions)}`);
   await http
     .put(`/api/user-management/update/${props.user.id}/permissions`, newPermissions)
     .then(() => {

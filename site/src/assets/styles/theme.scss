@@ -1,33 +1,49 @@
-// https://www.realtimecolors.com/?colors=e2e6f6-070a17-8aa3db-812869-c95172&fonts=Inter-Inter
-$text: rgb(226, 230, 246);
-$text-50: rgba(226, 230, 246, 0.5);
-$background: rgb(7, 10, 23);
-$background-30: rgba(7, 10, 23, 0.3);
-$background-50: rgba(7, 10, 23, 0.5);
-$background-70: rgba(7, 10, 23, 0.7);
-$background-90: rgba(7, 10, 23, 0.9);
+// Compatibility shim.
+//
+// This file used to be the palette: 34 lines of Sass variables straight off a realtimecolors.com
+// permalink. It is now a mapping from those historical names onto the real tokens in `tokens.scss`,
+// which is what lets a light theme exist at all — a Sass variable is resolved when the stylesheet is
+// built, so no `[data-theme]` attribute could ever have changed one.
+//
+// It deliberately declares *only* variables and emits no CSS. Around 40 components `@import` it, and
+// any selector in here would be duplicated once per component in the built stylesheet. `tokens.scss`
+// is imported once, globally, from `main.scss`.
+//
+// New components should use `var(--token)` directly. This exists so the migration did not have to
+// touch all 40 components in a single commit; it should shrink over time.
 
-$primary: rgb(138, 163, 219);
-$primary-30: rgba(138, 163, 219, 0.3);
-$primary-50: rgba(138, 163, 219, 0.5);
-$primary-70: rgba(138, 163, 219, 0.7);
-$primary-90: rgba(138, 163, 219, 0.9);
+$text: var(--text);
+$text-50: var(--text-muted);
+$background: var(--bg);
+$background-30: var(--surface);
+$background-50: var(--surface);
+$background-70: var(--surface-raised);
+$background-90: var(--bg);
 
-$secondary: rgb(129, 40, 105);
-$secondary-30: rgba(129, 40, 105, 0.3);
-$secondary-50: rgba(129, 40, 105, 0.5);
-$secondary-70: rgba(129, 40, 105, 0.7);
-$secondary-90: rgba(129, 40, 105, 0.9);
-$accent: rgb(201, 81, 114);
-$accent-30: rgba(201, 81, 114, 0.3);
-$accent-50: rgba(201, 81, 114, 0.5);
-$accent-70: rgba(201, 81, 114, 0.7);
-$accent-90: rgba(201, 81, 114, 0.9);
+$primary: var(--accent);
+$primary-30: var(--accent-muted);
+$primary-50: var(--surface-raised);
+$primary-70: var(--accent-border);
+$primary-90: var(--accent);
 
-$valid-value: rgb(144, 238, 144);
+// The old "secondary" was a plum used almost exclusively for input chrome, where it rendered as a
+// magenta form field. Mapped onto surfaces and borders instead, which is what those call sites
+// actually wanted from it.
+$secondary: var(--border-strong);
+$secondary-30: var(--border);
+$secondary-50: var(--surface-hover);
+$secondary-70: var(--surface-raised);
+$secondary-90: var(--surface);
 
-$invalid-form-field: rgb(225, 43, 43);
+$accent: var(--accent);
+$accent-30: var(--accent-muted);
+$accent-50: var(--accent-muted);
+$accent-70: var(--accent-border);
+$accent-90: var(--accent);
 
-$switch-slider: $secondary;
-$switch-slider-before: $accent;
-$switch-slider-checked: $primary;
+$valid-value: var(--success);
+$invalid-form-field: var(--danger);
+
+$switch-slider: var(--border-strong);
+$switch-slider-before: var(--text-muted);
+$switch-slider-checked: var(--accent);

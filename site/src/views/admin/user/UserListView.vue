@@ -1,32 +1,47 @@
 <template>
-  <main v-if="!error && users.length >= 1">
-    <UserList :users="users" />
+  <main class="container">
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1>Users</h1>
+        <p>Accounts that can sign in to this instance.</p>
+      </div>
+      <div class="page-header-actions">
+        <NButton
+          variant="primary"
+          icon="user-plus"
+          :to="{ name: 'UserCreate' }">
+          New user
+        </NButton>
+      </div>
+    </div>
+
+    <UserTable
+      :users="users"
+      :loading="loading"
+      :error="error" />
   </main>
-  <ErrorOnRequest
-    v-else-if="error"
-    :error="error" />
 </template>
 
 <script setup lang="ts">
-import UserList from "@/components/admin/user/UserList.vue";
-import ErrorOnRequest from "@/components/ErrorOnRequest.vue";
+import { ref } from "vue";
+import UserTable from "@/components/admin/user/UserTable.vue";
+import NButton from "@/components/core/ui/NButton.vue";
 import http from "@/http";
 import type { UserResponseType } from "@/types/base";
-import { ref } from "vue";
 
-const users = ref<UserResponseType[]>([]);
-const error = ref<string | null>(null);
+const users = ref<Array<UserResponseType>>([]);
+const error = ref<string | undefined>(undefined);
+const loading = ref(true);
 
-async function fetchUsers() {
-  await http
-    .get<UserResponseType[]>("/api/user-management/list")
-    .then((response) => {
-      users.value = response.data;
-    })
-    .catch((error) => {
-      console.error(error);
-      error.value = "Failed to fetch users";
-    });
+async function load() {
+  try {
+    const response = await http.get<Array<UserResponseType>>("/api/user-management/list");
+    users.value = response.data;
+  } catch {
+    error.value = "Failed to load users.";
+  } finally {
+    loading.value = false;
+  }
 }
-fetchUsers();
+load();
 </script>

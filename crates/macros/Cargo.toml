@@ -12,9 +12,9 @@ proc-macro = true
 [dependencies]
 quote = "1"
 proc-macro2 = "1"
-syn = { version = "2", features = ["full", "extra-traits", "parsing"] }
+syn = { version = "3", features = ["full", "extra-traits", "parsing"] }
 heck = "0.5"
 
 [dev-dependencies]
-prettyplease = "0.2"
+prettyplease = "0.3"
 anyhow = "1"

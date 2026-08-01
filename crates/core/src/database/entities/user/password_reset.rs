@@ -1,5 +1,4 @@
 use chrono::Local;
-use rand::{SeedableRng, rngs::StdRng};
 use serde::{Deserialize, Serialize};
 use sqlx::{
     PgPool,
@@ -92,10 +91,12 @@ impl UserPasswordReset {
         .await?;
         Ok(row)
     }
+    /// See [`crate::database::entities::user::auth_token::utils::generate_token`] on the choice of
+    /// generator: `rand::rng()` is a CSPRNG seeded from the OS.
     fn generate_token_value() -> String {
-        use rand::{Rng, distr::Alphanumeric};
+        use rand::{RngExt, distr::Alphanumeric};
 
-        StdRng::from_os_rng()
+        rand::rng()
             .sample_iter(&Alphanumeric)
             .take(32)
             .map(char::from)

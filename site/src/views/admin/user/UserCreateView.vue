@@ -77,14 +77,12 @@ async function create() {
     createError.value = "Password is required";
     return;
   }
-  console.log("Creating user");
   const requestBody = {
     name: user.value.name,
     email: user.value.email,
     username: user.value.username,
     password: password.value,
   };
-  console.log(requestBody);
 
   await http
     .post("/api/user-management/create", requestBody)

@@ -58,13 +58,10 @@ const props = defineProps({
 });
 const version = computed(() => {
   if (props.version) {
-    console.debug("Using version from props");
     return props.version.version;
   } else if (props.project.latest_release) {
-    console.debug("Using latest release");
     return props.project.latest_release;
   } else if (props.project.latest_pre_release) {
-    console.debug("Using latest pre-release");
     return props.project.latest_pre_release;
   } else {
     return "latest";

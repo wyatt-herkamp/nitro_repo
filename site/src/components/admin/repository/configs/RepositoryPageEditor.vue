@@ -27,7 +27,7 @@ import DropDown from "@/components/form/dropdown/DropDown.vue";
 import http from "@/http";
 import { type RepositoryPage, PageType } from "@/types/repository";
 import { MilkdownProvider } from "@milkdown/vue";
-import { defineProps, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import MarkdownEditor from "./MarkdownEditor.vue";
 import SubmitButton from "@/components/form/SubmitButton.vue";
 const pageTypes = [
@@ -52,10 +52,7 @@ const input = ref<RepositoryPage>({
   content: "# Hello World",
 });
 
-watch(input.value, () => {
-  console.log("input changed");
-  console.log(input.value.content);
-});
+watch(input.value, () => {});
 async function load() {
   if (props.repository) {
     await http
@@ -74,9 +71,7 @@ async function save() {
   if (props.repository) {
     await http
       .put(`/api/repository/${props.repository}/config/page`, input.value)
-      .then(() => {
-        console.log("Saved");
-      })
+      .then(() => {})
       .catch((error) => {
         console.error(error);
       });

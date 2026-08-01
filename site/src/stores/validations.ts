@@ -22,7 +22,6 @@ export const useValidationStore = defineStore("validationStore", () => {
           isAvailable = false;
         }
       });
-    console.log(`${type} ${value} is aviailable: ${isAvailable}`);
     return isAvailable;
   }
   async function isUsernameInUse(username: string): Promise<boolean | undefined> {

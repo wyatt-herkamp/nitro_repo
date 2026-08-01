@@ -1,43 +1,66 @@
 <template>
   <main
     v-if="repository"
-    :data-has-page="repositoryPage != undefined">
-    <div class="primaryInfo">
-      <h1>{{ repository.storage_name }}/{{ repository.name }}</h1>
-      <RouterLink
-        class="openBrowse"
-        :to="{
-          name: 'Browse',
-          params: { id: repository.id, catchAll: '' },
-        }">
-        Browse
-      </RouterLink>
+    class="container">
+    <div class="page-header">
+      <div class="page-header-text">
+        <NBreadcrumb :items="crumbs" />
+        <h1>{{ repository.name }}</h1>
+        <div class="chips">
+          <NBadge variant="accent">{{ repository.repository_type }}</NBadge>
+          <NBadge :variant="repository.visibility === 'Public' ? 'success' : 'neutral'">
+            {{ repository.visibility }}
+          </NBadge>
+          <NBadge
+            v-if="!repository.active"
+            variant="warning"
+            >Disabled</NBadge
+          >
+        </div>
+      </div>
 
-      <CopyURL :code="url"> </CopyURL>
-      <div v-if="repositoryType">
+      <div class="page-header-actions">
+        <NButton
+          icon="folder"
+          :to="{ name: 'Browse', params: { id: repository.id, catchAll: '' } }">
+          Browse files
+        </NButton>
+      </div>
+    </div>
+
+    <NCard
+      title="Repository URL"
+      subtitle="Point your client at this.">
+      <CopyURL :code="url" />
+      <div
+        v-if="repositoryType && repositoryType.icons.length > 0"
+        class="icons">
         <RepositoryIcon
-          :name="repositoryType.name"
           v-for="icon in repositoryType.icons"
           :key="icon.name"
+          :name="repositoryType.name"
           :icon="icon" />
       </div>
-    </div>
-    <div class="content">
-      <div id="page">
-        <RepositoryPageViewer
-          v-if="repositoryPage"
-          :repository="repository"
-          :page="repositoryPage" />
-      </div>
-      <div id="helper">
-        <RepositoryHelper :repository="repository" />
-      </div>
-    </div>
+    </NCard>
+
+    <RepositoryPageViewer
+      v-if="repositoryPage && repositoryPage.page_type !== 'None'"
+      :repository="repository"
+      :page="repositoryPage" />
+
+    <RepositoryHelper :repository="repository" />
   </main>
+
   <ErrorOnRequest
     v-else-if="error"
     :error="error"
     :errorCode="errorCode" />
+
+  <main
+    v-else
+    class="loading">
+    <SpinnerElement size="lg" />
+  </main>
 </template>
 
 <script setup lang="ts">
@@ -46,8 +69,12 @@ import ErrorOnRequest from "@/components/ErrorOnRequest.vue";
 import RepositoryHelper from "@/components/nr/repository/RepositoryHelper.vue";
 import RepositoryIcon from "@/components/nr/repository/RepositoryIcon.vue";
 import RepositoryPageViewer from "@/components/nr/repository/RepositoryPageViewer.vue";
+import NBadge from "@/components/core/ui/NBadge.vue";
+import NButton from "@/components/core/ui/NButton.vue";
+import NCard from "@/components/core/ui/NCard.vue";
+import NBreadcrumb, { type Crumb } from "@/components/core/ui/NBreadcrumb.vue";
+import SpinnerElement from "@/components/spinner/SpinnerElement.vue";
 import http from "@/http";
-
 import router from "@/router";
 import { useRepositoryStore } from "@/stores/repositories";
 import {
@@ -57,125 +84,99 @@ import {
   type RepositoryWithStorageName,
 } from "@/types/repository";
 import { computed, ref } from "vue";
-const repoStore = useRepositoryStore();
 
-const repositoryId = ref<string | undefined>(undefined);
+const repoStore = useRepositoryStore();
 
 const repository = ref<RepositoryWithStorageName | undefined>(undefined);
 const repositoryPage = ref<RepositoryPage | undefined>(undefined);
 const error = ref<string | null>(null);
 const errorCode = ref<number | undefined>(undefined);
-const repositoryType = computed(() => {
-  if (repository.value) {
-    return findRepositoryType(repository.value.repository_type);
-  }
-  return undefined;
-});
-const url = computed(() => {
-  if (!repository.value) {
-    return "";
-  }
-  return createRepositoryRoute(repository.value);
-});
-async function fetchRepository() {
-  if (!repositoryId.value) {
-    console.error("No repository id");
+
+const repositoryType = computed(() =>
+  repository.value ? findRepositoryType(repository.value.repository_type) : undefined,
+);
+
+const url = computed(() => (repository.value ? createRepositoryRoute(repository.value) : ""));
+
+const crumbs = computed<Array<Crumb>>(() => [
+  { label: "Repositories", to: { name: "repositories" } },
+  { label: repository.value?.storage_name ?? "" },
+  { label: repository.value?.name ?? "" },
+]);
+
+async function load(repositoryId: string) {
+  try {
+    repository.value = await repoStore.getRepositoryById(repositoryId);
+    if (repository.value === undefined) {
+      error.value = "Repository not found";
+      errorCode.value = 404;
+      return;
+    }
+  } catch {
+    error.value = "Could not load this repository";
     return;
   }
-  await repoStore.getRepositoryById(repositoryId.value).then((response) => {
-    repository.value = response;
-    console.log(repository.value);
-  });
-  await http
-    .get<RepositoryPage>(`/api/repository/page/${repositoryId.value}`)
-    .then((response) => {
-      console.log(response.data);
-      repositoryPage.value = response.data;
-    })
-    .catch((error) => {
-      console.error(error);
-      errorCode.value = error.response.status;
-      error.value = "Failed to fetch repository";
-    });
-}
-console.log(router.currentRoute.value.params);
-if (router.currentRoute.value.params.repositoryId) {
-  repositoryId.value = router.currentRoute.value.params.repositoryId as string;
-  console.debug(`Fetching repository ${repositoryId.value}`);
-  fetchRepository();
-} else if (
-  router.currentRoute.value.params.storageName &&
-  router.currentRoute.value.params.repositoryName
-) {
-  console.debug(
-    `Fetching repository by names ${router.currentRoute.value.params.storageName}/${router.currentRoute.value.params.repositoryName}`,
-  );
-  repoStore
-    .getRepositoryIdByNames(
-      router.currentRoute.value.params.storageName as string,
-      router.currentRoute.value.params.repositoryName as string,
-    )
-    .then((response) => {
-      if (response === null) {
-        error.value = "Repository not found";
-        return;
-      }
-      repositoryId.value = response;
-      fetchRepository();
-    });
-}
-</script>
-<style scoped lang="scss">
-@import "@/assets/styles/theme.scss";
-main {
-  margin: 0 auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.primaryInfo {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  flex-wrap: wrap;
 
-  align-items: center;
-  border-bottom: 1px solid gray;
-  h1 {
-    margin: 0;
+  // A repository with no page configured is the normal case, not a failure — it just means there is
+  // nothing to render above the install snippets.
+  try {
+    const response = await http.get<RepositoryPage>(`/api/repository/page/${repositoryId}`);
+    repositoryPage.value = response.data;
+  } catch {
+    repositoryPage.value = undefined;
   }
 }
-.content {
+
+async function resolve() {
+  const params = router.currentRoute.value.params;
+  if (params.repositoryId) {
+    await load(params.repositoryId as string);
+    return;
+  }
+
+  if (params.storageName && params.repositoryName) {
+    // `getRepositoryIdByNames` resolves to `undefined` when it cannot find one; this used to check
+    // `=== null`, so a miss fell straight through and the page rendered nothing at all.
+    const resolved = await repoStore.getRepositoryIdByNames(
+      params.storageName as string,
+      params.repositoryName as string,
+    );
+    if (!resolved) {
+      error.value = "Repository not found";
+      errorCode.value = 404;
+      return;
+    }
+    await load(resolved);
+    return;
+  }
+
+  error.value = "Repository not found";
+  errorCode.value = 404;
+}
+
+resolve();
+</script>
+
+<style scoped lang="scss">
+.chips {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
-main[data-has-page="true"] {
-  margin: 0 10%;
+
+.icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
-#page {
-  flex-grow: 3;
-  width: 100%;
-  border-bottom: 1px solid gray;
-  background-color: $background;
-}
-@media screen and (max-width: 1200px) {
-  main[data-has-page="true"] {
-    margin: 0 0;
-  }
-  #page {
-    border-bottom: none;
-  }
-}
-.openBrowse {
-  display: block;
-  padding: 0.5rem;
-  border: 1px solid gray;
-  border-radius: 0.5rem;
-  background-color: $primary-30;
-  color: white;
-  text-decoration: none;
-  text-align: end;
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-4);
 }
 </style>

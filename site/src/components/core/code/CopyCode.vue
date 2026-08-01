@@ -1,14 +1,23 @@
 <template>
   <div class="copyURL">
-    <label>
-      <slot></slot>
+    <label v-if="$slots.default">
+      <slot />
     </label>
-    <span @click="copyURL">
-      {{ code }}
-    </span>
+    <button
+      type="button"
+      class="value"
+      :title="copied ? 'Copied' : 'Copy'"
+      @click="copy">
+      <span class="mono">{{ code }}</span>
+      <font-awesome-icon :icon="copied ? 'check' : 'copy'" />
+    </button>
   </div>
 </template>
+
 <script setup lang="ts">
+// A `<button>` rather than a `<span>` with a click handler, so it is reachable by keyboard and
+// announced as something you can activate.
+import { ref } from "vue";
 import { notify } from "@kyvg/vue3-notification";
 
 const props = defineProps({
@@ -17,40 +26,56 @@ const props = defineProps({
     required: true,
   },
 });
-function copyURL() {
-  navigator.clipboard.writeText(props.code);
-  notify({
-    type: "success",
-    title: "Copied",
-  });
+
+const copied = ref(false);
+
+async function copy() {
+  try {
+    await navigator.clipboard.writeText(props.code);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1600);
+  } catch {
+    // Clipboard access is refused outside a secure context, which includes plain-HTTP instances.
+    notify({ type: "error", title: "Could not copy", text: "Select the text and copy it." });
+  }
 }
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/styles/theme.scss";
 .copyURL {
-  margin: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
-@media screen and (max-width: 768px) {
-  span {
-    max-width: 90%;
-    word-wrap: break-word;
-  }
-}
-span {
-  display: block;
-  width: fit-content;
+
+.value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+  text-align: left;
+  background-color: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  padding: 0.5rem;
-  padding-right: 1rem;
-  border-radius: 0.25rem;
-  margin-top: 0.5rem;
-  border: 0.25px solid $primary-50;
-  // Text wrapping
+  transition: border-color var(--duration-fast) var(--ease-out);
 
   &:hover {
-    background-color: $primary-50;
-    transition: background-color 0.25s;
+    border-color: var(--accent-border);
+  }
+
+  span {
+    overflow-wrap: anywhere;
+  }
+
+  svg {
+    flex-shrink: 0;
+    color: var(--text-subtle);
   }
 }
 </style>

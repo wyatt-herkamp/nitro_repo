@@ -27,7 +27,6 @@
   </section>
 </template>
 <script setup lang="ts">
-import "@/assets/styles/form.scss";
 import { computed, ref } from "vue";
 const props = defineProps({
   id: {

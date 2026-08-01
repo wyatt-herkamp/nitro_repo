@@ -47,7 +47,6 @@ function organizeScopes() {
       organized.set(parent, [scope]);
     }
   }
-  console.log(organized);
   scopeDescriptionsOrganized.value = organized;
 }
 async function getScopeDescriptions() {

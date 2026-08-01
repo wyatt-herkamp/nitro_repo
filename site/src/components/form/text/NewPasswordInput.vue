@@ -108,7 +108,6 @@ watch(
     } else {
       passwordsMatch.value = true;
     }
-    console.log(validations.value);
     const { isValid: newIsValid, validationResults: newValidationResults } = await checkValidations(
       validations.value,
       internalValue.value.value,
@@ -120,10 +119,8 @@ watch(
       return;
     }
     if (newIsValid && passwordsMatch.value) {
-      console.log("Setting value");
       value.value = newValue.value;
     } else {
-      console.log("Setting value to undefined");
       value.value = undefined;
     }
   },
@@ -131,7 +128,6 @@ watch(
 );
 </script>
 <style scoped lang="scss">
-@import "@/assets/styles/form.scss";
 @import "@/assets/styles/theme.scss";
 
 .inputs {

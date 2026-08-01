@@ -1,3 +1,10 @@
+// Self-hosted, so there is no third-party request on page load and no flash of system sans.
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+
 import "./assets/styles/main.scss";
 import "vue-final-modal/style.css";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
@@ -39,6 +46,29 @@ import {
   faCheckCircle,
   faFile,
   faFolder,
+  faMagnifyingGlass,
+  faArrowUp,
+  faArrowDown,
+  faTrash,
+  faPlus,
+  faSun,
+  faMoon,
+  faDesktop,
+  faCopy,
+  faCheck,
+  faInbox,
+  faTriangleExclamation,
+  faDatabase,
+  faCube,
+  faKey,
+  faGaugeHigh,
+  // The repository browser's file-type icons (#497).
+  faBoxArchive,
+  faFileCode,
+  faFileLines,
+  faFilePdf,
+  faFileShield,
+  faFingerprint,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { sessionStore } from "./stores/session";
@@ -103,6 +133,28 @@ library.add(faCircleXmark);
 library.add(faCheckCircle);
 library.add(faFile);
 library.add(faFolder);
+library.add(faMagnifyingGlass);
+library.add(faArrowUp);
+library.add(faArrowDown);
+library.add(faTrash);
+library.add(faPlus);
+library.add(faSun);
+library.add(faMoon);
+library.add(faDesktop);
+library.add(faCopy);
+library.add(faCheck);
+library.add(faInbox);
+library.add(faTriangleExclamation);
+library.add(faDatabase);
+library.add(faCube);
+library.add(faKey);
+library.add(faGaugeHigh);
+library.add(faBoxArchive);
+library.add(faFileCode);
+library.add(faFileLines);
+library.add(faFilePdf);
+library.add(faFileShield);
+library.add(faFingerprint);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 app.use(createMetaManager());

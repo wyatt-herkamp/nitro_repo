@@ -15,7 +15,7 @@ use nr_core::{
         scopes::NRScope,
     },
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
 
@@ -38,10 +38,11 @@ use crate::{
         create_user,
         is_taken,
         update_permissions,
+        update_user,
         update_password,
         revoke_user_tokens
     ),
-    components(schemas(IsTaken, UpdatePermissions))
+    components(schemas(IsTaken, UpdatePermissions, UpdateUserRequest))
 )]
 pub struct UserManagementAPI;
 pub fn user_management_routes() -> axum::Router<NitroRepo> {
@@ -58,6 +59,7 @@ pub fn user_management_routes() -> axum::Router<NitroRepo> {
             "/update/{user_id}/permissions",
             axum::routing::put(update_permissions),
         )
+        .route("/update/{user_id}", axum::routing::put(update_user))
         .route(
             "/update/{user_id}/password",
             axum::routing::put(update_password),
@@ -337,4 +339,84 @@ pub async fn revoke_user_tokens(
     let revoked = AuthToken::delete_all_for_user(user.id, site.as_ref()).await?;
     tracing::info!(?user_id, revoked, "Revoked every token for a user");
     Ok(ResponseBuilder::ok().json(&RevokedTokensResponse { revoked }))
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, ToSchema)]
+#[serde(default)]
+pub struct UpdateUserRequest {
+    pub name: Option<String>,
+    pub username: Option<String>,
+    pub email: Option<String>,
+}
+
+/// Updates a user's details.
+///
+/// The admin user page has had a form for these three fields with no `@submit` handler and no
+/// endpoint behind it, so editing a name, username or email was silently impossible. The entity
+/// methods (`update_name`, `update_username`, `update_email_address`) already existed; nothing
+/// exposed them.
+#[utoipa::path(
+    put,
+    request_body = UpdateUserRequest,
+    path = "/update/{user_id}",
+    responses(
+        (status = 204, description = "The user was updated"),
+        (status = 400, description = "The username or email is not valid"),
+        (status = 404, description = "User not found"),
+        (status = 409, description = "That username or email is already taken"),
+    ),
+)]
+#[instrument(skip(site))]
+pub async fn update_user(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Path(user_id): Path<i32>,
+    JsonBody(request): JsonBody<UpdateUserRequest>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_user_manager() {
+        return Ok(MissingPermission::UserManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::EditUser, &site).await? {
+        return Ok(denied);
+    }
+    let Some(user) = UserSafeData::get_by_id(user_id, &site.database).await? else {
+        return Ok(ResponseBuilder::not_found()
+            .error_reason("User not found")
+            .empty());
+    };
+
+    // Validated and checked for conflicts before anything is written, so a request that changes two
+    // fields cannot leave one applied and the other rejected.
+    if let Some(username) = &request.username
+        && username != user.username.as_ref()
+    {
+        if let Err(error) = Username::new(username.clone()) {
+            return Ok(ResponseBuilder::bad_request().body(error.to_string()));
+        }
+        if user_utils::is_username_taken(username, &site.database).await? {
+            return Ok(ConflictResponse::from("username").into_response());
+        }
+    }
+    if let Some(email) = &request.email
+        && email != user.email.as_ref()
+    {
+        if let Err(error) = Email::new(email.clone()) {
+            return Ok(ResponseBuilder::bad_request().body(error.to_string()));
+        }
+        if user_utils::is_email_taken(email, &site.database).await? {
+            return Ok(ConflictResponse::from("email").into_response());
+        }
+    }
+
+    if let Some(name) = &request.name {
+        user.update_name(name, &site.database).await?;
+    }
+    if let Some(username) = &request.username {
+        user.update_username(username, &site.database).await?;
+    }
+    if let Some(email) = &request.email {
+        user.update_email_address(email, &site.database).await?;
+    }
+
+    Ok(ResponseBuilder::no_content().empty())
 }

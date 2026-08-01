@@ -1,27 +1,44 @@
 <template>
-  <main v-if="!error && repositories.length >= 1">
-    <PublicRepositoryList :repositories="repositories" />
+  <main class="container">
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1>Repositories</h1>
+        <p>Browse the repositories you have access to.</p>
+      </div>
+    </div>
+
+    <RepositoryTable
+      :repositories="repositories"
+      :loading="loading"
+      :error="error" />
   </main>
-  <ErrorOnRequest
-    v-else-if="error"
-    :error="error" />
 </template>
 
 <script setup lang="ts">
-import ErrorOnRequest from "@/components/ErrorOnRequest.vue";
-import PublicRepositoryList from "@/components/nr/repository/PublicRepositoryList.vue";
+/**
+ * Serves both `/` and `/page/repositories`. `HomeView.vue` was a byte-identical copy of this file;
+ * both routes now render this one.
+ */
+import { ref } from "vue";
+import RepositoryTable from "@/components/nr/repository/RepositoryTable.vue";
 import { useRepositoryStore } from "@/stores/repositories";
 import type { RepositoryWithStorageName } from "@/types/repository";
-import { ref } from "vue";
 
-const repositories = ref<RepositoryWithStorageName[]>([]);
-const error = ref<string | null>(null);
-const repoStore = useRepositoryStore();
-async function getRepositories() {
-  await repoStore.getRepositories().then((response) => {
-    repositories.value = response;
-    console.log(repositories.value);
-  });
+const repositories = ref<Array<RepositoryWithStorageName>>([]);
+const error = ref<string | undefined>(undefined);
+const loading = ref(true);
+const repositoryStore = useRepositoryStore();
+
+async function load() {
+  try {
+    repositories.value = await repositoryStore.getRepositories();
+  } catch {
+    // Previously this rendered nothing when the request failed and nothing when the list came back
+    // empty, so the two were indistinguishable from a page that had not finished loading.
+    error.value = "Could not load repositories.";
+  } finally {
+    loading.value = false;
+  }
 }
-getRepositories();
+load();
 </script>

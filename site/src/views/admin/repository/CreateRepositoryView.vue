@@ -87,16 +87,13 @@ const currentRepositoryType = computed(() => {
 const requiredConfigValues = ref<Record<string, any>>({});
 watch(selectedRepositoryType, (newValue, old) => {
   if (newValue !== old) {
-    console.log(`Changed repository type to ${newValue} from '${old}'. Resetting required configs`);
     requiredConfigValues.value = {} as Record<string, any>;
     for (const config of currentRepositoryType.value?.required_configs || []) {
       requiredConfigValues.value[config] = {} as any;
     }
   }
 });
-watch(requiredConfigValues, () => {
-  console.log(requiredConfigValues.value);
-});
+watch(requiredConfigValues, () => {});
 const requiredConfigComponents = computed(() => {
   if (!currentRepositoryType.value) {
     return [];
@@ -119,7 +116,6 @@ const requiredConfigComponents = computed(() => {
       };
     }
   });
-  console.log(configs);
   return configs;
 });
 
@@ -142,10 +138,8 @@ async function createRepository() {
     configs: {} as any,
   };
   for (const [key, value] of Object.entries(requiredConfigValues.value)) {
-    console.log(`${key} = ${JSON.stringify(value)}`);
     request.configs[key] = value;
   }
-  console.log(JSON.stringify(request));
   await http
     .post(`/api/repository/new/${selectedRepositoryType.value}`, request)
     .then((response) => {

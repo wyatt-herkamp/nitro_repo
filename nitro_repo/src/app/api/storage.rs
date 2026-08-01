@@ -2,14 +2,16 @@ use axum::{
     Json,
     extract::{Path, Query, State},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use nr_core::{
     database::entities::storage::{DBStorage, DBStorageNoConfig, NewDBStorage, StorageDBType},
     storage::StorageName,
     user::{permissions::HasPermissions, scopes::NRScope},
 };
-use nr_storage::{StorageConfig, StorageTypeConfig, fs_v2::FileSystemV2Config, local::LocalConfig};
+use nr_storage::{
+    Storage, StorageConfig, StorageTypeConfig, fs_v2::FileSystemV2Config, local::LocalConfig,
+};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 use utoipa::{IntoParams, OpenApi, ToSchema};
@@ -28,10 +30,11 @@ use crate::{
 };
 #[derive(OpenApi)]
 #[openapi(
-    paths(list_storages, new_storage, get_storage),
+    paths(list_storages, new_storage, get_storage, update_storage),
     components(schemas(
         DBStorage,
         NewStorageRequest,
+        UpdateStorageRequest,
         StorageTypeConfig,
         LocalConfig,
         FileSystemV2Config
@@ -51,6 +54,7 @@ pub fn storage_routes() -> axum::Router<crate::app::api::storage::NitroRepo> {
         .route("/list", get(list_storages))
         .route("/new/{storage_type}", post(new_storage))
         .route("/{id}", get(get_storage))
+        .route("/{id}", put(update_storage))
         .nest("/local", local::local_storage_routes())
         .nest("/s3", s3::s3_storage_api())
 }
@@ -194,4 +198,85 @@ pub async fn get_storage(
         Some(storage) => Ok(ResponseBuilder::ok().json(&storage)),
         None => Ok(ResponseBuilder::not_found().body("Storage not found")),
     }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, ToSchema)]
+#[serde(default)]
+pub struct UpdateStorageRequest {
+    pub name: Option<StorageName>,
+    /// Replaces the whole configuration. Omit it to leave the stored one alone.
+    pub config: Option<StorageTypeConfig>,
+    pub active: Option<bool>,
+}
+
+#[utoipa::path(
+    put,
+    path = "/{id}",
+    request_body = UpdateStorageRequest,
+    responses(
+        (status = 200, description = "The updated storage", body = DBStorage),
+        (status = 404, description = "Storage not found"),
+        (status = 409, description = "Another storage already has that name"),
+    )
+)]
+#[instrument(skip(site))]
+pub async fn update_storage(
+    auth: Authentication,
+    State(site): State<NitroRepo>,
+    Path(id): Path<Uuid>,
+    Json(request): Json<UpdateStorageRequest>,
+) -> Result<Response, InternalError> {
+    if !auth.is_admin_or_system_manager() {
+        return Ok(MissingPermission::StorageManager.into_response());
+    }
+    if let Some(denied) = require_scope(&auth, NRScope::ManageStorage, &site).await? {
+        return Ok(denied);
+    }
+
+    let Some(existing) = DBStorage::get_by_id(id, site.as_ref()).await? else {
+        return Ok(ResponseBuilder::not_found().body("Storage not found"));
+    };
+
+    // Checked before writing so a rename reports a conflict rather than a constraint violation.
+    // The unique index is still what makes it correct under a race.
+    if let Some(name) = &request.name
+        && name != &existing.name
+        && DBStorage::is_name_taken_by_other(id, name, site.as_ref()).await?
+    {
+        return Ok(ConflictResponse::from("name").into_response());
+    }
+
+    // A configuration change is offered to the running storage before it is persisted: a backend
+    // that cannot move to the new config (an unreachable bucket, a path it cannot write) should
+    // fail here rather than leave a row that will not load on the next restart.
+    if let Some(config) = &request.config {
+        let Some(storage) = site.get_storage(id) else {
+            return Ok(ResponseBuilder::not_found().body("Storage is not loaded"));
+        };
+        if let Err(error) = storage.validate_config_change(config.clone()).await {
+            error!(?error, "Rejected a storage config change");
+            return Ok(InvalidStorageConfig(error).into_response());
+        }
+    }
+
+    let config = request
+        .config
+        .map(serde_json::to_value)
+        .transpose()
+        .map_err(InternalError::from)?;
+
+    let updated = DBStorage::update_details(
+        id,
+        request.name.as_ref(),
+        config.as_ref(),
+        request.active,
+        site.as_ref(),
+    )
+    .await?;
+
+    let Some(updated) = updated else {
+        return Ok(ResponseBuilder::not_found().body("Storage not found"));
+    };
+
+    Ok(ResponseBuilder::ok().json(&updated))
 }

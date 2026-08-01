@@ -12,6 +12,10 @@
     "name": "logout"
   },
   {
+    "path": "/forgot-password",
+    "name": "forgotPassword"
+  },
+  {
     "path": "/page/repositories",
     "name": "repositories"
   },

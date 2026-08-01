@@ -137,4 +137,51 @@ impl DBStorage {
             .await?;
         Ok(result == 0)
     }
+
+    /// Updates a storage in place.
+    ///
+    /// `COALESCE` on every column so a caller can send only what it means to change — the admin
+    /// page toggles `active` without resending credentials it was never shown.
+    pub async fn update_details(
+        id: Uuid,
+        name: Option<&StorageName>,
+        config: Option<&Value>,
+        active: Option<bool>,
+        database: &sqlx::PgPool,
+    ) -> Result<Option<DBStorage>, sqlx::Error> {
+        let updated = sqlx::query_as(
+            r#"UPDATE storages
+               SET name = COALESCE($2, name),
+                   config = COALESCE($3, config),
+                   active = COALESCE($4, active),
+                   updated_at = NOW()
+               WHERE id = $1
+               RETURNING *"#,
+        )
+        .bind(id)
+        .bind(name)
+        .bind(config.map(|value| Json(value.clone())))
+        .bind(active)
+        .fetch_optional(database)
+        .await?;
+        Ok(updated)
+    }
+
+    /// Whether any *other* storage already holds this name.
+    ///
+    /// Distinct from [`Self::is_name_available`], which would report a rename to the storage's own
+    /// current name as a conflict with itself.
+    pub async fn is_name_taken_by_other(
+        id: Uuid,
+        name: &str,
+        database: &sqlx::PgPool,
+    ) -> Result<bool, sqlx::Error> {
+        let result: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM storages WHERE name = $1 AND id != $2;")
+                .bind(name)
+                .bind(id)
+                .fetch_one(database)
+                .await?;
+        Ok(result > 0)
+    }
 }

@@ -50,7 +50,13 @@ use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
             DBProject,
             DBProjectMember,
             DBProjectVersion,
-            NewUserRequest, RepositoryActions, FullUserPermissions, ScopeDescription, NRScope
+            NewUserRequest, RepositoryActions, FullUserPermissions, ScopeDescription, NRScope,
+            // Both of these were referenced by generated paths but never registered, so the served
+            // document contained `$ref`s pointing at components that did not exist. Any consumer
+            // that resolves references — `openapi-typescript`, a client generator, Redocly —
+            // refused the whole document over it.
+            nr_core::storage::StoragePath,
+            crate::utils::response::api_error_response::APIErrorResponseSchema,
         )
     ),
     tags(

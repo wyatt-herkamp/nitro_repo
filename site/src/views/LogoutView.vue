@@ -1,32 +1,36 @@
 <template>
-  <main>
-    <SpinnerElement />
+  <main class="logout">
+    <SpinnerElement size="lg" />
+    <p>Signing out…</p>
   </main>
 </template>
+
 <script setup lang="ts">
 import { sessionStore } from "@/stores/session";
-import SpinnerElement from "@/components//spinner/SpinnerElement.vue";
+import SpinnerElement from "@/components/spinner/SpinnerElement.vue";
+
 const session = sessionStore();
+
 async function logout() {
-  // Pause for 1 second to allow the spinner to show
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  session
-    .logout()
-    .then(() => {
-      window.location.href = "/";
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+  // A failed logout still has to clear the client's session and land somewhere sensible; leaving
+  // someone on a spinner because the server refused the request is the worse outcome.
+  try {
+    await session.logout();
+  } finally {
+    window.location.href = "/";
+  }
 }
 logout();
 </script>
 
 <style lang="scss" scoped>
-main {
+.logout {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16) var(--space-4);
+  color: var(--text-muted);
 }
 </style>
