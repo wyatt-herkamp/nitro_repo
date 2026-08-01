@@ -12,6 +12,7 @@ pub mod error;
 mod exporter;
 pub mod logging;
 pub mod repository;
+mod seed;
 pub mod utils;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum ExportOptions {
@@ -67,6 +68,19 @@ enum SubCommands {
         export: ExportOptions,
         location: PathBuf,
     },
+    /// Deploy a suite of fixture artifacts into a running instance
+    ///
+    /// Uses the real Maven and npm protocols rather than writing to the database, so a seed run is
+    /// also a smoke test of the deploy paths. Re-running it is safe: anything already present is
+    /// left alone.
+    Seed {
+        /// The seed configuration file
+        #[clap(short, long, default_value = "seed.toml")]
+        config: PathBuf,
+        /// Write an example configuration to `--config` instead of running
+        #[clap(long, default_value = "false")]
+        write_example: bool,
+    },
 }
 fn main() -> anyhow::Result<()> {
     // For Some Reason Lettre fails if this is not installed
@@ -92,6 +106,11 @@ fn main() -> anyhow::Result<()> {
             ExportOptions::RepositoryTypes => exporter::export_repository_types(location),
             ExportOptions::OpenAPI => exporter::export_openapi(location),
         },
+
+        SubCommands::Seed {
+            config,
+            write_example,
+        } => seed::seed(config, write_example),
 
         SubCommands::Config { config, section } => {
             let tokio = tokio::runtime::Builder::new_current_thread()

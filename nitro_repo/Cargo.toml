@@ -130,6 +130,8 @@ url = "2"
 serde_urlencoded = "0.7"
 inquire = "0.9"
 serde_path_to_error = "0.1"
+tar = "0.4.46"
+flate2 = "1.1.9"
 [features]
 default = ["utoipa-scalar"]
 frontend = []
