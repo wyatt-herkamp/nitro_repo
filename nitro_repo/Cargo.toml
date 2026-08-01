@@ -8,18 +8,21 @@ repository.workspace = true
 build = "build.rs"
 
 [dev-dependencies]
-pretty_assertions = "1.1"
+pretty_assertions = "1.4"
 [dependencies]
 # Web
 axum = { version = "0.8", features = ["macros", "tokio", "ws"] }
-axum-extra = { version = "0.10", features = [
+axum-extra = { version = "0.12", features = [
     "multipart",
     "cookie",
     "typed-header",
+    # 0.12 moved `RouterExt`/`route_with_tsr` behind this feature. The repository router needs it so
+    # that `/{storage}/{repository}` redirects to the trailing-slash form Maven clients ask for.
+    "routing",
 ] }
 tower = { version = "0.5", features = ["limit", "timeout"] }
-tower-http = { version = "0.6", features = ["full"] }
-tower-service = "0.3.2"
+tower-http = { version = "0.7", features = ["full"] }
+tower-service = "0.3.3"
 hyper.workspace = true
 hyper-util.workspace = true
 http.workspace = true
@@ -42,7 +45,7 @@ sqlx.workspace = true
 # Serde
 serde.workspace = true
 serde_json.workspace = true
-serde-env = "0.2"
+serde-env = "0.3"
 
 toml.workspace = true
 # utils
@@ -56,7 +59,7 @@ futures-util.workspace = true
 base64.workspace = true
 tokio.workspace = true
 uuid.workspace = true
-flume = "0.11"
+flume = "0.12"
 sha2.workspace = true
 # npm publishes a `shasum` (hex sha1) alongside the sha512 `integrity` string, and both are
 # verified against the uploaded tarball.
@@ -83,13 +86,13 @@ semver = { version = "1", features = ["std", "serde"] }
 tempfile = "3"
 # Maven Stuff
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
-zip = { version = "5" }
+zip = { version = "8" }
 current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
 nr-storage.workspace = true
 nr-aql.workspace = true
-redb = { version = "3" }
+redb = { version = "4" }
 tuxs-config-types = { git = "https://github.com/wyatt-herkamp/tuxs-config-types.git", features = [
     "chrono",
 ] }
@@ -102,20 +105,20 @@ tracing-subscriber.workspace = true
 tracing-appender.workspace = true
 
 # OpenTelemetry - Tracing framework
-tracing-opentelemetry = "0.31"
-opentelemetry = { version = "0.30", features = [] }
-opentelemetry_sdk = { version = "0.30", features = [
+tracing-opentelemetry = "0.33"
+opentelemetry = { version = "0.32", features = [] }
+opentelemetry_sdk = { version = "0.32", features = [
     "rt-tokio",
     "trace",
     "metrics",
     "logs",
 ] }
-opentelemetry-otlp = { version = "0.30", default-features = true, features = [
+opentelemetry-otlp = { version = "0.32", default-features = true, features = [
     "grpc-tonic",
     "http-proto",
     "http-json",
 ] }
-opentelemetry-appender-tracing = { version = "0.30" }
+opentelemetry-appender-tracing = { version = "0.32" }
 lettre = { version = "0.11", features = [
     "builder",
     "tokio1",
@@ -125,7 +128,7 @@ lettre = { version = "0.11", features = [
 url = "2"
 # `npm search` sends its parameters in the query string.
 serde_urlencoded = "0.7"
-inquire = "0.7"
+inquire = "0.9"
 serde_path_to_error = "0.1"
 [features]
 default = ["utoipa-scalar"]
@@ -136,8 +139,8 @@ workspace = true
 
 
 [build-dependencies]
-zip = { version = "5" }
+zip = { version = "8" }
 
 walkdir = "2"
 anyhow = "1.0"
-camino = "1.1"
+camino = "1.2"

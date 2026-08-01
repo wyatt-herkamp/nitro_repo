@@ -27,7 +27,7 @@ import DropDown from "@/components/form/dropdown/DropDown.vue";
 import http from "@/http";
 import { type RepositoryPage, PageType } from "@/types/repository";
 import { MilkdownProvider } from "@milkdown/vue";
-import { defineProps, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import MarkdownEditor from "./MarkdownEditor.vue";
 import SubmitButton from "@/components/form/SubmitButton.vue";
 const pageTypes = [

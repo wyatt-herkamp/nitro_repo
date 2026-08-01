@@ -70,7 +70,15 @@ pub fn make_span<B>(
     });
 
     if context.has_active_span() {
-        span.set_parent(context);
+        // tracing-opentelemetry 0.33 made this fallible. It fails when the OpenTelemetry layer is
+        // not installed — which is the normal case with tracing disabled — so this is a debug note
+        // rather than an error: the span is still recorded, just not linked to the caller's trace.
+        if let Err(error) = span.set_parent(context) {
+            tracing::debug!(
+                ?error,
+                "Could not attach the incoming trace context to this span"
+            );
+        }
     }
 
     span

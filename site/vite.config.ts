@@ -46,11 +46,8 @@ export default defineConfig({
     },
   ],
   css: {
-    preprocessorOptions: {
-      scss: {
-        api: "modern-compiler",
-      },
-    },
+    // `preprocessorOptions.scss.api: "modern-compiler"` was here until Vite 8, which dropped the
+    // option — the modern compiler is the only mode now, so selecting it is no longer meaningful.
     devSourcemap: true,
   },
   resolve: {

@@ -10,7 +10,7 @@
 </template>
 <script setup lang="ts">
 import router from "@/router";
-import { computed, defineProps } from "vue";
+import { computed } from "vue";
 const props = defineProps({
   isOpen: {
     type: Boolean,

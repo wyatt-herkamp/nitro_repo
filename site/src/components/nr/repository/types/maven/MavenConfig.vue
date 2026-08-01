@@ -33,7 +33,7 @@ import DropDown from "@/components/form/dropdown/DropDown.vue";
 import TextInput from "@/components/form/text/TextInput.vue";
 import http from "@/http";
 import { defaultProxy, type MavenConfigType, type MavenProxyConfigType } from "./maven";
-import { computed, defineProps, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { notify } from "@kyvg/vue3-notification";
 import MavenProxyConfig from "./MavenProxyConfig.vue";
 import SubmitButton from "@/components/form/SubmitButton.vue";

@@ -1,4 +1,4 @@
-use rand::{Rng, SeedableRng, distr::Alphanumeric, rngs::StdRng};
+use rand::{RngExt, distr::Alphanumeric};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
@@ -26,8 +26,12 @@ pub async fn create_token(database: &PgPool) -> Result<(String, String), sqlx::E
 /// 32 alphanumeric characters from the OS entropy source, stored only as a SHA-256 hash. The
 /// `// TODO: Secure this` that sat here predated that and had been true of an earlier
 /// implementation; leaving it read as an open hole that was not one.
+///
+/// `rand::rng()` replaced `StdRng::from_os_rng()` when rand 0.10 removed the latter. It is a
+/// ChaCha12 CSPRNG seeded from the OS and periodically reseeded — no weaker than seeding a fresh
+/// `StdRng` per call, and it does not pay for that seeding every time.
 pub fn generate_token() -> String {
-    StdRng::from_os_rng()
+    rand::rng()
         .sample_iter(&Alphanumeric)
         .take(32)
         .map(char::from)
