@@ -327,6 +327,85 @@ impl TestServer {
         .await
     }
 
+    /// A `GET` addressed to a specific host.
+    ///
+    /// `Request::builder().uri("/x")` produces a URI with no authority, so `Host` is the only
+    /// signal the router has — which is exactly the path host routing takes in production.
+    pub async fn get_with_host(&self, host: &str, path: &str) -> TestResponse {
+        self.request(
+            Request::builder()
+                .uri(path)
+                .header(header::HOST, host)
+                .body(Body::empty())
+                .expect("valid request"),
+        )
+        .await
+    }
+
+    pub async fn get_with_headers(&self, path: &str, headers: &[(&str, &str)]) -> TestResponse {
+        let mut builder = Request::builder().uri(path);
+        for (name, value) in headers {
+            builder = builder.header(*name, *value);
+        }
+        self.request(builder.body(Body::empty()).expect("valid request"))
+            .await
+    }
+
+    /// A `PUT` with basic auth, addressed to a specific host — a domain-routed `mvn deploy`.
+    pub async fn put_with_basic_and_host(
+        &self,
+        host: &str,
+        path: &str,
+        body: Vec<u8>,
+        content_type: &str,
+    ) -> TestResponse {
+        use base64::{Engine, engine::general_purpose::STANDARD};
+        let credentials = STANDARD.encode(format!("{TEST_USERNAME}:{TEST_PASSWORD}"));
+
+        self.request(
+            Request::builder()
+                .method("PUT")
+                .uri(path)
+                .header(header::HOST, host)
+                .header(header::CONTENT_TYPE, content_type)
+                .header(header::AUTHORIZATION, format!("Basic {credentials}"))
+                .body(Body::from(body))
+                .expect("valid request"),
+        )
+        .await
+    }
+
+    /// Registers a custom domain through the API.
+    ///
+    /// Always through the API, never with a direct `INSERT`: the routing index is in memory, and a
+    /// row written behind its back would leave the request falling through to the frontend, which
+    /// reads as a routing bug rather than as the test's own mistake.
+    pub async fn add_hostname(
+        &self,
+        session: &str,
+        repository_id: &str,
+        hostname: &str,
+    ) -> TestResponse {
+        self.post_json_as(
+            &format!("/api/repository/{repository_id}/hostnames"),
+            json!({ "hostname": hostname }),
+            session,
+        )
+        .await
+    }
+
+    pub async fn delete_as(&self, path: &str, session: &str) -> TestResponse {
+        self.request(
+            Request::builder()
+                .method("DELETE")
+                .uri(path)
+                .header(header::AUTHORIZATION, format!("Session {session}"))
+                .body(Body::empty())
+                .expect("valid request"),
+        )
+        .await
+    }
+
     /// Creates a storage and a repository, and returns the repository's id.
     pub async fn create_repository(
         &self,

@@ -15,7 +15,7 @@ use nr_core::{
     database::{
         DatabaseConfig,
         entities::{
-            repository::DBRepository,
+            repository::{DBRepository, DBRepositoryHostname},
             storage::{DBStorage, StorageDBType},
             user::user_utils,
         },
@@ -54,6 +54,7 @@ use crate::{
 };
 pub mod api;
 pub mod badge;
+pub mod host_routing;
 pub mod responses;
 pub mod web;
 #[derive(Debug, Serialize, Clone, ToSchema)]
@@ -117,6 +118,15 @@ pub struct NitroRepoInner {
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
+    /// Custom hostnames that route straight into a repository, keyed by the normalised
+    /// (lowercased, port-stripped) host.
+    ///
+    /// Materialised in full at startup and kept in step by every mutation, rather than filled
+    /// lazily like [`Self::name_lookup_table`]. This one is consulted by the router fallback, which
+    /// every request that is not `/api`, `/badge` or `/repositories` reaches — including every
+    /// static asset of the web UI. A lazy read-through cache would turn each of those into an
+    /// unauthenticated database round trip. Here a miss is authoritative.
+    pub hostname_lookup_table: RwLock<HashMap<String, Uuid>>,
     pub general_security_settings: SecuritySettings,
     #[cfg(feature = "frontend")]
     pub frontend: frontend::HostedFrontend,
@@ -270,6 +280,7 @@ impl NitroRepo {
             storages: RwLock::new(HashMap::new()),
             repositories: RwLock::new(HashMap::new()),
             name_lookup_table: Mutex::new(HashMap::new()),
+            hostname_lookup_table: RwLock::new(HashMap::new()),
             general_security_settings: security,
             staging_config,
             services: Mutex::new(services),
@@ -291,6 +302,7 @@ impl NitroRepo {
         };
         nitro_repo.load_storages().await?;
         nitro_repo.load_repositories().await?;
+        nitro_repo.load_hostnames().await?;
         Ok(nitro_repo)
     }
 
@@ -348,6 +360,20 @@ impl NitroRepo {
             repositories.insert(repository_id, repository);
         }
         info!("Loaded {} repositories", repositories.len());
+        Ok(())
+    }
+    /// Fills [`NitroRepoInner::hostname_lookup_table`] from the database.
+    ///
+    /// Must run after [`Self::load_repositories`] — a hostname is only useful once the repository
+    /// it points at is loaded.
+    async fn load_hostnames(&self) -> anyhow::Result<()> {
+        let pairs = DBRepositoryHostname::all_pairs(&self.database).await?;
+        let mut lookup_table = self.hostname_lookup_table.write();
+        lookup_table.clear();
+        for (hostname, repository_id) in pairs {
+            lookup_table.insert(hostname.to_lowercase(), repository_id);
+        }
+        info!("Loaded {} repository hostnames", lookup_table.len());
         Ok(())
     }
     pub fn get_storage_factory(&self, storage_name: &str) -> Option<&'static dyn StorageFactory> {
@@ -462,6 +488,41 @@ impl NitroRepo {
         // No repository found in the database
         Ok(None)
     }
+    /// The repository a request for `host` belongs to, or `None` if the host is not registered.
+    ///
+    /// `host` must already have been normalised by [`crate::app::host_routing::normalize_host`].
+    ///
+    /// Unlike [`Self::get_repository_from_names`] this is infallible and synchronous: the index is
+    /// complete, so a miss needs no database round trip. That is what makes it cheap enough to run
+    /// on every request that reaches the router's fallback.
+    pub fn repository_for_hostname(&self, host: &str) -> Option<DynRepository> {
+        let id = {
+            let lookup_table = self.hostname_lookup_table.read();
+            lookup_table.get(host).copied()
+        }?;
+        let repository = self.get_repository(id);
+        if repository.is_none() {
+            warn!(?host, ?id, "Hostname points at an unloaded repository");
+            let mut lookup_table = self.hostname_lookup_table.write();
+            lookup_table.remove(host);
+        }
+        repository
+    }
+    pub fn register_hostname(&self, hostname: String, repository_id: Uuid) {
+        let mut lookup_table = self.hostname_lookup_table.write();
+        lookup_table.insert(hostname.to_lowercase(), repository_id);
+    }
+    pub fn unregister_hostname(&self, hostname: &str) {
+        let mut lookup_table = self.hostname_lookup_table.write();
+        lookup_table.remove(&hostname.to_lowercase());
+    }
+    /// Drops every hostname pointing at this repository.
+    ///
+    /// The database rows go by `ON DELETE CASCADE`; this is the in-memory half of the same delete.
+    pub fn forget_repository_hostnames(&self, id: Uuid) {
+        let mut lookup_table = self.hostname_lookup_table.write();
+        lookup_table.retain(|_, value| *value != id);
+    }
     pub fn get_storage(&self, id: Uuid) -> Option<DynStorage> {
         let storages = self.storages.read();
         storages.get(&id).cloned()
@@ -491,6 +552,7 @@ impl NitroRepo {
             let mut lookup_table = self.inner.name_lookup_table.lock();
             lookup_table.retain(|_, value| *value != id);
         }
+        self.forget_repository_hostnames(id);
     }
     fn set_session_cleaner(&self, cleaner: JoinHandle<()>) {
         let mut services = self.inner.services.lock();

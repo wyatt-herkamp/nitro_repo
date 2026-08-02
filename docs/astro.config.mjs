@@ -134,6 +134,7 @@ export default defineConfig({
           label: "Administration",
           items: [
             { label: "Storages", slug: "admin/storages" },
+            { label: "Custom domains", slug: "admin/custom-domains" },
             { label: "Users and permissions", slug: "admin/users" },
             { label: "API tokens and scopes", slug: "admin/tokens" },
             { label: "Search", slug: "admin/search" },

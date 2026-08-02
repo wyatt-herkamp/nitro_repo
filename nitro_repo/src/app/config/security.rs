@@ -7,12 +7,24 @@ use utoipa::ToSchema;
 pub struct SecuritySettings {
     pub allow_basic_without_tokens: bool,
     pub password_rules: Option<PasswordRules>,
+    /// Resolve a request's host from `X-Forwarded-Host` before `Host`.
+    ///
+    /// Off by default. Any client can send that header, so trusting it without a reverse proxy in
+    /// front that overwrites it would let a caller pick which repository's custom domain it lands
+    /// on. Turn it on only if your proxy sets it and strips whatever the client sent.
+    ///
+    /// `#[serde(default)]` on the field rather than the struct: `SecuritySettings` has no
+    /// container-level default, so without it every existing config with a `[security]` section
+    /// would stop parsing.
+    #[serde(default)]
+    pub trust_forwarded_host: bool,
 }
 impl Default for SecuritySettings {
     fn default() -> Self {
         Self {
             allow_basic_without_tokens: false,
             password_rules: Some(PasswordRules::default()),
+            trust_forwarded_host: false,
         }
     }
 }

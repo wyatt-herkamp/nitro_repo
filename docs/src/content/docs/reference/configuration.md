@@ -132,13 +132,20 @@ it somewhere persistent.
 
 ## `[security]`
 
-| Key                          | Default | What                                        |
-| ---------------------------- | ------- | ------------------------------------------- |
-| `allow_basic_without_tokens` | `false` | Declared but not read. Has no effect today. |
+| Key                          | Default | What                                           |
+| ---------------------------- | ------- | ---------------------------------------------- |
+| `allow_basic_without_tokens` | `false` | Declared but not read. Has no effect today.    |
+| `trust_forwarded_host`       | `false` | Read the request host from `X-Forwarded-Host`. |
 
 `allow_basic_without_tokens` appears in the generated file and in this table because it is in the
 config struct, but nothing consults it. To require tokens for deploys, use the per-repository
 `must_use_auth_token_for_push` push rule instead — that one is enforced.
+
+`trust_forwarded_host` only matters if you use [custom domains](/admin/custom-domains/). Requests
+are normally routed by their `Host`; turn this on if your reverse proxy replaces `Host` with its own
+and sends the original in `X-Forwarded-Host`. Leave it off otherwise — any client can send that
+header, so trusting it without a proxy in front that overwrites it lets a caller pick which
+repository their request reaches.
 
 ### `[security.password_rules]`
 

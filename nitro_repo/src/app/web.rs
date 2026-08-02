@@ -103,7 +103,9 @@ pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBody
         .nest("/repositories", crate::repository::repository_router())
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
-        .fallback(super::frontend::frontend_request)
+        // Not `frontend_request` directly: a request whose `Host` is registered to a repository is
+        // served by that repository, and everything else still gets the single-page app.
+        .fallback(super::host_routing::host_or_frontend)
         .with_state(site.clone());
 
     if open_api_routes {

@@ -339,6 +339,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/repository/{repository_id}/hostnames": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["list_hostnames"];
+    put?: never;
+    post: operations["add_hostname"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/repository/{repository_id}/hostnames/{hostname_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: operations["delete_hostname"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/repository/{repository_id}/names": {
     parameters: {
       query?: never;
@@ -1088,6 +1120,24 @@ export interface components {
       updated_at: string;
       visibility: components["schemas"]["Visibility"];
     };
+    /**
+     * @description A hostname that routes a request straight into a repository.
+     *
+     *     Table: `hostnames` — shared with storage-scoped hostnames, which have `repository_id` NULL and
+     *     `storage_id` set. Every query here filters those out, so the non-optional `repository_id` below
+     *     always decodes.
+     */
+    DBRepositoryHostname: {
+      /** Format: date-time */
+      created_at: string;
+      hostname: components["schemas"]["Hostname"];
+      /** Format: int32 */
+      id: number;
+      /** Format: uuid */
+      repository_id: string;
+      /** Format: date-time */
+      updated_at: string;
+    };
     DBRepositoryNames: {
       /**
        * Format: uuid
@@ -1201,6 +1251,7 @@ export interface components {
       user_id: number;
       user_manager: boolean;
     };
+    Hostname: string;
     InstallRequest: {
       user: components["schemas"]["NewUserRequest"];
     };
@@ -1321,6 +1372,10 @@ export interface components {
       name?: string | null;
       repository_scopes?: components["schemas"]["NewRepositoryScope"][];
       scopes?: components["schemas"]["NRScope"][];
+    };
+    NewHostnameRequest: {
+      /** @description A bare hostname, without a scheme, port or path. Matched case-insensitively. */
+      hostname: string;
     };
     NewRepositoryRequest: {
       /**
@@ -2198,6 +2253,114 @@ export interface operations {
         content: {
           "application/json": string[];
         };
+      };
+    };
+  };
+  list_hostnames: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The Repository ID */
+        repository_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The repository's custom domains */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DBRepositoryHostname"][];
+        };
+      };
+      /** @description Repository not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  add_hostname: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The Repository ID */
+        repository_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NewHostnameRequest"];
+      };
+    };
+    responses: {
+      /** @description The registered domain */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DBRepositoryHostname"];
+        };
+      };
+      /** @description The hostname is not valid */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Repository not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description That hostname is already in use */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  delete_hostname: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The Repository ID */
+        repository_id: string;
+        /** @description The Hostname ID */
+        hostname_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The domain was removed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No such domain on this repository */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
