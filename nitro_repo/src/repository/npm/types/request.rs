@@ -92,7 +92,31 @@ pub struct PublishDist {
     #[serde(flatten)]
     pub other: HashMap<String, Value>,
 }
+/// How many path segments a tarball URL can have and still be one this registry is the origin of.
+///
+/// A domain-routed tarball is `@scope/pkg/-/pkg-1.0.0.tgz` (four) at its longest and
+/// `pkg/-/pkg-1.0.0.tgz` (three) at its shortest. The path-routed form carries
+/// `repositories/{storage}/{repository}` in front of that, so it is six at the very least — the two
+/// shapes cannot be confused for each other.
+const MAX_DOMAIN_ROUTED_SEGMENTS: usize = 4;
+
 impl PublishDist {
+    /// Checks that `dist.tarball` points back at this repository.
+    ///
+    /// npm rewrites `dist.tarball` to whatever registry it is publishing to, and the packument we
+    /// store is what tells every future `npm install` where to fetch from — so a URL naming some
+    /// other registry has to be refused rather than saved.
+    ///
+    /// Two shapes are legitimate, because there are two ways to reach a repository:
+    ///
+    /// - path-routed, `…/{storage}/{repository}/{name}/-/{file}.tgz`, where the storage and
+    ///   repository names must be this repository's;
+    /// - domain-routed, `https://npm.example.com/{name}/-/{file}.tgz`, where the repository is the
+    ///   origin and there are no names in the path at all.
+    ///
+    /// The host is deliberately not checked. The set of hostnames a repository answers on is
+    /// instance state this type has no access to, and an operator fronting the instance with a
+    /// proxy or a CDN can make the published host differ from any of them.
     #[tracing::instrument]
     pub fn validate_tarball(
         &self,
@@ -106,34 +130,105 @@ impl PublishDist {
                 error: Cow::Owned(format!("Invalid URL: {}", error)),
             }
         })?;
-        let mut path = url
+        let segments: Vec<&str> = url
             .path_segments()
             .ok_or(NPMRegistryError::InvalidTarball {
                 tarball_route: self.tarball.clone(),
                 error: Cow::Borrowed("No Path"),
-            })?;
-        if path.next().is_none() {
-            info!(?url, "Invalid tarball (Missing Base Path for tarball)");
+            })?
+            .filter(|segment| !segment.is_empty())
+            .collect();
+
+        // `…/{name}/-/{file}.tgz` — the shape npm uses for every tarball, whichever route it
+        // arrived by.
+        let is_tarball_path = segments.iter().rev().nth(1) == Some(&"-")
+            && segments
+                .last()
+                .is_some_and(|file| file.ends_with(".tgz") && file.len() > ".tgz".len());
+        if !is_tarball_path {
+            info!(?url, "Invalid tarball (not a tarball path)");
             return Err(NPMRegistryError::InvalidTarball {
                 tarball_route: self.tarball.clone(),
-                error: Cow::Borrowed("Missing base path"),
+                error: Cow::Borrowed("Not a tarball path"),
             });
         }
-        if path.next() != Some(storage_name) {
-            info!(?url, "Invalid tarball (Missing storage name)");
+
+        // Scanned for rather than read at a fixed offset: the prefix depends on where the instance
+        // is mounted, and pinning the offset is what made this reject anything but `/repositories`.
+        let names_match = segments
+            .windows(2)
+            .any(|pair| pair[0] == storage_name && pair[1] == repository_name);
+        let domain_routed = segments.len() <= MAX_DOMAIN_ROUTED_SEGMENTS;
+
+        if !names_match && !domain_routed {
+            info!(
+                ?url,
+                "Invalid tarball (Missing storage and repository name)"
+            );
             return Err(NPMRegistryError::InvalidTarball {
                 tarball_route: self.tarball.clone(),
-                error: Cow::Borrowed("Missing storage name"),
-            });
-        }
-        if path.next() != Some(repository_name) {
-            info!(?url, "Invalid tarball (Missing repository name)");
-            return Err(NPMRegistryError::InvalidTarball {
-                tarball_route: self.tarball.clone(),
-                error: Cow::Borrowed("Missing repository name"),
+                error: Cow::Borrowed("Missing storage and repository name"),
             });
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod validate_tarball_tests {
+    use super::PublishDist;
+
+    fn dist(tarball: &str) -> PublishDist {
+        PublishDist {
+            integrity: String::new(),
+            shasum: String::new(),
+            tarball: tarball.to_owned(),
+            other: Default::default(),
+        }
+    }
+
+    fn validate(tarball: &str) -> bool {
+        dist(tarball).validate_tarball("local", "npm").is_ok()
+    }
+
+    #[test]
+    fn a_path_routed_tarball_for_this_repository_is_accepted() {
+        assert!(validate(
+            "http://localhost:6742/repositories/local/npm/@nitro/example/-/example-1.0.0.tgz"
+        ));
+        assert!(validate(
+            "http://localhost:6742/repositories/local/npm/example/-/example-1.0.0.tgz"
+        ));
+    }
+
+    #[test]
+    fn a_path_routed_tarball_for_another_repository_is_refused() {
+        assert!(!validate(
+            "http://localhost:6742/repositories/local/other/@nitro/example/-/example-1.0.0.tgz"
+        ));
+        assert!(!validate(
+            "http://localhost:6742/repositories/other/npm/@nitro/example/-/example-1.0.0.tgz"
+        ));
+    }
+
+    #[test]
+    fn a_domain_routed_tarball_is_accepted() {
+        assert!(validate(
+            "https://npm.example.com/@nitro/example/-/example-1.0.0.tgz"
+        ));
+        assert!(validate(
+            "https://npm.example.com/example/-/example-1.0.0.tgz"
+        ));
+    }
+
+    #[test]
+    fn something_that_is_not_a_tarball_path_is_refused() {
+        assert!(!validate("https://npm.example.com/@nitro/example"));
+        assert!(!validate(
+            "http://localhost:6742/repositories/local/npm/@nitro/example/example-1.0.0.tgz"
+        ));
+        assert!(!validate("https://npm.example.com/-/.tgz"));
+        assert!(!validate("not a url"));
     }
 }
 impl PublishVersion {

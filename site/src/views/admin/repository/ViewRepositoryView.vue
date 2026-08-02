@@ -27,9 +27,12 @@
         </template>
         <template #content>
           <TabContent tabId="main">
-            <BasicRepositoryInfo
-              :repository="repository"
-              @updated="onUpdated" />
+            <div class="stack">
+              <BasicRepositoryInfo
+                :repository="repository"
+                @updated="onUpdated" />
+              <RepositoryHostnames :repository-id="repositoryId" />
+            </div>
           </TabContent>
           <TabContent
             v-for="configType in configComponents"
@@ -59,6 +62,7 @@
 
 <script setup lang="ts">
 import BasicRepositoryInfo from "@/components/admin/repository/BasicRepositoryInfo.vue";
+import RepositoryHostnames from "@/components/admin/repository/RepositoryHostnames.vue";
 import FallBackEditor from "@/components/admin/repository/configs/FallBackEditor.vue";
 import TabContent from "@/components/core/tabs/TabContent.vue";
 import TabElement from "@/components/core/tabs/TabElement.vue";

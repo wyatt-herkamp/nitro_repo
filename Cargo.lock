@@ -2945,6 +2945,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "parking_lot",
+ "percent-encoding",
  "pin-project",
  "pretty_assertions",
  "rand 0.10.2",

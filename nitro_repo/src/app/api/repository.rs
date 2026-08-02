@@ -6,7 +6,7 @@ use axum::{
 use management::NewRepositoryRequest;
 use nr_core::{
     database::entities::repository::{
-        DBRepository, DBRepositoryNames, DBRepositoryNamesWithVisibility,
+        DBRepository, DBRepositoryHostname, DBRepositoryNames, DBRepositoryNamesWithVisibility,
         DBRepositoryWithStorageName,
     },
     repository::{
@@ -35,6 +35,7 @@ use crate::{
 };
 mod browse;
 mod config;
+mod hostname;
 mod management;
 mod page;
 mod types;
@@ -55,6 +56,9 @@ mod types;
         management::update_config,
         management::get_configs_for_repository,
         management::delete_repository,
+        hostname::list_hostnames,
+        hostname::add_hostname,
+        hostname::delete_hostname,
         browse::browse,
     ),
     components(schemas(
@@ -68,7 +72,9 @@ mod types;
         BrowseResponse,
         ProjectResolution,
         DBRepositoryNames,
-        DBRepositoryNamesWithVisibility
+        DBRepositoryNamesWithVisibility,
+        DBRepositoryHostname,
+        hostname::NewHostnameRequest
     )),
     nest(
         (path = "/page", api = RepositoryPageRoutes, tags=["repository", "page"]),
@@ -88,6 +94,7 @@ pub fn repository_routes() -> axum::Router<NitroRepo> {
         .route("/types", get(types::repository_types))
         .merge(browse::browse_routes())
         .merge(management::management_routes())
+        .merge(hostname::hostname_routes())
         .merge(config::config_routes())
 }
 #[derive(Debug, Serialize, ToSchema)]

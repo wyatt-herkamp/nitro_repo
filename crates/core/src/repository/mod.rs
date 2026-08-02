@@ -10,8 +10,10 @@ use utoipa::ToSchema;
 use crate::utils::validations::{self};
 pub mod browse;
 pub mod config;
+mod hostname;
 pub mod project;
 pub mod proxy_url;
+pub use hostname::*;
 #[derive(
     Debug,
     Clone,

@@ -62,6 +62,8 @@ import {
   faCube,
   faKey,
   faGaugeHigh,
+  // The custom-domains card on a repository's settings page.
+  faGlobe,
   // The repository browser's file-type icons (#497).
   faBoxArchive,
   faFileCode,
@@ -148,6 +150,7 @@ library.add(faTriangleExclamation);
 library.add(faDatabase);
 library.add(faCube);
 library.add(faKey);
+library.add(faGlobe);
 library.add(faGaugeHigh);
 library.add(faBoxArchive);
 library.add(faFileCode);

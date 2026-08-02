@@ -35,6 +35,19 @@ export interface RepositoryWithStorageName {
   updated_at: string;
   created_at: string;
 }
+/**
+ * A custom domain a repository answers on.
+ *
+ * Not a repository config — hostnames live in their own table, because the name has to be unique
+ * across the whole instance rather than per repository.
+ */
+export interface RepositoryHostname {
+  id: number;
+  repository_id: string;
+  hostname: string;
+  updated_at: string;
+  created_at: string;
+}
 export interface ConfigDescription {
   name: string;
   description: string;

@@ -502,15 +502,44 @@ pub async fn handle_repo_request(
         let not_found = RepositoryNotFound::from(names);
         return Ok(not_found.into_response());
     };
+    drop(entered_guard);
+    Ok(dispatch_repository_request(
+        &site,
+        repository,
+        path.unwrap_or_default(),
+        authentication,
+        &parent_span,
+        request,
+    )
+    .await)
+}
+
+/// Runs a resolved repository against a request.
+///
+/// Shared by the two ways a request reaches a repository: the `/repositories/{storage}/{repository}`
+/// path, and a request whose `Host` is a hostname registered to the repository. The two differ only
+/// in how they arrive at the repository and at the path — everything from here on, including the
+/// active check, tracing and the method dispatch, is identical.
+///
+/// Nothing below is aware of the URL prefix the request arrived under: [`ResponseContext`] only
+/// reads conditional-request headers, and [`redirect_directory_to_slash`] emits a relative
+/// `Location`. That is what lets a host-routed request reuse this unchanged.
+pub(crate) async fn dispatch_repository_request(
+    site: &NitroRepo,
+    repository: DynRepository,
+    path: StoragePath,
+    authentication: RepositoryAuthentication,
+    parent_span: &Span,
+    request: Request,
+) -> Response {
     if !repository.is_active() {
-        return Ok(RepoResponse::disabled_repository().into_response_default());
+        return RepoResponse::disabled_repository().into_response_default();
     }
     let method = request.method().clone();
     let (parts, body) = request.into_parts();
-    let path = path.unwrap_or_default();
     let response_context = ResponseContext::new(path.clone(), &parts);
     let trace =
-        RepositoryRequestTracing::new(&repository, &parent_span, site.repository_metrics.clone());
+        RepositoryRequestTracing::new(&repository, parent_span, site.repository_metrics.clone());
     trace.path(&path);
     let request = RepositoryRequest {
         parts,
@@ -519,7 +548,6 @@ pub async fn handle_repo_request(
         authentication,
         trace: trace.clone(),
     };
-    drop(entered_guard);
     let response = {
         let _guard = trace.span.enter();
         let response = match method {
@@ -542,12 +570,12 @@ pub async fn handle_repo_request(
         event!(Level::DEBUG, "Repository Request Completed");
         response
     };
-    let _guard = request_debug.entered();
+    let _guard = parent_span.enter();
     match response {
-        Ok(response) => Ok(response.into_response_with(&response_context)),
+        Ok(response) => response.into_response_with(&response_context),
         Err(err) => {
             error!(?err, "Failed to handle request");
-            Ok(err.into_response())
+            err.into_response()
         }
     }
 }
