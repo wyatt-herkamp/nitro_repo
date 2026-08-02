@@ -3,7 +3,7 @@ use sqlx::{FromRow, PgPool, postgres::PgRow};
 use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
-use versions::{DBProjectVersion, DBProjectVersionColumn, ProjectVersionType};
+use versions::{DBProjectVersion, DBProjectVersionColumn, ProjectVersionType, VersionName};
 mod new;
 pub mod utils;
 pub use new::*;
@@ -189,6 +189,90 @@ impl DBProject {
             .execute(database)
             .await?;
         Ok(())
+    }
+}
+
+/// Every release type that is not a stable release.
+///
+/// Kept as one list so "latest pre-release" means the same thing everywhere.
+pub const PRE_RELEASE_TYPES: [ReleaseType; 4] = [
+    ReleaseType::ReleaseCandidate,
+    ReleaseType::Beta,
+    ReleaseType::Alpha,
+    ReleaseType::Snapshot,
+];
+
+/// A project as the web API returns it.
+///
+/// `DBProject` used to be serialized straight onto the wire, which named the key `key` and the path
+/// `path` and carried no version at all — while every consumer reads `project_key`, `storage_path`,
+/// `latest_release` and `latest_pre_release`. All four came back missing, so a crate's page showed
+/// `undefined`, no version was ever found, and the Gradle snippet read `undefined:latest`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ToSchema)]
+pub struct ProjectResponse {
+    pub id: Uuid,
+    /// Maven's groupId, npm's scope, or nothing for a registry without scopes.
+    pub scope: Option<String>,
+    /// The project's unique-per-repository key. Maven's `{groupId}:{artifactId}`, a crate name, an
+    /// npm package name, a docker image name.
+    pub project_key: String,
+    /// Maven's artifactId, or the package/crate/image name.
+    pub name: String,
+    pub description: Option<String>,
+    pub repository_id: Uuid,
+    /// Where the project lives in the repository, for linking straight into browse.
+    pub storage_path: String,
+    /// Newest version whose release type is `Stable`.
+    pub latest_release: Option<String>,
+    /// Newest version that is not a stable release.
+    pub latest_pre_release: Option<String>,
+    pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+    pub created_at: chrono::DateTime<chrono::FixedOffset>,
+}
+
+impl ProjectResponse {
+    #[instrument(skip(database), name = "Project Response")]
+    pub async fn from_project(project: DBProject, database: &PgPool) -> DBResult<Self> {
+        let latest_release =
+            DBProject::latest_version::<VersionName>(project.id, ReleaseType::Stable, database)
+                .await?
+                .map(|version| version.version);
+        // The query orders newest-first, so the first row is the newest pre-release.
+        let latest_pre_release = project
+            .find_version_by_release_type::<VersionName>(PRE_RELEASE_TYPES.to_vec(), database)
+            .await?
+            .into_iter()
+            .next()
+            .map(|version| version.version);
+
+        let DBProject {
+            id,
+            scope,
+            key,
+            name,
+            description,
+            repository_id,
+            path,
+            updated_at,
+            created_at,
+        } = project;
+
+        Ok(Self {
+            id,
+            scope,
+            project_key: key,
+            name,
+            description,
+            repository_id,
+            // Maven stores a trailing slash on the project directory and Cargo does not. The path
+            // is handed straight to the browse route, so it is normalized here rather than leaving
+            // every consumer to cope with both shapes.
+            storage_path: path.trim_end_matches('/').to_owned(),
+            latest_release,
+            latest_pre_release,
+            updated_at,
+            created_at,
+        })
     }
 }
 

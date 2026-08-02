@@ -8,8 +8,8 @@
           :snippets="snippets" />
       </div>
       <div class="details">
-        <CopyCode :code="project.scope || 'undefined'">Group Id</CopyCode>
-        <CopyCode :code="project.name || 'undefined'">Artifact Id</CopyCode>
+        <CopyCode :code="coordinate.groupId">Group Id</CopyCode>
+        <CopyCode :code="coordinate.artifactId">Artifact Id</CopyCode>
         <CopyCode
           v-if="project.latest_pre_release"
           :code="project.latest_pre_release"
@@ -29,7 +29,7 @@
 import type { Project, ProjectVersion } from "@/types/project";
 import type { RepositoryWithStorageName } from "@/types/repository";
 import { computed, type PropType } from "vue";
-import { createProjectSnippets } from "./MavenRepositoryHelpers";
+import { createProjectSnippets, mavenCoordinate } from "./MavenRepositoryHelpers";
 import CodeMenu from "@/components/core/code/CodeMenu.vue";
 import CopyCode from "@/components/core/code/CopyCode.vue";
 
@@ -47,6 +47,7 @@ const props = defineProps({
     required: true,
   },
 });
+const coordinate = computed(() => mavenCoordinate(props.project));
 const version = computed(() => {
   if (props.version) {
     return props.version.version;
@@ -55,10 +56,10 @@ const version = computed(() => {
   } else if (props.project.latest_pre_release) {
     return props.project.latest_pre_release;
   } else {
-    return "latest";
+    return "{VERSION}";
   }
 });
-const snippets = createProjectSnippets(props.project, version.value);
+const snippets = computed(() => createProjectSnippets(props.project, version.value));
 </script>
 
 <style lang="scss" scoped>

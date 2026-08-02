@@ -170,12 +170,22 @@ onMounted(async () => {
   align-items: center;
 }
 .searchInput {
-  flex: 1;
+  // `flex-basis: 0` plus `min-width: 0` — the box has to be free to take whatever the button does
+  // not. It had `flex: 1` next to a `SubmitButton`, which is `width: 100%`; the button's basis was
+  // therefore the full row, leaving zero free space to grow into, and the input collapsed to its
+  // padding — about one character wide, with no room to see what was typed.
+  flex: 1 1 0;
+  min-width: 0;
   padding: 0.5rem;
   font-family: inherit;
   &.invalid {
     border-color: #ff6b6b;
   }
+}
+// The submit sits beside the field here rather than under it, so it is sized by its label.
+.searchForm :deep(.submitButton) {
+  flex: 0 0 auto;
+  width: auto;
 }
 .parseError {
   color: #ff6b6b;

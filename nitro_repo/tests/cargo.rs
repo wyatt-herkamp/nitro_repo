@@ -540,6 +540,76 @@ async fn browsing_resolves_the_project_and_version() {
     );
 }
 
+/// What the project page reads off a project, from the ids browsing hands it.
+///
+/// The API used to serialize the database row directly, so it answered with `key` and `path` and
+/// with no version at all — while the page reads `project_key`, `storage_path` and
+/// `latest_release`. Every field came back undefined, which is why a crate's page showed
+/// `undefined` where its name belonged and never found a version. Nothing resolved a `version_id`
+/// into a version either, so a version directory's `cargo add` line said `*`.
+#[tokio::test]
+async fn the_project_api_names_the_crate_and_its_version() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "the_project_api_names_the_crate_and_its_version"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, STORAGE, REPOSITORY, "cargo")
+        .await;
+    let token = server
+        .create_repository_token(&session, &repository, &["Read", "Write", "Edit"])
+        .await;
+    let registry = Registry { server, token };
+    registry.publish("example", "1.0.0").await;
+    registry.publish("example", "1.1.0").await;
+    registry.publish("example", "2.0.0-beta.1").await;
+
+    let browse = registry
+        .server
+        .get_as(
+            &format!(
+                "/api/repository/browse/{repository}/crates/example/1.0.0?check_for_project=true"
+            ),
+            &session,
+        )
+        .await;
+    let resolution = browse.json();
+    let resolution = &resolution["project_resolution"];
+    let project_id = resolution["project_id"].as_str().expect("a project id");
+    let version_id = resolution["version_id"].as_str().expect("a version id");
+
+    let project = registry
+        .server
+        .get_as(&format!("/api/project/{project_id}"), &session)
+        .await;
+    assert_eq!(project.status, StatusCode::OK, "{}", project.text);
+    let project = project.json();
+    assert_eq!(project["project_key"], "example", "{project}");
+    assert_eq!(project["name"], "example", "{project}");
+    assert_eq!(
+        project["storage_path"], "crates/example",
+        "the page links straight into browse with this: {project}"
+    );
+    assert_eq!(
+        project["latest_release"], "1.1.0",
+        "the newest stable release, not the newest version: {project}"
+    );
+    assert_eq!(project["latest_pre_release"], "2.0.0-beta.1", "{project}");
+
+    // The version the browser is actually looking at, so the install snippet names it rather than
+    // falling back to the newest release.
+    let version = registry
+        .server
+        .get_as(&format!("/api/project/version/{version_id}"), &session)
+        .await;
+    assert_eq!(version.status, StatusCode::OK, "{}", version.text);
+    assert_eq!(version.json()["version"], "1.0.0", "{}", version.text);
+}
+
 #[tokio::test]
 async fn an_anonymous_publish_is_refused() {
     let Some(registry) = Registry::start().await else {

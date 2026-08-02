@@ -105,6 +105,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/project/version/{version_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a Project Version by its ID
+     * @description Browsing lands inside a version directory and resolves a `version_id`, but there was no way to
+     *     turn that id into a version string — so the install snippets shown next to a version's files
+     *     always fell back to "latest" instead of naming the version being looked at.
+     */
+    get: operations["get_project_version"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/project/{project_id}": {
     parameters: {
       query?: never;
@@ -1469,6 +1491,40 @@ export interface components {
       /** Format: uuid */
       version_id?: string | null;
     };
+    /**
+     * @description A project as the web API returns it.
+     *
+     *     `DBProject` used to be serialized straight onto the wire, which named the key `key` and the path
+     *     `path` and carried no version at all — while every consumer reads `project_key`, `storage_path`,
+     *     `latest_release` and `latest_pre_release`. All four came back missing, so a crate's page showed
+     *     `undefined`, no version was ever found, and the Gradle snippet read `undefined:latest`.
+     */
+    ProjectResponse: {
+      /** Format: date-time */
+      created_at: string;
+      description?: string | null;
+      /** Format: uuid */
+      id: string;
+      /** @description Newest version that is not a stable release. */
+      latest_pre_release?: string | null;
+      /** @description Newest version whose release type is `Stable`. */
+      latest_release?: string | null;
+      /** @description Maven's artifactId, or the package/crate/image name. */
+      name: string;
+      /**
+       * @description The project's unique-per-repository key. Maven's `{groupId}:{artifactId}`, a crate name, an
+       *     npm package name, a docker image name.
+       */
+      project_key: string;
+      /** Format: uuid */
+      repository_id: string;
+      /** @description Maven's groupId, npm's scope, or nothing for a registry without scopes. */
+      scope?: string | null;
+      /** @description Where the project lives in the repository, for linking straight into browse. */
+      storage_path: string;
+      /** Format: date-time */
+      updated_at: string;
+    };
     /** @description Source of the project */
     ProjectSource: {
       /** @enum {string} */
@@ -1906,13 +1962,13 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description File listing */
+      /** @description The project */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DBProject"];
+          "application/json": components["schemas"]["ProjectResponse"];
         };
       };
       /** @description Missing permission */
@@ -1923,6 +1979,43 @@ export interface operations {
         content?: never;
       };
       /** @description Project not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get_project_version: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The version ID */
+        version_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The version */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DBProjectVersion"];
+        };
+      };
+      /** @description Missing permission */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Version not found */
       404: {
         headers: {
           [name: string]: unknown;
@@ -1943,13 +2036,13 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description File listing */
+      /** @description The project */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DBProject"];
+          "application/json": components["schemas"]["ProjectResponse"];
         };
       };
       /** @description Missing permission */

@@ -15,6 +15,30 @@ pub trait ProjectVersionType:
 {
     fn id(&self) -> Uuid;
 }
+/// Just enough of a version to name it.
+///
+/// Answering "what is the newest release of this project" does not need the version page or the
+/// extra JSON blob, and a project page asks it twice on every load.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema)]
+pub struct VersionName {
+    pub id: Uuid,
+    pub version: String,
+}
+impl TableQuery for VersionName {
+    type Table = DBProjectVersion;
+
+    fn columns() -> Vec<DBProjectVersionColumn>
+    where
+        Self: Sized,
+    {
+        vec![DBProjectVersionColumn::Id, DBProjectVersionColumn::Version]
+    }
+}
+impl ProjectVersionType for VersionName {
+    fn id(&self) -> Uuid {
+        self.id
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, ToSchema, TableType)]
 #[table(name = "project_versions")]
 pub struct DBProjectVersion {
@@ -45,6 +69,14 @@ impl ProjectVersionType for DBProjectVersion {
 }
 
 impl DBProjectVersion {
+    #[instrument(skip(database))]
+    pub async fn find_by_id(id: Uuid, database: &PgPool) -> Result<Option<Self>, sqlx::Error> {
+        let version = sqlx::query_as::<_, Self>(r#"SELECT * FROM project_versions WHERE id = $1"#)
+            .bind(id)
+            .fetch_optional(database)
+            .await?;
+        Ok(version)
+    }
     #[instrument(skip(database))]
     pub async fn find_by_version_and_project(
         version: &str,

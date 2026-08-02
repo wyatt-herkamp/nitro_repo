@@ -4,7 +4,8 @@ export interface RawBrowseResponse {
 }
 export interface ProjectResolution {
   project_id?: string;
-  version_id?: number;
+  /** A uuid — it was typed as a number, which no version id has ever been. */
+  version_id?: string;
 }
 
 export interface RawFile {

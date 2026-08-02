@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { type Ref, ref } from "vue";
 import http from "@/http";
-import { Project, type RawProject } from "@/types/project";
+import { Project, ProjectVersion, type RawProject, type RawProjectVersion } from "@/types/project";
 
 export const useProjectStore = defineStore(
   "projects",
@@ -36,10 +36,25 @@ export const useProjectStore = defineStore(
           return undefined;
         });
     }
+    /**
+     * Browsing resolves a `version_id` for a version directory but nothing else about it, so the
+     * version has to be looked up before a snippet can name it.
+     */
+    async function getVersionById(versionId: string): Promise<ProjectVersion | undefined> {
+      return await http
+        .get<RawProjectVersion>(`/api/project/version/${versionId}`)
+        .then((response) => {
+          return new ProjectVersion(response.data);
+        })
+        .catch(() => {
+          return undefined;
+        });
+    }
     return {
       projects,
       getProjectById,
       getProjectByKey,
+      getVersionById,
     };
   },
   {

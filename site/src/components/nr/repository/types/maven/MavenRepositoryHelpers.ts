@@ -17,6 +17,24 @@ export function createSnippetsForPulling(
   ];
 }
 
+/**
+ * The `groupId:artifactId` a dependency is actually written with.
+ *
+ * Read out of `project_key`, which is the coordinate by construction, rather than off `name` —
+ * projects published before the server stopped preferring the pom's `<name>` have a human title
+ * such as "My Library" stored there, and that is not something anyone can depend on.
+ */
+export function mavenCoordinate(project: Project): { groupId: string; artifactId: string } {
+  const separator = project.project_key?.lastIndexOf(":") ?? -1;
+  if (separator === -1) {
+    return { groupId: project.scope ?? "", artifactId: project.name };
+  }
+  return {
+    groupId: project.project_key.substring(0, separator),
+    artifactId: project.project_key.substring(separator + 1),
+  };
+}
+
 export function createProjectSnippets(
   project: Project,
   version: string = "{VERSION}",
@@ -29,13 +47,14 @@ export function createProjectSnippets(
 }
 
 export function createMavenProjectSnippet(project: Project, version: string): CodeSnippet {
+  const { groupId, artifactId } = mavenCoordinate(project);
   return {
     name: "Maven",
     language: "xml",
     key: "maven",
     code: `<dependency>
-    <groupId>${project.scope}</groupId>
-    <artifactId>${project.name}</artifactId>
+    <groupId>${groupId}</groupId>
+    <artifactId>${artifactId}</artifactId>
     <version>${version}</version>
 </dependency>`,
   };

@@ -3,6 +3,7 @@ export interface RawProject {
   scope?: string;
   name: string;
   project_key: string;
+  description?: string;
   latest_release?: string;
   latest_pre_release?: string;
   repository_id: string;
@@ -12,7 +13,7 @@ export interface RawProject {
 }
 
 export interface RawProjectVersion {
-  id: number;
+  id: string;
   project_id: string;
   version: string;
   release_type: string;
@@ -22,6 +23,7 @@ export class Project {
   id: string;
   scope?: string;
   name: string;
+  description?: string;
   latest_release?: string;
   latest_pre_release?: string;
   project_key: string;
@@ -34,6 +36,7 @@ export class Project {
     this.id = data.id;
     this.scope = data.scope;
     this.name = data.name;
+    this.description = data.description;
     this.latest_release = data.latest_release;
     this.latest_pre_release = data.latest_pre_release;
     this.project_key = data.project_key;
@@ -44,7 +47,7 @@ export class Project {
   }
 }
 export class ProjectVersion {
-  id: number;
+  id: string;
   project_id: string;
   version: string;
   release_type: string;

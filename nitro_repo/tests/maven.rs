@@ -304,3 +304,108 @@ async fn an_anonymous_deploy_is_refused() {
         response.status
     );
 }
+
+/// Deploys a POM carrying a `<name>` — a human title, which is not a coordinate.
+async fn deploy_named_pom(server: &TestServer, repository: &str, title: &str) {
+    let pom = format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>dev.kingtux</groupId>
+    <artifactId>titled</artifactId>
+    <version>1.0.0</version>
+    <name>{title}</name>
+</project>"#
+    );
+    let response = server
+        .put_with_basic(
+            &format!("/repositories/{repository}/dev/kingtux/titled/1.0.0/titled-1.0.0.pom"),
+            pom.into_bytes(),
+            "application/xml",
+        )
+        .await;
+    assert!(
+        response.status.is_success(),
+        "deploying the POM failed: {} {}",
+        response.status,
+        response.text
+    );
+}
+
+/// What the project page reads off a Maven project.
+///
+/// Three things were wrong at once. The API serialized the database row directly, so it answered
+/// with `key` and `path` while the page reads `project_key` and `storage_path`, and it carried no
+/// version at all — so the Gradle line rendered as `undefined:latest`. And ingest stored the POM's
+/// `<name>` as the project name, so the field the page labels "Artifact Id" held a human title.
+#[tokio::test]
+async fn the_project_api_returns_the_coordinate_and_the_latest_version() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "the_project_api_returns_the_coordinate_and_the_latest_version"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, "local", "releases", "maven")
+        .await;
+
+    deploy(&server, "local/releases", "1.0.0").await;
+    deploy(&server, "local/releases", "1.1.0").await;
+    deploy(&server, "local/releases", "2.0.0-SNAPSHOT").await;
+
+    let response = server
+        .get_as(
+            &format!("/api/project/by-key/{repository}/dev.kingtux:tms"),
+            &session,
+        )
+        .await;
+    assert_eq!(response.status, StatusCode::OK, "{}", response.text);
+
+    let project = response.json();
+    assert_eq!(project["project_key"], "dev.kingtux:tms", "{project}");
+    assert_eq!(project["scope"], "dev.kingtux", "{project}");
+    assert_eq!(
+        project["name"], "tms",
+        "`name` is the artifactId — it is what the page labels \"Artifact Id\": {project}"
+    );
+    assert_eq!(
+        project["storage_path"], "dev/kingtux/tms",
+        "the page links straight into browse with this: {project}"
+    );
+    assert_eq!(
+        project["latest_release"], "1.1.0",
+        "a snapshot is not a release: {project}"
+    );
+    assert_eq!(project["latest_pre_release"], "2.0.0-SNAPSHOT", "{project}");
+}
+
+/// A POM's `<name>` is a title, not a coordinate — nobody can depend on "Totally Not An Artifact
+/// Id", so it must not end up in the field the dependency snippets use as the artifactId.
+#[tokio::test]
+async fn a_poms_name_element_does_not_become_the_artifact_id() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "a_poms_name_element_does_not_become_the_artifact_id"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, "local", "releases", "maven")
+        .await;
+
+    deploy_named_pom(&server, "local/releases", "Totally Not An Artifact Id").await;
+
+    let response = server
+        .get_as(
+            &format!("/api/project/by-key/{repository}/dev.kingtux:titled"),
+            &session,
+        )
+        .await;
+    assert_eq!(response.status, StatusCode::OK, "{}", response.text);
+    assert_eq!(response.json()["name"], "titled", "{}", response.text);
+}

@@ -211,7 +211,10 @@ pub fn pom_to_db_project(
     Ok(NewProject {
         project_key: format!("{}:{}", group_id, pom.artifact_id),
         scope: Some(group_id.to_owned()),
-        name: pom.name.unwrap_or(pom.artifact_id),
+        // `name` is the artifactId — it is what the project page labels "Artifact Id" and what the
+        // Maven snippet puts in `<artifactId>`. Preferring the pom's `<name>` put a human title
+        // like "My Library" in both, which is not a coordinate anyone can depend on.
+        name: pom.artifact_id,
         description: pom.description,
         repository,
         storage_path: project_path.to_string(),
