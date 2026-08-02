@@ -41,7 +41,7 @@
     "axios": "^1.19.0",
     "eslint-plugin-compat": "^7.0.2",
     "highlight.js": "^11.11.1",
-    "nitro-jsf": "0.0.1",
+    "nitro-jsf": "0.0.3",
     "pinia": "^4.0.2",
     "pinia-plugin-persistedstate": "^4.7.1",
     "vite-plugin-ejs": "^2.0.0",

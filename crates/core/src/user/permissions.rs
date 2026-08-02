@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use ahash::HashMap;
 use serde::{Deserialize, Serialize};
 use sqlx::{
-    Execute, PgPool, QueryBuilder,
+    PgPool, QueryBuilder,
     prelude::{FromRow, Type},
 };
 use tracing::{debug, info, instrument, trace, warn};
@@ -176,9 +176,15 @@ impl UpdatePermissions {
         }
         query.push(" WHERE id = ");
         query.push_bind(user_id);
-        let query = query.build();
-        info!("Updating permissions for user {} {}", user_id, query.sql());
-        let result = query.execute(db).await?;
+        // Logged from the builder rather than the built query: sqlx 0.9's `Execute::sql()` consumes
+        // the query and hands back an owned `SqlStr`, so reading it there would move the value out
+        // from under `execute`. `SqlStr` is not `Display` either, hence `as_str()`.
+        info!(
+            "Updating permissions for user {} {}",
+            user_id,
+            query.sql().as_str()
+        );
+        let result = query.build().execute(db).await?;
         if result.rows_affected() == 0 {
             warn!(
                 "No rows affected when updating permissions for user {}",

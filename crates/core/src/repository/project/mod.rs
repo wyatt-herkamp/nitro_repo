@@ -1,4 +1,4 @@
-use pg_extended_sqlx_queries::prelude::*;
+use pgsmith::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::prelude::Type;

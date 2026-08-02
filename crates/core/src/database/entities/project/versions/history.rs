@@ -1,5 +1,5 @@
 use chrono::{DateTime, FixedOffset};
-use pg_extended_sqlx_queries::prelude::*;
+use pgsmith::prelude::*;
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 use utoipa::ToSchema;

@@ -174,7 +174,7 @@ pub fn default_log_levels() -> LoggingLevels {
     others.insert("nr_core".to_string(), LevelSerde::Debug);
     others.insert("nr_storage".to_string(), LevelSerde::Debug);
     others.insert("sqlx".to_owned(), LevelSerde::Debug);
-    others.insert("pg_extended_sqlx_queries".to_owned(), LevelSerde::Debug);
+    others.insert("pgsmith".to_owned(), LevelSerde::Debug);
     others.insert("h2".to_string(), LevelSerde::Warn);
     others.insert("tower".to_string(), LevelSerde::Warn);
     others.insert("tonic".to_string(), LevelSerde::Warn);

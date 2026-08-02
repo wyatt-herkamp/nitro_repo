@@ -30,7 +30,7 @@ use nitro_repo::app::{
 };
 use nr_core::database::DatabaseConfig;
 use serde_json::{Value, json};
-use sqlx::{Connection, Executor, PgConnection};
+use sqlx::{AssertSqlSafe, Connection, Executor, PgConnection};
 use tower::ServiceExt;
 
 pub static TEST_USERNAME: &str = "test_admin";
@@ -106,11 +106,15 @@ impl TestServer {
 
         let mut admin = PgConnection::connect(&admin_url).await.ok()?;
         admin
-            .execute(format!(r#"DROP DATABASE IF EXISTS "{database_name}""#).as_str())
+            .execute(AssertSqlSafe(format!(
+                r#"DROP DATABASE IF EXISTS "{database_name}""#
+            )))
             .await
             .ok()?;
         admin
-            .execute(format!(r#"CREATE DATABASE "{database_name}""#).as_str())
+            .execute(AssertSqlSafe(format!(
+                r#"CREATE DATABASE "{database_name}""#
+            )))
             .await
             .ok()?;
         drop(admin);
@@ -489,9 +493,9 @@ impl Drop for TestServer {
             runtime.block_on(async move {
                 if let Ok(mut admin) = PgConnection::connect(&admin_url).await {
                     let _ = admin
-                        .execute(
-                            format!(r#"DROP DATABASE IF EXISTS "{name}" WITH (FORCE)"#).as_str(),
-                        )
+                        .execute(AssertSqlSafe(format!(
+                            r#"DROP DATABASE IF EXISTS "{name}" WITH (FORCE)"#
+                        )))
                         .await;
                 }
             });

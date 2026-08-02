@@ -231,8 +231,8 @@ fn generate_badge(
     settings: &BadgeSettings,
     label: &str,
     value: &str,
-) -> Result<badge_maker::Badge, badge_maker::error::Error> {
-    badge_maker::BadgeBuilder::new()
+) -> Result<nr_badge::Badge, nr_badge::error::Error> {
+    nr_badge::BadgeBuilder::new()
         .label_color_parse(&settings.label_color)
         .color_parse(&settings.color)
         .style(settings.style.0)

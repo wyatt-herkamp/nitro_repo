@@ -21,7 +21,7 @@ use nr_core::{
     user::permissions::{HasPermissions, RepositoryActions},
 };
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
+use sqlx::{AssertSqlSafe, Row};
 use tracing::instrument;
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
@@ -196,7 +196,11 @@ pub async fn search(
         predicate = compiled.predicate,
     );
 
-    let mut sql_query = sqlx::query(&statement);
+    // sqlx 0.9 only accepts `&'static str` without an assertion. This statement is assembled here
+    // and every user-supplied value reaches it as a `$n` binding below — `compiled.predicate` is
+    // built from `CompiledQuery`, which emits placeholders rather than interpolating input — so
+    // there is nothing in the string that came from the request.
+    let mut sql_query = sqlx::query(AssertSqlSafe(statement));
     for binding in &compiled.bindings {
         sql_query = match binding {
             Binding::Text(text) => sql_query.bind(text),
