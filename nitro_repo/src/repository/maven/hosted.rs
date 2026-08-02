@@ -498,13 +498,20 @@ impl Repository for MavenHosted {
     }
     #[instrument(fields(repository_type = "maven/hosted"))]
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
-        let Some(is_active) = DBRepository::get_active_by_id(self.id, self.site.as_ref()).await?
-        else {
+        // The whole row, not just `active`: this read `get_active_by_id` and never refreshed the
+        // cached `visibility`, so making a repository private took effect in the database and in
+        // `/api/repository/list` while the running repository carried on serving its files to
+        // anyone — until a restart. The artifact bytes are the most sensitive thing here, so this
+        // was the worst of the visibility leaks.
+        let Some(repository) = DBRepository::get_by_id(self.id, self.site.as_ref()).await? else {
             error!("Failed to get repository");
             self.0.active.store(false, atomic::Ordering::Relaxed);
             return Ok(());
         };
-        self.0.active.store(is_active, atomic::Ordering::Relaxed);
+        self.0
+            .active
+            .store(repository.active, atomic::Ordering::Relaxed);
+        *self.0.visibility.write() = repository.visibility;
 
         let push_rules_db = get_repository_config_or_default::<
             MavenPushRulesConfigType,

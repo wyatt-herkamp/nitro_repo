@@ -103,7 +103,13 @@ impl Compiler {
                 // ILIKE, because artifact coordinates are matched case-insensitively everywhere
                 // else in this codebase. ESCAPE names the character `glob_to_like` used, so a
                 // literal `%` or `_` in a query stays literal.
-                let comparison = format!("{column} ILIKE {placeholder} ESCAPE '\\'");
+                //
+                // `COLLATE "C"` is not cosmetic: `projects.key` carries a nondeterministic ICU
+                // collation (`ignorecase`), and Postgres refuses LIKE and ILIKE against those with
+                // `nondeterministic collations are not supported for ILIKE`. Forcing a
+                // deterministic collation on the operand is what makes the pattern match legal;
+                // ILIKE still supplies the case-insensitivity the collation was there for.
+                let comparison = format!("{column} COLLATE \"C\" ILIKE {placeholder} ESCAPE '\\'");
                 if operator == Operator::NotMatches {
                     format!("(NOT COALESCE({comparison}, FALSE))")
                 } else {
@@ -245,6 +251,14 @@ mod tests {
         let compiled = compile("name ~= *.jar");
         assert_eq!(compiled.bindings, vec![Binding::Text("%.jar".to_owned())]);
         assert!(compiled.predicate.contains("ILIKE"));
+        // `projects.key` carries a nondeterministic collation in the real schema, and Postgres
+        // rejects LIKE/ILIKE against those outright. Without this the query compiles, passes every
+        // unit test here, and then fails at runtime against an actual database.
+        assert!(
+            compiled.predicate.contains(r#"COLLATE "C""#),
+            "glob comparisons must force a deterministic collation: {}",
+            compiled.predicate
+        );
         assert!(compiled.predicate.contains(r"ESCAPE '\'"));
     }
 

@@ -3,16 +3,13 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use app::config::NitroRepoConfig;
 use clap::{Parser, Subcommand};
 use config_editor::ConfigSection;
-pub mod app;
+// The application itself lives in the library target; this file is only the CLI.
+use nitro_repo::{app, app::config::NitroRepoConfig, seed};
+
 mod config_editor;
-pub mod error;
 mod exporter;
-pub mod logging;
-pub mod repository;
-pub mod utils;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum ExportOptions {
     /// The Repository Config Types
@@ -67,6 +64,19 @@ enum SubCommands {
         export: ExportOptions,
         location: PathBuf,
     },
+    /// Deploy a suite of fixture artifacts into a running instance
+    ///
+    /// Uses the real Maven and npm protocols rather than writing to the database, so a seed run is
+    /// also a smoke test of the deploy paths. Re-running it is safe: anything already present is
+    /// left alone.
+    Seed {
+        /// The seed configuration file
+        #[clap(short, long, default_value = "seed.toml")]
+        config: PathBuf,
+        /// Write an example configuration to `--config` instead of running
+        #[clap(long, default_value = "false")]
+        write_example: bool,
+    },
 }
 fn main() -> anyhow::Result<()> {
     // For Some Reason Lettre fails if this is not installed
@@ -92,6 +102,11 @@ fn main() -> anyhow::Result<()> {
             ExportOptions::RepositoryTypes => exporter::export_repository_types(location),
             ExportOptions::OpenAPI => exporter::export_openapi(location),
         },
+
+        SubCommands::Seed {
+            config,
+            write_example,
+        } => seed::seed(config, write_example),
 
         SubCommands::Config { config, section } => {
             let tokio = tokio::runtime::Builder::new_current_thread()

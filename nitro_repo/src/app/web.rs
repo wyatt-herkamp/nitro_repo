@@ -33,7 +33,7 @@ use crate::app::request_logging::AppTracingLayer;
 
 const POWERED_BY_HEADER: HeaderName = HeaderName::from_static("x-powered-by");
 const POWERED_BY_VALUE: HeaderValue = HeaderValue::from_static("Nitro Repo");
-pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
+pub async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     let NitroRepoConfig {
         web_server,
         database,
@@ -71,31 +71,7 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     site.start_session_cleaner();
 
     let cloned_site = site.clone();
-    let auth_layer = AuthenticationLayer::from(site.clone());
-    let mut app = Router::new()
-        // `/repositories/{storage}/{repository}/{*path}` is the canonical artifact URL — it is what
-        // `repositoryUrl()` in the frontend hands to Maven and npm. `/storages` used to be nested
-        // with the identical router, which served every artifact under a second URL that nothing
-        // generated and that reads as if it addressed the storage API.
-        .nest("/repositories", crate::repository::repository_router())
-        .nest("/api", api::api_routes())
-        .nest("/badge", super::badge::badge_routes())
-        .fallback(super::frontend::frontend_request)
-        .with_state(site.clone());
-
-    if open_api_routes {
-        info!("OpenAPI routes enabled");
-        app = app.merge(open_api::build_router())
-    }
-    let body_limit: DefaultBodyLimit = max_upload.into();
-    let app = app
-        .layer(auth_layer)
-        .layer(SetResponseHeaderLayer::if_not_present(
-            POWERED_BY_HEADER,
-            POWERED_BY_VALUE,
-        ))
-        .layer(AppTracingLayer(site.clone()))
-        .layer(body_limit);
+    let app = build_app(site.clone(), open_api_routes, max_upload.into());
 
     if let Some(tls) = tls {
         debug!("Starting TLS server");
@@ -112,6 +88,38 @@ pub(crate) async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
     drop(logger);
     Ok(())
 }
+/// Assembles the whole application router.
+///
+/// Separate from [`start`] so the integration tests can drive the real router in-process, with the
+/// real middleware stack, rather than starting a server on a port and talking to it over TCP. A
+/// test that builds its own router tests its own router.
+pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBodyLimit) -> Router {
+    let auth_layer = AuthenticationLayer::from(site.clone());
+    let mut app = Router::new()
+        // `/repositories/{storage}/{repository}/{*path}` is the canonical artifact URL — it is what
+        // `repositoryUrl()` in the frontend hands to Maven and npm. `/storages` used to be nested
+        // with the identical router, which served every artifact under a second URL that nothing
+        // generated and that reads as if it addressed the storage API.
+        .nest("/repositories", crate::repository::repository_router())
+        .nest("/api", api::api_routes())
+        .nest("/badge", super::badge::badge_routes())
+        .fallback(super::frontend::frontend_request)
+        .with_state(site.clone());
+
+    if open_api_routes {
+        info!("OpenAPI routes enabled");
+        app = app.merge(open_api::build_router())
+    }
+
+    app.layer(auth_layer)
+        .layer(SetResponseHeaderLayer::if_not_present(
+            POWERED_BY_HEADER,
+            POWERED_BY_VALUE,
+        ))
+        .layer(AppTracingLayer(site.clone()))
+        .layer(body_limit)
+}
+
 async fn start_app(app: Router, bind: String, site: NitroRepo) -> anyhow::Result<()> {
     let listener = TcpListener::bind(bind).await?;
     tracing::debug!("listening on {}", listener.local_addr()?);

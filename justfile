@@ -18,12 +18,22 @@ services-up:
 services-down:
     docker compose -f docker-compose.dev.yml down
 
-# Backends with no service running are skipped with a warning. Run `just services-up` first, or
-# `just test-all` to make a skipped backend a failure instead.
+# Backends with no service running are skipped with a warning, and so are the integration tests
+# when there is no database. Run `just services-up` first, or `just test-all` to make a skip a
+# failure instead.
 test:
     cargo test --all
 test-all:
-    STORAGE_TESTS_REQUIRE_ALL=1 cargo test --all
+    STORAGE_TESTS_REQUIRE_ALL=1 NITRO_TESTS_REQUIRE_DB=1 cargo test --all
+
+# The end-to-end suite on its own: real Maven and npm requests against the real router, each test
+# in its own database.
+test-integration:
+    NITRO_TESTS_REQUIRE_DB=1 cargo test -p nitro_repo --test maven --test npm --test authorization
+
+# Fills a running instance with a suite of artifacts, over the real protocols.
+seed config="seed.example.toml":
+    cargo run -p nitro_repo -- seed --config {{config}}
 
 lint:
     cargo clippy --all --all-targets -- -D warnings

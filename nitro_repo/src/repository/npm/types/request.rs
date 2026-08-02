@@ -244,8 +244,17 @@ impl GetPath {
             debug!(?name, ?version, "Version info");
             return Ok(GetPath::VersionInfo { name, version });
         }
-        if length == 5 {
-            let file = components[4].to_string();
+        // What npm actually requests for a scoped package is
+        // `@scope/package/-/package-1.0.0.tgz` — four components, with the *unscoped* name in the
+        // filename (`@babel/core/-/core-7.24.0.tgz`). Only the five-component form was handled, so
+        // every real scoped tarball download answered 404: `npm install @scope/pkg` resolved the
+        // packument and then failed to fetch what the packument pointed at.
+        //
+        // The five-component form, where the scope is repeated in the filename, is still accepted.
+        // The tarball URL is whatever the publishing client wrote into `dist.tarball`, so a stored
+        // packument may carry one.
+        if length == 4 || length == 5 {
+            let file = components[length - 1].to_string();
             let version = extract_version_from_file(&file, &name)
                 .ok_or(NPMRegistryError::InvalidGetRequest)?;
             return Ok(GetPath::GetTar {
@@ -362,6 +371,54 @@ pub mod tests {
 
     use super::{GetPath, extract_version_from_file};
 
+    /// Both tarball URL shapes have to resolve to `GetTar`.
+    ///
+    /// The scoped branch checked for five components and read index four, when the path has four —
+    /// so every scoped tarball download 404'd and `npm install @scope/pkg` failed after resolving
+    /// the packument. Unscoped, one component shorter, was always correct.
+    #[test]
+    pub fn tarball_paths_resolve_for_both_name_shapes() {
+        let scoped = GetPath::try_from(StoragePath::from("@nitro/example/-/example-1.0.0.tgz"))
+            .expect("a scoped tarball path should resolve");
+        assert_eq!(
+            scoped,
+            GetPath::GetTar {
+                name: "@nitro/example".to_owned(),
+                version: "1.0.0".to_owned(),
+                file: "example-1.0.0.tgz".to_owned(),
+            }
+        );
+
+        let unscoped = GetPath::try_from(StoragePath::from("example/-/example-1.0.0.tgz"))
+            .expect("an unscoped tarball path should resolve");
+        assert_eq!(
+            unscoped,
+            GetPath::GetTar {
+                name: "example".to_owned(),
+                version: "1.0.0".to_owned(),
+                file: "example-1.0.0.tgz".to_owned(),
+            }
+        );
+    }
+
+    /// The shorter scoped paths must keep meaning what they meant.
+    #[test]
+    pub fn scoped_package_and_version_paths_still_resolve() {
+        assert_eq!(
+            GetPath::try_from(StoragePath::from("@nitro/example")).unwrap(),
+            GetPath::GetPackageInfo {
+                name: "@nitro/example".to_owned()
+            }
+        );
+        assert_eq!(
+            GetPath::try_from(StoragePath::from("@nitro/example/1.0.0")).unwrap(),
+            GetPath::VersionInfo {
+                name: "@nitro/example".to_owned(),
+                version: "1.0.0".to_owned(),
+            }
+        );
+    }
+
     /// A hyphen in the version is the common case for a prerelease, and a hyphen in the name is
     /// the common case for everything else.
     #[test]
@@ -450,6 +507,16 @@ pub mod tests {
     pub fn tests() {
         let tests = vec![
             (
+                // The shape npm actually requests: the filename is unscoped.
+                StoragePath::from("@nr/mylib/-/mylib-1.0.0.tgz"),
+                GetPath::GetTar {
+                    name: "@nr/mylib".to_string(),
+                    version: "1.0.0".to_string(),
+                    file: "mylib-1.0.0.tgz".to_string(),
+                },
+            ),
+            (
+                // The scope-repeated form, still accepted because a stored packument may carry it.
                 StoragePath::from("@nr/mylib/-/@nr/mylib-1.0.0.tgz"),
                 GetPath::GetTar {
                     name: "@nr/mylib".to_string(),

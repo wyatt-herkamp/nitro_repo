@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
 use inquire::{Text, validator::Validation};
+use nitro_repo::app::config::ReadConfigType;
 use nr_core::database::DatabaseConfig;
 use sqlx::{Connection, PgConnection, postgres::PgConnectOptions};
-
-use crate::app::config::ReadConfigType;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum ConfigSection {

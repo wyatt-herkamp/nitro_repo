@@ -6,7 +6,7 @@ use strum::EnumIs;
 use tuxs_config_types::size_config::InvalidSizeError;
 use utoipa::ToSchema;
 mod max_upload;
-mod security;
+pub mod security;
 pub use max_upload::*;
 pub use security::*;
 

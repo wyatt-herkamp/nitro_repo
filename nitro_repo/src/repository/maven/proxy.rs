@@ -461,6 +461,15 @@ impl Repository for MavenProxy {
     }
     #[instrument(fields(repository_type = "maven/proxy"))]
     async fn reload(&self) -> Result<(), RepositoryFactoryError> {
+        // Same as the hosted repository: without this the cached visibility never changes, and a
+        // proxy made private keeps serving whatever it has cached.
+        if let Some(repository) = DBRepository::get_by_id(self.id, self.site.as_ref()).await? {
+            self.0
+                .active
+                .store(repository.active, std::sync::atomic::Ordering::Relaxed);
+            *self.0.visibility.write() = repository.visibility;
+        }
+
         let project_config_db =
             get_repository_config_or_default::<ProjectConfigType, ProjectConfig>(
                 self.id,
