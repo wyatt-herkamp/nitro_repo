@@ -48,6 +48,9 @@ jobs:
           # suite silently stops running and nobody notices.
           NITRO_TESTS_REQUIRE_DB: 1
           NITRO_TEST_DATABASE_URL: postgres://postgres:password@localhost/nr_tests
+          # `TestCore` reads this one. It normally comes from `nr_tests.env`, which is gitignored
+          # — it holds whatever local database a developer uses — so it does not exist here.
+          DATABASE_URL: postgres://postgres:password@localhost/nr_tests
       - name: Service logs
         if: failure()
         run: docker compose -f docker-compose.dev.yml logs
