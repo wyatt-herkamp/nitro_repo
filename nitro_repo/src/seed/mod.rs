@@ -19,7 +19,10 @@ use tracing::{info, warn};
 pub mod artifacts;
 pub mod config;
 
-use config::{MavenProject, NpmPackage, SeedAuth, SeedConfig, SeedRepository, SeedStorage};
+use config::{
+    CargoCrate, DockerImage, MavenProject, NpmPackage, SeedAuth, SeedConfig, SeedRepository,
+    SeedStorage,
+};
 
 pub struct Seeder {
     client: Client,
@@ -129,6 +132,12 @@ impl Seeder {
         }
         for package in &config.npm {
             self.publish_npm(package).await?;
+        }
+        for krate in &config.cargo {
+            self.publish_crate(krate).await?;
+        }
+        for image in &config.docker {
+            self.push_image(image).await?;
         }
 
         Ok(())
@@ -568,6 +577,152 @@ impl Seeder {
             }
         }
 
+        Ok(())
+    }
+
+    /// `cargo publish`: a `PUT` of two length-prefixed frames to `/api/v1/crates/new`.
+    async fn publish_crate(&mut self, krate: &CargoCrate) -> anyhow::Result<()> {
+        for version in &krate.versions {
+            let crate_file =
+                artifacts::crate_file(&krate.name, version, krate.description.as_deref())?;
+            let metadata = json!({
+                "name": krate.name,
+                "vers": version,
+                "deps": [],
+                "features": {},
+                "authors": ["nitro_repo seed"],
+                "description": krate.description.clone().unwrap_or_else(|| "Seeded by nitro_repo".to_owned()),
+                "keywords": [],
+                "categories": [],
+                "license": "MIT",
+            });
+            let body = artifacts::cargo_publish_body(&metadata, &crate_file);
+
+            let url = format!(
+                "{}/repositories/{}/api/v1/crates/new",
+                self.base, krate.repository
+            );
+            let response = self
+                .authorize(
+                    self.client
+                        .put(&url)
+                        .header("Content-Type", "application/octet-stream")
+                        .body(body),
+                )
+                .send()
+                .await?;
+
+            let status = response.status();
+            if status == StatusCode::CONFLICT {
+                warn!(krate = %krate.name, %version, "Already published, leaving it alone");
+                self.summary.skipped += 1;
+            } else if !status.is_success() {
+                let body = response.text().await.unwrap_or_default();
+                anyhow::bail!(
+                    "Publishing {}@{version} failed: {status} {body}",
+                    krate.name
+                );
+            } else {
+                info!(krate = %krate.name, %version, "Published");
+                self.summary.packages_published += 1;
+            }
+        }
+        Ok(())
+    }
+
+    /// `docker push`: each blob through the three-step upload, then the manifest.
+    ///
+    /// The image name carries the `{storage}/{repository}` prefix because a seeded registry has no
+    /// hostname of its own — this is exactly what a client would send to
+    /// `docker push localhost:6742/local/docker/example:1.0`.
+    async fn push_image(&mut self, image: &DockerImage) -> anyhow::Result<()> {
+        let name = format!("{}/{}", image.repository, image.name);
+
+        for tag in &image.tags {
+            // One layer per tag, so the two tags are genuinely different images rather than the
+            // same manifest under two names — which would not exercise re-tagging.
+            let layer = artifacts::oci_layer("hello.txt", &format!("{}:{tag}", image.name))?;
+            let config = artifacts::oci_config(&layer);
+            let manifest = artifacts::oci_manifest(&config, &layer.gzipped);
+
+            for blob in [&layer.gzipped, &config] {
+                self.push_blob(&name, blob).await?;
+            }
+
+            let url = format!("{}/v2/{name}/manifests/{tag}", self.base);
+            let response = self
+                .authorize(
+                    self.client
+                        .put(&url)
+                        .header("Content-Type", "application/vnd.oci.image.manifest.v1+json")
+                        .body(manifest),
+                )
+                .send()
+                .await?;
+
+            let status = response.status();
+            if !status.is_success() {
+                let body = response.text().await.unwrap_or_default();
+                anyhow::bail!("Pushing {name}:{tag} failed: {status} {body}");
+            }
+            info!(image = %name, %tag, "Pushed");
+            self.summary.packages_published += 1;
+        }
+        Ok(())
+    }
+
+    async fn push_blob(&mut self, name: &str, blob: &[u8]) -> anyhow::Result<()> {
+        let digest = artifacts::oci_digest(blob);
+
+        // A blob already present is the common case on a re-run, and skipping it is what a real
+        // client does too.
+        let head = self
+            .authorize(
+                self.client
+                    .head(format!("{}/v2/{name}/blobs/{digest}", self.base)),
+            )
+            .send()
+            .await?;
+        if head.status().is_success() {
+            self.summary.skipped += 1;
+            return Ok(());
+        }
+
+        let started = self
+            .authorize(
+                self.client
+                    .post(format!("{}/v2/{name}/blobs/uploads/", self.base)),
+            )
+            .send()
+            .await?;
+        if !started.status().is_success() {
+            let status = started.status();
+            let body = started.text().await.unwrap_or_default();
+            anyhow::bail!("Opening a blob upload for {name} failed: {status} {body}");
+        }
+        let location = started
+            .headers()
+            .get("location")
+            .and_then(|value| value.to_str().ok())
+            .map(ToOwned::to_owned)
+            .ok_or_else(|| anyhow::anyhow!("The registry opened an upload with no Location"))?;
+        // Relative, as the registry emits it, so it is resolved against the instance base here.
+        let location = format!("{}{location}", self.base);
+
+        let response = self
+            .authorize(
+                self.client
+                    .put(format!("{location}?digest={digest}"))
+                    .body(blob.to_vec()),
+            )
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            anyhow::bail!("Committing a blob for {name} failed: {status} {body}");
+        }
+        self.summary.files_uploaded += 1;
         Ok(())
     }
 }

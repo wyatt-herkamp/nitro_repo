@@ -46,6 +46,8 @@ pub mod open_api;
 use crate::{
     repository::{
         DynRepository, RepositoryType, StagingConfig,
+        cargo::{CargoRegistryConfigType, CargoRegistryType},
+        docker::{DockerRegistryConfigType, DockerRegistryType, uploads::BlobUploadManager},
         maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
         npm::{NPMRegistryConfigType, NpmRegistryType, login::web_login::NpmWebLoginManager},
         repo_tracing::RepositoryMetricsMeter,
@@ -136,6 +138,9 @@ pub struct NitroRepoInner {
     /// npm browser-login sessions awaiting approval. In memory on purpose — see
     /// [`crate::repository::npm::login::web_login`].
     pub npm_web_logins: NpmWebLoginManager,
+    /// In-progress Docker blob uploads. Buffered to the staging directory and tracked in memory,
+    /// for the reasons set out in [`crate::repository::docker::uploads`].
+    pub docker_uploads: BlobUploadManager,
 }
 macro_rules! take_service {
     ($(
@@ -275,6 +280,7 @@ impl NitroRepo {
         } else {
             std::env::current_dir()?.join("storages")
         };
+        let docker_uploads = BlobUploadManager::new(&staging_config.staging_dir);
         let nitro_repo = NitroRepoInner {
             instance: Mutex::new(instance),
             storages: RwLock::new(HashMap::new()),
@@ -288,6 +294,7 @@ impl NitroRepo {
             frontend: frontend::HostedFrontend::new(site.frontend_path)?,
             suggested_local_storage_path,
             npm_web_logins: NpmWebLoginManager::default(),
+            docker_uploads,
         };
 
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
@@ -575,8 +582,15 @@ pub static REPOSITORY_CONFIG_TYPES: &[&dyn RepositoryConfigType] = &[
     &MavenRepositoryConfigType,
     &MavenPushRulesConfigType,
     &NPMRegistryConfigType,
+    &CargoRegistryConfigType,
+    &DockerRegistryConfigType,
 ];
-pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[&MavenRepositoryType, &NpmRegistryType];
+pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[
+    &MavenRepositoryType,
+    &NpmRegistryType,
+    &CargoRegistryType,
+    &DockerRegistryType,
+];
 
 #[cfg(test)]
 mod registry_tests {

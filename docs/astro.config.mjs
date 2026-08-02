@@ -128,6 +128,41 @@ export default defineConfig({
                 },
               ],
             },
+            {
+              label: "Cargo",
+              collapsed: false,
+              items: [
+                { label: "Overview", slug: "repositories/cargo" },
+                {
+                  label: "Authenticating",
+                  slug: "repositories/cargo/authenticating",
+                },
+                { label: "Publishing", slug: "repositories/cargo/publishing" },
+                {
+                  label: "Configuration",
+                  slug: "repositories/cargo/configuration",
+                },
+              ],
+            },
+            {
+              label: "Docker",
+              collapsed: false,
+              items: [
+                { label: "Overview", slug: "repositories/docker" },
+                {
+                  label: "Authenticating",
+                  slug: "repositories/docker/authenticating",
+                },
+                {
+                  label: "Pushing and pulling",
+                  slug: "repositories/docker/pushing",
+                },
+                {
+                  label: "Configuration",
+                  slug: "repositories/docker/configuration",
+                },
+              ],
+            },
           ],
         },
         {

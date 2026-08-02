@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+  "/api/docker/token": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Exchanges Basic credentials for a bearer token. */
+    get: operations["token"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/info": {
     parameters: {
       query?: never;
@@ -47,6 +64,24 @@ export interface paths {
     put?: never;
     /** Installs the site with the first user. If Site is already installed, it will return a 404. */
     post: operations["install"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/npm/login/{session}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Describes a pending npm login session. */
+    get: operations["login_session"];
+    put?: never;
+    /** Approves a pending npm login and releases a token to the waiting client. */
+    post: operations["complete_login"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1408,6 +1443,17 @@ export interface components {
       password?: string | null;
       username: components["schemas"]["Username"];
     };
+    NpmLoginCompleteResponse: {
+      /** Format: uuid */
+      repository_id: string;
+      repository_name: string;
+    };
+    /** @description What the login page needs to show the user before they approve. */
+    NpmLoginSessionResponse: {
+      /** Format: uuid */
+      repository_id: string;
+      repository_name: string;
+    };
     /** @enum {string} */
     PageType: "Markdown" | "HTML" | "None";
     PasswordRules: {
@@ -1555,6 +1601,17 @@ export interface components {
           /** @enum {string} */
           type: "FileSystemV2";
         };
+    TokenResponse: {
+      access_token: string;
+      /** Format: int64 */
+      expires_in: number;
+      issued_at: string;
+      /**
+       * @description The spec names this `token`; the OAuth2 flow names the same value `access_token`. Both are
+       *     sent because different clients read different ones.
+       */
+      token: string;
+    };
     UpdatePermissions: {
       admin?: boolean | null;
       default_repository_actions?: components["schemas"]["RepositoryActions"][] | null;
@@ -1665,6 +1722,33 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  token: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description A bearer token for the requested scope */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
+        };
+      };
+      /** @description The credentials were not accepted */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   info: {
     parameters: {
       query?: never;
@@ -1726,6 +1810,80 @@ export interface operations {
         content?: never;
       };
       /** @description Site is already installed */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  login_session: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The login session id npm was handed */
+        session: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The pending session */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NpmLoginSessionResponse"];
+        };
+      };
+      /** @description Unknown or expired session */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  complete_login: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The login session id npm was handed */
+        session: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Login approved */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NpmLoginCompleteResponse"];
+        };
+      };
+      /** @description Not signed in */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Cannot write to this repository */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unknown or expired session */
       404: {
         headers: {
           [name: string]: unknown;

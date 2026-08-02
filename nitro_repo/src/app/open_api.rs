@@ -21,8 +21,8 @@ use utoipa::{
 use super::{
     api,
     api::{
-        repository::RepositoryAPI, storage::StorageAPI, user::UserAPI,
-        user_management::UserManagementAPI,
+        docker::DockerAPI, npm::NpmAPI, repository::RepositoryAPI, storage::StorageAPI,
+        user::UserAPI, user_management::UserManagementAPI,
     },
 };
 use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
@@ -36,6 +36,11 @@ use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
         (path = "/api/repository", api = RepositoryAPI, tags=["repository"]),
         (path="/badge", api = BadgeRoutes),
         (path="/api/project", api = ProjectRoutes, tags= ["project", "repository"]),
+        // `NpmAPI` was declared and never nested, so npm's browser-login endpoints were missing
+        // from the served document — and from the generated frontend types, which is why the login
+        // page calls them through a hand-written interface.
+        (path="/api/npm", api = NpmAPI, tags=["npm", "repository"]),
+        (path="/api/docker", api = DockerAPI, tags=["docker", "repository"]),
     ),
     paths(
         api::info,
