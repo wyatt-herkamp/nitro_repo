@@ -25,6 +25,7 @@ nr-core = { path = "crates/core" }
 nr-macros = { path = "crates/macros" }
 nr-storage = { path = "crates/storage" }
 nr-aql = { path = "crates/aql" }
+nr-badge = { path = "crates/badge" }
 # Rust Utilities
 futures = "0.3"
 derive_more = { version = "2.1", features = [
@@ -47,6 +48,14 @@ either = "1.17"
 
 base64 = "0.23"
 
+# Badge rendering (`nr-badge`). `bincode` is held at 1 on purpose: the font width tables in
+# `crates/badge/fonts` are bincode-1 encoded, and re-encoding them would change text measurement
+# and therefore every rendered badge.
+bincode = "1"
+aho-corasick = "1"
+seahash = "4"
+itoa = "1"
+
 # Storage backends
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-s3 = "1"
@@ -61,12 +70,11 @@ tux-io-encoding = { git = "https://github.com/wyatt-herkamp/tux-io-encoding.git"
   "gzip",
 ] }
 
-# Error Handling
-schemars = { git = "https://github.com/wyatt-herkamp/schemars.git", branch = "if_for_adjacent" }
+schemars = "1"
 
+# Error Handling
 thiserror = "2"
 anyhow = "1"
-badge-maker = { git = "https://github.com/wyatt-herkamp/badge-maker.git", branch = "updates_and_improvements" }
 auto_impl = "1.3"
 once_cell = "1"
 regex = "1"
@@ -79,32 +87,29 @@ bytes = "1"
 pin-project = "1"
 url = "2"
 ## Hashing
-digestible = { git = "https://github.com/wyatt-herkamp/digestible.git", features = [
-  "base64",
-  "uuid",
-  "chrono",
-], version = "0.3" }
+digestible = { features = ["base64", "uuid", "chrono"], version = "0.3" }
 digest = { version = "0.11", features = ["alloc"] }
 md-5 = "0.11"
 sha1 = "0.11"
 sha2 = "0.11"
 sha3 = "0.12"
 clap = { version = "4", features = ["derive"] }
-pg-extended-sqlx-queries = { git = "https://github.com/wyatt-herkamp/pg-extended-sqlx-queries.git", features = [
+# Every query in this workspace is built on this. Pinned to a rev rather than floating on the
+# default branch so an upstream push cannot change what CI compiles.
+pgsmith = { git = "https://github.com/wyatt-herkamp/pgsmith.git", rev = "dd16c3a8d1a1ccd7474eb66ead87046621a780a8", features = [
   "uuid",
   "chrono",
   "json",
 ] }
 
-# Held at 0.8 deliberately. `pg-extended-sqlx-queries` — which every query in this workspace is
-# built on — pins sqlx 0.8 at its HEAD, so moving to 0.9 puts two incompatible copies of
-# `sqlx_core` in the graph and no `Pool` satisfies the other version's `Executor`. This can move up
-# once that crate does.
 [workspace.dependencies.sqlx]
-version = "0.8"
+version = "0.9"
 default-features = false
 features = [
-  "runtime-tokio-rustls",
+  # 0.9 removed the combined runtime+TLS features. `tls-rustls` aliases `tls-rustls-ring-webpki`,
+  # which is what 0.8's `runtime-tokio-rustls` resolved to, so Postgres TLS behaviour is unchanged.
+  "runtime-tokio",
+  "tls-rustls",
   "macros",
   "postgres",
   "chrono",

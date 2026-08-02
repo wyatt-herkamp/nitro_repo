@@ -1,0 +1,23 @@
+[package]
+name = "nr-badge"
+description = "SVG badge rendering, vendored from badge-maker"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+regex.workspace = true
+thiserror.workspace = true
+base64.workspace = true
+aho-corasick.workspace = true
+itoa.workspace = true
+seahash.workspace = true
+# The font width tables in `fonts/` are bincode 1 encoded. Bumping to bincode 2 means
+# regenerating them, which would change text measurement and therefore every rendered badge.
+bincode.workspace = true
+
+[lints]
+workspace = true

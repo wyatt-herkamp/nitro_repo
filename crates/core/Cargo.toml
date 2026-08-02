@@ -18,7 +18,7 @@ sha2.workspace = true
 uuid.workspace = true
 strum.workspace = true
 schemars.workspace = true
-badge-maker.workspace = true
+nr-badge.workspace = true
 utoipa.workspace = true
 once_cell.workspace = true
 regex.workspace = true
@@ -30,7 +30,7 @@ url.workspace = true
 nr-macros.workspace = true
 ahash.workspace = true
 mime.workspace = true
-pg-extended-sqlx-queries.workspace = true
+pgsmith.workspace = true
 # Testing
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }

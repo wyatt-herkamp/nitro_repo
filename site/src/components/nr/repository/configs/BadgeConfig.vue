@@ -191,7 +191,7 @@ const snippets = computed<Array<CodeSnippet>>(() => {
 });
 
 /**
- * A local approximation of what `badge_maker` renders. Character widths in a proportional face
+ * A local approximation of what `nr_badge` renders. Character widths in a proportional face
  * cannot be measured without laying the text out, so this estimates them — the preview is for
  * judging colour, and the served badge is the real thing.
  */

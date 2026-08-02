@@ -1,4 +1,4 @@
-use pg_extended_sqlx_queries::prelude::*;
+use pgsmith::prelude::*;
 use sqlx::{PgPool, prelude::FromRow};
 use tracing::instrument;
 use uuid::Uuid;

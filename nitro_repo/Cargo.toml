@@ -80,7 +80,7 @@ thiserror.workspace = true
 anyhow.workspace = true
 derive_more.workspace = true
 # Badge Stuff
-badge-maker.workspace = true
+nr-badge.workspace = true
 pin-project = "1"
 clap.workspace = true
 semver = { version = "1", features = ["std", "serde"] }

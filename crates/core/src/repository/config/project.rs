@@ -1,4 +1,4 @@
-use badge_maker::Style;
+use nr_badge::Style;
 use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 
@@ -81,21 +81,15 @@ impl schemars::JsonSchema for BadgeStyle {
     }
 
     fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-        {
-            let mut map = schemars::_serde_json::Map::new();
-            map.insert("type".to_owned(), "string".into());
-            map.insert(
-                "enum".to_owned(),
-                // These must match `badge_maker::Style`'s `Display`/`FromStr`, which is what the
-                // newtype's `Serialize`/`Deserialize` delegate to. "flatquare" was a typo for
-                // "flatsquare", so the schema advertised a style that `Style::from_str` rejects —
-                // picking it in the generated form produced a `BadStyleChoice` on save.
-                serde_json::Value::Array({
-                    vec!["flat".into(), "plastic".into(), "flatsquare".into()]
-                }),
-            );
-            schemars::Schema::from(map)
-        }
+        // These must match `nr_badge::Style`'s `Display`/`FromStr`, which is what the newtype's
+        // `Serialize`/`Deserialize` delegate to. "flatquare" was a typo for "flatsquare", so the
+        // schema advertised a style that `Style::from_str` rejects — picking it in the generated
+        // form produced a `BadStyleChoice` on save. `every_advertised_badge_style_deserializes`
+        // below is what keeps the two in step.
+        schemars::json_schema!({
+            "type": "string",
+            "enum": ["flat", "plastic", "flatsquare"],
+        })
     }
 }
 

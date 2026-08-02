@@ -9,7 +9,17 @@ use crate::{database::DateTime, repository::Hostname};
 ///
 /// Spelled out rather than `SELECT *` because the table is shared with storage-scoped hostnames
 /// and carries a `storage_id` this type has no field for.
-const COLUMNS: &str = "id, repository_id, hostname, updated_at, created_at";
+///
+/// A macro rather than a `const` so the statements below can `concat!` it into `&'static str`
+/// literals. sqlx 0.9 only accepts `&'static str` without an `AssertSqlSafe` audit wrapper, and
+/// there is nothing to audit here — the column list is fixed at compile time and every value is
+/// bound. Building the statements with `format!` instead would mean asserting safety on a string
+/// that is not actually dynamic, and allocating it on every call.
+macro_rules! columns {
+    () => {
+        "id, repository_id, hostname, updated_at, created_at"
+    };
+}
 
 /// A hostname that routes a request straight into a repository.
 ///
@@ -40,8 +50,10 @@ impl DBRepositoryHostname {
         database: &PgPool,
         hostname: &str,
     ) -> Result<Option<Self>, sqlx::Error> {
-        sqlx::query_as(&format!(
-            "SELECT {COLUMNS} FROM hostnames WHERE hostname = $1 AND repository_id IS NOT NULL"
+        sqlx::query_as(concat!(
+            "SELECT ",
+            columns!(),
+            " FROM hostnames WHERE hostname = $1 AND repository_id IS NOT NULL"
         ))
         .bind(hostname)
         .fetch_optional(database)
@@ -52,8 +64,10 @@ impl DBRepositoryHostname {
         database: &PgPool,
         repository_id: Uuid,
     ) -> Result<Vec<Self>, sqlx::Error> {
-        sqlx::query_as(&format!(
-            "SELECT {COLUMNS} FROM hostnames WHERE repository_id = $1 ORDER BY created_at"
+        sqlx::query_as(concat!(
+            "SELECT ",
+            columns!(),
+            " FROM hostnames WHERE repository_id = $1 ORDER BY created_at"
         ))
         .bind(repository_id)
         .fetch_all(database)
@@ -61,8 +75,10 @@ impl DBRepositoryHostname {
     }
 
     pub async fn get_all(database: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        sqlx::query_as(&format!(
-            "SELECT {COLUMNS} FROM hostnames WHERE repository_id IS NOT NULL ORDER BY created_at"
+        sqlx::query_as(concat!(
+            "SELECT ",
+            columns!(),
+            " FROM hostnames WHERE repository_id IS NOT NULL ORDER BY created_at"
         ))
         .fetch_all(database)
         .await
@@ -82,8 +98,9 @@ impl DBRepositoryHostname {
         repository_id: Uuid,
         hostname: &Hostname,
     ) -> Result<Self, sqlx::Error> {
-        sqlx::query_as(&format!(
-            "INSERT INTO hostnames (repository_id, hostname) VALUES ($1, $2) RETURNING {COLUMNS}"
+        sqlx::query_as(concat!(
+            "INSERT INTO hostnames (repository_id, hostname) VALUES ($1, $2) RETURNING ",
+            columns!()
         ))
         .bind(repository_id)
         .bind(hostname)
@@ -101,8 +118,9 @@ impl DBRepositoryHostname {
         id: i32,
         repository_id: Uuid,
     ) -> Result<Option<Self>, sqlx::Error> {
-        sqlx::query_as(&format!(
-            "DELETE FROM hostnames WHERE id = $1 AND repository_id = $2 RETURNING {COLUMNS}"
+        sqlx::query_as(concat!(
+            "DELETE FROM hostnames WHERE id = $1 AND repository_id = $2 RETURNING ",
+            columns!()
         ))
         .bind(id)
         .bind(repository_id)
