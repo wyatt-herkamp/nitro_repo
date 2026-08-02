@@ -1,17 +1,30 @@
 {
-  "name": "nitro_repo.kingtux.me",
-  "version": "1.0.0",
-  "description": "Nitro Repo Home Page",
-  "main": "index.js",
+  "name": "nitro-repo-docs",
+  "version": "2.0.0",
+  "description": "Documentation for Nitro Repo",
   "type": "module",
+  "private": true,
   "scripts": {
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:serve": "vitepress serve docs"
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "format": "prettier --write \"src/**/*.{md,mdx,css,ts}\" astro.config.mjs",
+    "astro": "astro"
   },
   "author": "Wyatt Herkamp",
-  "license": "ISC",
+  "license": "MIT",
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/starlight": "^0.41.6",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "astro": "^7.1.6",
+    "sharp": "^0.35.3"
+  },
   "devDependencies": {
-    "vitepress": "^1.6.4"
+    "prettier": "^3.9.6",
+    "starlight-links-validator": "^0.25.2"
   }
 }

@@ -6,6 +6,7 @@ build-release:
 fmt:
     cargo +nightly fmt --all
     cd site && npm run format
+    cd docs && npm run format
 
 fmt-check:
     cargo +nightly fmt --all --check
@@ -34,6 +35,12 @@ test-integration:
 # Fills a running instance with a suite of artifacts, over the real protocols.
 seed config="seed.example.toml":
     cargo run -p nitro_repo -- seed --config {{config}}
+
+# The documentation site. `docs-build` is what CI runs; it fails on a broken internal link.
+docs:
+    cd docs && npm run dev
+docs-build:
+    cd docs && npm run build
 
 lint:
     cargo clippy --all --all-targets -- -D warnings

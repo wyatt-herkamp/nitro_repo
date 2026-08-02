@@ -59,7 +59,7 @@ impl RepositoryType for MavenRepositoryType {
             type_name: "maven",
             name: "Maven",
             description: "A Maven Repository",
-            documentation_url: Some("https://nitro-repo.kingtux.dev/repositoryTypes/maven/"),
+            documentation_url: Some("https://nitro-repo.kingtux.dev/repositories/maven/"),
             is_stable: true,
             required_configs: vec![MavenRepositoryConfigType::get_type_static()],
         }

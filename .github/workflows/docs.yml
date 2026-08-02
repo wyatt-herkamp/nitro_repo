@@ -1,63 +1,70 @@
-# Sample workflow for building and deploying a VitePress site to GitHub Pages
-#
-name: Deploy VitePress site to Pages
+name: Docs
 
 on:
-  # Runs on pushes targeting the `main` branch. Change this to `master` if you're
-  # using the `master` branch as the default branch.
   push:
     branches: [main]
-
-  # Allows you to run this workflow manually from the Actions tab
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  # A pull request builds but does not deploy, so a broken link or a bad config fails the PR rather
+  # than main. The build is where link validation runs.
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Do not cancel a deployment in flight — a half-published site is worse than a slow one.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  # Build job
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: "docs/.node-version"
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
       - name: Install dependencies
         working-directory: docs
         run: npm ci
-      - name: Build with VitePress
+      - name: Build
         working-directory: docs
-        run: npm run docs:build # or pnpm docs:build / yarn docs:build / bun run docs:build
+        # `starlight-links-validator` runs as part of this and fails the build on a link to a page
+        # or anchor that does not exist.
+        run: npm run build
       - name: Upload artifact
+        # Only main produces something to deploy. A PR has already got what it needed from the
+        # build step above.
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/docs/.vitepress/dist
+          path: docs/dist
 
-  # Deployment job
   deploy:
+    name: Deploy
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    name: Deploy
     steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

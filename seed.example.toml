@@ -41,17 +41,9 @@ visibility = "Public"
 repository = "local/releases"
 group_id = "dev.kingtux"
 artifact_id = "tms"
-versions = [
-    "1.0.0",
-    "1.0.1",
-    "1.1.0",
-    "2.0.0-beta.1",
-]
+versions = ["1.0.0", "1.0.1", "1.1.0", "2.0.0-beta.1"]
 description = "A seeded example artifact"
-classifiers = [
-    "sources",
-    "javadoc",
-]
+classifiers = ["sources", "javadoc"]
 dependencies = ["org.slf4j:slf4j-api:2.0.13"]
 
 [[maven]]
@@ -69,20 +61,13 @@ group_id = "dev.kingtux"
 artifact_id = "tms"
 versions = ["1.2.0-SNAPSHOT"]
 description = "Snapshot deploys, for maven-metadata.xml"
-classifiers = [
-    "sources",
-    "javadoc",
-]
+classifiers = ["sources", "javadoc"]
 dependencies = []
 
 [[npm]]
 repository = "local/npm"
 name = "@nitro/example"
-versions = [
-    "1.0.0",
-    "1.0.1",
-    "1.1.0",
-]
+versions = ["1.0.0", "1.0.1", "1.1.0"]
 description = "A scoped package"
 
 [npm.dist_tags]
@@ -90,10 +75,7 @@ description = "A scoped package"
 [[npm]]
 repository = "local/npm"
 name = "nitro.helpers"
-versions = [
-    "0.1.0",
-    "0.2.0",
-]
+versions = ["0.1.0", "0.2.0"]
 description = "An unscoped package with a dot in its name"
 
 [npm.dist_tags]
@@ -101,10 +83,7 @@ description = "An unscoped package with a dot in its name"
 [[npm]]
 repository = "local/npm"
 name = "@nitro/prerelease"
-versions = [
-    "1.0.0",
-    "2.0.0-beta.1",
-]
+versions = ["1.0.0", "2.0.0-beta.1"]
 description = "Prerelease versions, and a non-latest dist-tag"
 
 [npm.dist_tags]

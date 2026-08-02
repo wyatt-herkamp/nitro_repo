@@ -35,8 +35,8 @@ pg-extended-sqlx-queries.workspace = true
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 tracing-subscriber = { version = "0.3", features = [
-    "env-filter",
-    "json",
+  "env-filter",
+  "json",
 ], optional = true }
 tracing-appender = { version = "0.2", optional = true }
 clap.workspace = true
@@ -46,11 +46,11 @@ pretty_assertions = "1"
 default = ["migrations", "testing"]
 migrations = []
 testing = [
-    "migrations",
-    "anyhow",
-    "tokio",
-    "tracing-subscriber",
-    "tracing-appender",
+  "migrations",
+  "anyhow",
+  "tokio",
+  "tracing-subscriber",
+  "tracing-appender",
 ]
 [lints]
 workspace = true

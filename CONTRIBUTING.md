@@ -87,6 +87,30 @@ Two things under `site/` are **generated** — do not edit them by hand:
 - `src/types/api.d.ts`, from the OpenAPI document.
   `npm run export-openapi && npm run generate-api-types`.
 
+## Docs
+
+The site at [nitro-repo.kingtux.dev](https://nitro-repo.kingtux.dev/) is Astro + Starlight, in
+`docs/`:
+
+```sh
+cd docs
+npm install
+npm run dev
+```
+
+Pages are Markdown under `docs/src/content/docs/`. The sidebar lives in `docs/astro.config.mjs` — a
+new page is not reachable until it is listed there.
+
+`npm run build` runs `starlight-links-validator`, so a link to a page or anchor that does not exist
+fails the build. Docs rot by way of links long before they rot by way of prose, and a broken link
+is the one kind of rot a machine can catch.
+
+Two things in `docs/astro.config.mjs` are load-bearing beyond the site itself:
+
+- **`redirects`** keeps the old VitePress URLs working. `documentation_url` on a repository type
+  points at one of them, and so do links in the wild.
+- **`site`** feeds the canonical tags and the sitemap.
+
 ## Before you open a pull request
 
 ```sh
@@ -94,6 +118,7 @@ just fmt      # cargo +nightly fmt --all, and prettier over site/
 just lint     # clippy with -D warnings
 just test-all
 cd site && npm run type-check && npm run lint && npm run build
+cd docs && npm run build
 ```
 
 CI runs all of these. `deprecated = "deny"` is set workspace-wide, so a deprecation is a build
@@ -110,3 +135,4 @@ failure rather than a warning you can leave for later.
 | `crates/macros/`  | Macros the other crates use                                                   |
 | `crates/nr-api/`  | A client for the API                                                          |
 | `site/`           | The frontend                                                                  |
+| `docs/`           | The documentation site — Astro + Starlight                                    |

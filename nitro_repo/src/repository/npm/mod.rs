@@ -174,7 +174,7 @@ impl RepositoryType for NpmRegistryType {
             type_name: "npm",
             name: "NPM",
             description: "A NPM Registry",
-            documentation_url: Some("https://nitro-repo.kingtux.dev/repositoryTypes/npm/"),
+            documentation_url: Some("https://nitro-repo.kingtux.dev/repositories/npm/"),
             is_stable: true,
             required_configs: vec![NPMRegistryConfigType::get_type_static()],
         }

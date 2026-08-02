@@ -1,18 +1,62 @@
-version: "3.9"
+# A single-node Nitro Repo, with the Postgres it requires.
+#
+#   docker compose up -d
+#
+# Then open http://localhost:6742 and create the first administrator.
+#
+# Configuration is passed as environment rather than as a mounted `nitro-repo.toml`, so there is
+# nothing to create before the first `up`. The container's entrypoint points `--config` at
+# /etc/nitro-repo/nitro-repo.toml; a missing file there is not an error, and the server falls back
+# to the environment. Mount a file at that path if you would rather keep settings in TOML — see
+# https://nitro-repo.kingtux.dev/reference/configuration/.
+#
+# The `NITRO-REPO_` prefix really does contain a hyphen. It is spelled that way in the binary, and
+# a variable without it is ignored silently.
 services:
   nitro_repo:
-    # This is a link to the beta builds of the nitro repo
+    # The beta builds. Pin a tag before you depend on this for anything.
     image: "git.kingtux.dev/wherkamp/nitro_repo/nitro_repo:latest"
-    # Startup policy
     restart: unless-stopped
-    env:
-      # Basically it makes the frontend suggest this as the base path for the local storage
-      - SUGGESTED_LOCAL_STORAGE_PATH=/data/storages/
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NITRO-REPO_DATABASE_HOST: postgres
+      NITRO-REPO_DATABASE_PORT: "5432"
+      NITRO-REPO_DATABASE_USER: nitro_repo
+      # Change this, and change it in the postgres service below to match.
+      NITRO-REPO_DATABASE_PASSWORD: nitro_repo
+      NITRO-REPO_DATABASE_DATABASE: nitro_repo
+      # Everything that must survive a restart goes under the volume. The image's working
+      # directory is not one, so the defaults would put the session database and the staging
+      # directory somewhere that disappears when the container is replaced.
+      NITRO-REPO_SESSIONS_DATABASE_LOCATION: /data/sessions.redb
+      NITRO-REPO_STAGING_STAGING_DIR: /data/staging
+      # What the "create a storage" form offers as a default path, so an operator does not have to
+      # know where the volume is mounted.
+      NITRO-REPO_SUGGESTED_LOCAL_STORAGE_PATH: /data/storages/
     ports:
       - "6742:6742"
     volumes:
       - nitro_repo_data:/data/
 
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nitro_repo
+      POSTGRES_PASSWORD: nitro_repo
+      POSTGRES_DB: nitro_repo
+    volumes:
+      - nitro_repo_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nitro_repo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   nitro_repo_data:
     name: nitro_repo_data
+  nitro_repo_postgres:
+    name: nitro_repo_postgres

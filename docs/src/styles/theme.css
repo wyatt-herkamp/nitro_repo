@@ -1,0 +1,239 @@
+/*
+ * The docs wear the application's palette.
+ *
+ * `site/src/assets/styles/tokens.scss` calls the direction an instrument panel: warm-neutral
+ * charcoal rather than blue-black, hairline borders instead of drop shadows, tight radii, IBM Plex
+ * sans and mono together, and exactly one signal colour — phosphor teal — so "interactive" and
+ * "warning" can never be confused. Someone moving between the docs and their own instance should
+ * not feel a seam, so the values below are the same values, mapped onto Starlight's variables
+ * rather than re-picked.
+ */
+
+:root {
+  --sl-font:
+    "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --sl-font-mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono", monospace;
+
+  /* Deliberately tight. Soft pill shapes read as consumer software; this is a tool. */
+  --sl-border-radius: 5px;
+
+  --nr-accent: #3ddbd9;
+  --nr-accent-muted: rgb(61 219 217 / 0.14);
+  --nr-accent-border: rgb(61 219 217 / 0.4);
+}
+
+/* ---- Dark, the default ------------------------------------------------- */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --sl-color-accent-low: #06201f;
+  --sl-color-accent: #2cc0be;
+  --sl-color-accent-high: #7fe9e7;
+
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e6e9ec;
+  --sl-color-gray-2: #c3c9cf;
+  --sl-color-gray-3: #9aa3ad;
+  --sl-color-gray-4: #6b747e;
+  --sl-color-gray-5: #363d45;
+  --sl-color-gray-6: #22262d;
+  --sl-color-gray-7: #16191d;
+  --sl-color-black: #101215;
+
+  --sl-color-text: #e6e9ec;
+  --sl-color-text-accent: #3ddbd9;
+  --sl-color-text-invert: #06201f;
+
+  --sl-color-bg: #101215;
+  --sl-color-bg-nav: #0d0f12;
+  --sl-color-bg-sidebar: #0d0f12;
+  --sl-color-bg-inline-code: #1c2026;
+  --sl-color-bg-accent: #3ddbd9;
+
+  --sl-color-hairline: #22262d;
+  --sl-color-hairline-light: #262b31;
+  --sl-color-hairline-shade: #1a1e23;
+
+  /* The application's semantic ramp, reused by the asides below. */
+  --nr-accent: #3ddbd9;
+  --nr-accent-muted: rgb(61 219 217 / 0.14);
+  --nr-accent-border: rgb(61 219 217 / 0.4);
+  --nr-success: #42be65;
+  --nr-warning: #f1c21b;
+  --nr-danger: #fa4d56;
+  --nr-info: #4589ff;
+  --nr-surface: #16191d;
+  --nr-surface-raised: #1c2026;
+}
+
+/* ---- Light -------------------------------------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* The dark theme's teal fails contrast on white, so light takes the darker end of the ramp
+     rather than reusing one value and hoping. */
+  --sl-color-accent-low: #d5eeed;
+  --sl-color-accent: #00807c;
+  --sl-color-accent-high: #004b49;
+
+  --sl-color-white: #121619;
+  --sl-color-gray-1: #21262b;
+  --sl-color-gray-2: #3d454d;
+  --sl-color-gray-3: #5a636c;
+  --sl-color-gray-4: #7c858e;
+  --sl-color-gray-5: #c1c7cd;
+  --sl-color-gray-6: #dde1e6;
+  --sl-color-gray-7: #eef0f2;
+  --sl-color-black: #ffffff;
+
+  --sl-color-text: #121619;
+  --sl-color-text-accent: #00807c;
+  --sl-color-text-invert: #ffffff;
+
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #f4f5f7;
+  --sl-color-bg-sidebar: #f4f5f7;
+  --sl-color-bg-inline-code: #eef0f2;
+  --sl-color-bg-accent: #00807c;
+
+  --sl-color-hairline: #dde1e6;
+  --sl-color-hairline-light: #dde1e6;
+  --sl-color-hairline-shade: #e9ebee;
+
+  --nr-accent: #00807c;
+  --nr-accent-muted: rgb(0 128 124 / 0.1);
+  --nr-accent-border: rgb(0 128 124 / 0.35);
+  --nr-success: #157f3d;
+  --nr-warning: #8c6800;
+  --nr-danger: #c72a33;
+  --nr-info: #0f5fd6;
+  --nr-surface: #ffffff;
+  --nr-surface-raised: #f4f5f7;
+}
+
+/* ---- Structure over shadow ---------------------------------------------
+ *
+ * Starlight leans on shadows to separate the header and sidebar. The application separates every
+ * surface with a hairline instead, so the docs do the same and the two do not disagree about what
+ * an edge looks like.
+ */
+.header {
+  border-bottom: 1px solid var(--sl-color-hairline);
+  box-shadow: none;
+}
+
+#starlight__sidebar {
+  border-right: 1px solid var(--sl-color-hairline);
+}
+
+/* Uppercase micro-labels need loosening or they set as a solid block. */
+.sidebar-content summary .group-label .large,
+.sl-markdown-content h2 + .heading-wrapper {
+  letter-spacing: 0.02em;
+}
+
+/* ---- Code --------------------------------------------------------------
+ *
+ * Version strings, coordinates and hashes are read far more often here than prose is, so anything
+ * a machine produced is monospaced and given a border rather than being left to float.
+ */
+.sl-markdown-content code:not(:where(.not-content *)) {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 3px;
+  padding: 0.125em 0.35em;
+  font-size: 0.875em;
+}
+
+.expressive-code .frame {
+  border-radius: var(--sl-border-radius);
+}
+
+/* ---- Tables -------------------------------------------------------------
+ *
+ * Most tables here are option references — a name, a type, a default. Dense beats airy, and a
+ * left-aligned monospace first column makes the key scannable without reading the row.
+ */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: var(--sl-text-sm);
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+  font-weight: 600;
+  font-size: var(--sl-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sl-color-gray-3);
+  border-bottom: 1px solid var(--sl-color-gray-5);
+}
+
+.sl-markdown-content td:not(:where(.not-content *)),
+.sl-markdown-content th:not(:where(.not-content *)) {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+.sl-markdown-content tbody tr:last-child td:not(:where(.not-content *)) {
+  border-bottom: none;
+}
+
+/* ---- Landing page -------------------------------------------------------
+ *
+ * The hero is the application's own icon, and the largest one that exists is 128px — the same file
+ * `site/index.html` and the nav bar use. Starlight would otherwise stretch a hero image to half the
+ * viewport, which on a 128px raster is a blurry mess, so it is capped just above its native size:
+ * 9rem is 144px, a 1.125x scale nobody can see. Do not raise this without a larger source.
+ */
+.hero > img,
+.hero > .hero-html {
+  width: 100%;
+  max-width: 9rem;
+  /* Starlight stamps `width="400" height="400"` on the hero image. Capping the width without
+     releasing the height would stretch a square mark into a 144x400 sliver. */
+  height: auto;
+  justify-self: center;
+  /* The mark is a hard-edged square, so it needs a shadow to sit on the page rather than the
+     accent-coloured glow a vector logo would carry. */
+  filter: drop-shadow(0 6px 20px rgb(0 0 0 / 0.35));
+}
+
+:root[data-theme="light"] .hero > img,
+:root[data-theme="light"] .hero > .hero-html {
+  filter: drop-shadow(0 6px 20px rgb(16 22 26 / 0.18));
+}
+
+/* Below the two-column breakpoint the icon stacks above the text, where 144px is more presence
+   than it needs. */
+@media (max-width: 50rem) {
+  .hero > img,
+  .hero > .hero-html {
+    max-width: 6rem;
+  }
+}
+
+.hero h1 {
+  letter-spacing: -0.02em;
+}
+
+.card-grid .card {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: var(--sl-border-radius);
+  padding: 1.25rem;
+  background: var(--nr-surface);
+  transition: border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-grid .card:hover {
+  border-color: var(--nr-accent-border);
+}
+
+.card-grid .card .icon {
+  border: 1px solid var(--nr-accent-border);
+  background: var(--nr-accent-muted);
+  color: var(--nr-accent);
+}

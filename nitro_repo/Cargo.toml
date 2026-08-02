@@ -16,12 +16,12 @@ tower = { version = "0.5", features = ["util"] }
 # Web
 axum = { version = "0.8", features = ["macros", "tokio", "ws"] }
 axum-extra = { version = "0.12", features = [
-    "multipart",
-    "cookie",
-    "typed-header",
-    # 0.12 moved `RouterExt`/`route_with_tsr` behind this feature. The repository router needs it so
-    # that `/{storage}/{repository}` redirects to the trailing-slash form Maven clients ask for.
-    "routing",
+  "multipart",
+  "cookie",
+  "typed-header",
+  # 0.12 moved `RouterExt`/`route_with_tsr` behind this feature. The repository router needs it so
+  # that `/{storage}/{repository}` redirects to the trailing-slash form Maven clients ask for.
+  "routing",
 ] }
 tower = { version = "0.5", features = ["limit", "timeout"] }
 tower-http = { version = "0.7", features = ["full"] }
@@ -97,7 +97,7 @@ nr-storage.workspace = true
 nr-aql.workspace = true
 redb = { version = "4" }
 tuxs-config-types = { git = "https://github.com/wyatt-herkamp/tuxs-config-types.git", features = [
-    "chrono",
+  "chrono",
 ] }
 auto_impl.workspace = true
 digestible.workspace = true
@@ -111,22 +111,22 @@ tracing-appender.workspace = true
 tracing-opentelemetry = "0.33"
 opentelemetry = { version = "0.32", features = [] }
 opentelemetry_sdk = { version = "0.32", features = [
-    "rt-tokio",
-    "trace",
-    "metrics",
-    "logs",
+  "rt-tokio",
+  "trace",
+  "metrics",
+  "logs",
 ] }
 opentelemetry-otlp = { version = "0.32", default-features = true, features = [
-    "grpc-tonic",
-    "http-proto",
-    "http-json",
+  "grpc-tonic",
+  "http-proto",
+  "http-json",
 ] }
 opentelemetry-appender-tracing = { version = "0.32" }
 lettre = { version = "0.11", features = [
-    "builder",
-    "tokio1",
-    "smtp-transport",
-    "tokio1-rustls-tls",
+  "builder",
+  "tokio1",
+  "smtp-transport",
+  "tokio1-rustls-tls",
 ], default-features = false }
 url = "2"
 # `npm search` sends its parameters in the query string.

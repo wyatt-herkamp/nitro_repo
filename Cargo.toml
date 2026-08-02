@@ -28,11 +28,11 @@ nr-aql = { path = "crates/aql" }
 # Rust Utilities
 futures = "0.3"
 derive_more = { version = "2.1", features = [
-    "deref",
-    "from",
-    "into",
-    "as_ref",
-    "debug",
+  "deref",
+  "from",
+  "into",
+  "as_ref",
+  "debug",
 ] }
 ahash = "0.8"
 parking_lot = { version = "0.12", features = [] }
@@ -53,12 +53,12 @@ aws-sdk-s3 = "1"
 aws-smithy-types = { version = "1", features = ["byte-stream-poll-next"] }
 aws-smithy-runtime-api = "1"
 tux-io-encoding = { git = "https://github.com/wyatt-herkamp/tux-io-encoding.git", features = [
-    "tokio",
-    "chrono",
-    "uuid",
-    "bytes",
-    "zstd",
-    "gzip",
+  "tokio",
+  "chrono",
+  "uuid",
+  "bytes",
+  "zstd",
+  "gzip",
 ] }
 
 # Error Handling
@@ -80,9 +80,9 @@ pin-project = "1"
 url = "2"
 ## Hashing
 digestible = { git = "https://github.com/wyatt-herkamp/digestible.git", features = [
-    "base64",
-    "uuid",
-    "chrono",
+  "base64",
+  "uuid",
+  "chrono",
 ], rev = "3a32cbac4ddbb25315da700f3818433c706059d6" }
 digest = { version = "0.11", features = ["alloc"] }
 md-5 = "0.11"
@@ -91,9 +91,9 @@ sha2 = "0.11"
 sha3 = "0.12"
 clap = { version = "4", features = ["derive"] }
 pg-extended-sqlx-queries = { git = "https://github.com/wyatt-herkamp/pg-extended-sqlx-queries.git", features = [
-    "uuid",
-    "chrono",
-    "json",
+  "uuid",
+  "chrono",
+  "json",
 ] }
 
 # Held at 0.8 deliberately. `pg-extended-sqlx-queries` — which every query in this workspace is
@@ -104,14 +104,14 @@ pg-extended-sqlx-queries = { git = "https://github.com/wyatt-herkamp/pg-extended
 version = "0.8"
 default-features = false
 features = [
-    "runtime-tokio-rustls",
-    "macros",
-    "postgres",
-    "chrono",
-    "json",
-    "derive",
-    "uuid",
-    "migrate",
+  "runtime-tokio-rustls",
+  "macros",
+  "postgres",
+  "chrono",
+  "json",
+  "derive",
+  "uuid",
+  "migrate",
 ]
 [workspace.dependencies.reqwest]
 version = "0.13"

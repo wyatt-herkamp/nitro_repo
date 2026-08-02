@@ -46,15 +46,23 @@ a faster and more modern experience.
 
 ### Running it
 
-The published image, with a volume for its data:
+The published image, with the Postgres it needs and a volume for its data:
 
 ```sh
 docker compose up -d
 ```
 
+Then open `http://localhost:6742` and create the first administrator. Change the password in
+`docker-compose.yml` before this is anything but a trial.
+
 Building it yourself, and everything else you would need to work on it, is in
 [CONTRIBUTING.md](CONTRIBUTING.md). To fill an instance with something to look at,
 `nitro_repo seed --config seed.toml` deploys a suite of artifacts over the real protocols.
+
+### Documentation
+
+[nitro-repo.kingtux.dev](https://nitro-repo.kingtux.dev/) — installation, configuration, the Maven
+and npm guides, and the API reference. The source is in [`docs/`](docs/) (Astro + Starlight).
 
 ### Status
 

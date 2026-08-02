@@ -1,0 +1,74 @@
+---
+title: Nitro Repo
+description: An open source artifact manager for Maven and npm, with a Rust backend and a Vue frontend.
+template: splash
+hero:
+  tagline: A free and open source artifact manager. Maven and npm, hosted and proxied, on local disk or S3.
+  image:
+    alt: Nitro Repo
+    file: ../../assets/icon.png
+  actions:
+    - text: Get started
+      link: /start/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/wyatt-herkamp/nitro_repo
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard, Aside } from "@astrojs/starlight/components";
+
+<Aside type="caution" title="2.0 is in beta">
+  The 2.0 rewrite moved the backend from Actix to Axum and from Sea-ORM to SQLx,
+  and moved repository and storage configuration into Postgres. It is usable,
+  and breaking changes are still on the table. These docs describe 2.0; anything
+  written for 1.x no longer applies.
+</Aside>
+
+<CardGrid>
+  <Card title="Maven" icon="seti:java">
+    Hosted and proxy repositories, generated `maven-metadata.xml` including
+    timestamped snapshots, checksum verification on upload and generation on
+    demand, and push rules that are actually enforced.
+  </Card>
+  <Card title="npm" icon="seti:npm">
+    A hosted registry: scoped packages, dist-tags, publish, unpublish,
+    deprecate, search, and both login flows — including the browser one that npm
+    9 and later default to.
+  </Card>
+  <Card title="Storage you choose" icon="seti:folder">
+    The local filesystem, a self-contained single-file object format, or S3 and
+    anything S3-compatible. Storages are configured at runtime, not at build
+    time.
+  </Card>
+  <Card title="Search" icon="magnifier">
+    A small query language over projects and versions, exposed both as plain
+    text search and as a full query syntax with globs and date comparisons.
+  </Card>
+</CardGrid>
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Installation"
+    href="/start/installation/"
+    description="Docker, a prebuilt binary, or a build from source."
+  />
+  <LinkCard
+    title="First run"
+    href="/start/first-run/"
+    description="Create the administrator, a storage and your first repository."
+  />
+  <LinkCard
+    title="Core concepts"
+    href="/start/concepts/"
+    description="Storages, repositories, projects, versions and configs — and how they nest."
+  />
+  <LinkCard
+    title="Configuration reference"
+    href="/reference/configuration/"
+    description="Every key in nitro_repo.toml, and the environment variable that overrides it."
+  />
+</CardGrid>
