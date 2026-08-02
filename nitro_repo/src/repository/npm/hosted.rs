@@ -13,7 +13,7 @@ use http::{StatusCode, header::CONTENT_TYPE};
 use nr_core::{
     database::entities::{
         project::{
-            DBProject,
+            DBProject, ProjectDBType,
             dist_tags::{DBNpmDistTag, LATEST_TAG},
             versions::{DBProjectVersion, UpdateProjectVersion},
         },
@@ -24,6 +24,7 @@ use nr_core::{
         config::{
             RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
         },
+        project::ProjectResolution,
     },
     storage::StoragePath,
     user::permissions::{HasPermissions, RepositoryActions},
@@ -565,6 +566,37 @@ impl Repository for NPMHostedRegistry {
             .store(repository.active, atomic::Ordering::Relaxed);
         *self.0.visibility.write() = repository.visibility;
         Ok(())
+    }
+
+    /// Tells the file browser which project — and which version — a path belongs to.
+    ///
+    /// npm stored the right paths from the start but never implemented this, so the default
+    /// resolved nothing and browsing a package showed a bare directory listing with no link to its
+    /// project page. Both lookups match the `path` columns written at publish time:
+    /// `{package}` is the project's and `{package}/{version}` is the version's.
+    #[instrument(fields(repository_type = "npm/hosted"))]
+    async fn resolve_project_and_version_for_path(
+        &self,
+        path: &StoragePath,
+    ) -> Result<ProjectResolution, NPMRegistryError> {
+        let path = path.to_string();
+
+        if let Some(version) =
+            DBProjectVersion::find_ids_by_version_dir(&path, self.id, self.site.as_ref()).await?
+        {
+            debug!(?path, ?version, "Path is a package version");
+            return Ok(version.into());
+        }
+        if let Some(project) =
+            DBProject::find_by_project_directory(&path, self.id, self.site.as_ref()).await?
+        {
+            debug!(?path, "Path is a package");
+            return Ok(ProjectResolution {
+                project_id: Some(project.id),
+                version_id: None,
+            });
+        }
+        Ok(ProjectResolution::default())
     }
 
     async fn handle_get(

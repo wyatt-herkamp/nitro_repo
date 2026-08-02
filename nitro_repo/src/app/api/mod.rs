@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Request, State},
+    extract::{OriginalUri, Request, State},
     response::{IntoResponse, Response},
 };
 use http::{StatusCode, Uri};
@@ -164,7 +164,30 @@ impl Serialize for RouteNotFound {
     }
 }
 /// `/api/*` fall back is different than the rest of the site
-async fn route_not_found(request: Request) -> Response {
+/// The `/api` fallback.
+///
+/// A repository reached on one of its own hostnames owns that host's whole path space, and Cargo's
+/// web API lives at `/api/v1/...` — paths this nest matches before host routing is ever consulted.
+/// Without the fall-through, a Cargo registry on a custom domain served a `config.json` advertising
+/// a `dl` and an `api` that answered `404` from inside the REST API, so `cargo publish` and every
+/// download failed against URLs the registry itself had handed out.
+///
+/// Only *unmatched* `/api` paths get here, so the real API stays reachable on a custom domain — a
+/// request for `/api/user/me` still hits `/api/user/me`.
+async fn route_not_found(State(site): State<NitroRepo>, request: Request) -> Response {
+    let host = crate::app::host_routing::request_host(
+        request.headers(),
+        request.uri(),
+        site.general_security_settings.trust_forwarded_host,
+    );
+    if host
+        .as_deref()
+        .and_then(|host| site.repository_for_hostname(host))
+        .is_some()
+    {
+        return host_route(site, request).await;
+    }
+
     let response: APIErrorResponse<RouteNotFound, ()> = APIErrorResponse {
         message: "Not Found".into(),
         details: Some(RouteNotFound {
@@ -176,4 +199,20 @@ async fn route_not_found(request: Request) -> Response {
     ResponseBuilder::not_found()
         .error_reason("Route not found")
         .json(&response)
+}
+
+/// Hands a request back to host routing with its full path restored.
+///
+/// `nest` strips the prefix it matched, so a handler under `/api` sees `/v1/crates/new` rather than
+/// `/api/v1/crates/new`. Host routing turns the path into a `StoragePath`, and the stripped form
+/// would address the wrong thing entirely — `OriginalUri` is what the router recorded before the
+/// rewrite.
+async fn host_route(site: NitroRepo, mut request: Request) -> Response {
+    if let Some(OriginalUri(original)) = request.extensions().get::<OriginalUri>().cloned() {
+        *request.uri_mut() = original;
+    }
+    match crate::app::host_routing::host_or_frontend(State(site), request).await {
+        Ok(response) => response,
+        Err(error) => error.into_response(),
+    }
 }

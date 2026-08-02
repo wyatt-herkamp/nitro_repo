@@ -18,13 +18,33 @@ pub fn to_hex(bytes: &[u8]) -> String {
     })
 }
 
-/// Where a crate's `.crate` file is stored, relative to the repository root.
+/// The directory holding every version of a crate, relative to the repository root.
 ///
-/// The crate name is the project key, so the storage layout mirrors what the index says, and
-/// `crates/` keeps the files clear of the `index/` tree a future on-disk index would want.
-pub fn crate_file_path(name: &str, version: &str) -> Result<StoragePath, CargoRegistryError> {
+/// This is also the project's `path`, which is what lets browsing it resolve to the project page —
+/// see [`CargoHostedRegistry::resolve_project_and_version_for_path`]. `crates/` keeps the files
+/// clear of the `index/` tree a future on-disk index would want.
+///
+/// [`CargoHostedRegistry::resolve_project_and_version_for_path`]: super::hosted::CargoHostedRegistry
+pub fn crate_project_dir(name: &str) -> Result<StoragePath, CargoRegistryError> {
     let mut path = StoragePath::parse("crates")?;
     path.push_mut(name);
+    Ok(path)
+}
+
+/// The directory holding one version of a crate.
+///
+/// A version gets a directory of its own rather than sitting as a lone file in the crate's, so that
+/// its path is something `project_versions.path` can name and browsing it resolves to the version.
+/// It is also the layout Maven and npm already use.
+pub fn crate_version_dir(name: &str, version: &str) -> Result<StoragePath, CargoRegistryError> {
+    let mut path = crate_project_dir(name)?;
+    path.push_mut(version);
+    Ok(path)
+}
+
+/// Where a crate's `.crate` file is stored.
+pub fn crate_file_path(name: &str, version: &str) -> Result<StoragePath, CargoRegistryError> {
+    let mut path = crate_version_dir(name, version)?;
     path.push_mut(&format!("{name}-{version}.crate"));
     Ok(path)
 }

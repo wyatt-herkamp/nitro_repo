@@ -82,6 +82,19 @@ fetched under another's path, and Cargo caches by path.
 The index is generated from what the registry holds rather than stored, and every response carries
 an `ETag`. Cargo revalidates constantly, so a `304` is the common case.
 
+## How storage is laid out
+
+```text
+crates/{name}/                              the crate
+crates/{name}/{version}/                    one version
+crates/{name}/{version}/{name}-{version}.crate
+```
+
+A version gets a directory of its own rather than sitting as a lone file, which is the layout Maven
+and npm already use. It is also what makes the file browser resolve a path to a project or a
+version — those two directories are exactly the paths recorded against the project and the version,
+so browsing either links to its page.
+
 ## Next
 
 - [Authenticating](/repositories/cargo/authenticating/) — tokens, and CI.

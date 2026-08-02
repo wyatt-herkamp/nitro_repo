@@ -24,7 +24,7 @@ use nr_core::{
         config::{
             RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
         },
-        project::{ReleaseType, VersionData},
+        project::{ProjectResolution, ReleaseType, VersionData},
     },
     storage::StoragePath,
     user::permissions::RepositoryActions,
@@ -40,7 +40,7 @@ use super::{
     types::{
         CargoPath, IndexEntry, is_valid_crate_name, publish::PublishMetadata, split_publish_body,
     },
-    utils::{crate_file_path, registry_base_url, to_hex},
+    utils::{crate_file_path, crate_project_dir, crate_version_dir, registry_base_url, to_hex},
 };
 use crate::{
     app::NitroRepo,
@@ -304,6 +304,10 @@ impl CargoHostedRegistry {
         // stored rather than taken from anything the client said.
         let cksum = to_hex(&Sha256::digest(&crate_file));
         let path = crate_file_path(&project.key, &metadata.vers)?;
+        // The *directory*, not the `.crate` file. `project_versions.path` is what browse matches a
+        // requested path against, so pointing it at the file would leave the version directory
+        // resolving to nothing and the file browser showing no link to the version.
+        let version_dir = crate_version_dir(&project.key, &metadata.vers)?;
 
         let version = metadata.vers.clone();
         let stored = StoredVersion {
@@ -316,7 +320,7 @@ impl CargoHostedRegistry {
             project_id: project.id,
             version: version.clone(),
             release_type: ReleaseType::release_type_from_version(&version),
-            version_path: path.to_string(),
+            version_path: version_dir.to_string(),
             publisher: Some(user.id),
             version_page: metadata.readme.clone(),
             extra: VersionData {
@@ -360,8 +364,7 @@ impl CargoHostedRegistry {
             return Ok(project);
         }
 
-        let mut storage_path = StoragePath::parse("crates")?;
-        storage_path.push_mut(&metadata.name);
+        let storage_path = crate_project_dir(&metadata.name)?;
         let project = NewProject {
             scope: None,
             project_key: metadata.name.clone(),
@@ -692,6 +695,40 @@ impl Repository for CargoHostedRegistry {
             .store(repository.active, atomic::Ordering::Relaxed);
         *self.0.visibility.write() = repository.visibility;
         Ok(())
+    }
+
+    /// Tells the file browser which project — and which version — a path belongs to.
+    ///
+    /// Without this the browser shows a bare directory listing with no link to the project page,
+    /// because the default implementation resolves nothing.
+    ///
+    /// Both lookups match against the `path` columns written at publish time, so there is no
+    /// sidecar to keep in step: `crates/{name}` is the project's path and `crates/{name}/{version}`
+    /// is the version's. Maven consults its `RepositoryMeta` first and falls back to exactly these
+    /// two queries; Cargo has no need of the sidecar, so it uses only the queries.
+    #[instrument(fields(repository_type = "cargo/hosted"))]
+    async fn resolve_project_and_version_for_path(
+        &self,
+        path: &StoragePath,
+    ) -> Result<ProjectResolution, CargoRegistryError> {
+        let path = path.to_string();
+
+        if let Some(version) =
+            DBProjectVersion::find_ids_by_version_dir(&path, self.0.id, self.site.as_ref()).await?
+        {
+            debug!(?path, ?version, "Path is a crate version");
+            return Ok(version.into());
+        }
+        if let Some(project) =
+            DBProject::find_by_project_directory(&path, self.0.id, self.site.as_ref()).await?
+        {
+            debug!(?path, "Path is a crate");
+            return Ok(ProjectResolution {
+                project_id: Some(project.id),
+                version_id: None,
+            });
+        }
+        Ok(ProjectResolution::default())
     }
 
     async fn handle_get(
