@@ -1509,7 +1509,7 @@ dependencies = [
 [[package]]
 name = "digestible"
 version = "0.3.0"
-source = "git+https://github.com/wyatt-herkamp/digestible.git?rev=3a32cbac4ddbb25315da700f3818433c706059d6#3a32cbac4ddbb25315da700f3818433c706059d6"
+source = "git+https://github.com/wyatt-herkamp/digestible.git#e186438336b0b9251099a1ca44ca669afaabae02"
 dependencies = [
  "base64 0.22.1",
  "byteorder",
@@ -1522,7 +1522,7 @@ dependencies = [
 [[package]]
 name = "digestible-macros"
 version = "0.3.0"
-source = "git+https://github.com/wyatt-herkamp/digestible.git?rev=3a32cbac4ddbb25315da700f3818433c706059d6#3a32cbac4ddbb25315da700f3818433c706059d6"
+source = "git+https://github.com/wyatt-herkamp/digestible.git#e186438336b0b9251099a1ca44ca669afaabae02"
 dependencies = [
  "proc-macro2",
  "quote",

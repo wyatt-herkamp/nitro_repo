@@ -83,7 +83,7 @@ digestible = { git = "https://github.com/wyatt-herkamp/digestible.git", features
   "base64",
   "uuid",
   "chrono",
-], rev = "3a32cbac4ddbb25315da700f3818433c706059d6" }
+], version = "0.3" }
 digest = { version = "0.11", features = ["alloc"] }
 md-5 = "0.11"
 sha1 = "0.11"
