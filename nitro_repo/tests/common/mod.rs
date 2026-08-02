@@ -331,6 +331,78 @@ impl TestServer {
         .await
     }
 
+    /// Mints an auth token scoped to one repository, and returns its secret.
+    ///
+    /// This is how cargo and Docker authenticate — neither ever sees the user's password — so a
+    /// test that wants to behave like the real client has to go and get one the same way.
+    pub async fn create_repository_token(
+        &self,
+        session: &str,
+        repository_id: &str,
+        actions: &[&str],
+    ) -> String {
+        let response = self
+            .post_json_as(
+                "/api/user/token/create",
+                json!({
+                    "name": "integration test",
+                    "repository_scopes": [
+                        { "repository_id": repository_id, "scopes": actions }
+                    ],
+                }),
+                session,
+            )
+            .await;
+        assert!(
+            response.status.is_success(),
+            "creating a token failed: {} {}",
+            response.status,
+            response.text
+        );
+        response.json()["token"]
+            .as_str()
+            .expect("the response should carry a token")
+            .to_owned()
+    }
+
+    /// A request with an arbitrary method, body, headers and (optionally) a `Host`.
+    ///
+    /// Docker pushes need all four at once — `PATCH` with a `Content-Range`, `PUT` with a
+    /// `Content-Type`, both bearing a token — which none of the narrower helpers above cover.
+    pub async fn send(
+        &self,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: Vec<u8>,
+    ) -> TestResponse {
+        let mut builder = Request::builder().method(method).uri(path);
+        for (name, value) in headers {
+            builder = builder.header(*name, *value);
+        }
+        self.request(builder.body(Body::from(body)).expect("valid request"))
+            .await
+    }
+
+    /// A request carrying `Authorization: <token>` with no scheme — the way cargo sends it.
+    pub async fn request_with_bare_token(
+        &self,
+        method: &str,
+        path: &str,
+        token: &str,
+        body: Vec<u8>,
+    ) -> TestResponse {
+        self.request(
+            Request::builder()
+                .method(method)
+                .uri(path)
+                .header(header::AUTHORIZATION, token)
+                .body(Body::from(body))
+                .expect("valid request"),
+        )
+        .await
+    }
+
     /// A `GET` addressed to a specific host.
     ///
     /// `Request::builder().uri("/x")` produces a URI with no authority, so `Host` is the only

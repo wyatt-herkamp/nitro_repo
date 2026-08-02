@@ -27,10 +27,13 @@ test:
 test-all:
     STORAGE_TESTS_REQUIRE_ALL=1 NITRO_TESTS_REQUIRE_DB=1 cargo test --all
 
-# The end-to-end suite on its own: real Maven and npm requests against the real router, each test
-# in its own database.
+# The end-to-end suite on its own: real Maven, npm, Cargo and Docker requests against the real
+# router, each test in its own database.
+#
+# The binaries are listed by hand because `--test` takes one name at a time. Add new ones here —
+# `hostnames` was missed when it was added, so nothing ran it outside `just test`.
 test-integration:
-    NITRO_TESTS_REQUIRE_DB=1 cargo test -p nitro_repo --test maven --test npm --test authorization
+    NITRO_TESTS_REQUIRE_DB=1 cargo test -p nitro_repo --test maven --test npm --test cargo --test docker --test authorization --test hostnames
 
 # Fills a running instance with a suite of artifacts, over the real protocols.
 seed config="seed.example.toml":

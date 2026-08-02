@@ -27,7 +27,9 @@ pub mod staging;
 pub use staging::*;
 mod repo_http;
 pub use repo_http::*;
+pub mod cargo;
 pub mod commands;
+pub mod docker;
 pub mod maven;
 pub mod npm;
 mod repo_type;
@@ -157,4 +159,6 @@ pub trait Repository: Send + Sync + Clone + Debug {
 pub enum DynRepository {
     Maven(maven::MavenRepository),
     NPM(npm::NPMRegistry),
+    Cargo(cargo::CargoRegistry),
+    Docker(docker::DockerRegistry),
 }

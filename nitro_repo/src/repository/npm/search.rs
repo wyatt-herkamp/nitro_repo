@@ -99,6 +99,10 @@ pub async fn handle_search(
 
     let site = repository.site();
     // npm sends the raw search text; `%` and `_` in it would otherwise act as LIKE wildcards.
+    //
+    // The `COLLATE "C"` below is not cosmetic: `projects.key` is declared with the nondeterministic
+    // `ignoreCase` collation, and Postgres refuses `ILIKE` against one ("nondeterministic
+    // collations are not supported for ILIKE"). Without it every search answered 500.
     let escaped = query
         .text
         .replace('\\', r"\\")
@@ -108,7 +112,8 @@ pub async fn handle_search(
 
     let total: i64 = sqlx::query_scalar(
         r#"SELECT COUNT(*) FROM projects
-           WHERE repository_id = $1 AND (key ILIKE $2 OR COALESCE(description, '') ILIKE $2)"#,
+           WHERE repository_id = $1
+             AND ((key COLLATE "C") ILIKE $2 OR COALESCE(description, '') ILIKE $2)"#,
     )
     .bind(repository.id())
     .bind(&pattern)
@@ -117,7 +122,8 @@ pub async fn handle_search(
 
     let projects: Vec<DBProject> = sqlx::query_as(
         r#"SELECT * FROM projects
-           WHERE repository_id = $1 AND (key ILIKE $2 OR COALESCE(description, '') ILIKE $2)
+           WHERE repository_id = $1
+             AND ((key COLLATE "C") ILIKE $2 OR COALESCE(description, '') ILIKE $2)
            ORDER BY updated_at DESC
            LIMIT $3 OFFSET $4"#,
     )

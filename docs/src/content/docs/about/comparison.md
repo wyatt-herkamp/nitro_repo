@@ -14,8 +14,8 @@ Honestly, including the parts where Nitro Repo loses.
 | Maven     |                               ✅                               |  ✅   |     ✅      |                          ✅                          |                         ✅                          |
 | npm       |                           ✅ hosted                            |  ✅   |     ✅      |                          ❌                          |                         ✅                          |
 | NuGet     | [#191](https://github.com/wyatt-herkamp/nitro_repo/issues/191) |  ✅   |     ✅      |                          ❌                          |                         ✅                          |
-| Cargo     |   [#6](https://github.com/wyatt-herkamp/nitro_repo/issues/6)   |  ❌   |     ✅      |                          ❌                          |                         ❌                          |
-| Docker    | [#419](https://github.com/wyatt-herkamp/nitro_repo/issues/419) |  ✅   |     ✅      |                          ❌                          |                         ❌                          |
+| Cargo     |                           ✅ hosted                            |  ❌   |     ✅      |                          ❌                          |                         ❌                          |
+| Docker    |                           ✅ hosted                            |  ✅   |     ✅      |                          ❌                          |                         ❌                          |
 | apt / RPM | [#192](https://github.com/wyatt-herkamp/nitro_repo/issues/192) |  ✅   |     ✅      |                          ❌                          |                         ❌                          |
 
 A linked issue is an open issue, not work in progress.
@@ -26,6 +26,8 @@ A linked issue is an open issue, not work in progress.
 | ------------------------- | :--------: | :---: | :---------: | :--------: |
 | Maven proxying            |     ✅     |  ✅   |     ✅      |     ✅     |
 | npm proxying              |     ❌     |  ✅   |     ✅      |     —      |
+| Docker pull-through cache |     ❌     |  ✅   |     ✅      |     —      |
+| Container image GC        |     ❌     |  ✅   |     ✅      |     —      |
 | Repository grouping       |     ❌     |  ✅   |     ✅      |     ✅     |
 | S3 storage                |     ✅     |  Pro  |     ✅      |     ❌     |
 | Scoped API tokens         |     ✅     |  ✅   |     ✅      |     ✅     |

@@ -51,6 +51,9 @@ const BY_EXTENSION: Record<string, FileIcon> = {
 
   // npm
   tgz: { icon: "box-archive", color: "--file-archive", label: "npm tarball" },
+  // Cargo. A `.crate` is a gzipped tar, so it belongs with the archives rather than looking like
+  // an unknown binary.
+  crate: { icon: "box-archive", color: "--file-archive", label: "Rust crate" },
   tar: { icon: "box-archive", color: "--file-archive", label: "Tarball" },
   zip: { icon: "box-archive", color: "--file-archive", label: "Zip archive" },
   gz: { icon: "box-archive", color: "--file-archive", label: "Gzip archive" },

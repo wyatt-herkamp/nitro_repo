@@ -13,6 +13,7 @@ use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
 use utoipa::ToSchema;
+pub mod docker;
 pub mod npm;
 pub mod project;
 pub mod repository;
@@ -65,6 +66,9 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
         .nest("/repository", repository::repository_routes())
         .nest("/project", project::project_routes())
         .nest("/npm", npm::npm_routes())
+        // The realm a Docker client is sent to by the `WWW-Authenticate` challenge. Under `/api`
+        // rather than under `/v2` so it can never collide with an image named `token`.
+        .nest("/docker", docker::docker_routes())
         .nest("/search", search::search_routes())
         .fallback(route_not_found)
         .layer(CorsLayer::very_permissive())

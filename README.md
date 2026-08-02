@@ -18,6 +18,10 @@ a faster and more modern experience.
   snapshots), checksum verification on upload and generation on demand, and enforced push rules.
 - **npm** — a hosted registry: scoped packages, dist-tags, publish, unpublish, deprecate, search,
   and both login flows including the browser one npm 9+ defaults to.
+- **Cargo** — a hosted registry over the sparse index: publish, yank, owners, search, and renamed
+  dependencies.
+- **Docker** — a hosted OCI registry: push and pull, multi-arch images, referrers, and the bearer
+  token exchange `docker login` uses. Addressed on a domain of its own or by an image-name prefix.
 - **Storage** — the local filesystem, a self-contained object format (FileSystemV2), or S3 and
   anything S3-compatible.
 - **Search** — a small query language (`crates/aql`) over projects and versions, exposed both as
@@ -61,8 +65,8 @@ Building it yourself, and everything else you would need to work on it, is in
 
 ### Documentation
 
-[nitro-repo.kingtux.dev](https://nitro-repo.kingtux.dev/) — installation, configuration, the Maven
-and npm guides, and the API reference. The source is in [`docs/`](docs/) (Astro + Starlight).
+[nitro-repo.kingtux.dev](https://nitro-repo.kingtux.dev/) — installation, configuration, the
+per-format guides, and the API reference. The source is in [`docs/`](docs/) (Astro + Starlight).
 
 ### Status
 

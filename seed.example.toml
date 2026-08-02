@@ -1,8 +1,8 @@
 # Example seed configuration.
 #
 # `nitro_repo seed --config seed.example.toml` deploys this suite into a running
-# instance over the real Maven and npm protocols. Re-running is safe — anything already
-# present is left alone.
+# instance over the real Maven, npm, Cargo and Docker protocols. Re-running is safe —
+# anything already present is left alone.
 #
 # Regenerate with: nitro_repo seed --config seed.toml --write-example
 
@@ -35,6 +35,18 @@ visibility = "Public"
 storage = "local"
 name = "npm"
 type = "npm"
+visibility = "Public"
+
+[[repositories]]
+storage = "local"
+name = "crates"
+type = "cargo"
+visibility = "Public"
+
+[[repositories]]
+storage = "local"
+name = "docker"
+type = "docker"
 visibility = "Public"
 
 [[maven]]
@@ -88,3 +100,26 @@ description = "Prerelease versions, and a non-latest dist-tag"
 
 [npm.dist_tags]
 next = "2.0.0-beta.1"
+
+# Four characters or more, so the sparse index path goes through the `{c1c2}/{c3c4}/`
+# branch rather than one of the short-name special cases.
+[[cargo]]
+repository = "local/crates"
+name = "nitro-example"
+versions = ["0.1.0", "0.2.0", "1.0.0"]
+description = "A seeded crate"
+
+# Three characters: the `3/{first}/` branch, which is easy to get wrong.
+[[cargo]]
+repository = "local/crates"
+name = "nrx"
+versions = ["0.1.0"]
+description = "A short crate name, for the index prefix rule"
+
+# The name carries no `{storage}/{repository}` prefix — the seeder adds it, because a
+# registry with no hostname of its own is addressed as
+# `docker pull localhost:6742/local/docker/example:1.0`.
+[[docker]]
+repository = "local/docker"
+name = "example"
+tags = ["1.0", "latest"]

@@ -23,6 +23,12 @@ pub struct SeedConfig {
     /// npm packages to publish.
     #[serde(default)]
     pub npm: Vec<NpmPackage>,
+    /// Crates to publish.
+    #[serde(default)]
+    pub cargo: Vec<CargoCrate>,
+    /// Container images to push.
+    #[serde(default)]
+    pub docker: Vec<DockerImage>,
 }
 
 /// How to authenticate.
@@ -51,7 +57,7 @@ pub struct SeedStorage {
 pub struct SeedRepository {
     pub storage: String,
     pub name: String,
-    /// `maven` or `npm`.
+    /// `maven`, `npm`, `cargo` or `docker`.
     #[serde(rename = "type")]
     pub repository_type: String,
     /// Defaults to public so a seeded instance can be browsed without signing in.
@@ -101,6 +107,26 @@ pub struct NpmPackage {
     pub dist_tags: std::collections::BTreeMap<String, String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CargoCrate {
+    /// `{storage}/{repository}`.
+    pub repository: String,
+    pub name: String,
+    pub versions: Vec<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerImage {
+    /// `{storage}/{repository}`.
+    pub repository: String,
+    /// The image name *without* the `{storage}/{repository}` prefix — the seeder adds it, because
+    /// that is how a client addresses a registry that has no hostname of its own yet.
+    pub name: String,
+    pub tags: Vec<String>,
+}
+
 impl SeedConfig {
     /// The suite written by `seed --write-example`.
     ///
@@ -136,6 +162,18 @@ impl SeedConfig {
                     storage: "local".to_owned(),
                     name: "npm".to_owned(),
                     repository_type: "npm".to_owned(),
+                    visibility: "Public".to_owned(),
+                },
+                SeedRepository {
+                    storage: "local".to_owned(),
+                    name: "crates".to_owned(),
+                    repository_type: "cargo".to_owned(),
+                    visibility: "Public".to_owned(),
+                },
+                SeedRepository {
+                    storage: "local".to_owned(),
+                    name: "docker".to_owned(),
+                    repository_type: "docker".to_owned(),
                     visibility: "Public".to_owned(),
                 },
             ],
@@ -200,6 +238,28 @@ impl SeedConfig {
                         .collect(),
                 },
             ],
+            cargo: vec![
+                CargoCrate {
+                    repository: "local/crates".to_owned(),
+                    // Four characters or more, so the index path goes through the
+                    // `{c1c2}/{c3c4}/` branch rather than one of the short-name special cases.
+                    name: "nitro-example".to_owned(),
+                    versions: vec!["0.1.0".to_owned(), "0.2.0".to_owned(), "1.0.0".to_owned()],
+                    description: Some("A seeded crate".to_owned()),
+                },
+                CargoCrate {
+                    repository: "local/crates".to_owned(),
+                    // Three characters: the `3/{first}/` branch, which is easy to get wrong.
+                    name: "nrx".to_owned(),
+                    versions: vec!["0.1.0".to_owned()],
+                    description: Some("A short crate name, for the index prefix rule".to_owned()),
+                },
+            ],
+            docker: vec![DockerImage {
+                repository: "local/docker".to_owned(),
+                name: "example".to_owned(),
+                tags: vec!["1.0".to_owned(), "latest".to_owned()],
+            }],
         }
     }
 }

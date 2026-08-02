@@ -103,6 +103,11 @@ pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBody
         .nest("/repositories", crate::repository::repository_router())
         .nest("/api", api::api_routes())
         .nest("/badge", super::badge::badge_routes())
+        // Docker cannot be given a URL prefix — `docker pull host/x/y` always asks for
+        // `/v2/x/y/...` at the host root. Mounted after the three nests above so none of them can
+        // be shadowed, and before the fallback so a `/v2` request is not mistaken for a frontend
+        // route. See `crate::repository::docker::routing`.
+        .merge(crate::repository::docker::v2_router())
         // Not `frontend_request` directly: a request whose `Host` is registered to a repository is
         // served by that repository, and everything else still gets the single-page app.
         .fallback(super::host_routing::host_or_frontend)

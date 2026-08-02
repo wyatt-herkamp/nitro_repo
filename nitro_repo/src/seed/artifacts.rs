@@ -140,6 +140,123 @@ pub fn npm_tarball(
     Ok(encoder.finish()?)
 }
 
+/// A `.crate` file: a gzipped tar whose entries all sit under `{name}-{version}/`, which is the
+/// layout `cargo package` produces and the one `cargo` expects when it unpacks a download.
+pub fn crate_file(name: &str, version: &str, description: Option<&str>) -> anyhow::Result<Vec<u8>> {
+    let prefix = format!("{name}-{version}");
+    let manifest = format!(
+        "[package]\nname = \"{name}\"\nversion = \"{version}\"\nedition = \"2021\"\n\
+         description = \"{}\"\nlicense = \"MIT\"\n",
+        description.unwrap_or("Seeded by nitro_repo")
+    );
+    let source = format!("pub fn name() -> &'static str {{ {name:?} }}\n");
+
+    let mut tar_bytes = Vec::new();
+    {
+        let mut builder = tar::Builder::new(&mut tar_bytes);
+        append(
+            &mut builder,
+            &format!("{prefix}/Cargo.toml"),
+            manifest.as_bytes(),
+        )?;
+        append(
+            &mut builder,
+            &format!("{prefix}/src/lib.rs"),
+            source.as_bytes(),
+        )?;
+        builder.finish()?;
+    }
+
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&tar_bytes)?;
+    Ok(encoder.finish()?)
+}
+
+/// The body `cargo publish` sends: two length-prefixed frames, metadata then the `.crate` file.
+pub fn cargo_publish_body(metadata: &serde_json::Value, crate_file: &[u8]) -> Vec<u8> {
+    let metadata = serde_json::to_vec(metadata).expect("metadata should serialise");
+    let mut body = Vec::with_capacity(metadata.len() + crate_file.len() + 8);
+    body.extend_from_slice(&(metadata.len() as u32).to_le_bytes());
+    body.extend_from_slice(&metadata);
+    body.extend_from_slice(&(crate_file.len() as u32).to_le_bytes());
+    body.extend_from_slice(crate_file);
+    body
+}
+
+pub fn sha256_hex(data: &[u8]) -> String {
+    hex(&sha2::Sha256::digest(data))
+}
+
+/// The `algorithm:hex` digest a registry addresses content by.
+pub fn oci_digest(data: &[u8]) -> String {
+    format!("sha256:{}", sha256_hex(data))
+}
+
+/// A gzipped-tar image layer holding one file, so a pushed image has real content in it.
+pub struct OciLayer {
+    /// What is uploaded as a blob, and what the manifest's layer descriptor names.
+    pub gzipped: Vec<u8>,
+    /// The digest of the *uncompressed* tar.
+    ///
+    /// This is what goes in the config's `rootfs.diff_ids`, and it is not the same as the blob's
+    /// digest. A Docker daemon decompresses each layer on pull and checks the result against the
+    /// diff id — using the compressed digest here makes the pull fail with `wrong diff id` after
+    /// everything has already transferred.
+    pub diff_id: String,
+}
+
+pub fn oci_layer(name: &str, contents: &str) -> anyhow::Result<OciLayer> {
+    let mut tar_bytes = Vec::new();
+    {
+        let mut builder = tar::Builder::new(&mut tar_bytes);
+        append(&mut builder, name, contents.as_bytes())?;
+        builder.finish()?;
+    }
+    let diff_id = oci_digest(&tar_bytes);
+
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&tar_bytes)?;
+    Ok(OciLayer {
+        gzipped: encoder.finish()?,
+        diff_id,
+    })
+}
+
+/// An OCI image config blob — the JSON document `docker inspect` shows.
+pub fn oci_config(layer: &OciLayer) -> Vec<u8> {
+    let config = serde_json::json!({
+        "architecture": "amd64",
+        "os": "linux",
+        "config": { "Env": ["PATH=/usr/local/bin:/usr/bin:/bin"] },
+        "rootfs": { "type": "layers", "diff_ids": [layer.diff_id] },
+        "history": [{ "created_by": "nitro_repo seed" }],
+    });
+    serde_json::to_vec(&config).expect("the config should serialise")
+}
+
+/// An OCI image manifest pointing at a config and one layer.
+///
+/// Returned as bytes rather than as a `Value`, because a manifest's digest is over the exact bytes
+/// that are sent — a caller that re-serialised it would compute a digest the registry disagrees
+/// with.
+pub fn oci_manifest(config: &[u8], layer: &[u8]) -> Vec<u8> {
+    let manifest = serde_json::json!({
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "config": {
+            "mediaType": "application/vnd.oci.image.config.v1+json",
+            "digest": oci_digest(config),
+            "size": config.len(),
+        },
+        "layers": [{
+            "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+            "digest": oci_digest(layer),
+            "size": layer.len(),
+        }],
+    });
+    serde_json::to_vec(&manifest).expect("the manifest should serialise")
+}
+
 fn append<W: Write>(builder: &mut tar::Builder<W>, path: &str, data: &[u8]) -> anyhow::Result<()> {
     let mut header = tar::Header::new_gnu();
     header.set_size(data.len() as u64);
@@ -272,6 +389,91 @@ mod tests {
     fn checksum_helpers_agree_with_known_digests() {
         assert_eq!(sha1_hex(b""), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
         assert_eq!(md5_hex(b""), "d41d8cd98f00b204e9800998ecf8427e");
+        assert_eq!(
+            sha256_hex(b""),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+    }
+
+    /// A layer's blob digest and its `diff_id` describe different bytes — compressed and not. A
+    /// config that names the compressed digest passes every registry-side check and then fails the
+    /// pull with `wrong diff id`, after the whole image has transferred.
+    #[test]
+    fn a_layers_diff_id_is_the_digest_of_the_uncompressed_tar() {
+        let layer = oci_layer("hello.txt", "contents").expect("builds");
+        assert_ne!(layer.diff_id, oci_digest(&layer.gzipped));
+
+        let mut decompressed = Vec::new();
+        std::io::Read::read_to_end(
+            &mut flate2::read::GzDecoder::new(std::io::Cursor::new(&layer.gzipped)),
+            &mut decompressed,
+        )
+        .expect("the layer should be gzip");
+        assert_eq!(layer.diff_id, oci_digest(&decompressed));
+
+        // And the config repeats it verbatim.
+        let config: serde_json::Value =
+            serde_json::from_slice(&oci_config(&layer)).expect("the config should be JSON");
+        assert_eq!(config["rootfs"]["diff_ids"][0], layer.diff_id);
+    }
+
+    #[test]
+    fn the_manifest_points_at_the_config_and_the_compressed_layer() {
+        let layer = oci_layer("hello.txt", "contents").unwrap();
+        let config = oci_config(&layer);
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&oci_manifest(&config, &layer.gzipped)).unwrap();
+
+        assert_eq!(manifest["config"]["digest"], oci_digest(&config));
+        assert_eq!(manifest["config"]["size"], config.len());
+        assert_eq!(manifest["layers"][0]["digest"], oci_digest(&layer.gzipped));
+        assert_eq!(manifest["layers"][0]["size"], layer.gzipped.len());
+    }
+
+    #[test]
+    fn the_crate_file_unpacks_with_a_name_version_prefix() {
+        let bytes = crate_file("example", "1.0.0", Some("Example")).expect("builds");
+        let decoder = flate2::read::GzDecoder::new(std::io::Cursor::new(bytes));
+        let mut archive = tar::Archive::new(decoder);
+
+        let paths: Vec<String> = archive
+            .entries()
+            .expect("entries")
+            .map(|entry| entry.unwrap().path().unwrap().display().to_string())
+            .collect();
+
+        assert!(
+            paths.contains(&"example-1.0.0/Cargo.toml".to_owned()),
+            "{paths:?}"
+        );
+        assert!(
+            paths.contains(&"example-1.0.0/src/lib.rs".to_owned()),
+            "{paths:?}"
+        );
+    }
+
+    /// The frame lengths are little-endian u32s. Reading them the other way round would put the
+    /// split in the wrong place, and the failure would surface as unparseable JSON.
+    #[test]
+    fn the_publish_body_is_two_length_prefixed_frames() {
+        let metadata = serde_json::json!({ "name": "example", "vers": "1.0.0" });
+        let body = cargo_publish_body(&metadata, b"crate bytes");
+
+        let metadata_length = u32::from_le_bytes([body[0], body[1], body[2], body[3]]) as usize;
+        let metadata_end = 4 + metadata_length;
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&body[4..metadata_end]).unwrap(),
+            metadata
+        );
+
+        let crate_length = u32::from_le_bytes([
+            body[metadata_end],
+            body[metadata_end + 1],
+            body[metadata_end + 2],
+            body[metadata_end + 3],
+        ]) as usize;
+        assert_eq!(crate_length, b"crate bytes".len());
+        assert_eq!(&body[metadata_end + 4..], b"crate bytes");
     }
 
     /// A tarball must be byte-identical across runs, so re-seeding does not produce a new integrity

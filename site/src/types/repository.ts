@@ -8,6 +8,10 @@ import { apiURL } from "@/config";
 import { MavenFrontendDefinition } from "@/components/nr/repository/types/maven/maven";
 import { NPMFrontendDefinition } from "@/components/nr/repository/types/npm/npm";
 import NPMConfig from "@/components/nr/repository/types/npm/NPMConfig.vue";
+import { CargoFrontendDefinition } from "@/components/nr/repository/types/cargo/cargo";
+import CargoConfig from "@/components/nr/repository/types/cargo/CargoConfig.vue";
+import { DockerFrontendDefinition } from "@/components/nr/repository/types/docker/docker";
+import DockerConfig from "@/components/nr/repository/types/docker/DockerConfig.vue";
 import BadgeConfig from "@/components/nr/repository/configs/BadgeConfig.vue";
 import type { RepositoryActionsType } from "./user";
 
@@ -76,6 +80,16 @@ export const configTypes: ConfigType[] = [
     component: NPMConfig,
   },
   {
+    name: "cargo",
+    title: "Cargo",
+    component: CargoConfig,
+  },
+  {
+    name: "docker",
+    title: "Docker",
+    component: DockerConfig,
+  },
+  {
     // Missing entirely, which is why badge settings rendered through the generic JSON-schema
     // fallback — raw hex text fields with no preview. (#501)
     name: "project",
@@ -105,6 +119,8 @@ export interface FrontendRepositoryType {
 export const repositoryTypes: FrontendRepositoryType[] = [
   MavenFrontendDefinition,
   NPMFrontendDefinition,
+  CargoFrontendDefinition,
+  DockerFrontendDefinition,
 ];
 export function findRepositoryType(name: string): FrontendRepositoryType | undefined {
   return repositoryTypes.find((repositoryType) => repositoryType.name === name);

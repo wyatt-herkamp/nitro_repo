@@ -14,6 +14,8 @@ import type { RepositoryWithStorageName } from "@/types/repository";
 import { computed, type PropType } from "vue";
 import MavenRepositoryHelper from "./types/maven/MavenRepositoryHelper.vue";
 import NPMRepositoryHelper from "./types/npm/NPMRepositoryHelper.vue";
+import CargoRepositoryHelper from "./types/cargo/CargoRepositoryHelper.vue";
+import DockerRepositoryHelper from "./types/docker/DockerRepositoryHelper.vue";
 
 const props = defineProps({
   repository: {
@@ -29,6 +31,14 @@ const helpers = [
   {
     type: "npm",
     component: NPMRepositoryHelper,
+  },
+  {
+    type: "cargo",
+    component: CargoRepositoryHelper,
+  },
+  {
+    type: "docker",
+    component: DockerRepositoryHelper,
   },
 ];
 const repositoryHelper = computed(() => {

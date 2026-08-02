@@ -20,10 +20,33 @@ pub enum MaxUpload {
 impl From<MaxUpload> for axum::extract::DefaultBodyLimit {
     fn from(value: MaxUpload) -> Self {
         match value {
-            MaxUpload::Limit(size) => axum::extract::DefaultBodyLimit::max(size.size),
+            MaxUpload::Limit(size) => axum::extract::DefaultBodyLimit::max(as_bytes(size)),
             MaxUpload::Unlimited => axum::extract::DefaultBodyLimit::disable(),
         }
     }
+}
+
+/// A configured size in bytes.
+///
+/// This used to read `size.size`, which is the bare number with the unit thrown away — so the
+/// default `100MiB` configured a limit of one hundred *bytes*, and the server answered `413` to
+/// every request carrying a body, including creating a repository.
+///
+/// `ConfigSize::get_as_bytes()` is the obvious replacement and is also wrong: `tuxs-config-types`
+/// declares `Unit::Mebibytes = 1024 * 2`, so it multiplies by 2048 rather than 1048576. The
+/// multiplier is therefore computed here until that is fixed upstream. `Unit` is `#[non_exhaustive]`,
+/// so an unrecognised unit falls back to bytes — the conservative direction, since a too-small
+/// limit refuses uploads loudly while a too-large one silently accepts what the operator meant to
+/// cap.
+fn as_bytes(size: ConfigSize) -> usize {
+    let multiplier = if size.unit.is_mebibytes() {
+        1024 * 1024
+    } else if size.unit.is_kibibytes() {
+        1024
+    } else {
+        1
+    };
+    size.size.saturating_mul(multiplier)
 }
 impl Default for MaxUpload {
     fn default() -> Self {
@@ -184,6 +207,25 @@ mod tests {
             );
         }
     }
+    /// The unit has to survive into the limit. It did not: `100MiB` produced a 100-byte limit, and
+    /// the server refused every request with a body.
+    #[test]
+    fn the_limit_is_in_bytes_not_in_whatever_unit_was_written() {
+        let limit = |value: &str| match MaxUpload::from_str(value).unwrap() {
+            MaxUpload::Limit(size) => as_bytes(size),
+            MaxUpload::Unlimited => panic!("expected a limit"),
+        };
+
+        assert_eq!(limit("100MiB"), 100 * 1024 * 1024);
+        assert_eq!(limit("64KiB"), 64 * 1024);
+        assert_eq!(limit("512"), 512);
+
+        let MaxUpload::Limit(default) = MaxUpload::default() else {
+            panic!("expected a limit");
+        };
+        assert_eq!(as_bytes(default), 100 * 1024 * 1024);
+    }
+
     #[test]
     fn test_unlimited() {
         {
