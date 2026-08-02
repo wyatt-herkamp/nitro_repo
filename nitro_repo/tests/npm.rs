@@ -246,6 +246,55 @@ async fn search_finds_a_published_package() {
     assert_eq!(names, vec!["example"]);
 }
 
+/// Browsing a package has to say which project it is, or the file browser shows a bare directory
+/// listing with no link to the project page.
+///
+/// npm stored the right paths from the start but never implemented the resolver, so this returned
+/// nulls for every path.
+#[tokio::test]
+async fn browsing_resolves_the_project_and_version() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "browsing_resolves_the_project_and_version"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, "local", "npm", "npm")
+        .await;
+    publish(&server, "local/npm", "@nitro/example", "1.0.0").await;
+
+    let project = server
+        .get_as(
+            &format!("/api/repository/browse/{repository}/@nitro/example?check_for_project=true"),
+            &session,
+        )
+        .await;
+    assert_eq!(project.status, StatusCode::OK, "{}", project.text);
+    assert!(
+        project.json()["project_resolution"]["project_id"].is_string(),
+        "browsing the package directory should resolve a project: {}",
+        project.text
+    );
+
+    let version = server
+        .get_as(
+            &format!(
+                "/api/repository/browse/{repository}/@nitro/example/1.0.0?check_for_project=true"
+            ),
+            &session,
+        )
+        .await;
+    assert_eq!(version.status, StatusCode::OK, "{}", version.text);
+    assert!(
+        version.json()["project_resolution"]["version_id"].is_string(),
+        "browsing the version directory should resolve a version: {}",
+        version.text
+    );
+}
+
 /// The registry advertises this to `npm ping`, and npm refuses to talk to a registry that 404s it.
 #[tokio::test]
 async fn the_registry_answers_ping() {

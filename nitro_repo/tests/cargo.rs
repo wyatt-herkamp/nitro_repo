@@ -325,6 +325,221 @@ async fn config_json_follows_a_custom_domain() {
     assert_eq!(config["dl"], "http://crates.example.com/api/v1/crates");
 }
 
+/// A registry on a custom domain has to work through the URLs its own `config.json` advertises.
+///
+/// It did not. Cargo's web API lives at `/api/v1/...`, and the `/api` nest matches that before host
+/// routing is consulted — so `config.json` handed out a `dl` and an `api` that answered `404` from
+/// inside the REST API, and every publish and download against a custom domain failed.
+#[tokio::test]
+async fn a_crate_round_trips_over_a_custom_domain() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "a_crate_round_trips_over_a_custom_domain"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, STORAGE, REPOSITORY, "cargo")
+        .await;
+    let added = server
+        .add_hostname(&session, &repository, "crates.example.com")
+        .await;
+    assert!(added.status.is_success(), "{}", added.text);
+    let token = server
+        .create_repository_token(&session, &repository, &["Read", "Write", "Edit"])
+        .await;
+    let host = ("host", "crates.example.com");
+
+    // Everything below uses only what `config.json` reports, so this fails if the two disagree.
+    let config = server
+        .send("GET", "/index/config.json", &[host], Vec::new())
+        .await;
+    assert_eq!(config.status, StatusCode::OK, "{}", config.text);
+    assert_eq!(config.json()["api"], "http://crates.example.com");
+    assert_eq!(
+        config.json()["dl"],
+        "http://crates.example.com/api/v1/crates"
+    );
+
+    let crate_file = artifacts::crate_file("example", "1.0.0", Some("Example")).expect("builds");
+    let published = server
+        .send(
+            "PUT",
+            "/api/v1/crates/new",
+            &[host, ("authorization", &token)],
+            artifacts::cargo_publish_body(&metadata("example", "1.0.0"), &crate_file),
+        )
+        .await;
+    assert_eq!(
+        published.status,
+        StatusCode::OK,
+        "publish over a custom domain failed: {}",
+        published.text
+    );
+
+    let index = server
+        .send("GET", "/index/ex/am/example", &[host], Vec::new())
+        .await;
+    assert_eq!(index.status, StatusCode::OK, "{}", index.text);
+    assert!(index.text.contains("\"vers\":\"1.0.0\""), "{}", index.text);
+
+    let download = server
+        .send(
+            "GET",
+            "/api/v1/crates/example/1.0.0/download",
+            &[host],
+            Vec::new(),
+        )
+        .await;
+    assert_eq!(
+        download.status,
+        StatusCode::OK,
+        "download over a custom domain failed: {}",
+        download.text
+    );
+    assert_eq!(download.bytes, crate_file);
+
+    // Yank and owners go through `/api` too.
+    let yanked = server
+        .send(
+            "DELETE",
+            "/api/v1/crates/example/1.0.0/yank",
+            &[host, ("authorization", &token)],
+            Vec::new(),
+        )
+        .await;
+    assert_eq!(yanked.status, StatusCode::OK, "{}", yanked.text);
+
+    let owners = server
+        .send("GET", "/api/v1/crates/example/owners", &[host], Vec::new())
+        .await;
+    assert_eq!(owners.status, StatusCode::OK, "{}", owners.text);
+}
+
+/// The fall-through must not shadow the REST API itself on a custom domain — the web UI and every
+/// admin call still go through `/api` on whatever host the browser happens to be using.
+#[tokio::test]
+async fn the_rest_api_still_works_on_a_custom_domain() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "the_rest_api_still_works_on_a_custom_domain"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, STORAGE, REPOSITORY, "cargo")
+        .await;
+    server
+        .add_hostname(&session, &repository, "crates.example.com")
+        .await;
+
+    let info = server
+        .send(
+            "GET",
+            "/api/info",
+            &[("host", "crates.example.com")],
+            Vec::new(),
+        )
+        .await;
+    assert_eq!(info.status, StatusCode::OK, "{}", info.text);
+    assert!(info.json()["name"].is_string(), "{}", info.text);
+
+    let configs = server
+        .send(
+            "GET",
+            &format!("/api/repository/{repository}/configs"),
+            &[
+                ("host", "crates.example.com"),
+                ("authorization", &format!("Session {session}")),
+            ],
+            Vec::new(),
+        )
+        .await;
+    assert_eq!(configs.status, StatusCode::OK, "{}", configs.text);
+
+    // An `/api` path that is neither a REST route nor a registry route is still a clean 404 rather
+    // than something the registry tried to interpret.
+    let nonsense = server
+        .send(
+            "GET",
+            "/api/nonsense/route",
+            &[("host", "crates.example.com")],
+            Vec::new(),
+        )
+        .await;
+    assert_eq!(nonsense.status, StatusCode::NOT_FOUND, "{}", nonsense.text);
+}
+
+/// And on a host that is *not* a repository, an unknown `/api` path is the REST API's own 404 —
+/// not the frontend, and not an artifact lookup.
+#[tokio::test]
+async fn an_unknown_api_route_is_still_a_json_404() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "an_unknown_api_route_is_still_a_json_404"
+        ));
+        return;
+    };
+    server.install().await;
+
+    let response = server.get("/api/nonsense/route").await;
+    assert_eq!(response.status, StatusCode::NOT_FOUND, "{}", response.text);
+    assert_eq!(response.json()["message"], "Not Found");
+}
+
+/// Browsing a crate's directory has to say which project it is, or the file browser shows a bare
+/// directory listing with no link to the project page.
+#[tokio::test]
+async fn browsing_resolves_the_project_and_version() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database(
+            "browsing_resolves_the_project_and_version"
+        ));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    let repository = server
+        .create_repository(&session, STORAGE, REPOSITORY, "cargo")
+        .await;
+    let token = server
+        .create_repository_token(&session, &repository, &["Read", "Write", "Edit"])
+        .await;
+    let registry = Registry { server, token };
+    registry.publish("example", "1.0.0").await;
+
+    let browse = async |path: &str| {
+        let url = format!("/api/repository/browse/{repository}/{path}?check_for_project=true");
+        registry.server.get_as(&url, &session).await
+    };
+
+    // The crate's own directory is the project.
+    let project = browse("crates/example").await;
+    assert_eq!(project.status, StatusCode::OK, "{}", project.text);
+    assert!(
+        project.json()["project_resolution"]["project_id"].is_string(),
+        "browsing the crate directory should resolve a project: {}",
+        project.text
+    );
+
+    // And a version directory is the version.
+    let version = browse("crates/example/1.0.0").await;
+    assert_eq!(version.status, StatusCode::OK, "{}", version.text);
+    assert!(
+        version.json()["project_resolution"]["version_id"].is_string(),
+        "browsing the version directory should resolve a version: {}",
+        version.text
+    );
+    assert_eq!(
+        version.json()["project_resolution"]["project_id"],
+        project.json()["project_resolution"]["project_id"],
+    );
+}
+
 #[tokio::test]
 async fn an_anonymous_publish_is_refused() {
     let Some(registry) = Registry::start().await else {
