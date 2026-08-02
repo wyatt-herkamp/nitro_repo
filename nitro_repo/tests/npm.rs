@@ -207,6 +207,45 @@ async fn republishing_an_existing_version_is_refused() {
     );
 }
 
+/// `npm search` answered 500 for every query.
+///
+/// `projects.key` is declared `COLLATE ignoreCase`, and Postgres refuses `ILIKE` against a
+/// nondeterministic collation. The search query has always been written that way; nothing ever
+/// called it in a test, so the failure only ever showed up as a 500 in front of a user.
+#[tokio::test]
+async fn search_finds_a_published_package() {
+    let Some(server) = TestServer::start().await else {
+        assert!(skip_without_database("search_finds_a_published_package"));
+        return;
+    };
+    server.install().await;
+    let session = server.sign_in().await;
+    server
+        .create_repository(&session, "local", "npm", "npm")
+        .await;
+    publish(&server, "local/npm", "example", "1.0.0").await;
+    publish(&server, "local/npm", "unrelated", "2.0.0").await;
+
+    let response = server
+        .get("/repositories/local/npm/-/v1/search?text=exam&size=10")
+        .await;
+    assert_eq!(
+        response.status,
+        StatusCode::OK,
+        "search should succeed: {}",
+        response.text
+    );
+
+    let results = response.json();
+    let names: Vec<&str> = results["objects"]
+        .as_array()
+        .expect("objects should be a list")
+        .iter()
+        .map(|found| found["package"]["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["example"]);
+}
+
 /// The registry advertises this to `npm ping`, and npm refuses to talk to a registry that 404s it.
 #[tokio::test]
 async fn the_registry_answers_ping() {

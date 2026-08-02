@@ -112,16 +112,100 @@ async fn dispatch_by_host(
 /// its first value: a proxy chain appends, so the left-most is the one nearest the client, which is
 /// the one the operator's own proxy wrote.
 pub fn request_host(headers: &HeaderMap, uri: &Uri, trust_forwarded: bool) -> Option<String> {
+    raw_host(headers, uri, trust_forwarded).and_then(|raw| normalize_host(&raw))
+}
+
+/// The host *with* its port, for building a URL to hand back to the client.
+///
+/// [`request_host`] deliberately strips the port, because a hostname is registered without one and
+/// a lookup has to match whether or not the client wrote `:8443`. A URL is the opposite case: an
+/// authentication realm of `http://localhost/...` when the instance is on `:6742` points at nothing,
+/// and a Docker client that cannot reach the realm abandons the push without an error.
+pub fn request_authority(headers: &HeaderMap, uri: &Uri, trust_forwarded: bool) -> Option<String> {
+    let raw = raw_host(headers, uri, trust_forwarded)?;
+    // Validated through `normalize_host` so anything that is not a bare host is rejected here too,
+    // but the value returned keeps the port the client actually addressed.
+    normalize_host(&raw)?;
+    Some(raw.trim().to_ascii_lowercase())
+}
+
+/// Picks which of the three sources names the host, without normalising it.
+fn raw_host(headers: &HeaderMap, uri: &Uri, trust_forwarded: bool) -> Option<String> {
     if trust_forwarded
         && let Some(forwarded) = headers.get_str_ignore_empty(&X_FORWARDED_HOST)
-        && let Some(host) = forwarded.split(',').next().and_then(normalize_host)
+        && let Some(first) = forwarded.split(',').next()
+        && normalize_host(first).is_some()
     {
-        return Some(host);
+        return Some(first.to_owned());
     }
-    headers
-        .get_str_ignore_empty(&http::header::HOST)
-        .and_then(normalize_host)
-        .or_else(|| uri.host().and_then(normalize_host))
+    if let Some(host) = headers.get_str_ignore_empty(&http::header::HOST)
+        && normalize_host(host).is_some()
+    {
+        return Some(host.to_owned());
+    }
+    // HTTP/2 has no `Host` header; hyper puts `:authority` in the URI instead. `authority()` rather
+    // than `host()` so the port survives.
+    uri.authority()
+        .map(|authority| authority.as_str().to_owned())
+        .filter(|authority| normalize_host(authority).is_some())
+}
+
+/// The scheme to build absolute URLs with.
+///
+/// The server may be terminating plain HTTP behind a TLS proxy, in which case the request itself
+/// says `http` while the client is on `https`. `X-Forwarded-Proto` is only believed when the
+/// operator has said their proxy sets it — the same switch that guards `X-Forwarded-Host` — and
+/// otherwise the configured `app_url`'s scheme is the operator's own statement of how the instance
+/// is reached.
+pub fn request_scheme(site: &NitroRepo, headers: &HeaderMap, uri: &Uri) -> String {
+    static X_FORWARDED_PROTO: HeaderName = HeaderName::from_static("x-forwarded-proto");
+
+    if site.general_security_settings.trust_forwarded_host
+        && let Some(forwarded) = headers.get_str_ignore_empty(&X_FORWARDED_PROTO)
+        && let Some(first) = forwarded.split(',').next()
+        && matches!(first.trim(), "http" | "https")
+    {
+        return first.trim().to_owned();
+    }
+    if let Some(scheme) = uri.scheme_str() {
+        return scheme.to_owned();
+    }
+    let app_url = {
+        let instance = site.instance.lock();
+        instance.app_url.clone()
+    };
+    if app_url.starts_with("http://") {
+        "http".to_owned()
+    } else {
+        "https".to_owned()
+    }
+}
+
+/// `{scheme}://{host}` for the request as the client addressed it.
+///
+/// Built from the request rather than from `app_url` because a repository reachable on a custom
+/// domain may not be reachable at `app_url` from wherever the client is running — a URL handed back
+/// in a `Location` or an authentication realm has to point somewhere the caller can actually go.
+/// Falls back to `app_url` when the request carries no usable host, and to `None` when there is no
+/// `app_url` either.
+pub fn request_origin(site: &NitroRepo, headers: &HeaderMap, uri: &Uri) -> Option<String> {
+    match request_authority(
+        headers,
+        uri,
+        site.general_security_settings.trust_forwarded_host,
+    ) {
+        Some(authority) => {
+            let scheme = request_scheme(site, headers, uri);
+            Some(format!("{scheme}://{authority}"))
+        }
+        None => {
+            let app_url = {
+                let instance = site.instance.lock();
+                instance.app_url.trim_end_matches('/').to_owned()
+            };
+            (!app_url.is_empty()).then_some(app_url)
+        }
+    }
 }
 
 /// Lowercases a host and strips the port and any trailing root dot.
@@ -173,7 +257,7 @@ fn is_port(value: &str) -> bool {
 mod tests {
     use http::{HeaderMap, HeaderName, HeaderValue, Uri};
 
-    use super::{X_FORWARDED_HOST, normalize_host, request_host};
+    use super::{X_FORWARDED_HOST, normalize_host, request_authority, request_host};
 
     fn headers(pairs: &[(&HeaderName, &str)]) -> HeaderMap {
         let mut headers = HeaderMap::new();
@@ -262,6 +346,49 @@ mod tests {
         assert_eq!(
             request_host(&HeaderMap::new(), &uri, false).as_deref(),
             Some("maven.example.com")
+        );
+    }
+
+    /// A lookup ignores the port; a URL cannot. A realm of `http://localhost/...` for an instance
+    /// on `:6742` is unreachable, and a Docker client that cannot reach the realm abandons the push
+    /// with no error at all.
+    #[test]
+    fn the_authority_keeps_the_port_that_the_host_drops() {
+        let map = headers(&[(&http::header::HOST, "localhost:6742")]);
+        let uri = Uri::from_static("/v2/");
+
+        assert_eq!(
+            request_host(&map, &uri, false).as_deref(),
+            Some("localhost")
+        );
+        assert_eq!(
+            request_authority(&map, &uri, false).as_deref(),
+            Some("localhost:6742")
+        );
+    }
+
+    #[test]
+    fn the_authority_is_normalised_and_validated_like_the_host() {
+        let map = headers(&[(&http::header::HOST, "  Docker.Example.COM:8443 ")]);
+        let uri = Uri::from_static("/v2/");
+        assert_eq!(
+            request_authority(&map, &uri, false).as_deref(),
+            Some("docker.example.com:8443")
+        );
+
+        // Anything that is not a bare host is refused here too.
+        for bad in ["host:notaport", "a/b", "user@example.com"] {
+            let map = headers(&[(&http::header::HOST, bad)]);
+            assert_eq!(request_authority(&map, &uri, false), None, "raw: {bad:?}");
+        }
+    }
+
+    #[test]
+    fn the_authority_falls_back_to_the_uri_for_http2() {
+        let uri = Uri::from_static("https://docker.example.com:8443/v2/");
+        assert_eq!(
+            request_authority(&HeaderMap::new(), &uri, false).as_deref(),
+            Some("docker.example.com:8443")
         );
     }
 
