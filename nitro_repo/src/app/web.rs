@@ -94,7 +94,7 @@ pub async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
 /// real middleware stack, rather than starting a server on a port and talking to it over TCP. A
 /// test that builds its own router tests its own router.
 pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBodyLimit) -> Router {
-    let auth_layer = AuthenticationLayer::from(site.clone());
+    let auth_layer = AuthenticationLayer::from(site.session_manager.clone());
     let mut app = Router::new()
         // `/repositories/{storage}/{repository}/{*path}` is the canonical artifact URL — it is what
         // `repositoryUrl()` in the frontend hands to Maven and npm. `/storages` used to be nested

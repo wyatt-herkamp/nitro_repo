@@ -1,7 +1,36 @@
-use std::path::PathBuf;
+//! Configuration types shared between the server and the code it hands a request to.
+//!
+//! Only the pieces something below the application needs: the security settings a repository reads
+//! to decide whether to trust `X-Forwarded-Host`, the password rules the API reports, and the two
+//! odds and ends the session store wants. The rest of the configuration stays in the server, which
+//! is the only thing that parses it.
+
+use std::{env, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
+use strum::EnumIs;
 use utoipa::ToSchema;
+
+/// Whether this build is a debug build, which relaxes a few things that would be unsafe in
+/// production — notably the `Secure` flag on the session cookie.
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, EnumIs, ToSchema)]
+pub enum Mode {
+    Debug,
+    Release,
+}
+
+impl Default for Mode {
+    fn default() -> Self {
+        #[cfg(debug_assertions)]
+        return Mode::Debug;
+        #[cfg(not(debug_assertions))]
+        return Mode::Release;
+    }
+}
+
+pub fn get_current_directory() -> PathBuf {
+    env::current_dir().unwrap_or_else(|_| PathBuf::new())
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SecuritySettings {

@@ -1,7 +1,10 @@
 use std::{
     fmt::Debug,
     path::PathBuf,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
 use axum::response::{IntoResponse, Response};
@@ -23,10 +26,7 @@ use tracing::{
 use utoipa::ToSchema;
 
 use crate::{
-    app::{
-        NitroRepo,
-        config::{Mode, get_current_directory},
-    },
+    config::{Mode, get_current_directory},
     utils::IntoErrorResponse,
 };
 #[derive(Debug, Error)]
@@ -259,10 +259,18 @@ impl SessionManager {
         sessions.commit()?;
         Ok(sessions_removed)
     }
-    pub async fn cleaner_task(this: NitroRepo, how_often: std::time::Duration) {
-        let session_manager = this.session_manager.clone();
-
-        while session_manager.running.load(Ordering::Relaxed) {
+    /// Expires sessions on a timer until [`Self::shutdown`].
+    ///
+    /// `report_active` is handed the number of live sessions after each pass. A callback because
+    /// the only caller publishes it to the application's metrics, and this module cannot see
+    /// those — keeping the loop here is what lets `running`, `config` and `clean_inner` stay
+    /// private.
+    pub async fn cleaner_task(
+        self: Arc<Self>,
+        how_often: std::time::Duration,
+        report_active: impl Fn(u64) + Send + 'static,
+    ) {
+        while self.running.load(Ordering::Relaxed) {
             let sleep_for = {
                 let span = span!(
                     Level::INFO,
@@ -273,7 +281,7 @@ impl SessionManager {
                 let _enter = span.enter();
 
                 info!("Cleaning sessions");
-                match session_manager.clean_inner() {
+                match self.clean_inner() {
                     Ok(value) => {
                         info!("Cleaned {} sessions", value);
                         span.record("sessions.removed", value);
@@ -286,29 +294,30 @@ impl SessionManager {
                     }
                 }
             };
-            if let Ok(number_of_sessions) = session_manager.number_of_sessions() {
-                this.metrics
-                    .active_sessions
-                    .add(number_of_sessions as i64, &[]);
+            if let Ok(number_of_sessions) = self.number_of_sessions() {
+                report_active(number_of_sessions);
             }
             tokio::time::sleep(sleep_for).await
         }
     }
-    pub fn start_cleaner(this: NitroRepo) -> Option<JoinHandle<()>> {
-        let how_often = this
-            .session_manager
+
+    /// Spawns [`Self::cleaner_task`] on the configured interval.
+    pub fn start_cleaner(
+        self: Arc<Self>,
+        report_active: impl Fn(u64) + Send + 'static,
+    ) -> Option<JoinHandle<()>> {
+        let how_often = self
             .config
             .cleanup_interval
             .to_std()
             .expect("Duration is too large");
         debug!("Starting Session Cleaner with interval: {:?}", how_often);
-        this.session_manager.running.store(true, Ordering::Relaxed);
-        let result = tokio::spawn(async move {
-            let this = this;
-            SessionManager::cleaner_task(this, how_often).await;
-        });
-        Some(result)
+        self.running.store(true, Ordering::Relaxed);
+        Some(tokio::spawn(async move {
+            self.cleaner_task(how_often, report_active).await
+        }))
     }
+
     #[instrument]
     pub fn create_session(
         &self,

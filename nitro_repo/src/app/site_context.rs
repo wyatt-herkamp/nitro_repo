@@ -33,7 +33,7 @@ use parking_lot::{Mutex, RwLock};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::{Instance, config::security::SecuritySettings};
+use super::{Instance, config::SecuritySettings};
 use crate::{
     repository::{StagingConfig, repo_tracing::RepositoryMetricsMeter},
     utils::host,

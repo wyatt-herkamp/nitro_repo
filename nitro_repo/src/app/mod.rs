@@ -580,7 +580,12 @@ impl NitroRepo {
         services.session_cleaner = Some(cleaner);
     }
     fn start_session_cleaner(&self) {
-        let result = SessionManager::start_cleaner(self.clone());
+        // The metric is reported through a callback: `SessionManager` lives in `nr-web-core` and
+        // cannot see `AppMetrics`, which belongs to the application.
+        let metrics = self.metrics.clone();
+        let result = self.session_manager.clone().start_cleaner(move |active| {
+            metrics.active_sessions.add(active as i64, &[]);
+        });
         if let Some(handle) = result {
             self.set_session_cleaner(handle);
             info!("Session cleaner started");

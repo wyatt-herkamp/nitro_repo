@@ -10,5 +10,7 @@
 //! have to share a crate — and that crate is then a dependency of everything that returns an
 //! error from a handler, which is all of it.
 
+pub mod authentication;
+pub mod config;
 pub mod error;
 pub mod utils;

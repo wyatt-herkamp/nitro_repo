@@ -12,18 +12,24 @@ use http_body_util::Either;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use crate::{
-    app::{NitroRepo, authentication::AuthenticationRaw},
+    app::authentication::{AuthenticationRaw, session::SessionManager},
     error::InternalError,
     utils::{header::HeaderValueExt, request_logging::request_span::RequestSpan},
 };
 mod future;
+use std::sync::Arc;
+
+use nr_web_core::authentication::header::AuthorizationHeader;
 use tower::Layer;
 use tower_service::Service;
 use tracing::{Span, debug, field::Empty, info_span, trace};
-
-use super::header::AuthorizationHeader;
+/// Reads credentials off every request and parks the result in the extensions.
+///
+/// Takes the session store rather than the application state: resolving a session cookie is the
+/// only thing this needs, and holding `NitroRepo` here is what kept the whole authentication
+/// module in the binary.
 #[derive(Debug, Clone, From)]
-pub struct AuthenticationLayer(pub NitroRepo);
+pub struct AuthenticationLayer(pub Arc<SessionManager>);
 
 impl<S> Layer<S> for AuthenticationLayer {
     type Service = AuthenticationMiddleware<S>;
@@ -31,7 +37,7 @@ impl<S> Layer<S> for AuthenticationLayer {
     fn layer(&self, inner: S) -> Self::Service {
         AuthenticationMiddleware {
             inner,
-            site: self.0.clone(),
+            sessions: self.0.clone(),
         }
     }
 }
@@ -40,7 +46,7 @@ type ServiceResponse<T> = Response<ServiceBody<T>>;
 #[derive(Debug, Clone)]
 pub struct AuthenticationMiddleware<S> {
     inner: S,
-    site: NitroRepo,
+    sessions: Arc<SessionManager>,
 }
 impl<S> AuthenticationMiddleware<S> {
     pub fn process_from_parts(&self, parts: &mut Parts, span: &Span) -> Result<(), InternalError> {
@@ -52,10 +58,10 @@ impl<S> AuthenticationMiddleware<S> {
             .map(|header| header.parsed::<AuthorizationHeader, _>())
             .transpose()?;
         let raw = if let Some(authorization_header) = authorization_header {
-            AuthenticationRaw::new_from_header(authorization_header, &self.site)
+            AuthenticationRaw::new_from_header(authorization_header, &self.sessions)
         } else if let Some(cookie) = cookie_jar.get("session") {
             debug!("Session Cookie Found");
-            AuthenticationRaw::new_from_cookie(cookie, &self.site)
+            AuthenticationRaw::new_from_cookie(cookie, &self.sessions)
         } else {
             debug!("No Authorization Header or Session Cookie Found");
             AuthenticationRaw::NoIdentification

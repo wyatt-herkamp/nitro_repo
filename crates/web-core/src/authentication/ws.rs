@@ -3,10 +3,13 @@ use nr_core::{
     user::permissions::{HasPermissions, HasUserType, UserPermissions},
 };
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use tracing::{Span, debug, instrument};
 
-use super::{AuthenticationError, get_user_and_auth_token, session::Session};
-use crate::app::NitroRepo;
+use super::{
+    AuthenticationError, get_user_and_auth_token,
+    session::{Session, SessionManager},
+};
 /// Authentication Message for Websockets.
 ///
 /// This type should be added to your WebSocket Message Enum to handle Authentication.
@@ -19,15 +22,19 @@ pub enum WebSocketAuthenticationMessage {
     Session(String),
 }
 impl WebSocketAuthenticationMessage {
-    #[instrument(skip(self, site), fields(login.type, project_module = "Authentication"))]
+    #[instrument(
+        skip(self, database, sessions),
+        fields(login.type, project_module = "Authentication")
+    )]
     pub async fn attempt_login(
         &self,
-        site: &NitroRepo,
+        database: &PgPool,
+        sessions: &SessionManager,
     ) -> Result<WebSocketAuthentication, AuthenticationError> {
         match self {
             WebSocketAuthenticationMessage::AuthToken(token) => {
                 Span::current().record("login.type", "auth_token");
-                let (user, auth_token) = get_user_and_auth_token(token, &site.database).await?;
+                let (user, auth_token) = get_user_and_auth_token(token, database).await?;
                 debug!(?user, "User Login Via Auth Token");
                 let result = WebSocketAuthentication::AuthToken {
                     token: auth_token,
@@ -37,11 +44,11 @@ impl WebSocketAuthenticationMessage {
             }
             WebSocketAuthenticationMessage::Session(session) => {
                 Span::current().record("login.type", "session");
-                let Some(session) = site.session_manager.get_session(session)? else {
+                let Some(session) = sessions.get_session(session)? else {
                     return Err(AuthenticationError::Unauthorized);
                 };
 
-                let user = UserSafeData::get_by_id(session.user_id, &site.database)
+                let user = UserSafeData::get_by_id(session.user_id, database)
                     .await?
                     .ok_or(AuthenticationError::Unauthorized)?;
                 debug!(?user, "User Login Via Session");

@@ -25,7 +25,7 @@ use axum::{
 use http_body_util::BodyExt;
 use nitro_repo::app::{
     NitroRepo,
-    config::{Mode, SiteSetting, security::SecuritySettings},
+    config::{Mode, SecuritySettings, SiteSetting},
     web::build_app,
 };
 use nr_core::database::DatabaseConfig;

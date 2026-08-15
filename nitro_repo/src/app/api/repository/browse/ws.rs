@@ -175,7 +175,9 @@ impl BrowseWSState {
                 Ok(false)
             }
             WebsocketIncomingMessage::Authentication(auth) => {
-                let auth = auth.attempt_login(&self.site).await;
+                let auth = auth
+                    .attempt_login(&self.site.database, &self.site.session_manager)
+                    .await;
 
                 match auth {
                     Ok(auth) => {

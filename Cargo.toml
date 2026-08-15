@@ -39,6 +39,7 @@ axum-extra = { version = "0.12", features = [
   "routing",
 ] }
 argon2 = { version = "0.5.3", features = ["std"] }
+redb = "4"
 # Rust Utilities
 futures = "0.3"
 derive_more = { version = "2.1", features = [
