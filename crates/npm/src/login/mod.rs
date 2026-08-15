@@ -2,8 +2,7 @@ use axum::response::{IntoResponse, Response};
 use couch_db::CouchDBLoginResponse;
 use derive_more::derive::From;
 use http::StatusCode;
-
-use crate::repository::RepoResponse;
+use nr_repository::RepoResponse;
 pub mod couch_db;
 pub mod web_login;
 

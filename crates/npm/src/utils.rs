@@ -6,12 +6,12 @@ use nr_core::{
     },
     storage::StoragePath,
 };
+use nr_repository::Repository;
 use tracing::{info, instrument};
 
 use super::{
     NPMRegistryError, login::web_login::NpmWebLoginManager, types::request::PublishVersion,
 };
-use crate::repository::Repository;
 
 pub mod npm_time {
     use chrono::{DateTime, FixedOffset};

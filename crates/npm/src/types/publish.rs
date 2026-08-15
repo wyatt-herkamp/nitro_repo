@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::request::PublishVersion;
-use crate::repository::npm::NPMRegistryError;
+use crate::NPMRegistryError;
 
 #[derive(Deserialize, Serialize, Clone, PartialEq)]
 pub struct PublishAttachment {

@@ -20,17 +20,17 @@ use nr_core::{
     database::entities::{repository::DBRepository, user::auth_token::NewRepositoryToken},
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_repository::SiteContext;
+use nr_web_core::{
+    authentication::Authentication, error::InternalError, responses::MissingPermission,
+    utils::ResponseBuilder,
+};
 use serde::{Deserialize, Serialize};
 use tracing::{info, instrument};
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
 
 use super::login::web_login::NpmWebLoginManager;
-use crate::{
-    app::{SiteContext, authentication::Authentication, responses::MissingPermission},
-    error::InternalError,
-    utils::ResponseBuilder,
-};
 
 #[derive(OpenApi)]
 #[openapi(

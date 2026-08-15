@@ -13,6 +13,10 @@ use nr_core::{
         scopes::{NRScope, ScopeDescription},
     },
 };
+// The two per-type API fragments live with their repository types rather than under `app::api`.
+// utoipa names schema components from the Rust type name, not the module path, so moving them
+// changes nothing in the served document.
+use nr_npm::api::NpmAPI;
 use utoipa::{
     Modify, OpenApi,
     openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme},
@@ -25,11 +29,10 @@ use super::{
         user_management::UserManagementAPI,
     },
 };
-use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
-// The two per-type API fragments live with their repository types rather than under `app::api`.
-// utoipa names schema components from the Rust type name, not the module path, so moving them
-// changes nothing in the served document.
-use crate::repository::{docker::api::DockerAPI, npm::api::NpmAPI};
+use crate::{
+    app::{api::project::ProjectRoutes, badge::BadgeRoutes},
+    repository::docker::api::DockerAPI,
+};
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),

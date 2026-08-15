@@ -1,3 +1,8 @@
+//! Response types the API returns from more than one place.
+//!
+//! `RepositoryNotFound` is not here — it lives with the lookup that produces it, in
+//! `nr-repository`.
+
 use std::fmt::Debug;
 
 use axum::{
@@ -12,7 +17,6 @@ use tracing::instrument;
 
 // Moved next to the lookup it reports on; re-exported so `app::responses::RepositoryNotFound`
 // still resolves.
-pub use crate::repository::RepositoryNotFound;
 
 #[derive(Debug)]
 pub enum MissingPermission {

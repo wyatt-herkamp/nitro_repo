@@ -27,16 +27,17 @@ use login::web_login::NpmWebLoginManager;
 use nr_core::repository::config::{
     project::ProjectConfigType, repository_page::RepositoryPageType,
 };
-
-pub use super::prelude::*;
-use crate::{
-    app::authentication::AuthenticationError,
+// The prelude is what the `DynRepositoryHandler` derive expects in scope at the derive site.
+use nr_repository::prelude::*;
+use nr_web_core::{
+    authentication::AuthenticationError,
     utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
 mod configs;
 pub use configs::*;
-
-use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
+use nr_repository::{
+    DynRepository, NewRepository, RepositoryHandlerError, RepositoryType, RepositoryTypeDescription,
+};
 
 #[derive(Debug, Clone, DynRepositoryHandler)]
 #[repository_handler(error=NPMRegistryError)]

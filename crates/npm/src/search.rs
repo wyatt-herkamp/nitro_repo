@@ -3,14 +3,12 @@
 //! `GetPath::Search` was declared and never constructed, so a search request fell through to the
 //! tarball branch and came back as a 404 complaining about a missing package.
 use nr_core::database::entities::project::{DBProject, versions::DBProjectVersion};
+use nr_repository::{RepoResponse, Repository};
+use nr_web_core::utils::ResponseBuilder;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
 use super::{NPMRegistryError, utils::npm_time};
-use crate::{
-    repository::{RepoResponse, Repository},
-    utils::ResponseBuilder,
-};
 
 /// npm's default page size, and the cap on what a caller can ask for. Without an upper bound a
 /// single request could ask the database for every project in the registry.

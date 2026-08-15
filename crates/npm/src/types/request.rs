@@ -15,7 +15,7 @@ use tracing::{debug, info};
 use uuid::Uuid;
 
 use super::NPMPackageName;
-use crate::repository::npm::NPMRegistryError;
+use crate::NPMRegistryError;
 
 /// The value of the `npm-command` header.
 ///
@@ -554,7 +554,7 @@ pub mod tests {
     /// could be published and then never resolved.
     #[test]
     pub fn published_and_requested_keys_agree() {
-        use crate::repository::npm::types::NPMPackageName;
+        use crate::types::NPMPackageName;
 
         for name in ["@nr/mylib", "mylib", "@babel/core"] {
             let published = NPMPackageName::try_from(name).unwrap().to_string();

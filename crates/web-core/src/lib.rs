@@ -13,4 +13,5 @@
 pub mod authentication;
 pub mod config;
 pub mod error;
+pub mod responses;
 pub mod utils;

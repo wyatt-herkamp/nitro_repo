@@ -4,17 +4,13 @@ use derive_more::derive::From;
 use nr_core::{
     database::entities::user::auth_token::NewRepositoryToken, user::permissions::RepositoryActions,
 };
+use nr_repository::{RepoResponse, RepositoryRequest};
+use nr_web_core::authentication::verify_login;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::{debug, instrument};
 
-use crate::{
-    app::authentication::verify_login,
-    repository::{
-        RepoResponse, RepositoryRequest,
-        npm::{NPMRegistryError, login::LoginResponse, utils::NpmRegistryExt},
-    },
-};
+use crate::{NPMRegistryError, login::LoginResponse, utils::NpmRegistryExt};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct CouchDBLoginRequest {

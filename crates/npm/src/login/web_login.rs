@@ -22,16 +22,14 @@ use std::time::{Duration, Instant};
 use ahash::HashMap;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
+use nr_repository::{RepoResponse, RepositoryRequest};
 use nr_storage::Storage;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument};
 use uuid::Uuid;
 
-use crate::repository::{
-    RepoResponse, RepositoryRequest,
-    npm::{NPMRegistryError, utils::NpmRegistryExt},
-};
+use crate::{NPMRegistryError, utils::NpmRegistryExt};
 
 /// How long a user has to finish logging in before the session is discarded.
 const SESSION_TTL: Duration = Duration::from_secs(15 * 60);

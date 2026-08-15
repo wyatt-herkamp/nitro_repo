@@ -29,7 +29,12 @@ use nr_core::{
     storage::StoragePath,
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_repository::{
+    RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError, RepositoryRequest,
+    SiteContext, utils::RepositoryExt,
+};
 use nr_storage::{DynStorage, FileContent, Storage};
+use nr_web_core::utils::ResponseBuilder;
 use parking_lot::RwLock;
 use serde::Deserialize;
 use serde_json::Value;
@@ -44,20 +49,11 @@ use super::{
     utils::{NpmRegistryExt, npm_time},
 };
 use crate::{
-    app::SiteContext,
-    repository::{
-        RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError,
-        RepositoryRequest,
-        npm::{
-            NPMRegistryConfigType, NPMRegistryError,
-            integrity::{verify_integrity, verify_shasum},
-            login::web_login,
-            search,
-            types::PublishRequest,
-        },
-        utils::RepositoryExt,
-    },
-    utils::ResponseBuilder,
+    NPMRegistryConfigType, NPMRegistryError,
+    integrity::{verify_integrity, verify_shasum},
+    login::web_login,
+    search,
+    types::PublishRequest,
 };
 
 /// The value `Repository::full_type()` reports, and what lands in the repository request

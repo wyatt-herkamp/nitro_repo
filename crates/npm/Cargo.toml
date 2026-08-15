@@ -1,0 +1,48 @@
+[package]
+name = "nr-npm"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The npm registry repository type for Nitro Repo"
+
+[dependencies]
+nr-core.workspace = true
+nr-macros.workspace = true
+nr-repository.workspace = true
+nr-storage.workspace = true
+nr-web-core.workspace = true
+# npm publishes a hex-sha1 `shasum` alongside the sha512 `integrity` string, and both are
+# verified against the uploaded tarball.
+sha1.workspace = true
+sha2.workspace = true
+base64.workspace = true
+# `npm search` sends its parameters in the query string.
+serde_urlencoded.workspace = true
+url.workspace = true
+# Web. `utoipa` is for the browser-login endpoints under `/api/npm`.
+axum.workspace = true
+http.workspace = true
+utoipa.workspace = true
+# Database / serde
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# Utils
+ahash.workspace = true
+chrono.workspace = true
+derive_more.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
+strum.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+
+[lints]
+workspace = true
