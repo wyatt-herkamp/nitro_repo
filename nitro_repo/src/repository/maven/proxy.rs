@@ -144,6 +144,10 @@ fn project_download_files(pom: &Pom) -> Result<Vec<String>, MavenError> {
 /// How many directory-to-upstream mappings to remember. See [`MavenProxy::remember_route`].
 const ROUTE_MEMO_LIMIT: usize = 4096;
 
+/// The value `Repository::full_type()` reports, and what lands in the repository request
+/// span and metric attributes. Pinned by `repository_type_ids_are_stable`.
+pub static FULL_TYPE: &str = "maven/proxy";
+
 #[derive(Debug)]
 pub struct MavenProxyInner {
     pub storage: DynStorage,
@@ -438,7 +442,7 @@ impl Repository for MavenProxy {
         REPOSITORY_TYPE_ID
     }
     fn full_type(&self) -> &'static str {
-        "maven/proxy"
+        FULL_TYPE
     }
     fn config_types(&self) -> Vec<&str> {
         vec![

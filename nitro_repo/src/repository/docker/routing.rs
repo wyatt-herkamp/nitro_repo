@@ -31,11 +31,11 @@ use tracing::{Span, debug};
 
 use super::{DockerError, errors::ErrorCode};
 use crate::{
-    app::{NitroRepo, RepositoryStorageName, host_routing::request_host},
+    app::{NitroRepo, RepositoryStorageName},
     repository::{
         DynRepository, Repository, RepositoryAuthentication, dispatch_repository_request,
     },
-    utils::request_logging::request_span::RequestSpan,
+    utils::{host::request_host, request_logging::request_span::RequestSpan},
 };
 
 pub fn v2_router() -> Router<NitroRepo> {
@@ -149,7 +149,7 @@ async fn resolve(
         .as_deref()
         .and_then(|host| site.repository_for_hostname(host))
     {
-        if repository.get_type() == "docker" {
+        if repository.get_type() == super::REPOSITORY_TYPE_ID {
             debug!(?host, repository = %repository.name(), "Routing /v2 by host");
             return Resolution::Docker { repository, path };
         }
@@ -188,7 +188,7 @@ async fn resolve(
             components[0], components[1]
         ));
     };
-    if repository.get_type() != "docker" {
+    if repository.get_type() != super::REPOSITORY_TYPE_ID {
         return Resolution::Unknown(format!(
             "`{}/{}` is a `{}` repository, not a Docker one",
             components[0],

@@ -143,12 +143,15 @@ impl IntoResponse for CargoRegistryError {
     }
 }
 
+/// The value stored in `repositories.repository_type`. See [`crate::repository::npm::REPOSITORY_TYPE_ID`].
+pub static REPOSITORY_TYPE_ID: &str = "cargo";
+
 #[derive(Debug, Default)]
 pub struct CargoRegistryType;
 
 impl RepositoryType for CargoRegistryType {
     fn get_type(&self) -> &'static str {
-        "cargo"
+        REPOSITORY_TYPE_ID
     }
 
     fn config_types(&self) -> Vec<&str> {
@@ -161,7 +164,7 @@ impl RepositoryType for CargoRegistryType {
 
     fn get_description(&self) -> RepositoryTypeDescription {
         RepositoryTypeDescription {
-            type_name: "cargo",
+            type_name: REPOSITORY_TYPE_ID,
             name: "Cargo",
             description: "A Cargo registry, speaking the sparse index protocol",
             documentation_url: Some("https://nitro-repo.kingtux.dev/repositories/cargo/"),
@@ -193,7 +196,7 @@ impl RepositoryType for CargoRegistryType {
             Ok(NewRepository {
                 name,
                 uuid,
-                repository_type: "cargo".to_string(),
+                repository_type: REPOSITORY_TYPE_ID.to_string(),
                 configs,
             })
         })

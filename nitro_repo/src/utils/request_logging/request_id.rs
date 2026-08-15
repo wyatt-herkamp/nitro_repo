@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
-use axum::extract::{FromRef, FromRequestParts};
+use axum::extract::FromRequestParts;
 use derive_more::derive::{From, Into};
 use http::{HeaderValue, header::InvalidHeaderValue, request::Parts};
 use sqlx::types::Uuid;
 
-use crate::{app::NitroRepo, utils::extensions::MissingInternelExtension};
+use crate::utils::extensions::MissingInternelExtension;
 
 #[derive(Debug, Clone, Copy, From, Into)]
 pub struct RequestId(pub Uuid);
@@ -25,9 +25,12 @@ impl RequestId {
             .ok_or(MissingInternelExtension("Request ID"))
     }
 }
+/// Reads the id the request-id layer put in the extensions.
+///
+/// Bounded only on `S: Send + Sync`. It used to require `NitroRepo: FromRef<S>` and then ignore
+/// the state entirely, which tied this extractor — and so all of `utils` — to the app state.
 impl<S> FromRequestParts<S> for RequestId
 where
-    NitroRepo: FromRef<S>,
     S: Send + Sync,
 {
     type Rejection = MissingInternelExtension;

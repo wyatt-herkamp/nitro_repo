@@ -27,11 +27,10 @@ use crate::{
         NitroRepo,
         api::require_scope,
         authentication::Authentication,
-        host_routing::normalize_host,
         responses::{MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
-    utils::{ResponseBuilder, conflict::ConflictResponse},
+    utils::{ResponseBuilder, conflict::ConflictResponse, host::normalize_host},
 };
 
 pub fn hostname_routes() -> Router<NitroRepo> {

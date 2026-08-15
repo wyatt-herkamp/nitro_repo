@@ -59,6 +59,10 @@ use crate::{
     utils::ResponseBuilder,
 };
 
+/// The value `Repository::full_type()` reports, and what lands in the repository request
+/// span and metric attributes. Pinned by `repository_type_ids_are_stable`.
+pub static FULL_TYPE: &str = "npm/hosted";
+
 #[derive(derive_more::Debug)]
 pub struct NpmRegistryInner {
     #[debug(skip)]
@@ -527,7 +531,7 @@ impl Repository for NPMHostedRegistry {
         "npm"
     }
     fn full_type(&self) -> &'static str {
-        "npm/hosted"
+        FULL_TYPE
     }
 
     fn config_types(&self) -> Vec<&str> {

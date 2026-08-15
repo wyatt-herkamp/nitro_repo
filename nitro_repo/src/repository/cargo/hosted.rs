@@ -67,6 +67,10 @@ pub struct CargoRegistryInner {
     pub active: AtomicBool,
 }
 
+/// The value `Repository::full_type()` reports, and what lands in the repository request
+/// span and metric attributes. Pinned by `repository_type_ids_are_stable`.
+pub static FULL_TYPE: &str = "cargo/hosted";
+
 #[derive(Debug, Clone, Deref)]
 pub struct CargoHostedRegistry(Arc<CargoRegistryInner>);
 
@@ -656,7 +660,7 @@ impl Repository for CargoHostedRegistry {
     }
 
     fn full_type(&self) -> &'static str {
-        "cargo/hosted"
+        FULL_TYPE
     }
 
     fn config_types(&self) -> Vec<&str> {

@@ -68,6 +68,10 @@ pub struct DockerRegistryInner {
     pub active: AtomicBool,
 }
 
+/// The value `Repository::full_type()` reports, and what lands in the repository request
+/// span and metric attributes. Pinned by `repository_type_ids_are_stable`.
+pub static FULL_TYPE: &str = "docker/hosted";
+
 #[derive(Debug, Clone, Deref)]
 pub struct DockerHostedRegistry(Arc<DockerRegistryInner>);
 
@@ -145,9 +149,18 @@ impl DockerHostedRegistry {
     /// Docker is running, and it is also what lets the token endpoint work out which repository the
     /// caller means when the image name carries no prefix.
     pub fn challenge(&self, parts: &Parts, image: Option<&str>, actions: &str) -> DockerError {
-        let base =
-            crate::app::host_routing::request_origin(&self.0.site, &parts.headers, &parts.uri)
-                .unwrap_or_default();
+        let site = &self.0.site;
+        let app_url = {
+            let instance = site.instance.lock();
+            instance.app_url.clone()
+        };
+        let base = crate::utils::host::request_origin(
+            &parts.headers,
+            &parts.uri,
+            site.general_security_settings.trust_forwarded_host,
+            &app_url,
+        )
+        .unwrap_or_default();
         DockerError::Challenge {
             // Under `/api`, not under `/v2`, so it can never collide with an image literally named
             // `token`. `/api` is nested before the fallback and served on every host, so it is
@@ -1062,7 +1075,7 @@ impl Repository for DockerHostedRegistry {
     }
 
     fn full_type(&self) -> &'static str {
-        "docker/hosted"
+        FULL_TYPE
     }
 
     fn config_types(&self) -> Vec<&str> {

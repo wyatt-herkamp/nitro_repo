@@ -497,7 +497,7 @@ impl NitroRepo {
     }
     /// The repository a request for `host` belongs to, or `None` if the host is not registered.
     ///
-    /// `host` must already have been normalised by [`crate::app::host_routing::normalize_host`].
+    /// `host` must already have been normalised by [`crate::utils::host::normalize_host`].
     ///
     /// Unlike [`Self::get_repository_from_names`] this is infallible and synchronous: the index is
     /// complete, so a miss needs no database round trip. That is what makes it cheap enough to run
@@ -595,6 +595,55 @@ pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[
 #[cfg(test)]
 mod registry_tests {
     use super::*;
+
+    /// Every string this server persists or routes on, written out by hand.
+    ///
+    /// `repositories.repository_type` and `repository_configs.key` are free `VARCHAR`s with no
+    /// constraint behind them, and `full_type()` feeds the span and metric attributes that
+    /// dashboards are built on. Nothing about renaming a Rust item tells you that you have just
+    /// orphaned every repository row of that type — the failure surfaces at startup as
+    /// "Repository type not found", naming nothing useful.
+    ///
+    /// So this test deliberately duplicates the constants rather than referring to them. A
+    /// duplicate that has to be edited in two places is the point: the second edit is where you
+    /// notice the first one was a data migration.
+    #[test]
+    fn repository_type_ids_are_stable() {
+        use crate::repository::{cargo, docker, maven, npm};
+
+        assert_eq!(maven::REPOSITORY_TYPE_ID, "maven");
+        assert_eq!(npm::REPOSITORY_TYPE_ID, "npm");
+        assert_eq!(cargo::REPOSITORY_TYPE_ID, "cargo");
+        assert_eq!(docker::REPOSITORY_TYPE_ID, "docker");
+
+        assert_eq!(maven::hosted::FULL_TYPE, "maven/hosted");
+        assert_eq!(maven::proxy::FULL_TYPE, "maven/proxy");
+        assert_eq!(npm::hosted::FULL_TYPE, "npm/hosted");
+        assert_eq!(cargo::hosted::FULL_TYPE, "cargo/hosted");
+        assert_eq!(docker::hosted::FULL_TYPE, "docker/hosted");
+
+        assert_eq!(MavenRepositoryConfigType.get_type(), "maven");
+        assert_eq!(MavenPushRulesConfigType.get_type(), "maven_push_rules");
+        assert_eq!(NPMRegistryConfigType.get_type(), "npm");
+        assert_eq!(CargoRegistryConfigType.get_type(), "cargo");
+        assert_eq!(DockerRegistryConfigType.get_type(), "docker");
+        assert_eq!(ProjectConfigType.get_type(), "project");
+        // `page`, not `repository_page` — the config key and the Rust type name differ here.
+        assert_eq!(RepositoryPageType.get_type(), "page");
+    }
+
+    /// The registries are hand-written arrays, so a dropped entry is not a compile error — and the
+    /// two drift tests below iterate them, so a *missing* type passes both of those happily. The
+    /// only symptom would be every repository of that type failing to load at startup.
+    #[test]
+    fn every_repository_type_is_registered() {
+        let mut registered: Vec<_> = REPOSITORY_TYPES
+            .iter()
+            .map(|repository_type| repository_type.get_type())
+            .collect();
+        registered.sort_unstable();
+        assert_eq!(registered, ["cargo", "docker", "maven", "npm"]);
+    }
 
     /// Every config key a repository type advertises must actually be registered.
     ///

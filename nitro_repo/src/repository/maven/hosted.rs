@@ -44,6 +44,11 @@ use crate::{
     },
     utils::ResponseBuilder,
 };
+
+/// The value `Repository::full_type()` reports, and what lands in the repository request
+/// span and metric attributes. Pinned by `repository_type_ids_are_stable`.
+pub static FULL_TYPE: &str = "maven/hosted";
+
 #[derive(derive_more::Debug)]
 pub struct MavenHostedInner {
     pub id: Uuid,
@@ -473,7 +478,7 @@ impl Repository for MavenHosted {
         REPOSITORY_TYPE_ID
     }
     fn full_type(&self) -> &'static str {
-        "maven/hosted"
+        FULL_TYPE
     }
     #[inline(always)]
     fn name(&self) -> String {

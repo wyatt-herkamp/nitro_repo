@@ -5,7 +5,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, header::ToStrError};
 use nr_core::{
     database::entities::project::{NewProject, versions::NewVersion},
-    repository::project::VersionData,
+    repository::project::{ReleaseType, VersionData},
     storage::{StoragePath, StoragePathComponent},
 };
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ use tracing::{debug, info};
 use uuid::Uuid;
 
 use super::NPMPackageName;
-use crate::repository::{maven::get_release_type, npm::NPMRegistryError};
+use crate::repository::npm::NPMRegistryError;
 
 /// The value of the `npm-command` header.
 ///
@@ -267,7 +267,7 @@ impl PublishVersion {
         save_path: String,
         publisher: i32,
     ) -> Result<NewVersion, NPMRegistryError> {
-        let release_type = get_release_type(&self.version);
+        let release_type = ReleaseType::release_type_from_version(&self.version);
         let extra = VersionData {
             extra: Some(serde_json::to_value(self).unwrap()),
             ..Default::default()

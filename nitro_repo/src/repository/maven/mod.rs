@@ -9,11 +9,8 @@ use nr_core::{
         DBError,
         entities::repository::{DBRepository, DBRepositoryConfig},
     },
-    repository::{
-        config::{
-            RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
-        },
-        project::ReleaseType,
+    repository::config::{
+        RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
     },
     storage::StoragePath,
 };
@@ -56,7 +53,7 @@ impl RepositoryType for MavenRepositoryType {
 
     fn get_description(&self) -> super::RepositoryTypeDescription {
         super::RepositoryTypeDescription {
-            type_name: "maven",
+            type_name: REPOSITORY_TYPE_ID,
             name: "Maven",
             description: "A Maven Repository",
             documentation_url: Some("https://nitro-repo.kingtux.dev/repositories/maven/"),
@@ -93,7 +90,7 @@ impl RepositoryType for MavenRepositoryType {
             Ok(super::NewRepository {
                 name,
                 uuid,
-                repository_type: "maven".to_string(),
+                repository_type: REPOSITORY_TYPE_ID.to_string(),
                 configs,
             })
         })
@@ -225,13 +222,5 @@ impl IntoResponse for MavenError {
                 )))
                 .unwrap(),
         }
-    }
-}
-pub fn get_release_type(version: &str) -> ReleaseType {
-    let version = version.to_lowercase();
-    if version.contains("snapshot") {
-        ReleaseType::Snapshot
-    } else {
-        ReleaseType::Stable
     }
 }

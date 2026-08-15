@@ -153,12 +153,19 @@ impl IntoResponse for NPMRegistryError {
         }
     }
 }
+/// The value stored in `repositories.repository_type`.
+///
+/// A named constant rather than a literal at each of the three sites that produce it: the column
+/// is a free `VARCHAR` with no constraint, so a typo here is a repository nobody can load, and the
+/// failure lands at startup naming nothing useful. Pinned by `repository_type_ids_are_stable`.
+pub static REPOSITORY_TYPE_ID: &str = "npm";
+
 #[derive(Debug, Default)]
 pub struct NpmRegistryType;
 
 impl RepositoryType for NpmRegistryType {
     fn get_type(&self) -> &'static str {
-        "npm"
+        REPOSITORY_TYPE_ID
     }
 
     fn config_types(&self) -> Vec<&str> {
@@ -171,7 +178,7 @@ impl RepositoryType for NpmRegistryType {
 
     fn get_description(&self) -> RepositoryTypeDescription {
         RepositoryTypeDescription {
-            type_name: "npm",
+            type_name: REPOSITORY_TYPE_ID,
             name: "NPM",
             description: "A NPM Registry",
             documentation_url: Some("https://nitro-repo.kingtux.dev/repositories/npm/"),
@@ -206,7 +213,7 @@ impl RepositoryType for NpmRegistryType {
             Ok(NewRepository {
                 name,
                 uuid,
-                repository_type: "npm".to_string(),
+                repository_type: REPOSITORY_TYPE_ID.to_string(),
                 configs,
             })
         })

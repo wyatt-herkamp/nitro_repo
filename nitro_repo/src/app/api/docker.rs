@@ -198,7 +198,7 @@ async fn resolve_repository(
         }
     }
 
-    let host = crate::app::host_routing::request_host(
+    let host = crate::utils::host::request_host(
         &parts.headers,
         &parts.uri,
         site.general_security_settings.trust_forwarded_host,

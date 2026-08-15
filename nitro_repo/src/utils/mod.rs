@@ -5,6 +5,7 @@ pub mod requests;
 pub mod response;
 pub use response::*;
 pub mod header;
+pub mod host;
 pub mod other;
 pub mod request_logging;
 pub use requests::*;

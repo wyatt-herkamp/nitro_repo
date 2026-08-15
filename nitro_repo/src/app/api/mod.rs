@@ -175,7 +175,7 @@ impl Serialize for RouteNotFound {
 /// Only *unmatched* `/api` paths get here, so the real API stays reachable on a custom domain — a
 /// request for `/api/user/me` still hits `/api/user/me`.
 async fn route_not_found(State(site): State<NitroRepo>, request: Request) -> Response {
-    let host = crate::app::host_routing::request_host(
+    let host = crate::utils::host::request_host(
         request.headers(),
         request.uri(),
         site.general_security_settings.trust_forwarded_host,

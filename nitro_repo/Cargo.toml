@@ -36,7 +36,6 @@ http-body = "1"
 http-body-util.workspace = true
 utoipa = { workspace = true, features = ["axum_extras"] }
 utoipa-scalar = { version = "0.3", features = ["axum"], optional = true }
-async-trait = "0.1"
 # TLS
 tokio-rustls = "0.26"
 rustls = { version = "0.23" }
@@ -57,7 +56,6 @@ rand.workspace = true
 rust-embed = { version = "8", features = ["interpolate-folder-path"] }
 argon2 = { version = "0.5.3", features = ["std"] }
 chrono.workspace = true
-regex = "1"
 futures-util.workspace = true
 base64.workspace = true
 tokio.workspace = true
