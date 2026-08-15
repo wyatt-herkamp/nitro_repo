@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::DynRepository;
-use crate::{app::NitroRepo, error::InternalError};
+use crate::{app::SiteContext, error::InternalError};
 
 #[derive(Debug, Clone, Serialize, ToSchema, Digestible)]
 pub struct RepositoryTypeDescription {
@@ -89,7 +89,7 @@ pub trait RepositoryType: Send + Debug + Sync {
         &self,
         repo: DBRepository,
         storage: DynStorage,
-        website: NitroRepo,
+        website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>>;
 }
 pub type DynRepositoryType = Box<dyn RepositoryType + Send + Sync>;

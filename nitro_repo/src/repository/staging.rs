@@ -11,7 +11,7 @@ use thiserror::Error;
 use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
-use crate::app::{NitroRepo, config::get_current_directory};
+use crate::app::{SiteContext, config::get_current_directory};
 #[derive(Debug, Error)]
 pub enum StagingManagerError {
     #[error("Database Error")]
@@ -46,7 +46,7 @@ impl Default for StagingConfig {
 }
 pub struct StagingManagerInner {
     repository: Uuid,
-    site: NitroRepo,
+    site: SiteContext,
 }
 #[derive(Deref, Clone)]
 pub struct StagingManager(Arc<StagingManagerInner>);

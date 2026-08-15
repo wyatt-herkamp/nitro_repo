@@ -172,7 +172,7 @@ pub async fn new_repository(
     };
     let db_repository = repository.insert(storage, site.as_ref()).await?;
     match repository_factory
-        .load_repo(db_repository.clone(), loaded_storage, site.clone())
+        .load_repo(db_repository.clone(), loaded_storage, site.context())
         .await
     {
         Ok(loaded) => {

@@ -223,7 +223,7 @@ impl RepositoryType for NpmRegistryType {
         &self,
         repo: DBRepository,
         storage: DynStorage,
-        website: NitroRepo,
+        website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
         Box::pin(async move {
             let Some(npm_config_db) = DBRepositoryConfig::<NPMRegistryConfig>::get_config(

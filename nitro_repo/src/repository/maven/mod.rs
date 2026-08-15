@@ -19,7 +19,7 @@ use nr_storage::DynStorage;
 use proxy::MavenProxy;
 
 use super::*;
-use crate::{app::NitroRepo, error::OtherInternalError, utils::bad_request::BadRequestErrors};
+use crate::{app::SiteContext, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 mod configs;
 use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod checksum;
@@ -102,7 +102,7 @@ impl RepositoryType for MavenRepositoryType {
         &self,
         repo: DBRepository,
         storage: DynStorage,
-        website: NitroRepo,
+        website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
         Box::pin(async move {
             MavenRepository::load(repo, storage, website)
@@ -121,7 +121,7 @@ impl MavenRepository {
     pub async fn load(
         repo: DBRepository,
         storage: DynStorage,
-        website: NitroRepo,
+        website: SiteContext,
     ) -> Result<Self, RepositoryFactoryError> {
         let Some(maven_config_db) = DBRepositoryConfig::<MavenRepositoryConfig>::get_config(
             repo.id,

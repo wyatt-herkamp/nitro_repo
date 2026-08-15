@@ -74,6 +74,10 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
         variants.push(variant_ident);
     }
 
+    // The generated code names `Repository`, `SiteContext`, `Visibility`, `StoragePath`,
+    // `ProjectResolution`, `RepositoryRequest`, `RepoResponse` and `RepositoryFactoryError`
+    // unqualified, so every derive site must have the repository prelude in scope. That is a real
+    // coupling, and the reason a rename in the `Repository` trait has to be mirrored here.
     let result = quote! {
         #(
             #impl_from
@@ -88,7 +92,7 @@ pub(crate) fn expand(derive_input: DeriveInput) -> Result<TokenStream> {
                     )*
                 }
             }
-            fn site(&self) -> NitroRepo{
+            fn site(&self) -> SiteContext{
                 match self {
                     #(
                         #ident::#variants(variant) => variant.site(),

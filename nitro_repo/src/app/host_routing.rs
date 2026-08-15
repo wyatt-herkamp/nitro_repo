@@ -94,7 +94,7 @@ async fn dispatch_by_host(
 
     let request = Request::from_parts(parts, body);
     dispatch_repository_request(
-        &site,
+        &site.context(),
         repository,
         path,
         authentication,

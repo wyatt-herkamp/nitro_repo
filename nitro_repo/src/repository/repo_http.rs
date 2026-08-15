@@ -10,7 +10,7 @@ use axum::{
 
 use crate::{
     app::{
-        NitroRepo, RepositoryStorageName, authentication::AuthenticationError,
+        NitroRepo, RepositoryStorageName, SiteContext, authentication::AuthenticationError,
         responses::RepositoryNotFound,
     },
     error::IllegalStateError,
@@ -504,7 +504,7 @@ pub async fn handle_repo_request(
     };
     drop(entered_guard);
     Ok(dispatch_repository_request(
-        &site,
+        &site.context(),
         repository,
         path.unwrap_or_default(),
         authentication,
@@ -525,7 +525,7 @@ pub async fn handle_repo_request(
 /// reads conditional-request headers, and [`redirect_directory_to_slash`] emits a relative
 /// `Location`. That is what lets a host-routed request reuse this unchanged.
 pub(crate) async fn dispatch_repository_request(
-    site: &NitroRepo,
+    site: &SiteContext,
     repository: DynRepository,
     path: StoragePath,
     authentication: RepositoryAuthentication,

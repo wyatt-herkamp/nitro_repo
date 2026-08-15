@@ -206,7 +206,7 @@ impl RepositoryType for CargoRegistryType {
         &self,
         repo: DBRepository,
         storage: DynStorage,
-        website: NitroRepo,
+        website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
         Box::pin(async move {
             let Some(config) = DBRepositoryConfig::<CargoRegistryConfig>::get_config(

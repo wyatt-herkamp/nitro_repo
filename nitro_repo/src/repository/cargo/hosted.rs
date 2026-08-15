@@ -43,7 +43,7 @@ use super::{
     utils::{crate_file_path, crate_project_dir, crate_version_dir, registry_base_url, to_hex},
 };
 use crate::{
-    app::NitroRepo,
+    app::SiteContext,
     repository::{
         RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError,
         RepositoryRequest, utils::RepositoryExt,
@@ -59,7 +59,7 @@ const MAX_SEARCH_SIZE: i64 = 100;
 #[derive(derive_more::Debug)]
 pub struct CargoRegistryInner {
     #[debug(skip)]
-    pub site: NitroRepo,
+    pub site: SiteContext,
     pub storage: DynStorage,
     pub id: uuid::Uuid,
     pub name: String,
@@ -76,7 +76,7 @@ pub struct CargoHostedRegistry(Arc<CargoRegistryInner>);
 
 impl CargoHostedRegistry {
     pub async fn load(
-        site: NitroRepo,
+        site: SiteContext,
         storage: DynStorage,
         repository: DBRepository,
     ) -> Result<Self, RepositoryFactoryError> {
@@ -651,7 +651,7 @@ impl Repository for CargoHostedRegistry {
         self.0.storage.clone()
     }
 
-    fn site(&self) -> NitroRepo {
+    fn site(&self) -> SiteContext {
         self.0.site.clone()
     }
 

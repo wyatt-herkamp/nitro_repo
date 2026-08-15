@@ -36,7 +36,7 @@ use super::{
     configs::MavenPushRules, metadata, push_rules, utils::MavenRepositoryExt,
 };
 use crate::{
-    app::NitroRepo,
+    app::SiteContext,
     repository::{
         Repository, RepositoryFactoryError,
         maven::{MavenRepositoryConfigType, configs::MavenPushRulesConfigType},
@@ -60,7 +60,7 @@ pub struct MavenHostedInner {
     #[debug(skip)]
     pub storage: DynStorage,
     #[debug(skip)]
-    pub site: NitroRepo,
+    pub site: SiteContext,
 }
 impl MavenHostedInner {}
 #[derive(Debug, Clone, Deref)]
@@ -430,7 +430,7 @@ impl MavenHosted {
     pub async fn load(
         repository: DBRepository,
         storage: DynStorage,
-        site: NitroRepo,
+        site: SiteContext,
     ) -> Result<Self, RepositoryFactoryError> {
         let push_rules_db = get_repository_config_or_default::<
             MavenPushRulesConfigType,
@@ -462,7 +462,7 @@ impl MavenHosted {
 impl Repository for MavenHosted {
     type Error = MavenError;
     #[inline(always)]
-    fn site(&self) -> NitroRepo {
+    fn site(&self) -> SiteContext {
         self.0.site.clone()
     }
     #[inline(always)]

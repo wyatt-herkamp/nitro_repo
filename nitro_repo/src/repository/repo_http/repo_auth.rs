@@ -13,7 +13,7 @@ use tracing::{debug, instrument};
 use uuid::Uuid;
 
 use crate::app::{
-    NitroRepo,
+    SiteContext,
     authentication::{AuthenticationError, AuthenticationRaw, session::Session, verify_login},
 };
 
@@ -139,9 +139,12 @@ impl RepositoryAuthentication {
         )
     }
 }
+/// Bounded on [`SiteContext`], not on the whole application state: the body below reads nothing
+/// but the database, and requiring `NitroRepo` here is what tied every repository router to the
+/// binary.
 impl<S> FromRequestParts<S> for RepositoryAuthentication
 where
-    NitroRepo: FromRef<S>,
+    SiteContext: FromRef<S>,
     S: Send + Sync,
 {
     type Rejection = AuthenticationError;
@@ -152,7 +155,7 @@ where
     )]
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
-        let repo = NitroRepo::from_ref(state);
+        let repo = SiteContext::from_ref(state);
         let Some(raw_auth) = raw_extension else {
             return Err(AuthenticationError::Unauthorized);
         };

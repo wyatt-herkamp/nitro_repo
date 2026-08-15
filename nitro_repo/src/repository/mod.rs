@@ -19,7 +19,7 @@ pub mod prelude {
         DynRepositoryHandlerError, RepoResponse, Repository, RepositoryFactoryError,
         RepositoryHandlerError, RepositoryRequest,
     };
-    pub use crate::app::NitroRepo;
+    pub use crate::app::SiteContext;
 }
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
@@ -41,7 +41,7 @@ pub mod utils;
 pub use error::*;
 
 use crate::{
-    app::{NitroRepo, authentication::AuthenticationError},
+    app::{SiteContext, authentication::AuthenticationError},
     utils::IntoErrorResponse,
 };
 pub trait Repository: Send + Sync + Clone + Debug {
@@ -60,7 +60,7 @@ pub trait Repository: Send + Sync + Clone + Debug {
     fn visibility(&self) -> Visibility;
     fn is_active(&self) -> bool;
     /// Returns a copy of the site that this Repository is associated with
-    fn site(&self) -> NitroRepo;
+    fn site(&self) -> SiteContext;
     fn resolve_project_and_version_for_path(
         &self,
         path: &StoragePath,

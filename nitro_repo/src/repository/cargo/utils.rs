@@ -61,33 +61,19 @@ pub fn registry_base_url(
     parts: &Parts,
 ) -> Result<String, CargoRegistryError> {
     let site = repository.site();
-    let trust_forwarded = site.general_security_settings.trust_forwarded_host;
-    // Read once: `request_origin` needs it as a fallback and so does the `/repositories` form
-    // below, and taking the lock twice would let the two disagree if `update_app_url` landed
-    // between them.
-    let app_url = {
-        let instance = site.instance.lock();
-        instance.app_url.clone()
-    };
 
-    if let Some(host) =
-        crate::utils::host::request_host(&parts.headers, &parts.uri, trust_forwarded)
-        && site
-            .repository_for_hostname(&host)
-            .is_some_and(|found| found.id() == repository.id())
-        && let Some(origin) = crate::utils::host::request_origin(
-            &parts.headers,
-            &parts.uri,
-            trust_forwarded,
-            &app_url,
-        )
+    // `hostname_belongs_to`, not a lookup-then-compare: the answer is in the hostname index, so it
+    // needs no access to the repository map — which is what keeps that map out of `SiteContext`.
+    if let Some(host) = site.request_host(parts)
+        && site.hostname_belongs_to(&host, repository.id())
+        && let Some(origin) = site.request_origin(parts)
     {
         // The origin, not the looked-up host: the lookup is deliberately port-blind, but the URL
         // written into `config.json` is what cargo will actually request.
         return Ok(origin);
     }
 
-    let base = app_url.trim_end_matches('/').to_owned();
+    let base = site.app_url();
     if base.is_empty() {
         return Err(CargoRegistryError::NoAppUrl);
     }

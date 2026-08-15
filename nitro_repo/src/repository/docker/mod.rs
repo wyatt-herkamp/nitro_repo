@@ -259,7 +259,7 @@ impl RepositoryType for DockerRegistryType {
         &self,
         repo: DBRepository,
         storage: DynStorage,
-        website: NitroRepo,
+        website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
         Box::pin(async move {
             let Some(config) = DBRepositoryConfig::<DockerRegistryConfig>::get_config(

@@ -37,7 +37,7 @@ use super::{
     MavenError, MavenRepositoryConfig, MavenRepositoryConfigType, REPOSITORY_TYPE_ID, RepoResponse,
     RepositoryRequest, metadata, repo_type::RepositoryFactoryError, utils::MavenRepositoryExt,
 };
-use crate::{app::NitroRepo, repository::Repository};
+use crate::{app::SiteContext, repository::Repository};
 /// How long a cached artifact is served before the upstream is asked again.
 ///
 /// Zero means forever, which is right for a released artifact — those are immutable by
@@ -151,7 +151,7 @@ pub static FULL_TYPE: &str = "maven/proxy";
 #[derive(Debug)]
 pub struct MavenProxyInner {
     pub storage: DynStorage,
-    pub site: NitroRepo,
+    pub site: SiteContext,
     pub id: Uuid,
     pub name: String,
     pub visibility: RwLock<Visibility>,
@@ -178,7 +178,7 @@ impl MavenProxy {
     pub async fn load(
         repository: DBRepository,
         storage: DynStorage,
-        site: NitroRepo,
+        site: SiteContext,
         mut proxy_config: MavenProxyConfig,
     ) -> Result<Self, RepositoryFactoryError> {
         let project_config_db =
@@ -622,7 +622,7 @@ impl Repository for MavenProxy {
         }
         Ok(ProjectResolution::default())
     }
-    fn site(&self) -> NitroRepo {
+    fn site(&self) -> SiteContext {
         self.0.site.clone()
     }
 }

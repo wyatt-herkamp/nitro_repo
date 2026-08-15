@@ -43,7 +43,7 @@ use super::{
     utils::{NpmRegistryExt, npm_time},
 };
 use crate::{
-    app::NitroRepo,
+    app::SiteContext,
     repository::{
         RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError,
         RepositoryRequest,
@@ -66,7 +66,7 @@ pub static FULL_TYPE: &str = "npm/hosted";
 #[derive(derive_more::Debug)]
 pub struct NpmRegistryInner {
     #[debug(skip)]
-    pub site: NitroRepo,
+    pub site: SiteContext,
     pub storage: DynStorage,
     pub id: uuid::Uuid,
     pub name: String,
@@ -80,7 +80,7 @@ pub struct NpmRegistryInner {
 pub struct NPMHostedRegistry(Arc<NpmRegistryInner>);
 impl NPMHostedRegistry {
     pub async fn load(
-        site: NitroRepo,
+        site: SiteContext,
         storage: DynStorage,
         repository: DBRepository,
     ) -> Result<Self, RepositoryFactoryError> {
@@ -523,7 +523,7 @@ impl Repository for NPMHostedRegistry {
     fn get_storage(&self) -> DynStorage {
         self.0.storage.clone()
     }
-    fn site(&self) -> NitroRepo {
+    fn site(&self) -> SiteContext {
         self.0.site.clone()
     }
 

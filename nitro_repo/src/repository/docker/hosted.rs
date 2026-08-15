@@ -45,7 +45,7 @@ use super::{
     },
 };
 use crate::{
-    app::NitroRepo,
+    app::SiteContext,
     repository::{
         RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError,
         RepositoryRequest, utils::RepositoryExt,
@@ -60,7 +60,7 @@ const MAX_PAGE_SIZE: usize = 1000;
 #[derive(derive_more::Debug)]
 pub struct DockerRegistryInner {
     #[debug(skip)]
-    pub site: NitroRepo,
+    pub site: SiteContext,
     pub storage: DynStorage,
     pub id: Uuid,
     pub name: String,
@@ -77,7 +77,7 @@ pub struct DockerHostedRegistry(Arc<DockerRegistryInner>);
 
 impl DockerHostedRegistry {
     pub async fn load(
-        site: NitroRepo,
+        site: SiteContext,
         storage: DynStorage,
         repository: DBRepository,
     ) -> Result<Self, RepositoryFactoryError> {
@@ -1066,7 +1066,7 @@ impl Repository for DockerHostedRegistry {
         self.0.storage.clone()
     }
 
-    fn site(&self) -> NitroRepo {
+    fn site(&self) -> SiteContext {
         self.0.site.clone()
     }
 

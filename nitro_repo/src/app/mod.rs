@@ -47,9 +47,9 @@ use crate::{
     repository::{
         DynRepository, RepositoryType, StagingConfig,
         cargo::{CargoRegistryConfigType, CargoRegistryType},
-        docker::{DockerRegistryConfigType, DockerRegistryType, uploads::BlobUploadManager},
+        docker::{DockerRegistryConfigType, DockerRegistryType},
         maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
-        npm::{NPMRegistryConfigType, NpmRegistryType, login::web_login::NpmWebLoginManager},
+        npm::{NPMRegistryConfigType, NpmRegistryType},
         repo_tracing::RepositoryMetricsMeter,
     },
     utils::ip_addr::HasForwardedHeader,
@@ -58,6 +58,8 @@ pub mod api;
 pub mod badge;
 pub mod host_routing;
 pub mod responses;
+mod site_context;
+pub use site_context::{HostnameIndex, SiteContext, SiteContextInner};
 pub mod web;
 #[derive(Debug, Serialize, Clone, ToSchema)]
 pub struct Instance {
@@ -116,31 +118,28 @@ pub struct InternalServices {
     pub email: Option<EmailService>,
 }
 pub struct NitroRepoInner {
-    pub instance: Mutex<Instance>,
+    /// The slice of this state a repository is given. See [`SiteContext`] for what is in it and,
+    /// more to the point, what is deliberately not.
+    ///
+    /// `NitroRepoInner` derefs to its contents, so `site.instance`, `site.staging_config` and
+    /// friends still resolve as before.
+    pub context: SiteContext,
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
-    /// Custom hostnames that route straight into a repository, keyed by the normalised
-    /// (lowercased, port-stripped) host.
-    ///
-    /// Materialised in full at startup and kept in step by every mutation, rather than filled
-    /// lazily like [`Self::name_lookup_table`]. This one is consulted by the router fallback, which
-    /// every request that is not `/api`, `/badge` or `/repositories` reaches — including every
-    /// static asset of the web UI. A lazy read-through cache would turn each of those into an
-    /// unauthenticated database round trip. Here a miss is authoritative.
-    pub hostname_lookup_table: RwLock<HashMap<String, Uuid>>,
-    pub general_security_settings: SecuritySettings,
     #[cfg(feature = "frontend")]
     pub frontend: frontend::HostedFrontend,
-    pub staging_config: StagingConfig,
     services: Mutex<InternalServices>,
     pub suggested_local_storage_path: PathBuf,
-    /// npm browser-login sessions awaiting approval. In memory on purpose — see
-    /// [`crate::repository::npm::login::web_login`].
-    pub npm_web_logins: NpmWebLoginManager,
-    /// In-progress Docker blob uploads. Buffered to the staging directory and tracked in memory,
-    /// for the reasons set out in [`crate::repository::docker::uploads`].
-    pub docker_uploads: BlobUploadManager,
+}
+
+// `std::ops::Deref` spelled out: `Deref` in this module is `derive_more`'s derive macro.
+impl std::ops::Deref for NitroRepoInner {
+    type Target = SiteContextInner;
+
+    fn deref(&self) -> &SiteContextInner {
+        &self.context
+    }
 }
 macro_rules! take_service {
     ($(
@@ -236,6 +235,22 @@ impl HasForwardedHeader for NitroRepo {
         Some(&X_FORWARDED_FOR_HEADER)
     }
 }
+
+/// Lets an extractor ask for only the context, so anything that needs no more than the context is
+/// not bound to the whole application state. `RepositoryAuthentication` is the reason this exists.
+impl axum::extract::FromRef<NitroRepo> for SiteContext {
+    fn from_ref(site: &NitroRepo) -> SiteContext {
+        site.inner.context.clone()
+    }
+}
+
+impl NitroRepo {
+    /// The slice of this state that repositories are given.
+    pub fn context(&self) -> SiteContext {
+        self.inner.context.clone()
+    }
+}
+
 impl NitroRepo {
     #[instrument]
     async fn load_database(database: DatabaseConfig) -> anyhow::Result<PgPool> {
@@ -280,21 +295,23 @@ impl NitroRepo {
         } else {
             std::env::current_dir()?.join("storages")
         };
-        let docker_uploads = BlobUploadManager::new(&staging_config.staging_dir);
+        let repository_metrics = RepositoryMetricsMeter::default();
+        let context = SiteContext::new(
+            database.clone(),
+            instance,
+            security,
+            staging_config,
+            repository_metrics.clone(),
+        );
         let nitro_repo = NitroRepoInner {
-            instance: Mutex::new(instance),
+            context,
             storages: RwLock::new(HashMap::new()),
             repositories: RwLock::new(HashMap::new()),
             name_lookup_table: Mutex::new(HashMap::new()),
-            hostname_lookup_table: RwLock::new(HashMap::new()),
-            general_security_settings: security,
-            staging_config,
             services: Mutex::new(services),
             #[cfg(feature = "frontend")]
             frontend: frontend::HostedFrontend::new(site.frontend_path)?,
             suggested_local_storage_path,
-            npm_web_logins: NpmWebLoginManager::default(),
-            docker_uploads,
         };
 
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
@@ -305,7 +322,7 @@ impl NitroRepo {
             database,
             email_access: Arc::new(email_access),
             metrics: AppMetrics::default(),
-            repository_metrics: RepositoryMetricsMeter::default(),
+            repository_metrics,
         };
         nitro_repo.load_storages().await?;
         nitro_repo.load_repositories().await?;
@@ -362,25 +379,21 @@ impl NitroRepo {
                 .context("Repository type not found")?;
             let repository_id = db_repository.id;
             let repository = repository_type
-                .load_repo(db_repository, storage, self.clone())
+                .load_repo(db_repository, storage, self.context())
                 .await?;
             repositories.insert(repository_id, repository);
         }
         info!("Loaded {} repositories", repositories.len());
         Ok(())
     }
-    /// Fills [`NitroRepoInner::hostname_lookup_table`] from the database.
+    /// Fills the [`HostnameIndex`] from the database.
     ///
     /// Must run after [`Self::load_repositories`] — a hostname is only useful once the repository
     /// it points at is loaded.
     async fn load_hostnames(&self) -> anyhow::Result<()> {
         let pairs = DBRepositoryHostname::all_pairs(&self.database).await?;
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.clear();
-        for (hostname, repository_id) in pairs {
-            lookup_table.insert(hostname.to_lowercase(), repository_id);
-        }
-        info!("Loaded {} repository hostnames", lookup_table.len());
+        self.hostnames.replace_all(pairs);
+        info!("Loaded {} repository hostnames", self.hostnames.len());
         Ok(())
     }
     pub fn get_storage_factory(&self, storage_name: &str) -> Option<&'static dyn StorageFactory> {
@@ -503,32 +516,25 @@ impl NitroRepo {
     /// complete, so a miss needs no database round trip. That is what makes it cheap enough to run
     /// on every request that reaches the router's fallback.
     pub fn repository_for_hostname(&self, host: &str) -> Option<DynRepository> {
-        let id = {
-            let lookup_table = self.hostname_lookup_table.read();
-            lookup_table.get(host).copied()
-        }?;
+        let id = self.hostnames.get(host)?;
         let repository = self.get_repository(id);
         if repository.is_none() {
             warn!(?host, ?id, "Hostname points at an unloaded repository");
-            let mut lookup_table = self.hostname_lookup_table.write();
-            lookup_table.remove(host);
+            self.hostnames.remove(host);
         }
         repository
     }
     pub fn register_hostname(&self, hostname: String, repository_id: Uuid) {
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.insert(hostname.to_lowercase(), repository_id);
+        self.hostnames.insert(hostname, repository_id);
     }
     pub fn unregister_hostname(&self, hostname: &str) {
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.remove(&hostname.to_lowercase());
+        self.hostnames.remove(hostname);
     }
     /// Drops every hostname pointing at this repository.
     ///
     /// The database rows go by `ON DELETE CASCADE`; this is the in-memory half of the same delete.
     pub fn forget_repository_hostnames(&self, id: Uuid) {
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.retain(|_, value| *value != id);
+        self.hostnames.forget_repository(id);
     }
     pub fn get_storage(&self, id: Uuid) -> Option<DynStorage> {
         let storages = self.storages.read();
