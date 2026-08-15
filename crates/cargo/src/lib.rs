@@ -26,11 +26,13 @@ pub mod utils;
 
 mod configs;
 pub use configs::*;
-
-pub use super::prelude::*;
-use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
-use crate::{
-    app::authentication::AuthenticationError,
+// The prelude is what the `DynRepositoryHandler` derive expects in scope at the derive site.
+use nr_repository::prelude::*;
+use nr_repository::{
+    DynRepository, NewRepository, RepositoryHandlerError, RepositoryType, RepositoryTypeDescription,
+};
+use nr_web_core::{
+    authentication::AuthenticationError,
     utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
 

@@ -2,7 +2,7 @@
 //!
 //! Cargo speaks two things over one URL prefix: the sparse index (under `index/`) and the web API
 //! (under `api/v1/`). Both are addressed by path rather than by a header, so — like npm's
-//! [`GetPath`](crate::repository::npm::types::request::GetPath) — this is a `TryFrom<StoragePath>`
+//! [`GetPath`](nr_npm::types::request::GetPath) — this is a `TryFrom<StoragePath>`
 //! rather than a set of axum routes.
 
 use nr_core::storage::StoragePath;

@@ -95,6 +95,7 @@ nr-macros.workspace = true
 nr-web-core.workspace = true
 nr-repository.workspace = true
 nr-maven.workspace = true
+nr-cargo.workspace = true
 nr-storage.workspace = true
 nr-aql.workspace = true
 redb = { version = "4" }

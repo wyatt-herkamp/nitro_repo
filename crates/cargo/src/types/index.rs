@@ -161,7 +161,7 @@ pub fn index_path_for(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{IndexEntry, index_path_for};
-    use crate::repository::cargo::types::publish::PublishMetadata;
+    use crate::types::publish::PublishMetadata;
 
     #[test]
     fn the_index_path_depends_on_the_name_length() {

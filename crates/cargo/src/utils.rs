@@ -2,10 +2,10 @@ use std::fmt::Write;
 
 use http::request::Parts;
 use nr_core::storage::StoragePath;
+use nr_repository::Repository;
 use nr_storage::Storage;
 
 use super::CargoRegistryError;
-use crate::repository::Repository;
 
 /// Lowercase hex, which is the only form cargo accepts for `cksum`.
 ///

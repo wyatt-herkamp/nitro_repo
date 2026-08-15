@@ -29,6 +29,7 @@ nr-badge = { path = "crates/badge" }
 nr-web-core = { path = "crates/web-core" }
 nr-repository = { path = "crates/repository" }
 nr-maven = { path = "crates/maven" }
+nr-cargo = { path = "crates/cargo" }
 
 # Web. Promoted to the workspace now that more than the binary needs them.
 axum = { version = "0.8", features = ["macros", "tokio", "ws"] }
@@ -44,6 +45,7 @@ argon2 = { version = "0.5.3", features = ["std"] }
 redb = "4"
 semver = { version = "1", features = ["std", "serde"] }
 maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
+serde_urlencoded = "0.7"
 opentelemetry = { version = "0.32", features = [] }
 # Rust Utilities
 futures = "0.3"

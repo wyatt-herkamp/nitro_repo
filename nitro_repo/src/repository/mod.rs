@@ -7,9 +7,8 @@
 
 pub use nr_repository::*;
 
-pub mod cargo;
 pub mod docker;
 pub mod npm;
 
-/// Its own crate now. Aliased so `crate::repository::maven::` still resolves.
-pub use nr_maven as maven;
+/// Their own crates now. Aliased so `crate::repository::{maven,cargo}::` still resolve.
+pub use {nr_cargo as cargo, nr_maven as maven};
