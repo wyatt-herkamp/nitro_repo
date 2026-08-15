@@ -15,7 +15,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::DynRepository;
-use crate::SiteContext;
+use crate::{RepositoryRouterState, SiteContext};
 
 #[derive(Debug, Clone, Serialize, ToSchema, Digestible)]
 pub struct RepositoryTypeDescription {
@@ -101,7 +101,11 @@ pub trait RepositoryType: Send + Debug + Sync {
     /// without being able to name any of it. That is what lets the manager live on the type
     /// instead of on the application state, which is where it used to have to live precisely
     /// because these routes needed to reach it.
-    fn api_router(&self) -> Option<Router<SiteContext>> {
+    ///
+    /// The state is [`RepositoryRouterState`] rather than a bare [`SiteContext`] because Docker's
+    /// token endpoint has to resolve an image name to a repository. A handler that needs only the
+    /// context can still ask for `State<SiteContext>`, which `FromRef` supplies.
+    fn api_router(&self) -> Option<Router<RepositoryRouterState>> {
         None
     }
 }

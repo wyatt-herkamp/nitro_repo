@@ -16,69 +16,59 @@
 //! A host that resolves to a repository which is *not* a Docker one falls through to the normal
 //! host dispatch, so an artifact whose path happens to begin with `v2/` is still served over a
 //! custom domain — `/v2` does not become a fourth entry in the "cannot be served over a custom
-//! domain" list in [`host_routing`](crate::app::host_routing).
+//! domain" list in [`host_routing`](the application's host routing).
 
 use axum::{
-    Router,
-    extract::{FromRequestParts, Request, State},
+    extract::{FromRequestParts, Request},
     response::{IntoResponse, Response},
-    routing::any,
 };
 use http::{HeaderMap, Uri};
 use nr_core::storage::StoragePath;
+use nr_repository::{
+    DynRepository, RepositoryAuthentication, RepositoryRouterState, RepositoryStorageName,
+    dispatch_repository_request,
+};
+use nr_web_core::utils::{host::request_host, request_logging::request_span::RequestSpan};
 use percent_encoding::percent_decode_str;
 use tracing::{Span, debug};
 
 use super::{DockerError, errors::ErrorCode};
-use crate::{
-    app::{NitroRepo, RepositoryStorageName},
-    repository::{DynRepository, RepositoryAuthentication, dispatch_repository_request},
-    utils::{host::request_host, request_logging::request_span::RequestSpan},
-};
 
-pub fn v2_router() -> Router<NitroRepo> {
-    Router::new()
-        .route("/v2", any(handle_v2))
-        .route("/v2/", any(handle_v2))
-        .route("/v2/{*path}", any(handle_v2))
-}
+/// The routes `/v2` needs. The application mounts these at the host root, after `/repositories`,
+/// `/api` and `/badge` and before its own fallback.
+///
+/// Exported as patterns rather than as a `Router` so that this crate does not have to know what to
+/// do when a request turns out not to be its own — see [`try_handle_v2`].
+pub const V2_ROUTES: &[&str] = &["/v2", "/v2/", "/v2/{*path}"];
 
-async fn handle_v2(State(site): State<NitroRepo>, request: Request) -> Response {
-    // The URI path is still percent-encoded here: `{*path}` is captured but this handler reads the
-    // URI directly so that `/v2` and `/v2/` reach the same code as `/v2/{*path}`.
-    let raw = request
-        .uri()
-        .path()
-        .strip_prefix("/v2")
-        .unwrap_or_default()
-        .to_owned();
-    let decoded = percent_decode_str(&raw).decode_utf8_lossy();
-    // `parse`, not `From<&str>`: this is client-controlled, and `From` silently drops `..` rather
-    // than rejecting it.
-    let path = match StoragePath::parse(&decoded) {
-        Ok(path) => path,
-        Err(error) => {
-            return DockerError::coded(ErrorCode::NameInvalid, error.to_string()).into_response();
-        }
-    };
-
+/// Serves a `/v2` request, or hands it back when it is not addressed to a Docker repository.
+///
+/// `Err(request)` is where this used to call straight into the application's frontend fallback.
+/// The decision "this is not mine" belongs here; the decision "so serve the frontend instead"
+/// belongs to the application. Nothing has been consumed from the request when it is handed back.
+pub async fn try_handle_v2(
+    state: &RepositoryRouterState,
+    request: Request,
+) -> Result<Response, Request> {
     // Headers and URI, not `&request`: a `&Request` is not `Send` (its `Body` is not `Sync`), so
-    // holding one across the lookup's `.await` would make this handler's future non-`Send` and
-    // axum would refuse it — with an error that names neither the borrow nor the reason.
-    match resolve(&site, request.headers(), request.uri(), path).await {
-        Resolution::Docker { repository, path } => dispatch(site, repository, path, request).await,
-        // A hostname pointing at something that is not a Docker repository: serve the request as
-        // that repository's own path, which is what it would have got without this router.
-        Resolution::OtherRepository => {
-            crate::app::host_routing::host_or_frontend(State(site), request)
-                .await
-                .unwrap_or_else(|error| error.into_response())
-        }
-        Resolution::VersionCheck => version_check(&site, request).await,
+    // holding one across the lookup's `.await` would make this future non-`Send` and axum would
+    // refuse the handler — with an error that names neither the borrow nor the reason.
+    let resolution = resolve(state, request.headers(), request.uri()).await;
+
+    Ok(match resolution {
+        Resolution::Docker { repository, path } => dispatch(state, repository, path, request).await,
+        // A hostname pointing at something that is not a Docker repository. Handed back so the
+        // request is served as that repository's own path, which is what it would have got
+        // without this router in the way.
+        Resolution::OtherRepository => return Err(request),
+        Resolution::VersionCheck => version_check(state, request).await,
         Resolution::Unknown(message) => {
             DockerError::coded(ErrorCode::NameUnknown, message).into_response()
         }
-    }
+        Resolution::InvalidPath(message) => {
+            DockerError::coded(ErrorCode::NameInvalid, message).into_response()
+        }
+    })
 }
 
 /// `GET /v2/` with no repository behind it.
@@ -86,11 +76,11 @@ async fn handle_v2(State(site): State<NitroRepo>, request: Request) -> Response 
 /// Credentials, if any, are checked so that `docker login` finds out about a typo now rather than
 /// on the first push. No credentials is not an error: an anonymous pull of a public image starts
 /// with this same probe, and answering `401` would make it give up before it ever named an image.
-async fn version_check(site: &NitroRepo, request: Request) -> Response {
+async fn version_check(state: &RepositoryRouterState, request: Request) -> Response {
     let (mut parts, _) = request.into_parts();
     let authenticated =
-        <RepositoryAuthentication as FromRequestParts<NitroRepo>>::from_request_parts(
-            &mut parts, site,
+        <RepositoryAuthentication as FromRequestParts<RepositoryRouterState>>::from_request_parts(
+            &mut parts, state,
         )
         .await;
 
@@ -106,10 +96,7 @@ async fn version_check(site: &NitroRepo, request: Request) -> Response {
             .unwrap(),
         Err(error) => {
             debug!(?error, "Refused a /v2/ probe carrying bad credentials");
-            let base = {
-                let instance = site.instance.lock();
-                instance.app_url.trim_end_matches('/').to_owned()
-            };
+            let base = state.context.app_url();
             DockerError::Challenge {
                 realm: format!("{base}/api/docker/token"),
                 scope: None,
@@ -128,31 +115,49 @@ enum Resolution {
     VersionCheck,
     OtherRepository,
     Unknown(String),
+    /// The path after `/v2` is not a path this server will accept.
+    InvalidPath(String),
+}
+
+/// The Docker sub-path: everything after `/v2`, percent-decoded.
+///
+/// Read off the URI rather than from the `{*path}` capture so that `/v2` and `/v2/` reach the same
+/// code as `/v2/{*path}`.
+fn v2_path(uri: &Uri) -> Result<StoragePath, String> {
+    let raw = uri.path().strip_prefix("/v2").unwrap_or_default();
+    let decoded = percent_decode_str(raw).decode_utf8_lossy();
+    // `parse`, not `From<&str>`: this is client-controlled, and `From` silently drops `..` rather
+    // than rejecting it.
+    StoragePath::parse(&decoded).map_err(|error| error.to_string())
 }
 
 /// Works out which repository a `/v2` request is for, and what the path means to it.
-async fn resolve(
-    site: &NitroRepo,
-    headers: &HeaderMap,
-    uri: &Uri,
-    path: StoragePath,
-) -> Resolution {
-    let host = request_host(
-        headers,
-        uri,
-        site.general_security_settings.trust_forwarded_host,
-    );
+async fn resolve(state: &RepositoryRouterState, headers: &HeaderMap, uri: &Uri) -> Resolution {
+    let host = request_host(headers, uri, state.context.trust_forwarded_host());
 
+    // The host is checked before the path is parsed. The other way round, a malformed path on a
+    // hostname belonging to a *Maven* repository answered with a Docker `NameInvalid` instead of
+    // falling through to the repository that owns the host.
     if let Some(repository) = host
         .as_deref()
-        .and_then(|host| site.repository_for_hostname(host))
+        .and_then(|host| state.resolver.repository_for_hostname(host))
     {
-        if repository.get_type() == super::REPOSITORY_TYPE_ID {
-            debug!(?host, repository = %repository.name(), "Routing /v2 by host");
-            return Resolution::Docker { repository, path };
+        if repository.get_type() != super::REPOSITORY_TYPE_ID {
+            return Resolution::OtherRepository;
         }
-        return Resolution::OtherRepository;
+        return match v2_path(uri) {
+            Ok(path) => {
+                debug!(?host, repository = %repository.name(), "Routing /v2 by host");
+                Resolution::Docker { repository, path }
+            }
+            Err(message) => Resolution::InvalidPath(message),
+        };
     }
+
+    let path = match v2_path(uri) {
+        Ok(path) => path,
+        Err(message) => return Resolution::InvalidPath(message),
+    };
 
     let components: Vec<String> = Vec::<nr_core::storage::StoragePathComponent>::from(path)
         .into_iter()
@@ -174,7 +179,7 @@ async fn resolve(
     }
 
     let names = RepositoryStorageName::from((components[0].clone(), components[1].clone()));
-    let repository = match site.get_repository_from_names(&names).await {
+    let repository = match state.resolver.repository_from_names(&names).await {
         Ok(repository) => repository,
         Err(error) => {
             return Resolution::Unknown(format!("could not look up the repository: {error}"));
@@ -208,7 +213,7 @@ async fn resolve(
 }
 
 async fn dispatch(
-    site: NitroRepo,
+    state: &RepositoryRouterState,
     repository: DynRepository,
     path: StoragePath,
     request: Request,
@@ -224,19 +229,18 @@ async fn dispatch(
     // Extracted here rather than as a handler argument, for the same reason host routing does it:
     // `AuthenticationLayer` skips `OPTIONS`, and `RepositoryAuthentication` rejects a request it
     // did not annotate — which would turn every preflight into a 401.
-    let authentication =
-        match <RepositoryAuthentication as FromRequestParts<NitroRepo>>::from_request_parts(
-            &mut parts, &site,
-        )
-        .await
-        {
-            Ok(authentication) => authentication,
-            Err(error) => return error.into_response(),
-        };
+    let authentication = match <RepositoryAuthentication as FromRequestParts<
+        RepositoryRouterState,
+    >>::from_request_parts(&mut parts, state)
+    .await
+    {
+        Ok(authentication) => authentication,
+        Err(error) => return error.into_response(),
+    };
 
     let request = Request::from_parts(parts, body);
     dispatch_repository_request(
-        &site.context(),
+        &state.context,
         repository,
         path,
         authentication,

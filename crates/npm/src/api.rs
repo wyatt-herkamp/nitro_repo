@@ -39,7 +39,9 @@ use super::login::web_login::NpmWebLoginManager;
 )]
 pub struct NpmAPI;
 
-pub fn npm_routes(web_logins: Arc<NpmWebLoginManager>) -> Router<SiteContext> {
+pub fn npm_routes(
+    web_logins: Arc<NpmWebLoginManager>,
+) -> Router<nr_repository::RepositoryRouterState> {
     Router::new()
         .route("/login/{session}", axum::routing::get(login_session))
         .route("/login/{session}", axum::routing::post(complete_login))

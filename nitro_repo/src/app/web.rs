@@ -8,8 +8,10 @@ use std::{
 
 use anyhow::Context;
 use axum::{
-    Router,
-    extract::{DefaultBodyLimit, Request},
+    Extension, Router,
+    extract::{DefaultBodyLimit, Request, State},
+    response::{IntoResponse, Response},
+    routing::any,
 };
 use futures_util::pin_mut;
 use http::{HeaderName, HeaderValue};
@@ -93,6 +95,32 @@ pub async fn start(config_path: Option<PathBuf>) -> anyhow::Result<()> {
 /// Separate from [`start`] so the integration tests can drive the real router in-process, with the
 /// real middleware stack, rather than starting a server on a port and talking to it over TCP. A
 /// test that builds its own router tests its own router.
+/// `/v2` at the host root.
+///
+/// The Docker crate decides whether a `/v2` request is one of its own and hands back the ones that
+/// are not — a hostname registered to a Maven repository, say. Deciding what to do with those is
+/// the application's job, not the registry's, so the fallback is applied here.
+fn v2_router(state: crate::repository::RepositoryRouterState) -> Router<NitroRepo> {
+    async fn handle(
+        State(site): State<NitroRepo>,
+        Extension(state): Extension<crate::repository::RepositoryRouterState>,
+        request: Request,
+    ) -> Response {
+        match crate::repository::docker::try_handle_v2(&state, request).await {
+            Ok(response) => response,
+            Err(request) => super::host_routing::host_or_frontend(State(site), request)
+                .await
+                .unwrap_or_else(|error| error.into_response()),
+        }
+    }
+
+    let mut router = Router::new();
+    for route in crate::repository::docker::V2_ROUTES {
+        router = router.route(route, any(handle));
+    }
+    router.layer(Extension(state))
+}
+
 pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBodyLimit) -> Router {
     let auth_layer = AuthenticationLayer::from(site.session_manager.clone());
     let repository_state = crate::repository::RepositoryRouterState::new(
@@ -116,7 +144,7 @@ pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBody
         // `/v2/x/y/...` at the host root. Mounted after the three nests above so none of them can
         // be shadowed, and before the fallback so a `/v2` request is not mistaken for a frontend
         // route. See `crate::repository::docker::routing`.
-        .merge(crate::repository::docker::v2_router())
+        .merge(v2_router(repository_state))
         // Not `frontend_request` directly: a request whose `Host` is registered to a repository is
         // served by that repository, and everything else still gets the single-page app.
         .fallback(super::host_routing::host_or_frontend)

@@ -53,6 +53,10 @@ pub async fn require_scope(
 /// `site` rather than nothing, because the per-type routes come off the repository-type registry
 /// and each arrives already carrying whatever state is private to that type.
 pub fn api_routes(site: &NitroRepo) -> axum::Router<NitroRepo> {
+    let repository_state = crate::repository::RepositoryRouterState::new(
+        site.context(),
+        std::sync::Arc::new(site.clone()),
+    );
     let mut router = axum::Router::new()
         .route("/info", axum::routing::get(info))
         .route("/info/scopes", axum::routing::get(scopes))
@@ -65,9 +69,6 @@ pub fn api_routes(site: &NitroRepo) -> axum::Router<NitroRepo> {
         )
         .nest("/repository", repository::repository_routes())
         .nest("/project", project::project_routes())
-        // The realm a Docker client is sent to by the `WWW-Authenticate` challenge. Under `/api`
-        // rather than under `/v2` so it can never collide with an image named `token`.
-        .nest("/docker", crate::repository::docker::api::docker_routes())
         .nest("/search", search::search_routes());
 
     // Each repository type may serve its own routes under `/api/{type}`. Mounted from the registry
@@ -77,7 +78,7 @@ pub fn api_routes(site: &NitroRepo) -> axum::Router<NitroRepo> {
         if let Some(sub) = repository_type.api_router() {
             router = router.nest(
                 &format!("/{}", repository_type.get_type()),
-                sub.with_state(site.context()),
+                sub.with_state(repository_state.clone()),
             );
         }
     }

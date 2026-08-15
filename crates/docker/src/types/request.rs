@@ -8,7 +8,7 @@ use nr_core::storage::StoragePath;
 use uuid::Uuid;
 
 use super::digest::Digest;
-use crate::repository::docker::{DockerError, errors::ErrorCode};
+use crate::{DockerError, errors::ErrorCode};
 
 /// What a manifest request addresses: a mutable tag, or an immutable digest.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -226,12 +226,12 @@ mod tests {
     use nr_core::storage::StoragePath;
 
     use super::{DockerPath, Reference, is_valid_image_name, is_valid_tag};
-    use crate::repository::docker::types::digest::Digest;
+    use crate::types::digest::Digest;
 
     const EMPTY_SHA256: &str =
         "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
-    fn parse(path: &str) -> Result<DockerPath, crate::repository::docker::DockerError> {
+    fn parse(path: &str) -> Result<DockerPath, crate::DockerError> {
         DockerPath::parse(&StoragePath::parse(path).unwrap())
     }
 

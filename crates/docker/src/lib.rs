@@ -15,7 +15,7 @@
 //! * otherwise the first two segments of the image name are the storage and repository — `docker
 //!   pull nitro.example.com/local/docker/alpine`.
 //!
-//! Both end up in [`dispatch_repository_request`](crate::repository::dispatch_repository_request),
+//! Both end up in [`dispatch_repository_request`](nr_repository::dispatch_repository_request),
 //! the same function the other two entry points use.
 //!
 //! # What is not here
@@ -45,17 +45,20 @@ pub mod uploads;
 
 mod configs;
 pub use configs::*;
-pub use routing::v2_router;
-
-pub use super::prelude::*;
-use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
-use crate::{
-    app::authentication::AuthenticationError,
-    repository::docker::{
-        errors::ErrorCode,
-        uploads::{BlobUploadManager, UploadError},
-    },
+// The prelude is what the `DynRepositoryHandler` derive expects in scope at the derive site.
+use nr_repository::prelude::*;
+use nr_repository::{
+    DynRepository, NewRepository, RepositoryHandlerError, RepositoryType, RepositoryTypeDescription,
+};
+use nr_web_core::{
+    authentication::AuthenticationError,
     utils::{IntoErrorResponse, bad_request::BadRequestErrors},
+};
+pub use routing::{V2_ROUTES, try_handle_v2};
+
+use crate::{
+    errors::ErrorCode,
+    uploads::{BlobUploadManager, UploadError},
 };
 
 /// Every response a registry sends carries this, and older clients use it to decide whether the
@@ -274,6 +277,12 @@ impl RepositoryType for DockerRegistryType {
                 configs,
             })
         })
+    }
+
+    /// The realm a Docker client is sent to by the `WWW-Authenticate` challenge. Under `/api`
+    /// rather than under `/v2` so it can never collide with an image named `token`.
+    fn api_router(&self) -> Option<axum::Router<nr_repository::RepositoryRouterState>> {
+        Some(api::docker_routes())
     }
 
     fn load_repo(

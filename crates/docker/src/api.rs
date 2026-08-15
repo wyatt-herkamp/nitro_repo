@@ -21,20 +21,11 @@ use chrono::{Duration, Local};
 use nr_core::{
     database::entities::user::auth_token::NewRepositoryToken, user::permissions::RepositoryActions,
 };
+use nr_repository::{RepositoryAuthentication, RepositoryRouterState, RepositoryStorageName};
+use nr_web_core::{error::InternalError, utils::ResponseBuilder};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
 use utoipa::{OpenApi, ToSchema};
-
-// Still on `NitroRepo` rather than `SiteContext`: `resolve_repository` below has to turn a name or
-// a hostname into a loaded repository, and resolving repositories is deliberately not something
-// `SiteContext` can do (see its module docs on the reference cycle). This moves to the repository
-// resolver along with `routing.rs`, which is blocked on the same thing.
-use crate::{
-    app::{NitroRepo, RepositoryStorageName},
-    error::InternalError,
-    repository::RepositoryAuthentication,
-    utils::ResponseBuilder,
-};
 
 /// How long a minted token lives.
 ///
@@ -46,7 +37,7 @@ const TOKEN_LIFETIME: Duration = Duration::minutes(30);
 #[openapi(paths(token), components(schemas(TokenResponse)))]
 pub struct DockerAPI;
 
-pub fn docker_routes() -> axum::Router<NitroRepo> {
+pub fn docker_routes() -> axum::Router<RepositoryRouterState> {
     axum::Router::new().route("/token", axum::routing::get(token))
 }
 
@@ -80,9 +71,9 @@ pub struct TokenResponse {
         (status = 401, description = "The credentials were not accepted"),
     )
 )]
-#[instrument(skip(site, query, authentication, parts))]
+#[instrument(skip(state, query, authentication, parts))]
 pub async fn token(
-    State(site): State<NitroRepo>,
+    State(state): State<RepositoryRouterState>,
     Query(query): Query<TokenQuery>,
     authentication: RepositoryAuthentication,
     parts: http::request::Parts,
@@ -103,7 +94,7 @@ pub async fn token(
         // makes `docker login` report success.
         None => (None, vec![RepositoryActions::Read]),
     };
-    let repository = resolve_repository(&site, image.as_deref(), &parts).await;
+    let repository = resolve_repository(&state, image.as_deref(), &parts).await;
 
     let expires_at = Local::now().fixed_offset() + TOKEN_LIFETIME;
     let source = format!(
@@ -125,7 +116,7 @@ pub async fn token(
             expires_at: Some(expires_at),
         },
     };
-    let (_, secret) = new_token.insert(site.as_ref()).await?;
+    let (_, secret) = new_token.insert(state.context.db()).await?;
 
     Ok(ResponseBuilder::ok().json(&TokenResponse {
         access_token: secret.clone(),
@@ -183,7 +174,7 @@ fn parse_scope(scope: &str) -> Option<(String, Vec<RepositoryActions>)> {
 /// still checked against the repository it names, and a token with no repository scope passes no
 /// such check. It only keeps `docker login` working when there is nothing to scope to.
 async fn resolve_repository(
-    site: &NitroRepo,
+    state: &RepositoryRouterState,
     image: Option<&str>,
     parts: &http::request::Parts,
 ) -> Option<uuid::Uuid> {
@@ -194,7 +185,7 @@ async fn resolve_repository(
             // Through the cache-then-database lookup rather than the in-memory table alone: that
             // table is filled lazily, so a miss on a registry nobody has pulled from yet would mint
             // a token that grants nothing and make the first push of the day fail.
-            if let Ok(Some(found)) = site.get_repository_from_names(&names).await
+            if let Ok(Some(found)) = state.resolver.repository_from_names(&names).await
                 && found.get_type() == super::REPOSITORY_TYPE_ID
             {
                 return Some(found.id());
@@ -202,12 +193,10 @@ async fn resolve_repository(
         }
     }
 
-    let host = crate::utils::host::request_host(
-        &parts.headers,
-        &parts.uri,
-        site.general_security_settings.trust_forwarded_host,
-    )?;
-    site.repository_for_hostname(&host)
+    let host = state.context.request_host(parts)?;
+    state
+        .resolver
+        .repository_for_hostname(&host)
         .filter(|repository| repository.get_type() == super::REPOSITORY_TYPE_ID)
         .map(|repository| repository.id())
 }

@@ -1,13 +1,11 @@
-//! The four repository types, and a re-export of the contract they implement.
+//! The repository contract and the four types that implement it.
 //!
-//! The contract itself — [`Repository`], [`RepositoryType`], [`RepoResponse`], [`SiteContext`] and
-//! the HTTP plumbing around them — lives in `nr-repository`. It is re-exported here so that the
-//! existing `crate::repository::` paths keep resolving while the four types below are still in
-//! this crate; the glob goes away once each of them is its own crate too.
+//! Nothing here any more: `nr-repository` holds the contract, and each type is its own crate. The
+//! re-exports keep the existing `crate::repository::` paths resolving; they go away in the next
+//! commit, once every call site names the crate it means.
 
+pub use nr_cargo as cargo;
+pub use nr_docker as docker;
+pub use nr_maven as maven;
+pub use nr_npm as npm;
 pub use nr_repository::*;
-
-pub mod docker;
-
-/// Their own crates now. Aliased so `crate::repository::{maven,cargo,npm}::` still resolve.
-pub use {nr_cargo as cargo, nr_maven as maven, nr_npm as npm};

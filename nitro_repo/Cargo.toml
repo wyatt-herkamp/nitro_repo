@@ -97,6 +97,7 @@ nr-repository.workspace = true
 nr-maven.workspace = true
 nr-cargo.workspace = true
 nr-npm.workspace = true
+nr-docker.workspace = true
 nr-storage.workspace = true
 nr-aql.workspace = true
 redb = { version = "4" }

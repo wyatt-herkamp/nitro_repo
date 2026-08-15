@@ -29,7 +29,12 @@ use nr_core::{
     storage::StoragePath,
     user::permissions::RepositoryActions,
 };
+use nr_repository::{
+    RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError, RepositoryRequest,
+    SiteContext, utils::RepositoryExt,
+};
 use nr_storage::{DynStorage, FileContent, Storage, StorageFile};
+use nr_web_core::utils::ResponseBuilder;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, instrument, warn};
@@ -44,14 +49,6 @@ use super::{
         manifest::{DEFAULT_MANIFEST_MEDIA_TYPE, is_index},
     },
     uploads::BlobUploadManager,
-};
-use crate::{
-    app::SiteContext,
-    repository::{
-        RepoResponse, Repository, RepositoryAuthentication, RepositoryFactoryError,
-        RepositoryRequest, utils::RepositoryExt,
-    },
-    utils::ResponseBuilder,
 };
 
 /// The default page size for `tags/list` and `_catalog`, and the cap on what `?n=` can ask for.
@@ -162,7 +159,7 @@ impl DockerHostedRegistry {
             let instance = site.instance.lock();
             instance.app_url.clone()
         };
-        let base = crate::utils::host::request_origin(
+        let base = nr_web_core::utils::host::request_origin(
             &parts.headers,
             &parts.uri,
             site.general_security_settings.trust_forwarded_host,

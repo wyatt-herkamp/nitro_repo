@@ -263,7 +263,7 @@ impl RepositoryType for NpmRegistryType {
     ///
     /// Carries the same manager the registries got, so the page that approves a login and the
     /// `npm` process waiting on `doneUrl` are talking about the same sessions.
-    fn api_router(&self) -> Option<axum::Router<SiteContext>> {
+    fn api_router(&self) -> Option<axum::Router<nr_repository::RepositoryRouterState>> {
         Some(api::npm_routes(self.web_logins.clone()))
     }
 }

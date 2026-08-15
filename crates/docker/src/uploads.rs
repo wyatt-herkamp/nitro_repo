@@ -4,7 +4,7 @@
 //! bytes into it, then `PUT ?digest=` to commit. [`Storage::save_file`] takes a whole
 //! [`FileContent`](nr_storage::FileContent) and there is no append or streaming write on any
 //! backend, so the in-progress bytes are buffered to the local staging directory — the same place
-//! [`StagingManager`](crate::repository::staging::StagingManager) writes — and only handed to
+//! [`StagingManager`](nr_repository::staging::StagingManager) writes — and only handed to
 //! storage once the digest has been verified.
 //!
 //! The consequence, which the Docker docs page states: an upload is tied to the node that started
@@ -13,7 +13,7 @@
 //! multipart-upload state.
 //!
 //! The session table is modelled on
-//! [`NpmWebLoginManager`](crate::repository::npm::login::web_login::NpmWebLoginManager): an
+//! [`NpmWebLoginManager`](nr_repository::npm::login::web_login::NpmWebLoginManager): an
 //! in-memory map with a TTL, swept whenever a new session is opened.
 
 use std::{
@@ -267,7 +267,7 @@ mod tests {
     use uuid::Uuid;
 
     use super::{BlobUploadManager, UploadError};
-    use crate::repository::docker::types::digest::Digest;
+    use crate::types::digest::Digest;
 
     fn manager() -> (BlobUploadManager, tempfile::TempDir) {
         let directory = tempfile::tempdir().unwrap();
