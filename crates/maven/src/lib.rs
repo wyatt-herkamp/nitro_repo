@@ -15,13 +15,16 @@ use nr_core::{
     storage::StoragePath,
 };
 use nr_macros::DynRepositoryHandler;
+use nr_repository::SiteContext;
+// The prelude is what the `DynRepositoryHandler` derive expects in scope at the derive site.
+use nr_repository::{
+    AuthenticationError, IntoErrorResponse, RepoResponse, RepositoryHandlerError, prelude::*,
+};
 use nr_storage::DynStorage;
+use nr_web_core::{error::OtherInternalError, utils::bad_request::BadRequestErrors};
 use proxy::MavenProxy;
-
-use super::*;
-use crate::{app::SiteContext, error::OtherInternalError, utils::bad_request::BadRequestErrors};
 mod configs;
-use super::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
+use nr_repository::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
 pub mod checksum;
 pub mod hosted;
 pub mod metadata;
@@ -51,8 +54,8 @@ impl RepositoryType for MavenRepositoryType {
         ]
     }
 
-    fn get_description(&self) -> super::RepositoryTypeDescription {
-        super::RepositoryTypeDescription {
+    fn get_description(&self) -> nr_repository::RepositoryTypeDescription {
+        nr_repository::RepositoryTypeDescription {
             type_name: REPOSITORY_TYPE_ID,
             name: "Maven",
             description: "A Maven Repository",
@@ -68,7 +71,10 @@ impl RepositoryType for MavenRepositoryType {
         uuid: uuid::Uuid,
         configs: HashMap<String, serde_json::Value>,
         _storage: nr_storage::DynStorage,
-    ) -> BoxFuture<'static, Result<super::NewRepository, super::RepositoryFactoryError>> {
+    ) -> BoxFuture<
+        'static,
+        Result<nr_repository::NewRepository, nr_repository::RepositoryFactoryError>,
+    > {
         Box::pin(async move {
             let sub_type = configs
                 .get(MavenRepositoryConfigType::get_type_static())
@@ -87,7 +93,7 @@ impl RepositoryType for MavenRepositoryType {
             };
             // TODO: Check all configs
 
-            Ok(super::NewRepository {
+            Ok(nr_repository::NewRepository {
                 name,
                 uuid,
                 repository_type: REPOSITORY_TYPE_ID.to_string(),

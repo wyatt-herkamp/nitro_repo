@@ -85,14 +85,16 @@ semver = { version = "1", features = ["std", "serde"] }
 
 # Staging
 tempfile = "3"
-# Maven Stuff
-maven-rs = { git = "https://github.com/wyatt-herkamp/maven-rs.git" }
+# `seed` builds a real `pom.xml` for its fixture artifacts.
+maven-rs.workspace = true
+# Bundling the frontend, and building fixture jars for `seed`.
 zip = { version = "8" }
 current_semver = "0.1"
 nr-core.workspace = true
 nr-macros.workspace = true
 nr-web-core.workspace = true
 nr-repository.workspace = true
+nr-maven.workspace = true
 nr-storage.workspace = true
 nr-aql.workspace = true
 redb = { version = "4" }

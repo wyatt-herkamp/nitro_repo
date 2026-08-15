@@ -9,5 +9,7 @@ pub use nr_repository::*;
 
 pub mod cargo;
 pub mod docker;
-pub mod maven;
 pub mod npm;
+
+/// Its own crate now. Aliased so `crate::repository::maven::` still resolves.
+pub use nr_maven as maven;

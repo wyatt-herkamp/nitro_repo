@@ -26,6 +26,7 @@ use nr_core::{
     },
     storage::StoragePath,
 };
+use nr_repository::{Repository, SiteContext};
 use nr_storage::{DynStorage, FileContent, Storage, StorageFile};
 use parking_lot::RwLock;
 use schemars::JsonSchema;
@@ -37,7 +38,6 @@ use super::{
     MavenError, MavenRepositoryConfig, MavenRepositoryConfigType, REPOSITORY_TYPE_ID, RepoResponse,
     RepositoryFactoryError, RepositoryRequest, metadata, utils::MavenRepositoryExt,
 };
-use crate::{app::SiteContext, repository::Repository};
 /// How long a cached artifact is served before the upstream is asked again.
 ///
 /// Zero means forever, which is right for a released artifact — those are immutable by

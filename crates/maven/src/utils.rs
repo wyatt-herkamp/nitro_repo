@@ -10,12 +10,13 @@ use nr_core::{
     storage::{FileTypeCheck, StoragePath},
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_repository::{RepoResponse, Repository, RepositoryAuthentication, RepositoryHandlerError};
 use nr_storage::Storage;
+use nr_web_core::utils::bad_request::BadRequestErrors;
 use tracing::{Level, error, event, info, instrument, trace};
 use uuid::Uuid;
 
-use super::{MavenError, RepoResponse, RepositoryAuthentication, RepositoryHandlerError};
-use crate::{repository::Repository, utils::bad_request::BadRequestErrors};
+use crate::MavenError;
 
 /// Utilities for Maven Repositories
 pub trait MavenRepositoryExt: Repository + Debug {

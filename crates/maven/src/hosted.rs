@@ -26,7 +26,9 @@ use nr_core::{
     storage::StoragePath,
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_repository::{Repository, RepositoryFactoryError, SiteContext, utils::RepositoryExt};
 use nr_storage::{DynStorage, FileType, Storage, StorageFile};
+use nr_web_core::utils::ResponseBuilder;
 use parking_lot::RwLock;
 use tracing::{debug, error, event, info, instrument};
 use uuid::Uuid;
@@ -35,15 +37,7 @@ use super::{
     MavenError, REPOSITORY_TYPE_ID, RepoResponse, RepositoryRequest, checksum,
     configs::MavenPushRules, metadata, push_rules, utils::MavenRepositoryExt,
 };
-use crate::{
-    app::SiteContext,
-    repository::{
-        Repository, RepositoryFactoryError,
-        maven::{MavenRepositoryConfigType, configs::MavenPushRulesConfigType},
-        utils::RepositoryExt,
-    },
-    utils::ResponseBuilder,
-};
+use crate::{MavenRepositoryConfigType, configs::MavenPushRulesConfigType};
 
 /// The value `Repository::full_type()` reports, and what lands in the repository request
 /// span and metric attributes. Pinned by `repository_type_ids_are_stable`.
