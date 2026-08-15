@@ -69,6 +69,17 @@ impl IntoErrorResponse for RepositoryHandlerError {
 ///  it will create conflicting implementations
 #[derive(Debug)]
 pub struct DynRepositoryHandlerError(pub Box<dyn IntoErrorResponse>);
+
+impl DynRepositoryHandlerError {
+    /// Boxes any repository's concrete error.
+    ///
+    /// Generic, so erasing a repository needs no `From<XError>` impl per type — the four that
+    /// existed for exactly that purpose are gone.
+    pub fn new<E: IntoErrorResponse + 'static>(error: E) -> Self {
+        Self(Box::new(error))
+    }
+}
+
 impl Display for DynRepositoryHandlerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)

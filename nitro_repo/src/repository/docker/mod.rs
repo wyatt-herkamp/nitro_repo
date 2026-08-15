@@ -142,12 +142,6 @@ impl IntoErrorResponse for DockerError {
     }
 }
 
-impl From<DockerError> for DynRepositoryHandlerError {
-    fn from(err: DockerError) -> Self {
-        DynRepositoryHandlerError(Box::new(err))
-    }
-}
-
 impl IntoResponse for DockerError {
     fn into_response(self) -> Response {
         match self {
@@ -197,7 +191,11 @@ impl IntoResponse for DockerError {
     }
 }
 
-/// The value stored in `repositories.repository_type`. See [`crate::repository::npm::REPOSITORY_TYPE_ID`].
+/// The value stored in `repositories.repository_type`.
+///
+/// A named constant rather than a literal at each site that produces it: the column is a free
+/// `VARCHAR` with no constraint, so a typo here is a repository nobody can load. Pinned by
+/// `repository_type_ids_are_stable`.
 ///
 /// Also what `routing::resolve` compares a resolved repository's `get_type()` against when deciding
 /// whether a `/v2` request is one it should serve.
@@ -301,7 +299,7 @@ impl RepositoryType for DockerRegistryType {
                 DockerRegistryConfig::Hosted => {
                     let hosted =
                         DockerHostedRegistry::load(website, storage, repo, uploads).await?;
-                    Ok(DockerRegistry::Hosted(hosted).into())
+                    Ok(DockerRegistry::Hosted(hosted).into_dyn())
                 }
             }
         })

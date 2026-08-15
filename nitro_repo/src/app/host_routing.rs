@@ -26,7 +26,7 @@ use crate::{
     app::NitroRepo,
     error::InternalError,
     repository::{
-        DynRepository, Repository, RepositoryAuthentication, RepositoryRequestError,
+        DynRepository, RepositoryAuthentication, RepositoryRequestError,
         dispatch_repository_request,
     },
     utils::{host::request_host, request_logging::request_span::RequestSpan},

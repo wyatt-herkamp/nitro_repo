@@ -30,7 +30,7 @@ use crate::{
         responses::{MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
-    repository::{Repository, RepositoryTypeDescription},
+    repository::RepositoryTypeDescription,
     utils::ResponseBuilder,
 };
 mod browse;

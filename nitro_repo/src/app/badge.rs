@@ -21,7 +21,7 @@ use tracing::{Level, event, instrument};
 use utoipa::{IntoParams, OpenApi};
 
 use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
-use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
+use crate::{error::InternalError, utils::ResponseBuilder};
 #[derive(OpenApi)]
 #[openapi(
     paths(repository_badge, project_badge, supports_badges),

@@ -100,12 +100,6 @@ impl IntoErrorResponse for CargoRegistryError {
     }
 }
 
-impl From<CargoRegistryError> for DynRepositoryHandlerError {
-    fn from(err: CargoRegistryError) -> Self {
-        DynRepositoryHandlerError(Box::new(err))
-    }
-}
-
 /// The error shape cargo expects.
 ///
 /// Cargo reads `errors[].detail` out of the body and prints it. A plain-text body reaches the user
@@ -143,7 +137,11 @@ impl IntoResponse for CargoRegistryError {
     }
 }
 
-/// The value stored in `repositories.repository_type`. See [`crate::repository::npm::REPOSITORY_TYPE_ID`].
+/// The value stored in `repositories.repository_type`.
+///
+/// A named constant rather than a literal at each site that produces it: the column is a free
+/// `VARCHAR` with no constraint, so a typo here is a repository nobody can load. Pinned by
+/// `repository_type_ids_are_stable`.
 pub static REPOSITORY_TYPE_ID: &str = "cargo";
 
 #[derive(Debug, Default)]
@@ -223,7 +221,7 @@ impl RepositoryType for CargoRegistryType {
             match config.value.0 {
                 CargoRegistryConfig::Hosted => {
                     let hosted = CargoHostedRegistry::load(website, storage, repo).await?;
-                    Ok(CargoRegistry::Hosted(hosted).into())
+                    Ok(CargoRegistry::Hosted(hosted).into_dyn())
                 }
             }
         })

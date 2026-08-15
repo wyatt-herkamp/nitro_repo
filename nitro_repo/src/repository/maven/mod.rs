@@ -107,7 +107,7 @@ impl RepositoryType for MavenRepositoryType {
         Box::pin(async move {
             MavenRepository::load(repo, storage, website)
                 .await
-                .map(DynRepository::Maven)
+                .map(IntoDynRepository::into_dyn)
         })
     }
 }
@@ -162,11 +162,6 @@ pub enum MavenError {
     MissingFromPom(&'static str),
     #[error("{0}")]
     Other(Box<dyn IntoErrorResponse>),
-}
-impl From<MavenError> for DynRepositoryHandlerError {
-    fn from(err: MavenError) -> Self {
-        DynRepositoryHandlerError(Box::new(err))
-    }
 }
 macro_rules! impl_from_error_for_other {
     ($t:ty) => {

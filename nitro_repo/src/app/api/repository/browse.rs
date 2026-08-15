@@ -26,7 +26,7 @@ use crate::{
         responses::{MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
-    repository::{Repository, utils::can_read_repository},
+    repository::utils::can_read_repository,
     utils::{ResponseBuilder, request_logging::request_id::RequestId},
 };
 pub fn browse_routes() -> axum::Router<NitroRepo> {

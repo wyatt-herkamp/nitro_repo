@@ -22,7 +22,6 @@ use crate::{
         responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
-    repository::Repository,
     utils::ResponseBuilder,
 };
 #[derive(OpenApi)]

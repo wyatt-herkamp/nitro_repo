@@ -110,12 +110,6 @@ impl IntoErrorResponse for NPMRegistryError {
     }
 }
 
-impl From<NPMRegistryError> for DynRepositoryHandlerError {
-    fn from(err: NPMRegistryError) -> Self {
-        DynRepositoryHandlerError(Box::new(err))
-    }
-}
-
 /// The error shape npm expects. The CLI prints `error` verbatim, so a plain-text body reaches the
 /// user as an unhelpful "Unexpected token" instead of the message.
 fn npm_error(status: StatusCode, message: &str) -> Response {
@@ -258,7 +252,7 @@ impl RepositoryType for NpmRegistryType {
                 NPMRegistryConfig::Hosted => {
                     let maven_hosted =
                         NPMHostedRegistry::load(website, storage, repo, web_logins).await?;
-                    Ok(NPMRegistry::Hosted(maven_hosted).into())
+                    Ok(NPMRegistry::Hosted(maven_hosted).into_dyn())
                 }
             }
         })

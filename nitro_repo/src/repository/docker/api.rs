@@ -32,7 +32,7 @@ use utoipa::{OpenApi, ToSchema};
 use crate::{
     app::{NitroRepo, RepositoryStorageName},
     error::InternalError,
-    repository::{Repository, RepositoryAuthentication},
+    repository::RepositoryAuthentication,
     utils::ResponseBuilder,
 };
 

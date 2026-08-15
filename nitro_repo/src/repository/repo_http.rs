@@ -14,7 +14,6 @@ use crate::{
         responses::RepositoryNotFound,
     },
     error::IllegalStateError,
-    repository::Repository,
     utils::{
         bad_request::BadRequestErrors, header::date_time::date_time_for_header,
         request_logging::request_span::RequestSpan,
@@ -27,7 +26,7 @@ use axum_extra::routing::RouterExt;
 use bytes::Bytes;
 use derive_more::From;
 use http::{
-    HeaderValue, Method, StatusCode,
+    HeaderValue, StatusCode,
     header::{
         CONTENT_LENGTH, CONTENT_LOCATION, CONTENT_TYPE, ETAG, IF_MODIFIED_SINCE, IF_NONE_MATCH,
         LAST_MODIFIED, USER_AGENT,
@@ -535,7 +534,6 @@ pub(crate) async fn dispatch_repository_request(
     if !repository.is_active() {
         return RepoResponse::disabled_repository().into_response_default();
     }
-    let method = request.method().clone();
     let (parts, body) = request.into_parts();
     let response_context = ResponseContext::new(path.clone(), &parts);
     let trace =
@@ -550,15 +548,9 @@ pub(crate) async fn dispatch_repository_request(
     };
     let response = {
         let _guard = trace.span.enter();
-        let response = match method {
-            Method::GET => repository.handle_get(request).await,
-            Method::POST => repository.handle_post(request).await,
-            Method::PUT => repository.handle_put(request).await,
-            Method::DELETE => repository.handle_delete(request).await,
-            Method::PATCH => repository.handle_patch(request).await,
-            Method::HEAD => repository.handle_head(request).await,
-            _ => repository.handle_other(request).await,
-        };
+        // The method dispatch that used to be spelled out here now lives behind
+        // `RepositoryHandler::handle`, which does the same match on `request.parts.method`.
+        let response = repository.handle(request).await;
         match &response {
             Ok(_) => {
                 trace.ok();

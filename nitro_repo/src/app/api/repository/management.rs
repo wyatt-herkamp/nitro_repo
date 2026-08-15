@@ -30,7 +30,6 @@ use crate::{
         responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
     },
     error::InternalError,
-    repository::Repository,
     utils::{ResponseBuilder, conflict::ConflictResponse},
 };
 pub fn management_routes() -> Router<NitroRepo> {

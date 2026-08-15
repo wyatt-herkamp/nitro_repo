@@ -32,9 +32,7 @@ use tracing::{Span, debug};
 use super::{DockerError, errors::ErrorCode};
 use crate::{
     app::{NitroRepo, RepositoryStorageName},
-    repository::{
-        DynRepository, Repository, RepositoryAuthentication, dispatch_repository_request,
-    },
+    repository::{DynRepository, RepositoryAuthentication, dispatch_repository_request},
     utils::{host::request_host, request_logging::request_span::RequestSpan},
 };
 

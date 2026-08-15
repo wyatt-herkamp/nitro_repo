@@ -29,7 +29,7 @@ use crate::{
         authentication::ws::{WebSocketAuthentication, WebSocketAuthenticationMessage},
     },
     error::InternalError,
-    repository::{DynRepository, Repository, utils::can_read_repository},
+    repository::{DynRepository, utils::can_read_repository},
 };
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
