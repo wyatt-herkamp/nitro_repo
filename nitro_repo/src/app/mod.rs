@@ -4,7 +4,7 @@ use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
 use authentication::session::{SessionManager, SessionManagerConfig};
 use axum::extract::State;
-use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
+use config::{Mode, SecuritySettings, SiteSetting};
 use derive_more::{AsRef, derive::Deref};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
@@ -30,7 +30,6 @@ use opentelemetry::{
     metrics::{Histogram, Meter, UpDownCounter},
 };
 use parking_lot::{Mutex, RwLock};
-use serde::{Deserialize, Serialize};
 pub mod authentication;
 pub mod config;
 pub mod email;
@@ -40,7 +39,6 @@ use current_semver::current_semver;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 use tracing::{debug, info, instrument, warn};
-use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 pub mod open_api;
 use crate::{
@@ -58,60 +56,17 @@ pub mod api;
 pub mod badge;
 pub mod host_routing;
 pub mod responses;
-mod site_context;
-pub use site_context::{HostnameIndex, SiteContext, SiteContextInner};
-pub mod web;
-#[derive(Debug, Serialize, Clone, ToSchema)]
-pub struct Instance {
-    pub app_url: String,
-    pub name: String,
-    pub description: String,
-    pub is_https: bool,
-    pub is_installed: bool,
-    #[schema(value_type=String)]
-    pub version: semver::Version,
-    pub mode: Mode,
-    pub password_rules: Option<PasswordRules>,
-}
-#[derive(Debug, Clone, Hash, PartialEq, Eq, IntoParams, Deserialize)]
-#[into_params(parameter_in = Path)]
-pub struct RepositoryStorageName {
-    /// The name of the storage
-    pub storage_name: String,
-    /// The name of the repository
-    pub repository_name: String,
-}
+// The site context moved into `nr-repository` — a repository holds one, so it has to live where
+// the repository contract does. Re-exported so `app::SiteContext` still resolves.
+pub use nr_repository::{HostnameIndex, SiteContext, SiteContextInner};
+// `Instance` moved to `nr-web-core` so `SiteContext` can carry it; re-exported so `app::Instance`
+// still resolves.
+pub use nr_web_core::config::Instance;
 
-impl RepositoryStorageName {
-    pub async fn query_db(&self, database: &PgPool) -> Result<Option<Uuid>, sqlx::Error> {
-        let query: Option<Uuid> = sqlx::query_scalar(
-            r#"SELECT repositories.id FROM repositories INNER JOIN storages
-                    ON storages.id = repositories.storage_id AND storages.name = $1
-                    WHERE repositories.name = $2"#,
-        )
-        .bind(&self.storage_name)
-        .bind(&self.repository_name)
-        .fetch_optional(database)
-        .await?;
-        Ok(query)
-    }
-}
-impl From<(&str, &str)> for RepositoryStorageName {
-    fn from((storage_name, repository_name): (&str, &str)) -> Self {
-        Self {
-            storage_name: storage_name.to_lowercase(),
-            repository_name: repository_name.to_lowercase(),
-        }
-    }
-}
-impl From<(String, String)> for RepositoryStorageName {
-    fn from((storage_name, repository_name): (String, String)) -> Self {
-        Self {
-            storage_name: storage_name.to_lowercase(),
-            repository_name: repository_name.to_lowercase(),
-        }
-    }
-}
+// Moved next to the resolver that consumes it; re-exported so `app::RepositoryStorageName` still
+// resolves.
+pub use crate::repository::RepositoryStorageName;
+pub mod web;
 #[derive(Debug, Default)]
 pub struct InternalServices {
     pub session_cleaner: Option<JoinHandle<()>>,
@@ -244,6 +199,26 @@ impl HasForwardedHeader for NitroRepo {
 impl axum::extract::FromRef<NitroRepo> for SiteContext {
     fn from_ref(site: &NitroRepo) -> SiteContext {
         site.inner.context.clone()
+    }
+}
+
+/// The application owns the repository map, so it is what can resolve an address to a loaded
+/// repository. The three methods here are the existing lookups, unchanged; the trait exists so
+/// that the repository router can be handed this capability without being handed the whole state.
+impl crate::repository::RepositoryResolver for NitroRepo {
+    fn repository_by_id(&self, id: Uuid) -> Option<DynRepository> {
+        self.get_repository(id)
+    }
+
+    fn repository_for_hostname(&self, host: &str) -> Option<DynRepository> {
+        NitroRepo::repository_for_hostname(self, host)
+    }
+
+    fn repository_from_names<'a>(
+        &'a self,
+        names: &'a RepositoryStorageName,
+    ) -> futures::future::BoxFuture<'a, Result<Option<DynRepository>, sqlx::Error>> {
+        Box::pin(self.get_repository_from_names(names))
     }
 }
 

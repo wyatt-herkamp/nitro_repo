@@ -43,7 +43,8 @@ impl RepositoryConfigType for MavenRepositoryConfigType {
         Some(schema_for!(MavenRepositoryConfig))
     }
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
-        let config: MavenRepositoryConfig = serde_json::from_value(config)?;
+        // Parsed purely to validate: a config that will not deserialize is not a valid one.
+        let _: MavenRepositoryConfig = serde_json::from_value(config)?;
         Ok(())
     }
     fn validate_change(&self, old: Value, new: Value) -> Result<(), RepositoryConfigError> {

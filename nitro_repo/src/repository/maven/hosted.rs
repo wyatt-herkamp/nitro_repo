@@ -546,7 +546,6 @@ impl Repository for MavenHosted {
     async fn handle_get(
         &self,
         RepositoryRequest {
-            parts,
             path,
             authentication,
             trace,
@@ -599,13 +598,11 @@ impl Repository for MavenHosted {
     async fn handle_head(
         &self,
         RepositoryRequest {
-            parts,
             path,
             authentication,
             ..
         }: RepositoryRequest,
     ) -> Result<RepoResponse, MavenError> {
-        let visibility = self.visibility();
         if let Some(err) = self.check_read(&authentication).await? {
             return Ok(err);
         }

@@ -65,7 +65,8 @@ pub async fn perform_login(
     debug!(?login, "Handling PUT request");
     let user = match verify_login(login.name, login.password, repository.site().as_ref()).await {
         Ok(ok) => ok,
-        Err(err) => {
+        Err(error) => {
+            debug!(?error, "Refused a couchdb-style npm login");
             return Ok(RepoResponse::forbidden());
         }
     };

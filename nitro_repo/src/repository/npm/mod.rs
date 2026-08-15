@@ -201,7 +201,7 @@ impl RepositoryType for NpmRegistryType {
         name: String,
         uuid: uuid::Uuid,
         configs: HashMap<String, serde_json::Value>,
-        storage: nr_storage::DynStorage,
+        _storage: nr_storage::DynStorage,
     ) -> BoxFuture<'static, Result<NewRepository, RepositoryFactoryError>> {
         Box::pin(async move {
             let sub_type = configs
@@ -210,7 +210,7 @@ impl RepositoryType for NpmRegistryType {
                     NPMRegistryConfigType::get_type_static(),
                 ))?
                 .clone();
-            let maven_config: NPMRegistryConfig = match serde_json::from_value(sub_type) {
+            let _maven_config: NPMRegistryConfig = match serde_json::from_value(sub_type) {
                 Ok(ok) => ok,
                 Err(err) => {
                     return Err(RepositoryFactoryError::InvalidConfig(

@@ -7,6 +7,7 @@ use digestible::Digestible;
 use futures::future::BoxFuture;
 use nr_core::database::entities::repository::{DBRepository, GenericDBRepositoryConfig};
 use nr_storage::DynStorage;
+use nr_web_core::error::InternalError;
 use serde::Serialize;
 use serde_json::Value;
 use thiserror::Error;
@@ -14,7 +15,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::DynRepository;
-use crate::{app::SiteContext, error::InternalError};
+use crate::SiteContext;
 
 #[derive(Debug, Clone, Serialize, ToSchema, Digestible)]
 pub struct RepositoryTypeDescription {

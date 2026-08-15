@@ -7,15 +7,15 @@ use nr_core::{
         does_user_and_token_have_repository_action,
     },
 };
+use nr_web_core::authentication::{
+    AuthenticationError, AuthenticationRaw, session::Session, verify_login,
+};
 use sqlx::PgPool;
 use strum::EnumIs;
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
-use crate::app::{
-    SiteContext,
-    authentication::{AuthenticationError, AuthenticationRaw, session::Session, verify_login},
-};
+use crate::SiteContext;
 
 #[derive(Clone, Debug, PartialEq, EnumIs)]
 pub enum RepositoryAuthentication {

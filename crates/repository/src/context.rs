@@ -1,13 +1,13 @@
 //! The slice of the application a repository is allowed to see.
 //!
-//! A repository used to be handed the whole [`NitroRepo`](super::NitroRepo): the trait said
+//! A repository used to be handed the whole application state, `NitroRepo`: the trait said
 //! `fn site(&self) -> NitroRepo`, so every repository type named the concrete application state and
 //! could reach the email service, the session manager and the frontend as easily as the database.
 //! That made the four repository types inseparable from the binary.
 //!
 //! [`SiteContext`] is what they actually use — measured, not guessed: the database, the instance
 //! settings, the security settings, the staging directory, the request metrics, and the custom
-//! hostname index. [`NitroRepo`](super::NitroRepo) owns one and derefs to it, so nothing on the
+//! hostname index. The server's `NitroRepo` owns one and derefs to it, so nothing on the
 //! application side had to change.
 //!
 //! # Why the hostname *index* and not a repository lookup
@@ -29,15 +29,15 @@ use std::{ops::Deref, sync::Arc};
 
 use ahash::HashMap;
 use http::request::Parts;
+use nr_web_core::{
+    config::{Instance, SecuritySettings},
+    utils::host,
+};
 use parking_lot::{Mutex, RwLock};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::{Instance, config::SecuritySettings};
-use crate::{
-    repository::{StagingConfig, repo_tracing::RepositoryMetricsMeter},
-    utils::host,
-};
+use crate::{StagingConfig, repo_tracing::RepositoryMetricsMeter};
 
 /// Custom hostnames that route straight into a repository, keyed by the normalised
 /// (lowercased, port-stripped) host.
@@ -52,7 +52,7 @@ pub struct HostnameIndex(RwLock<HashMap<String, Uuid>>);
 
 impl HostnameIndex {
     /// The repository registered to `host`, which must already be normalised by
-    /// [`crate::utils::host::normalize_host`].
+    /// [`nr_web_core::utils::host::normalize_host`].
     pub fn get(&self, host: &str) -> Option<Uuid> {
         self.0.read().get(host).copied()
     }

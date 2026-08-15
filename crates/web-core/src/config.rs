@@ -32,6 +32,24 @@ pub fn get_current_directory() -> PathBuf {
     env::current_dir().unwrap_or_else(|_| PathBuf::new())
 }
 
+/// What this instance is and how it is reached.
+///
+/// Mutable at runtime: installation flips `is_installed`, and the app URL can be rewritten. Lives
+/// here because the site context carries it and repository code reads `app_url` out of it to build
+/// URLs — the cargo index, the Docker token realm, the npm login page.
+#[derive(Debug, Serialize, Clone, ToSchema)]
+pub struct Instance {
+    pub app_url: String,
+    pub name: String,
+    pub description: String,
+    pub is_https: bool,
+    pub is_installed: bool,
+    #[schema(value_type = String)]
+    pub version: semver::Version,
+    pub mode: Mode,
+    pub password_rules: Option<PasswordRules>,
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SecuritySettings {
     pub allow_basic_without_tokens: bool,

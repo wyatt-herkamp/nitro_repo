@@ -35,7 +35,7 @@ use uuid::Uuid;
 
 use super::{
     MavenError, MavenRepositoryConfig, MavenRepositoryConfigType, REPOSITORY_TYPE_ID, RepoResponse,
-    RepositoryRequest, metadata, repo_type::RepositoryFactoryError, utils::MavenRepositoryExt,
+    RepositoryFactoryError, RepositoryRequest, metadata, utils::MavenRepositoryExt,
 };
 use crate::{app::SiteContext, repository::Repository};
 /// How long a cached artifact is served before the upstream is asked again.
@@ -515,7 +515,6 @@ impl Repository for MavenProxy {
     async fn handle_get(
         &self,
         RepositoryRequest {
-            parts,
             path,
             authentication,
             ..

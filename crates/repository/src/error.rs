@@ -5,12 +5,11 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use http::StatusCode;
-use thiserror::Error;
-
-use crate::{
-    app::authentication::AuthenticationError,
+use nr_web_core::{
+    authentication::AuthenticationError,
     utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum RepositoryHandlerError {
@@ -63,10 +62,11 @@ impl IntoErrorResponse for RepositoryHandlerError {
     }
 }
 
-/// A DynRepositoryHandlerError is a boxed version of a IntoErrorResponse
+/// Any repository's error, boxed.
 ///
-/// impl From<ErrorType> for DynRepositoryHandlerError  is required because we can't impl IntoBoxedResponse for DynRepositoryHandlerError or
-///  it will create conflicting implementations
+/// The erased [`RepositoryHandler`](crate::RepositoryHandler) has to name one error type for all
+/// repository types, so this is it. Built with [`Self::new`], which is generic — there used to be
+/// a hand-written `From<XError>` per repository type, and there is no longer any need for one.
 #[derive(Debug)]
 pub struct DynRepositoryHandlerError(pub Box<dyn IntoErrorResponse>);
 

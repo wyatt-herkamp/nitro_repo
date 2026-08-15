@@ -40,6 +40,7 @@ redb.workspace = true
 tokio.workspace = true
 derive_more.workspace = true
 digestible.workspace = true
+semver = { version = "1", features = ["std", "serde"] }
 sha2.workspace = true
 strum.workspace = true
 thiserror.workspace = true

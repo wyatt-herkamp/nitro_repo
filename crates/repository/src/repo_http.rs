@@ -7,18 +7,16 @@ use axum::{
     response::{IntoResponse, Response},
     routing::any,
 };
-
-use crate::{
-    app::{
-        NitroRepo, RepositoryStorageName, SiteContext, authentication::AuthenticationError,
-        responses::RepositoryNotFound,
-    },
+use nr_web_core::{
+    authentication::AuthenticationError,
     error::IllegalStateError,
     utils::{
         bad_request::BadRequestErrors, header::date_time::date_time_for_header,
         request_logging::request_span::RequestSpan,
     },
 };
+
+use crate::SiteContext;
 pub mod directory_index;
 pub mod repo_tracing;
 
@@ -41,8 +39,13 @@ use tracing::{Level, Span, debug, debug_span, error, event, instrument};
 mod repo_auth;
 pub use repo_auth::*;
 
-use super::{DynRepository, RepositoryHandlerError, repo_tracing::RepositoryRequestTracing};
-pub fn repository_router() -> axum::Router<NitroRepo> {
+use super::{
+    DynRepository, RepositoryHandlerError, RepositoryNotFound, RepositoryRouterState,
+    RepositoryStorageName, repo_tracing::RepositoryRequestTracing,
+};
+/// `RepositoryRouterState` rather than the application state: everything below needs a database,
+/// the site context, and the ability to turn a name into a repository — and nothing more.
+pub fn repository_router() -> axum::Router<RepositoryRouterState> {
     Router::new()
         .route("/{storage}/{repository}/{*path}", any(handle_repo_request))
         .route_with_tsr("/{storage}/{repository}", any(handle_repo_request))
@@ -475,7 +478,7 @@ pub struct RepoRequestPath {
 }
 
 pub async fn handle_repo_request(
-    State(site): State<NitroRepo>,
+    State(state): State<RepositoryRouterState>,
     Path(request_path): Path<RepoRequestPath>,
     parent_span: Option<RequestSpan>,
     authentication: RepositoryAuthentication,
@@ -497,13 +500,13 @@ pub async fn handle_repo_request(
         path,
     } = request_path;
     let names = RepositoryStorageName::from((storage, repository));
-    let Some(repository) = site.get_repository_from_names(&names).await? else {
+    let Some(repository) = state.resolver.repository_from_names(&names).await? else {
         let not_found = RepositoryNotFound::from(names);
         return Ok(not_found.into_response());
     };
     drop(entered_guard);
     Ok(dispatch_repository_request(
-        &site.context(),
+        &state.context,
         repository,
         path.unwrap_or_default(),
         authentication,
@@ -521,9 +524,9 @@ pub async fn handle_repo_request(
 /// active check, tracing and the method dispatch, is identical.
 ///
 /// Nothing below is aware of the URL prefix the request arrived under: [`ResponseContext`] only
-/// reads conditional-request headers, and [`redirect_directory_to_slash`] emits a relative
+/// reads conditional-request headers, and `redirect_directory_to_slash` emits a relative
 /// `Location`. That is what lets a host-routed request reuse this unchanged.
-pub(crate) async fn dispatch_repository_request(
+pub async fn dispatch_repository_request(
     site: &SiteContext,
     repository: DynRepository,
     path: StoragePath,

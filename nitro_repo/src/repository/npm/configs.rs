@@ -26,10 +26,16 @@ impl RepositoryConfigType for NPMRegistryConfigType {
         Some(schema_for!(NPMRegistryConfig))
     }
     fn validate_config(&self, config: Value) -> Result<(), RepositoryConfigError> {
-        let config: NPMRegistryConfig = serde_json::from_value(config)?;
+        // Parsed purely to validate: a config that will not deserialize is not a valid one.
+        let _: NPMRegistryConfig = serde_json::from_value(config)?;
         Ok(())
     }
-    fn validate_change(&self, old: Value, new: Value) -> Result<(), RepositoryConfigError> {
+    /// Accepts any change.
+    ///
+    /// Note that this overrides the trait default, which would have run `validate_config(new)`.
+    /// There is only one npm sub-type, so there is nothing to forbid switching between — but it
+    /// does mean an unparseable config is accepted on update where it would be refused on create.
+    fn validate_change(&self, _old: Value, _new: Value) -> Result<(), RepositoryConfigError> {
         Ok(())
     }
     fn default(&self) -> Result<Value, RepositoryConfigError> {

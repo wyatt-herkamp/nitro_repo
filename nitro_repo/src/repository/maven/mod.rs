@@ -67,7 +67,7 @@ impl RepositoryType for MavenRepositoryType {
         name: String,
         uuid: uuid::Uuid,
         configs: HashMap<String, serde_json::Value>,
-        storage: nr_storage::DynStorage,
+        _storage: nr_storage::DynStorage,
     ) -> BoxFuture<'static, Result<super::NewRepository, super::RepositoryFactoryError>> {
         Box::pin(async move {
             let sub_type = configs
@@ -76,7 +76,7 @@ impl RepositoryType for MavenRepositoryType {
                     MavenRepositoryConfigType::get_type_static(),
                 ))?
                 .clone();
-            let maven_config: MavenRepositoryConfig = match serde_json::from_value(sub_type) {
+            let _maven_config: MavenRepositoryConfig = match serde_json::from_value(sub_type) {
                 Ok(ok) => ok,
                 Err(err) => {
                     return Err(RepositoryFactoryError::InvalidConfig(

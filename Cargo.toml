@@ -27,6 +27,7 @@ nr-storage = { path = "crates/storage" }
 nr-aql = { path = "crates/aql" }
 nr-badge = { path = "crates/badge" }
 nr-web-core = { path = "crates/web-core" }
+nr-repository = { path = "crates/repository" }
 
 # Web. Promoted to the workspace now that more than the binary needs them.
 axum = { version = "0.8", features = ["macros", "tokio", "ws"] }
@@ -40,6 +41,8 @@ axum-extra = { version = "0.12", features = [
 ] }
 argon2 = { version = "0.5.3", features = ["std"] }
 redb = "4"
+semver = { version = "1", features = ["std", "serde"] }
+opentelemetry = { version = "0.32", features = [] }
 # Rust Utilities
 futures = "0.3"
 derive_more = { version = "2.1", features = [
