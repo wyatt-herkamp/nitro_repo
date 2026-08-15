@@ -8,8 +8,7 @@ mod hosted;
 pub use hosted::*;
 #[cfg(not(feature = "frontend"))]
 pub use no_frontend::*;
-
-use crate::utils::{
+use nr_web_core::utils::{
     IntoErrorResponse, ResponseBuilder, api_error_response::APIErrorResponse,
     other::PLAIN_TEXT_MEDIA_TYPE,
 };
@@ -49,13 +48,14 @@ impl IntoErrorResponse for FrontendError {
 #[cfg(not(feature = "frontend"))]
 mod no_frontend {
     use axum::extract::{Request, State};
+    use nr_web_core::utils::response::ResponseBuilder;
 
-    use crate::{app::NitroRepo, utils::response::ResponseBuilder};
+    use crate::app::NitroRepo;
 
     pub async fn frontend_request(
         State(_): State<NitroRepo>,
         _request: Request,
-    ) -> Result<axum::response::Response, crate::error::InternalError> {
+    ) -> Result<axum::response::Response, nr_web_core::error::InternalError> {
         Ok(ResponseBuilder::not_found().empty())
     }
 }

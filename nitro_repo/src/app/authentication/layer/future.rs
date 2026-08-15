@@ -7,10 +7,10 @@ use std::{
 use axum::{body::Body, response::Response};
 use futures::ready;
 use http_body_util::Either;
+use nr_web_core::utils::IntoErrorResponse;
 use pin_project::pin_project;
 
 use super::ServiceResponse;
-use crate::utils::IntoErrorResponse;
 
 #[pin_project]
 pub struct ResponseFuture<F> {

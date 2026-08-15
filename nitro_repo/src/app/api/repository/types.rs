@@ -1,7 +1,9 @@
 use axum::{extract::State, response::Response};
+use nr_repository::RepositoryTypeDescription;
+use nr_web_core::utils::ResponseBuilder;
 use tracing::instrument;
 
-use crate::{app::NitroRepo, repository::RepositoryTypeDescription, utils::ResponseBuilder};
+use crate::app::NitroRepo;
 
 #[utoipa::path(
     get,

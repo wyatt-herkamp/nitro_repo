@@ -16,7 +16,7 @@
 //! A host that resolves to a repository which is *not* a Docker one falls through to the normal
 //! host dispatch, so an artifact whose path happens to begin with `v2/` is still served over a
 //! custom domain — `/v2` does not become a fourth entry in the "cannot be served over a custom
-//! domain" list in [`host_routing`](the application's host routing).
+//! domain" list the application's host routing keeps.
 
 use axum::{
     extract::{FromRequestParts, Request},

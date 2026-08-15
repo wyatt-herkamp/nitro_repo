@@ -5,14 +5,16 @@ use serde::{Deserialize, Serialize};
 use tuxs_config_types::size_config::InvalidSizeError;
 mod max_upload;
 pub use max_upload::*;
+use nr_repository::StagingConfig;
+use nr_web_core::authentication::session::SessionManagerConfig;
 // `Mode`, `get_current_directory` and the security settings live in `nr-web-core`: the session
 // store and the repository types read them, and neither can depend on the server.
 pub use nr_web_core::config::{
     Mode, PasswordRules, SecuritySettings, TlsConfig, get_current_directory,
 };
 
-use super::{authentication::session::SessionManagerConfig, email::EmailSetting};
-use crate::{logging::config::LoggingConfig, repository::StagingConfig};
+use super::email::EmailSetting;
+use crate::logging::config::LoggingConfig;
 pub const CONFIG_PREFIX: &str = "NITRO-REPO";
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {

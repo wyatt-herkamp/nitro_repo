@@ -14,16 +14,15 @@ use nr_core::{
     },
     user::{permissions::RepositoryActions, scopes::NRScope, token::AuthTokenFullResponse},
 };
+use nr_web_core::{
+    authentication::OnlySessionAllowedAuthentication, error::InternalError, utils::ResponseBuilder,
+};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{
-    app::{NitroRepo, authentication::OnlySessionAllowedAuthentication},
-    error::InternalError,
-    utils::ResponseBuilder,
-};
+use crate::app::NitroRepo;
 
 pub fn token_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()

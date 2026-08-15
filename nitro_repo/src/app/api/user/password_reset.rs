@@ -17,17 +17,14 @@ use nr_core::database::entities::user::{
     ChangePasswordNoCheck, User, UserSafeData, UserType,
     password_reset::{RequestDetails, UserPasswordReset},
 };
+use nr_web_core::{authentication::password, error::InternalError};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 use utoipa::ToSchema;
 
-use crate::{
-    app::{
-        NitroRepo,
-        authentication::password,
-        email_service::{Email, EmailDebug, template},
-    },
-    error::InternalError,
+use crate::app::{
+    NitroRepo,
+    email_service::{Email, EmailDebug, template},
 };
 
 pub fn password_reset_routes() -> axum::Router<NitroRepo> {

@@ -9,6 +9,7 @@ build = "build.rs"
 
 [dev-dependencies]
 http-body-util.workspace = true
+nr-web-core.workspace = true
 pretty_assertions = "1.4"
 tempfile = "3"
 tower = { version = "0.5", features = ["util"] }
@@ -52,9 +53,7 @@ serde-env = "0.3"
 toml.workspace = true
 # utils
 futures.workspace = true
-rand.workspace = true
 rust-embed = { version = "8", features = ["interpolate-folder-path"] }
-argon2 = { version = "0.5.3", features = ["std"] }
 chrono.workspace = true
 futures-util.workspace = true
 base64.workspace = true
@@ -66,7 +65,6 @@ sha2.workspace = true
 # verified against the uploaded tarball.
 sha1.workspace = true
 # Maven uploads `.md5` beside every artifact, and asks for one back.
-md-5.workspace = true
 schemars.workspace = true
 reqwest.workspace = true
 bytes.workspace = true
@@ -81,15 +79,17 @@ derive_more.workspace = true
 nr-badge.workspace = true
 pin-project = "1"
 clap.workspace = true
-semver = { version = "1", features = ["std", "serde"] }
 
 # Staging
 tempfile = "3"
-# `seed` builds a real `pom.xml` for its fixture artifacts.
+# `seed` builds fixture artifacts: a real `pom.xml`, and the `.md5` a Maven client uploads.
+md-5.workspace = true
 maven-rs.workspace = true
 # Bundling the frontend, and building fixture jars for `seed`.
 zip = { version = "8" }
 current_semver = "0.1"
+# Expanded by `current_semver!()` into a `semver::Version`.
+semver.workspace = true
 nr-core.workspace = true
 nr-macros.workspace = true
 nr-web-core.workspace = true
@@ -100,12 +100,9 @@ nr-npm.workspace = true
 nr-docker.workspace = true
 nr-storage.workspace = true
 nr-aql.workspace = true
-redb = { version = "4" }
 tuxs-config-types = { git = "https://github.com/wyatt-herkamp/tuxs-config-types.git", features = [
   "chrono",
 ] }
-auto_impl.workspace = true
-digestible.workspace = true
 
 # Tracing
 tracing.workspace = true

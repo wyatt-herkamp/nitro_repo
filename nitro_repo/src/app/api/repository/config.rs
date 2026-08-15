@@ -5,13 +5,10 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use http::StatusCode;
+use nr_web_core::{authentication::Authentication, error::InternalError, utils::ResponseBuilder};
 use tracing::instrument;
 
-use crate::{
-    app::{NitroRepo, authentication::Authentication},
-    error::InternalError,
-    utils::ResponseBuilder,
-};
+use crate::app::NitroRepo;
 pub fn config_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/config/{key}/schema", axum::routing::get(config_schema))

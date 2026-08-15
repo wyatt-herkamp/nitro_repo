@@ -16,22 +16,20 @@ use nr_core::{
         scopes::NRScope,
     },
 };
+use nr_repository::RepositoryNotFound;
+use nr_web_core::{
+    authentication::{Authentication, AuthenticationError},
+    error::InternalError,
+    responses::{InvalidRepositoryConfig, MissingPermission},
+    utils::{ResponseBuilder, conflict::ConflictResponse},
+};
 use serde::Deserialize;
 use serde_json::Value;
 use tracing::{debug, error, info, instrument};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{
-    app::{
-        NitroRepo,
-        api::require_scope,
-        authentication::{Authentication, AuthenticationError},
-        responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
-    },
-    error::InternalError,
-    utils::{ResponseBuilder, conflict::ConflictResponse},
-};
+use crate::app::{NitroRepo, api::require_scope};
 pub fn management_routes() -> Router<NitroRepo> {
     Router::new()
         .route("/{repository_id}/configs", get(get_configs_for_repository))

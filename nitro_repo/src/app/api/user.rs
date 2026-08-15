@@ -32,20 +32,18 @@ use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
 mod password_reset;
 mod tokens;
-use crate::{
-    app::{
-        NitroRepo,
-        api::require_scope,
-        authentication::{
-            Authentication, MeWithSession,
-            password::{self, verify_password},
-            session::{Session, SessionError},
-            verify_login,
-        },
+use nr_web_core::{
+    authentication::{
+        Authentication, MeWithSession,
+        password::{self, verify_password},
+        session::{Session, SessionError},
+        verify_login,
     },
     error::InternalError,
     utils::ResponseBuilder,
 };
+
+use crate::app::{NitroRepo, api::require_scope};
 #[derive(OpenApi)]
 #[openapi(
     paths(

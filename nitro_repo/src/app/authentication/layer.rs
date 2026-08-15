@@ -9,13 +9,12 @@ use derive_more::derive::From;
 use future::ResponseFuture;
 use http::{Request, Response, header::AUTHORIZATION, request::Parts};
 use http_body_util::Either;
-use tracing_opentelemetry::OpenTelemetrySpanExt;
-
-use crate::{
-    app::authentication::{AuthenticationRaw, session::SessionManager},
+use nr_web_core::{
+    authentication::{AuthenticationRaw, session::SessionManager},
     error::InternalError,
     utils::{header::HeaderValueExt, request_logging::request_span::RequestSpan},
 };
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 mod future;
 use std::sync::Arc;
 

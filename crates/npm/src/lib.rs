@@ -1,6 +1,6 @@
 //! NPM Registry Implementation
 //!
-//! Documentation for NPM: https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md
+//! Documentation for NPM: <https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md>
 //!
 
 use std::{borrow::Cow, sync::Arc};

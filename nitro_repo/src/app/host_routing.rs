@@ -11,7 +11,7 @@
 //! segments cannot be fetched over a custom domain.
 //!
 //! The header parsing this is built on — `request_host`, `request_origin`, `normalize_host` and
-//! friends — lives in [`crate::utils::host`], which depends on nothing but the request itself so
+//! friends — lives in [`nr_web_core::utils::host`], which depends on nothing but the request itself so
 //! that repository code can reach it without reaching the app state.
 
 use axum::{
@@ -19,18 +19,17 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use nr_core::storage::StoragePath;
+use nr_repository::{
+    DynRepository, RepositoryAuthentication, RepositoryRequestError, dispatch_repository_request,
+};
+use nr_web_core::{
+    error::InternalError,
+    utils::{host::request_host, request_logging::request_span::RequestSpan},
+};
 use percent_encoding::percent_decode_str;
 use tracing::{Span, debug};
 
-use crate::{
-    app::NitroRepo,
-    error::InternalError,
-    repository::{
-        DynRepository, RepositoryAuthentication, RepositoryRequestError,
-        dispatch_repository_request,
-    },
-    utils::{host::request_host, request_logging::request_span::RequestSpan},
-};
+use crate::app::NitroRepo;
 
 /// The router's fallback: a repository when the request's host is registered to one, the frontend
 /// otherwise.

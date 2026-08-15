@@ -2,13 +2,16 @@ use std::{fmt::Debug, path::PathBuf, sync::Arc};
 
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
-use authentication::session::{SessionManager, SessionManagerConfig};
 use axum::extract::State;
 use config::{Mode, SecuritySettings, SiteSetting};
 use derive_more::{AsRef, derive::Deref};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
 use http::{HeaderName, Uri};
+use nr_web_core::{
+    authentication::session::{SessionManager, SessionManagerConfig},
+    config::Instance,
+};
 pub mod frontend;
 pub mod resources;
 use nr_core::{
@@ -41,31 +44,19 @@ use tokio::task::JoinHandle;
 use tracing::{debug, info, instrument, warn};
 use uuid::Uuid;
 pub mod open_api;
-use crate::{
-    repository::{
-        DynRepository, RepositoryType, RepositoryTypeRegistry, StagingConfig,
-        cargo::{CargoRegistryConfigType, CargoRegistryType},
-        docker::{DockerRegistryConfigType, DockerRegistryType},
-        maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
-        npm::{NPMRegistryConfigType, NpmRegistryType},
-        repo_tracing::RepositoryMetricsMeter,
-    },
-    utils::ip_addr::HasForwardedHeader,
+use nr_cargo::{CargoRegistryConfigType, CargoRegistryType};
+use nr_docker::{DockerRegistryConfigType, DockerRegistryType};
+use nr_maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType};
+use nr_npm::{NPMRegistryConfigType, NpmRegistryType};
+use nr_repository::{
+    DynRepository, RepositoryStorageName, RepositoryType, RepositoryTypeRegistry, SiteContext,
+    SiteContextInner, StagingConfig, repo_tracing::RepositoryMetricsMeter,
 };
+use nr_web_core::utils::ip_addr::HasForwardedHeader;
 pub mod api;
 pub mod badge;
 pub mod host_routing;
 pub mod responses;
-// The site context moved into `nr-repository` — a repository holds one, so it has to live where
-// the repository contract does. Re-exported so `app::SiteContext` still resolves.
-pub use nr_repository::{HostnameIndex, SiteContext, SiteContextInner};
-// `Instance` moved to `nr-web-core` so `SiteContext` can carry it; re-exported so `app::Instance`
-// still resolves.
-pub use nr_web_core::config::Instance;
-
-// Moved next to the resolver that consumes it; re-exported so `app::RepositoryStorageName` still
-// resolves.
-pub use crate::repository::RepositoryStorageName;
 pub mod web;
 #[derive(Debug, Default)]
 pub struct InternalServices {
@@ -205,7 +196,7 @@ impl axum::extract::FromRef<NitroRepo> for SiteContext {
 /// The application owns the repository map, so it is what can resolve an address to a loaded
 /// repository. The three methods here are the existing lookups, unchanged; the trait exists so
 /// that the repository router can be handed this capability without being handed the whole state.
-impl crate::repository::RepositoryResolver for NitroRepo {
+impl nr_repository::RepositoryResolver for NitroRepo {
     fn repository_by_id(&self, id: Uuid) -> Option<DynRepository> {
         self.get_repository(id)
     }
@@ -496,7 +487,7 @@ impl NitroRepo {
     }
     /// The repository a request for `host` belongs to, or `None` if the host is not registered.
     ///
-    /// `host` must already have been normalised by [`crate::utils::host::normalize_host`].
+    /// `host` must already have been normalised by [`nr_web_core::utils::host::normalize_host`].
     ///
     /// Unlike [`Self::get_repository_from_names`] this is infallible and synchronous: the index is
     /// complete, so a miss needs no database round trip. That is what makes it cheap enough to run
@@ -618,18 +609,16 @@ mod registry_tests {
     /// notice the first one was a data migration.
     #[test]
     fn repository_type_ids_are_stable() {
-        use crate::repository::{cargo, docker, maven, npm};
+        assert_eq!(nr_maven::REPOSITORY_TYPE_ID, "maven");
+        assert_eq!(nr_npm::REPOSITORY_TYPE_ID, "npm");
+        assert_eq!(nr_cargo::REPOSITORY_TYPE_ID, "cargo");
+        assert_eq!(nr_docker::REPOSITORY_TYPE_ID, "docker");
 
-        assert_eq!(maven::REPOSITORY_TYPE_ID, "maven");
-        assert_eq!(npm::REPOSITORY_TYPE_ID, "npm");
-        assert_eq!(cargo::REPOSITORY_TYPE_ID, "cargo");
-        assert_eq!(docker::REPOSITORY_TYPE_ID, "docker");
-
-        assert_eq!(maven::hosted::FULL_TYPE, "maven/hosted");
-        assert_eq!(maven::proxy::FULL_TYPE, "maven/proxy");
-        assert_eq!(npm::hosted::FULL_TYPE, "npm/hosted");
-        assert_eq!(cargo::hosted::FULL_TYPE, "cargo/hosted");
-        assert_eq!(docker::hosted::FULL_TYPE, "docker/hosted");
+        assert_eq!(nr_maven::hosted::FULL_TYPE, "maven/hosted");
+        assert_eq!(nr_maven::proxy::FULL_TYPE, "maven/proxy");
+        assert_eq!(nr_npm::hosted::FULL_TYPE, "npm/hosted");
+        assert_eq!(nr_cargo::hosted::FULL_TYPE, "cargo/hosted");
+        assert_eq!(nr_docker::hosted::FULL_TYPE, "docker/hosted");
 
         assert_eq!(MavenRepositoryConfigType.get_type(), "maven");
         assert_eq!(MavenPushRulesConfigType.get_type(), "maven_push_rules");

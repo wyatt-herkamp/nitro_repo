@@ -1,7 +1,7 @@
 //! Resumable blob uploads.
 //!
 //! Docker pushes a blob in three steps: `POST` to open a session, one or more `PATCH`es to stream
-//! bytes into it, then `PUT ?digest=` to commit. [`Storage::save_file`] takes a whole
+//! bytes into it, then `PUT ?digest=` to commit. `Storage::save_file` takes a whole
 //! [`FileContent`](nr_storage::FileContent) and there is no append or streaming write on any
 //! backend, so the in-progress bytes are buffered to the local staging directory — the same place
 //! [`StagingManager`](nr_repository::staging::StagingManager) writes — and only handed to
@@ -13,7 +13,7 @@
 //! multipart-upload state.
 //!
 //! The session table is modelled on
-//! [`NpmWebLoginManager`](nr_repository::npm::login::web_login::NpmWebLoginManager): an
+//! npm's `NpmWebLoginManager` (in `nr-npm`): an
 //! in-memory map with a TTL, swept whenever a new session is opened.
 
 use std::{

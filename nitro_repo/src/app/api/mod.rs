@@ -19,11 +19,14 @@ pub mod search;
 pub mod storage;
 pub mod user;
 pub mod user_management;
-use super::{Instance, NitroRepo, NitroRepoState, authentication::password};
-use crate::{
+use nr_web_core::{
+    authentication::password,
+    config::Instance,
     error::InternalError,
     utils::{ResponseBuilder, api_error_response::APIErrorResponse},
 };
+
+use super::{NitroRepo, NitroRepoState};
 /// Refuses a request whose token does not carry `scope`.
 ///
 /// Returns `Some(response)` when the caller should be turned away, so a route reads as:
@@ -38,7 +41,7 @@ use crate::{
 /// token may do; whether the user may do it at all is still decided by their permissions, and both
 /// have to pass.
 pub async fn require_scope(
-    auth: &super::authentication::Authentication,
+    auth: &nr_web_core::authentication::Authentication,
     scope: NRScope,
     site: &NitroRepo,
 ) -> Result<Option<Response>, InternalError> {
@@ -46,14 +49,14 @@ pub async fn require_scope(
         return Ok(None);
     }
     Ok(Some(
-        crate::app::responses::MissingPermission::Scope(scope).into_response(),
+        nr_web_core::responses::MissingPermission::Scope(scope).into_response(),
     ))
 }
 
 /// `site` rather than nothing, because the per-type routes come off the repository-type registry
 /// and each arrives already carrying whatever state is private to that type.
 pub fn api_routes(site: &NitroRepo) -> axum::Router<NitroRepo> {
-    let repository_state = crate::repository::RepositoryRouterState::new(
+    let repository_state = nr_repository::RepositoryRouterState::new(
         site.context(),
         std::sync::Arc::new(site.clone()),
     );
@@ -189,7 +192,7 @@ impl Serialize for RouteNotFound {
 /// Only *unmatched* `/api` paths get here, so the real API stays reachable on a custom domain — a
 /// request for `/api/user/me` still hits `/api/user/me`.
 async fn route_not_found(State(site): State<NitroRepo>, request: Request) -> Response {
-    let host = crate::utils::host::request_host(
+    let host = nr_web_core::utils::host::request_host(
         request.headers(),
         request.uri(),
         site.general_security_settings.trust_forwarded_host,

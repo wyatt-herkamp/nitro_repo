@@ -62,7 +62,7 @@ pub trait MavenRepositoryExt: Repository + Debug {
         Ok(RepoResponse::from(file_response))
     }
 
-    /// Same as [indexing_check] but for an Option
+    /// Same as `indexing_check` but for an Option
     async fn indexing_check_option<T: FileTypeCheck>(
         &self,
         file_response: Option<T>,

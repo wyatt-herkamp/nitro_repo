@@ -15,20 +15,17 @@ use nr_core::{
         scopes::NRScope,
     },
 };
+use nr_web_core::{
+    authentication::{Authentication, password},
+    error::InternalError,
+    responses::MissingPermission,
+    utils::{ResponseBuilder, conflict::ConflictResponse, json::JsonBody},
+};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use utoipa::{OpenApi, ToSchema};
 
-use crate::{
-    app::{
-        NitroRepo,
-        api::require_scope,
-        authentication::{Authentication, password},
-        responses::MissingPermission,
-    },
-    error::InternalError,
-    utils::{ResponseBuilder, conflict::ConflictResponse, json::JsonBody},
-};
+use crate::app::{NitroRepo, api::require_scope};
 
 #[derive(OpenApi)]
 #[openapi(
