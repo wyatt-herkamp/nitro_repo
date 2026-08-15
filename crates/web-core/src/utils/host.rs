@@ -6,7 +6,7 @@
 //! the intended callers.
 //!
 //! The routing built on top of these — which repository a host belongs to, and what to serve when
-//! it belongs to none — lives in [`crate::app::host_routing`].
+//! it belongs to none — lives in the server, in `nitro_repo::app::host_routing`.
 
 use http::{HeaderMap, HeaderName, Uri};
 

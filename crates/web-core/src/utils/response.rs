@@ -9,7 +9,7 @@ pub mod conflict;
 pub trait IntoErrorResponse: Error + Send + Sync {
     /// Converts the error into a response
     ///
-    /// It must be of type of Box<Self> to allow for dynamic dispatch
+    /// It must be of type of `Box<Self>` to allow for dynamic dispatch
     fn into_response_boxed(self: Box<Self>) -> axum::response::Response;
     #[inline(always)]
     fn json_error_response(self: Box<Self>) -> Option<axum::response::Response> {

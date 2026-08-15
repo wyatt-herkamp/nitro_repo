@@ -1,0 +1,42 @@
+[package]
+name = "nr-web-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "HTTP plumbing shared by the Nitro Repo server and its repository types"
+
+[dependencies]
+nr-core.workspace = true
+nr-storage.workspace = true
+# Web
+axum.workspace = true
+http.workspace = true
+mime.workspace = true
+# Serde / schema
+serde.workspace = true
+serde_json.workspace = true
+# Names the field a malformed JSON body failed on, which is what makes the 400 useful.
+serde_path_to_error = "0.1"
+utoipa.workspace = true
+# Database
+sqlx.workspace = true
+# `IntoErrorResponse` is defined here, and `error.rs` blanket-impls it for foreign error types.
+# The orphan rule means those impls have to live in this crate, which is the only reason
+# `reqwest` and `argon2` are dependencies of it — nothing here makes a request or hashes a
+# password.
+reqwest.workspace = true
+argon2 = { workspace = true }
+# Utils
+base64.workspace = true
+chrono.workspace = true
+derive_more.workspace = true
+digestible.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

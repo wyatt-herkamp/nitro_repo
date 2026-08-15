@@ -8,8 +8,13 @@
 //! `main.rs` is the CLI; everything it needs lives here.
 
 pub mod app;
-pub mod error;
 pub mod logging;
 pub mod repository;
 pub mod seed;
-pub mod utils;
+
+/// `error` and `utils` now live in `nr-web-core`.
+///
+/// Re-exported under their old paths so the several hundred `crate::utils::` and `crate::error::`
+/// call sites in this crate did not have to move in the same commit the files did. The re-exports
+/// go away once everything is in its final crate.
+pub use nr_web_core::{error, utils};

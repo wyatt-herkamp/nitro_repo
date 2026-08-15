@@ -2864,6 +2864,7 @@ dependencies = [
  "nr-core",
  "nr-macros",
  "nr-storage",
+ "nr-web-core",
  "opentelemetry",
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
@@ -3054,6 +3055,32 @@ dependencies = [
  "tracing-subscriber",
  "tux-io-encoding",
  "url",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
+name = "nr-web-core"
+version = "2.0.0-BETA"
+dependencies = [
+ "argon2",
+ "axum",
+ "base64 0.23.0",
+ "chrono",
+ "derive_more",
+ "digestible",
+ "http 1.5.0",
+ "mime",
+ "nr-core",
+ "nr-storage",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "sha2 0.11.0",
+ "sqlx",
+ "thiserror 2.0.19",
+ "tracing",
  "utoipa",
  "uuid",
 ]
