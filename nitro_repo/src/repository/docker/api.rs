@@ -25,6 +25,10 @@ use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
 use utoipa::{OpenApi, ToSchema};
 
+// Still on `NitroRepo` rather than `SiteContext`: `resolve_repository` below has to turn a name or
+// a hostname into a loaded repository, and resolving repositories is deliberately not something
+// `SiteContext` can do (see its module docs on the reference cycle). This moves to the repository
+// resolver along with `routing.rs`, which is blocked on the same thing.
 use crate::{
     app::{NitroRepo, RepositoryStorageName},
     error::InternalError,
@@ -191,7 +195,7 @@ async fn resolve_repository(
             // table is filled lazily, so a miss on a registry nobody has pulled from yet would mint
             // a token that grants nothing and make the first push of the day fail.
             if let Ok(Some(found)) = site.get_repository_from_names(&names).await
-                && found.get_type() == "docker"
+                && found.get_type() == super::REPOSITORY_TYPE_ID
             {
                 return Some(found.id());
             }
@@ -204,7 +208,7 @@ async fn resolve_repository(
         site.general_security_settings.trust_forwarded_host,
     )?;
     site.repository_for_hostname(&host)
-        .filter(|repository| repository.get_type() == "docker")
+        .filter(|repository| repository.get_type() == super::REPOSITORY_TYPE_ID)
         .map(|repository| repository.id())
 }
 

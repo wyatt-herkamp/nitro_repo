@@ -3,7 +3,7 @@ use std::{
     path::PathBuf,
 };
 
-use nitro_repo::app::{REPOSITORY_CONFIG_TYPES, REPOSITORY_TYPES};
+use nitro_repo::app::{REPOSITORY_CONFIG_TYPES, default_repository_types};
 use utoipa::OpenApi;
 
 pub fn export_repository_configs(path: PathBuf) -> anyhow::Result<()> {
@@ -52,7 +52,10 @@ pub fn export_repository_types(path: PathBuf) -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("Path is a file, expected a directory"));
     }
 
-    for repository_type in REPOSITORY_TYPES {
+    // Nothing here touches the staging directory — building the registry only derives paths from
+    // it — so the exporter, which has no configuration to read, hands over a throwaway one.
+    let repository_types = default_repository_types(&std::env::temp_dir());
+    for repository_type in repository_types.iter() {
         let file_path = path.join(format!("{}.json", repository_type.get_type()));
         let file = File::create(&file_path)?;
         serde_json::to_writer_pretty(file, &repository_type.get_description())?;

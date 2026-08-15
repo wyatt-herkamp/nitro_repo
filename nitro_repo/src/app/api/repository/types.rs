@@ -1,7 +1,7 @@
-use axum::response::Response;
+use axum::{extract::State, response::Response};
 use tracing::instrument;
 
-use crate::{app::REPOSITORY_TYPES, repository::RepositoryTypeDescription, utils::ResponseBuilder};
+use crate::{app::NitroRepo, repository::RepositoryTypeDescription, utils::ResponseBuilder};
 
 #[utoipa::path(
     get,
@@ -11,11 +11,8 @@ use crate::{app::REPOSITORY_TYPES, repository::RepositoryTypeDescription, utils:
     )
 )]
 #[instrument]
-pub async fn repository_types() -> Response {
+pub async fn repository_types(State(site): State<NitroRepo>) -> Response {
     // TODO: Add Client side caching
-    let types: Vec<_> = REPOSITORY_TYPES
-        .iter()
-        .map(|v| v.get_description())
-        .collect();
+    let types = site.inner.repository_types.descriptions();
     ResponseBuilder::ok().json(&types)
 }

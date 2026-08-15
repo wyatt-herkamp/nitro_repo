@@ -36,6 +36,7 @@ use serde_json::Value;
 use tracing::{debug, info, instrument, warn};
 
 use super::{
+    login::web_login::NpmWebLoginManager,
     types::{
         NPM_COMMAND_HEADER, NpmRegistryPackageResponse,
         request::{GetPath, InvalidNPMCommand, NPMCommand, PublishVersion},
@@ -67,6 +68,12 @@ pub static FULL_TYPE: &str = "npm/hosted";
 pub struct NpmRegistryInner {
     #[debug(skip)]
     pub site: SiteContext,
+    /// Handed down from [`NpmRegistryType`](super::NpmRegistryType), which owns it. The `/api/npm`
+    /// routes get the same `Arc` from that type's `api_router`, which is what lets the browser
+    /// half of the login exchange meet the registry half without either going through the
+    /// application state.
+    #[debug(skip)]
+    pub web_logins: Arc<NpmWebLoginManager>,
     pub storage: DynStorage,
     pub id: uuid::Uuid,
     pub name: String,
@@ -83,9 +90,11 @@ impl NPMHostedRegistry {
         site: SiteContext,
         storage: DynStorage,
         repository: DBRepository,
+        web_logins: Arc<NpmWebLoginManager>,
     ) -> Result<Self, RepositoryFactoryError> {
         Ok(Self(Arc::new(NpmRegistryInner {
             site,
+            web_logins,
             storage,
             id: repository.id,
             name: repository.name.to_string(),
@@ -516,7 +525,11 @@ fn strip_revision(path: &StoragePath) -> StoragePath {
     }
 }
 
-impl NpmRegistryExt for NPMHostedRegistry {}
+impl NpmRegistryExt for NPMHostedRegistry {
+    fn web_logins(&self) -> &Arc<NpmWebLoginManager> {
+        &self.0.web_logins
+    }
+}
 impl RepositoryExt for NPMHostedRegistry {}
 impl Repository for NPMHostedRegistry {
     type Error = NPMRegistryError;

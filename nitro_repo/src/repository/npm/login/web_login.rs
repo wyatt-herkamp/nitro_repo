@@ -164,7 +164,7 @@ pub async fn perform_login(
     let details: WebLoginRequest = serde_json::from_str(&body).unwrap_or_default();
     debug!(?details, "Starting npm web login");
 
-    let session = site.npm_web_logins.start(repository.id());
+    let session = repository.web_logins().start(repository.id());
 
     let base = {
         let instance = site.instance.lock();
@@ -219,11 +219,7 @@ pub async fn poll_login(
             "Unknown login session",
         ));
     };
-    match repository
-        .site()
-        .npm_web_logins
-        .poll(session, repository.id())
-    {
+    match repository.web_logins().poll(session, repository.id()) {
         PollResult::Ready(token) => {
             info!("npm web login completed");
             Ok(RepoResponse::Other(

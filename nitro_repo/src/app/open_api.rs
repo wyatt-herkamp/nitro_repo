@@ -21,11 +21,15 @@ use utoipa::{
 use super::{
     api,
     api::{
-        docker::DockerAPI, npm::NpmAPI, repository::RepositoryAPI, storage::StorageAPI,
-        user::UserAPI, user_management::UserManagementAPI,
+        repository::RepositoryAPI, storage::StorageAPI, user::UserAPI,
+        user_management::UserManagementAPI,
     },
 };
 use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
+// The two per-type API fragments live with their repository types rather than under `app::api`.
+// utoipa names schema components from the Rust type name, not the module path, so moving them
+// changes nothing in the served document.
+use crate::repository::{docker::api::DockerAPI, npm::api::NpmAPI};
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),

@@ -1,7 +1,8 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::Arc};
 
 use ahash::HashMap;
 use auto_impl::auto_impl;
+use axum::Router;
 use digestible::Digestible;
 use futures::future::BoxFuture;
 use nr_core::database::entities::repository::{DBRepository, GenericDBRepositoryConfig};
@@ -61,7 +62,7 @@ impl NewRepository {
     }
 }
 /// This trait is invoked via dynamic dispatch for simplicity reasons.
-#[auto_impl(&, Box)]
+#[auto_impl(&, Box, Arc)]
 pub trait RepositoryType: Send + Debug + Sync {
     fn get_type(&self) -> &'static str;
     fn get_description(&self) -> RepositoryTypeDescription;
@@ -91,8 +92,56 @@ pub trait RepositoryType: Send + Debug + Sync {
         storage: DynStorage,
         website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>>;
+
+    /// Routes this type serves under `/api/{get_type()}`, if it has any.
+    ///
+    /// Returned already carrying whatever state is private to the type — npm's browser-login
+    /// manager, for instance, goes in as a request extension — so the application can mount these
+    /// without being able to name any of it. That is what lets the manager live on the type
+    /// instead of on the application state, which is where it used to have to live precisely
+    /// because these routes needed to reach it.
+    fn api_router(&self) -> Option<Router<SiteContext>> {
+        None
+    }
 }
 pub type DynRepositoryType = Box<dyn RepositoryType + Send + Sync>;
+
+/// Every repository type this instance knows about.
+///
+/// Built once at startup and then read-only. A runtime list rather than the `&'static` slice it
+/// replaces because a type is allowed to own state — Docker's blob-upload manager needs the
+/// staging directory, which is configuration and so is not known until the config is read.
+///
+/// Still assembled by hand in the binary. There is no registration magic: adding a type means
+/// adding a line, and `every_repository_type_is_registered` fails if that line goes missing.
+#[derive(Clone, Debug, Default)]
+pub struct RepositoryTypeRegistry(Arc<Vec<Arc<dyn RepositoryType>>>);
+
+impl RepositoryTypeRegistry {
+    pub fn new(types: Vec<Arc<dyn RepositoryType>>) -> Self {
+        Self(Arc::new(types))
+    }
+
+    /// Case-insensitive, because the value comes from `repositories.repository_type` and from
+    /// URLs, and neither is normalised on the way in.
+    pub fn get(&self, name: &str) -> Option<Arc<dyn RepositoryType>> {
+        self.0
+            .iter()
+            .find(|repository_type| repository_type.get_type().eq_ignore_ascii_case(name))
+            .cloned()
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, Arc<dyn RepositoryType>> {
+        self.0.iter()
+    }
+
+    pub fn descriptions(&self) -> Vec<RepositoryTypeDescription> {
+        self.0
+            .iter()
+            .map(|repository_type| repository_type.get_description())
+            .collect()
+    }
+}
 #[derive(Debug, Error)]
 pub enum RepositoryFactoryError {
     #[error("Invalid Config: {0}. Error: {1}")]

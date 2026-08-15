@@ -101,7 +101,7 @@ pub fn build_app(site: NitroRepo, open_api_routes: bool, body_limit: DefaultBody
         // with the identical router, which served every artifact under a second URL that nothing
         // generated and that reads as if it addressed the storage API.
         .nest("/repositories", crate::repository::repository_router())
-        .nest("/api", api::api_routes())
+        .nest("/api", api::api_routes(&site))
         .nest("/badge", super::badge::badge_routes())
         // Docker cannot be given a URL prefix — `docker pull host/x/y` always asks for
         // `/v2/x/y/...` at the host root. Mounted after the three nests above so none of them can

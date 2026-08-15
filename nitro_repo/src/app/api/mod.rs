@@ -13,8 +13,6 @@ use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
 use utoipa::ToSchema;
-pub mod docker;
-pub mod npm;
 pub mod project;
 pub mod repository;
 pub mod search;
@@ -52,8 +50,10 @@ pub async fn require_scope(
     ))
 }
 
-pub fn api_routes() -> axum::Router<NitroRepo> {
-    axum::Router::new()
+/// `site` rather than nothing, because the per-type routes come off the repository-type registry
+/// and each arrives already carrying whatever state is private to that type.
+pub fn api_routes(site: &NitroRepo) -> axum::Router<NitroRepo> {
+    let mut router = axum::Router::new()
         .route("/info", axum::routing::get(info))
         .route("/info/scopes", axum::routing::get(scopes))
         .route("/install", axum::routing::post(install))
@@ -65,11 +65,24 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
         )
         .nest("/repository", repository::repository_routes())
         .nest("/project", project::project_routes())
-        .nest("/npm", npm::npm_routes())
         // The realm a Docker client is sent to by the `WWW-Authenticate` challenge. Under `/api`
         // rather than under `/v2` so it can never collide with an image named `token`.
-        .nest("/docker", docker::docker_routes())
-        .nest("/search", search::search_routes())
+        .nest("/docker", crate::repository::docker::api::docker_routes())
+        .nest("/search", search::search_routes());
+
+    // Each repository type may serve its own routes under `/api/{type}`. Mounted from the registry
+    // rather than listed here so that a type's private state — npm's login-session manager — never
+    // has to be reachable from the application state just to let its routes find it.
+    for repository_type in site.inner.repository_types.iter() {
+        if let Some(sub) = repository_type.api_router() {
+            router = router.nest(
+                &format!("/{}", repository_type.get_type()),
+                sub.with_state(site.context()),
+            );
+        }
+    }
+
+    router
         .fallback(route_not_found)
         .layer(CorsLayer::very_permissive())
 }

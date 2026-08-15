@@ -3,7 +3,7 @@
 //! Documentation for NPM: https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md
 //!
 
-use std::borrow::Cow;
+use std::{borrow::Cow, sync::Arc};
 
 use ahash::HashMap;
 use base64::DecodeError;
@@ -16,12 +16,14 @@ use nr_storage::DynStorage;
 use tracing::debug;
 use types::InvalidNPMPackageName;
 
+pub mod api;
 pub mod hosted;
 pub mod integrity;
 pub mod login;
 pub mod search;
 pub mod types;
 pub mod utils;
+use login::web_login::NpmWebLoginManager;
 use nr_core::repository::config::{
     project::ProjectConfigType, repository_page::RepositoryPageType,
 };
@@ -161,7 +163,20 @@ impl IntoResponse for NPMRegistryError {
 pub static REPOSITORY_TYPE_ID: &str = "npm";
 
 #[derive(Debug, Default)]
-pub struct NpmRegistryType;
+pub struct NpmRegistryType {
+    /// Browser-login sessions awaiting approval. In memory on purpose — see [`login::web_login`].
+    ///
+    /// Owned by the type rather than kept on the application state. `Arc` because both the
+    /// registry handlers and the `/api/npm` routes need the same instance, and the routes get
+    /// theirs from [`Self::api_router`].
+    web_logins: Arc<NpmWebLoginManager>,
+}
+
+impl NpmRegistryType {
+    pub fn web_logins(&self) -> &Arc<NpmWebLoginManager> {
+        &self.web_logins
+    }
+}
 
 impl RepositoryType for NpmRegistryType {
     fn get_type(&self) -> &'static str {
@@ -225,6 +240,7 @@ impl RepositoryType for NpmRegistryType {
         storage: DynStorage,
         website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
+        let web_logins = self.web_logins.clone();
         Box::pin(async move {
             let Some(npm_config_db) = DBRepositoryConfig::<NPMRegistryConfig>::get_config(
                 repo.id,
@@ -240,10 +256,19 @@ impl RepositoryType for NpmRegistryType {
             let npm_config = npm_config_db.value.0;
             match npm_config {
                 NPMRegistryConfig::Hosted => {
-                    let maven_hosted = NPMHostedRegistry::load(website, storage, repo).await?;
+                    let maven_hosted =
+                        NPMHostedRegistry::load(website, storage, repo, web_logins).await?;
                     Ok(NPMRegistry::Hosted(maven_hosted).into())
                 }
             }
         })
+    }
+
+    /// The browser half of the login exchange, mounted at `/api/npm`.
+    ///
+    /// Carries the same manager the registries got, so the page that approves a login and the
+    /// `npm` process waiting on `doneUrl` are talking about the same sessions.
+    fn api_router(&self) -> Option<axum::Router<SiteContext>> {
+        Some(api::npm_routes(self.web_logins.clone()))
     }
 }

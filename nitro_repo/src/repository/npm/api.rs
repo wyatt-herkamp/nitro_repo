@@ -5,8 +5,14 @@
 //! `POST /api/npm/login/{session}` here. This mints the repository token and hands it to the
 //! waiting `npm` process through the `doneUrl` it is polling.
 //!
-//! See [`crate::repository::npm::login::web_login`] for the registry side of the exchange.
+//! See [`super::login::web_login`] for the registry side of the exchange.
+//!
+//! The session manager arrives as a request extension rather than off the application state, so
+//! that it can stay owned by [`NpmRegistryType`](super::NpmRegistryType) and private to npm.
+use std::sync::Arc;
+
 use axum::{
+    Extension, Router,
     extract::{Path, State},
     response::{IntoResponse, Response},
 };
@@ -19,8 +25,9 @@ use tracing::{info, instrument};
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
 
+use super::login::web_login::NpmWebLoginManager;
 use crate::{
-    app::{NitroRepo, authentication::Authentication, responses::MissingPermission},
+    app::{SiteContext, authentication::Authentication, responses::MissingPermission},
     error::InternalError,
     utils::ResponseBuilder,
 };
@@ -32,10 +39,11 @@ use crate::{
 )]
 pub struct NpmAPI;
 
-pub fn npm_routes() -> axum::Router<NitroRepo> {
-    axum::Router::new()
+pub fn npm_routes(web_logins: Arc<NpmWebLoginManager>) -> Router<SiteContext> {
+    Router::new()
         .route("/login/{session}", axum::routing::get(login_session))
         .route("/login/{session}", axum::routing::post(complete_login))
+        .layer(Extension(web_logins))
 }
 
 /// What the login page needs to show the user before they approve.
@@ -63,10 +71,11 @@ pub struct NpmLoginCompleteResponse {
 )]
 #[instrument(skip(site))]
 pub async fn login_session(
-    State(site): State<NitroRepo>,
+    State(site): State<SiteContext>,
+    Extension(web_logins): Extension<Arc<NpmWebLoginManager>>,
     Path(session): Path<Uuid>,
 ) -> Result<Response, InternalError> {
-    let Some(repository_id) = site.npm_web_logins.repository_for(session) else {
+    let Some(repository_id) = web_logins.repository_for(session) else {
         return Ok(ResponseBuilder::not_found().empty());
     };
     // The repository is named rather than just identified so the page can tell the user what they
@@ -94,14 +103,15 @@ pub async fn login_session(
 )]
 #[instrument(skip(site))]
 pub async fn complete_login(
-    State(site): State<NitroRepo>,
+    State(site): State<SiteContext>,
+    Extension(web_logins): Extension<Arc<NpmWebLoginManager>>,
     auth: Option<Authentication>,
     Path(session): Path<Uuid>,
 ) -> Result<Response, InternalError> {
     let Some(auth) = auth else {
         return Ok(ResponseBuilder::unauthorized().empty());
     };
-    let Some(repository_id) = site.npm_web_logins.repository_for(session) else {
+    let Some(repository_id) = web_logins.repository_for(session) else {
         return Ok(ResponseBuilder::not_found().empty());
     };
     // The token this hands out can publish, so approving a session requires the permission the
@@ -126,11 +136,7 @@ pub async fn complete_login(
     .insert(site.as_ref())
     .await?;
 
-    if site
-        .npm_web_logins
-        .complete(session, repository_id, token)
-        .is_err()
-    {
+    if web_logins.complete(session, repository_id, token).is_err() {
         // Expired between the lookup above and here.
         return Ok(ResponseBuilder::not_found().empty());
     }

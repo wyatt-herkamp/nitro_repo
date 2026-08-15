@@ -45,7 +45,7 @@ use uuid::Uuid;
 pub mod open_api;
 use crate::{
     repository::{
-        DynRepository, RepositoryType, StagingConfig,
+        DynRepository, RepositoryType, RepositoryTypeRegistry, StagingConfig,
         cargo::{CargoRegistryConfigType, CargoRegistryType},
         docker::{DockerRegistryConfigType, DockerRegistryType},
         maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
@@ -124,6 +124,9 @@ pub struct NitroRepoInner {
     /// `NitroRepoInner` derefs to its contents, so `site.instance`, `site.staging_config` and
     /// friends still resolve as before.
     pub context: SiteContext,
+    /// Every repository type this instance knows about, assembled by
+    /// [`default_repository_types`] at startup.
+    pub repository_types: RepositoryTypeRegistry,
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
@@ -244,6 +247,13 @@ impl axum::extract::FromRef<NitroRepo> for SiteContext {
     }
 }
 
+/// The authentication extractors read nothing but the pool, so they ask for only that.
+impl axum::extract::FromRef<NitroRepo> for PgPool {
+    fn from_ref(site: &NitroRepo) -> PgPool {
+        site.database.clone()
+    }
+}
+
 impl NitroRepo {
     /// The slice of this state that repositories are given.
     pub fn context(&self) -> SiteContext {
@@ -304,6 +314,7 @@ impl NitroRepo {
             repository_metrics.clone(),
         );
         let nitro_repo = NitroRepoInner {
+            repository_types: default_repository_types(&context.staging_config.staging_dir),
             context,
             storages: RwLock::new(HashMap::new()),
             repositories: RwLock::new(HashMap::new()),
@@ -540,11 +551,8 @@ impl NitroRepo {
         let storages = self.storages.read();
         storages.get(&id).cloned()
     }
-    pub fn get_repository_type(&self, name: &str) -> Option<&'static dyn RepositoryType> {
-        REPOSITORY_TYPES
-            .iter()
-            .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
-            .copied()
+    pub fn get_repository_type(&self, name: &str) -> Option<Arc<dyn RepositoryType>> {
+        self.inner.repository_types.get(name)
     }
     /// Drops any cached name that resolves to this repository.
     ///
@@ -591,16 +599,31 @@ pub static REPOSITORY_CONFIG_TYPES: &[&dyn RepositoryConfigType] = &[
     &CargoRegistryConfigType,
     &DockerRegistryConfigType,
 ];
-pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[
-    &MavenRepositoryType,
-    &NpmRegistryType,
-    &CargoRegistryType,
-    &DockerRegistryType,
-];
+/// Every repository type this build knows about.
+///
+/// Assembled at startup rather than as a `&'static` slice because a type may own state that
+/// depends on configuration — Docker's blob-upload manager needs the staging directory.
+///
+/// `staging_dir` is only read to derive paths; nothing here touches the filesystem, so a caller
+/// with no real configuration (the exporter, the tests) can pass a throwaway directory.
+pub fn default_repository_types(staging_dir: &std::path::Path) -> RepositoryTypeRegistry {
+    RepositoryTypeRegistry::new(vec![
+        Arc::new(MavenRepositoryType),
+        Arc::new(NpmRegistryType::default()),
+        Arc::new(CargoRegistryType),
+        Arc::new(DockerRegistryType::new(staging_dir)),
+    ])
+}
 
 #[cfg(test)]
 mod registry_tests {
     use super::*;
+
+    /// The real registry. Nothing here touches the staging directory — `DockerRegistryType::new`
+    /// only derives paths from it — so a throwaway one is enough.
+    fn test_registry() -> RepositoryTypeRegistry {
+        default_repository_types(&std::env::temp_dir())
+    }
 
     /// Every string this server persists or routes on, written out by hand.
     ///
@@ -638,12 +661,12 @@ mod registry_tests {
         assert_eq!(RepositoryPageType.get_type(), "page");
     }
 
-    /// The registries are hand-written arrays, so a dropped entry is not a compile error — and the
-    /// two drift tests below iterate them, so a *missing* type passes both of those happily. The
+    /// The registry is a hand-written list, so a dropped entry is not a compile error — and the
+    /// two drift tests below iterate it, so a *missing* type passes both of those happily. The
     /// only symptom would be every repository of that type failing to load at startup.
     #[test]
     fn every_repository_type_is_registered() {
-        let mut registered: Vec<_> = REPOSITORY_TYPES
+        let mut registered: Vec<_> = test_registry()
             .iter()
             .map(|repository_type| repository_type.get_type())
             .collect();
@@ -658,7 +681,7 @@ mod registry_tests {
     /// confusing error rather than at startup.
     #[test]
     fn advertised_config_types_are_registered() {
-        for repository_type in REPOSITORY_TYPES {
+        for repository_type in test_registry().iter() {
             for key in repository_type.config_types() {
                 assert!(
                     REPOSITORY_CONFIG_TYPES
@@ -677,7 +700,7 @@ mod registry_tests {
     /// omitted `maven`, the very key its `required_configs` demanded.
     #[test]
     fn required_configs_are_a_subset_of_supported_ones() {
-        for repository_type in REPOSITORY_TYPES {
+        for repository_type in test_registry().iter() {
             let supported = repository_type.config_types();
             for required in repository_type.get_description().required_configs {
                 assert!(

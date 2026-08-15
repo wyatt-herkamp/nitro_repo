@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use nr_core::{
     database::entities::project::{
         DBProject, ProjectDBType, update::UpdateProject, versions::DBProjectVersion,
@@ -6,7 +8,9 @@ use nr_core::{
 };
 use tracing::{info, instrument};
 
-use super::{NPMRegistryError, types::request::PublishVersion};
+use super::{
+    NPMRegistryError, login::web_login::NpmWebLoginManager, types::request::PublishVersion,
+};
 use crate::repository::Repository;
 
 pub mod npm_time {
@@ -17,6 +21,12 @@ pub mod npm_time {
     }
 }
 pub trait NpmRegistryExt: Repository {
+    /// The browser-login sessions this registry shares with the `/api/npm` routes.
+    ///
+    /// On the trait rather than read off the site: the manager belongs to `NpmRegistryType`, and
+    /// the login handlers take `&impl NpmRegistryExt` rather than a concrete registry.
+    fn web_logins(&self) -> &Arc<NpmWebLoginManager>;
+
     #[instrument]
     async fn get_or_create_project(
         &self,

@@ -35,10 +35,7 @@ use uuid::Uuid;
 
 use super::{Instance, config::security::SecuritySettings};
 use crate::{
-    repository::{
-        StagingConfig, docker::uploads::BlobUploadManager,
-        npm::login::web_login::NpmWebLoginManager, repo_tracing::RepositoryMetricsMeter,
-    },
+    repository::{StagingConfig, repo_tracing::RepositoryMetricsMeter},
     utils::host,
 };
 
@@ -103,17 +100,6 @@ pub struct SiteContextInner {
     pub staging_config: StagingConfig,
     pub repository_metrics: RepositoryMetricsMeter,
     pub hostnames: HostnameIndex,
-    /// npm browser-login sessions awaiting approval. In memory on purpose — see
-    /// [`crate::repository::npm::login::web_login`].
-    ///
-    /// Here only because npm code reads it and npm code now takes a `SiteContext`. It is not
-    /// shared state in any meaningful sense — no other repository type, and nothing in the
-    /// application, has any business touching it — so the next commit moves it onto
-    /// `NpmRegistryType`, where it can be private to the npm crate.
-    pub npm_web_logins: NpmWebLoginManager,
-    /// In-progress Docker blob uploads. Same story as [`Self::npm_web_logins`]: it belongs to
-    /// `DockerRegistryType`, not to every repository in the instance.
-    pub docker_uploads: BlobUploadManager,
 }
 
 /// A cheap handle to [`SiteContextInner`]. Cloning one is an `Arc` bump.
@@ -136,6 +122,15 @@ impl AsRef<PgPool> for SiteContext {
     }
 }
 
+/// Lets the authentication extractors ask for the pool and nothing else, which is all any of them
+/// reads. Legal despite `FromRef` and `PgPool` both being foreign: `SiteContext` is local and
+/// appears as a trait argument.
+impl axum::extract::FromRef<SiteContext> for PgPool {
+    fn from_ref(context: &SiteContext) -> PgPool {
+        context.0.database.clone()
+    }
+}
+
 impl SiteContext {
     pub fn new(
         database: PgPool,
@@ -144,7 +139,6 @@ impl SiteContext {
         staging_config: StagingConfig,
         repository_metrics: RepositoryMetricsMeter,
     ) -> Self {
-        let docker_uploads = BlobUploadManager::new(&staging_config.staging_dir);
         Self(Arc::new(SiteContextInner {
             database,
             instance: Mutex::new(instance),
@@ -152,8 +146,6 @@ impl SiteContext {
             staging_config,
             repository_metrics,
             hostnames: HostnameIndex::default(),
-            npm_web_logins: NpmWebLoginManager::default(),
-            docker_uploads,
         }))
     }
 

@@ -139,7 +139,7 @@ impl HasPermissions for OnlySessionAllowedAuthentication {
 }
 impl<S> FromRequestParts<S> for OnlySessionAllowedAuthentication
 where
-    NitroRepo: FromRef<S>,
+    PgPool: FromRef<S>,
     S: Send + Sync,
 {
     type Rejection = AuthenticationError;
@@ -150,7 +150,7 @@ where
     )]
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
-        let repo = NitroRepo::from_ref(state);
+        let database = PgPool::from_ref(state);
         let Some(raw_auth) = raw_extension else {
             return Err(AuthenticationError::Unauthorized);
         };
@@ -162,7 +162,7 @@ where
                 return Err(AuthenticationError::AuthTokenForbidden);
             }
             AuthenticationRaw::Session(session) => {
-                let user = UserSafeData::get_by_id(session.user_id, &repo.database)
+                let user = UserSafeData::get_by_id(session.user_id, &database)
                     .await?
                     .ok_or(AuthenticationError::Unauthorized)?;
                 return Ok(OnlySessionAllowedAuthentication { user, session });
@@ -239,7 +239,7 @@ impl HasPermissions for Authentication {
 }
 impl<S> FromRequestParts<S> for Authentication
 where
-    NitroRepo: FromRef<S>,
+    PgPool: FromRef<S>,
     S: Send + Sync,
 {
     type Rejection = AuthenticationError;
@@ -250,7 +250,7 @@ where
     )]
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
-        let repo = NitroRepo::from_ref(state);
+        let database = PgPool::from_ref(state);
         let Some(raw_auth) = raw_extension else {
             return Err(AuthenticationError::Unauthorized);
         };
@@ -259,11 +259,11 @@ where
                 return Err(AuthenticationError::Unauthorized);
             }
             AuthenticationRaw::AuthToken(token) => {
-                let (user, auth_token) = get_user_and_auth_token(&token, &repo.database).await?;
+                let (user, auth_token) = get_user_and_auth_token(&token, &database).await?;
                 Authentication::AuthToken(auth_token, user)
             }
             AuthenticationRaw::Session(session) => {
-                let user = UserSafeData::get_by_id(session.user_id, &repo.database)
+                let user = UserSafeData::get_by_id(session.user_id, &database)
                     .await?
                     .ok_or(AuthenticationError::Unauthorized)?;
                 Authentication::Session(session, user)
@@ -278,7 +278,7 @@ where
 }
 impl<S> OptionalFromRequestParts<S> for Authentication
 where
-    NitroRepo: FromRef<S>,
+    PgPool: FromRef<S>,
     S: Send + Sync,
 {
     type Rejection = AuthenticationError;
@@ -287,7 +287,7 @@ where
         state: &S,
     ) -> Result<Option<Self>, Self::Rejection> {
         let raw_extension = parts.extensions.get::<AuthenticationRaw>().cloned();
-        let repo = NitroRepo::from_ref(state);
+        let database = PgPool::from_ref(state);
         let Some(raw_auth) = raw_extension else {
             return Ok(None);
         };
@@ -296,11 +296,11 @@ where
                 return Ok(None);
             }
             AuthenticationRaw::AuthToken(token) => {
-                let (user, auth_token) = get_user_and_auth_token(&token, &repo.database).await?;
+                let (user, auth_token) = get_user_and_auth_token(&token, &database).await?;
                 Authentication::AuthToken(auth_token, user)
             }
             AuthenticationRaw::Session(session) => {
-                let user = UserSafeData::get_by_id(session.user_id, &repo.database)
+                let user = UserSafeData::get_by_id(session.user_id, &database)
                     .await?
                     .ok_or(AuthenticationError::Unauthorized)?;
                 Authentication::Session(session, user)

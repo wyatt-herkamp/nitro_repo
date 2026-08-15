@@ -43,6 +43,7 @@ use super::{
         Digest, DockerPath, Manifest, Reference,
         manifest::{DEFAULT_MANIFEST_MEDIA_TYPE, is_index},
     },
+    uploads::BlobUploadManager,
 };
 use crate::{
     app::SiteContext,
@@ -61,6 +62,11 @@ const MAX_PAGE_SIZE: usize = 1000;
 pub struct DockerRegistryInner {
     #[debug(skip)]
     pub site: SiteContext,
+    /// Handed down from [`DockerRegistryType`](super::DockerRegistryType), which owns it. It used
+    /// to be reached through the application state, which meant every repository type could see
+    /// Docker's in-flight uploads.
+    #[debug(skip)]
+    pub uploads: BlobUploadManager,
     pub storage: DynStorage,
     pub id: Uuid,
     pub name: String,
@@ -80,9 +86,11 @@ impl DockerHostedRegistry {
         site: SiteContext,
         storage: DynStorage,
         repository: DBRepository,
+        uploads: BlobUploadManager,
     ) -> Result<Self, RepositoryFactoryError> {
         Ok(Self(Arc::new(DockerRegistryInner {
             site,
+            uploads,
             storage,
             id: repository.id,
             name: repository.name.to_string(),
@@ -449,8 +457,7 @@ impl DockerHostedRegistry {
         }
 
         let id = self
-            .site
-            .docker_uploads
+            .uploads
             .start(self.0.id, image)
             .await
             .map_err(DockerError::Upload)?;
@@ -489,8 +496,7 @@ impl DockerHostedRegistry {
         let start = content_range_start(&request.parts);
         let body = request.body.body_as_bytes().await?;
         let offset = self
-            .site
-            .docker_uploads
+            .uploads
             .append(id, self.0.id, start, body)
             .await
             .map_err(DockerError::Upload)?;
@@ -547,8 +553,7 @@ impl DockerHostedRegistry {
         let start = content_range_start(&request.parts);
         let body = request.body.body_as_bytes().await?;
         if !body.is_empty() {
-            self.site
-                .docker_uploads
+            self.uploads
                 .append(id, self.0.id, start, body)
                 .await
                 .map_err(DockerError::Upload)?;
@@ -557,8 +562,7 @@ impl DockerHostedRegistry {
         // Verified against the digest the client committed under; a mismatch closes the session and
         // nothing reaches storage.
         let bytes = self
-            .site
-            .docker_uploads
+            .uploads
             .finish(id, self.0.id, &digest)
             .await
             .map_err(DockerError::Upload)?;
@@ -1193,8 +1197,7 @@ impl Repository for DockerHostedRegistry {
                     &origin.image_name(&name),
                 )
                 .await?;
-                self.site
-                    .docker_uploads
+                self.uploads
                     .cancel(uuid, self.0.id)
                     .await
                     .map_err(DockerError::Upload)?;
@@ -1276,8 +1279,7 @@ impl DockerHostedRegistry {
                 )
                 .await?;
                 let offset = self
-                    .site
-                    .docker_uploads
+                    .uploads
                     .offset(uuid, self.0.id)
                     .map_err(DockerError::Upload)?;
                 Ok(RepoResponse::Other(

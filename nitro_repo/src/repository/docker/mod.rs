@@ -36,6 +36,7 @@ use nr_core::{
 use nr_macros::DynRepositoryHandler;
 use nr_storage::DynStorage;
 
+pub mod api;
 pub mod errors;
 pub mod hosted;
 pub mod routing;
@@ -50,7 +51,10 @@ pub use super::prelude::*;
 use super::{DynRepository, NewRepository, RepositoryType, RepositoryTypeDescription};
 use crate::{
     app::authentication::AuthenticationError,
-    repository::docker::{errors::ErrorCode, uploads::UploadError},
+    repository::docker::{
+        errors::ErrorCode,
+        uploads::{BlobUploadManager, UploadError},
+    },
     utils::{IntoErrorResponse, bad_request::BadRequestErrors},
 };
 
@@ -199,8 +203,27 @@ impl IntoResponse for DockerError {
 /// whether a `/v2` request is one it should serve.
 pub static REPOSITORY_TYPE_ID: &str = "docker";
 
-#[derive(Debug, Default)]
-pub struct DockerRegistryType;
+#[derive(Debug)]
+pub struct DockerRegistryType {
+    /// In-progress blob uploads, buffered to the staging directory and tracked in memory for the
+    /// reasons set out in [`uploads`].
+    ///
+    /// Owned by the type rather than kept on the application state, which is where it used to
+    /// live. Nothing outside Docker has any business touching it, and hanging it here means each
+    /// instance of the server — including each `TestServer` in the integration suite — gets its
+    /// own without anything having to remember to construct one.
+    uploads: BlobUploadManager,
+}
+
+impl DockerRegistryType {
+    /// `staging_dir` is the instance's staging directory; uploads live in a `docker` subdirectory
+    /// of it. Cheap and infallible — nothing is created until an upload starts.
+    pub fn new(staging_dir: &std::path::Path) -> Self {
+        Self {
+            uploads: BlobUploadManager::new(staging_dir),
+        }
+    }
+}
 
 impl RepositoryType for DockerRegistryType {
     fn get_type(&self) -> &'static str {
@@ -261,6 +284,7 @@ impl RepositoryType for DockerRegistryType {
         storage: DynStorage,
         website: SiteContext,
     ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
+        let uploads = self.uploads.clone();
         Box::pin(async move {
             let Some(config) = DBRepositoryConfig::<DockerRegistryConfig>::get_config(
                 repo.id,
@@ -275,7 +299,8 @@ impl RepositoryType for DockerRegistryType {
             };
             match config.value.0 {
                 DockerRegistryConfig::Hosted => {
-                    let hosted = DockerHostedRegistry::load(website, storage, repo).await?;
+                    let hosted =
+                        DockerHostedRegistry::load(website, storage, repo, uploads).await?;
                     Ok(DockerRegistry::Hosted(hosted).into())
                 }
             }
