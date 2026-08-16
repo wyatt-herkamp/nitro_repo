@@ -2831,8 +2831,6 @@ version = "2.0.0-BETA"
 dependencies = [
  "ahash",
  "anyhow",
- "argon2",
- "auto_impl",
  "axum",
  "axum-extra",
  "base64 0.23.0",
@@ -2842,7 +2840,6 @@ dependencies = [
  "clap",
  "current_semver",
  "derive_more",
- "digestible",
  "flate2",
  "flume",
  "futures",
@@ -2861,8 +2858,13 @@ dependencies = [
  "mime_guess",
  "nr-aql",
  "nr-badge",
+ "nr-cargo",
  "nr-core",
+ "nr-docker",
  "nr-macros",
+ "nr-maven",
+ "nr-npm",
+ "nr-repository",
  "nr-storage",
  "nr-web-core",
  "opentelemetry",
@@ -2873,8 +2875,6 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "pretty_assertions",
- "rand 0.10.2",
- "redb",
  "reqwest",
  "rust-embed",
  "rustls 0.23.43",
@@ -2966,6 +2966,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "nr-cargo"
+version = "2.0.0-BETA"
+dependencies = [
+ "ahash",
+ "axum",
+ "bytes",
+ "derive_more",
+ "futures",
+ "http 1.5.0",
+ "nr-core",
+ "nr-macros",
+ "nr-repository",
+ "nr-storage",
+ "nr-web-core",
+ "parking_lot",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "sha2 0.11.0",
+ "sqlx",
+ "thiserror 2.0.19",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "nr-core"
 version = "2.0.0-BETA"
 dependencies = [
@@ -3002,6 +3029,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "nr-docker"
+version = "2.0.0-BETA"
+dependencies = [
+ "ahash",
+ "axum",
+ "bytes",
+ "chrono",
+ "derive_more",
+ "futures",
+ "http 1.5.0",
+ "nr-core",
+ "nr-macros",
+ "nr-repository",
+ "nr-storage",
+ "nr-web-core",
+ "parking_lot",
+ "percent-encoding",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "sha2 0.11.0",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
 name = "nr-macros"
 version = "2.0.0-BETA"
 dependencies = [
@@ -3011,6 +3070,106 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.3",
+]
+
+[[package]]
+name = "nr-maven"
+version = "2.0.0-BETA"
+dependencies = [
+ "ahash",
+ "axum",
+ "base64 0.23.0",
+ "bytes",
+ "chrono",
+ "derive_more",
+ "futures",
+ "http 1.5.0",
+ "maven-rs",
+ "md-5",
+ "nr-core",
+ "nr-macros",
+ "nr-repository",
+ "nr-storage",
+ "nr-web-core",
+ "parking_lot",
+ "reqwest",
+ "schemars",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha1 0.11.0",
+ "sha2 0.11.0",
+ "sqlx",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "nr-npm"
+version = "2.0.0-BETA"
+dependencies = [
+ "ahash",
+ "axum",
+ "base64 0.23.0",
+ "chrono",
+ "derive_more",
+ "futures",
+ "http 1.5.0",
+ "nr-core",
+ "nr-macros",
+ "nr-repository",
+ "nr-storage",
+ "nr-web-core",
+ "parking_lot",
+ "pretty_assertions",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "sha1 0.11.0",
+ "sha2 0.11.0",
+ "sqlx",
+ "strum 0.28.0",
+ "thiserror 2.0.19",
+ "tracing",
+ "url",
+ "utoipa",
+ "uuid",
+]
+
+[[package]]
+name = "nr-repository"
+version = "2.0.0-BETA"
+dependencies = [
+ "ahash",
+ "auto_impl",
+ "axum",
+ "axum-extra",
+ "bytes",
+ "chrono",
+ "derive_more",
+ "digestible",
+ "futures",
+ "http 1.5.0",
+ "http-body-util",
+ "mime",
+ "nr-core",
+ "nr-storage",
+ "nr-web-core",
+ "opentelemetry",
+ "parking_lot",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "strum 0.28.0",
+ "thiserror 2.0.19",
+ "tracing",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]
@@ -3065,6 +3224,7 @@ version = "2.0.0-BETA"
 dependencies = [
  "argon2",
  "axum",
+ "axum-extra",
  "base64 0.23.0",
  "chrono",
  "derive_more",
@@ -3073,13 +3233,19 @@ dependencies = [
  "mime",
  "nr-core",
  "nr-storage",
+ "parking_lot",
+ "rand 0.10.2",
+ "redb",
  "reqwest",
+ "semver",
  "serde",
  "serde_json",
  "serde_path_to_error",
  "sha2 0.11.0",
  "sqlx",
+ "strum 0.28.0",
  "thiserror 2.0.19",
+ "tokio",
  "tracing",
  "utoipa",
  "uuid",
