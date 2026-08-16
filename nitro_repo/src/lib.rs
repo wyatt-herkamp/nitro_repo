@@ -8,8 +8,5 @@
 //! `main.rs` is the CLI; everything it needs lives here.
 
 pub mod app;
-pub mod error;
 pub mod logging;
-pub mod repository;
 pub mod seed;
-pub mod utils;

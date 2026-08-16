@@ -13,6 +13,11 @@ use nr_core::{
         scopes::{NRScope, ScopeDescription},
     },
 };
+use nr_docker::api::DockerAPI;
+// The two per-type API fragments live with their repository types rather than under `app::api`.
+// utoipa names schema components from the Rust type name, not the module path, so moving them
+// changes nothing in the served document.
+use nr_npm::api::NpmAPI;
 use utoipa::{
     Modify, OpenApi,
     openapi::security::{ApiKey, ApiKeyValue, HttpAuthScheme, HttpBuilder, SecurityScheme},
@@ -21,8 +26,8 @@ use utoipa::{
 use super::{
     api,
     api::{
-        docker::DockerAPI, npm::NpmAPI, repository::RepositoryAPI, storage::StorageAPI,
-        user::UserAPI, user_management::UserManagementAPI,
+        repository::RepositoryAPI, storage::StorageAPI, user::UserAPI,
+        user_management::UserManagementAPI,
     },
 };
 use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
@@ -49,7 +54,7 @@ use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
     ),
     components(
         schemas(
-            super::Instance,
+            nr_web_core::config::Instance,
             UserPermissions,
             api::InstallRequest,
             DBProject,
@@ -61,7 +66,7 @@ use crate::app::{api::project::ProjectRoutes, badge::BadgeRoutes};
             // that resolves references — `openapi-typescript`, a client generator, Redocly —
             // refused the whole document over it.
             nr_core::storage::StoragePath,
-            crate::utils::response::api_error_response::APIErrorResponseSchema,
+            nr_web_core::utils::response::api_error_response::APIErrorResponseSchema,
         )
     ),
     tags(

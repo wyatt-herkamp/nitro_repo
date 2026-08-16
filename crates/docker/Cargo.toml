@@ -1,0 +1,48 @@
+[package]
+name = "nr-docker"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The Docker registry (OCI distribution) repository type for Nitro Repo"
+
+[dependencies]
+nr-core.workspace = true
+nr-macros.workspace = true
+nr-repository.workspace = true
+nr-storage.workspace = true
+nr-web-core.workspace = true
+# Verifying every blob and manifest digest.
+sha2.workspace = true
+# `/v2` paths arrive percent-encoded, and the image name is read straight off the URI.
+percent-encoding.workspace = true
+# `tags/list` and `_catalog` paginate through the query string.
+serde_urlencoded.workspace = true
+# Web. `utoipa` is for the token endpoint under `/api/docker`.
+axum.workspace = true
+bytes.workspace = true
+http.workspace = true
+utoipa.workspace = true
+# Blob uploads are buffered to the staging directory before they reach storage.
+tokio.workspace = true
+# Database / serde
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# Utils
+ahash.workspace = true
+chrono.workspace = true
+derive_more.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

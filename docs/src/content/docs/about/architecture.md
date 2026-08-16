@@ -9,15 +9,27 @@ Useful if you are debugging an instance, or about to work on one.
 
 ## The crates
 
-| Crate             | What it is                                                                     |
-| ----------------- | ------------------------------------------------------------------------------ |
-| `nitro_repo/`     | The server: HTTP, repository types, authentication. `main.rs` is only the CLI. |
-| `crates/core/`    | Shared types, the database entities, and the migrations.                       |
-| `crates/storage/` | Storage backends — Local, FileSystemV2, S3.                                    |
-| `crates/aql/`     | The query language behind search. Depends on nothing but serde and thiserror.  |
-| `crates/macros/`  | Macros the other crates use.                                                   |
-| `crates/nr-api/`  | A client for the API.                                                          |
-| `site/`           | The Vue frontend.                                                              |
+| Crate                | What it is                                                                       |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `nitro_repo/`        | The server: routing, the API, config, seeding. `main.rs` is only the CLI.        |
+| `crates/core/`       | Shared types, the database entities, and the migrations.                         |
+| `crates/storage/`    | Storage backends — Local, FileSystemV2, S3.                                      |
+| `crates/web-core/`   | HTTP plumbing: response building, the error trait, authentication, host parsing. |
+| `crates/repository/` | What a repository type implements, and the HTTP plumbing around it.              |
+| `crates/maven/`      | The Maven repository type — hosted and proxy.                                    |
+| `crates/npm/`        | The npm registry type.                                                           |
+| `crates/cargo/`      | The Cargo sparse-registry type.                                                  |
+| `crates/docker/`     | The Docker registry (OCI distribution) type.                                     |
+| `crates/aql/`        | The query language behind search. Depends on nothing but serde and thiserror.    |
+| `crates/macros/`     | Macros the other crates use.                                                     |
+| `crates/nr-api/`     | A client for the API.                                                            |
+| `site/`              | The Vue frontend.                                                                |
+
+Each repository type is its own crate, depending on `nr-repository` for the contract and on
+nothing from the server. What a type is handed is a `SiteContext` — the database, the instance
+settings, the staging directory, the request metrics and a hostname index — and never the
+application state. Adding a type means writing a crate and adding one line to
+`default_repository_types` in `nitro_repo/src/app/mod.rs`.
 
 `nitro_repo` is a library with a thin binary on top, which is what lets the integration tests build
 the real router in-process rather than starting a server and binding a port.
@@ -36,7 +48,14 @@ Axum router
 ```
 
 Repository types implement a trait with a handler per method, so `maven/hosted`, `maven/proxy` and
-`npm/hosted` are three implementations behind one route rather than three routes.
+`npm/hosted` are three implementations behind one route rather than three routes. A loaded
+repository is held as `Arc<dyn RepositoryHandler>`, so nothing outside a type's own crate names its
+concrete type.
+
+Docker is the exception to the route table above: `docker pull host/x/y` always asks for
+`/v2/x/y/...` at the host root and cannot be given a prefix, so `/v2` is mounted there too. The
+Docker crate decides whether a `/v2` request is one of its own and hands back the ones that are
+not; the server applies its own fallback to those.
 
 ## What lives where
 

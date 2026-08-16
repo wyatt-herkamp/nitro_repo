@@ -16,12 +16,13 @@ use nr_core::{
         project::ReleaseType,
     },
 };
+use nr_repository::{RepositoryNotFound, RepositoryStorageName};
+use nr_web_core::{error::InternalError, utils::ResponseBuilder};
 use serde::Deserialize;
 use tracing::{Level, event, instrument};
 use utoipa::{IntoParams, OpenApi};
 
-use super::{NitroRepo, RepositoryStorageName, responses::RepositoryNotFound};
-use crate::{error::InternalError, repository::Repository, utils::ResponseBuilder};
+use super::NitroRepo;
 #[derive(OpenApi)]
 #[openapi(
     paths(repository_badge, project_badge, supports_badges),

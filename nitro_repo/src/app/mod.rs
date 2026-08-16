@@ -2,13 +2,16 @@ use std::{fmt::Debug, path::PathBuf, sync::Arc};
 
 use ahash::{HashMap, HashMapExt};
 use anyhow::Context;
-use authentication::session::{SessionManager, SessionManagerConfig};
 use axum::extract::State;
-use config::{Mode, PasswordRules, SecuritySettings, SiteSetting};
+use config::{Mode, SecuritySettings, SiteSetting};
 use derive_more::{AsRef, derive::Deref};
 use email::EmailSetting;
 use email_service::{EmailAccess, EmailService};
 use http::{HeaderName, Uri};
+use nr_web_core::{
+    authentication::session::{SessionManager, SessionManagerConfig},
+    config::Instance,
+};
 pub mod frontend;
 pub mod resources;
 use nr_core::{
@@ -30,7 +33,6 @@ use opentelemetry::{
     metrics::{Histogram, Meter, UpDownCounter},
 };
 use parking_lot::{Mutex, RwLock};
-use serde::{Deserialize, Serialize};
 pub mod authentication;
 pub mod config;
 pub mod email;
@@ -40,107 +42,53 @@ use current_semver::current_semver;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 use tracing::{debug, info, instrument, warn};
-use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 pub mod open_api;
-use crate::{
-    repository::{
-        DynRepository, RepositoryType, StagingConfig,
-        cargo::{CargoRegistryConfigType, CargoRegistryType},
-        docker::{DockerRegistryConfigType, DockerRegistryType, uploads::BlobUploadManager},
-        maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType},
-        npm::{NPMRegistryConfigType, NpmRegistryType, login::web_login::NpmWebLoginManager},
-        repo_tracing::RepositoryMetricsMeter,
-    },
-    utils::ip_addr::HasForwardedHeader,
+use nr_cargo::{CargoRegistryConfigType, CargoRegistryType};
+use nr_docker::{DockerRegistryConfigType, DockerRegistryType};
+use nr_maven::{MavenPushRulesConfigType, MavenRepositoryConfigType, MavenRepositoryType};
+use nr_npm::{NPMRegistryConfigType, NpmRegistryType};
+use nr_repository::{
+    DynRepository, RepositoryStorageName, RepositoryType, RepositoryTypeRegistry, SiteContext,
+    SiteContextInner, StagingConfig, repo_tracing::RepositoryMetricsMeter,
 };
+use nr_web_core::utils::ip_addr::HasForwardedHeader;
 pub mod api;
 pub mod badge;
 pub mod host_routing;
 pub mod responses;
 pub mod web;
-#[derive(Debug, Serialize, Clone, ToSchema)]
-pub struct Instance {
-    pub app_url: String,
-    pub name: String,
-    pub description: String,
-    pub is_https: bool,
-    pub is_installed: bool,
-    #[schema(value_type=String)]
-    pub version: semver::Version,
-    pub mode: Mode,
-    pub password_rules: Option<PasswordRules>,
-}
-#[derive(Debug, Clone, Hash, PartialEq, Eq, IntoParams, Deserialize)]
-#[into_params(parameter_in = Path)]
-pub struct RepositoryStorageName {
-    /// The name of the storage
-    pub storage_name: String,
-    /// The name of the repository
-    pub repository_name: String,
-}
-
-impl RepositoryStorageName {
-    pub async fn query_db(&self, database: &PgPool) -> Result<Option<Uuid>, sqlx::Error> {
-        let query: Option<Uuid> = sqlx::query_scalar(
-            r#"SELECT repositories.id FROM repositories INNER JOIN storages
-                    ON storages.id = repositories.storage_id AND storages.name = $1
-                    WHERE repositories.name = $2"#,
-        )
-        .bind(&self.storage_name)
-        .bind(&self.repository_name)
-        .fetch_optional(database)
-        .await?;
-        Ok(query)
-    }
-}
-impl From<(&str, &str)> for RepositoryStorageName {
-    fn from((storage_name, repository_name): (&str, &str)) -> Self {
-        Self {
-            storage_name: storage_name.to_lowercase(),
-            repository_name: repository_name.to_lowercase(),
-        }
-    }
-}
-impl From<(String, String)> for RepositoryStorageName {
-    fn from((storage_name, repository_name): (String, String)) -> Self {
-        Self {
-            storage_name: storage_name.to_lowercase(),
-            repository_name: repository_name.to_lowercase(),
-        }
-    }
-}
 #[derive(Debug, Default)]
 pub struct InternalServices {
     pub session_cleaner: Option<JoinHandle<()>>,
     pub email: Option<EmailService>,
 }
 pub struct NitroRepoInner {
-    pub instance: Mutex<Instance>,
+    /// The slice of this state a repository is given. See [`SiteContext`] for what is in it and,
+    /// more to the point, what is deliberately not.
+    ///
+    /// `NitroRepoInner` derefs to its contents, so `site.instance`, `site.staging_config` and
+    /// friends still resolve as before.
+    pub context: SiteContext,
+    /// Every repository type this instance knows about, assembled by
+    /// [`default_repository_types`] at startup.
+    pub repository_types: RepositoryTypeRegistry,
     pub storages: RwLock<HashMap<Uuid, DynStorage>>,
     pub repositories: RwLock<HashMap<Uuid, DynRepository>>,
     pub name_lookup_table: Mutex<HashMap<RepositoryStorageName, Uuid>>,
-    /// Custom hostnames that route straight into a repository, keyed by the normalised
-    /// (lowercased, port-stripped) host.
-    ///
-    /// Materialised in full at startup and kept in step by every mutation, rather than filled
-    /// lazily like [`Self::name_lookup_table`]. This one is consulted by the router fallback, which
-    /// every request that is not `/api`, `/badge` or `/repositories` reaches — including every
-    /// static asset of the web UI. A lazy read-through cache would turn each of those into an
-    /// unauthenticated database round trip. Here a miss is authoritative.
-    pub hostname_lookup_table: RwLock<HashMap<String, Uuid>>,
-    pub general_security_settings: SecuritySettings,
     #[cfg(feature = "frontend")]
     pub frontend: frontend::HostedFrontend,
-    pub staging_config: StagingConfig,
     services: Mutex<InternalServices>,
     pub suggested_local_storage_path: PathBuf,
-    /// npm browser-login sessions awaiting approval. In memory on purpose — see
-    /// [`crate::repository::npm::login::web_login`].
-    pub npm_web_logins: NpmWebLoginManager,
-    /// In-progress Docker blob uploads. Buffered to the staging directory and tracked in memory,
-    /// for the reasons set out in [`crate::repository::docker::uploads`].
-    pub docker_uploads: BlobUploadManager,
+}
+
+// `std::ops::Deref` spelled out: `Deref` in this module is `derive_more`'s derive macro.
+impl std::ops::Deref for NitroRepoInner {
+    type Target = SiteContextInner;
+
+    fn deref(&self) -> &SiteContextInner {
+        &self.context
+    }
 }
 macro_rules! take_service {
     ($(
@@ -236,6 +184,49 @@ impl HasForwardedHeader for NitroRepo {
         Some(&X_FORWARDED_FOR_HEADER)
     }
 }
+
+/// Lets an extractor ask for only the context, so anything that needs no more than the context is
+/// not bound to the whole application state. `RepositoryAuthentication` is the reason this exists.
+impl axum::extract::FromRef<NitroRepo> for SiteContext {
+    fn from_ref(site: &NitroRepo) -> SiteContext {
+        site.inner.context.clone()
+    }
+}
+
+/// The application owns the repository map, so it is what can resolve an address to a loaded
+/// repository. The three methods here are the existing lookups, unchanged; the trait exists so
+/// that the repository router can be handed this capability without being handed the whole state.
+impl nr_repository::RepositoryResolver for NitroRepo {
+    fn repository_by_id(&self, id: Uuid) -> Option<DynRepository> {
+        self.get_repository(id)
+    }
+
+    fn repository_for_hostname(&self, host: &str) -> Option<DynRepository> {
+        NitroRepo::repository_for_hostname(self, host)
+    }
+
+    fn repository_from_names<'a>(
+        &'a self,
+        names: &'a RepositoryStorageName,
+    ) -> futures::future::BoxFuture<'a, Result<Option<DynRepository>, sqlx::Error>> {
+        Box::pin(self.get_repository_from_names(names))
+    }
+}
+
+/// The authentication extractors read nothing but the pool, so they ask for only that.
+impl axum::extract::FromRef<NitroRepo> for PgPool {
+    fn from_ref(site: &NitroRepo) -> PgPool {
+        site.database.clone()
+    }
+}
+
+impl NitroRepo {
+    /// The slice of this state that repositories are given.
+    pub fn context(&self) -> SiteContext {
+        self.inner.context.clone()
+    }
+}
+
 impl NitroRepo {
     #[instrument]
     async fn load_database(database: DatabaseConfig) -> anyhow::Result<PgPool> {
@@ -280,21 +271,24 @@ impl NitroRepo {
         } else {
             std::env::current_dir()?.join("storages")
         };
-        let docker_uploads = BlobUploadManager::new(&staging_config.staging_dir);
+        let repository_metrics = RepositoryMetricsMeter::default();
+        let context = SiteContext::new(
+            database.clone(),
+            instance,
+            security,
+            staging_config,
+            repository_metrics.clone(),
+        );
         let nitro_repo = NitroRepoInner {
-            instance: Mutex::new(instance),
+            repository_types: default_repository_types(&context.staging_config.staging_dir),
+            context,
             storages: RwLock::new(HashMap::new()),
             repositories: RwLock::new(HashMap::new()),
             name_lookup_table: Mutex::new(HashMap::new()),
-            hostname_lookup_table: RwLock::new(HashMap::new()),
-            general_security_settings: security,
-            staging_config,
             services: Mutex::new(services),
             #[cfg(feature = "frontend")]
             frontend: frontend::HostedFrontend::new(site.frontend_path)?,
             suggested_local_storage_path,
-            npm_web_logins: NpmWebLoginManager::default(),
-            docker_uploads,
         };
 
         let session_manager = Arc::new(SessionManager::new(session_manager, mode)?);
@@ -305,7 +299,7 @@ impl NitroRepo {
             database,
             email_access: Arc::new(email_access),
             metrics: AppMetrics::default(),
-            repository_metrics: RepositoryMetricsMeter::default(),
+            repository_metrics,
         };
         nitro_repo.load_storages().await?;
         nitro_repo.load_repositories().await?;
@@ -362,25 +356,21 @@ impl NitroRepo {
                 .context("Repository type not found")?;
             let repository_id = db_repository.id;
             let repository = repository_type
-                .load_repo(db_repository, storage, self.clone())
+                .load_repo(db_repository, storage, self.context())
                 .await?;
             repositories.insert(repository_id, repository);
         }
         info!("Loaded {} repositories", repositories.len());
         Ok(())
     }
-    /// Fills [`NitroRepoInner::hostname_lookup_table`] from the database.
+    /// Fills the [`HostnameIndex`] from the database.
     ///
     /// Must run after [`Self::load_repositories`] — a hostname is only useful once the repository
     /// it points at is loaded.
     async fn load_hostnames(&self) -> anyhow::Result<()> {
         let pairs = DBRepositoryHostname::all_pairs(&self.database).await?;
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.clear();
-        for (hostname, repository_id) in pairs {
-            lookup_table.insert(hostname.to_lowercase(), repository_id);
-        }
-        info!("Loaded {} repository hostnames", lookup_table.len());
+        self.hostnames.replace_all(pairs);
+        info!("Loaded {} repository hostnames", self.hostnames.len());
         Ok(())
     }
     pub fn get_storage_factory(&self, storage_name: &str) -> Option<&'static dyn StorageFactory> {
@@ -497,48 +487,38 @@ impl NitroRepo {
     }
     /// The repository a request for `host` belongs to, or `None` if the host is not registered.
     ///
-    /// `host` must already have been normalised by [`crate::app::host_routing::normalize_host`].
+    /// `host` must already have been normalised by [`nr_web_core::utils::host::normalize_host`].
     ///
     /// Unlike [`Self::get_repository_from_names`] this is infallible and synchronous: the index is
     /// complete, so a miss needs no database round trip. That is what makes it cheap enough to run
     /// on every request that reaches the router's fallback.
     pub fn repository_for_hostname(&self, host: &str) -> Option<DynRepository> {
-        let id = {
-            let lookup_table = self.hostname_lookup_table.read();
-            lookup_table.get(host).copied()
-        }?;
+        let id = self.hostnames.get(host)?;
         let repository = self.get_repository(id);
         if repository.is_none() {
             warn!(?host, ?id, "Hostname points at an unloaded repository");
-            let mut lookup_table = self.hostname_lookup_table.write();
-            lookup_table.remove(host);
+            self.hostnames.remove(host);
         }
         repository
     }
     pub fn register_hostname(&self, hostname: String, repository_id: Uuid) {
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.insert(hostname.to_lowercase(), repository_id);
+        self.hostnames.insert(hostname, repository_id);
     }
     pub fn unregister_hostname(&self, hostname: &str) {
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.remove(&hostname.to_lowercase());
+        self.hostnames.remove(hostname);
     }
     /// Drops every hostname pointing at this repository.
     ///
     /// The database rows go by `ON DELETE CASCADE`; this is the in-memory half of the same delete.
     pub fn forget_repository_hostnames(&self, id: Uuid) {
-        let mut lookup_table = self.hostname_lookup_table.write();
-        lookup_table.retain(|_, value| *value != id);
+        self.hostnames.forget_repository(id);
     }
     pub fn get_storage(&self, id: Uuid) -> Option<DynStorage> {
         let storages = self.storages.read();
         storages.get(&id).cloned()
     }
-    pub fn get_repository_type(&self, name: &str) -> Option<&'static dyn RepositoryType> {
-        REPOSITORY_TYPES
-            .iter()
-            .find(|repo_type| repo_type.get_type().eq_ignore_ascii_case(name))
-            .copied()
+    pub fn get_repository_type(&self, name: &str) -> Option<Arc<dyn RepositoryType>> {
+        self.inner.repository_types.get(name)
     }
     /// Drops any cached name that resolves to this repository.
     ///
@@ -566,7 +546,12 @@ impl NitroRepo {
         services.session_cleaner = Some(cleaner);
     }
     fn start_session_cleaner(&self) {
-        let result = SessionManager::start_cleaner(self.clone());
+        // The metric is reported through a callback: `SessionManager` lives in `nr-web-core` and
+        // cannot see `AppMetrics`, which belongs to the application.
+        let metrics = self.metrics.clone();
+        let result = self.session_manager.clone().start_cleaner(move |active| {
+            metrics.active_sessions.add(active as i64, &[]);
+        });
         if let Some(handle) = result {
             self.set_session_cleaner(handle);
             info!("Session cleaner started");
@@ -585,16 +570,78 @@ pub static REPOSITORY_CONFIG_TYPES: &[&dyn RepositoryConfigType] = &[
     &CargoRegistryConfigType,
     &DockerRegistryConfigType,
 ];
-pub static REPOSITORY_TYPES: &[&dyn RepositoryType] = &[
-    &MavenRepositoryType,
-    &NpmRegistryType,
-    &CargoRegistryType,
-    &DockerRegistryType,
-];
+/// Every repository type this build knows about.
+///
+/// Assembled at startup rather than as a `&'static` slice because a type may own state that
+/// depends on configuration — Docker's blob-upload manager needs the staging directory.
+///
+/// `staging_dir` is only read to derive paths; nothing here touches the filesystem, so a caller
+/// with no real configuration (the exporter, the tests) can pass a throwaway directory.
+pub fn default_repository_types(staging_dir: &std::path::Path) -> RepositoryTypeRegistry {
+    RepositoryTypeRegistry::new(vec![
+        Arc::new(MavenRepositoryType),
+        Arc::new(NpmRegistryType::default()),
+        Arc::new(CargoRegistryType),
+        Arc::new(DockerRegistryType::new(staging_dir)),
+    ])
+}
 
 #[cfg(test)]
 mod registry_tests {
     use super::*;
+
+    /// The real registry. Nothing here touches the staging directory — `DockerRegistryType::new`
+    /// only derives paths from it — so a throwaway one is enough.
+    fn test_registry() -> RepositoryTypeRegistry {
+        default_repository_types(&std::env::temp_dir())
+    }
+
+    /// Every string this server persists or routes on, written out by hand.
+    ///
+    /// `repositories.repository_type` and `repository_configs.key` are free `VARCHAR`s with no
+    /// constraint behind them, and `full_type()` feeds the span and metric attributes that
+    /// dashboards are built on. Nothing about renaming a Rust item tells you that you have just
+    /// orphaned every repository row of that type — the failure surfaces at startup as
+    /// "Repository type not found", naming nothing useful.
+    ///
+    /// So this test deliberately duplicates the constants rather than referring to them. A
+    /// duplicate that has to be edited in two places is the point: the second edit is where you
+    /// notice the first one was a data migration.
+    #[test]
+    fn repository_type_ids_are_stable() {
+        assert_eq!(nr_maven::REPOSITORY_TYPE_ID, "maven");
+        assert_eq!(nr_npm::REPOSITORY_TYPE_ID, "npm");
+        assert_eq!(nr_cargo::REPOSITORY_TYPE_ID, "cargo");
+        assert_eq!(nr_docker::REPOSITORY_TYPE_ID, "docker");
+
+        assert_eq!(nr_maven::hosted::FULL_TYPE, "maven/hosted");
+        assert_eq!(nr_maven::proxy::FULL_TYPE, "maven/proxy");
+        assert_eq!(nr_npm::hosted::FULL_TYPE, "npm/hosted");
+        assert_eq!(nr_cargo::hosted::FULL_TYPE, "cargo/hosted");
+        assert_eq!(nr_docker::hosted::FULL_TYPE, "docker/hosted");
+
+        assert_eq!(MavenRepositoryConfigType.get_type(), "maven");
+        assert_eq!(MavenPushRulesConfigType.get_type(), "maven_push_rules");
+        assert_eq!(NPMRegistryConfigType.get_type(), "npm");
+        assert_eq!(CargoRegistryConfigType.get_type(), "cargo");
+        assert_eq!(DockerRegistryConfigType.get_type(), "docker");
+        assert_eq!(ProjectConfigType.get_type(), "project");
+        // `page`, not `repository_page` — the config key and the Rust type name differ here.
+        assert_eq!(RepositoryPageType.get_type(), "page");
+    }
+
+    /// The registry is a hand-written list, so a dropped entry is not a compile error — and the
+    /// two drift tests below iterate it, so a *missing* type passes both of those happily. The
+    /// only symptom would be every repository of that type failing to load at startup.
+    #[test]
+    fn every_repository_type_is_registered() {
+        let mut registered: Vec<_> = test_registry()
+            .iter()
+            .map(|repository_type| repository_type.get_type())
+            .collect();
+        registered.sort_unstable();
+        assert_eq!(registered, ["cargo", "docker", "maven", "npm"]);
+    }
 
     /// Every config key a repository type advertises must actually be registered.
     ///
@@ -603,7 +650,7 @@ mod registry_tests {
     /// confusing error rather than at startup.
     #[test]
     fn advertised_config_types_are_registered() {
-        for repository_type in REPOSITORY_TYPES {
+        for repository_type in test_registry().iter() {
             for key in repository_type.config_types() {
                 assert!(
                     REPOSITORY_CONFIG_TYPES
@@ -622,7 +669,7 @@ mod registry_tests {
     /// omitted `maven`, the very key its `required_configs` demanded.
     #[test]
     fn required_configs_are_a_subset_of_supported_ones() {
-        for repository_type in REPOSITORY_TYPES {
+        for repository_type in test_registry().iter() {
             let supported = repository_type.config_types();
             for required in repository_type.get_description().required_configs {
                 assert!(

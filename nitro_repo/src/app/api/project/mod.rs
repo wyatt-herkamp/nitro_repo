@@ -11,15 +11,15 @@ use nr_core::{
     repository::{Visibility, project::ProjectResolution},
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_web_core::{
+    authentication::Authentication, error::InternalError, responses::MissingPermission,
+    utils::ResponseBuilder,
+};
 use tracing::instrument;
 use utoipa::OpenApi;
 use uuid::Uuid;
 
-use crate::{
-    app::{NitroRepo, authentication::Authentication, responses::MissingPermission},
-    error::InternalError,
-    utils::ResponseBuilder,
-};
+use crate::app::NitroRepo;
 
 /// Refuses a read of a project belonging to a repository the caller cannot see.
 ///

@@ -17,22 +17,19 @@ use nr_core::{
         scopes::NRScope,
     },
 };
+use nr_repository::RepositoryNotFound;
+use nr_web_core::{
+    authentication::Authentication,
+    error::InternalError,
+    responses::MissingPermission,
+    utils::{ResponseBuilder, conflict::ConflictResponse, host::normalize_host},
+};
 use serde::Deserialize;
 use tracing::{info, instrument};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{
-    app::{
-        NitroRepo,
-        api::require_scope,
-        authentication::Authentication,
-        host_routing::normalize_host,
-        responses::{MissingPermission, RepositoryNotFound},
-    },
-    error::InternalError,
-    utils::{ResponseBuilder, conflict::ConflictResponse},
-};
+use crate::app::{NitroRepo, api::require_scope};
 
 pub fn hostname_routes() -> Router<NitroRepo> {
     Router::new()

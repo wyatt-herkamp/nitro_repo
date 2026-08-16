@@ -18,16 +18,14 @@ use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
 mod local;
 mod s3;
-use crate::{
-    app::{
-        NitroRepo,
-        api::require_scope,
-        authentication::Authentication,
-        responses::{InvalidStorageConfig, InvalidStorageType, MissingPermission},
-    },
+use nr_web_core::{
+    authentication::Authentication,
     error::InternalError,
+    responses::{InvalidStorageConfig, InvalidStorageType, MissingPermission},
     utils::{ResponseBuilder, conflict::ConflictResponse},
 };
+
+use crate::app::{NitroRepo, api::require_scope};
 #[derive(OpenApi)]
 #[openapi(
     paths(list_storages, new_storage, get_storage, update_storage),

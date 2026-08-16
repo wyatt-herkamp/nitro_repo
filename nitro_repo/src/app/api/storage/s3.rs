@@ -4,15 +4,15 @@ use axum::{
 };
 use nr_core::user::permissions::HasPermissions;
 use nr_storage::s3::regions::S3StorageRegion;
+use nr_web_core::{
+    authentication::Authentication, error::InternalError, responses::MissingPermission,
+    utils::ResponseBuilder,
+};
 use strum::IntoEnumIterator;
 use tracing::instrument;
 use utoipa::OpenApi;
 
-use crate::{
-    app::{NitroRepo, authentication::Authentication, responses::MissingPermission},
-    error::InternalError,
-    utils::ResponseBuilder,
-};
+use crate::app::NitroRepo;
 
 #[derive(OpenApi)]
 #[openapi(paths(region_list), components(schemas(S3StorageRegion)))]

@@ -392,3 +392,29 @@ async fn a_tarball_that_does_not_match_its_integrity_is_refused() {
         response.text
     );
 }
+
+/// The `/api/npm` routes are mounted from the repository-type registry rather than listed in
+/// `api_routes`, so that npm's login-session manager can stay private to `NpmRegistryType`. That
+/// indirection is invisible to the OpenAPI document, which is built at compile time — if the
+/// registry loop stopped mounting anything, the served document would still advertise these paths
+/// and every request to them would quietly 404.
+///
+/// A malformed session id is the discriminator: it is a `Path<Uuid>`, so a mounted route rejects
+/// it with `400` while an absent one falls through to the `/api` fallback and answers `404`.
+#[tokio::test]
+async fn the_npm_login_routes_are_mounted() {
+    let Some(server) = common::TestServer::start().await else {
+        assert!(common::skip_without_database("npm login route mounting"));
+        return;
+    };
+    server.install().await;
+
+    let response = server.get("/api/npm/login/not-a-uuid").await;
+    assert_eq!(
+        response.status,
+        StatusCode::BAD_REQUEST,
+        "expected the route to be mounted and reject the malformed session id; a 404 means the \
+         repository-type registry stopped mounting `/api/npm`. Body: {}",
+        response.text
+    );
+}

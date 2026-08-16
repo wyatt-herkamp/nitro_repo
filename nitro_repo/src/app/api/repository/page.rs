@@ -11,20 +11,18 @@ use nr_core::{
     },
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_repository::{RepositoryNotFound, RepositoryStorageName};
+use nr_web_core::{
+    authentication::Authentication,
+    error::InternalError,
+    responses::{InvalidRepositoryConfig, MissingPermission},
+    utils::ResponseBuilder,
+};
 use tracing::instrument;
 use utoipa::OpenApi;
 use uuid::Uuid;
 
-use crate::{
-    app::{
-        NitroRepo, RepositoryStorageName,
-        authentication::Authentication,
-        responses::{InvalidRepositoryConfig, MissingPermission, RepositoryNotFound},
-    },
-    error::InternalError,
-    repository::Repository,
-    utils::ResponseBuilder,
-};
+use crate::app::NitroRepo;
 #[derive(OpenApi)]
 #[openapi(
     paths(get_repository_page_by_id, get_repository_page_by_names),

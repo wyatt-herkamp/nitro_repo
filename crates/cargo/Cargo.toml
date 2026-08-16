@@ -1,0 +1,39 @@
+[package]
+name = "nr-cargo"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The Cargo (sparse registry) repository type for Nitro Repo"
+
+[dependencies]
+nr-core.workspace = true
+nr-macros.workspace = true
+nr-repository.workspace = true
+nr-storage.workspace = true
+nr-web-core.workspace = true
+# The `cksum` recorded in every index entry.
+sha2.workspace = true
+# `cargo search` and friends send their parameters in the query string.
+serde_urlencoded.workspace = true
+# Web
+axum.workspace = true
+bytes.workspace = true
+http.workspace = true
+# Database / serde
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# Utils
+ahash.workspace = true
+derive_more.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

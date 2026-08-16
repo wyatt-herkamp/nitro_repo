@@ -1,0 +1,227 @@
+use ::http::status::StatusCode;
+use ahash::HashMap;
+use axum::response::IntoResponse;
+pub use configs::*;
+use futures::future::BoxFuture;
+use hosted::MavenHosted;
+use nr_core::{
+    database::{
+        DBError,
+        entities::repository::{DBRepository, DBRepositoryConfig},
+    },
+    repository::config::{
+        RepositoryConfigType, project::ProjectConfigType, repository_page::RepositoryPageType,
+    },
+    storage::StoragePath,
+};
+use nr_macros::DynRepositoryHandler;
+use nr_repository::SiteContext;
+// The prelude is what the `DynRepositoryHandler` derive expects in scope at the derive site.
+use nr_repository::{
+    AuthenticationError, IntoErrorResponse, RepoResponse, RepositoryHandlerError, prelude::*,
+};
+use nr_storage::DynStorage;
+use nr_web_core::{error::OtherInternalError, utils::bad_request::BadRequestErrors};
+use proxy::MavenProxy;
+mod configs;
+use nr_repository::{DynRepository, Repository, RepositoryFactoryError, RepositoryType};
+pub mod checksum;
+pub mod hosted;
+pub mod metadata;
+pub mod proxy;
+pub mod push_rules;
+pub mod utils;
+pub static REPOSITORY_TYPE_ID: &str = "maven";
+#[derive(Debug, Default)]
+pub struct MavenRepositoryType;
+
+impl RepositoryType for MavenRepositoryType {
+    fn get_type(&self) -> &'static str {
+        REPOSITORY_TYPE_ID
+    }
+
+    /// Every config key a Maven repository accepts.
+    ///
+    /// This omitted `MavenRepositoryConfigType` — the key it declares as *required* — and the page
+    /// config, while the per-instance `Repository::config_types` listed all four. The two are read
+    /// by different call sites, so they disagreed about what a Maven repository supports.
+    fn config_types(&self) -> Vec<&str> {
+        vec![
+            MavenRepositoryConfigType::get_type_static(),
+            MavenPushRulesConfigType::get_type_static(),
+            RepositoryPageType::get_type_static(),
+            ProjectConfigType::get_type_static(),
+        ]
+    }
+
+    fn get_description(&self) -> nr_repository::RepositoryTypeDescription {
+        nr_repository::RepositoryTypeDescription {
+            type_name: REPOSITORY_TYPE_ID,
+            name: "Maven",
+            description: "A Maven Repository",
+            documentation_url: Some("https://nitro-repo.kingtux.dev/repositories/maven/"),
+            is_stable: true,
+            required_configs: vec![MavenRepositoryConfigType::get_type_static()],
+        }
+    }
+
+    fn create_new(
+        &self,
+        name: String,
+        uuid: uuid::Uuid,
+        configs: HashMap<String, serde_json::Value>,
+        _storage: nr_storage::DynStorage,
+    ) -> BoxFuture<
+        'static,
+        Result<nr_repository::NewRepository, nr_repository::RepositoryFactoryError>,
+    > {
+        Box::pin(async move {
+            let sub_type = configs
+                .get(MavenRepositoryConfigType::get_type_static())
+                .ok_or(RepositoryFactoryError::MissingConfig(
+                    MavenRepositoryConfigType::get_type_static(),
+                ))?
+                .clone();
+            let _maven_config: MavenRepositoryConfig = match serde_json::from_value(sub_type) {
+                Ok(ok) => ok,
+                Err(err) => {
+                    return Err(RepositoryFactoryError::InvalidConfig(
+                        MavenRepositoryConfigType::get_type_static(),
+                        err.to_string(),
+                    ));
+                }
+            };
+            // TODO: Check all configs
+
+            Ok(nr_repository::NewRepository {
+                name,
+                uuid,
+                repository_type: REPOSITORY_TYPE_ID.to_string(),
+                configs,
+            })
+        })
+    }
+
+    #[doc = " Load a repository from the database"]
+    #[doc = " This function should load the repository from the database and return a DynRepository"]
+    fn load_repo(
+        &self,
+        repo: DBRepository,
+        storage: DynStorage,
+        website: SiteContext,
+    ) -> BoxFuture<'static, Result<DynRepository, RepositoryFactoryError>> {
+        Box::pin(async move {
+            MavenRepository::load(repo, storage, website)
+                .await
+                .map(IntoDynRepository::into_dyn)
+        })
+    }
+}
+#[derive(Debug, Clone, DynRepositoryHandler)]
+#[repository_handler(error=MavenError)]
+pub enum MavenRepository {
+    Hosted(MavenHosted),
+    Proxy(MavenProxy),
+}
+impl MavenRepository {
+    pub async fn load(
+        repo: DBRepository,
+        storage: DynStorage,
+        website: SiteContext,
+    ) -> Result<Self, RepositoryFactoryError> {
+        let Some(maven_config_db) = DBRepositoryConfig::<MavenRepositoryConfig>::get_config(
+            repo.id,
+            MavenRepositoryConfigType::get_type_static(),
+            &website.database,
+        )
+        .await?
+        else {
+            return Err(RepositoryFactoryError::MissingConfig(
+                MavenRepositoryConfigType::get_type_static(),
+            ));
+        };
+        let maven_config = maven_config_db.value.0;
+        match maven_config {
+            MavenRepositoryConfig::Hosted => {
+                let maven_hosted = MavenHosted::load(repo, storage, website).await?;
+                Ok(MavenRepository::Hosted(maven_hosted))
+            }
+            MavenRepositoryConfig::Proxy(proxy_config) => {
+                let proxy = MavenProxy::load(repo, storage, website, proxy_config).await?;
+                Ok(MavenRepository::Proxy(proxy))
+            }
+        }
+    }
+}
+#[derive(Debug, thiserror::Error)]
+pub enum MavenError {
+    #[error("Error with processing Maven request: {0}")]
+    MavenRS(#[from] maven_rs::Error),
+    #[error("XML Deserialize Error: {0}")]
+    XMLDeserialize(#[from] maven_rs::quick_xml::DeError),
+    /// Only reachable when generating a `maven-metadata.xml` we built ourselves, so it is a bug
+    /// here rather than anything the client did.
+    #[error("XML Serialize Error: {0}")]
+    XMLSerialize(#[from] maven_rs::quick_xml::SeError),
+
+    #[error("Missing From Pom: {0}")]
+    MissingFromPom(&'static str),
+    #[error("{0}")]
+    Other(Box<dyn IntoErrorResponse>),
+}
+macro_rules! impl_from_error_for_other {
+    ($t:ty) => {
+        impl From<$t> for MavenError {
+            fn from(e: $t) -> Self {
+                MavenError::Other(Box::new(e))
+            }
+        }
+    };
+}
+impl_from_error_for_other!(DBError);
+impl_from_error_for_other!(BadRequestErrors);
+impl_from_error_for_other!(sqlx::Error);
+impl_from_error_for_other!(serde_json::Error);
+impl_from_error_for_other!(std::io::Error);
+impl_from_error_for_other!(AuthenticationError);
+impl_from_error_for_other!(RepositoryHandlerError);
+impl_from_error_for_other!(nr_storage::StorageError);
+impl_from_error_for_other!(reqwest::Error);
+impl_from_error_for_other!(OtherInternalError);
+
+impl IntoErrorResponse for MavenError {
+    fn into_response_boxed(self: Box<Self>) -> axum::response::Response {
+        self.into_response()
+    }
+}
+impl From<MavenError> for RepositoryHandlerError {
+    fn from(e: MavenError) -> Self {
+        RepositoryHandlerError::Other(Box::new(e))
+    }
+}
+
+impl IntoResponse for MavenError {
+    fn into_response(self) -> axum::http::Response<axum::body::Body> {
+        match self {
+            MavenError::MavenRS(maven_rs::Error::XMLDeserialize(err))
+            | MavenError::XMLDeserialize(err) => axum::http::Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(axum::body::Body::from(format!(
+                    "XML Deserialize Error: {}",
+                    err
+                )))
+                .unwrap(),
+            MavenError::MavenRS(e) => axum::http::Response::builder()
+                .status(500)
+                .body(axum::body::Body::from(format!("Maven Error: {}", e)))
+                .unwrap(),
+            err => axum::http::Response::builder()
+                .status(500)
+                .body(axum::body::Body::from(format!(
+                    "Internal Server Error: {}",
+                    err
+                )))
+                .unwrap(),
+        }
+    }
+}

@@ -20,17 +20,14 @@ use nr_core::{
     repository::Visibility,
     user::permissions::{HasPermissions, RepositoryActions},
 };
+use nr_web_core::{authentication::Authentication, error::InternalError, utils::ResponseBuilder};
 use serde::{Deserialize, Serialize};
 use sqlx::{AssertSqlSafe, Row};
 use tracing::instrument;
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use uuid::Uuid;
 
-use crate::{
-    app::{NitroRepo, authentication::Authentication},
-    error::InternalError,
-    utils::ResponseBuilder,
-};
+use crate::app::NitroRepo;
 
 /// The most a single search will return. A query with no filters matches everything, and without
 /// a ceiling that is a way to pull the entire index in one request.

@@ -1,17 +1,20 @@
-use std::{env, fs::read_to_string, path::PathBuf};
+use std::{fs::read_to_string, path::PathBuf};
 
 use nr_core::database::DatabaseConfig;
 use serde::{Deserialize, Serialize};
-use strum::EnumIs;
 use tuxs_config_types::size_config::InvalidSizeError;
-use utoipa::ToSchema;
 mod max_upload;
-pub mod security;
 pub use max_upload::*;
-pub use security::*;
+use nr_repository::StagingConfig;
+use nr_web_core::authentication::session::SessionManagerConfig;
+// `Mode`, `get_current_directory` and the security settings live in `nr-web-core`: the session
+// store and the repository types read them, and neither can depend on the server.
+pub use nr_web_core::config::{
+    Mode, PasswordRules, SecuritySettings, TlsConfig, get_current_directory,
+};
 
-use super::{authentication::session::SessionManagerConfig, email::EmailSetting};
-use crate::{logging::config::LoggingConfig, repository::StagingConfig};
+use super::email::EmailSetting;
+use crate::logging::config::LoggingConfig;
 pub const CONFIG_PREFIX: &str = "NITRO-REPO";
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
@@ -25,24 +28,6 @@ pub enum ConfigError {
         value: String,
     },
 }
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, EnumIs, ToSchema)]
-pub enum Mode {
-    Debug,
-    Release,
-}
-
-impl Default for Mode {
-    fn default() -> Self {
-        #[cfg(debug_assertions)]
-        return Mode::Debug;
-        #[cfg(not(debug_assertions))]
-        return Mode::Release;
-    }
-}
-pub fn get_current_directory() -> PathBuf {
-    env::current_dir().unwrap_or_else(|_| PathBuf::new())
-}
-
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 #[serde(default)]
 pub struct NitroRepoConfig {

@@ -25,7 +25,7 @@ use axum::{
 use http_body_util::BodyExt;
 use nitro_repo::app::{
     NitroRepo,
-    config::{Mode, SiteSetting, security::SecuritySettings},
+    config::{Mode, SecuritySettings, SiteSetting},
     web::build_app,
 };
 use nr_core::database::DatabaseConfig;
@@ -132,11 +132,11 @@ impl TestServer {
                 frontend_path: None,
             },
             SecuritySettings::default(),
-            nitro_repo::app::authentication::session::SessionManagerConfig {
+            nr_web_core::authentication::session::SessionManagerConfig {
                 database_location: directory.path().join("sessions.redb"),
                 ..Default::default()
             },
-            nitro_repo::repository::staging::StagingConfig {
+            nr_repository::StagingConfig {
                 staging_dir: directory.path().join("staging"),
                 ..Default::default()
             },

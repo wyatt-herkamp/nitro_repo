@@ -1,0 +1,49 @@
+[package]
+name = "nr-maven"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The Maven repository type for Nitro Repo"
+
+[dependencies]
+nr-core.workspace = true
+nr-macros.workspace = true
+nr-repository.workspace = true
+nr-storage.workspace = true
+nr-web-core.workspace = true
+# Reading and writing `pom.xml` and `maven-metadata.xml`.
+maven-rs.workspace = true
+# Maven uploads a `.md5` and a `.sha1` beside every artifact, and asks for them back.
+md-5.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+base64.workspace = true
+# The `require_semver` push rule.
+semver.workspace = true
+# Proxying an upstream repository.
+reqwest.workspace = true
+url.workspace = true
+# Web
+axum.workspace = true
+bytes.workspace = true
+http.workspace = true
+# Database / serde
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+# Utils
+ahash.workspace = true
+chrono.workspace = true
+derive_more.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -10,11 +10,12 @@ use axum::{
 use handlebars::Handlebars;
 use http::StatusCode;
 use mime::Mime;
+use nr_web_core::{error::InternalError, utils::ResponseBuilder};
 use serde::Deserialize;
 use tracing::{debug, instrument, trace, warn};
 
 use super::FrontendError;
-use crate::{app::NitroRepo, error::InternalError, utils::ResponseBuilder};
+use crate::app::NitroRepo;
 
 #[cfg(feature = "frontend")]
 static FRONTEND_DATA: &[u8] = include_bytes!(env!("FRONTEND_ZIP"));

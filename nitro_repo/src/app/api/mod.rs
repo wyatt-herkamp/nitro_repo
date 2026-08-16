@@ -13,19 +13,20 @@ use strum::IntoEnumIterator;
 use tower_http::cors::CorsLayer;
 use tracing::{error, instrument};
 use utoipa::ToSchema;
-pub mod docker;
-pub mod npm;
 pub mod project;
 pub mod repository;
 pub mod search;
 pub mod storage;
 pub mod user;
 pub mod user_management;
-use super::{Instance, NitroRepo, NitroRepoState, authentication::password};
-use crate::{
+use nr_web_core::{
+    authentication::password,
+    config::Instance,
     error::InternalError,
     utils::{ResponseBuilder, api_error_response::APIErrorResponse},
 };
+
+use super::{NitroRepo, NitroRepoState};
 /// Refuses a request whose token does not carry `scope`.
 ///
 /// Returns `Some(response)` when the caller should be turned away, so a route reads as:
@@ -40,7 +41,7 @@ use crate::{
 /// token may do; whether the user may do it at all is still decided by their permissions, and both
 /// have to pass.
 pub async fn require_scope(
-    auth: &super::authentication::Authentication,
+    auth: &nr_web_core::authentication::Authentication,
     scope: NRScope,
     site: &NitroRepo,
 ) -> Result<Option<Response>, InternalError> {
@@ -48,12 +49,18 @@ pub async fn require_scope(
         return Ok(None);
     }
     Ok(Some(
-        crate::app::responses::MissingPermission::Scope(scope).into_response(),
+        nr_web_core::responses::MissingPermission::Scope(scope).into_response(),
     ))
 }
 
-pub fn api_routes() -> axum::Router<NitroRepo> {
-    axum::Router::new()
+/// `site` rather than nothing, because the per-type routes come off the repository-type registry
+/// and each arrives already carrying whatever state is private to that type.
+pub fn api_routes(site: &NitroRepo) -> axum::Router<NitroRepo> {
+    let repository_state = nr_repository::RepositoryRouterState::new(
+        site.context(),
+        std::sync::Arc::new(site.clone()),
+    );
+    let mut router = axum::Router::new()
         .route("/info", axum::routing::get(info))
         .route("/info/scopes", axum::routing::get(scopes))
         .route("/install", axum::routing::post(install))
@@ -65,11 +72,21 @@ pub fn api_routes() -> axum::Router<NitroRepo> {
         )
         .nest("/repository", repository::repository_routes())
         .nest("/project", project::project_routes())
-        .nest("/npm", npm::npm_routes())
-        // The realm a Docker client is sent to by the `WWW-Authenticate` challenge. Under `/api`
-        // rather than under `/v2` so it can never collide with an image named `token`.
-        .nest("/docker", docker::docker_routes())
-        .nest("/search", search::search_routes())
+        .nest("/search", search::search_routes());
+
+    // Each repository type may serve its own routes under `/api/{type}`. Mounted from the registry
+    // rather than listed here so that a type's private state — npm's login-session manager — never
+    // has to be reachable from the application state just to let its routes find it.
+    for repository_type in site.inner.repository_types.iter() {
+        if let Some(sub) = repository_type.api_router() {
+            router = router.nest(
+                &format!("/{}", repository_type.get_type()),
+                sub.with_state(repository_state.clone()),
+            );
+        }
+    }
+
+    router
         .fallback(route_not_found)
         .layer(CorsLayer::very_permissive())
 }
@@ -175,7 +192,7 @@ impl Serialize for RouteNotFound {
 /// Only *unmatched* `/api` paths get here, so the real API stays reachable on a custom domain — a
 /// request for `/api/user/me` still hits `/api/user/me`.
 async fn route_not_found(State(site): State<NitroRepo>, request: Request) -> Response {
-    let host = crate::app::host_routing::request_host(
+    let host = nr_web_core::utils::host::request_host(
         request.headers(),
         request.uri(),
         site.general_security_settings.trust_forwarded_host,

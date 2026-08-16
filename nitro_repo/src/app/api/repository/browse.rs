@@ -13,22 +13,20 @@ use nr_core::{
     },
     storage::StoragePath,
 };
+use nr_repository::{RepositoryNotFound, utils::can_read_repository};
 use nr_storage::{Storage, StorageFile};
+use nr_web_core::{
+    authentication::Authentication,
+    error::InternalError,
+    responses::MissingPermission,
+    utils::{ResponseBuilder, request_logging::request_id::RequestId},
+};
 use serde::{Deserialize, Serialize};
 use tracing::{Level, Span, event, info, info_span, instrument};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-use crate::{
-    app::{
-        NitroRepo,
-        authentication::Authentication,
-        responses::{MissingPermission, RepositoryNotFound},
-    },
-    error::InternalError,
-    repository::{Repository, utils::can_read_repository},
-    utils::{ResponseBuilder, request_logging::request_id::RequestId},
-};
+use crate::app::NitroRepo;
 pub fn browse_routes() -> axum::Router<NitroRepo> {
     axum::Router::new()
         .route("/browse-ws/{repository_id}", any(browse_ws_handler))

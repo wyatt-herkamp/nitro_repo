@@ -1,9 +1,8 @@
 use std::{borrow::Cow, fs::OpenOptions, io::Read, path::Path};
 
+use nr_web_core::error::InternalError;
 use rust_embed::RustEmbed;
 use tracing::error;
-
-use crate::error::InternalError;
 
 #[derive(RustEmbed)]
 #[folder = "$CARGO_MANIFEST_DIR/resources"]

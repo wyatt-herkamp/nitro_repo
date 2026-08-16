@@ -6,9 +6,14 @@ use nr_core::{
     repository::{browse::BrowseFile, project::ProjectResolution},
     storage::StoragePath,
 };
+use nr_repository::{DynRepository, utils::can_read_repository};
 use nr_storage::{
     DirectoryListStream, DynDirectoryListStream, DynStorage, EmptyDirectoryListStream, FileType,
     Storage, StorageFileMeta,
+};
+use nr_web_core::{
+    authentication::ws::{WebSocketAuthentication, WebSocketAuthenticationMessage},
+    error::InternalError,
 };
 use opentelemetry::trace::Status;
 use pin_project::pin_project;
@@ -23,14 +28,7 @@ use tracing::{
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use super::BrowseStreamPrimaryData;
-use crate::{
-    app::{
-        NitroRepo,
-        authentication::ws::{WebSocketAuthentication, WebSocketAuthenticationMessage},
-    },
-    error::InternalError,
-    repository::{DynRepository, Repository, utils::can_read_repository},
-};
+use crate::app::NitroRepo;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum WebsocketIncomingMessage {
@@ -175,7 +173,9 @@ impl BrowseWSState {
                 Ok(false)
             }
             WebsocketIncomingMessage::Authentication(auth) => {
-                let auth = auth.attempt_login(&self.site).await;
+                let auth = auth
+                    .attempt_login(&self.site.database, &self.site.session_manager)
+                    .await;
 
                 match auth {
                     Ok(auth) => {

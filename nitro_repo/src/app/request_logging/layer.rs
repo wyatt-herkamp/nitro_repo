@@ -10,16 +10,14 @@ use axum::{
     extract::MatchedPath,
 };
 use http::{HeaderValue, Request, Response, header::InvalidHeaderValue};
+use nr_web_core::utils::request_logging::{request_id::RequestId, request_span::RequestSpan};
 use opentelemetry::KeyValue;
 use pin_project::pin_project;
 use tower_service::Service;
 use tracing::error;
 
 use super::{X_REQUEST_ID, response_body::TraceResponseBody};
-use crate::{
-    app::NitroRepo,
-    utils::request_logging::{request_id::RequestId, request_span::RequestSpan},
-};
+use crate::app::NitroRepo;
 
 /// Middleware that handles the authentication of the user
 #[derive(Debug, Clone)]

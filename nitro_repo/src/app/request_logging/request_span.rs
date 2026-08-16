@@ -1,5 +1,5 @@
 //! Attempts to follow the http server semantic conventions of opentelemetry.
-//! https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-server-semantic-conventions
+//! <https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-server-semantic-conventions>
 use std::{borrow::Cow, fmt::Display};
 
 use axum::extract::MatchedPath;
@@ -7,19 +7,17 @@ use http::{
     HeaderMap, HeaderName, Request,
     header::{REFERER, USER_AGENT},
 };
+use nr_web_core::utils::{
+    ErrorReason,
+    header::HeaderMapExt,
+    ip_addr,
+    request_logging::{HttpTraceValue, request_id::RequestId},
+};
 use opentelemetry::{global, propagation::Extractor, trace::TraceContextExt};
 use tracing::{field::Empty, info_span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-use crate::{
-    app::NitroRepo,
-    utils::{
-        ErrorReason,
-        header::HeaderMapExt,
-        ip_addr,
-        request_logging::{HttpTraceValue, request_id::RequestId},
-    },
-};
+use crate::app::NitroRepo;
 
 pub struct HeaderMapCarrier<'a>(pub &'a HeaderMap);
 

@@ -1,0 +1,47 @@
+[package]
+name = "nr-repository"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "The contract a Nitro Repo repository type implements, and the HTTP plumbing around it"
+
+[dependencies]
+nr-core.workspace = true
+nr-storage.workspace = true
+nr-web-core.workspace = true
+# Web
+axum.workspace = true
+# `RouterExt`/`route_with_tsr`, so `/{storage}/{repository}` redirects to the trailing-slash form
+# Maven clients ask for.
+axum-extra.workspace = true
+bytes.workspace = true
+http.workspace = true
+http-body-util.workspace = true
+mime.workspace = true
+# Database
+sqlx.workspace = true
+# Serde / schema
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+utoipa.workspace = true
+# The request metrics a repository reports. A repository publishes its own span and metric
+# attributes, so the meter has to be reachable from here.
+opentelemetry.workspace = true
+# Utils
+ahash.workspace = true
+auto_impl.workspace = true
+chrono.workspace = true
+derive_more.workspace = true
+digestible.workspace = true
+futures.workspace = true
+parking_lot.workspace = true
+strum.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true
